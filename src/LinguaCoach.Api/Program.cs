@@ -86,6 +86,7 @@ builder.Services.AddInfrastructure();
 // ── API ─────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -112,6 +113,7 @@ app.UseAuthorization();
 // enforcement.
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.Run();
 
 // Exposed for WebApplicationFactory in integration tests.
