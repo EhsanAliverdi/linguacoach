@@ -51,3 +51,5 @@ npm-debug.log*
 ## OS
 .DS_Store
 Thumbs.db
+node_modules/
+src/LinguaCoach.Web/dist/

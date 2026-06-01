@@ -80,6 +80,17 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// ── CORS ─────────────────────────────────────────────────────────────────────
+// Allow Angular dev server in Development. In production, the Angular build is
+// served from the same origin (or a proxy), so no CORS needed.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularDev", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 // ── Infrastructure services ─────────────────────────────────────────────────
 builder.Services.AddInfrastructure();
 
@@ -102,6 +113,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
 app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment()) app.UseCors("AngularDev");
 app.UseAuthentication();
 app.UseAuthorization();
 

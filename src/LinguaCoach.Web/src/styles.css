@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Base typography */
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

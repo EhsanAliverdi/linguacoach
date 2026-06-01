@@ -2,7 +2,7 @@
 
 AI-powered language learning SaaS — role-specific workplace English for immigrant professionals.
 
-**Current status:** Backend API complete (T1–T4). Angular frontend coming in T6.
+**Current status:** Month 1 skeleton complete (T1–T6). Backend API + Angular frontend running end-to-end.
 
 ---
 
@@ -11,6 +11,8 @@ AI-powered language learning SaaS — role-specific workplace English for immigr
 | Tool | Version |
 |------|---------|
 | .NET SDK | 10.0+ |
+| Node.js | 22.x |
+| npm | 10.x+ |
 | Docker Desktop | 4.x+ |
 | PostgreSQL (optional) | 17 (provided by Docker Compose) |
 
@@ -131,9 +133,33 @@ docs/
 
 ---
 
-## Frontend
+## Running the Angular frontend
 
-The Angular frontend is coming in **T6**. Until then, the API can be exercised directly via curl, Postman, or the OpenAPI endpoint (in Development).
+The frontend lives in `src/LinguaCoach.Web`. It runs on `http://localhost:4200` and calls the API at `http://localhost:5038`.
+
+```bash
+# Terminal 1 — start the API (with local PostgreSQL running)
+cd src/LinguaCoach.Api
+dotnet run
+
+# Terminal 2 — start the Angular dev server
+cd src/LinguaCoach.Web
+npm install    # first time only
+npm start
+```
+
+Open `http://localhost:4200` in your browser. The API must be running for the login to work.
+
+> The API HTTP port is `5038` (see `src/LinguaCoach.Api/Properties/launchSettings.json`). If your setup uses a different port, update `src/LinguaCoach.Web/src/environments/environment.ts`.
+
+### First-time flow
+
+1. Start both API and Angular.
+2. Call `POST /api/admin/students` (e.g. via curl or Postman) to create a student account.
+3. Log in at `http://localhost:4200/login` with the student credentials.
+4. Change the temporary password when prompted.
+5. Complete onboarding (4 steps).
+6. Reach the dashboard placeholder.
 
 ---
 

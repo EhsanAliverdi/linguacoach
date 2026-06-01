@@ -1,0 +1,60 @@
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { OnboardingService } from '../../../core/services/onboarding.service';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './login.component.html',
+})
+export class LoginComponent {
+  email = '';
+  password = '';
+  loading = signal(false);
+  error = signal('');
+
+  constructor(
+    private auth: AuthService,
+    private onboarding: OnboardingService,
+    private router: Router,
+  ) {}
+
+  onSubmit(): void {
+    if (!this.email || !this.password) return;
+    this.loading.set(true);
+    this.error.set('');
+
+    this.auth.login({ email: this.email, password: this.password }).subscribe({
+      next: res => {
+        this.loading.set(false);
+        if (res.mustChangePassword) {
+          this.router.navigate(['/change-password']);
+          return;
+        }
+        if (res.role === 'Admin') {
+          this.router.navigate(['/admin']);
+          return;
+        }
+        // Student: check onboarding status
+        this.onboarding.getStatus().subscribe({
+          next: status => {
+            if (status.isComplete) {
+              this.router.navigate(['/dashboard']);
+            } else {
+              this.router.navigate(['/onboarding/resume']);
+            }
+          },
+          error: () => this.router.navigate(['/onboarding/step-1']),
+        });
+      },
+      error: err => {
+        this.loading.set(false);
+        this.error.set(err.error?.error ?? 'Login failed. Please check your credentials.');
+      },
+    });
+  }
+}
