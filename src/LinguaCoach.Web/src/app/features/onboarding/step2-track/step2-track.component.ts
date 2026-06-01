@@ -21,20 +21,17 @@ export class Step2TrackComponent implements OnInit {
   constructor(private ref: ReferenceService, private onboarding: OnboardingService, private router: Router) {}
 
   ngOnInit(): void {
-    // Fetch onboarding status to get the language pair stored in step 1
     this.onboarding.getStatus().subscribe({
-      next: () => {
-        // Language pair ID isn't returned by status; use the first available pair as proxy.
-        // The backend validates the pair anyway.
-        this.ref.getLanguagePairs().subscribe({
-          next: pairs => {
-            if (pairs.length === 0) { this.error.set('No language pairs found.'); this.loading.set(false); return; }
-            this.ref.getTracks(pairs[0].id).subscribe({
-              next: tracks => { this.tracks.set(tracks); this.loading.set(false); },
-              error: () => { this.error.set('Could not load tracks.'); this.loading.set(false); },
-            });
-          },
-          error: () => { this.error.set('Could not load language pairs.'); this.loading.set(false); },
+      next: status => {
+        const languagePairId = status.languagePairId;
+        if (!languagePairId) {
+          this.error.set('Please complete step 1 first.');
+          this.loading.set(false);
+          return;
+        }
+        this.ref.getTracks(languagePairId).subscribe({
+          next: tracks => { this.tracks.set(tracks); this.loading.set(false); },
+          error: () => { this.error.set('Could not load tracks.'); this.loading.set(false); },
         });
       },
       error: () => { this.error.set('Could not load your profile.'); this.loading.set(false); },

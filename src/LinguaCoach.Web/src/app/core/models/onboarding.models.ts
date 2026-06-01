@@ -3,6 +3,7 @@ export type SkillFocus = 'Writing' | 'Speaking' | 'Vocabulary';
 export interface OnboardingStatusResponse {
   currentStep: string;
   isComplete: boolean;
+  languagePairId?: string; // null until the language step is complete
 }
 
 export interface OnboardingStepResult {

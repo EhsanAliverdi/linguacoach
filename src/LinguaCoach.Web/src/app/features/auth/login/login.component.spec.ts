@@ -1,0 +1,89 @@
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { LoginComponent } from './login.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { OnboardingService } from '../../../core/services/onboarding.service';
+
+describe('LoginComponent', () => {
+  let authService: jasmine.SpyObj<AuthService>;
+  let onboardingService: jasmine.SpyObj<OnboardingService>;
+  let router: jasmine.SpyObj<Router>;
+
+  beforeEach(() => {
+    authService = jasmine.createSpyObj('AuthService', ['login']);
+    onboardingService = jasmine.createSpyObj('OnboardingService', ['getStatus']);
+    router = jasmine.createSpyObj('Router', ['navigate']);
+
+    TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        { provide: AuthService, useValue: authService },
+        { provide: OnboardingService, useValue: onboardingService },
+        { provide: Router, useValue: router },
+      ],
+    });
+  });
+
+  function create() {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('sets error signal on failed login', fakeAsync(() => {
+    authService.login.and.returnValue(throwError(() => ({ error: { error: 'Invalid credentials.' } })));
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.email = 'test@test.com';
+    component.password = 'wrong';
+    component.onSubmit();
+    tick();
+    expect(component.error()).toBe('Invalid credentials.');
+    expect(router.navigate).not.toHaveBeenCalled();
+  }));
+
+  it('routes mustChangePassword user to /change-password', fakeAsync(() => {
+    authService.login.and.returnValue(of({ token: 'tok', role: 'Student', mustChangePassword: true }));
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.email = 'test@test.com';
+    component.password = 'pass';
+    component.onSubmit();
+    tick();
+    expect(router.navigate).toHaveBeenCalledWith(['/change-password']);
+  }));
+
+  it('routes Admin to /admin', fakeAsync(() => {
+    authService.login.and.returnValue(of({ token: 'tok', role: 'Admin', mustChangePassword: false }));
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.email = 'admin@test.com';
+    component.password = 'pass';
+    component.onSubmit();
+    tick();
+    expect(router.navigate).toHaveBeenCalledWith(['/admin']);
+  }));
+
+  it('routes Student with complete onboarding to /dashboard', fakeAsync(() => {
+    authService.login.and.returnValue(of({ token: 'tok', role: 'Student', mustChangePassword: false }));
+    onboardingService.getStatus.and.returnValue(of({ currentStep: 'Skill', isComplete: true }));
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.email = 'student@test.com';
+    component.password = 'pass';
+    component.onSubmit();
+    tick();
+    expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+  }));
+
+  it('does not submit when email or password is empty', fakeAsync(() => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.email = '';
+    component.password = '';
+    component.onSubmit();
+    tick();
+    expect(authService.login).not.toHaveBeenCalled();
+  }));
+});

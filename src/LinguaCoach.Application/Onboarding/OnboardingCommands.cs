@@ -31,7 +31,7 @@ public interface IOnboardingHandler
 
 public sealed record OnboardingStatusQuery(Guid UserId);
 
-public sealed record OnboardingStatusResult(string CurrentStep, bool IsComplete);
+public sealed record OnboardingStatusResult(string CurrentStep, bool IsComplete, Guid? LanguagePairId);
 
 public interface IOnboardingStatusQuery
 {

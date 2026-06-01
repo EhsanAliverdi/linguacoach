@@ -37,7 +37,7 @@ jobs:
           path: "**/*.trx"
 
   frontend:
-    name: Frontend — build
+    name: Frontend — test and build
     runs-on: ubuntu-latest
 
     steps:
@@ -53,6 +53,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/LinguaCoach.Web
+
+      - name: Test
+        run: npm test -- --watch=false --browsers=ChromeHeadless
         working-directory: src/LinguaCoach.Web
 
       - name: Build

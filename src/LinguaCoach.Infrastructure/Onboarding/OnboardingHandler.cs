@@ -67,6 +67,7 @@ public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQue
 
         return new OnboardingStatusResult(
             profile.LastCompletedStep.ToString(),
-            profile.OnboardingStatus == OnboardingStatus.Complete);
+            profile.OnboardingStatus == OnboardingStatus.Complete,
+            profile.LanguagePairId);
     }
 }

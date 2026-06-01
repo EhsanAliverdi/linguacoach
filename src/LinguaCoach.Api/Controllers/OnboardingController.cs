@@ -69,7 +69,7 @@ public sealed class OnboardingController : ControllerBase
         if (userId == Guid.Empty) return Unauthorized();
 
         var result = await _statusQuery.HandleAsync(new OnboardingStatusQuery(userId), ct);
-        return Ok(new { currentStep = result.CurrentStep, isComplete = result.IsComplete });
+        return Ok(new { currentStep = result.CurrentStep, isComplete = result.IsComplete, languagePairId = result.LanguagePairId });
     }
 
     private Guid GetCurrentUserId()
