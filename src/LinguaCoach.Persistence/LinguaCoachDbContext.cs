@@ -23,6 +23,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<SpeakingScenario> SpeakingScenarios => Set<SpeakingScenario>();
     public DbSet<SpeakingSession> SpeakingSessions => Set<SpeakingSession>();
     public DbSet<SpeakingTurn> SpeakingTurns => Set<SpeakingTurn>();
+    public DbSet<WritingSubmission> WritingSubmissions => Set<WritingSubmission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

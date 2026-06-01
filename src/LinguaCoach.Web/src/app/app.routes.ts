@@ -41,5 +41,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent),
   },
 
+  {
+    path: 'writing',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/writing/writing-exercise/writing-exercise.component').then(m => m.WritingExerciseComponent),
+  },
+
   { path: '**', redirectTo: 'login' },
 ];

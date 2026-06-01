@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\LinguaCoach.Domain\LinguaCoach.Domain.csproj" />
+    <ProjectReference Include="..\..\src\LinguaCoach.Infrastructure\LinguaCoach.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

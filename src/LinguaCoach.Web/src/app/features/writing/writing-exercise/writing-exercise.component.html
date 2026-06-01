@@ -1,0 +1,189 @@
+<div class="min-h-screen bg-slate-50">
+
+  <!-- Nav -->
+  <nav class="bg-white border-b border-slate-200 px-4 py-3">
+    <div class="max-w-2xl mx-auto flex items-center gap-3">
+      <button (click)="backToDashboard()" class="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Dashboard
+      </button>
+      <span class="text-slate-300">|</span>
+      <span class="font-semibold text-slate-800 text-sm">Writing Exercise</span>
+    </div>
+  </nav>
+
+  <div class="max-w-2xl mx-auto px-4 py-8">
+
+    <!-- Loading -->
+    @if (state() === 'loading') {
+      <div class="flex justify-center py-16">
+        <div class="w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (state() === 'error') {
+      <div class="rounded-xl bg-red-50 border border-red-200 px-5 py-4 text-sm text-red-700 mb-4">
+        {{ errorMessage() }}
+      </div>
+      <button (click)="backToDashboard()" class="text-sm text-indigo-600 hover:underline">Back to dashboard</button>
+    }
+
+    <!-- Exercise -->
+    @if (state() === 'exercise' || state() === 'submitting') {
+      @if (exercise(); as ex) {
+
+        <!-- Scenario card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+          <div class="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">Writing Exercise</div>
+          <h2 class="text-lg font-semibold text-slate-900 mb-3">{{ ex.scenarioTitle }}</h2>
+          <p class="text-sm text-slate-600 mb-4">{{ ex.scenarioDescription }}</p>
+
+          <!-- Persian instruction -->
+          <div class="bg-indigo-50 rounded-xl px-4 py-3 text-sm text-indigo-800 mb-4" dir="rtl" lang="fa">
+            {{ ex.instructionInSourceLanguage }}
+          </div>
+
+          <!-- Target vocabulary chips -->
+          @if (ex.targetVocabulary.length > 0) {
+            <div class="mb-2">
+              <div class="text-xs font-medium text-slate-500 mb-2">Target vocabulary</div>
+              <div class="flex flex-wrap gap-1.5">
+                @for (word of ex.targetVocabulary; track word) {
+                  <span class="inline-block rounded-full bg-slate-100 px-3 py-0.5 text-xs text-slate-700">{{ word }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Draft textarea -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Write your email draft</label>
+          <textarea
+            [(ngModel)]="draftText"
+            [disabled]="state() === 'submitting'"
+            rows="10"
+            placeholder="Dear [Name],&#10;&#10;I hope this email finds you well..."
+            class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          ></textarea>
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-xs text-slate-400">{{ draftText.length }}/3000</span>
+          </div>
+        </div>
+
+        @if (errorMessage() && state() === 'exercise') {
+          <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{ errorMessage() }}</div>
+        }
+
+        <button
+          (click)="onSubmit()"
+          [disabled]="!draftText.trim() || state() === 'submitting' || draftText.length > 3000"
+          class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          @if (state() === 'submitting') {
+            <span class="flex items-center justify-center gap-2">
+              <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Getting AI feedback…
+            </span>
+          } @else {
+            Get feedback from AI coach
+          }
+        </button>
+      }
+    }
+
+    <!-- Feedback -->
+    @if (state() === 'feedback') {
+      @if (feedback(); as fb) {
+
+        <!-- Score -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5 text-center">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Overall score</div>
+          <div class="text-4xl font-bold mb-1 {{ scoreColour(fb.overallScore) }}">
+            {{ fb.overallScore !== null ? fb.overallScore : '—' }}
+            @if (fb.overallScore !== null) { <span class="text-xl font-normal text-slate-400">/100</span> }
+          </div>
+        </div>
+
+        <!-- Persian feedback -->
+        @if (fb.feedbackInSourceLanguage) {
+          <div class="bg-indigo-50 rounded-2xl border border-indigo-100 p-5 mb-5" dir="rtl" lang="fa">
+            <div class="text-xs font-medium text-indigo-500 uppercase tracking-wide mb-2 text-left" dir="ltr">Feedback (Persian)</div>
+            <p class="text-sm text-indigo-900 leading-relaxed">{{ fb.feedbackInSourceLanguage }}</p>
+          </div>
+        }
+
+        <!-- Corrected email -->
+        @if (fb.correctedEmail) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+            <div class="text-xs font-medium text-green-600 uppercase tracking-wide mb-3">Corrected email</div>
+            <pre class="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">{{ fb.correctedEmail }}</pre>
+          </div>
+        }
+
+        <!-- Issues grid -->
+        @if (fb.grammarIssues.length || fb.vocabularyIssues.length || fb.toneIssues.length) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-4">Areas to improve</div>
+            <div class="space-y-4">
+              @if (fb.grammarIssues.length) {
+                <div>
+                  <div class="text-xs font-semibold text-red-600 mb-1">Grammar</div>
+                  <ul class="space-y-1">
+                    @for (issue of fb.grammarIssues; track issue) {
+                      <li class="text-sm text-slate-600 flex gap-2"><span class="text-red-400 flex-shrink-0">•</span>{{ issue }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (fb.vocabularyIssues.length) {
+                <div>
+                  <div class="text-xs font-semibold text-amber-600 mb-1">Vocabulary</div>
+                  <ul class="space-y-1">
+                    @for (issue of fb.vocabularyIssues; track issue) {
+                      <li class="text-sm text-slate-600 flex gap-2"><span class="text-amber-400 flex-shrink-0">•</span>{{ issue }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (fb.toneIssues.length) {
+                <div>
+                  <div class="text-xs font-semibold text-indigo-600 mb-1">Tone & register</div>
+                  <ul class="space-y-1">
+                    @for (issue of fb.toneIssues; track issue) {
+                      <li class="text-sm text-slate-600 flex gap-2"><span class="text-indigo-400 flex-shrink-0">•</span>{{ issue }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Suggested phrases -->
+        @if (fb.suggestedPhrases.length) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Phrases to practise</div>
+            <div class="flex flex-wrap gap-2">
+              @for (phrase of fb.suggestedPhrases; track phrase) {
+                <span class="rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs text-green-800 italic">"{{ phrase }}"</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+          <button (click)="tryAgain()" class="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            Try again
+          </button>
+          <button (click)="backToDashboard()" class="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
+            Back to dashboard
+          </button>
+        </div>
+
+      }
+    }
+
+  </div>
+</div>

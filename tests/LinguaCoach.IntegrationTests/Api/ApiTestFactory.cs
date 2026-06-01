@@ -15,7 +15,7 @@ namespace LinguaCoach.IntegrationTests.Api;
 /// A single shared connection is kept open for the lifetime of the factory so
 /// the in-memory database survives between requests within one test instance.
 /// </summary>
-public sealed class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestJwtKey = "test-jwt-signing-key-at-least-32-characters-long!";
 

@@ -1,0 +1,86 @@
+using LinguaCoach.Application.Ai;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using OpenAI;
+using OpenAI.Chat;
+using System.ClientModel;
+
+namespace LinguaCoach.Infrastructure.Ai;
+
+/// <summary>
+/// OpenAI GPT-4o implementation of IAiProvider.
+/// Reads the API key from configuration key "OpenAI:ApiKey" or environment variable OPENAI_API_KEY.
+/// The model defaults to "gpt-4o" but can be overridden via "OpenAI:Model".
+/// </summary>
+public sealed class OpenAiProvider : IAiProvider
+{
+    public string ProviderName => "openai";
+
+    private readonly string _model;
+    private readonly ChatClient _client;
+    private readonly ILogger<OpenAiProvider> _logger;
+
+    // GPT-4o input/output cost per token (as of 2024, may change — update when repricing occurs).
+    private const decimal InputCostPer1kTokens = 0.005m;
+    private const decimal OutputCostPer1kTokens = 0.015m;
+
+    public OpenAiProvider(IConfiguration configuration, ILogger<OpenAiProvider> logger)
+    {
+        _logger = logger;
+
+        var apiKey = configuration["OpenAI:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+            ?? throw new InvalidOperationException(
+                "OpenAI API key is not configured. Set OpenAI:ApiKey in configuration " +
+                "or the OPENAI_API_KEY environment variable.");
+
+        _model = configuration["OpenAI:Model"] ?? "gpt-4o";
+        _client = new ChatClient(_model, new ApiKeyCredential(apiKey));
+    }
+
+    public async Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
+    {
+        _logger.LogDebug("Calling OpenAI model {Model} for prompt key {Key}", _model, request.PromptKey);
+
+        var options = new ChatCompletionOptions
+        {
+            MaxOutputTokenCount = request.MaxOutputTokens,
+        };
+
+        var messages = new[]
+        {
+            new UserChatMessage(request.RenderedPrompt)
+        };
+
+        ClientResult<ChatCompletion> result;
+        try
+        {
+            result = await _client.CompleteChatAsync(messages, options, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "OpenAI API call failed for prompt key {Key}", request.PromptKey);
+            throw new AiProviderException($"OpenAI call failed: {ex.Message}", ex);
+        }
+
+        var completion = result.Value;
+        var responseText = completion.Content[0].Text;
+
+        var inputTokens = completion.Usage.InputTokenCount;
+        var outputTokens = completion.Usage.OutputTokenCount;
+        var cost = (inputTokens / 1000m) * InputCostPer1kTokens
+                 + (outputTokens / 1000m) * OutputCostPer1kTokens;
+
+        _logger.LogInformation(
+            "OpenAI call complete: key={Key} input={Input} output={Output} cost=${Cost:F6}",
+            request.PromptKey, inputTokens, outputTokens, cost);
+
+        return new AiResponse(responseText, inputTokens, outputTokens, cost);
+    }
+}
+
+/// <summary>Wraps provider-specific errors into a stable application exception.</summary>
+public sealed class AiProviderException : Exception
+{
+    public AiProviderException(string message, Exception inner) : base(message, inner) { }
+}
