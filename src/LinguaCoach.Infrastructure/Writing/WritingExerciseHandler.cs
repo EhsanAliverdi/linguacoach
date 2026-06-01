@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain.Entities;
@@ -30,6 +31,10 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         "approval", "submittal", "revision", "pending", "outstanding",
         "document controller", "RFI", "transmittal", "compliance"
     ];
+
+    // Used in EF Core Where — must be a plain collection for SQL IN translation.
+    private static readonly List<string> TargetVocabularyList =
+        TargetVocabulary.ToList();
 
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
@@ -133,12 +138,11 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         _db.WritingSubmissions.Add(submission);
         await _db.SaveChangesAsync(ct);
 
-        // Update VocabularyEntry counters for each target word used in the draft.
+        // Stage vocabulary and summary changes together so they commit atomically.
         if (profile.LanguagePairId.HasValue)
-            await UpdateVocabularyEntriesAsync(profile.Id, profile.LanguagePairId.Value, command.DraftText, ct);
-
-        // Upsert the rolling learning summary.
-        await UpdateLearningSummaryAsync(profile.Id, feedback, ct);
+            await StageVocabularyUpdatesAsync(profile.Id, profile.LanguagePairId.Value, command.DraftText, ct);
+        await StageLearningSummaryUpdateAsync(profile.Id, feedback, ct);
+        await _db.SaveChangesAsync(ct);
 
         return new WritingFeedbackDto(
             submission.Id,
@@ -154,13 +158,13 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
 
     // ── Post-submission side-effects ──────────────────────────────────────────
 
-    private async Task UpdateVocabularyEntriesAsync(
+    private async Task StageVocabularyUpdatesAsync(
         Guid studentProfileId, Guid languagePairId, string draftText, CancellationToken ct)
     {
         var draftLower = draftText.ToLowerInvariant();
 
         var existingEntries = await _db.VocabularyEntries
-            .Where(v => v.StudentProfileId == studentProfileId)
+            .Where(v => v.StudentProfileId == studentProfileId && TargetVocabularyList.Contains(v.Word))
             .ToListAsync(ct);
 
         var existingByWord = existingEntries
@@ -169,25 +173,23 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         foreach (var word in TargetVocabulary)
         {
             var wordLower = word.ToLowerInvariant();
-            var usedCorrectly = draftLower.Contains(wordLower);
+            var usedCorrectly = Regex.IsMatch(draftLower, @"\b" + Regex.Escape(wordLower) + @"\b");
 
-            if (existingByWord.TryGetValue(wordLower, out var entry))
+            if (usedCorrectly && existingByWord.TryGetValue(wordLower, out var entry))
             {
-                entry.RecordUsage(usedCorrectly);
+                entry.RecordUsage(correct: true);
             }
             else if (usedCorrectly)
             {
                 // Only create an entry when the student actually uses the word.
-                var newEntry = new VocabularyEntry(studentProfileId, languagePairId, word, word);
+                var newEntry = new VocabularyEntry(studentProfileId, languagePairId, word: word, definition: word);
                 newEntry.RecordUsage(correct: true);
                 _db.VocabularyEntries.Add(newEntry);
             }
         }
-
-        await _db.SaveChangesAsync(ct);
     }
 
-    private async Task UpdateLearningSummaryAsync(
+    private async Task StageLearningSummaryUpdateAsync(
         Guid studentProfileId, AiFeedbackPayload feedback, CancellationToken ct)
     {
         var summary = await _db.UserLearningSummaries
@@ -211,7 +213,6 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
             weaknesses = weaknesses[..UserLearningSummary.MaxSummaryLength];
 
         summary.Update(weaknesses, progress);
-        await _db.SaveChangesAsync(ct);
     }
 
     // ── AI response parsing ───────────────────────────────────────────────────

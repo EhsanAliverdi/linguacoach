@@ -128,7 +128,7 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
         var client = ClientWithToken(token);
 
-        // "approval" and "submittal" are both in TargetVocabulary
+        // "approval" and "submittal" are both in TargetVocabulary; "revision" is not in this draft
         await client.PostAsJsonAsync("/api/writing/exercise/submit",
             new { draftText = "Dear manager, please approve the submittal for approval." });
 
@@ -137,11 +137,36 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         var profile = db.StudentProfiles.First(p => p.UserId == userId);
         var entries = db.VocabularyEntries.Where(v => v.StudentProfileId == profile.Id).ToList();
 
-        Assert.NotEmpty(entries);
+        Assert.Equal(2, entries.Count);
+
         var approvalEntry = entries.FirstOrDefault(v => v.Word.ToLower() == "approval");
         Assert.NotNull(approvalEntry);
-        Assert.True(approvalEntry.UsageCount > 0);
-        Assert.True(approvalEntry.CorrectCount > 0);
+        Assert.Equal(1, approvalEntry.UsageCount);
+        Assert.Equal(1, approvalEntry.CorrectCount);
+
+        var submittedEntry = entries.FirstOrDefault(v => v.Word.ToLower() == "submittal");
+        Assert.NotNull(submittedEntry);
+        Assert.Equal(1, submittedEntry.UsageCount);
+        Assert.Equal(1, submittedEntry.CorrectCount);
+    }
+
+    [Fact]
+    public async Task Submit_DoesNotCreateVocabularyEntry_ForWordsAbsentFromDraft()
+    {
+        var email = $"vocabneg_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
+        var client = ClientWithToken(token);
+
+        // Draft contains none of the TargetVocabulary words
+        await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Hello, just writing to check in." });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        var entries = db.VocabularyEntries.Where(v => v.StudentProfileId == profile.Id).ToList();
+
+        Assert.Empty(entries);
     }
 
     [Fact]
@@ -160,8 +185,31 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         var summary = db.UserLearningSummaries.FirstOrDefault(s => s.StudentProfileId == profile.Id);
 
         Assert.NotNull(summary);
-        Assert.False(string.IsNullOrEmpty(summary.RecentProgress));
         Assert.Contains("writing exercise", summary.RecentProgress.ToLower());
+        // FakeAiProvider returns overallScore=68 and 1 grammar issue
+        Assert.Contains("68", summary.RecentProgress);
+        Assert.Contains("Grammar issues: 1", summary.RecentWeaknesses);
+    }
+
+    [Fact]
+    public async Task Submit_Twice_ProducesSingleLearningSummaryRow()
+    {
+        var email = $"upsert_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
+        var client = ClientWithToken(token);
+
+        await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "First draft about pending approval." });
+        await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Second draft about approval submittal." });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        var summaries = db.UserLearningSummaries.Where(s => s.StudentProfileId == profile.Id).ToList();
+
+        Assert.Single(summaries);
+        Assert.False(string.IsNullOrEmpty(summaries[0].RecentProgress));
     }
 
     private HttpClient ClientWithToken(string token)
