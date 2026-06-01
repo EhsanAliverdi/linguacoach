@@ -1,0 +1,53 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+*.snupkg
+
+## Build outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+coverage/
+*.coverage
+*.coveragexml
+
+## ASP.NET
+wwwroot/
+
+## Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+## Docker
+.docker/
+
+## IDE
+.idea/
+*.swp
+*~
+
+## OS
+.DS_Store
+Thumbs.db
