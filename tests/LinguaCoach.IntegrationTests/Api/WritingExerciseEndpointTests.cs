@@ -230,6 +230,6 @@ internal sealed class FakeAiProvider : IAiProvider
             }
             """;
 
-        return Task.FromResult(new AiResponse(json, InputTokens: 450, OutputTokens: 180, CostUsd: 0.004m));
+        return Task.FromResult(new AiResponse(json, InputTokens: 450, OutputTokens: 180, CostUsd: 0.004m, ModelName: "fake-model"));
     }
 }

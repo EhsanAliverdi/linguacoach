@@ -75,7 +75,7 @@ public sealed class OpenAiProvider : IAiProvider
             "OpenAI call complete: key={Key} input={Input} output={Output} cost=${Cost:F6}",
             request.PromptKey, inputTokens, outputTokens, cost);
 
-        return new AiResponse(responseText, inputTokens, outputTokens, cost);
+        return new AiResponse(responseText, inputTokens, outputTokens, cost, _model);
     }
 }
 

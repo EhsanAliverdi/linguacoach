@@ -28,4 +28,5 @@ public sealed record AiResponse(
     string ResponseJson,
     int InputTokens,
     int OutputTokens,
-    decimal CostUsd);
+    decimal CostUsd,
+    string ModelName = "");

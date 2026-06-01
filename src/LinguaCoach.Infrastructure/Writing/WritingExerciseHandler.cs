@@ -107,10 +107,11 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         var aiResponse = await _aiProvider.CompleteAsync(aiRequest, ct);
 
         // Log usage immediately before any parsing — ensures cost is always tracked.
+        var modelName = string.IsNullOrEmpty(aiResponse.ModelName) ? "unknown" : aiResponse.ModelName;
         var usageLog = new AiUsageLog(
             profile.Id,
             _aiProvider.ProviderName,
-            "gpt-4o",
+            modelName,
             aiResponse.InputTokens,
             aiResponse.OutputTokens,
             aiResponse.CostUsd);
@@ -166,8 +167,9 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         }
         catch (JsonException ex)
         {
-            // Malformed AI response: return empty feedback rather than crashing.
-            // The submission will still be saved with the raw JSON for debugging.
+            // Malformed AI response. The submission is NOT saved in this path — the throw
+            // exits HandleAsync before the WritingSubmission save. The AiUsageLog is already
+            // saved, so cost is tracked. Raw response is lost; improve in T8 if needed.
             throw new InvalidOperationException($"AI response was not valid JSON: {ex.Message}", ex);
         }
     }
