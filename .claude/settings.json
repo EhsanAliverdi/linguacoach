@@ -23,16 +23,27 @@
       "Bash(node *)",
       "Bash(ng *)",
       "Bash(python *)",
-
       "PowerShell(Get-ChildItem *)",
       "PowerShell(Get-Content *)",
       "PowerShell(Select-Object *)",
       "PowerShell(Set-Content *)",
       "PowerShell(New-Item *)",
       "PowerShell(Copy-Item *)",
-
       "WebFetch(domain:localhost)",
       "mcp__playwright__*"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/check-gstack.sh\""
+          }
+        ]
+      }
     ]
   }
 }

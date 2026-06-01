@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Persistence;
@@ -12,11 +13,9 @@ namespace LinguaCoach.Infrastructure.Writing;
 
 public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmitWritingDraftHandler
 {
-    // The single seeded scenario for MVP. Hardened in T9 when LearningPlanner is implemented.
     private const string ScenarioTitle = "Follow-up email for a pending document approval";
     private const string PromptKey = "writing.exercise.v1";
 
-    // Target vocabulary and phrases seeded for Document Controller context.
     private static readonly string[] TargetPhrases =
     [
         "I wanted to follow up on",
@@ -26,30 +25,23 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         "I look forward to your response"
     ];
 
-    private static readonly string[] TargetVocabulary =
-    [
-        "approval", "submittal", "revision", "pending", "outstanding",
-        "document controller", "RFI", "transmittal", "compliance"
-    ];
-
-    // Used in EF Core Where — must be a plain collection for SQL IN translation.
-    private static readonly List<string> TargetVocabularyList =
-        TargetVocabulary.ToList();
-
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
     private readonly IAiProvider _aiProvider;
+    private readonly ILearningPlanner _learningPlanner;
     private readonly ILogger<WritingExerciseHandler> _logger;
 
     public WritingExerciseHandler(
         LinguaCoachDbContext db,
         IAiContextBuilder contextBuilder,
         IAiProvider aiProvider,
+        ILearningPlanner learningPlanner,
         ILogger<WritingExerciseHandler> logger)
     {
         _db = db;
         _contextBuilder = contextBuilder;
         _aiProvider = aiProvider;
+        _learningPlanner = learningPlanner;
         _logger = logger;
     }
 
@@ -65,13 +57,22 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         if (profile.OnboardingStatus != Domain.Enums.OnboardingStatus.Complete)
             throw new InvalidOperationException("Writing exercise requires completed onboarding.");
 
+        var plan = await _learningPlanner.BuildLessonPlanAsync(profile.Id, ct);
+
+        var allVocab = plan.TargetVocabulary
+            .Concat(plan.ReviewVocabulary)
+            .Concat(plan.ReinforcementVocabulary)
+            .Select(v => v.Word)
+            .Distinct()
+            .ToArray();
+
         return new WritingExerciseDto(
             ScenarioTitle,
             "You need to send a professional follow-up email to a project manager who has not yet approved " +
             "a document you submitted 5 working days ago. The document is critical for the next construction phase.",
             "لطفاً یک ایمیل رسمی و مودبانه به مدیر پروژه بنویسید که سند ارسالی شما را هنوز تأیید نکرده است.",
             TargetPhrases,
-            TargetVocabulary);
+            allVocab);
     }
 
     // ── Submit draft → AI feedback ────────────────────────────────────────────
@@ -95,15 +96,25 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         if (profile.OnboardingStatus != Domain.Enums.OnboardingStatus.Complete)
             throw new InvalidOperationException("Writing exercise requires completed onboarding.");
 
+        // Build lesson plan — SQL/system-driven vocabulary selection.
+        var plan = await _learningPlanner.BuildLessonPlanAsync(profile.Id, ct);
+
+        var allVocabWords = plan.TargetVocabulary
+            .Concat(plan.ReviewVocabulary)
+            .Concat(plan.ReinforcementVocabulary)
+            .Select(v => v.Word)
+            .Distinct()
+            .ToList();
+
         // Build the small context packet — backend controls what AI sees.
         var variables = new Dictionary<string, string>
         {
             ["sourceLanguageName"] = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
             ["targetLanguageName"] = profile.LanguagePair?.TargetLanguage?.Name ?? "English",
-            ["userLevel"] = "A2-B1",  // placeholder until T10 CEFR assessment
-            ["careerProfile"] = profile.CareerProfile?.Name ?? "Document Controller",
+            ["userLevel"] = plan.CefrLevel,
+            ["careerProfile"] = plan.CareerContext,
             ["scenario"] = ScenarioTitle,
-            ["targetVocabulary"] = string.Join(", ", TargetVocabulary),
+            ["targetVocabulary"] = string.Join(", ", allVocabWords),
             ["targetPhrases"] = string.Join(", ", TargetPhrases),
             ["userDraft"] = command.DraftText,
         };
@@ -138,9 +149,17 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         _db.WritingSubmissions.Add(submission);
         await _db.SaveChangesAsync(ct);
 
-        // Stage vocabulary and summary changes together so they commit atomically.
+        // Stage vocabulary usage, lesson log, and summary atomically.
+        var allVocabItems = plan.TargetVocabulary
+            .Concat(plan.ReviewVocabulary)
+            .Concat(plan.ReinforcementVocabulary)
+            .GroupBy(v => v.Word, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
         if (profile.LanguagePairId.HasValue)
-            await StageVocabularyUpdatesAsync(profile.Id, profile.LanguagePairId.Value, command.DraftText, ct);
+            await StageVocabularyUpdatesAsync(profile.Id, profile.LanguagePairId.Value, command.DraftText, allVocabItems, ct);
+        await StageLessonVocabularyLogsAsync(profile.Id, allVocabWords, ct);
         await StageLearningSummaryUpdateAsync(profile.Id, feedback, ct);
         await _db.SaveChangesAsync(ct);
 
@@ -159,34 +178,60 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
     // ── Post-submission side-effects ──────────────────────────────────────────
 
     private async Task StageVocabularyUpdatesAsync(
-        Guid studentProfileId, Guid languagePairId, string draftText, CancellationToken ct)
+        Guid studentProfileId, Guid languagePairId, string draftText,
+        IReadOnlyList<VocabItem> lessonVocabulary, CancellationToken ct)
     {
         var draftLower = draftText.ToLowerInvariant();
+        var words = lessonVocabulary.Select(v => v.Word).ToList();
 
         var existingEntries = await _db.VocabularyEntries
-            .Where(v => v.StudentProfileId == studentProfileId && TargetVocabularyList.Contains(v.Word))
+            .Where(v => v.StudentProfileId == studentProfileId && words.Contains(v.Word))
             .ToListAsync(ct);
 
         var existingByWord = existingEntries
             .ToDictionary(v => v.Word.ToLowerInvariant(), v => v);
 
-        foreach (var word in TargetVocabulary)
+        foreach (var item in lessonVocabulary)
         {
-            var wordLower = word.ToLowerInvariant();
-            var usedCorrectly = Regex.IsMatch(draftLower, @"\b" + Regex.Escape(wordLower) + @"\b");
+            var wordLower = item.Word.ToLowerInvariant();
+            var usedInDraft = Regex.IsMatch(draftLower, @"\b" + Regex.Escape(wordLower) + @"\b");
 
-            if (usedCorrectly && existingByWord.TryGetValue(wordLower, out var entry))
+            if (existingByWord.TryGetValue(wordLower, out var entry))
             {
-                entry.RecordUsage(correct: true);
+                if (usedInDraft)
+                    entry.RecordUsage(correct: true);
+                else
+                    entry.RecordExposure();
             }
-            else if (usedCorrectly)
+            else
             {
-                // Only create an entry when the student actually uses the word.
-                var newEntry = new VocabularyEntry(studentProfileId, languagePairId, word: word, definition: word);
-                newEntry.RecordUsage(correct: true);
+                // Create entry for any presented word — exposure for new words, usage for used ones.
+                var definition = string.IsNullOrEmpty(item.Definition) ? item.Word : item.Definition;
+                var newEntry = new VocabularyEntry(studentProfileId, languagePairId, word: item.Word, definition: definition);
+                if (usedInDraft)
+                    newEntry.RecordUsage(correct: true);
+                else
+                    newEntry.RecordExposure();
                 _db.VocabularyEntries.Add(newEntry);
             }
         }
+    }
+
+    private async Task StageLessonVocabularyLogsAsync(
+        Guid studentProfileId, IReadOnlyList<string> lessonVocabulary, CancellationToken ct)
+    {
+        var lastLesson = await _db.LessonVocabularyLogs
+            .Where(l => l.StudentProfileId == studentProfileId)
+            .MaxAsync(l => (int?)l.LessonNumber, ct) ?? 0;
+        var lessonNumber = lastLesson + 1;
+
+        var presentedEntries = await _db.VocabularyEntries
+            .Where(v => v.StudentProfileId == studentProfileId && lessonVocabulary.Contains(v.Word))
+            .Select(v => v.Id)
+            .ToListAsync(ct);
+
+        foreach (var entryId in presentedEntries)
+            _db.LessonVocabularyLogs.Add(new LessonVocabularyLog(studentProfileId, entryId, lessonNumber));
     }
 
     private async Task StageLearningSummaryUpdateAsync(

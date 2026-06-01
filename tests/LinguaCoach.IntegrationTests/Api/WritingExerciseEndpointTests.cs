@@ -128,7 +128,7 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
         var client = ClientWithToken(token);
 
-        // "approval" and "submittal" are both in TargetVocabulary; "revision" is not in this draft
+        // "approval" and "submittal" are used in draft; all presented words get entries (exposure or usage)
         await client.PostAsJsonAsync("/api/writing/exercise/submit",
             new { draftText = "Dear manager, please approve the submittal for approval." });
 
@@ -137,7 +137,8 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         var profile = db.StudentProfiles.First(p => p.UserId == userId);
         var entries = db.VocabularyEntries.Where(v => v.StudentProfileId == profile.Id).ToList();
 
-        Assert.Equal(2, entries.Count);
+        // All presented words get entries (up to 5 new from curriculum + any review/mastered)
+        Assert.NotEmpty(entries);
 
         var approvalEntry = entries.FirstOrDefault(v => v.Word.ToLower() == "approval");
         Assert.NotNull(approvalEntry);
@@ -151,13 +152,13 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
     }
 
     [Fact]
-    public async Task Submit_DoesNotCreateVocabularyEntry_ForWordsAbsentFromDraft()
+    public async Task Submit_CreatesExposureEntries_ForWordsNotUsedInDraft()
     {
         var email = $"vocabneg_{Guid.NewGuid():N}@test.com";
         var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
         var client = ClientWithToken(token);
 
-        // Draft contains none of the TargetVocabulary words
+        // Draft contains none of the lesson vocabulary words
         await client.PostAsJsonAsync("/api/writing/exercise/submit",
             new { draftText = "Hello, just writing to check in." });
 
@@ -166,7 +167,10 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         var profile = db.StudentProfiles.First(p => p.UserId == userId);
         var entries = db.VocabularyEntries.Where(v => v.StudentProfileId == profile.Id).ToList();
 
-        Assert.Empty(entries);
+        // All presented curriculum words get exposure entries even if not used in the draft
+        Assert.NotEmpty(entries);
+        Assert.All(entries, e => Assert.Equal(0, e.UsageCount));
+        Assert.All(entries, e => Assert.True(e.ExposureCount > 0));
     }
 
     [Fact]
@@ -247,12 +251,40 @@ public sealed class WritingExerciseTestFactory : ApiTestFactory
         await EnsureCreatedAsync();
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
         if (!db.AiPrompts.Any(p => p.Key == "writing.exercise.v1"))
         {
             db.AiPrompts.Add(new LinguaCoach.Domain.Entities.AiPrompt(
                 "writing.exercise.v1",
                 "You are an English coach. Draft: {{userDraft}}. Return JSON: {\"overallScore\":0,\"correctedEmail\":\"\",\"feedbackInSourceLanguage\":\"\",\"grammarIssues\":[],\"vocabularyIssues\":[],\"toneIssues\":[],\"suggestedPhrases\":[],\"mistakesToTrack\":[]}",
                 maxInputTokens: 800, maxOutputTokens: 600));
+            await db.SaveChangesAsync();
+        }
+
+        // EnsureCreated skips migrations, so we seed CurriculumWordList manually.
+        if (!db.CurriculumWordLists.Any())
+        {
+            var pair = db.LanguagePairs.First();
+            var career = db.CareerProfiles.First();
+
+            var words = new[]
+            {
+                ("approval", "Official agreement or permission", 1),
+                ("submittal", "A formal document submitted for review", 2),
+                ("revision", "A corrected or updated document version", 3),
+                ("pending", "Awaiting action or decision", 4),
+                ("outstanding", "Not yet resolved", 5),
+                ("transmittal", "A cover document recording what is sent", 6),
+                ("compliance", "Meeting required standards", 7),
+                ("RFI", "Request for Information", 8),
+                ("specification", "A detailed technical description", 9),
+                ("drawing register", "A log tracking all project drawings", 10),
+            };
+
+            foreach (var (word, def, priority) in words)
+                db.CurriculumWordLists.Add(new LinguaCoach.Domain.Entities.CurriculumWordList(
+                    career.Id, pair.Id, word, def, string.Empty, priority));
+
             await db.SaveChangesAsync();
         }
     }

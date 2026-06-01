@@ -33,6 +33,7 @@ internal sealed class VocabularyEntryConfiguration : IEntityTypeConfiguration<Vo
         builder.Property(e => e.NextReviewDate).HasColumnName("next_review_date");
 
         builder.Property(e => e.EaseFactor).HasColumnName("ease_factor").IsRequired();
+        builder.Property(e => e.RepetitionCount).HasColumnName("repetition_count").IsRequired();
         builder.Property(e => e.MasteryScore).HasColumnName("mastery_score").IsRequired();
         builder.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
 

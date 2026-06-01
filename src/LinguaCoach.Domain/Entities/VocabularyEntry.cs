@@ -33,6 +33,9 @@ public sealed class VocabularyEntry : BaseEntity
     // SM-2 ease factor. Default 2.5 per the SM-2 algorithm specification.
     public double EaseFactor { get; private set; }
 
+    // Number of successful consecutive review repetitions. Used by SM-2 to compute interval growth.
+    public int RepetitionCount { get; private set; }
+
     // Composite mastery score 0.0–1.0, updated after each interaction.
     public double MasteryScore { get; private set; }
 
@@ -123,10 +126,11 @@ public sealed class VocabularyEntry : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void ScheduleNextReview(DateTime nextReviewDate, double easeFactor)
+    public void ScheduleNextReview(DateTime nextReviewDate, double easeFactor, bool succeeded = true)
     {
         NextReviewDate = nextReviewDate;
         EaseFactor = easeFactor;
+        RepetitionCount = succeeded ? RepetitionCount + 1 : 0;
         UpdatedAt = DateTime.UtcNow;
     }
 

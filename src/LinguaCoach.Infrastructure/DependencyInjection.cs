@@ -2,6 +2,7 @@ using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Auth;
 using LinguaCoach.Application.Dashboard;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Application.Reference;
 using LinguaCoach.Application.Speaking;
@@ -10,6 +11,7 @@ using LinguaCoach.Infrastructure.Admin;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Auth;
 using LinguaCoach.Infrastructure.Dashboard;
+using LinguaCoach.Infrastructure.LearningPlan;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
 using LinguaCoach.Infrastructure.Speaking;
@@ -43,6 +45,9 @@ public static class DependencyInjection
         // AI — context builder and OpenAI provider
         services.AddScoped<IAiContextBuilder, DbPromptAiContextBuilder>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
+
+        // Learning planner (SM-2 spaced repetition + vocabulary selection)
+        services.AddScoped<ILearningPlanner, LearningPlannerService>();
 
         // Writing exercise
         services.AddScoped<IGetWritingExerciseHandler, WritingExerciseHandler>();
