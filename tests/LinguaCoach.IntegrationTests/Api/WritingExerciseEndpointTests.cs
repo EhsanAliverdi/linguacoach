@@ -121,6 +121,49 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         Assert.Contains("follow up", submission.OriginalText);
     }
 
+    [Fact]
+    public async Task Submit_UpdatesVocabularyEntries_ForWordsUsedInDraft()
+    {
+        var email = $"vocab_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
+        var client = ClientWithToken(token);
+
+        // "approval" and "submittal" are both in TargetVocabulary
+        await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, please approve the submittal for approval." });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        var entries = db.VocabularyEntries.Where(v => v.StudentProfileId == profile.Id).ToList();
+
+        Assert.NotEmpty(entries);
+        var approvalEntry = entries.FirstOrDefault(v => v.Word.ToLower() == "approval");
+        Assert.NotNull(approvalEntry);
+        Assert.True(approvalEntry.UsageCount > 0);
+        Assert.True(approvalEntry.CorrectCount > 0);
+    }
+
+    [Fact]
+    public async Task Submit_UpsertsUserLearningSummary()
+    {
+        var email = $"summary_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync(email);
+        var client = ClientWithToken(token);
+
+        await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "I wanted to follow up on the pending approval." });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        var summary = db.UserLearningSummaries.FirstOrDefault(s => s.StudentProfileId == profile.Id);
+
+        Assert.NotNull(summary);
+        Assert.False(string.IsNullOrEmpty(summary.RecentProgress));
+        Assert.Contains("writing exercise", summary.RecentProgress.ToLower());
+    }
+
     private HttpClient ClientWithToken(string token)
     {
         var client = _factory.CreateClient();

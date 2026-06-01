@@ -133,6 +133,13 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
         _db.WritingSubmissions.Add(submission);
         await _db.SaveChangesAsync(ct);
 
+        // Update VocabularyEntry counters for each target word used in the draft.
+        if (profile.LanguagePairId.HasValue)
+            await UpdateVocabularyEntriesAsync(profile.Id, profile.LanguagePairId.Value, command.DraftText, ct);
+
+        // Upsert the rolling learning summary.
+        await UpdateLearningSummaryAsync(profile.Id, feedback, ct);
+
         return new WritingFeedbackDto(
             submission.Id,
             feedback.OverallScore,
@@ -143,6 +150,68 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
             feedback.ToneIssues ?? [],
             feedback.SuggestedPhrases ?? [],
             feedback.MistakesToTrack ?? []);
+    }
+
+    // ── Post-submission side-effects ──────────────────────────────────────────
+
+    private async Task UpdateVocabularyEntriesAsync(
+        Guid studentProfileId, Guid languagePairId, string draftText, CancellationToken ct)
+    {
+        var draftLower = draftText.ToLowerInvariant();
+
+        var existingEntries = await _db.VocabularyEntries
+            .Where(v => v.StudentProfileId == studentProfileId)
+            .ToListAsync(ct);
+
+        var existingByWord = existingEntries
+            .ToDictionary(v => v.Word.ToLowerInvariant(), v => v);
+
+        foreach (var word in TargetVocabulary)
+        {
+            var wordLower = word.ToLowerInvariant();
+            var usedCorrectly = draftLower.Contains(wordLower);
+
+            if (existingByWord.TryGetValue(wordLower, out var entry))
+            {
+                entry.RecordUsage(usedCorrectly);
+            }
+            else if (usedCorrectly)
+            {
+                // Only create an entry when the student actually uses the word.
+                var newEntry = new VocabularyEntry(studentProfileId, languagePairId, word, word);
+                newEntry.RecordUsage(correct: true);
+                _db.VocabularyEntries.Add(newEntry);
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task UpdateLearningSummaryAsync(
+        Guid studentProfileId, AiFeedbackPayload feedback, CancellationToken ct)
+    {
+        var summary = await _db.UserLearningSummaries
+            .FirstOrDefaultAsync(s => s.StudentProfileId == studentProfileId, ct);
+
+        if (summary is null)
+        {
+            summary = new UserLearningSummary(studentProfileId);
+            _db.UserLearningSummaries.Add(summary);
+        }
+
+        var score = feedback.OverallScore.HasValue ? $" Score: {feedback.OverallScore:F0}/100." : string.Empty;
+        var weaknesses = feedback.GrammarIssues?.Count > 0 || feedback.VocabularyIssues?.Count > 0
+            ? $"Grammar issues: {feedback.GrammarIssues?.Count ?? 0}. Vocab issues: {feedback.VocabularyIssues?.Count ?? 0}."
+            : string.Empty;
+
+        var progress = $"Completed writing exercise: {ScenarioTitle}.{score}";
+        if (progress.Length > UserLearningSummary.MaxSummaryLength)
+            progress = progress[..UserLearningSummary.MaxSummaryLength];
+        if (weaknesses.Length > UserLearningSummary.MaxSummaryLength)
+            weaknesses = weaknesses[..UserLearningSummary.MaxSummaryLength];
+
+        summary.Update(weaknesses, progress);
+        await _db.SaveChangesAsync(ct);
     }
 
     // ── AI response parsing ───────────────────────────────────────────────────
