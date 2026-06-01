@@ -12,7 +12,8 @@ internal sealed class LearningTrackConfiguration : IEntityTypeConfiguration<Lear
 
         builder.HasKey(t => t.Id);
         builder.Property(t => t.Id).HasColumnName("id");
-        builder.Property(t => t.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(t => t.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(t => t.Name)
             .HasColumnName("name")
@@ -21,7 +22,8 @@ internal sealed class LearningTrackConfiguration : IEntityTypeConfiguration<Lear
 
         builder.Property(t => t.Description)
             .HasColumnName("description")
-            .HasMaxLength(1000);
+            .HasMaxLength(1000)
+            .IsRequired();
 
         builder.Property(t => t.LanguagePairId).HasColumnName("language_pair_id").IsRequired();
 

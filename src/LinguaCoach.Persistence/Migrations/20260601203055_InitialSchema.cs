@@ -22,29 +22,11 @@ namespace LinguaCoach.Persistence.Migrations
                     content = table.Column<string>(type: "text", nullable: false),
                     version = table.Column<int>(type: "integer", nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ai_prompts", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ai_usage_logs",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    student_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    provider_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    model_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    input_tokens = table.Column<int>(type: "integer", nullable: false),
-                    output_tokens = table.Column<int>(type: "integer", nullable: false),
-                    cost_usd = table.Column<decimal>(type: "numeric(10,6)", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ai_usage_logs", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -55,7 +37,7 @@ namespace LinguaCoach.Persistence.Migrations
                     code = table.Column<string>(type: "character varying(2)", maxLength: 2, nullable: false),
                     name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     direction = table.Column<int>(type: "integer", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -70,7 +52,7 @@ namespace LinguaCoach.Persistence.Migrations
                     source_language_id = table.Column<Guid>(type: "uuid", nullable: false),
                     target_language_id = table.Column<Guid>(type: "uuid", nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -97,7 +79,7 @@ namespace LinguaCoach.Persistence.Migrations
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     language_pair_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -118,7 +100,7 @@ namespace LinguaCoach.Persistence.Migrations
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     language_pair_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -143,7 +125,7 @@ namespace LinguaCoach.Persistence.Migrations
                     learning_track_id = table.Column<Guid>(type: "uuid", nullable: true),
                     career_profile_id = table.Column<Guid>(type: "uuid", nullable: true),
                     skill_focus = table.Column<int>(type: "integer", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -164,6 +146,30 @@ namespace LinguaCoach.Persistence.Migrations
                         name: "FK_student_profiles_learning_tracks_learning_track_id",
                         column: x => x.learning_track_id,
                         principalTable: "learning_tracks",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ai_usage_logs",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    student_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    provider_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    model_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    input_tokens = table.Column<int>(type: "integer", nullable: false),
+                    output_tokens = table.Column<int>(type: "integer", nullable: false),
+                    cost_usd = table.Column<decimal>(type: "numeric(10,6)", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ai_usage_logs", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_ai_usage_logs_student_profiles_student_profile_id",
+                        column: x => x.student_profile_id,
+                        principalTable: "student_profiles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -220,7 +226,7 @@ namespace LinguaCoach.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_language_pairs_target_language_id",
+                name: "ix_language_pairs_target_language_id",
                 table: "language_pairs",
                 column: "target_language_id");
 
@@ -236,17 +242,17 @@ namespace LinguaCoach.Persistence.Migrations
                 column: "language_pair_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_student_profiles_career_profile_id",
+                name: "ix_student_profiles_career_profile_id",
                 table: "student_profiles",
                 column: "career_profile_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_student_profiles_language_pair_id",
+                name: "ix_student_profiles_language_pair_id",
                 table: "student_profiles",
                 column: "language_pair_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_student_profiles_learning_track_id",
+                name: "ix_student_profiles_learning_track_id",
                 table: "student_profiles",
                 column: "learning_track_id");
 

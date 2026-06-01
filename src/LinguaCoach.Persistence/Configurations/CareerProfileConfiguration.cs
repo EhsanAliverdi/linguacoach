@@ -12,7 +12,8 @@ internal sealed class CareerProfileConfiguration : IEntityTypeConfiguration<Care
 
         builder.HasKey(cp => cp.Id);
         builder.Property(cp => cp.Id).HasColumnName("id");
-        builder.Property(cp => cp.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(cp => cp.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(cp => cp.Name)
             .HasColumnName("name")
@@ -21,7 +22,8 @@ internal sealed class CareerProfileConfiguration : IEntityTypeConfiguration<Care
 
         builder.Property(cp => cp.Description)
             .HasColumnName("description")
-            .HasMaxLength(1000);
+            .HasMaxLength(1000)
+            .IsRequired();
 
         builder.Property(cp => cp.LanguagePairId).HasColumnName("language_pair_id").IsRequired();
 

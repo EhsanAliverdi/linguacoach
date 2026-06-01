@@ -12,7 +12,8 @@ internal sealed class AiPromptConfiguration : IEntityTypeConfiguration<AiPrompt>
 
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Id).HasColumnName("id");
-        builder.Property(p => p.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(p => p.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(p => p.Key)
             .HasColumnName("key")

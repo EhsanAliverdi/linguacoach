@@ -12,9 +12,15 @@ internal sealed class AiUsageLogConfiguration : IEntityTypeConfiguration<AiUsage
 
         builder.HasKey(l => l.Id);
         builder.Property(l => l.Id).HasColumnName("id");
-        builder.Property(l => l.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(l => l.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(l => l.StudentProfileId).HasColumnName("student_profile_id").IsRequired();
+
+        builder.HasOne<StudentProfile>()
+            .WithMany()
+            .HasForeignKey(l => l.StudentProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.ProviderName)
             .HasColumnName("provider_name")

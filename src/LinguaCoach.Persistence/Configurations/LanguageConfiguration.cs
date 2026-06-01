@@ -12,7 +12,8 @@ internal sealed class LanguageConfiguration : IEntityTypeConfiguration<Language>
 
         builder.HasKey(l => l.Id);
         builder.Property(l => l.Id).HasColumnName("id");
-        builder.Property(l => l.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(l => l.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(l => l.Code)
             .HasColumnName("code")

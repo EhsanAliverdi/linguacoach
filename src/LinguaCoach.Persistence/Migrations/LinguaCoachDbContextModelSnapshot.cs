@@ -17,7 +17,7 @@ namespace LinguaCoach.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -35,8 +35,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("content");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -73,8 +75,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("cost_usd");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<int>("InputTokens")
                         .HasColumnType("integer")
@@ -119,8 +123,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -170,8 +176,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("code");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<int>("Direction")
                         .HasColumnType("integer")
@@ -218,8 +226,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -235,7 +245,8 @@ namespace LinguaCoach.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TargetLanguageId");
+                    b.HasIndex("TargetLanguageId")
+                        .HasDatabaseName("ix_language_pairs_target_language_id");
 
                     b.HasIndex("SourceLanguageId", "TargetLanguageId")
                         .IsUnique()
@@ -262,8 +273,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -311,8 +324,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("career_profile_id");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid?>("LanguagePairId")
                         .HasColumnType("uuid")
@@ -340,11 +355,14 @@ namespace LinguaCoach.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CareerProfileId");
+                    b.HasIndex("CareerProfileId")
+                        .HasDatabaseName("ix_student_profiles_career_profile_id");
 
-                    b.HasIndex("LanguagePairId");
+                    b.HasIndex("LanguagePairId")
+                        .HasDatabaseName("ix_student_profiles_language_pair_id");
 
-                    b.HasIndex("LearningTrackId");
+                    b.HasIndex("LearningTrackId")
+                        .HasDatabaseName("ix_student_profiles_learning_track_id");
 
                     b.HasIndex("UserId")
                         .IsUnique()
@@ -354,6 +372,15 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasDatabaseName("ix_student_profiles_user_id_onboarding_status");
 
                     b.ToTable("student_profiles", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.AiUsageLog", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.StudentProfile", null)
+                        .WithMany()
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.CareerProfile", b =>

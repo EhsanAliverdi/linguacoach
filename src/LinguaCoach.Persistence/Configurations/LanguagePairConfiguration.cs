@@ -12,7 +12,8 @@ internal sealed class LanguagePairConfiguration : IEntityTypeConfiguration<Langu
 
         builder.HasKey(lp => lp.Id);
         builder.Property(lp => lp.Id).HasColumnName("id");
-        builder.Property(lp => lp.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(lp => lp.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(lp => lp.SourceLanguageId).HasColumnName("source_language_id").IsRequired();
         builder.Property(lp => lp.TargetLanguageId).HasColumnName("target_language_id").IsRequired();
@@ -27,6 +28,9 @@ internal sealed class LanguagePairConfiguration : IEntityTypeConfiguration<Langu
             .WithMany()
             .HasForeignKey(lp => lp.TargetLanguageId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(lp => lp.TargetLanguageId)
+            .HasDatabaseName("ix_language_pairs_target_language_id");
 
         builder.HasIndex(lp => new { lp.SourceLanguageId, lp.TargetLanguageId })
             .IsUnique()

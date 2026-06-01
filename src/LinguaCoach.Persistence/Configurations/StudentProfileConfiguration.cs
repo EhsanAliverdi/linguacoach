@@ -12,7 +12,8 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
 
         builder.HasKey(sp => sp.Id);
         builder.Property(sp => sp.Id).HasColumnName("id");
-        builder.Property(sp => sp.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(sp => sp.CreatedAt).HasColumnName("created_at").IsRequired()
+            .HasDefaultValueSql("now()");
 
         builder.Property(sp => sp.UserId).HasColumnName("user_id").IsRequired();
         builder.Property(sp => sp.OnboardingStatus).HasColumnName("onboarding_status").IsRequired();
@@ -36,6 +37,15 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
             .WithMany()
             .HasForeignKey(sp => sp.CareerProfileId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(sp => sp.LanguagePairId)
+            .HasDatabaseName("ix_student_profiles_language_pair_id");
+
+        builder.HasIndex(sp => sp.LearningTrackId)
+            .HasDatabaseName("ix_student_profiles_learning_track_id");
+
+        builder.HasIndex(sp => sp.CareerProfileId)
+            .HasDatabaseName("ix_student_profiles_career_profile_id");
 
         builder.HasIndex(sp => sp.UserId)
             .IsUnique()
