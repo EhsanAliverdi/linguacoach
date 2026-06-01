@@ -1,0 +1,197 @@
+using FluentAssertions;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Exceptions;
+
+namespace LinguaCoach.UnitTests.Domain;
+
+public sealed class StudentProfileTests
+{
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static Language Persian() => new("fa", "Persian", LanguageDirection.Rtl);
+    private static Language English() => new("en", "English", LanguageDirection.Ltr);
+
+    private static LanguagePair FaEnPair()
+    {
+        var fa = Persian();
+        var en = English();
+        return new LanguagePair(fa, en);
+    }
+
+    private static LearningTrack WorkplaceEnglish(LanguagePair pair) =>
+        new("Workplace English", "English for professional workplace settings.", pair);
+
+    private static CareerProfile DocumentController(LanguagePair pair) =>
+        new("Document Controller", "English for document control workflows.", pair);
+
+    // ── Initial state ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void NewStudent_HasNotStartedOnboarding()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+
+        student.OnboardingStatus.Should().Be(OnboardingStatus.NotStarted);
+        student.LastCompletedStep.Should().Be(OnboardingStep.None);
+        student.LanguagePairId.Should().BeNull();
+        student.LearningTrackId.Should().BeNull();
+        student.CareerProfileId.Should().BeNull();
+        student.SkillFocus.Should().BeNull();
+    }
+
+    [Fact]
+    public void NewStudent_WithEmptyUserId_Throws()
+    {
+        var act = () => new StudentProfile(Guid.Empty);
+        act.Should().Throw<ArgumentException>();
+    }
+
+    // ── Happy path: all four steps in order ─────────────────────────────────
+
+    [Fact]
+    public void SetLanguagePair_AdvancesToInProgressLanguageStep()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+
+        student.SetLanguagePair(pair);
+
+        student.OnboardingStatus.Should().Be(OnboardingStatus.InProgress);
+        student.LastCompletedStep.Should().Be(OnboardingStep.Language);
+        student.LanguagePairId.Should().Be(pair.Id);
+    }
+
+    [Fact]
+    public void SetLearningTrack_AfterLanguage_AdvancesToTrackStep()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+
+        var track = WorkplaceEnglish(pair);
+        student.SetLearningTrack(track);
+
+        student.LastCompletedStep.Should().Be(OnboardingStep.Track);
+        student.LearningTrackId.Should().Be(track.Id);
+    }
+
+    [Fact]
+    public void SetCareerProfile_AfterTrack_AdvancesToCareerStep()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+        student.SetLearningTrack(WorkplaceEnglish(pair));
+
+        var profile = DocumentController(pair);
+        student.SetCareerProfile(profile);
+
+        student.LastCompletedStep.Should().Be(OnboardingStep.Career);
+        student.CareerProfileId.Should().Be(profile.Id);
+    }
+
+    [Fact]
+    public void SetSkillFocus_AfterCareer_CompletesOnboarding()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetCareerProfile(DocumentController(pair));
+
+        student.SetSkillFocus(SkillFocus.Writing);
+
+        student.OnboardingStatus.Should().Be(OnboardingStatus.Complete);
+        student.LastCompletedStep.Should().Be(OnboardingStep.Skill);
+        student.SkillFocus.Should().Be(SkillFocus.Writing);
+    }
+
+    // ── Idempotency ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void CompletedOnboarding_AllowsReapplyingSteps_WithoutStateChange()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetCareerProfile(DocumentController(pair));
+        student.SetSkillFocus(SkillFocus.Writing);
+
+        // Re-apply any step — should not throw and status stays Complete.
+        var act = () => student.SetLanguagePair(FaEnPair());
+        act.Should().NotThrow();
+        student.OnboardingStatus.Should().Be(OnboardingStatus.Complete);
+    }
+
+    // ── Out-of-order step enforcement ────────────────────────────────────────
+
+    [Fact]
+    public void SetTrack_BeforeLanguage_ThrowsOutOfOrder()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+
+        var act = () => student.SetLearningTrack(WorkplaceEnglish(pair));
+        act.Should().Throw<OnboardingStepOutOfOrderException>()
+            .Which.RequestedStep.Should().Be(OnboardingStep.Track);
+    }
+
+    [Fact]
+    public void SetCareer_BeforeTrack_ThrowsOutOfOrder()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+
+        var act = () => student.SetCareerProfile(DocumentController(pair));
+        act.Should().Throw<OnboardingStepOutOfOrderException>()
+            .Which.RequestedStep.Should().Be(OnboardingStep.Career);
+    }
+
+    [Fact]
+    public void SetSkill_BeforeCareer_ThrowsOutOfOrder()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+        student.SetLearningTrack(WorkplaceEnglish(pair));
+
+        var act = () => student.SetSkillFocus(SkillFocus.Vocabulary);
+        act.Should().Throw<OnboardingStepOutOfOrderException>()
+            .Which.RequestedStep.Should().Be(OnboardingStep.Skill);
+    }
+
+    // ── Cross-language-pair guard ────────────────────────────────────────────
+
+    [Fact]
+    public void SetTrack_FromDifferentLanguagePair_ThrowsDomainException()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+
+        // Create a second, different language pair.
+        var otherPair = new LanguagePair(new Language("de", "German", LanguageDirection.Ltr), English());
+        var germanTrack = new LearningTrack("Workplace German", "German for work.", otherPair);
+
+        var act = () => student.SetLearningTrack(germanTrack);
+        act.Should().Throw<DomainException>();
+    }
+
+    [Fact]
+    public void SetCareerProfile_FromDifferentLanguagePair_ThrowsDomainException()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+        student.SetLearningTrack(WorkplaceEnglish(pair));
+
+        var otherPair = new LanguagePair(new Language("de", "German", LanguageDirection.Ltr), English());
+        var germanProfile = new CareerProfile("Engineer", "German engineering context.", otherPair);
+
+        var act = () => student.SetCareerProfile(germanProfile);
+        act.Should().Throw<DomainException>();
+    }
+}

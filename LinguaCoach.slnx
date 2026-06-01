@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LinguaCoach.Api/LinguaCoach.Api.csproj" />
+    <Project Path="src/LinguaCoach.Application/LinguaCoach.Application.csproj" />
+    <Project Path="src/LinguaCoach.Domain/LinguaCoach.Domain.csproj" />
+    <Project Path="src/LinguaCoach.Infrastructure/LinguaCoach.Infrastructure.csproj" />
+    <Project Path="src/LinguaCoach.Persistence/LinguaCoach.Persistence.csproj" />
+    <Project Path="src/LinguaCoach.Worker/LinguaCoach.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LinguaCoach.ArchitectureTests/LinguaCoach.ArchitectureTests.csproj" />
+    <Project Path="tests/LinguaCoach.IntegrationTests/LinguaCoach.IntegrationTests.csproj" />
+    <Project Path="tests/LinguaCoach.UnitTests/LinguaCoach.UnitTests.csproj" />
+  </Folder>
+</Solution>
