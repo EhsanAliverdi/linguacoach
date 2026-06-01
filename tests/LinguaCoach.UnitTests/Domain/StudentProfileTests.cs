@@ -60,6 +60,7 @@ public sealed class StudentProfileTests
         student.OnboardingStatus.Should().Be(OnboardingStatus.InProgress);
         student.LastCompletedStep.Should().Be(OnboardingStep.Language);
         student.LanguagePairId.Should().Be(pair.Id);
+        student.LanguagePair.Should().BeSameAs(pair);
     }
 
     [Fact]
@@ -74,6 +75,7 @@ public sealed class StudentProfileTests
 
         student.LastCompletedStep.Should().Be(OnboardingStep.Track);
         student.LearningTrackId.Should().Be(track.Id);
+        student.LearningTrack.Should().BeSameAs(track);
     }
 
     [Fact]
@@ -89,6 +91,7 @@ public sealed class StudentProfileTests
 
         student.LastCompletedStep.Should().Be(OnboardingStep.Career);
         student.CareerProfileId.Should().Be(profile.Id);
+        student.CareerProfile.Should().BeSameAs(profile);
     }
 
     [Fact]
@@ -107,10 +110,40 @@ public sealed class StudentProfileTests
         student.SkillFocus.Should().Be(SkillFocus.Writing);
     }
 
+    // ── Null argument guards ─────────────────────────────────────────────────
+
+    [Fact]
+    public void SetLanguagePair_WithNull_Throws()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var act = () => student.SetLanguagePair(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void SetLearningTrack_WithNull_Throws()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        student.SetLanguagePair(FaEnPair());
+        var act = () => student.SetLearningTrack(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void SetCareerProfile_WithNull_Throws()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        student.SetLanguagePair(pair);
+        student.SetLearningTrack(WorkplaceEnglish(pair));
+        var act = () => student.SetCareerProfile(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     // ── Idempotency ──────────────────────────────────────────────────────────
 
     [Fact]
-    public void CompletedOnboarding_AllowsReapplyingSteps_WithoutStateChange()
+    public void CompletedOnboarding_RejectsFurtherModification()
     {
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
@@ -119,9 +152,9 @@ public sealed class StudentProfileTests
         student.SetCareerProfile(DocumentController(pair));
         student.SetSkillFocus(SkillFocus.Writing);
 
-        // Re-apply any step — should not throw and status stays Complete.
+        // Profile is immutable once complete — any step throws.
         var act = () => student.SetLanguagePair(FaEnPair());
-        act.Should().NotThrow();
+        act.Should().Throw<DomainException>();
         student.OnboardingStatus.Should().Be(OnboardingStatus.Complete);
     }
 
@@ -133,9 +166,10 @@ public sealed class StudentProfileTests
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
 
-        var act = () => student.SetLearningTrack(WorkplaceEnglish(pair));
-        act.Should().Throw<OnboardingStepOutOfOrderException>()
-            .Which.RequestedStep.Should().Be(OnboardingStep.Track);
+        var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
+            () => student.SetLearningTrack(WorkplaceEnglish(pair)));
+        ex.RequestedStep.Should().Be(OnboardingStep.Track);
+        ex.ExpectedStep.Should().Be(OnboardingStep.Language);
     }
 
     [Fact]
@@ -145,9 +179,10 @@ public sealed class StudentProfileTests
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
 
-        var act = () => student.SetCareerProfile(DocumentController(pair));
-        act.Should().Throw<OnboardingStepOutOfOrderException>()
-            .Which.RequestedStep.Should().Be(OnboardingStep.Career);
+        var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
+            () => student.SetCareerProfile(DocumentController(pair)));
+        ex.RequestedStep.Should().Be(OnboardingStep.Career);
+        ex.ExpectedStep.Should().Be(OnboardingStep.Track);
     }
 
     [Fact]
@@ -158,9 +193,31 @@ public sealed class StudentProfileTests
         student.SetLanguagePair(pair);
         student.SetLearningTrack(WorkplaceEnglish(pair));
 
-        var act = () => student.SetSkillFocus(SkillFocus.Vocabulary);
-        act.Should().Throw<OnboardingStepOutOfOrderException>()
-            .Which.RequestedStep.Should().Be(OnboardingStep.Skill);
+        var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
+            () => student.SetSkillFocus(SkillFocus.Vocabulary));
+        ex.RequestedStep.Should().Be(OnboardingStep.Skill);
+        ex.ExpectedStep.Should().Be(OnboardingStep.Career);
+    }
+
+    [Fact]
+    public void SetSkillFocus_FromNotStarted_ThrowsOutOfOrder()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
+            () => student.SetSkillFocus(SkillFocus.Writing));
+        ex.RequestedStep.Should().Be(OnboardingStep.Skill);
+        ex.ExpectedStep.Should().Be(OnboardingStep.Language);
+    }
+
+    [Fact]
+    public void SetCareer_FromNotStarted_ThrowsOutOfOrder()
+    {
+        var student = new StudentProfile(Guid.NewGuid());
+        var pair = FaEnPair();
+        var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
+            () => student.SetCareerProfile(DocumentController(pair)));
+        ex.RequestedStep.Should().Be(OnboardingStep.Career);
+        ex.ExpectedStep.Should().Be(OnboardingStep.Language);
     }
 
     // ── Cross-language-pair guard ────────────────────────────────────────────

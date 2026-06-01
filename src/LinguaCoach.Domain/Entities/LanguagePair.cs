@@ -23,7 +23,7 @@ public sealed class LanguagePair : BaseEntity
         ArgumentNullException.ThrowIfNull(sourceLanguage);
         ArgumentNullException.ThrowIfNull(targetLanguage);
 
-        if (sourceLanguage.Id == targetLanguage.Id)
+        if (sourceLanguage.Code == targetLanguage.Code)
             throw new ArgumentException("Source and target languages must be different.");
 
         SourceLanguageId = sourceLanguage.Id;

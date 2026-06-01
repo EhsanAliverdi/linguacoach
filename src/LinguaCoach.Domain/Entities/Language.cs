@@ -20,7 +20,11 @@ public sealed class Language : BaseEntity
         if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Language code is required.", nameof(code));
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Language name is required.", nameof(name));
 
-        Code = code.Trim().ToLowerInvariant();
+        var normalisedCode = code.Trim().ToLowerInvariant();
+        if (normalisedCode.Length != 2)
+            throw new ArgumentException("Language code must be exactly 2 characters (ISO 639-1).", nameof(code));
+
+        Code = normalisedCode;
         Name = name.Trim();
         Direction = direction;
     }

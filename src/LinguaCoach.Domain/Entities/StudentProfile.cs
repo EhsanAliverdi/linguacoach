@@ -11,7 +11,7 @@ namespace LinguaCoach.Domain.Entities;
  *   InProgress ──step: Track────► InProgress (LastCompletedStep = Language → Track)
  *   InProgress ──step: Career───► InProgress (LastCompletedStep = Track → Career)
  *   InProgress ──step: Skill────► Complete   (LastCompletedStep = Career → Skill)
- *   Complete   ──any step───────► Complete   (idempotent, no state change)
+ *   Complete   ──any step───────► DomainException (profile is immutable once complete)
  *
  *   Steps must be completed in order. Attempting step N+2 before step N+1 raises
  *   OnboardingStepOutOfOrderException.
@@ -88,7 +88,7 @@ public sealed class StudentProfile : BaseEntity
         AdvanceTo(OnboardingStep.Career);
     }
 
-    public void SetSkillFocus(Enums.SkillFocus skillFocus)
+    public void SetSkillFocus(SkillFocus skillFocus)
     {
         EnsureStepIsNext(OnboardingStep.Skill);
 
@@ -101,9 +101,12 @@ public sealed class StudentProfile : BaseEntity
 
     private void EnsureStepIsNext(OnboardingStep requestedStep)
     {
-        // Idempotent: already complete, silently allow re-application.
-        if (OnboardingStatus == OnboardingStatus.Complete) return;
+        // Once complete, the profile is immutable — no step can overwrite data.
+        if (OnboardingStatus == OnboardingStatus.Complete)
+            throw new DomainException("Onboarding is already complete and cannot be modified.");
 
+        // Steps must advance in order. Backward re-application would corrupt
+        // cross-pair consistency (e.g. LanguagePairId diverging from LearningTrack).
         var expectedNext = (OnboardingStep)((int)LastCompletedStep + 1);
         if (requestedStep > expectedNext)
             throw new OnboardingStepOutOfOrderException(requestedStep, expectedNext);

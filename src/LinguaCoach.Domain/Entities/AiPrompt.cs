@@ -19,10 +19,14 @@ public sealed class AiPrompt : BaseEntity
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Prompt key is required.", nameof(key));
         if (string.IsNullOrWhiteSpace(content)) throw new ArgumentException("Prompt content is required.", nameof(content));
+        if (version < 1) throw new ArgumentOutOfRangeException(nameof(version), "Prompt version must be >= 1.");
 
         Key = key.Trim();
         Content = content.Trim();
         Version = version;
         IsActive = true;
     }
+
+    public void Deactivate() => IsActive = false;
+    public void Activate() => IsActive = true;
 }

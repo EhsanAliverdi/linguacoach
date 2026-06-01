@@ -28,6 +28,9 @@ public sealed class AiUsageLog : BaseEntity
         if (studentProfileId == Guid.Empty) throw new ArgumentException("StudentProfileId must not be empty.", nameof(studentProfileId));
         if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentException("Provider name is required.", nameof(providerName));
         if (string.IsNullOrWhiteSpace(modelName)) throw new ArgumentException("Model name is required.", nameof(modelName));
+        if (inputTokens < 0) throw new ArgumentOutOfRangeException(nameof(inputTokens), "Input token count cannot be negative.");
+        if (outputTokens < 0) throw new ArgumentOutOfRangeException(nameof(outputTokens), "Output token count cannot be negative.");
+        if (costUsd < 0) throw new ArgumentOutOfRangeException(nameof(costUsd), "Cost cannot be negative.");
 
         StudentProfileId = studentProfileId;
         ProviderName = providerName.Trim();
