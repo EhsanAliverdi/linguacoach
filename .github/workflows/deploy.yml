@@ -1,0 +1,112 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test before deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore and test
+        run: |
+          dotnet restore
+          dotnet test --configuration Release
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: src/LinguaCoach.Web/package-lock.json
+
+      - name: Frontend build check
+        run: |
+          npm ci
+          npm run build -- --configuration production
+        working-directory: src/LinguaCoach.Web
+
+  build-and-push:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set short SHA tag
+        id: tag
+        run: echo "sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/ehsanaliverdi/linguacoach-api:latest
+            ghcr.io/ehsanaliverdi/linguacoach-api:${{ steps.tag.outputs.sha }}
+
+      - name: Build and push Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: src/LinguaCoach.Web
+          file: src/LinguaCoach.Web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/ehsanaliverdi/linguacoach-web:latest
+            ghcr.io/ehsanaliverdi/linguacoach-web:${{ steps.tag.outputs.sha }}
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose file to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: docker-compose.prod.yml
+          target: ${{ secrets.VPS_DEPLOY_PATH }}
+
+      - name: Pull, migrate, and restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+
+            docker pull ghcr.io/ehsanaliverdi/linguacoach-api:latest
+            docker pull ghcr.io/ehsanaliverdi/linguacoach-web:latest
+
+            # Migrations run automatically on API startup via db.Database.Migrate()
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --remove-orphans
+            docker image prune -f

@@ -1,0 +1,50 @@
+networks:
+  traefik:
+    external: true
+  linguacoach_internal:
+    driver: bridge
+
+services:
+  api:
+    image: ${API_IMAGE}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      Jwt__Key: "${JWT_KEY}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      Jwt__ExpiryHours: "${JWT_EXPIRY_HOURS}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      Seed__AdminEmail: "${SEED_ADMIN_EMAIL}"
+      Seed__AdminPassword: "${SEED_ADMIN_PASSWORD}"
+      GSSAPI_KRB5_NO_CONFIGURE: "1"
+    networks:
+      - traefik
+      - linguacoach_internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.linguacoach-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.linguacoach-api.entrypoints=websecure"
+      - "traefik.http.routers.linguacoach-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.linguacoach-api.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  web:
+    image: ${WEB_IMAGE}
+    restart: unless-stopped
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.linguacoach-web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.linguacoach-web.entrypoints=websecure"
+      - "traefik.http.routers.linguacoach-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.linguacoach-web.loadbalancer.server.port=80"

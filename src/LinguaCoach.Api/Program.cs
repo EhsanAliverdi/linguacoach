@@ -2,6 +2,7 @@ using System.Text;
 using LinguaCoach.Infrastructure;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
+using LinguaCoach.Persistence.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -101,12 +102,16 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// ── Run migrations on startup (skipped in Testing environment) ──────────────
+// ── Run migrations and seed on startup (skipped in Testing environment) ─────
 if (!app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
     db.Database.Migrate();
+
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var seederLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    await AdminSeeder.SeedAsync(userManager, app.Configuration, seederLogger);
 }
 
 if (app.Environment.IsDevelopment())

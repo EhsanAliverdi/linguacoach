@@ -27,6 +27,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=db;Database=linguacoach_dev;Username=postgres;Password=postgres"
       Jwt__Key: "${JWT_KEY:-CHANGE_ME_IN_PRODUCTION_USE_A_SECRET_AT_LEAST_32_CHARS}"
+      Seed__AdminEmail: "${SEED_ADMIN_EMAIL:-admin@linguacoach.local}"
+      Seed__AdminPassword: "${SEED_ADMIN_PASSWORD:-Admin1234!}"
       Jwt__Issuer: "linguacoach"
       Jwt__Audience: "linguacoach"
       Jwt__ExpiryHours: "24"

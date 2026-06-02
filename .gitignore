@@ -43,6 +43,9 @@ npm-debug.log*
 ## Docker
 .docker/
 
+## Secrets
+.env
+
 ## IDE
 .idea/
 *.swp
