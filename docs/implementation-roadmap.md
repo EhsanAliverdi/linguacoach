@@ -13,18 +13,18 @@ Branch: main
 | T2 | Persistence and PostgreSQL migrations | ✅ Done |
 | T3 | AI/learning/speaking schema and interfaces | ✅ Done |
 | T4 | Auth + API + hardening | ✅ Done |
-| T5 | Docker + CI/CD skeleton | ⬜ Next |
-| T6 | Angular + Tailwind frontend skeleton | ⬜ Pending |
-| T7 | First AI writing exercise | ⬜ Pending |
-| T8 | Writing feedback display and storage | ⬜ Pending |
-| T9 | Vocabulary mastery and LearningPlanner implementation | ⬜ Pending |
-| T10 | CEFR assessment | ⬜ Pending |
-| T11 | Speaking sessions | ⬜ Pending |
-| T12 | Admin management panel | ⬜ Pending |
+| T5 | Docker + CI/CD skeleton | ✅ Done |
+| T6 | Angular + Tailwind frontend skeleton | ✅ Done |
+| T7 | First AI writing exercise | ✅ Done |
+| T8 | Writing feedback display and storage | ✅ Done |
+| T9 | Vocabulary mastery and LearningPlanner implementation | ✅ Done |
+| T10 | CEFR assessment | ✅ Done |
+| T11 | Speaking sessions | ✅ Done |
+| T12 | Admin management panel | ⬜ Next |
 
-**The first product slice (Month 1 skeleton) is not complete until T6 is done.**
-**T5 and T6 together finish the Month 1 skeleton.**
-**AI features (T7 and beyond) must not start until the basic app can run locally with API + Angular + PostgreSQL.**
+**Month 2 — First AI feature live (T7–T8): COMPLETE**
+**Month 3 — Learning engine and speaking (T9–T11): COMPLETE**
+**T12 is the final remaining task.**
 
 ---
 
