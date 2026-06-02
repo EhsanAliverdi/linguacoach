@@ -30,6 +30,7 @@ public sealed class DashboardController : ControllerBase
             {
                 studentName = result.StudentName,
                 careerProfile = result.CareerProfileName,
+                cefrLevel = result.CefrLevel,
                 message = result.Message
             });
         }

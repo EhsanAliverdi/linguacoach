@@ -17,8 +17,8 @@ public sealed class OpenAiProvider : IAiProvider
     public string ProviderName => "openai";
 
     private readonly string _model;
-    private readonly ChatClient _client;
-    private readonly ApiKeyCredential _credential;
+    private readonly ChatClient? _client;
+    private readonly ApiKeyCredential? _credential;
     private readonly ILogger<OpenAiProvider> _logger;
 
     // GPT-4o input/output cost per token (as of 2024, may change — update when repricing occurs).
@@ -29,19 +29,29 @@ public sealed class OpenAiProvider : IAiProvider
     {
         _logger = logger;
 
-        var apiKey = configuration["OpenAI:ApiKey"]
-            ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
-            ?? throw new InvalidOperationException(
-                "OpenAI API key is not configured. Set OpenAI:ApiKey in configuration " +
-                "or the OPENAI_API_KEY environment variable.");
-
         _model = configuration["OpenAI:Model"] ?? "gpt-4o";
+        var apiKey = configuration["OpenAI:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            _logger.LogWarning(
+                "OpenAI API key is not configured. AI-backed features will return a controlled unavailable response.");
+            return;
+        }
+
         _credential = new ApiKeyCredential(apiKey);
         _client = new ChatClient(_model, _credential);
     }
 
     public async Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
     {
+        if (_client is null || _credential is null)
+        {
+            throw new AiProviderException(
+                "OpenAI API key is not configured.",
+                new InvalidOperationException("Set OpenAI:ApiKey or the OPENAI_API_KEY environment variable."));
+        }
+
         // Use the model hint from AiProviderConfig if provided; otherwise fall back to the configured default.
         var modelToUse = string.IsNullOrEmpty(request.ModelHint) ? _model : request.ModelHint;
         _logger.LogDebug("Calling OpenAI model {Model} for prompt key {Key}", modelToUse, request.PromptKey);

@@ -1,10 +1,10 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import {
-  LoginRequest, LoginResponse, ChangePasswordRequest, AuthUser
+  LoginRequest, LoginResponse, ChangePasswordRequest
 } from '../models/auth.models';
 import { TokenService } from './token.service';
 import { environment } from '../../../environments/environment';
@@ -12,37 +12,26 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly api = environment.apiUrl;
+  readonly currentUser: TokenService['currentUser'];
 
-  // Signal-based current user — components subscribe reactively
-  readonly currentUser = signal<AuthUser | null>(null);
-
-  constructor(private http: HttpClient, private tokenService: TokenService, private router: Router) {}
+  constructor(private http: HttpClient, private tokenService: TokenService, private router: Router) {
+    this.currentUser = tokenService.currentUser;
+  }
 
   login(request: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.api}/auth/login`, request).pipe(
-      tap(res => {
-        this.tokenService.setToken(res.token);
-        const user = this.tokenService.getUser();
-        if (user) {
-          user.mustChangePassword = res.mustChangePassword;
-          this.currentUser.set(user);
-        }
-      })
+      tap(res => this.tokenService.setToken(res.token, res.mustChangePassword))
     );
   }
 
   changePassword(request: ChangePasswordRequest): Observable<void> {
     return this.http.post<void>(`${this.api}/auth/change-password`, request).pipe(
-      tap(() => {
-        const user = this.currentUser();
-        if (user) this.currentUser.set({ ...user, mustChangePassword: false });
-      })
+      tap(() => this.tokenService.setMustChangePassword(false))
     );
   }
 
   logout(): void {
     this.tokenService.clear();
-    this.currentUser.set(null);
     this.router.navigate(['/login']);
   }
 

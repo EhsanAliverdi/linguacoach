@@ -1,16 +1,26 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { AuthUser, UserRole } from '../models/auth.models';
 
-// JWT is kept in memory only — never written to localStorage or sessionStorage.
-// Refreshing the page requires re-login. Acceptable for MVP.
+const SessionKey = 'speakpath.auth';
+
+interface StoredSession {
+  token: string;
+  mustChangePassword: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TokenService {
   private _token: string | null = null;
-  private _user: AuthUser | null = null;
+  readonly currentUser = signal<AuthUser | null>(null);
 
-  setToken(token: string): void {
+  constructor() {
+    this.restoreSession();
+  }
+
+  setToken(token: string, mustChangePassword = false): void {
     this._token = token;
-    this._user = this.decode(token);
+    this.currentUser.set(this.decode(token, mustChangePassword));
+    this.persistSession(mustChangePassword);
   }
 
   getToken(): string | null {
@@ -18,12 +28,19 @@ export class TokenService {
   }
 
   getUser(): AuthUser | null {
-    return this._user;
+    return this.currentUser();
+  }
+
+  setMustChangePassword(value: boolean): void {
+    const user = this.currentUser();
+    if (user) this.currentUser.set({ ...user, mustChangePassword: value });
+    this.persistSession(value);
   }
 
   clear(): void {
     this._token = null;
-    this._user = null;
+    this.currentUser.set(null);
+    sessionStorage.removeItem(SessionKey);
   }
 
   isAuthenticated(): boolean {
@@ -31,13 +48,13 @@ export class TokenService {
   }
 
   private isExpired(): boolean {
-    if (!this._user) return true;
+    if (!this.currentUser()) return true;
     const payload = this.parsePayload(this._token!);
     if (!payload?.exp) return false;
     return Date.now() / 1000 > payload.exp;
   }
 
-  private decode(token: string): AuthUser | null {
+  private decode(token: string, mustChangePassword: boolean): AuthUser | null {
     try {
       const payload = this.parsePayload(token);
       if (!payload) return null;
@@ -46,7 +63,7 @@ export class TokenService {
         email: payload.email,
         role: payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] as UserRole
           ?? payload.role as UserRole,
-        mustChangePassword: false, // populated from login response, not JWT
+        mustChangePassword,
       };
     } catch {
       return null;
@@ -58,5 +75,23 @@ export class TokenService {
     if (parts.length !== 3) return null;
     const decoded = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
     return JSON.parse(decoded);
+  }
+
+  private persistSession(mustChangePassword: boolean): void {
+    if (!this._token || !this.currentUser()) return;
+    sessionStorage.setItem(SessionKey, JSON.stringify({ token: this._token, mustChangePassword }));
+  }
+
+  private restoreSession(): void {
+    try {
+      const raw = sessionStorage.getItem(SessionKey);
+      if (!raw) return;
+      const session = JSON.parse(raw) as StoredSession;
+      this._token = session.token;
+      this.currentUser.set(this.decode(session.token, session.mustChangePassword));
+      if (!this.isAuthenticated()) this.clear();
+    } catch {
+      this.clear();
+    }
   }
 }

@@ -23,6 +23,11 @@ RUN dotnet publish src/LinguaCoach.Api/LinguaCoach.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
+# Used by the Docker health check.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Non-root user for security
 RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
 USER appuser

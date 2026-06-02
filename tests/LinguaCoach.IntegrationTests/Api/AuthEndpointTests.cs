@@ -82,6 +82,20 @@ public sealed class AuthEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task TemporaryPassword_UserCannotAccessProtectedEndpoints()
+    {
+        var (token, _) = await CreateTempStudentAsync($"restricted_{Guid.NewGuid():N}@test.com", "Temp@1234");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
+        {
+            Headers = { Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token) }
+        };
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task EnsureAdminExistsAsync()

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Claims;
 using LinguaCoach.Infrastructure;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
@@ -102,6 +103,14 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+var openAiApiKey = app.Configuration["OpenAI:ApiKey"]
+    ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+if (string.IsNullOrWhiteSpace(openAiApiKey))
+{
+    app.Logger.LogWarning(
+        "OpenAI API key is not configured. AI-backed features will be unavailable until OPENAI_API_KEY is set.");
+}
+
 // ── Run migrations and seed on startup (skipped in Testing environment) ─────
 if (!app.Environment.IsEnvironment("Testing"))
 {
@@ -120,14 +129,38 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment()) app.UseCors("AngularDev");
 app.UseAuthentication();
-app.UseAuthorization();
 
-// TODO before first real user: enforce MustChangePassword at the API layer so students
-// cannot access /onboarding, /dashboard, or /reference until they have changed their
-// admin-issued temporary password. Options: middleware that checks the claim, or an
-// ActionFilter applied to all [Authorize] controllers. Currently the flag is returned
-// in the login response and the frontend is expected to redirect; there is no backend
-// enforcement.
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true
+        && !context.Request.Path.Equals("/api/auth/change-password", StringComparison.OrdinalIgnoreCase))
+    {
+        var userIdValue = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.User.FindFirstValue("sub");
+        if (Guid.TryParse(userIdValue, out var userId))
+        {
+            var db = context.RequestServices.GetRequiredService<LinguaCoachDbContext>();
+            var mustChangePassword = await db.Users
+                .Where(user => user.Id == userId)
+                .Select(user => user.MustChangePassword)
+                .FirstOrDefaultAsync(context.RequestAborted);
+
+            if (mustChangePassword)
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = "You must change your temporary password before continuing."
+                }, context.RequestAborted);
+                return;
+            }
+        }
+    }
+
+    await next();
+});
+
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");

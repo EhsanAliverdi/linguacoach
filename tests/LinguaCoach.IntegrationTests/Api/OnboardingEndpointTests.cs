@@ -127,6 +127,8 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Your personalised plan is being prepared.", body.GetProperty("message").GetString());
         Assert.Equal("Document Controller", body.GetProperty("careerProfile").GetString());
+        Assert.True(body.TryGetProperty("cefrLevel", out var cefrLevel));
+        Assert.Equal(JsonValueKind.Null, cefrLevel.ValueKind);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
