@@ -92,7 +92,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: docker-compose.prod.yml
-          target: ${{ secrets.VPS_DEPLOY_PATH }}
+          target: /opt/linguacoach
+          strip_components: 0
+          overwrite: true
 
       - name: Pull, migrate, and restart
         uses: appleboy/ssh-action@v1.0.3
