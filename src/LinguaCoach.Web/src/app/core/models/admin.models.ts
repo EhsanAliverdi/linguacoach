@@ -39,3 +39,8 @@ export interface AiProviderConfigItem {
   providerName: string;
   modelName: string;
 }
+
+export interface AiProviderCatalogItem {
+  providerName: string;
+  models: string[];
+}

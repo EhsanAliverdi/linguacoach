@@ -134,6 +134,10 @@ public sealed class AdminController : ControllerBase
 
     // ── AI provider config ────────────────────────────────────────────────────
 
+    [HttpGet("ai-config/providers")]
+    public async Task<IActionResult> ListAiProviders(CancellationToken ct)
+        => Ok(await _aiConfigHandler.ListProvidersAsync(ct));
+
     [HttpGet("ai-config")]
     public async Task<IActionResult> ListAiConfigs(CancellationToken ct)
         => Ok(await _aiConfigHandler.ListConfigsAsync(ct));

@@ -95,6 +95,10 @@ public sealed record AiProviderConfigItem(
     string ProviderName,
     string ModelName);
 
+public sealed record AiProviderCatalogItem(
+    string ProviderName,
+    IReadOnlyList<string> Models);
+
 public sealed record UpdateAiProviderConfigCommand(
     Guid ConfigId,
     string ProviderName,
@@ -103,5 +107,6 @@ public sealed record UpdateAiProviderConfigCommand(
 public interface IAdminAiConfigHandler
 {
     Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default);
     Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
 }

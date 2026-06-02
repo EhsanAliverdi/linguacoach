@@ -52,6 +52,8 @@ public static class DependencyInjection
         services.AddScoped<IAiContextBuilder, DbPromptAiContextBuilder>();
         services.AddHttpClient<GeminiProvider>();
         services.AddScoped<OpenAiProvider>();
+        services.AddScoped<GeminiProvider>();
+        services.AddScoped<AnthropicProvider>();
         services.AddScoped<IAiProviderResolver, AiProviderResolver>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
 

@@ -12,7 +12,7 @@ public static class AiPricingOptions
     public static AiModelPricing? GetGeminiPricing(IConfiguration configuration, string modelName)
         => GetProviderPricing(configuration, "Gemini", modelName);
 
-    private static AiModelPricing? GetProviderPricing(IConfiguration configuration, string providerName, string modelName)
+    public static AiModelPricing? GetProviderPricing(IConfiguration configuration, string providerName, string modelName)
     {
         if (string.IsNullOrWhiteSpace(modelName)) return null;
 

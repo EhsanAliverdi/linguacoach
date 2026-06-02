@@ -34,12 +34,30 @@ public sealed class AiProviderConfig : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // Allowlisted model names. Prevents cost amplification via misconfigured or malicious admin input.
-    private static readonly HashSet<string> KnownModels = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, HashSet<string>> KnownModelsByProvider = new(StringComparer.OrdinalIgnoreCase)
     {
-        "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4",
-        "gpt-3.5-turbo", "o1", "o1-mini", "o3-mini",
+        ["openai"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4",
+            "gpt-3.5-turbo", "o1", "o1-mini", "o3-mini",
+        },
+        ["gemini"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "gemini-2.0-flash", "gemini-2.0-flash-lite",
+            "gemini-1.5-pro", "gemini-1.5-flash",
+        },
+        ["anthropic"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5",
+            "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
+            "claude-3-opus-20240229",
+        },
     };
+
+    public static IReadOnlyDictionary<string, IReadOnlySet<string>> AllowedModels =>
+        KnownModelsByProvider.ToDictionary(
+            kvp => kvp.Key,
+            kvp => (IReadOnlySet<string>)kvp.Value);
 
     public void Update(string providerName, string modelName)
     {
@@ -47,15 +65,15 @@ public sealed class AiProviderConfig : BaseEntity
         if (string.IsNullOrWhiteSpace(modelName)) throw new ArgumentException("ModelName is required.", nameof(modelName));
 
         var normalisedProvider = providerName.Trim().ToLowerInvariant();
-        if (normalisedProvider != "openai")
+        if (!KnownModelsByProvider.TryGetValue(normalisedProvider, out var allowedModels))
             throw new ArgumentException(
-                $"Unsupported provider '{normalisedProvider}'. Allowed: openai.",
+                $"Unsupported provider '{normalisedProvider}'. Allowed: {string.Join(", ", KnownModelsByProvider.Keys)}.",
                 nameof(providerName));
 
         var normalised = modelName.Trim();
-        if (!KnownModels.Contains(normalised))
+        if (!allowedModels.Contains(normalised))
             throw new ArgumentException(
-                $"Unknown model '{normalised}'. Allowed: {string.Join(", ", KnownModels.Order())}.",
+                $"Unknown model '{normalised}' for provider '{normalisedProvider}'. Allowed: {string.Join(", ", allowedModels.Order())}.",
                 nameof(modelName));
 
         ProviderName = normalisedProvider;

@@ -74,8 +74,17 @@ public sealed class AiProviderResolver : IAiProviderResolver
                 model);
         }
 
+        if (provider.Equals("Anthropic", StringComparison.OrdinalIgnoreCase))
+        {
+            RequireApiKey("ANTHROPIC_API_KEY", "Anthropic:ApiKey", "Anthropic");
+            return new AiProviderSelection(
+                _serviceProvider.GetRequiredService<AnthropicProvider>(),
+                "anthropic",
+                model);
+        }
+
         throw new AiConfigurationUnavailableException(
-            $"Unsupported AI writing feedback provider '{provider}'. Allowed providers: OpenAI, Gemini.");
+            $"Unsupported AI writing feedback provider '{provider}'. Allowed providers: OpenAI, Gemini, Anthropic.");
     }
 
     private void RequireApiKey(string environmentVariable, string configurationKey, string providerName)

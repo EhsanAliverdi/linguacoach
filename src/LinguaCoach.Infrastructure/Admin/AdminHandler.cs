@@ -164,6 +164,15 @@ public sealed class AdminHandler :
         return configs.Select(c => new AiProviderConfigItem(c.Id, c.FeatureKey, c.ProviderName, c.ModelName)).ToList();
     }
 
+    public Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default)
+    {
+        var catalog = AiProviderConfig.AllowedModels
+            .Select(kvp => new AiProviderCatalogItem(kvp.Key, kvp.Value.Order().ToList()))
+            .OrderBy(p => p.ProviderName)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<AiProviderCatalogItem>>(catalog);
+    }
+
     public async Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default)
     {
         var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Id == command.ConfigId, ct)

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
-  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem
+  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem, AiProviderCatalogItem
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -50,6 +50,9 @@ export class AdminApiService {
   }
 
   // AI config
+  listAiProviders(): Observable<AiProviderCatalogItem[]> {
+    return this.http.get<AiProviderCatalogItem[]>(`${this.api}/ai-config/providers`);
+  }
   listAiConfigs(): Observable<AiProviderConfigItem[]> {
     return this.http.get<AiProviderConfigItem[]>(`${this.api}/ai-config`);
   }
