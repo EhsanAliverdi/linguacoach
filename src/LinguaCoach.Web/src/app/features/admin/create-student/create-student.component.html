@@ -20,16 +20,47 @@
         <div class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">{{ success() }}</div>
       }
 
+      @if (createdCredentials(); as credentials) {
+        <div class="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <h3 class="text-sm font-semibold text-slate-800">Share these credentials</h3>
+          <p class="mt-1 text-xs text-slate-500">Send the email and temporary password to the student through a private channel. They will be asked to create their own password on first login.</p>
+          <dl class="mt-3 space-y-2 text-sm">
+            <div>
+              <dt class="text-xs font-medium uppercase text-slate-500">Email</dt>
+              <dd class="break-all font-medium text-slate-900">{{ credentials.email }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium uppercase text-slate-500">Temporary password</dt>
+              <dd class="break-all font-mono text-slate-900">{{ credentials.temporaryPassword }}</dd>
+            </div>
+          </dl>
+          <button type="button" (click)="startAnother()" class="mt-4 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-white transition-colors">
+            Create another student
+          </button>
+        </div>
+      }
+
       <form (ngSubmit)="onSubmit()" novalidate class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Student email</label>
+          <label for="studentEmail" class="block text-sm font-medium text-slate-700 mb-1">Student email</label>
           <input type="email" [(ngModel)]="email" name="email" required placeholder="student@example.com"
+            id="studentEmail"
+            [class.border-red-300]="emailError()"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          @if (emailError()) {
+            <p class="mt-1 text-xs text-red-600">{{ emailError() }}</p>
+          }
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Temporary password</label>
+          <label for="temporaryPassword" class="block text-sm font-medium text-slate-700 mb-1">Temporary password</label>
           <input type="text" [(ngModel)]="temporaryPassword" name="password" required placeholder="Min 8 chars, must include a digit"
+            id="temporaryPassword"
+            [class.border-red-300]="passwordError()"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <p class="mt-1 text-xs text-slate-500">Use at least 8 characters and one number.</p>
+          @if (passwordError()) {
+            <p class="mt-1 text-xs text-red-600">{{ passwordError() }}</p>
+          }
         </div>
         <button type="submit" [disabled]="loading()"
           class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">

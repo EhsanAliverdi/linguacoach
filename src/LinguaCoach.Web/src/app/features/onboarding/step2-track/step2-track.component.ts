@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ReferenceService } from '../../../core/services/reference.service';
 import { OnboardingService } from '../../../core/services/onboarding.service';
 import { LearningTrackDto } from '../../../core/models/reference.models';
@@ -8,7 +8,7 @@ import { LearningTrackDto } from '../../../core/models/reference.models';
 @Component({
   selector: 'app-step2-track',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './step2-track.component.html',
 })
 export class Step2TrackComponent implements OnInit {
@@ -17,6 +17,7 @@ export class Step2TrackComponent implements OnInit {
   loading = signal(true);
   submitting = signal(false);
   error = signal('');
+  needsLanguageStep = signal(false);
 
   constructor(private ref: ReferenceService, private onboarding: OnboardingService, private router: Router) {}
 
@@ -25,7 +26,8 @@ export class Step2TrackComponent implements OnInit {
       next: status => {
         const languagePairId = status.languagePairId;
         if (!languagePairId) {
-          this.error.set('Please complete step 1 first.');
+          this.needsLanguageStep.set(true);
+          this.error.set('Choose your language path before selecting a learning track.');
           this.loading.set(false);
           return;
         }

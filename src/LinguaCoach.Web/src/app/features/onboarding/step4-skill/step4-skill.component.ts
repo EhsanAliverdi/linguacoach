@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { OnboardingService } from '../../../core/services/onboarding.service';
 
 interface SkillOption { label: string; description: string; value: number; }
@@ -8,7 +8,7 @@ interface SkillOption { label: string; description: string; value: number; }
 @Component({
   selector: 'app-step4-skill',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './step4-skill.component.html',
 })
 export class Step4SkillComponent {

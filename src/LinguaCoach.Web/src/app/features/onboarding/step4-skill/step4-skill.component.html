@@ -20,8 +20,14 @@
     }
   </div>
 
-  <button (click)="finish()" [disabled]="selected() === null || submitting()"
-    class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-    @if (submitting()) { Finishing… } @else { Complete setup }
-  </button>
+  <div class="flex gap-3">
+    <a routerLink="/onboarding/step-3"
+      class="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+      Back
+    </a>
+    <button (click)="finish()" [disabled]="selected() === null || submitting()"
+      class="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+      @if (submitting()) { Finishing... } @else { Complete setup }
+    </button>
+  </div>
 </div>

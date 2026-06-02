@@ -8,7 +8,14 @@
   }
 
   @if (loading()) {
-    <div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+    <div class="py-8 text-center">
+      <div class="mx-auto mb-3 w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-sm text-slate-500">Loading available language paths...</p>
+    </div>
+  } @else if (pairs().length === 0) {
+    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      No language paths are available yet. Ask an admin to add a pilot learning path before continuing.
+    </div>
   } @else {
     <div class="space-y-2 mb-6">
       @for (pair of pairs(); track pair.id) {
@@ -24,9 +31,12 @@
       }
     </div>
 
-    <button (click)="next()" [disabled]="!selected() || submitting()"
+  }
+
+  @if (!loading()) {
+    <button (click)="next()" [disabled]="!selected() || submitting() || pairs().length === 0"
       class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-      @if (submitting()) { Saving… } @else { Continue }
+      @if (submitting()) { Saving... } @else { Continue }
     </button>
   }
 </div>

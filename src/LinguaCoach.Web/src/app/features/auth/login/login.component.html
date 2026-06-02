@@ -2,12 +2,18 @@
   <div class="w-full max-w-sm">
 
     <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold text-slate-900">LinguaCoach</h1>
-      <p class="mt-1 text-sm text-slate-500">Workplace English for professionals</p>
+      <h1 class="text-2xl font-bold text-slate-900">SpeakPath</h1>
+      <p class="mt-1 text-sm text-slate-500">Practise workplace messages before you send them.</p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
       <h2 class="text-lg font-semibold text-slate-800 mb-5">Sign in to your account</h2>
+
+      @if (notice()) {
+        <div class="mb-4 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
+          {{ notice() }}
+        </div>
+      }
 
       @if (error()) {
         <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

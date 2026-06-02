@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { OnboardingService } from '../../../core/services/onboarding.service';
+import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 
 @Component({
   selector: 'app-change-password',
@@ -17,12 +18,16 @@ export class ChangePasswordComponent {
   confirmPassword = '';
   loading = signal(false);
   error = signal('');
+  notice = signal('');
 
   constructor(
     private auth: AuthService,
     private onboarding: OnboardingService,
     private router: Router,
-  ) {}
+    private authNotice: AuthNoticeService,
+  ) {
+    this.notice.set(this.authNotice.consume() ?? '');
+  }
 
   onSubmit(): void {
     if (this.newPassword !== this.confirmPassword) {
@@ -35,6 +40,7 @@ export class ChangePasswordComponent {
     }
     this.loading.set(true);
     this.error.set('');
+    this.notice.set('');
 
     this.auth.changePassword({ currentPassword: this.currentPassword, newPassword: this.newPassword }).subscribe({
       next: () => {

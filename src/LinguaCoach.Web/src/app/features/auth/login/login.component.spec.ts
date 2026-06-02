@@ -4,16 +4,20 @@ import { of, throwError } from 'rxjs';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { OnboardingService } from '../../../core/services/onboarding.service';
+import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 
 describe('LoginComponent', () => {
   let authService: jasmine.SpyObj<AuthService>;
   let onboardingService: jasmine.SpyObj<OnboardingService>;
   let router: jasmine.SpyObj<Router>;
+  let authNotice: jasmine.SpyObj<AuthNoticeService>;
 
   beforeEach(() => {
     authService = jasmine.createSpyObj('AuthService', ['login']);
     onboardingService = jasmine.createSpyObj('OnboardingService', ['getStatus']);
     router = jasmine.createSpyObj('Router', ['navigate']);
+    authNotice = jasmine.createSpyObj('AuthNoticeService', ['consume']);
+    authNotice.consume.and.returnValue(null);
 
     TestBed.configureTestingModule({
       imports: [LoginComponent],
@@ -21,6 +25,7 @@ describe('LoginComponent', () => {
         { provide: AuthService, useValue: authService },
         { provide: OnboardingService, useValue: onboardingService },
         { provide: Router, useValue: router },
+        { provide: AuthNoticeService, useValue: authNotice },
       ],
     });
   });
@@ -86,4 +91,10 @@ describe('LoginComponent', () => {
     tick();
     expect(authService.login).not.toHaveBeenCalled();
   }));
+
+  it('shows a consumed auth notice', () => {
+    authNotice.consume.and.returnValue('Your session has expired. Please sign in again.');
+    const fixture = create();
+    expect(fixture.componentInstance.notice()).toBe('Your session has expired. Please sign in again.');
+  });
 });

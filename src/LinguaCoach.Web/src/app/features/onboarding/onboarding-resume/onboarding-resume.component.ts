@@ -6,7 +6,13 @@ import { OnboardingService } from '../../../core/services/onboarding.service';
 @Component({
   selector: 'app-onboarding-resume',
   standalone: true,
-  template: `<div class="flex justify-center py-16"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>`,
+  template: `
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+      <div class="mx-auto mb-4 h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+      <h2 class="text-base font-semibold text-slate-900">Finding your next setup step</h2>
+      <p class="mt-1 text-sm text-slate-500">We will take you back to the right place if setup was interrupted.</p>
+    </div>
+  `,
 })
 export class OnboardingResumeComponent implements OnInit {
   constructor(private onboarding: OnboardingService, private router: Router) {}

@@ -3,7 +3,7 @@
   <!-- Top nav -->
   <nav class="bg-white border-b border-slate-200 px-4 py-3">
     <div class="max-w-2xl mx-auto flex items-center justify-between">
-      <span class="font-bold text-slate-900">LinguaCoach</span>
+      <span class="font-bold text-slate-900">SpeakPath</span>
       <div class="flex items-center gap-3">
         <span class="text-sm text-slate-500 hidden sm:block">{{ auth.currentUser()?.email }}</span>
         <button (click)="auth.logout()" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">Sign out</button>
@@ -12,6 +12,12 @@
   </nav>
 
   <div class="max-w-2xl mx-auto px-4 py-8">
+
+    @if (notice()) {
+      <div class="mb-4 rounded-xl bg-indigo-50 border border-indigo-200 px-5 py-4 text-sm text-indigo-800">
+        {{ notice() }}
+      </div>
+    }
 
     @if (loading()) {
       <div class="flex justify-center py-16">
@@ -34,48 +40,15 @@
       </div>
 
       <!-- Career context -->
-      <div class="bg-indigo-600 rounded-2xl p-6 text-white mb-6">
-        <div class="text-xs font-medium text-indigo-200 uppercase tracking-wide mb-1">Your career focus</div>
+      <div class="bg-indigo-600 rounded-2xl p-6 text-white mb-4">
+        <div class="text-xs font-medium text-indigo-200 uppercase tracking-wide mb-1">Your workplace focus</div>
         <div class="text-xl font-bold mb-1">{{ data()!.careerProfile }}</div>
-        <div class="text-sm text-indigo-200">Role-specific English coaching tailored to your work.</div>
+        <div class="text-sm text-indigo-200">Practise clear, polite messages for real work situations.</div>
       </div>
 
-      <!-- CEFR level card -->
-      @if (data()!.cefrLevel) {
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">English level</div>
-              <div class="flex items-center gap-2">
-                <span class="inline-block rounded-full bg-indigo-100 px-3 py-1 text-sm font-bold text-indigo-700">{{ data()!.cefrLevel }}</span>
-                <span class="text-sm text-slate-500">CEFR</span>
-              </div>
-            </div>
-            <a routerLink="/assessment" class="text-xs text-slate-400 hover:text-indigo-600 transition-colors">Re-assess</a>
-          </div>
-        </div>
-      } @else {
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-4">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-            <div class="flex-1">
-              <h3 class="font-medium text-amber-800 mb-0.5">Find your English level</h3>
-              <p class="text-sm text-amber-700 mb-3">Take a quick writing assessment to personalise your lessons.</p>
-              <a routerLink="/assessment"
-                 class="inline-block rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
-                Take assessment
-              </a>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Writing exercise CTA -->
+      <!-- Recommended next action -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-4">
+        <div class="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-2">Recommended next action</div>
         <div class="flex items-start gap-4">
           <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
             <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,36 +57,17 @@
             </svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-slate-800 mb-0.5">Writing practice</h3>
-            <p class="text-sm text-slate-500 mb-3">Write a professional follow-up email for a pending document approval. Get instant AI feedback.</p>
+            <h3 class="font-semibold text-slate-800 mb-0.5">Practise a follow-up email</h3>
+            <p class="text-sm text-slate-500 mb-3">Write a professional message about a pending document approval, then review structured feedback before you would send it at work.</p>
             <a routerLink="/writing"
                class="inline-block rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors">
-              Start exercise
+              Start writing exercise
             </a>
           </div>
         </div>
       </div>
 
-      <!-- Speaking practice CTA -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-4">
-        <div class="flex items-start gap-4">
-          <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div class="flex-1">
-            <h3 class="font-semibold text-slate-800 mb-0.5">Speaking practice</h3>
-            <p class="text-sm text-slate-500 mb-3">Practise a telephone follow-up conversation with an AI project manager. Push-to-talk, 6 turns.</p>
-            <a routerLink="/speaking"
-               class="inline-block rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition-colors">
-              Start session
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Plan placeholder -->
+      <!-- Learning context -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
@@ -121,9 +75,19 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 class="font-medium text-slate-800">Your personalised plan</h3>
+          <h3 class="font-medium text-slate-800">Your learning context</h3>
         </div>
-        <p class="text-sm text-slate-500">{{ data()!.message }}</p>
+        <div class="space-y-3 text-sm text-slate-600">
+          <p>{{ data()!.message }}</p>
+          <div>
+            <span class="font-medium text-slate-800">English level:</span>
+            @if (data()!.cefrLevel) {
+              <span class="ml-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">{{ data()!.cefrLevel }}</span>
+            } @else {
+              <span class="ml-1 text-slate-500">Not set yet</span>
+            }
+          </div>
+        </div>
       </div>
     }
 

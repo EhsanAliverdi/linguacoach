@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { OnboardingService } from '../../../core/services/onboarding.service';
+import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 
 @Component({
   selector: 'app-login',
@@ -16,17 +17,22 @@ export class LoginComponent {
   password = '';
   loading = signal(false);
   error = signal('');
+  notice = signal('');
 
   constructor(
     private auth: AuthService,
     private onboarding: OnboardingService,
     private router: Router,
-  ) {}
+    private authNotice: AuthNoticeService,
+  ) {
+    this.notice.set(this.authNotice.consume() ?? '');
+  }
 
   onSubmit(): void {
     if (!this.email || !this.password) return;
     this.loading.set(true);
     this.error.set('');
+    this.notice.set('');
 
     this.auth.login({ email: this.email, password: this.password }).subscribe({
       next: res => {

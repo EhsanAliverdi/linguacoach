@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 import { DashboardResponse } from '../../../core/models/dashboard.models';
 
 @Component({
@@ -15,8 +16,15 @@ export class DashboardComponent implements OnInit {
   data = signal<DashboardResponse | null>(null);
   loading = signal(true);
   error = signal('');
+  notice = signal('');
 
-  constructor(private dashboardService: DashboardService, public auth: AuthService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    public auth: AuthService,
+    private authNotice: AuthNoticeService,
+  ) {
+    this.notice.set(this.authNotice.consume() ?? '');
+  }
 
   ngOnInit(): void {
     this.dashboardService.getDashboard().subscribe({

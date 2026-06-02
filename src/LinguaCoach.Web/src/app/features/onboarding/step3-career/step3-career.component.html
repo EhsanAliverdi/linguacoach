@@ -4,11 +4,23 @@
   <p class="text-sm text-slate-500 mb-5">Your lessons will use vocabulary and scenarios from your specific role.</p>
 
   @if (error()) {
-    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+      {{ error() }}
+      @if (needsLanguageStep()) {
+        <a routerLink="/onboarding/step-1" class="mt-2 block font-semibold text-red-800 underline">Go back to language selection</a>
+      }
+    </div>
   }
 
   @if (loading()) {
-    <div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+    <div class="py-8 text-center">
+      <div class="mx-auto mb-3 w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-sm text-slate-500">Loading career contexts for your path...</p>
+    </div>
+  } @else if (!needsLanguageStep() && careers().length === 0) {
+    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      No career contexts are available for this language path yet. Go back and choose another track, or ask an admin to add a career profile.
+    </div>
   } @else {
     <div class="space-y-2 mb-6">
       @for (career of careers(); track career.id) {
@@ -23,9 +35,18 @@
       }
     </div>
 
-    <button (click)="next()" [disabled]="!selected() || submitting()"
-      class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-      @if (submitting()) { Saving… } @else { Continue }
-    </button>
+  }
+
+  @if (!loading()) {
+    <div class="flex gap-3">
+      <a routerLink="/onboarding/step-2"
+        class="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+        Back
+      </a>
+      <button (click)="next()" [disabled]="!selected() || submitting() || careers().length === 0"
+        class="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+        @if (submitting()) { Saving... } @else { Continue }
+      </button>
+    </div>
   }
 </div>
