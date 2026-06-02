@@ -1,30 +1,33 @@
-<div class="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-  <div class="w-full max-w-sm">
-
-    <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold text-slate-900">SpeakPath</h1>
-      <p class="mt-1 text-sm text-slate-500">Practise workplace messages before you send them.</p>
+<div class="sp-page flex items-center justify-center px-4 py-8">
+  <div class="w-full max-w-md">
+    <div class="mb-8 text-center">
+      <a href="/" class="sp-brand justify-center">
+        <span class="sp-brand-mark">S</span>
+        <span>SpeakPath</span>
+      </a>
+      <p class="mt-3 text-sm leading-6 text-slate-600">Practise workplace messages before you send them.</p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-      <h2 class="text-lg font-semibold text-slate-800 mb-5">Sign in to your account</h2>
+    <div class="sp-card">
+      <h1 class="text-xl font-bold text-slate-950">Sign in</h1>
+      <p class="mt-1 text-sm text-slate-500">Pilot access for SpeakPath students and admins.</p>
 
       @if (notice()) {
-        <div class="mb-4 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
+        <div class="sp-alert-info mt-5">
           {{ notice() }}
         </div>
       }
 
       @if (error()) {
-        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div class="sp-alert-error mt-5">
           {{ error() }}
         </div>
       }
 
-      <form (ngSubmit)="onSubmit()" #f="ngForm" novalidate>
+      <form (ngSubmit)="onSubmit()" #f="ngForm" novalidate class="mt-6">
         <div class="space-y-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label for="email" class="sp-label">Email</label>
             <input
               id="email"
               type="email"
@@ -33,12 +36,12 @@
               required
               autocomplete="email"
               placeholder="you@example.com"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              class="sp-input"
             />
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <label for="password" class="sp-label">Password</label>
             <input
               id="password"
               type="password"
@@ -46,21 +49,16 @@
               [(ngModel)]="password"
               required
               autocomplete="current-password"
-              placeholder="••••••••"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Password"
+              class="sp-input"
             />
           </div>
         </div>
 
-        <button
-          type="submit"
-          [disabled]="loading()"
-          class="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          @if (loading()) { Signing in… } @else { Sign in }
+        <button type="submit" [disabled]="loading()" class="sp-button-primary mt-6 w-full">
+          @if (loading()) { Signing in... } @else { Sign in }
         </button>
       </form>
     </div>
-
   </div>
 </div>

@@ -8,18 +8,21 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
-    <div class="min-h-screen bg-slate-50">
-      <nav class="bg-slate-900 text-white px-4 py-3">
-        <div class="max-w-5xl mx-auto flex items-center gap-6">
-          <span class="font-bold text-sm">SpeakPath Admin</span>
-          <a routerLink="students" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">Students</a>
-          <a routerLink="prompts" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">Prompts</a>
-          <a routerLink="careers" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">Curriculum</a>
-          <a routerLink="ai-config" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">AI Config</a>
-          <button (click)="auth.logout()" class="ml-auto text-xs text-slate-300 hover:text-white transition-colors">Sign out</button>
+    <div class="sp-page">
+      <nav class="border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-4">
+          <span class="sp-brand mr-2">
+            <span class="sp-brand-mark">S</span>
+            <span>SpeakPath Admin</span>
+          </span>
+          <a routerLink="students" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Students</a>
+          <a routerLink="prompts" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Prompts</a>
+          <a routerLink="careers" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Curriculum</a>
+          <a routerLink="ai-config" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">AI Config</a>
+          <button (click)="auth.logout()" class="sp-link ml-auto">Sign out</button>
         </div>
       </nav>
-      <div class="max-w-5xl mx-auto px-4 py-6">
+      <div class="sp-shell">
         <router-outlet />
       </div>
     </div>

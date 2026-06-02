@@ -1,95 +1,87 @@
-<div class="min-h-screen bg-slate-50">
-
-  <!-- Top nav -->
-  <nav class="bg-white border-b border-slate-200 px-4 py-3">
-    <div class="max-w-2xl mx-auto flex items-center justify-between">
-      <span class="font-bold text-slate-900">SpeakPath</span>
+<div class="sp-page">
+  <nav class="border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
+    <div class="mx-auto flex max-w-5xl items-center justify-between">
+      <div class="sp-brand">
+        <span class="sp-brand-mark">S</span>
+        <span>SpeakPath</span>
+      </div>
       <div class="flex items-center gap-3">
-        <span class="text-sm text-slate-500 hidden sm:block">{{ auth.currentUser()?.email }}</span>
-        <button (click)="auth.logout()" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">Sign out</button>
+        <span class="hidden text-sm text-slate-500 sm:block">{{ auth.currentUser()?.email }}</span>
+        <button (click)="auth.logout()" class="sp-link">Sign out</button>
       </div>
     </div>
   </nav>
 
-  <div class="max-w-2xl mx-auto px-4 py-8">
-
+  <main class="sp-shell">
     @if (notice()) {
-      <div class="mb-4 rounded-xl bg-indigo-50 border border-indigo-200 px-5 py-4 text-sm text-indigo-800">
+      <div class="sp-alert-info mb-5">
         {{ notice() }}
       </div>
     }
 
     @if (loading()) {
-      <div class="flex justify-center py-16">
-        <div class="w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <div class="sp-card py-12 text-center">
+        <div class="mx-auto mb-3 h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+        <p class="text-sm text-slate-500">Loading your SpeakPath dashboard...</p>
       </div>
     } @else if (error()) {
-      <div class="rounded-xl bg-red-50 border border-red-200 px-5 py-4 text-sm text-red-700">{{ error() }}</div>
+      <div class="sp-alert-error">{{ error() }}</div>
     } @else if (data()) {
-      <!-- Welcome card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
-        <div class="flex items-start gap-4">
-          <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span class="text-indigo-600 font-bold text-sm">{{ data()!.studentName.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div>
-            <h2 class="font-semibold text-slate-900">Welcome back</h2>
-            <p class="text-sm text-slate-500 mt-0.5">{{ data()!.studentName }}</p>
-          </div>
-        </div>
-      </div>
+      <section class="mb-5">
+        <p class="sp-eyebrow mb-2">Today in SpeakPath</p>
+        <h1 class="text-3xl font-bold leading-tight text-slate-950">Welcome back, {{ data()!.studentName }}</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Your focus is workplace communication for {{ data()!.careerProfile }} work.</p>
+      </section>
 
-      <!-- Career context -->
-      <div class="bg-indigo-600 rounded-2xl p-6 text-white mb-4">
-        <div class="text-xs font-medium text-indigo-200 uppercase tracking-wide mb-1">Your workplace focus</div>
-        <div class="text-xl font-bold mb-1">{{ data()!.careerProfile }}</div>
-        <div class="text-sm text-indigo-200">Practise clear, polite messages for real work situations.</div>
-      </div>
-
-      <!-- Recommended next action -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-4">
-        <div class="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-2">Recommended next action</div>
-        <div class="flex items-start gap-4">
-          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 0l.172.172a2 2 0 010 2.828L12 16H9v-3z"/>
-            </svg>
-          </div>
-          <div class="flex-1">
-            <h3 class="font-semibold text-slate-800 mb-0.5">Practise a follow-up email</h3>
-            <p class="text-sm text-slate-500 mb-3">Write a professional message about a pending document approval, then review structured feedback before you would send it at work.</p>
-            <a routerLink="/writing"
-               class="inline-block rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors">
+      <section class="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
+        <div class="rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white shadow-sm sm:p-8">
+          <p class="text-xs font-bold uppercase text-indigo-200" style="letter-spacing: 0.08em;">Recommended next action</p>
+          <h2 class="mt-3 text-2xl font-bold leading-tight">Practise a follow-up email before you send it.</h2>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">Write a professional message about a pending document approval, then review structured feedback on tone, clarity, and useful phrases.</p>
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <a routerLink="/writing" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-indigo-50">
               Start writing exercise
             </a>
+            <span class="text-sm text-slate-300">Scenario: pending document approval</span>
           </div>
         </div>
-      </div>
 
-      <!-- Learning context -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <aside class="sp-card">
+          <p class="sp-eyebrow mb-3">Learning context</p>
+          <div class="space-y-4">
+            <div>
+              <p class="text-xs font-semibold uppercase text-slate-500">Career focus</p>
+              <p class="mt-1 font-semibold text-slate-950">{{ data()!.careerProfile }}</p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase text-slate-500">English level</p>
+              @if (data()!.cefrLevel) {
+                <span class="mt-1 inline-block rounded-full bg-indigo-100 px-3 py-1 text-sm font-bold text-indigo-700">{{ data()!.cefrLevel }}</span>
+              } @else {
+                <p class="mt-1 text-sm text-slate-500">Not set yet</p>
+              }
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p class="text-sm leading-6 text-slate-600">{{ data()!.message }}</p>
+            </div>
           </div>
-          <h3 class="font-medium text-slate-800">Your learning context</h3>
+        </aside>
+      </section>
+
+      <section class="mt-5 grid gap-4 sm:grid-cols-3">
+        <div class="sp-card">
+          <p class="text-sm font-bold text-slate-950">Practise</p>
+          <p class="mt-2 text-sm leading-6 text-slate-600">Use a realistic workplace scenario instead of a generic English prompt.</p>
         </div>
-        <div class="space-y-3 text-sm text-slate-600">
-          <p>{{ data()!.message }}</p>
-          <div>
-            <span class="font-medium text-slate-800">English level:</span>
-            @if (data()!.cefrLevel) {
-              <span class="ml-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">{{ data()!.cefrLevel }}</span>
-            } @else {
-              <span class="ml-1 text-slate-500">Not set yet</span>
-            }
-          </div>
+        <div class="sp-card">
+          <p class="text-sm font-bold text-slate-950">Improve tone</p>
+          <p class="mt-2 text-sm leading-6 text-slate-600">Check whether your message sounds clear, polite, and professional.</p>
         </div>
-      </div>
+        <div class="sp-card">
+          <p class="text-sm font-bold text-slate-950">Build confidence</p>
+          <p class="mt-2 text-sm leading-6 text-slate-600">Repeat the phrases you are likely to need at work.</p>
+        </div>
+      </section>
     }
-
-  </div>
+  </main>
 </div>

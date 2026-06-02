@@ -6,11 +6,14 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet],
   template: `
-    <div class="min-h-screen bg-slate-50">
-      <div class="max-w-xl mx-auto px-4 py-10">
-        <div class="text-center mb-8">
-          <h1 class="text-2xl font-bold text-slate-900">SpeakPath</h1>
-          <p class="text-sm text-slate-500 mt-1">Let's set up your learning profile</p>
+    <div class="sp-page">
+      <div class="sp-narrow-shell">
+        <div class="mb-8 text-center">
+          <div class="sp-brand justify-center">
+            <span class="sp-brand-mark">S</span>
+            <span>SpeakPath</span>
+          </div>
+          <p class="mt-3 text-sm leading-6 text-slate-600">Set up a workplace practice path that matches your role.</p>
         </div>
         <router-outlet />
       </div>
