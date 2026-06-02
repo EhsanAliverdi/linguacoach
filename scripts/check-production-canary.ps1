@@ -1,5 +1,7 @@
 param(
-    [string]$BaseUrl = "https://speakpath.app"
+    [string]$BaseUrl = "https://speakpath.app",
+    [int]$TimeoutSeconds = 60,
+    [int]$IntervalSeconds = 5
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,27 +39,61 @@ function Invoke-CanaryRequest {
     }
 }
 
+function Wait-ForCanaryCondition {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][scriptblock]$Check
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastMessage = ""
+
+    while ((Get-Date) -lt $deadline) {
+        $result = & $Check
+        if ($result.Ok) {
+            return $result
+        }
+
+        $lastMessage = $result.Message
+        Write-Host "$Name not ready yet: $lastMessage"
+        Start-Sleep -Seconds $IntervalSeconds
+    }
+
+    throw "$Name did not pass within $TimeoutSeconds seconds. Last result: $lastMessage"
+}
+
 $base = $BaseUrl.TrimEnd("/")
 
 Write-Host "Checking $base"
-$landing = Invoke-CanaryRequest "$base/"
-if ($landing.StatusCode -lt 200 -or $landing.StatusCode -ge 400) {
-    throw "Expected landing page to return 2xx/3xx, got $($landing.StatusCode)."
-}
+Wait-ForCanaryCondition "Landing page" {
+    $landing = Invoke-CanaryRequest "$base/"
+    [pscustomobject]@{
+        Ok = $landing.StatusCode -ge 200 -and $landing.StatusCode -lt 400
+        Message = "expected 2xx/3xx, got $($landing.StatusCode)"
+    }
+} | Out-Null
 
 Write-Host "Checking $base/health"
-$health = Invoke-CanaryRequest "$base/health"
-if ($health.StatusCode -ne 200) {
-    throw "Expected /health to return 200, got $($health.StatusCode)."
-}
-if ($health.Body -match "<html|<!doctype") {
-    throw "Expected /health to return API health, but response looked like SPA HTML."
-}
+Wait-ForCanaryCondition "API health" {
+    $health = Invoke-CanaryRequest "$base/health"
+    $looksLikeHtml = $health.Body -match "<html|<!doctype"
+    [pscustomobject]@{
+        Ok = $health.StatusCode -eq 200 -and -not $looksLikeHtml
+        Message = if ($looksLikeHtml) {
+            "expected API health, got SPA HTML"
+        } else {
+            "expected 200 API health, got $($health.StatusCode)"
+        }
+    }
+} | Out-Null
 
 Write-Host "Checking protected API returns 401"
-$protected = Invoke-CanaryRequest "$base/api/dashboard"
-if ($protected.StatusCode -ne 401) {
-    throw "Expected unauthenticated /api/dashboard to return 401, got $($protected.StatusCode)."
-}
+Wait-ForCanaryCondition "Protected API auth boundary" {
+    $protected = Invoke-CanaryRequest "$base/api/dashboard"
+    [pscustomobject]@{
+        Ok = $protected.StatusCode -eq 401
+        Message = "expected 401, got $($protected.StatusCode)"
+    }
+} | Out-Null
 
 Write-Host "Production canary checks passed."
