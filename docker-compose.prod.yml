@@ -1,6 +1,8 @@
 networks:
   traefik:
     external: true
+  proxy:
+    external: true
   linguacoach_internal:
     driver: bridge
 
@@ -21,6 +23,7 @@ services:
       GSSAPI_KRB5_NO_CONFIGURE: "1"
     networks:
       - traefik
+      - proxy
       - linguacoach_internal
     labels:
       - "traefik.enable=true"
