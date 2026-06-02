@@ -36,6 +36,7 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
         return new DashboardResult(
             StudentName: user.Email!,
             CareerProfileName: careerName,
+            CefrLevel: profile.CefrLevel,
             Message: "Your personalised plan is being prepared.");
     }
 }

@@ -5,6 +5,7 @@ public sealed record DashboardQuery(Guid UserId);
 public sealed record DashboardResult(
     string StudentName,
     string CareerProfileName,
+    string? CefrLevel,
     string Message);
 
 public interface IDashboardQueryHandler

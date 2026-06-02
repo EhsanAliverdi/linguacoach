@@ -147,7 +147,7 @@ public sealed class LearningPlannerService : ILearningPlanner
         return new LessonPlan(
             StudentProfileId: studentProfileId,
             LanguagePairCode: $"{profile.LanguagePair?.SourceLanguage?.Code ?? "fa"}-{profile.LanguagePair?.TargetLanguage?.Code ?? "en"}",
-            CefrLevel: "B1",  // placeholder until T10 CEFR assessment
+            CefrLevel: profile.CefrLevel ?? "B1",
             CareerContext: profile.CareerProfile?.Name ?? "Document Controller",
             LessonType: LessonType.Writing,
             TargetVocabulary: targetVocab,

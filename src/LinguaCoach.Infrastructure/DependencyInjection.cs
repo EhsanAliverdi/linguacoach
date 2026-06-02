@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Assessment;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Auth;
 using LinguaCoach.Application.Dashboard;
@@ -8,6 +9,7 @@ using LinguaCoach.Application.Reference;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Infrastructure.Admin;
+using LinguaCoach.Infrastructure.Assessment;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Auth;
 using LinguaCoach.Infrastructure.Dashboard;
@@ -45,6 +47,9 @@ public static class DependencyInjection
         // AI — context builder and OpenAI provider
         services.AddScoped<IAiContextBuilder, DbPromptAiContextBuilder>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
+
+        // CEFR assessment
+        services.AddScoped<ICefrAssessmentHandler, CefrAssessmentHandler>();
 
         // Learning planner (SM-2 spaced repetition + vocabulary selection)
         services.AddScoped<ILearningPlanner, LearningPlannerService>();

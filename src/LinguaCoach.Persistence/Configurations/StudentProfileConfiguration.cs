@@ -22,6 +22,7 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         builder.Property(sp => sp.LearningTrackId).HasColumnName("learning_track_id");
         builder.Property(sp => sp.CareerProfileId).HasColumnName("career_profile_id");
         builder.Property(sp => sp.SkillFocus).HasColumnName("skill_focus");
+        builder.Property(sp => sp.CefrLevel).HasColumnName("cefr_level").HasMaxLength(2);
 
         builder.HasOne(sp => sp.LanguagePair)
             .WithMany()

@@ -39,6 +39,9 @@ public sealed class StudentProfile : BaseEntity
 
     public SkillFocus? SkillFocus { get; private set; }
 
+    // Set after CEFR assessment (T10). Null until assessment is taken.
+    public string? CefrLevel { get; private set; }
+
     private StudentProfile() { }
 
     public StudentProfile(Guid userId)
@@ -95,6 +98,15 @@ public sealed class StudentProfile : BaseEntity
         SkillFocus = skillFocus;
         AdvanceTo(OnboardingStep.Skill);
         OnboardingStatus = OnboardingStatus.Complete;
+    }
+
+    public void SetCefrLevel(string level)
+    {
+        if (string.IsNullOrWhiteSpace(level)) throw new ArgumentException("CEFR level is required.", nameof(level));
+        var valid = new[] { "A1", "A2", "B1", "B2", "C1", "C2" };
+        if (!valid.Contains(level.ToUpperInvariant()))
+            throw new ArgumentException($"Invalid CEFR level '{level}'. Must be one of: A1, A2, B1, B2, C1, C2.", nameof(level));
+        CefrLevel = level.ToUpperInvariant();
     }
 
     // ── Private helpers ─────────────────────────────────────────────────────

@@ -1,0 +1,127 @@
+<div class="min-h-screen bg-slate-50">
+
+  <!-- Nav -->
+  <nav class="bg-white border-b border-slate-200 px-4 py-3">
+    <div class="max-w-2xl mx-auto flex items-center gap-3">
+      <button (click)="goToDashboard()" class="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Dashboard
+      </button>
+      <span class="text-slate-300">|</span>
+      <span class="font-semibold text-slate-800 text-sm">CEFR Assessment</span>
+    </div>
+  </nav>
+
+  <div class="max-w-2xl mx-auto px-4 py-8">
+
+    <!-- Intro -->
+    @if (state() === 'intro') {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+        <div class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-5">
+          <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+        </div>
+        <h1 class="text-xl font-bold text-slate-900 mb-2">Find your English level</h1>
+        <p class="text-sm text-slate-500 mb-2">Write a short email in English. Our AI will assess your level on the CEFR scale (A1–C2) and personalise your learning plan.</p>
+        <p class="text-xs text-slate-400 mb-6">Takes about 5 minutes.</p>
+        <button (click)="startWriting()" class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
+          Start assessment
+        </button>
+      </div>
+    }
+
+    <!-- Writing -->
+    @if (state() === 'writing' || state() === 'submitting') {
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+        <div class="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-2">Writing task</div>
+        <p class="text-sm text-slate-700 leading-relaxed">{{ prompt }}</p>
+      </div>
+
+      @if (errorMessage() && state() === 'writing') {
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{ errorMessage() }}</div>
+      }
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+        <label class="block text-sm font-medium text-slate-700 mb-2">Your email</label>
+        <textarea
+          [(ngModel)]="sampleText"
+          [disabled]="state() === 'submitting'"
+          rows="10"
+          placeholder="Dear [Name],&#10;&#10;I hope you are well..."
+          class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50">
+        </textarea>
+        <div class="text-right mt-1">
+          <span class="text-xs text-slate-400">{{ sampleText.length }}/2000</span>
+        </div>
+      </div>
+
+      <button
+        (click)="onSubmit()"
+        [disabled]="!sampleText.trim() || state() === 'submitting' || sampleText.length > 2000"
+        class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+        @if (state() === 'submitting') {
+          <span class="flex items-center justify-center gap-2">
+            <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Assessing your level…
+          </span>
+        } @else {
+          Get my CEFR level
+        }
+      </button>
+    }
+
+    <!-- Result -->
+    @if (state() === 'result') {
+      @if (result(); as r) {
+        <!-- Level badge -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-5 text-center">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Your English level</div>
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 {{ levelBg(r.level) }} mb-3">
+            <span class="text-3xl font-bold {{ levelColour(r.level) }}">{{ r.level }}</span>
+          </div>
+          <div class="text-sm text-slate-500">CEFR Scale</div>
+        </div>
+
+        <!-- Rationale (Persian) -->
+        @if (r.rationale) {
+          <div class="bg-indigo-50 rounded-2xl border border-indigo-100 p-5 mb-5" dir="rtl" lang="fa">
+            <div class="text-xs font-medium text-indigo-500 uppercase tracking-wide mb-2 text-left" dir="ltr">Feedback</div>
+            <p class="text-sm text-indigo-900 leading-relaxed">{{ r.rationale }}</p>
+          </div>
+        }
+
+        <!-- Strengths + areas -->
+        @if (r.strengths.length || r.areasForImprovement.length) {
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+            @if (r.strengths.length) {
+              <div class="mb-4">
+                <div class="text-xs font-semibold text-green-600 mb-2">What you do well</div>
+                <ul class="space-y-1">
+                  @for (s of r.strengths; track s) {
+                    <li class="text-sm text-slate-600 flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span>{{ s }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (r.areasForImprovement.length) {
+              <div>
+                <div class="text-xs font-semibold text-amber-600 mb-2">Areas to improve</div>
+                <ul class="space-y-1">
+                  @for (a of r.areasForImprovement; track a) {
+                    <li class="text-sm text-slate-600 flex gap-2"><span class="text-amber-400 flex-shrink-0">•</span>{{ a }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        }
+
+        <button (click)="goToDashboard()" class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
+          Back to dashboard
+        </button>
+      }
+    }
+
+  </div>
+</div>
