@@ -85,30 +85,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copy compose file to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: docker-compose.prod.yml
-          target: /opt/linguacoach
-          strip_components: 0
-          overwrite: true
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Pull, migrate, and restart
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
+      - name: Copy compose file and deploy
+        run: |
+          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/linguacoach/docker-compose.prod.yml
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
             set -e
             DEPLOY=/opt/linguacoach
-
             docker pull ghcr.io/ehsanaliverdi/linguacoach-api:latest
             docker pull ghcr.io/ehsanaliverdi/linguacoach-web:latest
-
-            # Migrations run automatically on API startup via db.Database.Migrate()
             docker compose -f $DEPLOY/docker-compose.prod.yml --env-file $DEPLOY/.env up -d --remove-orphans
             docker image prune -f
+          ENDSSH
