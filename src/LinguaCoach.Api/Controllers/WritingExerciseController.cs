@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Infrastructure.Ai;
 using Microsoft.AspNetCore.Authorization;
@@ -65,6 +66,15 @@ public sealed class WritingExerciseController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+        catch (AiConfigurationUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                code = "ai_unavailable",
+                error = "Writing feedback is temporarily unavailable while SpeakPath AI feedback is being configured. Your draft was not submitted. Please try again later.",
+                detail = ex.Message
+            });
         }
         catch (AiProviderException ex)
         {

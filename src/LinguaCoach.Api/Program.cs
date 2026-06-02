@@ -158,6 +158,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var seederLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await AdminSeeder.SeedAsync(userManager, app.Configuration, seederLogger);
+    await DefaultAiSeeder.SeedAsync(db, seederLogger);
 }
 
 if (app.Environment.IsDevelopment())

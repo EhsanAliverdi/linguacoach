@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Infrastructure.Ai;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using LinguaCoach.Persistence;
@@ -283,6 +284,56 @@ public sealed class WritingExerciseRateLimitTestFactory : WritingExerciseTestFac
         builder.UseSetting("WritingAi:RateLimit:PermitLimit", "1");
         builder.UseSetting("WritingAi:RateLimit:WindowMinutes", "10");
         base.ConfigureWebHost(builder);
+    }
+}
+
+public sealed class WritingExerciseMissingAiConfigTests : IClassFixture<WritingExerciseMissingAiConfigTestFactory>
+{
+    private readonly WritingExerciseMissingAiConfigTestFactory _factory;
+
+    public WritingExerciseMissingAiConfigTests(WritingExerciseMissingAiConfigTestFactory factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task Submit_WhenOpenAiKeyMissing_ReturnsControlledUnavailableResponse()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"missing_ai_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var response = await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, could you please review the latest revision?" });
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ai_unavailable", body.GetProperty("code").GetString());
+        Assert.Contains("temporarily unavailable", body.GetProperty("error").GetString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private HttpClient ClientWithToken(string token)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+}
+
+public sealed class WritingExerciseMissingAiConfigTestFactory : WritingExerciseTestFactory
+{
+    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+    {
+        builder.UseSetting("OpenAI:ApiKey", "");
+        base.ConfigureWebHost(builder);
+
+        builder.ConfigureServices(services =>
+        {
+            var descriptors = services.Where(d => d.ServiceType == typeof(IAiProvider)).ToList();
+            foreach (var descriptor in descriptors)
+                services.Remove(descriptor);
+
+            services.AddScoped<IAiProvider, OpenAiProvider>();
+        });
     }
 }
 

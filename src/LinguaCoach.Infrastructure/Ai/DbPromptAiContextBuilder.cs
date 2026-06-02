@@ -30,7 +30,8 @@ public sealed class DbPromptAiContextBuilder : IAiContextBuilder
             .Where(p => p.Key == promptKey && p.IsActive)
             .OrderByDescending(p => p.Version)
             .FirstOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException($"No active prompt template found for key '{promptKey}'.");
+            ?? throw new AiConfigurationUnavailableException(
+                "Writing feedback is temporarily unavailable because the AI prompt is not configured yet.");
 
         var rendered = Render(template.Content, variables);
 

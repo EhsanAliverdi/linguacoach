@@ -10,7 +10,7 @@ namespace LinguaCoach.Infrastructure.Ai;
 /// <summary>
 /// OpenAI implementation of IAiProvider.
 /// Reads the API key from configuration key "OpenAI:ApiKey" or environment variable OPENAI_API_KEY.
-/// The model defaults to "gpt-4o" but can be overridden via "OpenAI:Model".
+/// The model defaults to "gpt-4o-mini" but can be overridden via "OpenAI:Model".
 /// </summary>
 public sealed class OpenAiProvider : IAiProvider
 {
@@ -27,7 +27,7 @@ public sealed class OpenAiProvider : IAiProvider
         _logger = logger;
         _configuration = configuration;
 
-        _model = configuration["OpenAI:Model"] ?? "gpt-4o";
+        _model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
         var apiKey = configuration["OpenAI:ApiKey"]
             ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -45,7 +45,7 @@ public sealed class OpenAiProvider : IAiProvider
     {
         if (_client is null || _credential is null)
         {
-            throw new AiProviderException(
+            throw new AiConfigurationUnavailableException(
                 "OpenAI API key is not configured.",
                 new InvalidOperationException("Set OpenAI:ApiKey or the OPENAI_API_KEY environment variable."));
         }
