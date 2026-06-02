@@ -1,6 +1,4 @@
 networks:
-  traefik:
-    external: true
   proxy:
     external: true
   linguacoach_internal:
@@ -22,12 +20,11 @@ services:
       Seed__AdminPassword: "${SEED_ADMIN_PASSWORD}"
       GSSAPI_KRB5_NO_CONFIGURE: "1"
     networks:
-      - traefik
       - proxy
       - linguacoach_internal
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.linguacoach-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.linguacoach-api.entrypoints=websecure"
       - "traefik.http.routers.linguacoach-api.tls.certresolver=letsencrypt"
@@ -43,10 +40,10 @@ services:
     image: ${WEB_IMAGE}
     restart: unless-stopped
     networks:
-      - traefik
+      - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.linguacoach-web.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.linguacoach-web.entrypoints=websecure"
       - "traefik.http.routers.linguacoach-web.tls.certresolver=letsencrypt"
