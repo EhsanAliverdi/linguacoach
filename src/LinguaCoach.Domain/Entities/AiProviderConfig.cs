@@ -46,13 +46,19 @@ public sealed class AiProviderConfig : BaseEntity
         if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentException("ProviderName is required.", nameof(providerName));
         if (string.IsNullOrWhiteSpace(modelName)) throw new ArgumentException("ModelName is required.", nameof(modelName));
 
+        var normalisedProvider = providerName.Trim().ToLowerInvariant();
+        if (normalisedProvider != "openai")
+            throw new ArgumentException(
+                $"Unsupported provider '{normalisedProvider}'. Allowed: openai.",
+                nameof(providerName));
+
         var normalised = modelName.Trim();
         if (!KnownModels.Contains(normalised))
             throw new ArgumentException(
                 $"Unknown model '{normalised}'. Allowed: {string.Join(", ", KnownModels.Order())}.",
                 nameof(modelName));
 
-        ProviderName = providerName.Trim().ToLowerInvariant();
+        ProviderName = normalisedProvider;
         ModelName = normalised;
         UpdatedAt = DateTime.UtcNow;
     }

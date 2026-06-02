@@ -10,7 +10,10 @@ import { AiProviderConfigItem } from '../../../core/models/admin.models';
   imports: [CommonModule, FormsModule],
   template: `
     <h2 class="text-lg font-bold text-slate-900 mb-2">AI Provider Configuration</h2>
-    <p class="text-sm text-slate-500 mb-5">Changes take effect immediately — no deploy required.</p>
+    <p class="text-sm text-slate-500 mb-2">Choose the OpenAI model used by each feature. Model changes take effect on the next AI call.</p>
+    <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5">
+      This release supports OpenAI only. Claude and Gemini require provider adapters before they can be selected here.
+    </p>
 
     <div class="space-y-3">
       @for (c of configs(); track c.id) {
@@ -30,7 +33,9 @@ import { AiProviderConfigItem } from '../../../core/models/admin.models';
             <div class="mt-3 flex gap-3 items-end">
               <div>
                 <label class="block text-xs text-slate-500 mb-1">Provider</label>
-                <input [(ngModel)]="editProvider" class="rounded-lg border border-slate-300 px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <select [(ngModel)]="editProvider" class="rounded-lg border border-slate-300 px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="openai">openai</option>
+                </select>
               </div>
               <div>
                 <label class="block text-xs text-slate-500 mb-1">Model</label>
@@ -42,6 +47,9 @@ import { AiProviderConfigItem } from '../../../core/models/admin.models';
             @if (saveSuccess() === c.id) {
               <p class="mt-2 text-xs text-green-600">Saved. New model takes effect on next AI call.</p>
             }
+            @if (saveError()) {
+              <p class="mt-2 text-xs text-red-600">{{ saveError() }}</p>
+            }
           }
         </div>
       }
@@ -52,6 +60,7 @@ export class AdminAiConfigComponent implements OnInit {
   configs = signal<AiProviderConfigItem[]>([]);
   editingId = signal<string | null>(null);
   saveSuccess = signal<string | null>(null);
+  saveError = signal('');
   editProvider = ''; editModel = '';
 
   constructor(private adminApi: AdminApiService) {}
@@ -65,6 +74,7 @@ export class AdminAiConfigComponent implements OnInit {
     this.editProvider = c.providerName;
     this.editModel = c.modelName;
     this.saveSuccess.set(null);
+    this.saveError.set('');
   }
 
   save(id: string): void {
@@ -74,6 +84,7 @@ export class AdminAiConfigComponent implements OnInit {
         this.saveSuccess.set(id);
         setTimeout(() => { this.editingId.set(null); this.saveSuccess.set(null); }, 1500);
       },
+      error: err => this.saveError.set(err.error?.error ?? 'Failed to save AI configuration.'),
     });
   }
 }

@@ -280,6 +280,22 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal("gpt-4o-mini", config.ModelName);
     }
 
+    [Fact]
+    public async Task UpdateAiConfig_WithUnsupportedProvider_Returns400()
+    {
+        var configId = await SeedAiConfigAsync();
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.PutAsJsonAsync($"/api/admin/ai-config/{configId}", new
+        {
+            providerName = "anthropic",
+            modelName = "gpt-4o-mini"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task SeedPromptAsync()

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-admin-shell',
@@ -15,6 +16,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="prompts" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">Prompts</a>
           <a routerLink="careers" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">Curriculum</a>
           <a routerLink="ai-config" routerLinkActive="text-indigo-300" class="text-xs text-slate-300 hover:text-white transition-colors">AI Config</a>
+          <button (click)="auth.logout()" class="ml-auto text-xs text-slate-300 hover:text-white transition-colors">Sign out</button>
         </div>
       </nav>
       <div class="max-w-5xl mx-auto px-4 py-6">
@@ -23,4 +25,6 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     </div>
   `,
 })
-export class AdminShellComponent {}
+export class AdminShellComponent {
+  constructor(public auth: AuthService) {}
+}

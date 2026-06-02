@@ -1,14 +1,20 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
-    <h2 class="text-lg font-bold text-slate-900 mb-4">Students</h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-slate-900">Students</h2>
+      <a routerLink="../create-student" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
+        + Create student
+      </a>
+    </div>
     @if (loading()) {
       <div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
     } @else if (error()) {

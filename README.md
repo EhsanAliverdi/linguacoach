@@ -79,7 +79,7 @@ Tests use an in-memory SQLite database — no PostgreSQL required.
 dotnet test
 ```
 
-Expected output: **158 tests, 0 failures** (113 unit + 45 integration).
+Expected output: **251 tests, 0 failures** (162 unit + 89 integration).
 
 ---
 
@@ -92,6 +92,7 @@ Expected output: **158 tests, 0 failures** (113 unit + 45 integration).
 | `Jwt__Issuer` | No | `linguacoach` | JWT issuer |
 | `Jwt__Audience` | No | `linguacoach` | JWT audience |
 | `Jwt__ExpiryHours` | No | `24` | JWT access token lifetime in hours |
+| `OPENAI_API_KEY` | Yes for AI features | None | OpenAI API key used by assessment, writing, and speaking AI calls |
 | `ASPNETCORE_ENVIRONMENT` | No | `Production` in Docker, `Development` locally | Controls OpenAPI exposure and JWT placeholder guard |
 
 > **Security:** The `appsettings.json` JWT key (`CHANGE_ME_IN_PRODUCTION_USE_A_SECRET_AT_LEAST_32_CHARS`) is valid only in `Development`. The API refuses to start with that placeholder in any other environment.
@@ -155,11 +156,23 @@ Open `http://localhost:4200` in your browser. The API must be running for the lo
 ### First-time flow
 
 1. Start both API and Angular.
-2. Call `POST /api/admin/students` (e.g. via curl or Postman) to create a student account.
-3. Log in at `http://localhost:4200/login` with the student credentials.
-4. Change the temporary password when prompted.
-5. Complete onboarding (4 steps).
-6. Reach the dashboard placeholder.
+2. Log in at `http://localhost:4200/login` with the seeded admin credentials:
+   - Docker Compose defaults: `admin@linguacoach.local` / `Admin1234!`
+   - Production: values supplied through `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`
+3. Open **Students** and select **Create student**. Give the student their email and temporary password.
+4. Log out, then log in with the student credentials.
+5. Change the temporary password when prompted.
+6. Complete onboarding (4 steps).
+7. Reach the dashboard and start the assessment, writing, or speaking flow.
+
+### AI configuration
+
+The current release supports OpenAI only. Set `OPENAI_API_KEY` before using AI-backed features.
+An admin can open **AI Config** to select an allowed OpenAI model independently for assessment,
+writing, and speaking. The model selection is stored in PostgreSQL and takes effect on the next AI call.
+
+Selecting Claude or Gemini is not implemented yet. Adding either requires a provider adapter,
+its API-key configuration, and runtime provider routing before it can be exposed in the admin screen.
 
 ---
 
