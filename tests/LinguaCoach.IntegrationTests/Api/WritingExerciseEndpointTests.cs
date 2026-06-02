@@ -224,11 +224,73 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
     }
 }
 
+public sealed class WritingExerciseRateLimitTests : IClassFixture<WritingExerciseRateLimitTestFactory>
+{
+    private readonly WritingExerciseRateLimitTestFactory _factory;
+
+    public WritingExerciseRateLimitTests(WritingExerciseRateLimitTestFactory factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task Submit_WhenUserExceedsLimit_Returns429WithHelpfulMessage()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"limited_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var first = await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, please review the pending approval." });
+        var second = await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, please review the pending approval again." });
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
+        var body = await second.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("wait", body.GetProperty("error").GetString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Submit_RateLimit_IsPartitionedByUser()
+    {
+        var (firstToken, _) = await _factory.CreateOnboardedStudentAsync($"limited_a_{Guid.NewGuid():N}@test.com");
+        var (secondToken, _) = await _factory.CreateOnboardedStudentAsync($"limited_b_{Guid.NewGuid():N}@test.com");
+
+        var firstClient = ClientWithToken(firstToken);
+        var secondClient = ClientWithToken(secondToken);
+
+        var firstUserResponse = await firstClient.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, please review the pending approval." });
+        var secondUserResponse = await secondClient.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, please review the pending approval." });
+
+        Assert.Equal(HttpStatusCode.OK, firstUserResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondUserResponse.StatusCode);
+    }
+
+    private HttpClient ClientWithToken(string token)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+}
+
+public sealed class WritingExerciseRateLimitTestFactory : WritingExerciseTestFactory
+{
+    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+    {
+        builder.UseSetting("WritingAi:RateLimit:PermitLimit", "1");
+        builder.UseSetting("WritingAi:RateLimit:WindowMinutes", "10");
+        base.ConfigureWebHost(builder);
+    }
+}
+
 /// <summary>
 /// Test factory that replaces the real IAiProvider with a deterministic fake.
 /// No OpenAI API key required. Returns a fixed valid JSON response.
 /// </summary>
-public sealed class WritingExerciseTestFactory : ApiTestFactory
+public class WritingExerciseTestFactory : ApiTestFactory
 {
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {

@@ -1,14 +1,14 @@
+using System.ClientModel;
 using LinguaCoach.Application.Ai;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Chat;
-using System.ClientModel;
 
 namespace LinguaCoach.Infrastructure.Ai;
 
 /// <summary>
-/// OpenAI GPT-4o implementation of IAiProvider.
+/// OpenAI implementation of IAiProvider.
 /// Reads the API key from configuration key "OpenAI:ApiKey" or environment variable OPENAI_API_KEY.
 /// The model defaults to "gpt-4o" but can be overridden via "OpenAI:Model".
 /// </summary>
@@ -19,15 +19,13 @@ public sealed class OpenAiProvider : IAiProvider
     private readonly string _model;
     private readonly ChatClient? _client;
     private readonly ApiKeyCredential? _credential;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<OpenAiProvider> _logger;
-
-    // GPT-4o input/output cost per token (as of 2024, may change — update when repricing occurs).
-    private const decimal InputCostPer1kTokens = 0.005m;
-    private const decimal OutputCostPer1kTokens = 0.015m;
 
     public OpenAiProvider(IConfiguration configuration, ILogger<OpenAiProvider> logger)
     {
         _logger = logger;
+        _configuration = configuration;
 
         _model = configuration["OpenAI:Model"] ?? "gpt-4o";
         var apiKey = configuration["OpenAI:ApiKey"]
@@ -52,7 +50,6 @@ public sealed class OpenAiProvider : IAiProvider
                 new InvalidOperationException("Set OpenAI:ApiKey or the OPENAI_API_KEY environment variable."));
         }
 
-        // Use the model hint from AiProviderConfig if provided; otherwise fall back to the configured default.
         var modelToUse = string.IsNullOrEmpty(request.ModelHint) ? _model : request.ModelHint;
         _logger.LogDebug("Calling OpenAI model {Model} for prompt key {Key}", modelToUse, request.PromptKey);
 
@@ -85,12 +82,23 @@ public sealed class OpenAiProvider : IAiProvider
 
         var inputTokens = completion.Usage.InputTokenCount;
         var outputTokens = completion.Usage.OutputTokenCount;
-        var cost = (inputTokens / 1000m) * InputCostPer1kTokens
-                 + (outputTokens / 1000m) * OutputCostPer1kTokens;
+        var pricing = AiPricingOptions.GetOpenAiPricing(_configuration, modelToUse);
+        var cost = pricing is null
+            ? 0m
+            : AiPricingOptions.EstimateCostUsd(inputTokens, outputTokens, pricing);
 
-        _logger.LogInformation(
-            "OpenAI call complete: key={Key} input={Input} output={Output} cost=${Cost:F6}",
-            request.PromptKey, inputTokens, outputTokens, cost);
+        if (pricing is null)
+        {
+            _logger.LogInformation(
+                "OpenAI call complete: key={Key} input={Input} output={Output}; pricing is not configured for model {Model}, so cost was not estimated.",
+                request.PromptKey, inputTokens, outputTokens, modelToUse);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "OpenAI call complete: key={Key} input={Input} output={Output} cost=${Cost:F6}",
+                request.PromptKey, inputTokens, outputTokens, cost);
+        }
 
         return new AiResponse(responseText, inputTokens, outputTokens, cost, modelToUse);
     }

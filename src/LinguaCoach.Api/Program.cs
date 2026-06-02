@@ -1,5 +1,6 @@
 using System.Text;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using LinguaCoach.Infrastructure;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
@@ -82,6 +83,42 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+var writingAiPermitLimit = builder.Configuration.GetValue<int?>("WritingAi:RateLimit:PermitLimit") ?? 20;
+var writingAiWindowMinutes = builder.Configuration.GetValue<int?>("WritingAi:RateLimit:WindowMinutes") ?? 10;
+if (writingAiPermitLimit < 1)
+    throw new InvalidOperationException("WritingAi:RateLimit:PermitLimit must be at least 1.");
+if (writingAiWindowMinutes < 1)
+    throw new InvalidOperationException("WritingAi:RateLimit:WindowMinutes must be at least 1.");
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("WritingAi", context =>
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.User.FindFirstValue("sub")
+            ?? context.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = writingAiPermitLimit,
+            Window = TimeSpan.FromMinutes(writingAiWindowMinutes),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            error = "Please wait before requesting more writing feedback."
+        }, token);
+    };
+});
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // Allow Angular dev server in Development. In production, the Angular build is
 // served from the same origin (or a proxy), so no CORS needed.
@@ -128,6 +165,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment()) app.UseCors("AngularDev");
+app.UseRouting();
 app.UseAuthentication();
 
 app.Use(async (context, next) =>
@@ -160,6 +198,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();

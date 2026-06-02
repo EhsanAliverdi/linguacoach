@@ -103,3 +103,7 @@ jobs:
             docker compose -f $DEPLOY/docker-compose.prod.yml --env-file $DEPLOY/.env up -d --remove-orphans
             docker image prune -f
           ENDSSH
+
+      - name: Post-deploy canary checks
+        shell: pwsh
+        run: ./scripts/check-production-canary.ps1 -BaseUrl "https://speakpath.app"

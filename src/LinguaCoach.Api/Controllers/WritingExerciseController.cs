@@ -3,6 +3,7 @@ using LinguaCoach.Application.Writing;
 using LinguaCoach.Infrastructure.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LinguaCoach.Api.Controllers;
 
@@ -42,6 +43,7 @@ public sealed class WritingExerciseController : ControllerBase
 
     /// <summary>Submits a draft email for AI feedback. Calls the AI provider.</summary>
     [HttpPost("exercise/submit")]
+    [EnableRateLimiting("WritingAi")]
     public async Task<IActionResult> Submit([FromBody] SubmitDraftRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
