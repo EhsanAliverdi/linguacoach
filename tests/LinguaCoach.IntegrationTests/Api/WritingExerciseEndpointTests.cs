@@ -297,7 +297,7 @@ public sealed class WritingExerciseMissingAiConfigTests : IClassFixture<WritingE
     }
 
     [Fact]
-    public async Task Submit_WhenOpenAiKeyMissing_ReturnsControlledUnavailableResponse()
+    public async Task Submit_WhenConfiguredProviderApiKeyMissing_ReturnsControlledUnavailableResponse()
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"missing_ai_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
@@ -308,7 +308,7 @@ public sealed class WritingExerciseMissingAiConfigTests : IClassFixture<WritingE
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("ai_unavailable", body.GetProperty("code").GetString());
-        Assert.Contains("temporarily unavailable", body.GetProperty("error").GetString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("AI feedback is not configured or is temporarily unavailable.", body.GetProperty("error").GetString());
     }
 
     private HttpClient ClientWithToken(string token)
@@ -323,16 +323,70 @@ public sealed class WritingExerciseMissingAiConfigTestFactory : WritingExerciseT
 {
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
-        builder.UseSetting("OpenAI:ApiKey", "");
+        builder.UseSetting("AI:WritingFeedback:Provider", "Gemini");
+        builder.UseSetting("AI:WritingFeedback:Model", "gemini-2.0-flash");
+        builder.UseSetting("Gemini:ApiKey", "");
         base.ConfigureWebHost(builder);
 
         builder.ConfigureServices(services =>
         {
-            var descriptors = services.Where(d => d.ServiceType == typeof(IAiProvider)).ToList();
+            var descriptors = services.Where(d => d.ServiceType == typeof(IAiProviderResolver)).ToList();
             foreach (var descriptor in descriptors)
                 services.Remove(descriptor);
+            services.AddScoped<IAiProviderResolver, AiProviderResolver>();
+        });
+    }
+}
 
-            services.AddScoped<IAiProvider, OpenAiProvider>();
+public sealed class WritingExerciseMalformedAiResponseTests : IClassFixture<WritingExerciseMalformedAiResponseTestFactory>
+{
+    private readonly WritingExerciseMalformedAiResponseTestFactory _factory;
+
+    public WritingExerciseMalformedAiResponseTests(WritingExerciseMalformedAiResponseTestFactory factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task Submit_WhenProviderReturnsMalformedJson_ReturnsControlledValidationFailure()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"bad_ai_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var response = await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, could you please review the latest revision?" });
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ai_validation_failed", body.GetProperty("code").GetString());
+        Assert.Equal("AI feedback is not configured or is temporarily unavailable.", body.GetProperty("error").GetString());
+    }
+
+    private HttpClient ClientWithToken(string token)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+}
+
+public sealed class WritingExerciseMalformedAiResponseTestFactory : WritingExerciseTestFactory
+{
+    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+    {
+        base.ConfigureWebHost(builder);
+
+        builder.ConfigureServices(services =>
+        {
+            var providerDescriptors = services.Where(d => d.ServiceType == typeof(IAiProvider)).ToList();
+            foreach (var descriptor in providerDescriptors)
+                services.Remove(descriptor);
+            services.AddScoped<IAiProvider, MalformedFakeAiProvider>();
+
+            var resolverDescriptors = services.Where(d => d.ServiceType == typeof(IAiProviderResolver)).ToList();
+            foreach (var resolverDescriptor in resolverDescriptors)
+                services.Remove(resolverDescriptor);
+            services.AddScoped<IAiProviderResolver, FakeAiProviderResolver>();
         });
     }
 }
@@ -352,6 +406,11 @@ public class WritingExerciseTestFactory : ApiTestFactory
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IAiProvider));
             if (descriptor is not null) services.Remove(descriptor);
             services.AddScoped<IAiProvider, FakeAiProvider>();
+
+            var resolverDescriptors = services.Where(d => d.ServiceType == typeof(IAiProviderResolver)).ToList();
+            foreach (var resolverDescriptor in resolverDescriptors)
+                services.Remove(resolverDescriptor);
+            services.AddScoped<IAiProviderResolver, FakeAiProviderResolver>();
         });
     }
 
@@ -468,4 +527,25 @@ internal sealed class FakeAiProvider : IAiProvider
 
         return Task.FromResult(new AiResponse(json, InputTokens: 450, OutputTokens: 180, CostUsd: 0.004m, ModelName: "fake-model"));
     }
+}
+
+internal sealed class MalformedFakeAiProvider : IAiProvider
+{
+    public string ProviderName => "fake-provider";
+
+    public Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
+        => Task.FromResult(new AiResponse("not json", 10, 10, 0, "fake-model", ProviderName));
+}
+
+internal sealed class FakeAiProviderResolver : IAiProviderResolver
+{
+    private readonly IAiProvider _provider;
+
+    public FakeAiProviderResolver(IAiProvider provider)
+    {
+        _provider = provider;
+    }
+
+    public AiProviderSelection ResolveWritingFeedbackProvider()
+        => new(_provider, _provider.ProviderName, "fake-model");
 }

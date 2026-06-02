@@ -32,7 +32,10 @@ services:
       Jwt__Issuer: "linguacoach"
       Jwt__Audience: "linguacoach"
       Jwt__ExpiryHours: "24"
+      AI__WritingFeedback__Provider: "${AI__WritingFeedback__Provider:-}"
+      AI__WritingFeedback__Model: "${AI__WritingFeedback__Model:-}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       # Suppress non-fatal Kerberos library warning from Npgsql on Debian runtime image
       GSSAPI_KRB5_NO_CONFIGURE: "1"
     depends_on:

@@ -27,20 +27,20 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
 
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
-    private readonly IAiProvider _aiProvider;
+    private readonly IAiProviderResolver _aiProviderResolver;
     private readonly ILearningPlanner _learningPlanner;
     private readonly ILogger<WritingExerciseHandler> _logger;
 
     public WritingExerciseHandler(
         LinguaCoachDbContext db,
         IAiContextBuilder contextBuilder,
-        IAiProvider aiProvider,
+        IAiProviderResolver aiProviderResolver,
         ILearningPlanner learningPlanner,
         ILogger<WritingExerciseHandler> logger)
     {
         _db = db;
         _contextBuilder = contextBuilder;
-        _aiProvider = aiProvider;
+        _aiProviderResolver = aiProviderResolver;
         _learningPlanner = learningPlanner;
         _logger = logger;
     }
@@ -119,14 +119,16 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
             ["userDraft"] = command.DraftText,
         };
 
+        var selection = _aiProviderResolver.ResolveWritingFeedbackProvider();
         var aiRequest = await _contextBuilder.BuildAsync(PromptKey, variables, ct);
-        var aiResponse = await _aiProvider.CompleteAsync(aiRequest, ct);
+        aiRequest = aiRequest with { ModelHint = selection.ModelName };
+        var aiResponse = await selection.Provider.CompleteAsync(aiRequest, ct);
 
         // Log usage immediately before any parsing — ensures cost is always tracked.
         var modelName = string.IsNullOrEmpty(aiResponse.ModelName) ? "unknown" : aiResponse.ModelName;
         var usageLog = new AiUsageLog(
             profile.Id,
-            _aiProvider.ProviderName,
+            string.IsNullOrWhiteSpace(aiResponse.ProviderName) ? selection.ProviderName : aiResponse.ProviderName,
             modelName,
             aiResponse.InputTokens,
             aiResponse.OutputTokens,
@@ -285,7 +287,7 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
             // Malformed AI response. The submission is NOT saved in this path — the throw
             // exits HandleAsync before the WritingSubmission save. The AiUsageLog is already
             // saved, so cost is tracked. Raw response is lost; improve in T8 if needed.
-            throw new InvalidOperationException($"AI response was not valid JSON: {ex.Message}", ex);
+            throw new AiResponseValidationException($"AI response was not valid JSON: {ex.Message}", ex);
         }
     }
 }

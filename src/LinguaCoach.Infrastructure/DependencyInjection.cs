@@ -48,8 +48,11 @@ public static class DependencyInjection
         // Reference data
         services.AddScoped<IReferenceQueryService, ReferenceQueryService>();
 
-        // AI — context builder and OpenAI provider
+        // AI — context builder and provider selection
         services.AddScoped<IAiContextBuilder, DbPromptAiContextBuilder>();
+        services.AddHttpClient<GeminiProvider>();
+        services.AddScoped<OpenAiProvider>();
+        services.AddScoped<IAiProviderResolver, AiProviderResolver>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
 
         // CEFR assessment

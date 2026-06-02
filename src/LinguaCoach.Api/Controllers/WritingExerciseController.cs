@@ -13,6 +13,8 @@ namespace LinguaCoach.Api.Controllers;
 [Authorize]
 public sealed class WritingExerciseController : ControllerBase
 {
+    private const string AiUnavailableMessage = "AI feedback is not configured or is temporarily unavailable.";
+
     private readonly IGetWritingExerciseHandler _getExercise;
     private readonly ISubmitWritingDraftHandler _submitDraft;
 
@@ -72,13 +74,27 @@ public sealed class WritingExerciseController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new
             {
                 code = "ai_unavailable",
-                error = "Writing feedback is temporarily unavailable while SpeakPath AI feedback is being configured. Your draft was not submitted. Please try again later.",
+                error = AiUnavailableMessage,
+                detail = ex.Message
+            });
+        }
+        catch (AiResponseValidationException ex)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                code = "ai_validation_failed",
+                error = AiUnavailableMessage,
                 detail = ex.Message
             });
         }
         catch (AiProviderException ex)
         {
-            return StatusCode(502, new { error = "AI service is temporarily unavailable.", detail = ex.Message });
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                code = "ai_unavailable",
+                error = AiUnavailableMessage,
+                detail = ex.Message
+            });
         }
     }
 

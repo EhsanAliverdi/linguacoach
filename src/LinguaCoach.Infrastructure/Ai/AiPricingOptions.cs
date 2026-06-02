@@ -7,10 +7,16 @@ public sealed record AiModelPricing(decimal InputPer1KTokens, decimal OutputPer1
 public static class AiPricingOptions
 {
     public static AiModelPricing? GetOpenAiPricing(IConfiguration configuration, string modelName)
+        => GetProviderPricing(configuration, "OpenAI", modelName);
+
+    public static AiModelPricing? GetGeminiPricing(IConfiguration configuration, string modelName)
+        => GetProviderPricing(configuration, "Gemini", modelName);
+
+    private static AiModelPricing? GetProviderPricing(IConfiguration configuration, string providerName, string modelName)
     {
         if (string.IsNullOrWhiteSpace(modelName)) return null;
 
-        var section = configuration.GetSection($"OpenAI:Pricing:{modelName}");
+        var section = configuration.GetSection($"{providerName}:Pricing:{modelName}");
         var input = section.GetValue<decimal?>("InputPer1KTokens");
         var output = section.GetValue<decimal?>("OutputPer1KTokens");
 

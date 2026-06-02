@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Infrastructure.Writing;
 
 namespace LinguaCoach.UnitTests.Writing;
@@ -63,18 +64,18 @@ public sealed class WritingFeedbackParserTests
     // ── Invalid JSON ──────────────────────────────────────────────────────────
 
     [Fact]
-    public void ParseFeedback_InvalidJson_ThrowsInvalidOperation()
+    public void ParseFeedback_InvalidJson_ThrowsValidationException()
     {
         var act = () => WritingExerciseHandler.ParseFeedback("not json at all");
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<AiResponseValidationException>()
            .WithMessage("*not valid JSON*");
     }
 
     [Fact]
-    public void ParseFeedback_EmptyString_ThrowsInvalidOperation()
+    public void ParseFeedback_EmptyString_ThrowsValidationException()
     {
         var act = () => WritingExerciseHandler.ParseFeedback(string.Empty);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<AiResponseValidationException>();
     }
 
     // ── Score edge cases ──────────────────────────────────────────────────────

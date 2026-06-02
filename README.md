@@ -92,7 +92,10 @@ Expected output: **251 tests, 0 failures** (162 unit + 89 integration).
 | `Jwt__Issuer` | No | `linguacoach` | JWT issuer |
 | `Jwt__Audience` | No | `linguacoach` | JWT audience |
 | `Jwt__ExpiryHours` | No | `24` | JWT access token lifetime in hours |
-| `OPENAI_API_KEY` | Yes for AI features | None | OpenAI API key used by assessment, writing, and speaking AI calls |
+| `AI__WritingFeedback__Provider` | Yes for production writing feedback | Development only: `OpenAI` | `OpenAI` or `Gemini` |
+| `AI__WritingFeedback__Model` | Yes for production writing feedback | Development only: `gpt-4o-mini` | Model for writing feedback, for example `gpt-4o-mini` or `gemini-2.0-flash` |
+| `OPENAI_API_KEY` | Yes when OpenAI is selected | None | OpenAI API key for writing feedback |
+| `GEMINI_API_KEY` | Yes when Gemini is selected | None | Gemini API key for writing feedback |
 | `ASPNETCORE_ENVIRONMENT` | No | `Production` in Docker, `Development` locally | Controls OpenAPI exposure and JWT placeholder guard |
 
 > **Security:** The `appsettings.json` JWT key (`CHANGE_ME_IN_PRODUCTION_USE_A_SECRET_AT_LEAST_32_CHARS`) is valid only in `Development`. The API refuses to start with that placeholder in any other environment.
@@ -167,12 +170,44 @@ Open `http://localhost:4200` in your browser. The API must be running for the lo
 
 ### AI configuration
 
-The current release supports OpenAI only. Set `OPENAI_API_KEY` before using AI-backed features.
-An admin can open **AI Config** to select an allowed OpenAI model independently for assessment,
-writing, and speaking. The model selection is stored in PostgreSQL and takes effect on the next AI call.
+Writing feedback can use OpenAI or Gemini. Configure the provider and model through environment
+variables or .NET configuration. API keys must come from environment variables or secrets; they are
+not stored in PostgreSQL.
 
-Selecting Claude or Gemini is not implemented yet. Adding either requires a provider adapter,
-its API-key configuration, and runtime provider routing before it can be exposed in the admin screen.
+OpenAI local example:
+
+```bash
+export AI__WritingFeedback__Provider="OpenAI"
+export AI__WritingFeedback__Model="gpt-4o-mini"
+export OPENAI_API_KEY="your-openai-key"
+```
+
+Gemini local example:
+
+```bash
+export AI__WritingFeedback__Provider="Gemini"
+export AI__WritingFeedback__Model="gemini-2.0-flash"
+export GEMINI_API_KEY="your-gemini-key"
+```
+
+In Development only, missing provider/model defaults to `OpenAI` / `gpt-4o-mini`. In Production,
+missing provider, model, or the selected provider API key returns a controlled AI-unavailable response
+instead of a generic server error.
+
+Production uses the same secret names in `/opt/linguacoach/.env` or a secrets manager:
+
+```text
+AI__WritingFeedback__Provider=Gemini
+AI__WritingFeedback__Model=gemini-2.0-flash
+GEMINI_API_KEY=your-gemini-key
+OPENAI_API_KEY=your-openai-key-if-using-openai
+```
+
+The GitHub deployment currently reads production secrets from the VPS `.env` file through
+`docker-compose.prod.yml`. Do not commit API keys.
+
+The existing admin AI Config screen is not the source of truth for the MVP writing feedback provider.
+Full provider management UI is intentionally deferred.
 
 ---
 

@@ -140,12 +140,19 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-var openAiApiKey = app.Configuration["OpenAI:ApiKey"]
-    ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-if (string.IsNullOrWhiteSpace(openAiApiKey))
+var writingFeedbackProvider = app.Configuration["AI:WritingFeedback:Provider"];
+var writingFeedbackModel = app.Configuration["AI:WritingFeedback:Model"];
+var openAiApiKey = app.Configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+var geminiApiKey = app.Configuration["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+if (string.IsNullOrWhiteSpace(writingFeedbackProvider) || string.IsNullOrWhiteSpace(writingFeedbackModel))
 {
     app.Logger.LogWarning(
-        "OpenAI API key is not configured. AI-backed features will be unavailable until OPENAI_API_KEY is set.");
+        "AI writing feedback provider/model is not configured. Set AI__WritingFeedback__Provider and AI__WritingFeedback__Model for production writing feedback.");
+}
+if (string.IsNullOrWhiteSpace(openAiApiKey) && string.IsNullOrWhiteSpace(geminiApiKey))
+{
+    app.Logger.LogWarning(
+        "No AI provider API key is configured. Set OPENAI_API_KEY or GEMINI_API_KEY for AI-backed features.");
 }
 
 // ── Run migrations and seed on startup (skipped in Testing environment) ─────

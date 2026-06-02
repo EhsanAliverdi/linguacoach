@@ -38,7 +38,7 @@ describe('WritingExerciseComponent', () => {
   }
 
   it('displays controlled AI unavailable message from the API', fakeAsync(() => {
-    const message = 'Writing feedback is temporarily unavailable while SpeakPath AI feedback is being configured.';
+    const message = 'AI feedback is not configured or is temporarily unavailable.';
     writingService.submitDraft.and.returnValue(throwError(() => ({
       error: {
         code: 'ai_unavailable',

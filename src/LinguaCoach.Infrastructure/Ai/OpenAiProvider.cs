@@ -100,7 +100,7 @@ public sealed class OpenAiProvider : IAiProvider
                 request.PromptKey, inputTokens, outputTokens, cost);
         }
 
-        return new AiResponse(responseText, inputTokens, outputTokens, cost, modelToUse);
+        return new AiResponse(responseText, inputTokens, outputTokens, cost, modelToUse, ProviderName);
     }
 }
 

@@ -29,4 +29,7 @@ public sealed record AiResponse(
     int InputTokens,
     int OutputTokens,
     decimal CostUsd,
-    string ModelName = "");
+    string ModelName = "",
+    string ProviderName = "",
+    string Status = "succeeded",
+    string? Error = null);
