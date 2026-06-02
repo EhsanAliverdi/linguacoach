@@ -62,6 +62,10 @@ public static class DependencyInjection
         services.AddScoped<ISpeechToTextService, NoOpSpeechToTextService>();
         services.AddScoped<ITextToSpeechService, NoOpTextToSpeechService>();
 
+        // Speaking sessions
+        services.AddScoped<ICreateSpeakingSessionHandler, SpeakingSessionHandler>();
+        services.AddScoped<ISubmitSpeakingTurnHandler, SpeakingSessionHandler>();
+
         return services;
     }
 }

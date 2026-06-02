@@ -53,5 +53,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/assessment/cefr-assessment/cefr-assessment.component').then(m => m.CefrAssessmentComponent),
   },
 
+  {
+    path: 'speaking',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/speaking/speaking-session/speaking-session.component').then(m => m.SpeakingSessionComponent),
+  },
+
   { path: '**', redirectTo: 'login' },
 ];
