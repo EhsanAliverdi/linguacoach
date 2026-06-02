@@ -33,6 +33,10 @@ public static class DependencyInjection
 
         // Admin
         services.AddScoped<ICreateStudentHandler, CreateStudentHandler>();
+        services.AddScoped<IAdminStudentQuery, AdminHandler>();
+        services.AddScoped<IAdminPromptHandler, AdminHandler>();
+        services.AddScoped<IAdminCurriculumHandler, AdminHandler>();
+        services.AddScoped<IAdminAiConfigHandler, AdminHandler>();
 
         // Onboarding
         services.AddScoped<IOnboardingHandler, OnboardingHandler>();

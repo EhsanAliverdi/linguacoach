@@ -41,10 +41,25 @@ public sealed class DbPromptAiContextBuilder : IAiContextBuilder
                 throw new TokenBudgetExceededException(promptKey, estimated, template.MaxInputTokens.Value);
         }
 
+        // Look up configured model for this feature (strip version suffix).
+        var featureKey = DeriveFeatureKey(promptKey);
+        var providerConfig = await _db.AiProviderConfigs
+            .FirstOrDefaultAsync(c => c.FeatureKey == featureKey, ct);
+
         return new AiRequest(
             PromptKey: promptKey,
             RenderedPrompt: rendered,
-            MaxOutputTokens: template.MaxOutputTokens ?? 800);
+            MaxOutputTokens: template.MaxOutputTokens ?? 800,
+            ModelHint: providerConfig?.ModelName ?? string.Empty);
+    }
+
+    private static string DeriveFeatureKey(string promptKey)
+    {
+        // "writing.exercise.v1" → "writing.exercise", "speaking.turn.v1" → "speaking.turn"
+        var parts = promptKey.Split('.');
+        return parts.Length >= 3 && parts[^1].StartsWith('v') && int.TryParse(parts[^1][1..], out _)
+            ? string.Join('.', parts[..^1])
+            : promptKey;
     }
 
     private static string Render(string template, IReadOnlyDictionary<string, string> variables)

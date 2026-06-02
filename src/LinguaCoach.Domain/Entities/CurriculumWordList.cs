@@ -46,4 +46,15 @@ public sealed class CurriculumWordList : BaseEntity
         Priority = priority;
         Tags = tags?.Trim() ?? string.Empty;
     }
+
+    public void UpdateDetails(string definition, string exampleSentence, int priority, string tags)
+    {
+        if (string.IsNullOrWhiteSpace(definition)) throw new ArgumentException("Definition is required.", nameof(definition));
+        if (priority < 0) throw new ArgumentOutOfRangeException(nameof(priority), "Priority must be >= 0.");
+
+        Definition = definition.Trim();
+        ExampleSentence = exampleSentence?.Trim() ?? string.Empty;
+        Priority = priority;
+        Tags = tags?.Trim() ?? string.Empty;
+    }
 }

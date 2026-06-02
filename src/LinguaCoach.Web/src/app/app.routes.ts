@@ -18,7 +18,15 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [adminGuard],
-    loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent),
+    loadComponent: () => import('./features/admin/admin-shell/admin-shell.component').then(m => m.AdminShellComponent),
+    children: [
+      { path: '', redirectTo: 'students', pathMatch: 'full' },
+      { path: 'students', loadComponent: () => import('./features/admin/admin-students/admin-students.component').then(m => m.AdminStudentsComponent) },
+      { path: 'prompts', loadComponent: () => import('./features/admin/admin-prompts/admin-prompts.component').then(m => m.AdminPromptsComponent) },
+      { path: 'careers', loadComponent: () => import('./features/admin/admin-careers/admin-careers.component').then(m => m.AdminCareersComponent) },
+      { path: 'ai-config', loadComponent: () => import('./features/admin/admin-ai-config/admin-ai-config.component').then(m => m.AdminAiConfigComponent) },
+      { path: 'create-student', loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent) },
+    ],
   },
 
   {

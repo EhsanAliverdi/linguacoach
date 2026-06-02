@@ -18,6 +18,7 @@ public sealed class OpenAiProvider : IAiProvider
 
     private readonly string _model;
     private readonly ChatClient _client;
+    private readonly ApiKeyCredential _credential;
     private readonly ILogger<OpenAiProvider> _logger;
 
     // GPT-4o input/output cost per token (as of 2024, may change — update when repricing occurs).
@@ -35,12 +36,15 @@ public sealed class OpenAiProvider : IAiProvider
                 "or the OPENAI_API_KEY environment variable.");
 
         _model = configuration["OpenAI:Model"] ?? "gpt-4o";
-        _client = new ChatClient(_model, new ApiKeyCredential(apiKey));
+        _credential = new ApiKeyCredential(apiKey);
+        _client = new ChatClient(_model, _credential);
     }
 
     public async Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
     {
-        _logger.LogDebug("Calling OpenAI model {Model} for prompt key {Key}", _model, request.PromptKey);
+        // Use the model hint from AiProviderConfig if provided; otherwise fall back to the configured default.
+        var modelToUse = string.IsNullOrEmpty(request.ModelHint) ? _model : request.ModelHint;
+        _logger.LogDebug("Calling OpenAI model {Model} for prompt key {Key}", modelToUse, request.PromptKey);
 
         var options = new ChatCompletionOptions
         {
@@ -55,7 +59,10 @@ public sealed class OpenAiProvider : IAiProvider
         ClientResult<ChatCompletion> result;
         try
         {
-            result = await _client.CompleteChatAsync(messages, options, ct);
+            var chatClient = modelToUse == _model
+                ? _client
+                : new ChatClient(modelToUse, _credential);
+            result = await chatClient.CompleteChatAsync(messages, options, ct);
         }
         catch (Exception ex)
         {
@@ -75,7 +82,7 @@ public sealed class OpenAiProvider : IAiProvider
             "OpenAI call complete: key={Key} input={Input} output={Output} cost=${Cost:F6}",
             request.PromptKey, inputTokens, outputTokens, cost);
 
-        return new AiResponse(responseText, inputTokens, outputTokens, cost, _model);
+        return new AiResponse(responseText, inputTokens, outputTokens, cost, modelToUse);
     }
 }
 

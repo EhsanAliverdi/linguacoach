@@ -1,0 +1,177 @@
+using LinguaCoach.Application.Admin;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Persistence;
+using LinguaCoach.Persistence.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace LinguaCoach.Infrastructure.Admin;
+
+public sealed class AdminHandler :
+    IAdminStudentQuery,
+    IAdminPromptHandler,
+    IAdminCurriculumHandler,
+    IAdminAiConfigHandler
+{
+    private readonly LinguaCoachDbContext _db;
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public AdminHandler(LinguaCoachDbContext db, UserManager<ApplicationUser> userManager)
+    {
+        _db = db;
+        _userManager = userManager;
+    }
+
+    // ── Students ──────────────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(CancellationToken ct = default)
+    {
+        var profiles = await _db.StudentProfiles
+            .OrderBy(p => p.CreatedAt)
+            .ToListAsync(ct);
+
+        // Batch-load all Identity users matching the student profile user IDs.
+        var userIds = profiles.Select(p => p.UserId).ToList();
+        var users = await _db.Users
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, ct);
+
+        return profiles
+            .Where(p => users.ContainsKey(p.UserId))
+            .Select(p => new StudentListItem(
+                p.UserId,
+                users[p.UserId].Email ?? string.Empty,
+                p.OnboardingStatus.ToString(),
+                p.CefrLevel,
+                p.CreatedAt))
+            .ToList();
+    }
+
+    // ── Prompt templates ──────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<PromptTemplateItem>> ListPromptsAsync(CancellationToken ct = default)
+    {
+        var prompts = await _db.AiPrompts
+            .OrderBy(p => p.Key).ThenByDescending(p => p.Version)
+            .ToListAsync(ct);
+
+        return prompts.Select(p => new PromptTemplateItem(
+            p.Id, p.Key, p.Version, p.IsActive, p.MaxInputTokens, p.MaxOutputTokens))
+            .ToList();
+    }
+
+    public async Task<PromptTemplateDetail> GetPromptAsync(Guid promptId, CancellationToken ct = default)
+    {
+        var p = await _db.AiPrompts.FirstOrDefaultAsync(x => x.Id == promptId, ct)
+            ?? throw new InvalidOperationException("Prompt template not found.");
+        return new PromptTemplateDetail(p.Id, p.Key, p.Content, p.Version, p.IsActive, p.MaxInputTokens, p.MaxOutputTokens);
+    }
+
+    public async Task<PromptTemplateDetail> CreateVersionAsync(CreatePromptVersionCommand command, CancellationToken ct = default)
+    {
+        var latestVersion = await _db.AiPrompts
+            .Where(p => p.Key == command.Key)
+            .MaxAsync(p => (int?)p.Version, ct) ?? 0;
+
+        var newPrompt = new AiPrompt(
+            command.Key,
+            command.Content,
+            version: latestVersion + 1,
+            maxInputTokens: command.MaxInputTokens,
+            maxOutputTokens: command.MaxOutputTokens);
+
+        _db.AiPrompts.Add(newPrompt);
+        await _db.SaveChangesAsync(ct);
+
+        return new PromptTemplateDetail(
+            newPrompt.Id, newPrompt.Key, newPrompt.Content,
+            newPrompt.Version, newPrompt.IsActive,
+            newPrompt.MaxInputTokens, newPrompt.MaxOutputTokens);
+    }
+
+    public async Task ActivateAsync(ActivatePromptCommand command, CancellationToken ct = default)
+    {
+        var prompt = await _db.AiPrompts.FirstOrDefaultAsync(p => p.Id == command.PromptId, ct)
+            ?? throw new InvalidOperationException("Prompt template not found.");
+        prompt.Activate();
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task DeactivateAsync(DeactivatePromptCommand command, CancellationToken ct = default)
+    {
+        var prompt = await _db.AiPrompts.FirstOrDefaultAsync(p => p.Id == command.PromptId, ct)
+            ?? throw new InvalidOperationException("Prompt template not found.");
+        prompt.Deactivate();
+        await _db.SaveChangesAsync(ct);
+    }
+
+    // ── Curriculum ────────────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<CareerProfileItem>> ListCareerProfilesAsync(CancellationToken ct = default)
+    {
+        var profiles = await _db.CareerProfiles.OrderBy(c => c.Name).ToListAsync(ct);
+        return profiles.Select(c => new CareerProfileItem(c.Id, c.Name)).ToList();
+    }
+
+    public async Task<IReadOnlyList<CurriculumWordItem>> ListWordsAsync(
+        Guid careerProfileId, Guid languagePairId, CancellationToken ct = default)
+    {
+        var words = await _db.CurriculumWordLists
+            .Where(w => w.CareerProfileId == careerProfileId && w.LanguagePairId == languagePairId)
+            .OrderBy(w => w.Priority)
+            .ToListAsync(ct);
+
+        return words.Select(w => new CurriculumWordItem(
+            w.Id, w.Word, w.Definition, w.ExampleSentence, w.Priority, w.Tags)).ToList();
+    }
+
+    public async Task<CurriculumWordItem> AddWordAsync(AddCurriculumWordCommand command, CancellationToken ct = default)
+    {
+        var word = new CurriculumWordList(
+            command.CareerProfileId,
+            command.LanguagePairId,
+            command.Word,
+            command.Definition,
+            command.ExampleSentence,
+            command.Priority,
+            command.Tags);
+
+        _db.CurriculumWordLists.Add(word);
+        await _db.SaveChangesAsync(ct);
+
+        return new CurriculumWordItem(word.Id, word.Word, word.Definition, word.ExampleSentence, word.Priority, word.Tags);
+    }
+
+    public async Task<CurriculumWordItem> UpdateWordAsync(UpdateCurriculumWordCommand command, CancellationToken ct = default)
+    {
+        var word = await _db.CurriculumWordLists.FirstOrDefaultAsync(w => w.Id == command.WordId, ct)
+            ?? throw new InvalidOperationException("Curriculum word not found.");
+
+        // CurriculumWordList is an append-only entity; use a new instance approach
+        // by updating via EF shadow setters isn't available — call an Update method.
+        // We'll add an Update method to the domain entity.
+        word.UpdateDetails(command.Definition, command.ExampleSentence, command.Priority, command.Tags);
+        await _db.SaveChangesAsync(ct);
+
+        return new CurriculumWordItem(word.Id, word.Word, word.Definition, word.ExampleSentence, word.Priority, word.Tags);
+    }
+
+    // ── AI provider config ────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default)
+    {
+        var configs = await _db.AiProviderConfigs.OrderBy(c => c.FeatureKey).ToListAsync(ct);
+        return configs.Select(c => new AiProviderConfigItem(c.Id, c.FeatureKey, c.ProviderName, c.ModelName)).ToList();
+    }
+
+    public async Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default)
+    {
+        var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Id == command.ConfigId, ct)
+            ?? throw new InvalidOperationException("AI provider config not found.");
+
+        config.Update(command.ProviderName, command.ModelName);
+        await _db.SaveChangesAsync(ct);
+
+        return new AiProviderConfigItem(config.Id, config.FeatureKey, config.ProviderName, config.ModelName);
+    }
+}
