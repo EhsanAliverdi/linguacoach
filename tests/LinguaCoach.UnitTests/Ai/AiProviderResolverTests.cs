@@ -53,7 +53,7 @@ public sealed class AiProviderResolverTests
         var act = () => resolver.ResolveWritingFeedbackProvider();
 
         act.Should().Throw<AiConfigurationUnavailableException>()
-            .WithMessage("*AI:WritingFeedback:Provider*");
+            .WithMessage("*provider and model must be configured*");
     }
 
     [Fact]
@@ -85,8 +85,10 @@ public sealed class AiProviderResolverTests
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddSingleton(NullLogger<OpenAiProvider>.Instance);
         services.AddSingleton(NullLogger<GeminiProvider>.Instance);
+        services.AddSingleton(NullLogger<AnthropicProvider>.Instance);
         services.AddSingleton<OpenAiProvider>();
         services.AddHttpClient<GeminiProvider>();
+        services.AddSingleton<AnthropicProvider>();
         var provider = services.BuildServiceProvider();
 
         return new AiProviderResolver(

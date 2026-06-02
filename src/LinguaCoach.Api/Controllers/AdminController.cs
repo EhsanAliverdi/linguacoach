@@ -154,6 +154,18 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    [HttpPut("ai-config/{configId:guid}/api-key")]
+    public async Task<IActionResult> UpdateAiConfigApiKey(Guid configId, [FromBody] UpdateAiApiKeyRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.UpdateApiKeyAsync(
+                new UpdateAiProviderApiKeyCommand(configId, request.ApiKey), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+    }
 }
 
 public sealed record CreateStudentRequest(string Email, string TemporaryPassword);
@@ -161,3 +173,5 @@ public sealed record CreatePromptVersionRequest(string Key, string Content, int?
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateAiConfigRequest(string ProviderName, string ModelName);
+// ApiKey null/empty means "clear stored key — fall back to environment variable".
+public sealed record UpdateAiApiKeyRequest(string? ApiKey);

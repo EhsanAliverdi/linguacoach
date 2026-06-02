@@ -1,4 +1,6 @@
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,62 +34,80 @@ public sealed class AiProviderResolver : IAiProviderResolver
 
     public AiProviderSelection ResolveWritingFeedbackProvider()
     {
-        var providerName = _configuration[WritingProviderKey];
-        var modelName = _configuration[WritingModelKey];
+        // DB config takes precedence over appsettings/env for provider+model selection.
+        var (providerName, modelName, apiKeyFromDb) = ResolveFromDb("writing.exercise");
 
         if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
         {
-            if (_environment.IsDevelopment())
+            providerName = _configuration[WritingProviderKey];
+            modelName = _configuration[WritingModelKey];
+        }
+
+        if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
+        {
+            if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
             {
                 providerName = string.IsNullOrWhiteSpace(providerName) ? DefaultDevelopmentProvider : providerName;
                 modelName = string.IsNullOrWhiteSpace(modelName) ? DefaultDevelopmentModel : modelName;
                 _logger.LogWarning(
-                    "AI writing feedback provider/model not fully configured. Using Development default {Provider}/{Model}.",
-                    providerName,
-                    modelName);
+                    "AI writing feedback provider/model not configured. Using default {Provider}/{Model}.",
+                    providerName, modelName);
             }
             else
             {
                 throw new AiConfigurationUnavailableException(
-                    "AI writing feedback provider and model must be configured with AI:WritingFeedback:Provider and AI:WritingFeedback:Model.");
+                    "AI writing feedback provider and model must be configured.");
             }
         }
 
-        var provider = providerName.Trim();
-        var model = modelName.Trim();
+        return Resolve(providerName.Trim(), modelName.Trim(), apiKeyFromDb);
+    }
 
+    private (string? Provider, string? Model, string? ApiKey) ResolveFromDb(string featureKey)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var config = db.AiProviderConfigs
+                .AsNoTracking()
+                .FirstOrDefault(c => c.FeatureKey == featureKey);
+            return config is null
+                ? (null, null, null)
+                : (config.ProviderName, config.ModelName, config.ApiKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read AI provider config from DB for feature {Feature}; falling back to appsettings.", featureKey);
+            return (null, null, null);
+        }
+    }
+
+    private AiProviderSelection Resolve(string provider, string model, string? apiKeyOverride)
+    {
         if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
         {
-            RequireApiKey("OPENAI_API_KEY", "OpenAI:ApiKey", "OpenAI");
-            return new AiProviderSelection(
-                _serviceProvider.GetRequiredService<OpenAiProvider>(),
-                "openai",
-                model);
+            var key = apiKeyOverride ?? GetEnvApiKey("OPENAI_API_KEY", "OpenAI:ApiKey", "OpenAI");
+            return new AiProviderSelection(_serviceProvider.GetRequiredService<OpenAiProvider>(), "openai", model, key);
         }
 
         if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
         {
-            RequireApiKey("GEMINI_API_KEY", "Gemini:ApiKey", "Gemini");
-            return new AiProviderSelection(
-                _serviceProvider.GetRequiredService<GeminiProvider>(),
-                "gemini",
-                model);
+            var key = apiKeyOverride ?? GetEnvApiKey("GEMINI_API_KEY", "Gemini:ApiKey", "Gemini");
+            return new AiProviderSelection(_serviceProvider.GetRequiredService<GeminiProvider>(), "gemini", model, key);
         }
 
         if (provider.Equals("Anthropic", StringComparison.OrdinalIgnoreCase))
         {
-            RequireApiKey("ANTHROPIC_API_KEY", "Anthropic:ApiKey", "Anthropic");
-            return new AiProviderSelection(
-                _serviceProvider.GetRequiredService<AnthropicProvider>(),
-                "anthropic",
-                model);
+            var key = apiKeyOverride ?? GetEnvApiKey("ANTHROPIC_API_KEY", "Anthropic:ApiKey", "Anthropic");
+            return new AiProviderSelection(_serviceProvider.GetRequiredService<AnthropicProvider>(), "anthropic", model, key);
         }
 
         throw new AiConfigurationUnavailableException(
-            $"Unsupported AI writing feedback provider '{provider}'. Allowed providers: OpenAI, Gemini, Anthropic.");
+            $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic.");
     }
 
-    private void RequireApiKey(string environmentVariable, string configurationKey, string providerName)
+    private string GetEnvApiKey(string environmentVariable, string configurationKey, string providerName)
     {
         var apiKey = _configuration[configurationKey]
             ?? Environment.GetEnvironmentVariable(environmentVariable);
@@ -95,7 +115,9 @@ public sealed class AiProviderResolver : IAiProviderResolver
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             throw new AiConfigurationUnavailableException(
-                $"{providerName} API key is not configured. Set {environmentVariable}.");
+                $"{providerName} API key is not configured. Set {environmentVariable} or store it via the admin API.");
         }
+
+        return apiKey;
     }
 }

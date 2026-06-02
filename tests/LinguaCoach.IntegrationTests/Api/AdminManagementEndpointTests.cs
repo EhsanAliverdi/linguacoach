@@ -281,7 +281,23 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
-    public async Task UpdateAiConfig_WithUnsupportedProvider_Returns400()
+    public async Task UpdateAiConfig_WithUnknownProvider_Returns400()
+    {
+        var configId = await SeedAiConfigAsync();
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.PutAsJsonAsync($"/api/admin/ai-config/{configId}", new
+        {
+            providerName = "unknown-provider",
+            modelName = "gpt-4o-mini"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateAiConfig_WithWrongModelForProvider_Returns400()
     {
         var configId = await SeedAiConfigAsync();
         var token = await _factory.CreateAdminAndGetTokenAsync();
@@ -290,7 +306,7 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         var response = await client.PutAsJsonAsync($"/api/admin/ai-config/{configId}", new
         {
             providerName = "anthropic",
-            modelName = "gpt-4o-mini"
+            modelName = "gpt-4o-mini"   // OpenAI model, wrong provider
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

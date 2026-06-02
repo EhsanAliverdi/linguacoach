@@ -161,7 +161,7 @@ public sealed class AdminHandler :
     public async Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default)
     {
         var configs = await _db.AiProviderConfigs.OrderBy(c => c.FeatureKey).ToListAsync(ct);
-        return configs.Select(c => new AiProviderConfigItem(c.Id, c.FeatureKey, c.ProviderName, c.ModelName)).ToList();
+        return configs.Select(ToItem).ToList();
     }
 
     public Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default)
@@ -181,6 +181,20 @@ public sealed class AdminHandler :
         config.Update(command.ProviderName, command.ModelName);
         await _db.SaveChangesAsync(ct);
 
-        return new AiProviderConfigItem(config.Id, config.FeatureKey, config.ProviderName, config.ModelName);
+        return ToItem(config);
     }
+
+    public async Task<AiProviderConfigItem> UpdateApiKeyAsync(UpdateAiProviderApiKeyCommand command, CancellationToken ct = default)
+    {
+        var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Id == command.ConfigId, ct)
+            ?? throw new InvalidOperationException("AI provider config not found.");
+
+        config.UpdateApiKey(command.ApiKey);
+        await _db.SaveChangesAsync(ct);
+
+        return ToItem(config);
+    }
+
+    private static AiProviderConfigItem ToItem(AiProviderConfig c)
+        => new(c.Id, c.FeatureKey, c.ProviderName, c.ModelName, c.ApiKey is not null);
 }

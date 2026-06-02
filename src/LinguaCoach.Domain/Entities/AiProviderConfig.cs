@@ -9,14 +9,12 @@ namespace LinguaCoach.Domain.Entities;
 /// </summary>
 public sealed class AiProviderConfig : BaseEntity
 {
-    // Feature key, e.g. "writing.exercise", "cefr.assessment", "speaking.turn".
     public string FeatureKey { get; private set; }
-
-    // Provider name, e.g. "openai", "anthropic".
     public string ProviderName { get; private set; }
-
-    // Model identifier, e.g. "gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022".
     public string ModelName { get; private set; }
+
+    // Stored encrypted in the DB. Null means "use the environment variable".
+    public string? ApiKey { get; private set; }
 
     public DateTime UpdatedAt { get; private set; }
 
@@ -43,6 +41,7 @@ public sealed class AiProviderConfig : BaseEntity
         },
         ["gemini"] = new(StringComparer.OrdinalIgnoreCase)
         {
+            "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite",
             "gemini-2.0-flash", "gemini-2.0-flash-lite",
             "gemini-1.5-pro", "gemini-1.5-flash",
         },
@@ -78,6 +77,13 @@ public sealed class AiProviderConfig : BaseEntity
 
         ProviderName = normalisedProvider;
         ModelName = normalised;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateApiKey(string? apiKey)
+    {
+        // Null or empty string clears the stored key (falls back to env var).
+        ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
 }

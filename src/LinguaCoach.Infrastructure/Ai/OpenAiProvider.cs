@@ -43,11 +43,21 @@ public sealed class OpenAiProvider : IAiProvider
 
     public async Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
     {
-        if (_client is null || _credential is null)
+        // ApiKeyOverride (from DB) takes precedence over the constructor-time key.
+        ApiKeyCredential credential;
+        if (!string.IsNullOrWhiteSpace(request.ApiKeyOverride))
+        {
+            credential = new ApiKeyCredential(request.ApiKeyOverride);
+        }
+        else if (_credential is not null)
+        {
+            credential = _credential;
+        }
+        else
         {
             throw new AiConfigurationUnavailableException(
                 "OpenAI API key is not configured.",
-                new InvalidOperationException("Set OpenAI:ApiKey or the OPENAI_API_KEY environment variable."));
+                new InvalidOperationException("Set OpenAI:ApiKey, OPENAI_API_KEY, or store it via admin."));
         }
 
         var modelToUse = string.IsNullOrEmpty(request.ModelHint) ? _model : request.ModelHint;
@@ -66,9 +76,7 @@ public sealed class OpenAiProvider : IAiProvider
         ClientResult<ChatCompletion> result;
         try
         {
-            var chatClient = modelToUse == _model
-                ? _client
-                : new ChatClient(modelToUse, _credential);
+            var chatClient = new ChatClient(modelToUse, credential);
             result = await chatClient.CompleteChatAsync(messages, options, ct);
         }
         catch (Exception ex)

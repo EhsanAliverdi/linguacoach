@@ -22,13 +22,15 @@ public sealed class AnthropicProvider : IAiProvider
 
     public async Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
     {
-        var apiKey = _configuration["Anthropic:ApiKey"]
+        // ApiKeyOverride (from DB) takes precedence over env/config.
+        var apiKey = request.ApiKeyOverride
+            ?? _configuration["Anthropic:ApiKey"]
             ?? Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             throw new AiConfigurationUnavailableException(
                 "Anthropic API key is not configured.",
-                new InvalidOperationException("Set Anthropic:ApiKey or the ANTHROPIC_API_KEY environment variable."));
+                new InvalidOperationException("Set Anthropic:ApiKey, ANTHROPIC_API_KEY, or store it via admin."));
         }
 
         var modelToUse = string.IsNullOrWhiteSpace(request.ModelHint) ? DefaultModel : request.ModelHint;

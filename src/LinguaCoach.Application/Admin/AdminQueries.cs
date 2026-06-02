@@ -93,7 +93,8 @@ public sealed record AiProviderConfigItem(
     Guid Id,
     string FeatureKey,
     string ProviderName,
-    string ModelName);
+    string ModelName,
+    bool HasStoredApiKey);
 
 public sealed record AiProviderCatalogItem(
     string ProviderName,
@@ -104,9 +105,15 @@ public sealed record UpdateAiProviderConfigCommand(
     string ProviderName,
     string ModelName);
 
+// ApiKey is nullable — null/empty clears the stored key (falls back to env var).
+public sealed record UpdateAiProviderApiKeyCommand(
+    Guid ConfigId,
+    string? ApiKey);
+
 public interface IAdminAiConfigHandler
 {
     Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default);
     Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
+    Task<AiProviderConfigItem> UpdateApiKeyAsync(UpdateAiProviderApiKeyCommand command, CancellationToken ct = default);
 }

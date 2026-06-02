@@ -59,4 +59,7 @@ export class AdminApiService {
   updateAiConfig(id: string, providerName: string, modelName: string): Observable<AiProviderConfigItem> {
     return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}`, { providerName, modelName });
   }
+  updateAiApiKey(id: string, apiKey: string | null): Observable<AiProviderConfigItem> {
+    return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}/api-key`, { apiKey });
+  }
 }

@@ -38,6 +38,7 @@ export interface AiProviderConfigItem {
   featureKey: string;
   providerName: string;
   modelName: string;
+  hasStoredApiKey: boolean;
 }
 
 export interface AiProviderCatalogItem {

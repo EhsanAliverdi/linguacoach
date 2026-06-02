@@ -121,7 +121,7 @@ public sealed class WritingExerciseHandler : IGetWritingExerciseHandler, ISubmit
 
         var selection = _aiProviderResolver.ResolveWritingFeedbackProvider();
         var aiRequest = await _contextBuilder.BuildAsync(PromptKey, variables, ct);
-        aiRequest = aiRequest with { ModelHint = selection.ModelName };
+        aiRequest = aiRequest with { ModelHint = selection.ModelName, ApiKeyOverride = selection.ApiKeyOverride };
         var aiResponse = await selection.Provider.CompleteAsync(aiRequest, ct);
 
         // Log usage immediately before any parsing — ensures cost is always tracked.
