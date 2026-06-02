@@ -28,7 +28,7 @@ services:
       - "traefik.http.routers.linguacoach-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.linguacoach-api.entrypoints=websecure"
       - "traefik.http.routers.linguacoach-api.tls.certresolver=le"
-      - "traefik.http.routers.linguacoach-api.priority=10"
+      - "traefik.http.routers.linguacoach-api.priority=100"
       - "traefik.http.services.linguacoach-api.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
