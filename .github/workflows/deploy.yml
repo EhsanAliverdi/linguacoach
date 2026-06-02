@@ -102,11 +102,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd ${{ secrets.VPS_DEPLOY_PATH }}
+            DEPLOY=/opt/linguacoach
 
             docker pull ghcr.io/ehsanaliverdi/linguacoach-api:latest
             docker pull ghcr.io/ehsanaliverdi/linguacoach-web:latest
 
             # Migrations run automatically on API startup via db.Database.Migrate()
-            docker compose -f docker-compose.prod.yml --env-file .env up -d --remove-orphans
+            docker compose -f $DEPLOY/docker-compose.prod.yml --env-file $DEPLOY/.env up -d --remove-orphans
             docker image prune -f
