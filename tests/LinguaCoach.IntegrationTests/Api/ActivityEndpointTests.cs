@@ -39,12 +39,10 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
         Assert.False(string.IsNullOrEmpty(activityId));
         Assert.False(string.IsNullOrEmpty(body.GetProperty("title").GetString()));
 
-        // Source must be SystemFallback (2 = SystemFallback in ActivitySource enum)
+        // Source must serialize as camelCase string "systemFallback"
         var sourceEl = body.GetProperty("source");
-        if (sourceEl.ValueKind == JsonValueKind.Number)
-            Assert.Equal(2, sourceEl.GetInt32()); // ActivitySource.SystemFallback = 2
-        else
-            Assert.Contains("systemFallback", sourceEl.GetString() ?? "", StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(JsonValueKind.String, sourceEl.ValueKind);
+        Assert.Equal("systemFallback", sourceEl.GetString());
     }
 
     [Fact]

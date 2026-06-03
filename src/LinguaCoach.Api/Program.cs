@@ -1,5 +1,7 @@
 using System.Text;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using LinguaCoach.Infrastructure;
 using LinguaCoach.Persistence;
@@ -134,7 +136,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddInfrastructure();
 
 // ── API ─────────────────────────────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
