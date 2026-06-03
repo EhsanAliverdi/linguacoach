@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(c:\\Users\\aliverdi.ehsan\\.gstack\\projects\\EhsanAliverdi-linguacoach/**)",
+      "Agent(Explore)",
+      "Bash(dotnet *)",
+      "Bash(npm run *)",
+      "Bash(git add *)"
+    ]
+  },
+  "$version": 4
+}

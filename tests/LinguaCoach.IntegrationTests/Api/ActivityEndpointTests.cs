@@ -113,7 +113,7 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
 /// <summary>
 /// Test factory with a failing IAiActivityGenerator so we can test the SystemFallback path.
 /// </summary>
-public sealed class ActivityFallbackTestFactory : WritingExerciseTestFactory
+public sealed class ActivityFallbackTestFactory : ActivityTestFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

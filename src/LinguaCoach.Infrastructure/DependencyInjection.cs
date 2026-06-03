@@ -8,7 +8,6 @@ using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Application.Reference;
 using LinguaCoach.Application.Speaking;
-using LinguaCoach.Application.Writing;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Admin;
 using LinguaCoach.Infrastructure.Assessment;
@@ -19,7 +18,6 @@ using LinguaCoach.Infrastructure.LearningPlan;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
 using LinguaCoach.Infrastructure.Speaking;
-using LinguaCoach.Infrastructure.Writing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.Infrastructure;
@@ -66,12 +64,7 @@ public static class DependencyInjection
         // Learning planner (SM-2 spaced repetition + vocabulary selection)
         services.AddScoped<ILearningPlanner, LearningPlannerService>();
 
-        // Writing exercise
-        services.AddScoped<IGetWritingScenariosHandler, WritingExerciseGetHandler>();
-        services.AddScoped<IGetWritingExerciseHandler, WritingExerciseGetHandler>();
-        services.AddScoped<ISubmitWritingDraftHandler, WritingExerciseSubmitHandler>();
-
-        // Activity (new AI-first learning flow — runs alongside old Writing flow)
+        // Activity (AI-first learning flow)
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();
         services.AddScoped<IGetNextActivityHandler, ActivityGetHandler>();
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
