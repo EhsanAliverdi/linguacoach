@@ -92,10 +92,11 @@ Expected output: **251 tests, 0 failures** (162 unit + 89 integration).
 | `Jwt__Issuer` | No | `linguacoach` | JWT issuer |
 | `Jwt__Audience` | No | `linguacoach` | JWT audience |
 | `Jwt__ExpiryHours` | No | `24` | JWT access token lifetime in hours |
-| `AI__WritingFeedback__Provider` | Yes for production writing feedback | Development only: `OpenAI` | `OpenAI` or `Gemini` |
-| `AI__WritingFeedback__Model` | Yes for production writing feedback | Development only: `gpt-4o-mini` | Model for writing feedback, for example `gpt-4o-mini` or `gemini-2.0-flash` |
-| `OPENAI_API_KEY` | Yes when OpenAI is selected | None | OpenAI API key for writing feedback |
-| `GEMINI_API_KEY` | Yes when Gemini is selected | None | Gemini API key for writing feedback |
+| `AI__WritingFeedback__Provider` | Yes for production writing feedback | Development only: `OpenAI` | `OpenAI`, `Gemini`, or `Anthropic` |
+| `AI__WritingFeedback__Model` | Yes for production writing feedback | Development only: `gpt-4o-mini` | Model for writing feedback, e.g. `gpt-4o-mini`, `gemini-2.5-flash`, `claude-sonnet-4-6` |
+| `OPENAI_API_KEY` | Yes when OpenAI selected | None | OpenAI API key for writing feedback |
+| `GEMINI_API_KEY` | Yes when Gemini selected | None | Gemini API key for writing feedback |
+| `ANTHROPIC_API_KEY` | Yes when Anthropic selected | None | Anthropic API key for writing feedback |
 | `ASPNETCORE_ENVIRONMENT` | No | `Production` in Docker, `Development` locally | Controls OpenAPI exposure and JWT placeholder guard |
 
 > **Security:** The `appsettings.json` JWT key (`CHANGE_ME_IN_PRODUCTION_USE_A_SECRET_AT_LEAST_32_CHARS`) is valid only in `Development`. The API refuses to start with that placeholder in any other environment.
@@ -133,6 +134,13 @@ docs/
 | GET | `/api/reference/language-pairs` | JWT | Active language pairs |
 | GET | `/api/reference/tracks?languagePairId=` | JWT | Learning tracks for a language pair |
 | GET | `/api/reference/career-profiles?languagePairId=` | JWT | Career profiles for a language pair |
+| GET | `/api/admin/ai-config` | Admin JWT | List AI feature routing config |
+| PUT | `/api/admin/ai-config/{id}` | Admin JWT | Update provider + model for a feature |
+| GET | `/api/admin/ai-providers` | Admin JWT | List provider catalog with credential/test status |
+| PUT | `/api/admin/ai-providers/{p}/api-key` | Admin JWT | Store or clear API key for a provider |
+| POST | `/api/admin/ai-providers/{p}/test` | Admin JWT | Test all models for a provider |
+| GET | `/api/writing/exercise` | JWT | Get current writing exercise scenario |
+| POST | `/api/writing/exercise/submit` | JWT (rate-limited) | Submit draft for AI feedback |
 | GET | `/health` | None | Health check |
 
 ---
@@ -170,44 +178,56 @@ Open `http://localhost:4200` in your browser. The API must be running for the lo
 
 ### AI configuration
 
-Writing feedback can use OpenAI or Gemini. Configure the provider and model through environment
-variables or .NET configuration. API keys must come from environment variables or secrets; they are
-not stored in PostgreSQL.
+Writing feedback can use OpenAI, Gemini, or Anthropic. You can configure AI through either:
 
-OpenAI local example:
+**1. Admin UI** (takes precedence) — Log in as admin, navigate to **AI Config**:
+   - **Feature routing** — set which provider and model handles each feature (e.g. `writing.exercise`)
+   - **Provider credentials** — store API keys per provider, test connectivity per model
+   - Keys stored in the database are serialised securely and never returned to the client
 
-```bash
-export AI__WritingFeedback__Provider="OpenAI"
-export AI__WritingFeedback__Model="gpt-4o-mini"
-export OPENAI_API_KEY="your-openai-key"
-```
+**2. Environment variables** (fallback — used when no DB config or key exists):
 
-Gemini local example:
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `AI__WritingFeedback__Provider` | Yes (prod) | `OpenAI`, `Gemini`, or `Anthropic` |
+| `AI__WritingFeedback__Model` | Yes (prod) | e.g. `gpt-4o-mini`, `gemini-2.5-flash`, `claude-sonnet-4-6` |
+| `OPENAI_API_KEY` | When OpenAI selected | OpenAI API key |
+| `GEMINI_API_KEY` | When Gemini selected | Gemini API key |
+| `ANTHROPIC_API_KEY` | When Anthropic selected | Anthropic API key |
 
-```bash
-export AI__WritingFeedback__Provider="Gemini"
-export AI__WritingFeedback__Model="gemini-2.0-flash"
-export GEMINI_API_KEY="your-gemini-key"
-```
+**Resolution order:** DB feature config > appsettings/the env var > Development default (`OpenAI` / `gpt-4o-mini`).  
+API key: DB credential store > environment variable.
 
-In Development only, missing provider/model defaults to `OpenAI` / `gpt-4o-mini`. In Production,
-missing provider, model, or the selected provider API key returns a controlled AI-unavailable response
-instead of a generic server error.
+In Development only, completely missing provider/model defaults to `OpenAI` / `gpt-4o-mini`.  
+In Production, missing provider, model, or the selected provider's API key returns a controlled
+AI-unavailable response (HTTP 503) instead of a generic server error.
 
 Production uses the same secret names in `/opt/linguacoach/.env` or a secrets manager:
 
 ```text
 AI__WritingFeedback__Provider=Gemini
-AI__WritingFeedback__Model=gemini-2.0-flash
+AI__WritingFeedback__Model=gemini-2.5-flash
 GEMINI_API_KEY=your-gemini-key
 OPENAI_API_KEY=your-openai-key-if-using-openai
 ```
 
-The GitHub deployment currently reads production secrets from the VPS `.env` file through
-`docker-compose.prod.yml`. Do not commit API keys.
+The GitHub deployment reads production secrets from the VPS `.env` file through
+`docker-compose.prod.yml`. **Do not commit API keys.**
 
-The existing admin AI Config screen is not the source of truth for the MVP writing feedback provider.
-Full provider management UI is intentionally deferred.
+### Production verification
+
+Before allowing trusted testers or making the system available to real users, run the production Gemini smoke test:
+
+- See [docs/production-gemini-smoke-test.md](docs/production-gemini-smoke-test.md) for step-by-step verification of:
+  - Required environment variables and secrets
+  - Admin AI configuration UI setup
+  - Gemini provider connectivity test
+  - Student writing feedback end-to-end flow
+  - AI usage logging verification
+  - Error handling for missing/invalid keys
+  - Security checks (no key exposure)
+  - Health endpoint and canary checks
+  - Go/no-go decision criteria
 
 ---
 
