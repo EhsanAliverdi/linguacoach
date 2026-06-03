@@ -1,3 +1,4 @@
+using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Assessment;
 using LinguaCoach.Application.Ai;
@@ -8,6 +9,7 @@ using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Application.Reference;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Writing;
+using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Admin;
 using LinguaCoach.Infrastructure.Assessment;
 using LinguaCoach.Infrastructure.Ai;
@@ -68,6 +70,11 @@ public static class DependencyInjection
         services.AddScoped<IGetWritingScenariosHandler, WritingExerciseGetHandler>();
         services.AddScoped<IGetWritingExerciseHandler, WritingExerciseGetHandler>();
         services.AddScoped<ISubmitWritingDraftHandler, WritingExerciseSubmitHandler>();
+
+        // Activity (new AI-first learning flow — runs alongside old Writing flow)
+        services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();
+        services.AddScoped<IGetNextActivityHandler, ActivityGetHandler>();
+        services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 
         // STT/TTS — no-op stubs for MVP; interfaces registered so DI doesn't fail
         services.AddScoped<ISpeechToTextService, NoOpSpeechToTextService>();
