@@ -11,7 +11,7 @@ export class ActivityService {
   constructor(private http: HttpClient) {}
 
   getNext(type?: ActivityType): Observable<ActivityDto> {
-    const params = type ? { type } : {};
+    const params = type ? { type: String(type) } : undefined;
     return this.http.get<ActivityDto>(`${this.base}/next`, { params });
   }
 
