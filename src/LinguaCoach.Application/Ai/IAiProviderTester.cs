@@ -1,13 +1,16 @@
 namespace LinguaCoach.Application.Ai;
 
+public sealed record ModelTestOutcome(string ModelName, bool Ok, int LatencyMs, string? Error);
+
 /// <summary>
-/// Sends a minimal prompt to verify that a provider's API key and connectivity work.
-/// Returns (ok, latencyMs, error).
+/// Tests each model for a provider by sending a minimal prompt.
+/// Returns one result per model.
 /// </summary>
 public interface IAiProviderTester
 {
-    Task<(bool Ok, int LatencyMs, string? Error)> TestAsync(
+    Task<IReadOnlyList<ModelTestOutcome>> TestAllModelsAsync(
         string providerName,
+        IEnumerable<string> models,
         string? apiKeyOverride,
         CancellationToken ct = default);
 }

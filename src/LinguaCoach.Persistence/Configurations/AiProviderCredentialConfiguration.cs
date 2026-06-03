@@ -17,10 +17,16 @@ internal sealed class AiProviderCredentialConfiguration : IEntityTypeConfigurati
 
         builder.Property(e => e.ProviderName).HasColumnName("provider_name").HasMaxLength(50).IsRequired();
         builder.Property(e => e.ApiKey).HasColumnName("api_key").HasMaxLength(500).IsRequired(false);
-        builder.Property(e => e.LastTestOk).HasColumnName("last_test_ok").IsRequired();
-        builder.Property(e => e.LastTestedAt).HasColumnName("last_tested_at").IsRequired(false);
-        builder.Property(e => e.LastTestError).HasColumnName("last_test_error").HasMaxLength(1000).IsRequired(false);
         builder.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+        // Per-model test results stored as JSON. text works on both PostgreSQL and SQLite.
+        builder.Property(e => e.ModelTests)
+            .HasColumnName("model_tests")
+            .HasColumnType("text")
+            .HasConversion(
+                v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ModelTestResult>>(v, (System.Text.Json.JsonSerializerOptions?)null)
+                     ?? new Dictionary<string, ModelTestResult>());
 
         builder.HasIndex(e => e.ProviderName)
             .IsUnique()

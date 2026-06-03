@@ -37,19 +37,21 @@ public sealed class GeminiProvider : IAiProvider
         }
 
         var modelToUse = string.IsNullOrWhiteSpace(request.ModelHint) ? DefaultModel : request.ModelHint;
+        // Gemini 2.5 models are served under v1beta; older models also work there.
         var uri = $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(modelToUse)}:generateContent";
+
+        // Only request JSON output for real feature prompts; test pings use plain text.
+        var isTestCall = request.PromptKey == "admin.test";
+        var generationConfig = isTestCall
+            ? new GeminiGenerationConfig(ResponseMimeType: null, MaxOutputTokens: request.MaxOutputTokens)
+            : new GeminiGenerationConfig(ResponseMimeType: "application/json", MaxOutputTokens: request.MaxOutputTokens);
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri);
         httpRequest.Headers.Add("x-goog-api-key", apiKey);
         httpRequest.Content = JsonContent.Create(new GeminiGenerateContentRequest(
-            Contents:
-            [
-                new GeminiContent(
-                    Parts: [new GeminiPart(request.RenderedPrompt)])
-            ],
-            GenerationConfig: new GeminiGenerationConfig(
-                ResponseMimeType: "application/json",
-                MaxOutputTokens: request.MaxOutputTokens)));
+            Contents: [new GeminiContent(Parts: [new GeminiPart(request.RenderedPrompt)])],
+            GenerationConfig: generationConfig),
+            options: new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
 
         HttpResponseMessage response;
         try
@@ -144,7 +146,7 @@ internal sealed record GeminiPart(
     [property: JsonPropertyName("text")] string Text);
 
 internal sealed record GeminiGenerationConfig(
-    [property: JsonPropertyName("responseMimeType")] string ResponseMimeType,
+    [property: JsonPropertyName("responseMimeType")] string? ResponseMimeType,
     [property: JsonPropertyName("maxOutputTokens")] int MaxOutputTokens);
 
 internal sealed class GeminiGenerateContentResponse

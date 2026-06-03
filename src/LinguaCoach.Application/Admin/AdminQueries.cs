@@ -95,14 +95,14 @@ public sealed record AiProviderConfigItem(
     string ProviderName,
     string ModelName);
 
-/// <summary>One entry per provider in the catalog — includes credential status.</summary>
+public sealed record ModelTestStatus(string ModelName, bool Ok, int LatencyMs, string? Error, DateTime TestedAt);
+
+/// <summary>One entry per provider in the catalog — includes credential and per-model test status.</summary>
 public sealed record AiProviderCatalogItem(
     string ProviderName,
     IReadOnlyList<string> Models,
     bool HasApiKey,
-    bool LastTestOk,
-    DateTime? LastTestedAt,
-    string? LastTestError);
+    IReadOnlyList<ModelTestStatus> ModelTests);
 
 public sealed record UpdateAiProviderConfigCommand(
     Guid ConfigId,
@@ -113,16 +113,11 @@ public sealed record SetProviderApiKeyCommand(
     string ProviderName,
     string? ApiKey);
 
-public sealed record ProviderTestResult(
-    bool Ok,
-    int LatencyMs,
-    string? Error);
-
 public interface IAdminAiConfigHandler
 {
     Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default);
     Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default);
-    Task<ProviderTestResult> TestProviderAsync(string providerName, CancellationToken ct = default);
+    Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default);
 }

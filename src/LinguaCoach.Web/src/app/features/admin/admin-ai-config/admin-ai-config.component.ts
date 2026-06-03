@@ -1,9 +1,9 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AiProviderConfigItem, AiProviderCatalogItem, ProviderTestResult } from '../../../core/models/admin.models';
+import { AiProviderConfigItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
 
 interface ProviderState {
   catalog: AiProviderCatalogItem;
@@ -12,7 +12,6 @@ interface ProviderState {
   saveKeyBusy: boolean;
   saveKeyError: string;
   testBusy: boolean;
-  testResult: ProviderTestResult | null;
 }
 
 @Component({
@@ -28,20 +27,17 @@ interface ProviderState {
       <div class="mb-8">
         <h2 class="text-base font-semibold text-slate-900 mb-1">Feature routing</h2>
         <p class="text-sm text-slate-500 mb-4">
-          Choose which provider and model handles each feature. Changes take effect on the next call.
+          Which provider and model handles each feature. Auto-saves on change.
         </p>
 
         <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           @for (c of configs(); track c.id) {
-            <div class="flex items-center gap-4 px-5 py-4">
-              <!-- feature label -->
-              <div class="w-44 shrink-0">
-                <div class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">{{ c.featureKey }}</div>
+            <div class="flex items-center gap-3 px-5 py-3.5">
+              <div class="w-44 shrink-0 text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                {{ c.featureKey }}
               </div>
 
-              <!-- provider dropdown -->
-              <select
-                [value]="c.providerName"
+              <select [value]="c.providerName"
                 (change)="onFeatureProviderChange(c, $any($event.target).value)"
                 class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-indigo-400">
                 @for (p of providers(); track p.catalog.providerName) {
@@ -49,17 +45,14 @@ interface ProviderState {
                 }
               </select>
 
-              <!-- model dropdown -->
-              <select
-                [value]="c.modelName"
+              <select [value]="c.modelName"
                 (change)="onFeatureModelChange(c, $any($event.target).value)"
-                class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-mono w-56 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-mono w-60 focus:outline-none focus:ring-2 focus:ring-indigo-400">
                 @for (m of modelsFor(c.providerName); track m) {
                   <option [value]="m">{{ m }}</option>
                 }
               </select>
 
-              <!-- save indicator -->
               @if (savedFeatureId() === c.id) {
                 <span class="text-xs text-green-600">Saved</span>
               }
@@ -75,57 +68,37 @@ interface ProviderState {
       <div>
         <h2 class="text-base font-semibold text-slate-900 mb-1">Provider credentials</h2>
         <p class="text-sm text-slate-500 mb-4">
-          One API key per provider — applies to all features using that provider.
-          Keys stored here override environment variables.
+          One API key per provider applies to all features using it.
+          "Test connection" checks every model with the stored key.
         </p>
 
-        <div class="space-y-3">
+        <div class="space-y-4">
           @for (ps of providers(); track ps.catalog.providerName) {
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
 
-              <!-- provider header -->
-              <div class="flex items-start justify-between gap-4">
+              <!-- Header -->
+              <div class="flex items-center justify-between gap-4 mb-4">
                 <div class="flex items-center gap-3">
-                  <span class="text-sm font-semibold text-slate-800 capitalize w-20">{{ ps.catalog.providerName }}</span>
-
-                  <!-- key status badge -->
+                  <span class="text-sm font-bold text-slate-800 capitalize w-24">
+                    {{ ps.catalog.providerName }}
+                  </span>
                   @if (ps.catalog.hasApiKey) {
-                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Key stored
-                    </span>
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">Key stored</span>
                   } @else {
-                    <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Using env var
-                    </span>
-                  }
-
-                  <!-- last test badge -->
-                  @if (ps.catalog.lastTestedAt) {
-                    @if (ps.catalog.lastTestOk) {
-                      <span class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                        ✓ Connected
-                      </span>
-                    } @else {
-                      <span class="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5"
-                            [title]="ps.catalog.lastTestError ?? ''">
-                        ✗ Failed
-                      </span>
-                    }
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Using env var</span>
                   }
                 </div>
 
-                <!-- action buttons -->
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-2">
                   <button (click)="toggleKeyEdit(ps)"
-                    class="text-xs text-indigo-600 hover:underline">
+                    class="text-xs font-medium text-indigo-600 hover:underline">
                     {{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}
                   </button>
-                  <button (click)="runTest(ps)"
-                    [disabled]="ps.testBusy"
+                  <button (click)="runTest(ps)" [disabled]="ps.testBusy"
                     class="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50 transition-colors">
                     @if (ps.testBusy) {
                       <span class="animate-spin h-3 w-3 border-2 border-slate-400 border-t-transparent rounded-full"></span>
-                      Testing…
+                      Testing all models…
                     } @else {
                       Test connection
                     }
@@ -133,40 +106,43 @@ interface ProviderState {
                 </div>
               </div>
 
-              <!-- test result inline -->
-              @if (ps.testResult) {
-                <div class="mt-3 rounded-lg px-3 py-2 text-xs"
-                     [class]="ps.testResult.ok
-                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                       : 'bg-red-50 text-red-600 border border-red-200'">
-                  @if (ps.testResult.ok) {
-                    ✓ Connected successfully in {{ ps.testResult.latencyMs }}ms
-                  } @else {
-                    ✗ {{ ps.testResult.error }}
-                  }
-                </div>
-              }
+              <!-- Per-model status chips -->
+              <div class="flex flex-wrap gap-2">
+                @for (m of ps.catalog.modelTests; track m.modelName) {
+                  <div [class]="modelChipClass(m)"
+                       [title]="modelChipTitle(m)">
+                    <span [class]="modelDotClass(m)"></span>
+                    <span class="font-mono">{{ m.modelName }}</span>
+                    @if (hasBeenTested(m)) {
+                      @if (m.ok) {
+                        <span class="opacity-60">{{ m.latencyMs }}ms</span>
+                      } @else {
+                        <span>✗</span>
+                      }
+                    }
+                  </div>
+                }
+              </div>
 
-              <!-- key edit panel -->
+              <!-- API key edit panel -->
               @if (ps.editingKey) {
                 <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-3 items-end">
                   <div class="flex-1 min-w-64">
                     <label class="block text-xs text-slate-500 mb-1">
                       API Key
-                      <span class="text-slate-400 ml-1">— leave blank to clear and fall back to env var</span>
+                      <span class="text-slate-400 ml-1">— blank clears and falls back to env var; clears test results</span>
                     </label>
                     <input type="password" [(ngModel)]="ps.editKeyValue"
                       [placeholder]="keyPlaceholder(ps.catalog.providerName)"
                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
                   </div>
-                  <button (click)="saveKey(ps)"
-                    [disabled]="ps.saveKeyBusy"
-                    class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                  <button (click)="saveKey(ps)" [disabled]="ps.saveKeyBusy"
+                    class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
                     {{ ps.saveKeyBusy ? 'Saving…' : 'Save' }}
                   </button>
                   @if (ps.catalog.hasApiKey) {
                     <button (click)="clearKey(ps)"
-                      class="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                      class="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                       Clear key
                     </button>
                   }
@@ -176,13 +152,6 @@ interface ProviderState {
                   }
                 </div>
               }
-
-              <!-- available models list -->
-              <div class="mt-3 flex flex-wrap gap-1.5">
-                @for (m of ps.catalog.models; track m) {
-                  <span class="text-xs font-mono text-slate-400 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">{{ m }}</span>
-                }
-              </div>
 
             </div>
           }
@@ -205,30 +174,55 @@ export class AdminAiConfigComponent implements OnInit {
     forkJoin({ configs: this.adminApi.listAiConfigs(), catalog: this.adminApi.listAiProviders() }).subscribe({
       next: ({ configs, catalog }) => {
         this.configs.set(configs);
-        this.providers.set(catalog.map(c => ({
-          catalog: c,
-          editingKey: false,
-          editKeyValue: '',
-          saveKeyBusy: false,
-          saveKeyError: '',
-          testBusy: false,
-          testResult: null,
-        })));
+        this.providers.set(this.toStates(catalog));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  modelsFor(providerName: string): string[] {
-    return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
+  private toStates(catalog: AiProviderCatalogItem[]): ProviderState[] {
+    return catalog.map(c => ({
+      catalog: c,
+      editingKey: false, editKeyValue: '',
+      saveKeyBusy: false, saveKeyError: '',
+      testBusy: false,
+    }));
+  }
+
+  // ── Model chip helpers ─────────────────────────────────────────────────────
+
+  hasBeenTested(m: ModelTestStatus): boolean {
+    return m.testedAt !== '0001-01-01T00:00:00' && m.testedAt !== null;
+  }
+
+  modelChipClass(m: ModelTestStatus): string {
+    const base = 'inline-flex items-center gap-1.5 text-xs rounded-lg border px-2 py-1';
+    if (!this.hasBeenTested(m)) return `${base} border-slate-200 bg-slate-50 text-slate-500`;
+    return m.ok
+      ? `${base} border-emerald-200 bg-emerald-50 text-emerald-700`
+      : `${base} border-red-200 bg-red-50 text-red-600`;
+  }
+
+  modelDotClass(m: ModelTestStatus): string {
+    if (!this.hasBeenTested(m)) return 'w-1.5 h-1.5 rounded-full bg-slate-300';
+    return m.ok ? 'w-1.5 h-1.5 rounded-full bg-emerald-500' : 'w-1.5 h-1.5 rounded-full bg-red-500';
+  }
+
+  modelChipTitle(m: ModelTestStatus): string {
+    if (!this.hasBeenTested(m)) return 'Not tested yet';
+    if (m.ok) return `OK — ${m.latencyMs}ms`;
+    return m.error ?? 'Failed';
   }
 
   // ── Feature routing ────────────────────────────────────────────────────────
 
+  modelsFor(providerName: string): string[] {
+    return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
+  }
+
   onFeatureProviderChange(c: AiProviderConfigItem, newProvider: string): void {
-    const models = this.modelsFor(newProvider);
-    const newModel = models[0] ?? c.modelName;
+    const newModel = this.modelsFor(newProvider)[0] ?? c.modelName;
     this.saveFeature(c, newProvider, newModel);
   }
 
@@ -244,38 +238,27 @@ export class AdminAiConfigComponent implements OnInit {
         this.featureError.update(e => ({ ...e, [c.id]: '' }));
         setTimeout(() => this.savedFeatureId.set(null), 2000);
       },
-      error: err => {
-        this.featureError.update(e => ({ ...e, [c.id]: err.error?.error ?? 'Failed to save.' }));
-      },
+      error: err => this.featureError.update(e => ({ ...e, [c.id]: err.error?.error ?? 'Failed.' })),
     });
   }
 
   // ── Provider credentials ───────────────────────────────────────────────────
 
   keyPlaceholder(provider: string): string {
-    return { openai: 'sk-…', gemini: 'AIza…', anthropic: 'sk-ant-…' }[provider] ?? '…';
+    return ({ openai: 'sk-…', gemini: 'AIza…', anthropic: 'sk-ant-…' } as Record<string, string>)[provider] ?? '…';
   }
 
   toggleKeyEdit(ps: ProviderState): void {
     ps.editingKey = !ps.editingKey;
     ps.editKeyValue = '';
     ps.saveKeyError = '';
-    ps.testResult = null;
   }
 
   saveKey(ps: ProviderState): void {
-    ps.saveKeyBusy = true;
-    ps.saveKeyError = '';
+    ps.saveKeyBusy = true; ps.saveKeyError = '';
     this.adminApi.setProviderApiKey(ps.catalog.providerName, ps.editKeyValue || null).subscribe({
-      next: updated => {
-        ps.catalog = updated;
-        ps.editingKey = false;
-        ps.saveKeyBusy = false;
-      },
-      error: err => {
-        ps.saveKeyError = err.error?.error ?? 'Failed to save key.';
-        ps.saveKeyBusy = false;
-      },
+      next: updated => { ps.catalog = updated; ps.editingKey = false; ps.saveKeyBusy = false; },
+      error: err => { ps.saveKeyError = err.error?.error ?? 'Failed.'; ps.saveKeyBusy = false; },
     });
   }
 
@@ -289,19 +272,18 @@ export class AdminAiConfigComponent implements OnInit {
 
   runTest(ps: ProviderState): void {
     ps.testBusy = true;
-    ps.testResult = null;
     this.adminApi.testProvider(ps.catalog.providerName).subscribe({
-      next: result => {
-        ps.testResult = result;
-        ps.testBusy = false;
-        // Refresh catalog entry so last-test badges update
-        this.adminApi.listAiProviders().subscribe(catalog => {
-          const updated = catalog.find(c => c.providerName === ps.catalog.providerName);
-          if (updated) ps.catalog = updated;
-        });
-      },
+      next: updated => { ps.catalog = updated; ps.testBusy = false; },
       error: err => {
-        ps.testResult = { ok: false, latencyMs: 0, error: err.error?.error ?? 'Request failed.' };
+        // On error show all models as failed with the error message
+        ps.catalog = {
+          ...ps.catalog,
+          modelTests: ps.catalog.modelTests.map(m => ({
+            ...m, ok: false,
+            error: err.error?.error ?? 'Request failed.',
+            testedAt: new Date().toISOString(),
+          }))
+        };
         ps.testBusy = false;
       },
     });

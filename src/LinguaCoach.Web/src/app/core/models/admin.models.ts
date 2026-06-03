@@ -40,17 +40,17 @@ export interface AiProviderConfigItem {
   modelName: string;
 }
 
+export interface ModelTestStatus {
+  modelName: string;
+  ok: boolean;
+  latencyMs: number;
+  error: string | null;
+  testedAt: string; // ISO date or default(DateTime) = "0001-01-01..."
+}
+
 export interface AiProviderCatalogItem {
   providerName: string;
   models: string[];
   hasApiKey: boolean;
-  lastTestOk: boolean;
-  lastTestedAt: string | null;
-  lastTestError: string | null;
-}
-
-export interface ProviderTestResult {
-  ok: boolean;
-  latencyMs: number;
-  error: string | null;
+  modelTests: ModelTestStatus[];
 }

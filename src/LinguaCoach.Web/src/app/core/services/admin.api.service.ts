@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
-  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem, AiProviderCatalogItem, ProviderTestResult
+  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem, AiProviderCatalogItem
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -64,7 +64,7 @@ export class AdminApiService {
   setProviderApiKey(provider: string, apiKey: string | null): Observable<AiProviderCatalogItem> {
     return this.http.put<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/api-key`, { apiKey });
   }
-  testProvider(provider: string): Observable<ProviderTestResult> {
-    return this.http.post<ProviderTestResult>(`${this.api}/ai-providers/${provider}/test`, null);
+  testProvider(provider: string): Observable<AiProviderCatalogItem> {
+    return this.http.post<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/test`, null);
   }
 }

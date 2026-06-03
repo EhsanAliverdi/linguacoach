@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,17 +76,17 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
-    public async Task ListProviders_HasApiKeyAndLastTestOk_ArePresentInResponse()
+    public async Task ListProviders_ResponseShapeHasRequiredFields()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var body = await ClientWithToken(token).GetFromJsonAsync<JsonElement>("/api/admin/ai-providers");
 
-        // Every provider entry must expose these fields (type check suffices — values depend on prior tests).
         foreach (var p in body.EnumerateArray())
         {
-            Assert.True(p.TryGetProperty("hasApiKey", out var hasKey));
-            Assert.Equal(JsonValueKind.True | JsonValueKind.False, hasKey.ValueKind | JsonValueKind.False);
-            Assert.True(p.TryGetProperty("lastTestOk", out _));
+            Assert.True(p.TryGetProperty("providerName", out _));
+            Assert.True(p.TryGetProperty("hasApiKey", out _));
+            Assert.True(p.TryGetProperty("models", out _));
+            Assert.True(p.TryGetProperty("modelTests", out _));
         }
     }
 
@@ -168,7 +169,6 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
     [Fact]
     public async Task TestProvider_WithFakeProvider_ReturnsOk()
     {
-        // Register a fake provider and a fake tester so no real API call is made.
         var factory = new AiTestWithFakeTesterFactory();
         await factory.InitializeAsync();
         var token = await factory.CreateAdminAndGetTokenAsync();
@@ -178,8 +178,11 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(body.GetProperty("ok").GetBoolean());
-        Assert.True(body.GetProperty("latencyMs").GetInt32() >= 0);
+        // Returns AiProviderCatalogItem — check modelTests array has entries
+        Assert.Equal("openai", body.GetProperty("providerName").GetString());
+        var modelTests = body.GetProperty("modelTests").EnumerateArray().ToList();
+        Assert.NotEmpty(modelTests);
+        Assert.All(modelTests, m => Assert.True(m.GetProperty("ok").GetBoolean()));
 
         await factory.DisposeAsync();
     }
@@ -197,8 +200,8 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
         var cred = db.AiProviderCredentials.AsNoTracking().FirstOrDefault(c => c.ProviderName == "gemini");
         Assert.NotNull(cred);
-        Assert.NotNull(cred.LastTestedAt);
-        Assert.True(cred.LastTestOk);
+        Assert.NotEmpty(cred.ModelTests);
+        Assert.All(cred.ModelTests, kvp => Assert.True(kvp.Value.Ok));
 
         await factory.DisposeAsync();
     }
@@ -341,7 +344,15 @@ public sealed class AiTestWithFakeTesterFactory : ApiTestFactory
 
 internal sealed class FakeAiProviderTester : IAiProviderTester
 {
-    public Task<(bool Ok, int LatencyMs, string? Error)> TestAsync(
-        string providerName, string? apiKeyOverride, CancellationToken ct = default)
-        => Task.FromResult<(bool, int, string?)>((true, 42, null));
+    public Task<IReadOnlyList<ModelTestOutcome>> TestAllModelsAsync(
+        string providerName,
+        IEnumerable<string> models,
+        string? apiKeyOverride,
+        CancellationToken ct = default)
+    {
+        IReadOnlyList<ModelTestOutcome> results = models
+            .Select(m => new ModelTestOutcome(m, true, 42, null))
+            .ToList();
+        return Task.FromResult(results);
+    }
 }

@@ -180,6 +180,7 @@ public sealed class AdminController : ControllerBase
             return Ok(result);
         }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
     }
 }
 

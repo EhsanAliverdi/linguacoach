@@ -2,19 +2,20 @@ using LinguaCoach.Domain.Common;
 
 namespace LinguaCoach.Domain.Entities;
 
+public sealed record ModelTestResult(bool Ok, int LatencyMs, string? Error, DateTime TestedAt);
+
 /// <summary>
-/// Stores the API key and last-tested status for one AI provider (openai, gemini, anthropic).
-/// One row per provider — shared across all features that use that provider.
-/// Null ApiKey means "fall back to the environment variable".
+/// Stores the API key and per-model test results for one AI provider.
+/// One row per provider — shared across all features using that provider.
 /// </summary>
 public sealed class AiProviderCredential : BaseEntity
 {
     public string ProviderName { get; private set; }
     public string? ApiKey { get; private set; }
-    public bool LastTestOk { get; private set; }
-    public DateTime? LastTestedAt { get; private set; }
-    public string? LastTestError { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+
+    // Per-model test results stored as JSON. Key = model name.
+    public Dictionary<string, ModelTestResult> ModelTests { get; private set; } = new();
 
     private static readonly HashSet<string> KnownProviders = new(StringComparer.OrdinalIgnoreCase)
         { "openai", "gemini", "anthropic" };
@@ -37,14 +38,14 @@ public sealed class AiProviderCredential : BaseEntity
     public void SetApiKey(string? apiKey)
     {
         ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
+        // Clear stale test results when the key changes.
+        ModelTests = new();
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void RecordTestResult(bool ok, string? error = null)
+    public void RecordModelTest(string modelName, bool ok, int latencyMs, string? error)
     {
-        LastTestOk = ok;
-        LastTestedAt = DateTime.UtcNow;
-        LastTestError = ok ? null : error;
+        ModelTests[modelName] = new ModelTestResult(ok, latencyMs, error, DateTime.UtcNow);
         UpdatedAt = DateTime.UtcNow;
     }
 }

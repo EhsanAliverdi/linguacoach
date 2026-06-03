@@ -172,22 +172,14 @@ public sealed class AdminHandler :
         var credentials = await _db.AiProviderCredentials.ToListAsync(ct);
         var credByProvider = credentials.ToDictionary(c => c.ProviderName, StringComparer.OrdinalIgnoreCase);
 
-        var catalog = AiProviderConfig.AllowedModels
+        return AiProviderConfig.AllowedModels
             .Select(kvp =>
             {
                 credByProvider.TryGetValue(kvp.Key, out var cred);
-                return new AiProviderCatalogItem(
-                    kvp.Key,
-                    kvp.Value.Order().ToList(),
-                    HasApiKey: cred?.ApiKey is not null,
-                    LastTestOk: cred?.LastTestOk ?? false,
-                    LastTestedAt: cred?.LastTestedAt,
-                    LastTestError: cred?.LastTestError);
+                return ToCatalogItem(kvp.Key, kvp.Value.Order().ToList(), cred);
             })
             .OrderBy(p => p.ProviderName)
             .ToList();
-
-        return catalog;
     }
 
     public async Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default)
@@ -213,39 +205,48 @@ public sealed class AdminHandler :
         cred.SetApiKey(command.ApiKey);
         await _db.SaveChangesAsync(ct);
 
-        return ToCatalogItem(normalised, cred, AiProviderConfig.AllowedModels);
+        AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedModels);
+        return ToCatalogItem(normalised, allowedModels?.Order().ToList() ?? [], cred);
     }
 
-    public async Task<ProviderTestResult> TestProviderAsync(string providerName, CancellationToken ct = default)
+    public async Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default)
     {
         var normalised = providerName.Trim().ToLowerInvariant();
         var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
 
-        var (ok, latencyMs, error) = await _tester.TestAsync(normalised, cred?.ApiKey, ct);
+        AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedSet);
+        var models = allowedSet?.Order().ToList() ?? [];
+
+        var outcomes = await _tester.TestAllModelsAsync(normalised, models, cred?.ApiKey, ct);
 
         if (cred is null)
         {
             cred = new AiProviderCredential(normalised);
             _db.AiProviderCredentials.Add(cred);
         }
-        cred.RecordTestResult(ok, error);
-        await _db.SaveChangesAsync(ct);
+        foreach (var o in outcomes)
+            cred.RecordModelTest(o.ModelName, o.Ok, o.LatencyMs, o.Error);
 
-        return new ProviderTestResult(ok, latencyMs, error);
+        await _db.SaveChangesAsync(ct);
+        return ToCatalogItem(normalised, models, cred);
     }
 
     private static AiProviderCatalogItem ToCatalogItem(
         string providerName,
-        AiProviderCredential? cred,
-        IReadOnlyDictionary<string, IReadOnlySet<string>> allowedModels)
+        IReadOnlyList<string> models,
+        AiProviderCredential? cred)
     {
-        allowedModels.TryGetValue(providerName, out var models);
+        var tests = models.Select(m =>
+        {
+            if (cred?.ModelTests.TryGetValue(m, out var r) == true)
+                return new ModelTestStatus(m, r.Ok, r.LatencyMs, r.Error, r.TestedAt);
+            return new ModelTestStatus(m, false, 0, null, default);
+        }).ToList();
+
         return new AiProviderCatalogItem(
             providerName,
-            models?.Order().ToList() ?? [],
+            models,
             HasApiKey: cred?.ApiKey is not null,
-            LastTestOk: cred?.LastTestOk ?? false,
-            LastTestedAt: cred?.LastTestedAt,
-            LastTestError: cred?.LastTestError);
+            ModelTests: tests);
     }
 }
