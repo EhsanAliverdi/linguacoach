@@ -288,11 +288,10 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page.getByText('Professional email writing')).toBeVisible();
 
   // ── Navigate to activity ──────────────────────────────────────────────────────
-  await page.getByRole('link', { name: 'Start activity' }).click();
+  await page.getByRole('link', { name: 'Continue learning' }).click();
   await expect(page).toHaveURL(/\/activity/);
 
   // Activity lesson — learning phase
-  await expect(page.getByText("Today's activity")).toBeVisible();
   await expect(page.getByRole('heading', { name: /Follow-up email/i })).toBeVisible();
 
   // Persian instruction is rendered before writing starts

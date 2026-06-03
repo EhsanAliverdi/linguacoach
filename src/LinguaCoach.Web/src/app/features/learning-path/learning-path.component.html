@@ -1,122 +1,178 @@
 <div class="sp-page">
 
-  <!-- ── Navigation ──────────────────────────────────────────────────────── -->
-  <nav class="sticky top-0 z-10 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
+  <nav class="sp-nav">
     <div class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center gap-6">
+      <div class="flex items-center gap-5">
         <a routerLink="/dashboard" class="sp-brand">
-          <span class="sp-brand-mark">S</span>
-          <span class="hidden sm:inline">SpeakPath</span>
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="lg-path" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-path)"/>
+            <circle cx="14" cy="33" r="3.4" fill="#fff"/>
+            <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
+            <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
+            <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
+          </svg>
+          <span class="hidden sm:inline"><span class="sp-wordmark-speak">Speak</span><span class="sp-wordmark-path">Path</span></span>
         </a>
-        <div class="hidden items-center gap-1 sm:flex">
-          <a routerLink="/dashboard" class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100">Dashboard</a>
-          <a routerLink="/my-path" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-violet-700 bg-violet-50">My Path</a>
-          <a routerLink="/activity" class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100">Activities</a>
+        <div class="hidden items-center gap-0.5 sm:flex">
+          <a routerLink="/dashboard" class="sp-nav-link">Dashboard</a>
+          <a routerLink="/my-path"   class="sp-nav-link sp-nav-link-active">My Path</a>
+          <a routerLink="/activity"  class="sp-nav-link">Activities</a>
         </div>
       </div>
-      <a routerLink="/dashboard" class="sp-link text-xs">← Dashboard</a>
+      <a routerLink="/dashboard" class="sp-link text-xs font-bold">← Dashboard</a>
     </div>
-    <div class="flex border-t border-slate-100 sm:hidden">
-      <a routerLink="/dashboard" class="flex-1 py-2 text-center text-xs font-medium text-slate-500 hover:bg-slate-50">Dashboard</a>
-      <a routerLink="/my-path" class="flex-1 py-2 text-center text-xs font-semibold text-violet-700 bg-violet-50">My Path</a>
-      <a routerLink="/activity" class="flex-1 py-2 text-center text-xs font-medium text-slate-500 hover:bg-slate-50">Activities</a>
+    <div class="flex border-t sm:hidden" style="border-color:var(--sp-border)">
+      <a routerLink="/dashboard" class="flex-1 py-2 text-center text-xs font-semibold" style="color:var(--sp-muted)">Dashboard</a>
+      <a routerLink="/my-path"   class="flex-1 py-2 text-center text-xs font-bold" style="color:var(--sp-writing);background:var(--sp-writing-soft)">My Path</a>
+      <a routerLink="/activity"  class="flex-1 py-2 text-center text-xs font-semibold" style="color:var(--sp-muted)">Activities</a>
     </div>
   </nav>
 
   <main class="sp-shell">
 
-    <!-- ── Loading ──────────────────────────────────────────────────────── -->
+    <!-- Loading -->
     @if (loading()) {
       <div class="space-y-4">
-        <div class="sp-loading-pulse h-20 rounded-2xl"></div>
-        <div class="sp-loading-pulse h-28 rounded-2xl"></div>
-        <div class="sp-loading-pulse h-28 rounded-2xl"></div>
-        <div class="sp-loading-pulse h-28 rounded-2xl"></div>
+        <div class="sp-loading-pulse h-48"></div>
+        <div class="sp-loading-pulse h-24"></div>
+        <div class="sp-loading-pulse h-24"></div>
+        <div class="sp-loading-pulse h-24"></div>
       </div>
+
     } @else if (error()) {
       <div class="sp-empty-state">
-        <p class="mb-2 text-4xl">🗺️</p>
-        <h2 class="text-lg font-bold text-slate-950">No path yet</h2>
-        <p class="mt-2 max-w-sm text-sm leading-6 text-slate-500">{{ error() }}</p>
+        <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px]"
+          style="background:var(--sp-writing-soft)">
+          <svg width="28" height="28" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <h2 class="text-lg font-extrabold" style="color:var(--sp-ink)">No path yet</h2>
+        <p class="mt-2 max-w-sm text-sm font-medium leading-6" style="color:var(--sp-muted)">{{ error() }}</p>
         <a routerLink="/activity" class="sp-button-primary mt-5">Start an activity</a>
       </div>
+
     } @else if (path()) {
 
-      <!-- ── Path header ────────────────────────────────────────────────── -->
-      <section class="mb-6">
-        <p class="sp-eyebrow mb-2">My learning path</p>
-        <h1 class="text-2xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-3xl">
-          {{ path()!.title }}
-        </h1>
-        <!-- Overall progress -->
-        <div class="mt-4 flex items-center gap-3">
-          <div class="sp-progress-track flex-1">
-            <div class="sp-progress-fill" [style.width.%]="overallProgress()"></div>
+      <!-- ── Path hero — cool gradient header ─────────────────────────── -->
+      <div class="mb-5 overflow-hidden rounded-[22px] shadow-md" style="box-shadow:var(--sp-sh-md)">
+        <div class="px-5 pt-6 pb-6 sm:px-6" style="background:var(--sp-grad-cool);color:#fff">
+          <div class="mb-3">
+            <span class="sp-ai-badge">✦ AI-personalised path</span>
           </div>
-          <span class="shrink-0 text-sm font-semibold text-slate-600">
-            {{ path()!.modulesCompleted }} of {{ path()!.totalModules }} modules complete
-          </span>
+          <h1 class="text-xl font-extrabold leading-snug sm:text-2xl" style="color:#fff;letter-spacing:-.02em;max-width:460px">
+            {{ path()!.title }}
+          </h1>
+          <!-- Progress ring + label -->
+          <div class="mt-4 flex items-center gap-4">
+            <!-- SVG ring -->
+            <div class="relative h-14 w-14 shrink-0">
+              <svg width="56" height="56" style="transform:rotate(-90deg)">
+                <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,.25)" stroke-width="6" fill="none"/>
+                <circle cx="28" cy="28" r="22" stroke="#fff" stroke-width="6" fill="none"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="138.23"
+                  [attr.stroke-dashoffset]="138.23 * (1 - overallProgress() / 100)"/>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-sm font-extrabold" style="color:#fff">{{ overallProgress() }}%</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-base font-extrabold" style="color:#fff">{{ path()!.modulesCompleted }} of {{ path()!.totalModules }} modules</div>
+              <div class="text-xs font-semibold opacity-80">on your way to confident workplace English</div>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <!-- ── Module list ───────────────────────────────────────────────── -->
-      <div class="space-y-4">
+      <!-- ── Module journey ────────────────────────────────────────────── -->
+      <p class="sp-eyebrow mb-3">Your journey</p>
+      <div class="relative space-y-3">
+        <!-- Connecting spine -->
+        <div aria-hidden="true" class="absolute left-[31px] top-8 bottom-8 w-0.5"
+          style="background:repeating-linear-gradient(var(--sp-border2) 0 6px, transparent 6px 12px);z-index:0"></div>
+
         @for (mod of path()!.modules; track mod.moduleId) {
-          <div class="sp-module-card"
+          <div class="relative z-10 sp-module-card flex items-center gap-4"
             [class.sp-module-card-current]="moduleStatus(mod) === 'current'"
             [class.sp-module-card-complete]="moduleStatus(mod) === 'complete'"
             [class.sp-module-card-locked]="moduleStatus(mod) === 'locked'">
 
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1 min-w-0">
-                <!-- Module number + status -->
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Module {{ mod.order }}</span>
-                  @if (moduleStatus(mod) === 'current') {
-                    <span class="sp-skill-badge sp-skill-badge-writing">Current</span>
-                  } @else if (moduleStatus(mod) === 'complete') {
-                    <span class="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-700">
-                      ✓ Complete
-                    </span>
-                  } @else {
-                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-400">
-                      Upcoming
-                    </span>
-                  }
-                </div>
-                <h3 class="text-base font-bold text-slate-950">{{ mod.title }}</h3>
-                <p class="mt-1 text-sm leading-6 text-slate-500">{{ mod.description }}</p>
-              </div>
-
-              <!-- Activity dots (right) -->
-              <div class="shrink-0 flex flex-col items-end gap-1">
-                <div class="flex items-center gap-1.5">
-                  @for (i of activityDots(mod.totalActivities); track i) {
-                    <div
-                      class="h-2.5 w-2.5 rounded-full"
-                      [style.background-color]="i < mod.completedActivities ? '#0d9488' : '#e2e8f0'">
-                    </div>
-                  }
-                </div>
-                <span class="text-xs text-slate-400">{{ mod.completedActivities }}/{{ mod.totalActivities }}</span>
-              </div>
+            <!-- Skill icon -->
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px]"
+              [style.background]="moduleStatus(mod) === 'complete' ? 'var(--sp-success-soft)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing-soft)' : 'var(--sp-canvas2)'"
+              [style.color]="moduleStatus(mod) === 'complete' ? 'var(--sp-success)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing)' : 'var(--sp-faint)'">
+              @if (moduleStatus(mod) === 'complete') {
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              } @else if (moduleStatus(mod) === 'locked') {
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              } @else {
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              }
             </div>
 
-            <!-- Progress bar per module -->
-            @if (moduleStatus(mod) === 'current') {
-              <div class="mt-4">
-                <div class="sp-progress-track">
-                  <div class="sp-progress-fill" [style.width.%]="progressPercent(mod)"></div>
+            <!-- Content -->
+            <div class="flex-1 min-w-0">
+              <div class="mb-0.5 flex flex-wrap items-center gap-2">
+                <span class="text-xs font-extrabold uppercase tracking-widest" style="color:var(--sp-muted)">MODULE {{ mod.order }}</span>
+                @if (moduleStatus(mod) === 'current') {
+                  <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink);padding:2px 8px;font-size:10px">IN PROGRESS</span>
+                } @else if (moduleStatus(mod) === 'complete') {
+                  <span class="sp-pill" style="background:var(--sp-success-soft);color:var(--sp-success);padding:2px 8px;font-size:10px">✓ COMPLETE</span>
+                } @else {
+                  <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);padding:2px 8px;font-size:10px">SOON</span>
+                }
+              </div>
+              <h3 class="text-sm font-extrabold" style="color:var(--sp-ink)">{{ mod.title }}</h3>
+              <p class="mt-0.5 text-xs font-medium leading-5" style="color:var(--sp-muted)">{{ mod.description }}</p>
+              @if (moduleStatus(mod) === 'current' || moduleStatus(mod) === 'complete') {
+                <div class="mt-2 flex items-center gap-2">
+                  <div class="sp-progress-track flex-1" style="height:7px">
+                    <div class="sp-progress-fill" [style.width.%]="progressPercent(mod)"></div>
+                  </div>
+                  <span class="shrink-0 text-xs font-bold" style="color:var(--sp-muted)">{{ mod.completedActivities }}/{{ mod.totalActivities }}</span>
                 </div>
-              </div>
-              <div class="mt-3">
-                <a routerLink="/activity" class="sp-button-primary text-xs px-4 py-2">
-                  Continue this module →
-                </a>
-              </div>
-            }
+              }
+            </div>
+
+            <!-- Arrow / lock -->
+            <div class="shrink-0">
+              @if (moduleStatus(mod) === 'locked') {
+                <svg width="18" height="18" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              } @else {
+                <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              }
+            </div>
           </div>
+
+          @if (moduleStatus(mod) === 'current') {
+            <div class="relative z-10 -mt-1 ml-16">
+              <a routerLink="/activity" class="sp-button-primary inline-flex px-4 py-2 text-xs">
+                Continue this module →
+              </a>
+            </div>
+          }
         }
+      </div>
+
+      <!-- ── Adapts banner ────────────────────────────────────────────── -->
+      <div class="sp-card-soft mt-5 flex items-center gap-3">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]" style="background:#fff;color:#B45CF0">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-extrabold" style="color:var(--sp-ink)">Your path adapts as you learn</p>
+          <p class="text-xs font-medium leading-5" style="color:var(--sp-text)">SpeakPath adds new modules based on what you find easy or tricky.</p>
+        </div>
       </div>
 
     }

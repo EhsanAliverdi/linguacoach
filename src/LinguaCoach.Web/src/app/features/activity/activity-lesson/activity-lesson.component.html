@@ -1,147 +1,222 @@
 <div class="sp-page">
-  <nav class="border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
-    <div class="mx-auto flex max-w-5xl items-center gap-3">
-      <button (click)="backToDashboard()" class="sp-link flex items-center gap-1">
+
+  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
+  <nav class="sp-nav">
+    <div class="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <!-- Logo mark -->
+      <a routerLink="/dashboard" class="sp-brand mr-2" aria-label="SpeakPath home">
+        <svg width="30" height="30" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="lg-act" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-act)"/>
+          <circle cx="14" cy="33" r="3.4" fill="#fff"/>
+          <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
+          <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
+          <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
+        </svg>
+      </a>
+
+      <!-- Back breadcrumb -->
+      <button (click)="backToDashboard()" class="flex items-center gap-1.5 text-sm font-bold transition-colors" style="color:var(--sp-muted)">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         Dashboard
       </button>
-      <span class="text-slate-300">/</span>
-      <span class="text-sm font-semibold text-slate-800">Practice</span>
+      <span style="color:var(--sp-border2)">/</span>
+      <span class="text-sm font-bold" style="color:var(--sp-ink)">Practice</span>
+
+      <!-- Step dots (learning → practice → feedback) -->
+      @if (state() !== 'loading' && state() !== 'error') {
+        <div class="ml-auto flex items-center gap-1.5">
+          @for (step of stepDots; track step.label) {
+            <div class="flex items-center gap-1.5">
+              <div class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold"
+                [style.background]="stepState(step.key) === 'done' ? 'var(--sp-success)' : stepState(step.key) === 'active' ? 'var(--sp-grad-brand)' : 'var(--sp-canvas2)'"
+                [style.color]="stepState(step.key) === 'future' ? 'var(--sp-faint)' : '#fff'">
+                @if (stepState(step.key) === 'done') { ✓ } @else { {{ step.n }} }
+              </div>
+              <span class="hidden text-xs font-bold sm:inline"
+                [style.color]="stepState(step.key) === 'active' ? 'var(--sp-ink)' : 'var(--sp-muted)'">
+                {{ step.label }}
+              </span>
+            </div>
+            @if (!$last) {
+              <div class="h-0.5 w-3 rounded" style="background:var(--sp-border2)"></div>
+            }
+          }
+        </div>
+      }
+
+      <!-- AI badge -->
       @if (isAiGenerated()) {
-        <span class="ml-auto rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-200">AI generated</span>
+        <span class="sp-ai-badge shrink-0">✦ AI generated</span>
       }
     </div>
   </nav>
 
   <main class="sp-shell">
 
-    <!-- ── Loading ──────────────────────────────────────────────────────────── -->
+    <!-- ── Loading ──────────────────────────────────────────────────────── -->
     @if (state() === 'loading') {
-      <div class="sp-card py-12 text-center">
-        <div class="mx-auto mb-3 h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-        <p class="text-sm text-slate-500">Preparing your next activity...</p>
+      <div class="sp-empty-state py-16">
+        <div class="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-violet-200" style="border-top-color:var(--sp-writing)"></div>
+        <p class="text-sm font-semibold" style="color:var(--sp-muted)">Preparing your next activity…</p>
       </div>
     }
 
-    <!-- ── Error ─────────────────────────────────────────────────────────────── -->
+    <!-- ── Error ─────────────────────────────────────────────────────────── -->
     @if (state() === 'error') {
       <div class="sp-alert-error mb-4">{{ errorMessage() }}</div>
-      <button (click)="backToDashboard()" class="sp-button-secondary">Back to dashboard</button>
+      <button (click)="backToDashboard()" class="sp-button-ghost">← Back to dashboard</button>
     }
 
-    <!-- ── Learning section ──────────────────────────────────────────────────── -->
+    <!-- ── Learning (intro) phase ─────────────────────────────────────── -->
     @if (state() === 'learning') {
       @if (activity(); as act) {
-        <section class="mb-5">
-          <p class="sp-eyebrow mb-2">Today's activity</p>
-          <h1 class="text-3xl font-bold leading-tight text-slate-950">{{ act.title }}</h1>
-          @if (act.learningGoal) {
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{{ act.learningGoal }}</p>
-          }
-        </section>
 
-        <div class="grid gap-5 lg:grid-cols-2">
-          <div class="space-y-5">
+        <!-- Header -->
+        <div class="mb-5">
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <span class="sp-skill-badge sp-skill-badge-writing">✏ Writing</span>
+            @if (isAiGenerated()) {
+              <span class="sp-ai-badge">✦ AI generated</span>
+            } @else {
+              <span class="sp-fallback-badge">🛡 Backup content</span>
+            }
+            <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted)">
+              ⏱ ~8 min
+            </span>
+          </div>
+          <h1 class="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl" style="color:var(--sp-ink);letter-spacing:-.02em">
+            {{ act.title }}
+          </h1>
+          @if (act.learningGoal) {
+            <p class="mt-2 max-w-2xl text-sm font-medium leading-6" style="color:var(--sp-muted)">{{ act.learningGoal }}</p>
+          }
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <!-- Left column -->
+          <div class="space-y-4">
+
+            <!-- Situation -->
             @if (act.situation) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Situation</p>
-                <p class="text-sm leading-6 text-slate-700">{{ act.situation }}</p>
+              <div class="sp-info-block" style="border-left:3px solid var(--sp-writing)">
+                <div class="mb-2 flex items-center gap-2">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-[9px]" style="background:rgba(91,75,232,.12);color:var(--sp-writing)">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <span class="sp-eyebrow">The situation</span>
+                </div>
+                <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ act.situation }}</p>
               </div>
             }
 
+            <!-- Persian instruction -->
             @if (act.instructionInSourceLanguage) {
-              <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm leading-7 text-indigo-950" dir="rtl" lang="fa">
+              <div class="sp-source-lang-block" dir="rtl" lang="fa">
+                <p class="mb-1 text-left text-xs font-extrabold uppercase tracking-widest" dir="ltr" style="color:var(--sp-writing)">In Persian</p>
                 {{ act.instructionInSourceLanguage }}
               </div>
             }
 
+            <!-- Target phrases -->
             @if (act.targetPhrases.length > 0) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Target phrases</p>
-                <p class="mb-3 text-xs text-slate-500">Try to use at least one of these in your response:</p>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-2">Target phrases</p>
+                <p class="mb-3 text-xs font-medium" style="color:var(--sp-muted)">Try to use at least one of these:</p>
                 <div class="flex flex-wrap gap-2">
                   @for (phrase of act.targetPhrases; track phrase) {
-                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-800 ring-1 ring-indigo-200">{{ phrase }}</span>
+                    <span class="sp-phrase-chip">{{ phrase }}</span>
                   }
                 </div>
               </div>
             }
 
+            <!-- Vocabulary -->
             @if (act.targetVocabulary.length > 0) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Vocabulary to practise</p>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-2">Vocabulary to practise</p>
                 <div class="flex flex-wrap gap-2">
                   @for (word of act.targetVocabulary; track word) {
-                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">{{ word }}</span>
+                    <span class="sp-vocab-chip">
+                      <span class="text-sm font-extrabold" style="color:var(--sp-vocabulary-ink)">{{ word }}</span>
+                    </span>
                   }
                 </div>
               </div>
             }
           </div>
 
-          <div class="space-y-5">
+          <!-- Right column -->
+          <div class="space-y-4">
+            <!-- Example -->
             @if (act.exampleText) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3 text-emerald-700">Example</p>
-                <pre class="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 font-sans text-sm leading-7 text-slate-800">{{ act.exampleText }}</pre>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-3" style="color:var(--sp-success)">Example</p>
+                <pre class="whitespace-pre-wrap rounded-[14px] border p-4 font-sans text-sm leading-7"
+                  style="background:var(--sp-canvas);border-color:var(--sp-border);color:var(--sp-text)">{{ act.exampleText }}</pre>
               </div>
             }
 
+            <!-- Common mistake -->
             @if (act.commonMistakeToAvoid) {
-              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-amber-700" style="letter-spacing: 0.06em;">Common mistake to avoid</p>
-                <p class="text-sm leading-6 text-amber-950">{{ act.commonMistakeToAvoid }}</p>
+              <div class="rounded-[18px] border p-4" style="background:var(--sp-vocabulary-soft);border-color:#F6CAAA">
+                <p class="mb-2 sp-eyebrow" style="color:var(--sp-vocabulary-ink)">Common mistake to avoid</p>
+                <p class="text-sm font-medium leading-6" style="color:var(--sp-vocabulary-ink)">{{ act.commonMistakeToAvoid }}</p>
               </div>
             }
           </div>
         </div>
 
+        <!-- Start writing CTA -->
         <div class="mt-6">
           <button (click)="startWriting()" class="sp-button-primary">
             Start writing
-            <svg class="ml-2 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </button>
         </div>
       }
     }
 
-    <!-- ── Writing / submit section ──────────────────────────────────────────── -->
+    <!-- ── Writing / submitting phase ───────────────────────────────── -->
     @if (state() === 'writing' || state() === 'submitting') {
       @if (activity(); as act) {
-        <section class="mb-5">
-          <p class="sp-eyebrow mb-2">Writing practice</p>
-          <h1 class="text-3xl font-bold leading-tight text-slate-950">{{ act.title }}</h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Focus on clarity, professional tone, and the target phrases.</p>
-        </section>
+        <div class="mb-5">
+          <p class="sp-eyebrow mb-1">Writing practice</p>
+          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl" style="color:var(--sp-ink);letter-spacing:-.02em">{{ act.title }}</h1>
+          <p class="mt-1 text-sm font-medium" style="color:var(--sp-muted)">Focus on clarity, professional tone, and the target phrases.</p>
+        </div>
 
-        <div class="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-          <aside class="space-y-5">
+        <div class="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+
+          <!-- Left: reference sidebar -->
+          <aside class="space-y-4">
             @if (act.situation) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Situation</p>
-                <p class="text-sm leading-6 text-slate-700">{{ act.situation }}</p>
+              <div class="sp-info-block" style="border-left:3px solid var(--sp-writing)">
+                <p class="sp-eyebrow mb-2">Situation</p>
+                <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ act.situation }}</p>
               </div>
             }
-
             @if (act.instructionInSourceLanguage) {
-              <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm leading-7 text-indigo-950" dir="rtl" lang="fa">
-                {{ act.instructionInSourceLanguage }}
-              </div>
+              <div class="sp-source-lang-block" dir="rtl" lang="fa">{{ act.instructionInSourceLanguage }}</div>
             }
-
             @if (act.targetPhrases.length > 0) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Phrases to use</p>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-2">Phrases to use</p>
                 <div class="flex flex-wrap gap-2">
                   @for (phrase of act.targetPhrases; track phrase) {
-                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-800 ring-1 ring-indigo-200">{{ phrase }}</span>
+                    <span class="sp-phrase-chip">{{ phrase }}</span>
                   }
                 </div>
               </div>
             }
           </aside>
 
-          <section class="sp-card">
+          <!-- Right: textarea -->
+          <div class="sp-card">
             <label class="sp-label" for="draftText">Write your response</label>
             <textarea
               id="draftText"
@@ -149,12 +224,12 @@
               [disabled]="state() === 'submitting'"
               rows="13"
               placeholder="Dear [Name],&#10;&#10;I hope you are well..."
-              class="sp-input min-h-72 resize-y leading-6"
+              class="sp-input min-h-72 resize-y leading-7"
             ></textarea>
             <div class="mt-2 flex items-center justify-between">
-              <span class="text-xs text-slate-500">{{ draftText.length }}/3000</span>
+              <span class="text-xs font-semibold" style="color:var(--sp-muted)">{{ draftText.length }}/3000</span>
               @if (draftText.length > 3000) {
-                <span class="text-xs font-semibold text-red-600">Too long</span>
+                <span class="text-xs font-bold" style="color:var(--sp-speaking)">Too long</span>
               }
             </div>
 
@@ -168,43 +243,64 @@
               class="sp-button-primary mt-5 w-full">
               @if (state() === 'submitting') {
                 <span class="flex items-center justify-center gap-2">
-                  <span class="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
-                  Getting feedback...
+                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  Getting feedback…
                 </span>
               } @else {
                 Get feedback
               }
             </button>
-          </section>
+          </div>
         </div>
       }
     }
 
-    <!-- ── Feedback section ──────────────────────────────────────────────────── -->
+    <!-- ── Feedback phase ────────────────────────────────────────────── -->
     @if (state() === 'feedback') {
       @if (feedback(); as fb) {
-        <section class="mb-5">
-          <p class="sp-eyebrow mb-2">Feedback</p>
-          <h1 class="text-3xl font-bold leading-tight text-slate-950">{{ activity()?.title }}</h1>
-        </section>
+        <div class="mb-5">
+          <p class="sp-eyebrow mb-1">Feedback</p>
+          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl" style="color:var(--sp-ink);letter-spacing:-.02em">{{ activity()?.title }}</h1>
+        </div>
 
-        <div class="grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
-          <aside class="space-y-5">
+        <div class="grid gap-4 lg:grid-cols-[0.65fr_1.35fr]">
+
+          <!-- Left: score + highlights -->
+          <aside class="space-y-4">
+
+            <!-- Score ring + band -->
             <div class="sp-card text-center">
-              <p class="sp-eyebrow mb-2">Overall score</p>
-              <div class="text-5xl font-bold {{ scoreColour(fb.score) }}">
-                {{ fb.score !== null ? fb.score : '-' }}
-                @if (fb.score !== null) { <span class="text-xl font-normal text-slate-400">/100</span> }
+              <p class="sp-eyebrow mb-3">Overall score</p>
+              <div class="relative mx-auto mb-3" style="width:96px;height:96px">
+                <svg width="96" height="96" style="transform:rotate(-90deg)">
+                  <circle cx="48" cy="48" r="38" stroke="var(--sp-canvas2)" stroke-width="10" fill="none"/>
+                  <circle cx="48" cy="48" r="38" stroke-width="10" fill="none"
+                    stroke-linecap="round"
+                    [attr.stroke]="scoreRingColour(fb.score)"
+                    [attr.stroke-dasharray]="238.76"
+                    [attr.stroke-dashoffset]="fb.score !== null ? 238.76 * (1 - fb.score / 100) : 238.76"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-3xl font-extrabold" style="color:var(--sp-ink)">{{ fb.score !== null ? fb.score : '–' }}</span>
+                  <span class="text-xs font-bold" style="color:var(--sp-muted)">/100</span>
+                </div>
               </div>
+              @if (fb.score !== null) {
+                <span class="sp-pill" [style.background]="fb.score >= 85 ? 'var(--sp-success-soft)' : fb.score >= 70 ? 'var(--sp-vocabulary-soft)' : 'var(--sp-speaking-soft)'"
+                  [style.color]="fb.score >= 85 ? 'var(--sp-success)' : fb.score >= 70 ? 'var(--sp-vocabulary-ink)' : 'var(--sp-speaking-ink)'">
+                  ✦ {{ fb.score >= 85 ? 'Great work' : fb.score >= 70 ? 'Good effort' : 'Keep going' }}
+                </span>
+              }
             </div>
 
+            <!-- What you did well -->
             @if (fb.whatYouDidWell.length) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3 text-emerald-700">What you did well</p>
+              <div class="sp-coach-message flex-col">
+                <p class="sp-eyebrow mb-2" style="color:var(--sp-success)">What you did well</p>
                 <ul class="space-y-2">
                   @for (item of fb.whatYouDidWell; track item) {
-                    <li class="flex items-start gap-2 text-sm leading-6 text-slate-700">
-                      <span class="mt-1 shrink-0 text-emerald-500">✓</span>
+                    <li class="flex items-start gap-2 text-sm font-medium leading-6" style="color:var(--sp-text)">
+                      <span class="mt-0.5 shrink-0 font-bold" style="color:var(--sp-success)">✓</span>
                       {{ item }}
                     </li>
                   }
@@ -212,79 +308,97 @@
               </div>
             }
 
+            <!-- Vocabulary to remember -->
             @if (fb.vocabularyToRemember.length) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Vocabulary to remember</p>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-2">Vocabulary to remember</p>
                 <div class="flex flex-wrap gap-2">
                   @for (word of fb.vocabularyToRemember; track word) {
-                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-800 ring-1 ring-indigo-200">{{ word }}</span>
+                    <span class="sp-vocab-chip">
+                      <span class="text-sm font-extrabold" style="color:var(--sp-vocabulary-ink)">{{ word }}</span>
+                    </span>
                   }
                 </div>
               </div>
             }
           </aside>
 
-          <section class="space-y-5">
+          <!-- Right: detailed feedback -->
+          <section class="space-y-4">
+
+            <!-- Feedback in Persian -->
             @if (fb.feedbackInSourceLanguage) {
-              <div class="sp-card-soft" dir="rtl" lang="fa">
-                <p class="mb-3 text-left text-xs font-bold uppercase text-indigo-700" dir="ltr" style="letter-spacing: 0.08em;">Feedback in Persian</p>
-                <p class="text-sm leading-8 text-indigo-950">{{ fb.feedbackInSourceLanguage }}</p>
+              <div class="sp-source-lang-block" dir="rtl" lang="fa">
+                <p class="mb-2 text-left text-xs font-extrabold uppercase tracking-widest" dir="ltr" style="color:var(--sp-writing)">Feedback in Persian</p>
+                {{ fb.feedbackInSourceLanguage }}
               </div>
             }
 
+            <!-- Corrected version -->
             @if (fb.correctedText) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3 text-emerald-700">Clearer version</p>
-                <pre class="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 font-sans text-sm leading-7 text-slate-800">{{ fb.correctedText }}</pre>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-3" style="color:var(--sp-success)">Clearer version</p>
+                <pre class="whitespace-pre-wrap rounded-[14px] border p-4 font-sans text-sm leading-7"
+                  style="background:var(--sp-canvas);border-color:var(--sp-border);color:var(--sp-text)">{{ fb.correctedText }}</pre>
               </div>
             }
 
+            <!-- Grammar + tone -->
             @if (fb.grammarExplanation || fb.toneExplanation) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-4">Lessons from this activity</p>
-                <div class="space-y-4">
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-3">Lessons from this activity</p>
+                <div class="space-y-3">
                   @if (fb.grammarExplanation) {
-                    <div class="rounded-xl border border-red-100 bg-red-50 p-4">
-                      <h2 class="mb-2 text-xs font-bold uppercase tracking-wide text-red-700" style="letter-spacing: 0.06em;">Grammar lesson</h2>
-                      <p class="text-sm leading-6 text-red-950">{{ fb.grammarExplanation }}</p>
+                    <div class="rounded-[14px] border p-4" style="background:var(--sp-speaking-soft);border-color:#F5BDB3">
+                      <p class="mb-1 sp-eyebrow" style="color:var(--sp-speaking-ink)">Grammar lesson</p>
+                      <p class="text-sm font-medium leading-6" style="color:var(--sp-speaking-ink)">{{ fb.grammarExplanation }}</p>
                     </div>
                   }
                   @if (fb.toneExplanation) {
-                    <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
-                      <h2 class="mb-2 text-xs font-bold uppercase tracking-wide text-indigo-700" style="letter-spacing: 0.06em;">Tone and register</h2>
-                      <p class="text-sm leading-6 text-indigo-950">{{ fb.toneExplanation }}</p>
+                    <div class="rounded-[14px] border p-4" style="background:var(--sp-writing-soft);border-color:#C4BAFF">
+                      <p class="mb-1 sp-eyebrow" style="color:var(--sp-writing-ink)">Tone &amp; register</p>
+                      <p class="text-sm font-medium leading-6" style="color:var(--sp-writing-ink)">{{ fb.toneExplanation }}</p>
                     </div>
                   }
                 </div>
               </div>
             }
 
+            <!-- Main mistakes -->
             @if (fb.mainMistakes.length) {
-              <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Main mistake to fix</p>
+              <div class="sp-info-block">
+                <p class="sp-eyebrow mb-2">Main mistake to fix</p>
                 @for (mistake of fb.mainMistakes; track mistake) {
-                  <p class="text-sm leading-6 text-slate-700">{{ mistake }}</p>
+                  <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ mistake }}</p>
                 }
               </div>
             }
 
+            <!-- Rewrite challenge -->
             @if (fb.rewriteChallenge) {
-              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-amber-700" style="letter-spacing: 0.06em;">Challenge</p>
-                <p class="text-sm leading-6 text-amber-950">{{ fb.rewriteChallenge }}</p>
+              <div class="rounded-[18px] border p-4" style="background:var(--sp-vocabulary-soft);border-color:#F6CAAA">
+                <p class="mb-1 sp-eyebrow" style="color:var(--sp-vocabulary-ink)">Challenge</p>
+                <p class="text-sm font-medium leading-6" style="color:var(--sp-vocabulary-ink)">{{ fb.rewriteChallenge }}</p>
               </div>
             }
 
+            <!-- Next suggestion -->
             @if (fb.nextPracticeSuggestion) {
-              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500" style="letter-spacing: 0.06em;">Next time</p>
-                <p class="text-sm leading-6 text-slate-700">{{ fb.nextPracticeSuggestion }}</p>
+              <div class="rounded-[18px] border p-4" style="background:var(--sp-canvas2);border-color:var(--sp-border2)">
+                <p class="mb-1 sp-eyebrow">Next time</p>
+                <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ fb.nextPracticeSuggestion }}</p>
               </div>
             }
 
+            <!-- Actions -->
             <div class="flex flex-col gap-3 sm:flex-row">
-              <button (click)="tryAgain()" class="sp-button-secondary flex-1">Try again</button>
-              <button (click)="nextActivity()" class="sp-button-primary flex-1">Next activity</button>
+              <button (click)="tryAgain()" class="sp-button-ghost flex-1">Try again</button>
+              <button (click)="nextActivity()" class="sp-button-primary flex-1">Next activity →</button>
+            </div>
+
+            <!-- Back to path -->
+            <div class="text-center">
+              <a routerLink="/my-path" class="sp-link text-xs">Back to my path</a>
             </div>
           </section>
         </div>

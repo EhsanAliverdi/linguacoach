@@ -18,6 +18,12 @@ export class DashboardComponent implements OnInit {
   error = signal('');
   notice = signal('');
 
+  readonly howItWorks = [
+    { n: 1, text: 'AI generates a realistic workplace scenario for your career and level.' },
+    { n: 2, text: 'You write your response in a safe, private space.' },
+    { n: 3, text: 'Get coaching feedback on grammar, tone, and professional phrasing.' },
+  ];
+
   firstName = computed(() => {
     const name = this.data()?.studentName ?? '';
     return name.includes('@') ? name.split('@')[0] : name.split(' ')[0] || name;
@@ -27,6 +33,12 @@ export class DashboardComponent implements OnInit {
     const lp = this.data()?.learningPath;
     if (!lp || lp.totalModules === 0) return 0;
     return Math.round((lp.modulesCompleted / lp.totalModules) * 100);
+  });
+
+  moduleProgress = computed(() => {
+    const mod = this.data()?.learningPath?.currentModule;
+    if (!mod || mod.totalActivities === 0) return 0;
+    return Math.round((mod.completedActivities / mod.totalActivities) * 100);
   });
 
   constructor(

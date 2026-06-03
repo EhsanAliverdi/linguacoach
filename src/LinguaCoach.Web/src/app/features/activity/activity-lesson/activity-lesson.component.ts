@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
 
@@ -10,7 +10,7 @@ type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' 
 @Component({
   selector: 'app-activity-lesson',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './activity-lesson.component.html',
 })
 export class ActivityLessonComponent implements OnInit {
@@ -19,6 +19,12 @@ export class ActivityLessonComponent implements OnInit {
   feedback = signal<ActivityFeedbackDto | null>(null);
   draftText = '';
   errorMessage = signal('');
+
+  readonly stepDots = [
+    { n: 1, key: 'learning', label: 'Lesson' },
+    { n: 2, key: 'writing',  label: 'Practice' },
+    { n: 3, key: 'feedback', label: 'Feedback' },
+  ];
 
   constructor(
     private activityService: ActivityService,
@@ -33,6 +39,24 @@ export class ActivityLessonComponent implements OnInit {
         this.state.set('error');
       },
     });
+  }
+
+  stepState(key: string): 'done' | 'active' | 'future' {
+    const order = ['learning', 'writing', 'feedback'];
+    const current = this.state();
+    const activeKey = current === 'submitting' ? 'writing' : current;
+    const ki = order.indexOf(key);
+    const ai = order.indexOf(activeKey);
+    if (ki < ai) return 'done';
+    if (ki === ai) return 'active';
+    return 'future';
+  }
+
+  scoreRingColour(score: number | null): string {
+    if (score === null) return 'var(--sp-faint)';
+    if (score >= 85) return 'var(--sp-success)';
+    if (score >= 70) return 'var(--sp-vocabulary)';
+    return 'var(--sp-speaking)';
   }
 
   startWriting(): void {
@@ -74,13 +98,6 @@ export class ActivityLessonComponent implements OnInit {
 
   backToDashboard(): void {
     this.router.navigate(['/dashboard']);
-  }
-
-  scoreColour(score: number | null): string {
-    if (score === null) return 'text-slate-500';
-    if (score >= 75) return 'text-green-600';
-    if (score >= 50) return 'text-amber-600';
-    return 'text-red-600';
   }
 
   isAiGenerated(): boolean {

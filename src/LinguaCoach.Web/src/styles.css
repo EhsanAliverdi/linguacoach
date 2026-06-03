@@ -1,42 +1,92 @@
 @import "tailwindcss";
 @source "./**/*.{html,ts}";
 
-/* ── Brand tokens ────────────────────────────────────────────────────────── */
-@theme {
-  --color-sp-violet:       #6d28d9;
-  --color-sp-violet-mid:   #7c3aed;
-  --color-sp-violet-light: #ede9fe;
-  --color-sp-violet-dark:  #4c1d95;
-  --color-sp-teal:         #0d9488;
-  --color-sp-teal-light:   #ccfbf1;
-  --color-sp-amber:        #d97706;
-  --color-sp-coral:        #e11d48;
-  --color-sp-ink:          #0c0a1e;
+/* ── Design tokens (from SpeakPath prototype) ───────────────────────────── */
+:root {
+  /* Signature gradient */
+  --sp-grad-brand:      linear-gradient(135deg, #FF7A59 0%, #B45CF0 52%, #5B4BE8 100%);
+  --sp-grad-brand-soft: linear-gradient(135deg, #FFF0EA 0%, #F4ECFF 55%, #ECEAFF 100%);
+  --sp-grad-cool:       linear-gradient(135deg, #7C6CFF 0%, #5B4BE8 100%);
+  /* Skill accent colours */
+  --sp-writing:        #5B4BE8;
+  --sp-writing-soft:   #EDEBFF;
+  --sp-writing-ink:    #3A2EA8;
+  --sp-speaking:       #FB6B57;
+  --sp-speaking-soft:  #FFEAE4;
+  --sp-speaking-ink:   #C23C2C;
+  --sp-listening:      #9B5CF6;
+  --sp-listening-soft: #F2E9FF;
+  --sp-listening-ink:  #6B2EB8;
+  --sp-vocabulary:     #F0982C;
+  --sp-vocabulary-soft:#FFF1DC;
+  --sp-vocabulary-ink: #B26410;
+  --sp-pronunciation:  #10B5A4;
+  --sp-pronunciation-soft: #DFF6F2;
+  --sp-pronunciation-ink:  #0A7468;
+  /* Neutral ink */
+  --sp-ink:     #211B36;
+  --sp-text:    #4B4462;
+  --sp-muted:   #8B85A0;
+  --sp-faint:   #BDB8CC;
+  --sp-border:  #ECE9F5;
+  --sp-border2: #E2DEF0;
+  --sp-surface: #FFFFFF;
+  --sp-canvas:  #F6F4FB;
+  --sp-canvas2: #EFECF9;
+  /* Status */
+  --sp-success:      #13B07C;
+  --sp-success-soft: #E0F6EE;
+  --sp-warn:         #F0982C;
+  --sp-warn-soft:    #FFF1DC;
+  /* Shadows */
+  --sp-sh-xs: 0 1px 2px rgba(33,27,54,.06);
+  --sp-sh-sm: 0 2px 8px rgba(60,48,140,.07);
+  --sp-sh-md: 0 8px 24px rgba(60,48,140,.10);
+  --sp-sh-lg: 0 16px 40px rgba(60,48,140,.14);
+  --sp-sh-glow: 0 10px 30px rgba(123,80,220,.30);
+  /* Radius */
+  --sp-r-sm: 14px;
+  --sp-r:    18px;
+  --sp-r-lg: 22px;
+  --sp-r-xl: 28px;
 }
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
 html {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  color: var(--sp-text);
 }
 
 body {
   margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--sp-canvas);
+  color: var(--sp-text);
 }
+
+h1, h2, h3, h4 {
+  margin: 0;
+  color: var(--sp-ink);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+p { margin: 0; }
 
 button, a, input, textarea {
   touch-action: manipulation;
+  font-family: inherit;
 }
 
 /* ── Component classes ───────────────────────────────────────────────────── */
 @layer components {
 
-  /* Layout */
+  /* ── Layout ── */
   .sp-page {
-    @apply min-h-dvh text-slate-900;
-    background: linear-gradient(160deg, #f8fafc 0%, #f5f3ff 60%, #ede9fe 100%);
+    min-height: 100dvh;
+    background: var(--sp-canvas);
+    color: var(--sp-text);
   }
 
   .sp-shell {
@@ -47,215 +97,307 @@ button, a, input, textarea {
     @apply mx-auto w-full max-w-xl px-4 py-8 sm:px-6;
   }
 
-  /* Brand */
+  /* ── Brand ── */
   .sp-brand {
-    @apply inline-flex items-center gap-2 font-bold text-slate-950;
+    @apply inline-flex items-center gap-2;
+    font-weight: 800;
+    color: var(--sp-ink);
+    letter-spacing: -0.01em;
+    text-decoration: none;
   }
 
-  .sp-brand-mark {
-    @apply flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white shadow-sm;
-    background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
+  /* Logo wordmark: Speak + Path */
+  .sp-wordmark-speak { color: var(--sp-ink); }
+  .sp-wordmark-path  { color: var(--sp-writing); }
+
+  /* ── Navigation ── */
+  .sp-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(255,255,255,0.92);
+    border-bottom: 1px solid var(--sp-border);
+    backdrop-filter: blur(12px);
   }
 
-  /* Cards */
+  .sp-nav-link {
+    @apply rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors;
+    color: var(--sp-muted);
+    text-decoration: none;
+  }
+  .sp-nav-link:hover {
+    background: var(--sp-canvas2);
+    color: var(--sp-ink);
+  }
+  .sp-nav-link-active {
+    background: var(--sp-writing-soft);
+    color: var(--sp-writing);
+  }
+
+  /* ── Cards ── */
   .sp-card {
-    @apply rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-6;
+    background: var(--sp-surface);
+    border: 1px solid var(--sp-border);
+    border-radius: var(--sp-r-lg);
+    box-shadow: var(--sp-sh-sm);
+    padding: 18px;
   }
 
   .sp-card-soft {
-    @apply rounded-2xl border border-violet-100 bg-violet-50/60 p-5 sm:p-6;
+    background: var(--sp-grad-brand-soft);
+    border: 1px solid #EADBFF;
+    border-radius: var(--sp-r-lg);
+    padding: 18px;
   }
 
+  /* Module card — left-bordered status cards */
   .sp-module-card {
-    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md;
+    background: var(--sp-surface);
+    border: 1px solid var(--sp-border);
     border-left-width: 4px;
+    border-radius: var(--sp-r-lg);
+    box-shadow: var(--sp-sh-sm);
+    padding: 16px;
+    transition: transform 0.18s, box-shadow 0.2s;
   }
-
+  .sp-module-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sp-sh-md);
+  }
   .sp-module-card-current {
-    @apply border-l-[#6d28d9] bg-violet-50/40;
+    border-left-color: var(--sp-writing);
+    border-color: var(--sp-writing);
+    box-shadow: var(--sp-sh-md);
   }
-
   .sp-module-card-complete {
-    @apply border-l-[#0d9488] bg-teal-50/30;
+    border-left-color: var(--sp-success);
   }
-
   .sp-module-card-locked {
-    @apply border-l-slate-200 opacity-60;
+    border-left-color: var(--sp-border2);
+    opacity: 0.72;
   }
 
-  .sp-feedback-card {
-    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm;
-    border-left-width: 3px;
-  }
-
+  /* Coach feedback card */
   .sp-coach-message {
-    @apply rounded-2xl border border-teal-200 bg-teal-50 p-5;
+    background: var(--sp-grad-brand-soft);
+    border: 1px solid #EADBFF;
+    border-radius: var(--sp-r-lg);
+    padding: 16px;
+    display: flex;
+    gap: 12px;
   }
 
-  /* Buttons */
+  /* ── Buttons ── */
   .sp-button-primary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-    background-color: #6d28d9;
-    focus-ring-color: #6d28d9;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[14px] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--sp-grad-brand);
+    box-shadow: var(--sp-sh-glow);
+    --tw-ring-color: #B45CF0;
   }
   .sp-button-primary:hover:not(:disabled) {
-    background-color: #7c3aed;
+    opacity: 0.92;
+    transform: translateY(-1px);
   }
-  .sp-button-primary:focus {
-    --tw-ring-color: #6d28d9;
-  }
-
-  .sp-button-accent {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .sp-button-secondary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2;
+  .sp-button-primary:active:not(:disabled) {
+    transform: scale(0.98);
   }
 
   .sp-button-ghost {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[14px] border px-5 py-2.5 text-sm font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background: var(--sp-surface);
+    border-color: var(--sp-border2);
+    color: var(--sp-ink);
+  }
+  .sp-button-ghost:hover {
+    background: var(--sp-canvas);
+  }
+
+  .sp-button-secondary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[14px] border px-5 py-2.5 text-sm font-bold transition-all focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--sp-canvas2);
+    border-color: transparent;
+    color: var(--sp-ink);
+  }
+  .sp-button-secondary:hover:not(:disabled) {
+    background: var(--sp-canvas);
   }
 
   .sp-link {
-    @apply text-sm font-semibold transition-colors;
-    color: #6d28d9;
+    @apply text-sm font-bold transition-colors;
+    color: var(--sp-writing);
+    text-decoration: none;
   }
-  .sp-link:hover {
-    color: #4c1d95;
-  }
+  .sp-link:hover { color: var(--sp-writing-ink); }
 
-  /* Forms */
+  /* ── Forms ── */
   .sp-label {
-    @apply mb-1.5 block text-sm font-semibold text-slate-800;
+    @apply mb-1.5 block text-sm font-bold;
+    color: var(--sp-ink);
   }
 
   .sp-input {
-    @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-70;
-    --tw-ring-color: rgb(109 40 217 / 0.2);
+    @apply w-full px-3.5 py-3 text-sm placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70;
+    background: var(--sp-surface);
+    border: 1.5px solid var(--sp-border2);
+    border-radius: var(--sp-r-sm);
+    color: var(--sp-ink);
+    --tw-ring-color: rgba(91,75,232,0.25);
+    transition: border-color 0.15s;
+  }
+  .sp-input:focus {
+    border-color: var(--sp-writing);
   }
 
   .sp-option {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-violet-300 hover:bg-violet-50 focus:outline-none focus:ring-2;
-    --tw-ring-color: rgb(109 40 217 / 0.25);
+    @apply w-full px-4 py-3 text-left transition-colors focus:outline-none focus:ring-2;
+    background: var(--sp-surface);
+    border: 1.5px solid var(--sp-border2);
+    border-radius: var(--sp-r-sm);
+    color: var(--sp-text);
+    --tw-ring-color: rgba(91,75,232,0.25);
+  }
+  .sp-option:hover {
+    border-color: var(--sp-writing);
+    background: var(--sp-writing-soft);
+    color: var(--sp-writing-ink);
   }
 
-  /* Typography */
+  /* ── Typography ── */
   .sp-eyebrow {
-    @apply text-xs font-bold uppercase;
-    color: #6d28d9;
+    font-size: 11px;
+    font-weight: 800;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sp-muted);
   }
 
-  /* Chips */
+  /* ── Pills & chips ── */
+  .sp-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
+  }
+
   .sp-phrase-chip {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1;
-    background-color: #ede9fe;
-    color: #4c1d95;
-    ring-color: #c4b5fd;
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-2 text-sm font-semibold transition-colors;
+    background: var(--sp-surface);
+    border-color: var(--sp-border2);
+    color: var(--sp-text);
+  }
+  .sp-phrase-chip:hover, .sp-phrase-chip-active {
+    background: var(--sp-writing-soft);
+    border-color: transparent;
+    color: var(--sp-writing-ink);
   }
 
   .sp-vocab-chip {
-    @apply inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200;
+    @apply inline-flex flex-col rounded-[14px] px-3 py-2;
+    background: var(--sp-vocabulary-soft);
+    border: 1px solid #F6E2C2;
   }
 
-  /* Badges */
+  /* ── Badges ── */
   .sp-ai-badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
-    background-color: #ede9fe;
-    color: #6d28d9;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(120deg, #F4ECFF, #FFE9E2);
+    border: 1px solid #EADBFF;
+    color: #6B2EB8;
   }
 
   .sp-fallback-badge {
-    @apply inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold;
+    background: var(--sp-warn-soft);
+    border: 1px solid #F6E2C2;
+    color: #B26410;
   }
 
   /* Skill badges */
-  .sp-skill-badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
-  }
+  .sp-skill-badge        { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold; }
+  .sp-skill-badge-writing      { background: var(--sp-writing-soft);      color: var(--sp-writing-ink); }
+  .sp-skill-badge-speaking     { background: var(--sp-speaking-soft);     color: var(--sp-speaking-ink); }
+  .sp-skill-badge-listening    { background: var(--sp-listening-soft);    color: var(--sp-listening-ink); }
+  .sp-skill-badge-vocabulary   { background: var(--sp-vocabulary-soft);   color: var(--sp-vocabulary-ink); }
+  .sp-skill-badge-pronunciation{ background: var(--sp-pronunciation-soft);color: var(--sp-pronunciation-ink); }
+  .sp-skill-badge-reading      { @apply bg-emerald-100 text-emerald-700; }
 
-  .sp-skill-badge-writing {
-    background-color: #ede9fe;
-    color: #6d28d9;
-  }
-
-  .sp-skill-badge-speaking {
-    @apply bg-sky-100 text-sky-700;
-  }
-
-  .sp-skill-badge-listening {
-    @apply bg-teal-100 text-teal-700;
-  }
-
-  .sp-skill-badge-vocabulary {
-    @apply bg-amber-100 text-amber-700;
-  }
-
-  .sp-skill-badge-pronunciation {
-    @apply bg-rose-100 text-rose-700;
-  }
-
-  .sp-skill-badge-reading {
-    @apply bg-emerald-100 text-emerald-700;
-  }
-
-  /* Progress */
+  /* ── Progress ── */
   .sp-progress-track {
-    @apply h-2 w-full overflow-hidden rounded-full bg-slate-200;
+    height: 9px;
+    border-radius: 99px;
+    background: var(--sp-canvas2);
+    overflow: hidden;
   }
-
   .sp-progress-fill {
-    @apply h-2 rounded-full transition-all duration-500;
-    background-color: #0d9488;
+    height: 100%;
+    border-radius: 99px;
+    background: var(--sp-grad-brand);
+    transition: width 0.7s cubic-bezier(.22,1,.36,1);
   }
+  .sp-progress-fill-writing      { background: var(--sp-writing); }
+  .sp-progress-fill-speaking     { background: var(--sp-speaking); }
+  .sp-progress-fill-listening    { background: var(--sp-listening); }
+  .sp-progress-fill-vocabulary   { background: var(--sp-vocabulary); }
+  .sp-progress-fill-pronunciation{ background: var(--sp-pronunciation); }
 
-  /* Score */
-  .sp-score-ring {
-    @apply mx-auto flex h-24 w-24 flex-col items-center justify-center rounded-full border-4 text-3xl font-extrabold;
-  }
-
-  .sp-score-ring-high {
-    @apply border-emerald-400 text-emerald-600;
-  }
-
-  .sp-score-ring-mid {
-    @apply border-amber-400 text-amber-600;
-  }
-
-  .sp-score-ring-low {
-    @apply border-rose-400 text-rose-600;
-  }
-
-  /* State patterns */
+  /* ── State patterns ── */
   .sp-empty-state {
-    @apply flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center;
+    @apply flex flex-col items-center justify-center px-6 py-14 text-center;
+    background: var(--sp-surface);
+    border: 1.5px dashed var(--sp-border2);
+    border-radius: var(--sp-r-lg);
   }
 
   .sp-loading-pulse {
-    @apply animate-pulse rounded-2xl border border-slate-200 bg-slate-100;
+    @apply animate-pulse;
+    background: var(--sp-canvas2);
+    border-radius: var(--sp-r-lg);
   }
 
-  /* Alerts */
+  /* ── Alerts ── */
   .sp-alert-info {
-    @apply rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900;
+    @apply rounded-2xl border px-4 py-3 text-sm;
+    background: var(--sp-writing-soft);
+    border-color: #C4BAFF;
+    color: var(--sp-writing-ink);
   }
 
   .sp-alert-error {
-    @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+    @apply rounded-2xl border px-4 py-3 text-sm;
+    background: var(--sp-speaking-soft);
+    border-color: #F5BDB3;
+    color: var(--sp-speaking-ink);
   }
 
   .sp-alert-success {
-    @apply rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800;
+    @apply rounded-2xl border px-4 py-3 text-sm;
+    background: var(--sp-success-soft);
+    border-color: #86EFCF;
+    color: #065F46;
   }
 
   .sp-alert-warning {
-    @apply rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900;
+    @apply rounded-2xl border px-4 py-3 text-sm;
+    background: var(--sp-vocabulary-soft);
+    border-color: #F6CAAA;
+    color: var(--sp-vocabulary-ink);
   }
 
-  /* Source-language block (Persian) */
+  /* ── Source-language (Persian RTL) block ── */
   .sp-source-lang-block {
-    @apply rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm leading-8 text-indigo-950;
+    background: var(--sp-writing-soft);
+    border: 1px solid #C4BAFF;
+    border-radius: var(--sp-r-sm);
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 2;
+    color: var(--sp-writing-ink);
     direction: rtl;
+  }
+
+  /* ── Info block (activity lesson) ── */
+  .sp-info-block {
+    background: var(--sp-surface);
+    border: 1px solid var(--sp-border);
+    border-radius: var(--sp-r-lg);
+    padding: 16px;
+    box-shadow: var(--sp-sh-xs);
   }
 }
