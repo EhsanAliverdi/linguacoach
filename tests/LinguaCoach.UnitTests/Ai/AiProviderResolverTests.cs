@@ -34,14 +34,14 @@ public sealed class AiProviderResolverTests
         var resolver = BuildResolver(new Dictionary<string, string?>
         {
             ["AI:WritingFeedback:Provider"] = "Gemini",
-            ["AI:WritingFeedback:Model"] = "gemini-2.0-flash",
+            ["AI:WritingFeedback:Model"] = "gemini-2.5-flash",
             ["Gemini:ApiKey"] = "test-gemini-key"
         });
 
         var selection = resolver.ResolveWritingFeedbackProvider();
 
         selection.ProviderName.Should().Be("gemini");
-        selection.ModelName.Should().Be("gemini-2.0-flash");
+        selection.ModelName.Should().Be("gemini-2.5-flash");
         selection.Provider.Should().BeOfType<GeminiProvider>();
     }
 
@@ -62,7 +62,7 @@ public sealed class AiProviderResolverTests
         var resolver = BuildResolver(new Dictionary<string, string?>
         {
             ["AI:WritingFeedback:Provider"] = "Gemini",
-            ["AI:WritingFeedback:Model"] = "gemini-2.0-flash"
+            ["AI:WritingFeedback:Model"] = "gemini-2.5-flash"
         });
 
         var act = () => resolver.ResolveWritingFeedbackProvider();

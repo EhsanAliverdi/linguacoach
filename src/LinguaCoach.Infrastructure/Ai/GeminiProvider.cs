@@ -67,12 +67,14 @@ public sealed class GeminiProvider : IAiProvider
         var responseBody = await response.Content.ReadAsStringAsync(ct);
         if (!response.IsSuccessStatusCode)
         {
+            var snippet = responseBody.Length > 400 ? responseBody[..400] : responseBody;
             _logger.LogWarning(
-                "Gemini API returned {StatusCode} for prompt key {Key}.",
+                "Gemini API returned {StatusCode} for model {Model}. Body: {Body}",
                 (int)response.StatusCode,
-                request.PromptKey);
+                modelToUse,
+                snippet);
             throw new AiProviderException(
-                $"Gemini call failed with HTTP {(int)response.StatusCode}.",
+                $"Gemini {modelToUse} HTTP {(int)response.StatusCode}: {snippet}",
                 new InvalidOperationException(responseBody));
         }
 
@@ -88,14 +90,17 @@ public sealed class GeminiProvider : IAiProvider
             throw new AiProviderException("Gemini response envelope was not valid JSON.", ex);
         }
 
+        // Thinking models (2.5-pro, 2.5-flash) emit thought parts with Thought=true before the answer.
+        // Skip those and find the first non-thought, non-empty text part.
         var responseText = parsed?.Candidates?
             .FirstOrDefault()?.Content?.Parts?
-            .FirstOrDefault(part => !string.IsNullOrWhiteSpace(part.Text))?.Text;
+            .FirstOrDefault(part => !part.Thought && !string.IsNullOrWhiteSpace(part.Text))?.Text;
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
+            var snippet = responseBody.Length > 400 ? responseBody[..400] : responseBody;
             throw new AiProviderException(
-                "Gemini response did not include text content.",
+                $"Gemini response did not include text content. Body: {snippet}",
                 new InvalidOperationException(responseBody));
         }
 
@@ -174,6 +179,9 @@ internal sealed class GeminiPartResponse
 {
     [JsonPropertyName("text")]
     public string? Text { get; set; }
+
+    [JsonPropertyName("thought")]
+    public bool Thought { get; set; }
 }
 
 internal sealed class GeminiUsageMetadata

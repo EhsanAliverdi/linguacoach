@@ -324,7 +324,7 @@ public sealed class WritingExerciseMissingAiConfigTestFactory : WritingExerciseT
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
         builder.UseSetting("AI:WritingFeedback:Provider", "Gemini");
-        builder.UseSetting("AI:WritingFeedback:Model", "gemini-2.0-flash");
+        builder.UseSetting("AI:WritingFeedback:Model", "gemini-2.5-flash");
         builder.UseSetting("Gemini:ApiKey", "");
         base.ConfigureWebHost(builder);
 
