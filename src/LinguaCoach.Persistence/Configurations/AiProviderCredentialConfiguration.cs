@@ -25,11 +25,24 @@ internal sealed class AiProviderCredentialConfiguration : IEntityTypeConfigurati
             .HasColumnType("text")
             .HasConversion(
                 v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ModelTestResult>>(v, (System.Text.Json.JsonSerializerOptions?)null)
-                     ?? new Dictionary<string, ModelTestResult>());
+                v => DeserializeModelTests(v));
 
         builder.HasIndex(e => e.ProviderName)
             .IsUnique()
             .HasDatabaseName("ix_ai_provider_credentials_provider_name");
+    }
+
+    private static Dictionary<string, ModelTestResult> DeserializeModelTests(string v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return new Dictionary<string, ModelTestResult>();
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ModelTestResult>>(v, (System.Text.Json.JsonSerializerOptions?)null)
+                   ?? new Dictionary<string, ModelTestResult>();
+        }
+        catch
+        {
+            return new Dictionary<string, ModelTestResult>();
+        }
     }
 }
