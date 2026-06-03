@@ -4,6 +4,7 @@ const ids = {
   languagePairId: '11111111-1111-1111-1111-111111111111',
   learningTrackId: '22222222-2222-2222-2222-222222222222',
   careerProfileId: '33333333-3333-3333-3333-333333333333',
+  activityId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
 };
 
 function fakeJwt(email: string, role: 'Admin' | 'Student') {
@@ -138,39 +139,87 @@ async function mockApi(page: Page) {
         studentName: createdStudentEmail || 'student@example.com',
         careerProfile: 'Document Controller',
         cefrLevel: null,
-        message: 'Your personalised plan is ready.',
+        message: 'You are on module 1 of 5.',
+        learningPath: {
+          pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
+          title: 'Workplace English for Document Controller — B1',
+          modulesCompleted: 0,
+          totalModules: 5,
+          currentModule: {
+            moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
+            title: 'Professional email writing',
+            description: 'Practice writing clear, polite workplace emails.',
+            order: 1,
+            completedActivities: 0,
+            totalActivities: 3,
+          },
+        },
       }),
     });
   });
 
-  await page.route('**/api/writing/exercise', async route => {
+  await page.route('**/api/learning-path', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        scenarioTitle: 'Follow-up email for a pending document approval',
-        scenarioDescription: 'Ask a project manager to review a document submitted five working days ago.',
-        instructionInSourceLanguage: 'Please write a professional follow-up email.',
-        targetPhrases: ['could you please review', 'pending approval'],
-        targetVocabulary: ['pending approval', 'latest revision'],
+        pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
+        title: 'Workplace English for Document Controller — B1',
+        isActive: true,
+        modulesCompleted: 0,
+        totalModules: 5,
+        modules: [
+          {
+            moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
+            title: 'Professional email writing',
+            description: 'Practice writing clear, polite workplace emails.',
+            order: 1,
+            completedActivities: 0,
+            totalActivities: 3,
+            isCurrent: true,
+          },
+        ],
       }),
     });
   });
 
-  await page.route('**/api/writing/exercise/submit', async route => {
+  await page.route('**/api/activity/next', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        submissionId: 'submission-id',
-        overallScore: 78,
-        correctedEmail: 'Dear John,\n\nCould you please review the latest revision when you have a chance?\n\nBest regards,',
-        feedbackInSourceLanguage: 'This is clear and polite.',
-        grammarIssues: [],
-        vocabularyIssues: [],
-        toneIssues: ['Make the request slightly more polite.'],
-        suggestedPhrases: ['could you please review'],
-        mistakesToTrack: [],
+        activityId: ids.activityId,
+        activityType: 'writingScenario',
+        source: 'aiGenerated',
+        title: 'Follow-up email for a pending document approval',
+        difficulty: 'B1',
+        situation: 'You submitted an important document to your project manager 5 working days ago.',
+        learningGoal: 'Practice following up professionally without sounding pushy.',
+        targetPhrases: ['I wanted to follow up on', 'Please let me know'],
+        targetVocabulary: ['pending', 'approval'],
+        exampleText: 'Dear Mr. Ahmadi,\n\nI hope you are well. I wanted to follow up on the document I submitted last week.\n\nBest regards,\nSara',
+        commonMistakeToAvoid: "Avoid 'Why haven't you approved it yet?' — this sounds rude.",
+        instructionInSourceLanguage: 'یک ایمیل حرفه‌ای برای پیگیری تأیید سند بنویسید.',
+      }),
+    });
+  });
+
+  await page.route(`**/api/activity/${ids.activityId}/attempt`, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        attemptId: 'attempt-id-001',
+        score: 78,
+        correctedText: 'Dear Mr. Ahmadi,\n\nI hope you are well. I wanted to follow up on the document I submitted last week.\n\nBest regards,\nSara',
+        whatYouDidWell: ['Good use of formal greeting', 'Clear structure'],
+        mainMistakes: ['Missing comma after salutation'],
+        grammarExplanation: 'Always place a comma after the salutation in formal emails.',
+        toneExplanation: 'Your tone was professional throughout.',
+        vocabularyToRemember: ['at your earliest convenience'],
+        rewriteChallenge: "Rewrite the opening using 'I hope this email finds you well'.",
+        nextPracticeSuggestion: 'Try writing an email to explain a delay.',
+        feedbackInSourceLanguage: 'ایمیل شما خوب بود اما می‌توانید رسمی‌تر بنویسید.',
       }),
     });
   });
@@ -179,9 +228,11 @@ async function mockApi(page: Page) {
 test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await mockApi(page);
 
+  // ── Landing ──────────────────────────────────────────────────────────────────
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Practise the workplace message/i })).toBeVisible();
 
+  // ── Admin login ───────────────────────────────────────────────────────────────
   await page.getByRole('link', { name: /Sign in to SpeakPath/i }).click();
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 
@@ -190,12 +241,14 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/admin/);
 
+  // ── Admin creates student ─────────────────────────────────────────────────────
   await page.getByRole('link', { name: /Create student/i }).click();
   await page.getByLabel('Student email').fill('student@example.com');
   await page.getByLabel('Temporary password').fill('Student123');
   await page.getByRole('button', { name: 'Create student' }).click();
   await expect(page.getByRole('heading', { name: 'Share these credentials' })).toBeVisible();
 
+  // ── Student first login + password change ─────────────────────────────────────
   await page.getByRole('button', { name: 'Sign out' }).click();
   await page.getByLabel('Email').fill('student@example.com');
   await page.getByLabel('Password').fill('Student123');
@@ -207,6 +260,7 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.locator('input[name="confirm"]').fill('Student1234');
   await page.getByRole('button', { name: 'Set password and continue' }).click();
 
+  // ── Onboarding — 4 steps ──────────────────────────────────────────────────────
   await expect(page.getByRole('heading', { name: 'Choose your language path' })).toBeVisible();
   await page.getByRole('button', { name: /Persian to English/i }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -223,17 +277,43 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.getByRole('button', { name: /Writing/i }).click();
   await page.getByRole('button', { name: 'Complete setup' }).click();
 
+  // ── Dashboard — verify learning path card ─────────────────────────────────────
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Start writing exercise' }).click();
-  await expect(page.getByRole('heading', { name: /Follow-up email/i })).toBeVisible();
-  await page.getByLabel('Write your email draft').fill('Dear John, could you please review the latest revision?');
-  await page.getByRole('button', { name: 'Get writing feedback' }).click();
-  await expect(page.getByRole('heading', { name: 'Review your workplace message' })).toBeVisible();
-  await expect(page.getByText('78')).toBeVisible();
+  // Learning path section: title visible
+  await expect(page.getByText('Workplace English for Document Controller — B1')).toBeVisible();
 
-  await page.reload();
-  await expect(page).toHaveURL(/\/writing/);
+  // Current module card: module title visible in the hero card
+  await expect(page.getByText('Professional email writing')).toBeVisible();
+
+  // ── Navigate to activity ──────────────────────────────────────────────────────
+  await page.getByRole('link', { name: 'Start activity' }).click();
+  await expect(page).toHaveURL(/\/activity/);
+
+  // Activity lesson — learning phase
+  await expect(page.getByText("Today's activity")).toBeVisible();
   await expect(page.getByRole('heading', { name: /Follow-up email/i })).toBeVisible();
+
+  // Persian instruction is rendered before writing starts
+  await expect(page.getByText(/یک ایمیل حرفه‌ای/)).toBeVisible();
+
+  // Start writing
+  await page.getByRole('button', { name: 'Start writing' }).click();
+
+  // Writing phase — textarea appears, submit button present
+  await expect(page.getByLabel('Write your response')).toBeVisible();
+  await page.getByLabel('Write your response').fill('Dear Mr. Ahmadi, I wanted to follow up on the pending approval.');
+
+  await page.getByRole('button', { name: 'Get feedback' }).click();
+
+  // ── Feedback phase ────────────────────────────────────────────────────────────
+  await expect(page.getByText('Overall score')).toBeVisible();
+  await expect(page.getByText('78')).toBeVisible();
+  await expect(page.getByText('What you did well')).toBeVisible();
+  await expect(page.getByText(/Feedback in Persian/i)).toBeVisible();
+  await expect(page.getByText('ایمیل شما خوب بود')).toBeVisible();
+
+  // Next activity button is present
+  await expect(page.getByRole('button', { name: 'Next activity' })).toBeVisible();
 });
