@@ -26,6 +26,10 @@ export class DashboardComponent implements OnInit {
     this.notice.set(this.authNotice.consume() ?? '');
   }
 
+  activityDots(total: number): number[] {
+    return Array.from({ length: total }, (_, i) => i);
+  }
+
   ngOnInit(): void {
     this.dashboardService.getDashboard().subscribe({
       next: d => { this.data.set(d); this.loading.set(false); },

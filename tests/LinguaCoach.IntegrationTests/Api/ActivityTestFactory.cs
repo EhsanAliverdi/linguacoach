@@ -40,6 +40,16 @@ public class ActivityTestFactory : ApiTestFactory
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
+        foreach (var key in new[] { "activity_generate_writing", "activity_evaluate_writing", "learning_path_generate" })
+        {
+            if (!db.AiPrompts.Any(p => p.Key == key))
+            {
+                db.AiPrompts.Add(new LinguaCoach.Domain.Entities.AiPrompt(
+                    key, "fake-prompt-{{cefrLevel}}", maxInputTokens: 800, maxOutputTokens: 1000));
+            }
+        }
+        await db.SaveChangesAsync();
+
         if (!db.AiPrompts.Any(p => p.Key == "writing.exercise.v2"))
         {
             db.AiPrompts.Add(new LinguaCoach.Domain.Entities.AiPrompt(
@@ -163,7 +173,15 @@ internal sealed class FakeAiProvider : IAiProvider
               "exampleText": "Dear Manager,\n\nTest example.",
               "commonMistakeToAvoid": "Avoid rude phrasing.",
               "instructionInSourceLanguage": "یک ایمیل حرفه‌ای بنویسید.",
-              "title": "Follow up on pending approval"
+              "title": "Follow up on pending approval",
+              "pathTitle": "Workplace English for Document Controller — B1",
+              "modules": [
+                { "order": 1, "title": "Professional email writing", "description": "Practice formal workplace emails." },
+                { "order": 2, "title": "Meeting communication", "description": "Build confidence in meetings." },
+                { "order": 3, "title": "Document control language", "description": "Practice transmittals and approvals." },
+                { "order": 4, "title": "Formal requests", "description": "Learn to write and respond to formal requests." },
+                { "order": 5, "title": "Workplace relationships", "description": "Everyday professional communication." }
+              ]
             }
             """;
 

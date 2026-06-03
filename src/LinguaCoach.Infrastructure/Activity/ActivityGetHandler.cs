@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -15,17 +16,22 @@ namespace LinguaCoach.Infrastructure.Activity;
 /// </summary>
 public sealed class ActivityGetHandler : IGetNextActivityHandler
 {
+    private const int CompletionThreshold = 3;
+
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
+    private readonly ILearningPathGenerator _pathGenerator;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
         LinguaCoachDbContext db,
         IAiActivityGenerator aiGenerator,
+        ILearningPathGenerator pathGenerator,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
         _aiGenerator = aiGenerator;
+        _pathGenerator = pathGenerator;
         _logger = logger;
     }
 
@@ -45,6 +51,9 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
 
         var activityType = query.PreferredType ?? ActivityType.WritingScenario;
 
+        // Resolve active learning path + current module (lazy-generate if missing).
+        var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
+
         // Primary path — AI generation.
         try
         {
@@ -54,11 +63,11 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 CareerContext: profile.CareerProfile?.Name ?? "General",
                 LanguagePairCode: BuildPairCode(profile.LanguagePair),
                 SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
-                TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English");
+                TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+                TopicHint: topicHint);
 
             var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
 
-            // Persist the AI-generated activity so it can be referenced in attempt submissions.
             var cefrLevel = profile.CefrLevel ?? "B1";
             var title = ExtractTitle(contentJson, activityType);
 
@@ -67,7 +76,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 source: ActivitySource.AiGenerated,
                 title: title,
                 difficulty: cefrLevel,
-                aiGeneratedContentJson: contentJson);
+                aiGeneratedContentJson: contentJson,
+                learningModuleId: currentModuleId);
 
             _db.LearningActivities.Add(activity);
             await _db.SaveChangesAsync(ct);
@@ -97,6 +107,58 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 $"No SystemFallback activity found for type {activityType}. Ensure seed data has run.");
 
         return MapToDto(fallback);
+    }
+
+    private async Task<(Guid? ModuleId, string? TopicHint)> ResolveCurrentModuleAsync(
+        Guid userId, Guid studentProfileId, CancellationToken ct)
+    {
+        try
+        {
+            var path = await _db.LearningPaths
+                .Include(p => p.Modules)
+                .FirstOrDefaultAsync(p => p.StudentProfileId == studentProfileId && p.IsActive, ct);
+
+            if (path is null)
+            {
+                // Lazy generation: student has no path yet (e.g. existing test account).
+                _logger.LogInformation(
+                    "No active LearningPath for profile {ProfileId}. Generating default path lazily.",
+                    studentProfileId);
+                await _pathGenerator.GenerateAsync(new Application.LearningPath.GenerateLearningPathCommand(userId), ct);
+
+                path = await _db.LearningPaths
+                    .Include(p => p.Modules)
+                    .FirstOrDefaultAsync(p => p.StudentProfileId == studentProfileId && p.IsActive, ct);
+            }
+
+            if (path is null || path.Modules.Count == 0)
+                return (null, null);
+
+            var modules = path.Modules.OrderBy(m => m.Order).ToList();
+            var moduleIds = modules.Select(m => m.Id).ToList();
+
+            var completedCounts = await _db.ActivityAttempts
+                .Where(a => a.StudentProfileId == studentProfileId)
+                .Join(_db.LearningActivities.Where(la => la.LearningModuleId.HasValue && moduleIds.Contains(la.LearningModuleId!.Value)),
+                      attempt => attempt.LearningActivityId,
+                      activity => activity.Id,
+                      (attempt, activity) => activity.LearningModuleId!.Value)
+                .GroupBy(moduleId => moduleId)
+                .Select(g => new { ModuleId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ModuleId, x => x.Count, ct);
+
+            var current = modules.FirstOrDefault(m =>
+                completedCounts.GetValueOrDefault(m.Id, 0) < CompletionThreshold)
+                ?? modules.Last();
+
+            var hint = $"{current.Title}: {current.Description}";
+            return (current.Id, hint);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resolve current module for profile {ProfileId}. Proceeding without module context.", studentProfileId);
+            return (null, null);
+        }
     }
 
     private static string BuildPairCode(Domain.Entities.LanguagePair? pair)

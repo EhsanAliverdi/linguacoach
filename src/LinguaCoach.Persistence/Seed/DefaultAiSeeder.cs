@@ -13,6 +13,7 @@ public static class DefaultAiSeeder
 
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
+    public const string LearningPathGenerateKey = "learning_path_generate";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English language teacher creating a writing practice activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -80,6 +81,38 @@ Rules:
 - whatYouDidWell must include at least one genuine positive observation.
 - feedbackInSourceLanguage must be written entirely in {{sourceLanguageName}}.
 - All arrays may be empty [] if there are no issues.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string LearningPathGenerateContent = """
+You are an expert English language curriculum designer creating a personalised learning path for a professional.
+
+Student details:
+- Career context: {{careerContext}}
+- Current English level: {{cefrLevel}}
+- Learning goal: {{skillFocus}}
+- Source language: {{sourceLanguageName}}
+- Target language: {{targetLanguageName}}
+
+Design exactly {{moduleCount}} progressive learning modules for this student. Return ONLY valid JSON (no markdown) matching this exact structure:
+
+{
+  "pathTitle": "<concise path title, e.g. 'Workplace English for Document Controllers — B1'>",
+  "modules": [
+    {
+      "order": 1,
+      "title": "<module title, 3-6 words>",
+      "description": "<1-2 sentences describing what the student will practise in this module>"
+    }
+  ]
+}
+
+Rules:
+- pathTitle must include the career context and CEFR level.
+- Each module must address a distinct workplace communication skill relevant to {{careerContext}}.
+- Modules must progress from foundational to more advanced communication.
+- Descriptions must be specific to {{careerContext}} work, not generic.
+- Return exactly {{moduleCount}} modules.
 - Do not include any text outside the JSON object.
 """;
 
@@ -215,6 +248,28 @@ Rules:
             logger.LogInformation(
                 "Seeded AI prompt {PromptKey} version {Version}.",
                 ActivityEvaluateWritingKey, nextVersion);
+        }
+
+        // Learning path generation prompt
+        var hasLearningPathPrompt = await db.AiPrompts
+            .AnyAsync(p => p.Key == LearningPathGenerateKey && p.IsActive, ct);
+
+        if (!hasLearningPathPrompt)
+        {
+            var nextVersion = (await db.AiPrompts
+                .Where(p => p.Key == LearningPathGenerateKey)
+                .MaxAsync(p => (int?)p.Version, ct) ?? 0) + 1;
+
+            db.AiPrompts.Add(new AiPrompt(
+                LearningPathGenerateKey,
+                LearningPathGenerateContent,
+                version: nextVersion,
+                maxInputTokens: 600,
+                maxOutputTokens: 800));
+
+            logger.LogInformation(
+                "Seeded AI prompt {PromptKey} version {Version}.",
+                LearningPathGenerateKey, nextVersion);
         }
 
         await db.SaveChangesAsync(ct);

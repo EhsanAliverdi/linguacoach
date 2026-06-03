@@ -4,6 +4,7 @@ using LinguaCoach.Application.Assessment;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Auth;
 using LinguaCoach.Application.Dashboard;
+using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Application.Reference;
@@ -14,6 +15,7 @@ using LinguaCoach.Infrastructure.Assessment;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Auth;
 using LinguaCoach.Infrastructure.Dashboard;
+using LinguaCoach.Infrastructure.LearningPath;
 using LinguaCoach.Infrastructure.LearningPlan;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
@@ -63,6 +65,10 @@ public static class DependencyInjection
 
         // Learning planner (SM-2 spaced repetition + vocabulary selection)
         services.AddScoped<ILearningPlanner, LearningPlannerService>();
+
+        // Learning path generation
+        services.AddScoped<ILearningPathGenerator, AiLearningPathGeneratorHandler>();
+        services.AddScoped<IGetLearningPathHandler, LearningPathQueryHandler>();
 
         // Activity (AI-first learning flow)
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();
