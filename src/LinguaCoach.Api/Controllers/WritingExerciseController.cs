@@ -15,27 +15,48 @@ public sealed class WritingExerciseController : ControllerBase
 {
     private const string AiUnavailableMessage = "AI feedback is not configured or is temporarily unavailable.";
 
+    private readonly IGetWritingScenariosHandler _getScenarios;
     private readonly IGetWritingExerciseHandler _getExercise;
     private readonly ISubmitWritingDraftHandler _submitDraft;
 
     public WritingExerciseController(
+        IGetWritingScenariosHandler getScenarios,
         IGetWritingExerciseHandler getExercise,
         ISubmitWritingDraftHandler submitDraft)
     {
+        _getScenarios = getScenarios;
         _getExercise = getExercise;
         _submitDraft = submitDraft;
     }
 
-    /// <summary>Returns the current writing exercise scenario without calling AI.</summary>
-    [HttpGet("exercise")]
-    public async Task<IActionResult> GetExercise(CancellationToken ct)
+    /// <summary>Returns all active writing scenarios for the student to choose from.</summary>
+    [HttpGet("scenarios")]
+    public async Task<IActionResult> GetScenarios(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
         try
         {
-            var result = await _getExercise.HandleAsync(new GetWritingExerciseQuery(userId), ct);
+            var result = await _getScenarios.HandleAsync(new GetWritingScenariosQuery(userId), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Returns a single writing exercise scenario with learning section. No AI call.</summary>
+    [HttpGet("exercise/{scenarioId:guid}")]
+    public async Task<IActionResult> GetExercise(Guid scenarioId, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _getExercise.HandleAsync(new GetWritingExerciseQuery(userId, scenarioId), ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex)
@@ -58,7 +79,7 @@ public sealed class WritingExerciseController : ControllerBase
         try
         {
             var result = await _submitDraft.HandleAsync(
-                new SubmitWritingDraftCommand(userId, request.DraftText), ct);
+                new SubmitWritingDraftCommand(userId, request.DraftText, request.ScenarioId), ct);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -103,4 +124,4 @@ public sealed class WritingExerciseController : ControllerBase
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 }
 
-public sealed record SubmitDraftRequest(string DraftText);
+public sealed record SubmitDraftRequest(string DraftText, Guid? ScenarioId = null);

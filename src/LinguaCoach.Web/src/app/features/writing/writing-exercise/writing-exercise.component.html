@@ -1,12 +1,12 @@
 <div class="sp-page">
   <nav class="border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
     <div class="mx-auto flex max-w-5xl items-center gap-3">
-      <button (click)="backToDashboard()" class="sp-link flex items-center gap-1">
+      <button (click)="tryAnotherScenario()" class="sp-link flex items-center gap-1">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-        Dashboard
+        Writing practice
       </button>
       <span class="text-slate-300">/</span>
-      <span class="text-sm font-semibold text-slate-800">Writing practice</span>
+      <span class="text-sm font-semibold text-slate-800">Exercise</span>
     </div>
   </nav>
 
@@ -19,12 +19,67 @@
     }
 
     @if (state() === 'error') {
-      <div class="sp-alert-error mb-4">
-        {{ errorMessage() }}
-      </div>
-      <button (click)="backToDashboard()" class="sp-button-secondary">Back to dashboard</button>
+      <div class="sp-alert-error mb-4">{{ errorMessage() }}</div>
+      <button (click)="tryAnotherScenario()" class="sp-button-secondary">Back to scenarios</button>
     }
 
+    <!-- ── Learning section (pre-writing) ────────────────────────────────── -->
+    @if (state() === 'learning') {
+      @if (exercise(); as ex) {
+        <section class="mb-5">
+          <p class="sp-eyebrow mb-2">Today you will learn</p>
+          <h1 class="text-3xl font-bold leading-tight text-slate-950">{{ ex.scenarioTitle }}</h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{{ ex.scenarioDescription }}</p>
+        </section>
+
+        <div class="grid gap-5 lg:grid-cols-2">
+          <div class="space-y-5">
+            <div class="sp-card">
+              <p class="sp-eyebrow mb-3">Learning goal</p>
+              <p class="text-sm leading-6 text-slate-700">{{ ex.learningGoal }}</p>
+            </div>
+
+            @if (ex.targetPhrases.length > 0) {
+              <div class="sp-card">
+                <p class="sp-eyebrow mb-3">Target phrases</p>
+                <p class="mb-3 text-xs text-slate-500">Try to use at least one of these in your email:</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (phrase of ex.targetPhrases; track phrase) {
+                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-800 ring-1 ring-indigo-200">{{ phrase }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="space-y-5">
+            @if (ex.exampleText) {
+              <div class="sp-card">
+                <p class="sp-eyebrow mb-3 text-emerald-700">Example email</p>
+                <pre class="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 font-sans text-sm leading-7 text-slate-800">{{ ex.exampleText }}</pre>
+              </div>
+            }
+
+            @if (ex.commonMistakeToAvoid) {
+              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-amber-700" style="letter-spacing: 0.06em;">Common mistake to avoid</p>
+                <p class="text-sm leading-6 text-amber-950">{{ ex.commonMistakeToAvoid }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button (click)="startWriting()" class="sp-button-primary">
+            Start writing
+            <svg class="ml-2 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <button (click)="tryAnotherScenario()" class="sp-button-secondary">Choose a different scenario</button>
+        </div>
+      }
+    }
+
+    <!-- ── Writing section ────────────────────────────────────────────────── -->
     @if (state() === 'exercise' || state() === 'submitting') {
       @if (exercise(); as ex) {
         <section class="mb-5">
@@ -45,7 +100,7 @@
 
             @if (ex.targetVocabulary.length > 0) {
               <div class="sp-card">
-                <p class="sp-eyebrow mb-3">Target phrases</p>
+                <p class="sp-eyebrow mb-3">Vocabulary to practise</p>
                 <div class="flex flex-wrap gap-2">
                   @for (word of ex.targetVocabulary; track word) {
                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">{{ word }}</span>
@@ -94,6 +149,7 @@
       }
     }
 
+    <!-- ── Feedback section ───────────────────────────────────────────────── -->
     @if (state() === 'feedback') {
       @if (feedback(); as fb) {
         <section class="mb-5">
@@ -112,12 +168,37 @@
               </div>
             </div>
 
+            @if (fb.whatYouDidWell.length) {
+              <div class="sp-card">
+                <p class="sp-eyebrow mb-3 text-emerald-700">What you did well</p>
+                <ul class="space-y-2">
+                  @for (item of fb.whatYouDidWell; track item) {
+                    <li class="flex items-start gap-2 text-sm leading-6 text-slate-700">
+                      <span class="mt-1 shrink-0 text-emerald-500">✓</span>
+                      {{ item }}
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
             @if (fb.suggestedPhrases.length) {
               <div class="sp-card">
                 <p class="sp-eyebrow mb-3">Phrases to practise</p>
                 <div class="flex flex-wrap gap-2">
                   @for (phrase of fb.suggestedPhrases; track phrase) {
                     <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">{{ phrase }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (fb.vocabularyToRemember.length) {
+              <div class="sp-card">
+                <p class="sp-eyebrow mb-3">Vocabulary to remember</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (word of fb.vocabularyToRemember; track word) {
+                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-800 ring-1 ring-indigo-200">{{ word }}</span>
                   }
                 </div>
               </div>
@@ -136,6 +217,26 @@
               <div class="sp-card">
                 <p class="sp-eyebrow mb-3 text-emerald-700">Clearer version</p>
                 <pre class="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 font-sans text-sm leading-7 text-slate-800">{{ fb.correctedEmail }}</pre>
+              </div>
+            }
+
+            @if (fb.grammarExplanation || fb.toneExplanation) {
+              <div class="sp-card">
+                <p class="sp-eyebrow mb-4">Lessons from this email</p>
+                <div class="space-y-4">
+                  @if (fb.grammarExplanation) {
+                    <div class="rounded-xl border border-red-100 bg-red-50 p-4">
+                      <h2 class="mb-2 text-xs font-bold uppercase tracking-wide text-red-700" style="letter-spacing: 0.06em;">Grammar lesson</h2>
+                      <p class="text-sm leading-6 text-red-950">{{ fb.grammarExplanation }}</p>
+                    </div>
+                  }
+                  @if (fb.toneExplanation) {
+                    <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                      <h2 class="mb-2 text-xs font-bold uppercase tracking-wide text-indigo-700" style="letter-spacing: 0.06em;">Tone and register</h2>
+                      <p class="text-sm leading-6 text-indigo-950">{{ fb.toneExplanation }}</p>
+                    </div>
+                  }
+                </div>
               </div>
             }
 
@@ -177,9 +278,23 @@
               </div>
             }
 
+            @if (fb.rewriteChallenge) {
+              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-amber-700" style="letter-spacing: 0.06em;">Challenge</p>
+                <p class="text-sm leading-6 text-amber-950">{{ fb.rewriteChallenge }}</p>
+              </div>
+            }
+
+            @if (fb.nextPracticeSuggestion) {
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500" style="letter-spacing: 0.06em;">Next time</p>
+                <p class="text-sm leading-6 text-slate-700">{{ fb.nextPracticeSuggestion }}</p>
+              </div>
+            }
+
             <div class="flex flex-col gap-3 sm:flex-row">
               <button (click)="tryAgain()" class="sp-button-secondary flex-1">Try again</button>
-              <button (click)="backToDashboard()" class="sp-button-primary flex-1">Back to dashboard</button>
+              <button (click)="tryAnotherScenario()" class="sp-button-primary flex-1">Practise another scenario</button>
             </div>
           </section>
         </div>

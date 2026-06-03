@@ -10,6 +10,9 @@ public sealed class WritingSubmission : BaseEntity
 {
     public Guid StudentProfileId { get; private set; }
 
+    // FK to WritingScenario — nullable so pre-migration submissions are not broken.
+    public Guid? ScenarioId { get; private set; }
+
     // Short human-readable scenario title, e.g. "Follow-up email for pending approval".
     public string ScenarioTitle { get; private set; }
 
@@ -44,7 +47,8 @@ public sealed class WritingSubmission : BaseEntity
         string correctedText,
         string feedbackJson,
         double? score,
-        string promptKey)
+        string promptKey,
+        Guid? scenarioId = null)
     {
         if (studentProfileId == Guid.Empty) throw new ArgumentException("StudentProfileId must not be empty.", nameof(studentProfileId));
         if (string.IsNullOrWhiteSpace(scenarioTitle)) throw new ArgumentException("ScenarioTitle is required.", nameof(scenarioTitle));
@@ -52,6 +56,7 @@ public sealed class WritingSubmission : BaseEntity
         if (score is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(score), "Score must be between 0 and 100.");
 
         StudentProfileId = studentProfileId;
+        ScenarioId = scenarioId;
         ScenarioTitle = scenarioTitle.Trim();
         OriginalText = originalText.Trim();
         CorrectedText = correctedText?.Trim() ?? string.Empty;

@@ -55,7 +55,16 @@ export const routes: Routes = [
   {
     path: 'writing',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/writing/writing-exercise/writing-exercise.component').then(m => m.WritingExerciseComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/writing/writing-scenario-list/writing-scenario-list.component').then(m => m.WritingScenarioListComponent),
+      },
+      {
+        path: 'exercise/:scenarioId',
+        loadComponent: () => import('./features/writing/writing-exercise/writing-exercise.component').then(m => m.WritingExerciseComponent),
+      },
+    ],
   },
 
   {

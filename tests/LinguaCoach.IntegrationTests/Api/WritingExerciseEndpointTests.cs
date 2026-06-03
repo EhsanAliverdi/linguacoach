@@ -24,28 +24,72 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         _factory = factory;
     }
 
-    // ── GET /api/writing/exercise ─────────────────────────────────────────────
+    // ── GET /api/writing/scenarios ────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetScenarios_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/writing/scenarios");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetScenarios_AuthenticatedStudent_Returns200WithScenarioList()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.GetAsync("/api/writing/scenarios");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetArrayLength() > 0);
+        var first = body[0];
+        Assert.False(string.IsNullOrEmpty(first.GetProperty("id").GetString()));
+        Assert.False(string.IsNullOrEmpty(first.GetProperty("title").GetString()));
+        Assert.False(string.IsNullOrEmpty(first.GetProperty("difficulty").GetString()));
+    }
+
+    // ── GET /api/writing/exercise/{scenarioId} ────────────────────────────────
 
     [Fact]
     public async Task GetExercise_Unauthenticated_Returns401()
     {
         var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/writing/exercise");
+        var response = await client.GetAsync($"/api/writing/exercise/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetExercise_AuthenticatedStudent_WithCompletedOnboarding_Returns200()
+    public async Task GetExercise_UnknownScenarioId_Returns400()
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync();
         var client = ClientWithToken(token);
 
-        var response = await client.GetAsync("/api/writing/exercise");
+        var response = await client.GetAsync($"/api/writing/exercise/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetExercise_ValidScenarioId_Returns200WithLearningSection()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync();
+        var client = ClientWithToken(token);
+
+        // First get a valid scenario ID from the list
+        var listResponse = await client.GetAsync("/api/writing/scenarios");
+        var scenarios = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var scenarioId = scenarios[0].GetProperty("id").GetString();
+
+        var response = await client.GetAsync($"/api/writing/exercise/{scenarioId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.False(string.IsNullOrEmpty(body.GetProperty("scenarioTitle").GetString()));
-        Assert.True(body.GetProperty("targetVocabulary").GetArrayLength() > 0);
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("learningGoal").GetString()));
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("exampleText").GetString()));
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("commonMistakeToAvoid").GetString()));
     }
 
     // ── POST /api/writing/exercise/submit ─────────────────────────────────────
@@ -73,6 +117,32 @@ public sealed class WritingExerciseEndpointTests : IClassFixture<WritingExercise
         Assert.True(body.GetProperty("submissionId").GetString()?.Length > 0);
         Assert.True(body.GetProperty("overallScore").GetDouble() >= 0);
         Assert.False(string.IsNullOrEmpty(body.GetProperty("correctedEmail").GetString()));
+        // v2 teaching fields
+        Assert.True(body.TryGetProperty("whatYouDidWell", out _));
+        Assert.True(body.TryGetProperty("grammarExplanation", out _));
+    }
+
+    [Fact]
+    public async Task Submit_WithScenarioId_PersistsScenarioIdOnSubmission()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"scenario_id_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        // Get a real scenario ID
+        var listResponse = await client.GetAsync("/api/writing/scenarios");
+        var scenarios = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var scenarioIdStr = scenarios[0].GetProperty("id").GetString();
+        var scenarioId = Guid.Parse(scenarioIdStr!);
+
+        await client.PostAsJsonAsync("/api/writing/exercise/submit",
+            new { draftText = "Dear manager, please review the document.", scenarioId });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        var submission = db.WritingSubmissions.FirstOrDefault(s => s.StudentProfileId == profile.Id);
+        Assert.NotNull(submission);
+        Assert.Equal(scenarioId, submission.ScenarioId);
     }
 
     [Fact]
@@ -415,7 +485,7 @@ public class WritingExerciseTestFactory : ApiTestFactory
     }
 
     /// <summary>
-    /// Seeds the writing exercise prompt template for tests.
+    /// Seeds the writing exercise prompt template and writing scenarios for tests.
     /// EnsureCreated does not run migrations, so seed data from migrations must be added manually.
     /// </summary>
     public async Task SeedPromptTemplateAsync()
@@ -424,12 +494,26 @@ public class WritingExerciseTestFactory : ApiTestFactory
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-        if (!db.AiPrompts.Any(p => p.Key == "writing.exercise.v1"))
+        if (!db.AiPrompts.Any(p => p.Key == "writing.exercise.v2"))
         {
             db.AiPrompts.Add(new LinguaCoach.Domain.Entities.AiPrompt(
-                "writing.exercise.v1",
-                "You are an English coach. Draft: {{userDraft}}. Return JSON: {\"overallScore\":0,\"correctedEmail\":\"\",\"feedbackInSourceLanguage\":\"\",\"grammarIssues\":[],\"vocabularyIssues\":[],\"toneIssues\":[],\"suggestedPhrases\":[],\"mistakesToTrack\":[]}",
-                maxInputTokens: 800, maxOutputTokens: 600));
+                "writing.exercise.v2",
+                "You are an English coach. Draft: {{userDraft}}. Return JSON: {\"overallScore\":0,\"correctedEmail\":\"\",\"feedbackInSourceLanguage\":\"\",\"grammarIssues\":[],\"vocabularyIssues\":[],\"toneIssues\":[],\"suggestedPhrases\":[],\"mistakesToTrack\":[],\"whatYouDidWell\":[],\"mainMistakes\":[],\"grammarExplanation\":\"\",\"toneExplanation\":\"\",\"vocabularyToRemember\":[],\"rewriteChallenge\":\"\",\"nextPracticeSuggestion\":\"\"}",
+                maxInputTokens: 1500, maxOutputTokens: 1500));
+            await db.SaveChangesAsync();
+        }
+
+        if (!db.WritingScenarios.Any())
+        {
+            db.WritingScenarios.Add(new LinguaCoach.Domain.Entities.WritingScenario(
+                title: "Follow up on a pending document approval",
+                situation: "You submitted an important document to your project manager 5 working days ago.",
+                learningGoal: "Learn how to follow up professionally without sounding pushy.",
+                targetPhrasesJson: "[\"I wanted to follow up on\",\"Please let me know\"]",
+                targetVocabularyJson: "[\"pending\",\"approval\"]",
+                exampleText: "Dear Mr. Ahmadi,\n\nI hope you are well. I wanted to follow up on the document I submitted last week.\n\nBest regards,\nSara",
+                commonMistakeToAvoid: "Avoid 'Why haven't you approved it yet?' — this sounds rude.",
+                difficulty: "B1"));
             await db.SaveChangesAsync();
         }
 
@@ -521,11 +605,18 @@ internal sealed class FakeAiProvider : IAiProvider
               "vocabularyIssues": [],
               "toneIssues": [],
               "suggestedPhrases": ["I would appreciate your response at your earliest convenience"],
-              "mistakesToTrack": ["comma after salutation"]
+              "mistakesToTrack": ["comma after salutation"],
+              "whatYouDidWell": ["Good use of formal greeting"],
+              "mainMistakes": ["Missing comma after salutation"],
+              "grammarExplanation": "Always place a comma after the salutation in formal emails.",
+              "toneExplanation": "Your tone was professional throughout.",
+              "vocabularyToRemember": ["at your earliest convenience"],
+              "rewriteChallenge": "Rewrite the opening using 'I hope this email finds you well'.",
+              "nextPracticeSuggestion": "Try writing an email to explain a delay."
             }
             """;
 
-        return Task.FromResult(new AiResponse(json, InputTokens: 450, OutputTokens: 180, CostUsd: 0.004m, ModelName: "fake-model"));
+        return Task.FromResult(new AiResponse(json, InputTokens: 450, OutputTokens: 280, CostUsd: 0.004m, ModelName: "fake-model"));
     }
 }
 

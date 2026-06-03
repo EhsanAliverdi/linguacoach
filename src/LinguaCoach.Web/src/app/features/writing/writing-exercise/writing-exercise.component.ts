@@ -1,11 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { WritingService } from '../../../core/services/writing.service';
 import { WritingExerciseDto, WritingFeedbackDto } from '../../../core/models/writing.models';
 
-type PageState = 'loading' | 'exercise' | 'submitting' | 'feedback' | 'error';
+type PageState = 'loading' | 'learning' | 'exercise' | 'submitting' | 'feedback' | 'error';
 
 @Component({
   selector: 'app-writing-exercise',
@@ -20,11 +20,23 @@ export class WritingExerciseComponent implements OnInit {
   draftText = '';
   errorMessage = signal('');
 
-  constructor(private writingService: WritingService, private router: Router) {}
+  private scenarioId = '';
+
+  constructor(
+    private writingService: WritingService,
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {}
 
   ngOnInit(): void {
-    this.writingService.getExercise().subscribe({
-      next: ex => { this.exercise.set(ex); this.state.set('exercise'); },
+    this.scenarioId = this.route.snapshot.paramMap.get('scenarioId') ?? '';
+    if (!this.scenarioId) {
+      this.errorMessage.set('No scenario selected.');
+      this.state.set('error');
+      return;
+    }
+    this.writingService.getExercise(this.scenarioId).subscribe({
+      next: ex => { this.exercise.set(ex); this.state.set('learning'); },
       error: err => {
         this.errorMessage.set(err.error?.error ?? 'Could not load exercise.');
         this.state.set('error');
@@ -32,10 +44,14 @@ export class WritingExerciseComponent implements OnInit {
     });
   }
 
+  startWriting(): void {
+    this.state.set('exercise');
+  }
+
   onSubmit(): void {
     if (!this.draftText.trim()) return;
     this.state.set('submitting');
-    this.writingService.submitDraft(this.draftText).subscribe({
+    this.writingService.submitDraft(this.draftText, this.scenarioId).subscribe({
       next: fb => { this.feedback.set(fb); this.state.set('feedback'); },
       error: err => {
         this.errorMessage.set(err.error?.error ?? 'Failed to get feedback. Please try again.');
@@ -48,6 +64,10 @@ export class WritingExerciseComponent implements OnInit {
     this.feedback.set(null);
     this.draftText = '';
     this.state.set('exercise');
+  }
+
+  tryAnotherScenario(): void {
+    this.router.navigate(['/writing']);
   }
 
   backToDashboard(): void {

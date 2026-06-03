@@ -65,8 +65,9 @@ public static class DependencyInjection
         services.AddScoped<ILearningPlanner, LearningPlannerService>();
 
         // Writing exercise
-        services.AddScoped<IGetWritingExerciseHandler, WritingExerciseHandler>();
-        services.AddScoped<ISubmitWritingDraftHandler, WritingExerciseHandler>();
+        services.AddScoped<IGetWritingScenariosHandler, WritingExerciseGetHandler>();
+        services.AddScoped<IGetWritingExerciseHandler, WritingExerciseGetHandler>();
+        services.AddScoped<ISubmitWritingDraftHandler, WritingExerciseSubmitHandler>();
 
         // STT/TTS — no-op stubs for MVP; interfaces registered so DI doesn't fail
         services.AddScoped<ISpeechToTextService, NoOpSpeechToTextService>();

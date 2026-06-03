@@ -166,6 +166,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     var seederLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await AdminSeeder.SeedAsync(userManager, app.Configuration, seederLogger);
     await DefaultAiSeeder.SeedAsync(db, seederLogger);
+    await WritingScenarioSeeder.SeedAsync(db, seederLogger);
 }
 
 if (app.Environment.IsDevelopment())
