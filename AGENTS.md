@@ -1105,7 +1105,59 @@ no obvious user-flow breakage
 
 ---
 
-# 22. Working With Existing Plans
+# 22. Documentation Rules
+
+Every major sprint must create or update a sprint document:
+
+```text
+docs/sprints/<sprint-name>.md
+```
+
+Every major architecture change must create or update an architecture document:
+
+```text
+docs/architecture/<topic>.md
+```
+
+These documents must be committed with the code so that future AI sessions (Claude, Codex, or other agents) can read them and continue from the same context without needing the full conversation history.
+
+A sprint document must include:
+
+```text
+Sprint name
+Current state
+Product goal
+Architecture decision
+In scope
+Out of scope
+API changes
+Prompt keys
+DB changes
+Frontend changes
+Test plan
+Implementation tasks
+Risks and mitigations
+Future follow-up items
+```
+
+An architecture document must explain:
+
+```text
+Why the component exists and what problem it solves
+How it relates to other components
+How it works (flow, not just names)
+How it handles failure
+How future extensions fit without breaking the design
+Key invariants that must not be violated
+```
+
+Do not write documentation as an afterthought.
+
+Write it before coding complex features.
+
+---
+
+# 23. Working With Existing Plans
 
 Use these as source of truth:
 
@@ -1131,7 +1183,7 @@ Do not blindly continue old roadmap tasks if the current product is broken.
 
 ---
 
-# 23. How To Start Any UI/UX Task
+# 24. How To Start Any UI/UX Task
 
 Before editing UI, produce:
 
@@ -1155,7 +1207,7 @@ For Phase 1/2 rescue work, fix blockers before visual polish.
 
 ---
 
-# 24. How To Start Any Backend Task
+# 25. How To Start Any Backend Task
 
 Before editing backend, confirm:
 
@@ -1172,7 +1224,7 @@ Do not change backend architecture for cosmetic frontend issues.
 
 ---
 
-# 25. Current Product Rescue Instruction
+# 26. Current Product Rescue Instruction
 
 The product has reached broad feature completion, but the actual deployed app was judged not demo-ready.
 
@@ -1207,7 +1259,7 @@ After Phase 1, continue only with approval.
 
 ---
 
-# 26. Final Principle
+# 27. Final Principle
 
 Do not optimise for “tasks completed”.
 
