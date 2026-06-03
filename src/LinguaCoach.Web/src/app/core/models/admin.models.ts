@@ -38,10 +38,19 @@ export interface AiProviderConfigItem {
   featureKey: string;
   providerName: string;
   modelName: string;
-  hasStoredApiKey: boolean;
 }
 
 export interface AiProviderCatalogItem {
   providerName: string;
   models: string[];
+  hasApiKey: boolean;
+  lastTestOk: boolean;
+  lastTestedAt: string | null;
+  lastTestError: string | null;
+}
+
+export interface ProviderTestResult {
+  ok: boolean;
+  latencyMs: number;
+  error: string | null;
 }

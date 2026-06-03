@@ -18,6 +18,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
     public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
     public DbSet<AiProviderConfig> AiProviderConfigs => Set<AiProviderConfig>();
+    public DbSet<AiProviderCredential> AiProviderCredentials => Set<AiProviderCredential>();
     public DbSet<VocabularyEntry> VocabularyEntries => Set<VocabularyEntry>();
     public DbSet<CurriculumWordList> CurriculumWordLists => Set<CurriculumWordList>();
     public DbSet<UserLearningSummary> UserLearningSummaries => Set<UserLearningSummary>();

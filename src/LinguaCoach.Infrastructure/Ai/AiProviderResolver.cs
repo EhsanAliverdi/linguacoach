@@ -34,8 +34,8 @@ public sealed class AiProviderResolver : IAiProviderResolver
 
     public AiProviderSelection ResolveWritingFeedbackProvider()
     {
-        // DB config takes precedence over appsettings/env for provider+model selection.
-        var (providerName, modelName, apiKeyFromDb) = ResolveFromDb("writing.exercise");
+        // DB config (feature routing) takes precedence over appsettings.
+        var (providerName, modelName) = ResolveFeatureFromDb("writing.exercise");
 
         if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
         {
@@ -60,64 +60,72 @@ public sealed class AiProviderResolver : IAiProviderResolver
             }
         }
 
-        return Resolve(providerName.Trim(), modelName.Trim(), apiKeyFromDb);
+        // Resolve API key from the per-provider credential store, then fall back to env.
+        var apiKey = GetStoredApiKey(providerName) ?? GetEnvApiKey(providerName);
+        return Resolve(providerName.Trim(), modelName.Trim(), apiKey);
     }
 
-    private (string? Provider, string? Model, string? ApiKey) ResolveFromDb(string featureKey)
+    private (string? Provider, string? Model) ResolveFeatureFromDb(string featureKey)
     {
         try
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            var config = db.AiProviderConfigs
-                .AsNoTracking()
+            var config = db.AiProviderConfigs.AsNoTracking()
                 .FirstOrDefault(c => c.FeatureKey == featureKey);
-            return config is null
-                ? (null, null, null)
-                : (config.ProviderName, config.ModelName, config.ApiKey);
+            return config is null ? (null, null) : (config.ProviderName, config.ModelName);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not read AI provider config from DB for feature {Feature}; falling back to appsettings.", featureKey);
-            return (null, null, null);
+            _logger.LogWarning(ex, "Could not read AI feature config from DB for {Feature}.", featureKey);
+            return (null, null);
         }
     }
+
+    private string? GetStoredApiKey(string providerName)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var cred = db.AiProviderCredentials.AsNoTracking()
+                .FirstOrDefault(c => c.ProviderName == providerName.ToLowerInvariant());
+            return cred?.ApiKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read API key from DB for provider {Provider}.", providerName);
+            return null;
+        }
+    }
+
+    private string? GetEnvApiKey(string providerName) =>
+        providerName.ToLowerInvariant() switch
+        {
+            "openai" => _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY"),
+            "gemini" => _configuration["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY"),
+            "anthropic" => _configuration["Anthropic:ApiKey"] ?? Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY"),
+            _ => null
+        };
 
     private AiProviderSelection Resolve(string provider, string model, string? apiKeyOverride)
     {
-        if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-        {
-            var key = apiKeyOverride ?? GetEnvApiKey("OPENAI_API_KEY", "OpenAI:ApiKey", "OpenAI");
-            return new AiProviderSelection(_serviceProvider.GetRequiredService<OpenAiProvider>(), "openai", model, key);
-        }
-
-        if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
-        {
-            var key = apiKeyOverride ?? GetEnvApiKey("GEMINI_API_KEY", "Gemini:ApiKey", "Gemini");
-            return new AiProviderSelection(_serviceProvider.GetRequiredService<GeminiProvider>(), "gemini", model, key);
-        }
-
-        if (provider.Equals("Anthropic", StringComparison.OrdinalIgnoreCase))
-        {
-            var key = apiKeyOverride ?? GetEnvApiKey("ANTHROPIC_API_KEY", "Anthropic:ApiKey", "Anthropic");
-            return new AiProviderSelection(_serviceProvider.GetRequiredService<AnthropicProvider>(), "anthropic", model, key);
-        }
-
-        throw new AiConfigurationUnavailableException(
-            $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic.");
-    }
-
-    private string GetEnvApiKey(string environmentVariable, string configurationKey, string providerName)
-    {
-        var apiKey = _configuration[configurationKey]
-            ?? Environment.GetEnvironmentVariable(environmentVariable);
-
-        if (string.IsNullOrWhiteSpace(apiKey))
+        if (string.IsNullOrWhiteSpace(apiKeyOverride))
         {
             throw new AiConfigurationUnavailableException(
-                $"{providerName} API key is not configured. Set {environmentVariable} or store it via the admin API.");
+                $"{provider} API key is not configured. Set it via the admin UI or the environment variable.");
         }
 
-        return apiKey;
+        return provider.ToLowerInvariant() switch
+        {
+            "openai" => new AiProviderSelection(
+                _serviceProvider.GetRequiredService<OpenAiProvider>(), "openai", model, apiKeyOverride),
+            "gemini" => new AiProviderSelection(
+                _serviceProvider.GetRequiredService<GeminiProvider>(), "gemini", model, apiKeyOverride),
+            "anthropic" => new AiProviderSelection(
+                _serviceProvider.GetRequiredService<AnthropicProvider>(), "anthropic", model, apiKeyOverride),
+            _ => throw new AiConfigurationUnavailableException(
+                $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic.")
+        };
     }
 }

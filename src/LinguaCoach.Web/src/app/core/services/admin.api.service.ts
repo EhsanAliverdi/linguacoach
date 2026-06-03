@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
-  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem, AiProviderCatalogItem
+  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem, AiProviderCatalogItem, ProviderTestResult
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -49,17 +49,22 @@ export class AdminApiService {
     return this.http.put<CurriculumWordItem>(`${this.api}/careers/words/${wordId}`, data);
   }
 
-  // AI config
-  listAiProviders(): Observable<AiProviderCatalogItem[]> {
-    return this.http.get<AiProviderCatalogItem[]>(`${this.api}/ai-config/providers`);
-  }
+  // AI feature routing
   listAiConfigs(): Observable<AiProviderConfigItem[]> {
     return this.http.get<AiProviderConfigItem[]>(`${this.api}/ai-config`);
   }
   updateAiConfig(id: string, providerName: string, modelName: string): Observable<AiProviderConfigItem> {
     return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}`, { providerName, modelName });
   }
-  updateAiApiKey(id: string, apiKey: string | null): Observable<AiProviderConfigItem> {
-    return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}/api-key`, { apiKey });
+
+  // AI provider credentials
+  listAiProviders(): Observable<AiProviderCatalogItem[]> {
+    return this.http.get<AiProviderCatalogItem[]>(`${this.api}/ai-providers`);
+  }
+  setProviderApiKey(provider: string, apiKey: string | null): Observable<AiProviderCatalogItem> {
+    return this.http.put<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/api-key`, { apiKey });
+  }
+  testProvider(provider: string): Observable<ProviderTestResult> {
+    return this.http.post<ProviderTestResult>(`${this.api}/ai-providers/${provider}/test`, null);
   }
 }

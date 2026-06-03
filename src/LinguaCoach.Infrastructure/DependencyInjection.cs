@@ -56,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<AnthropicProvider>();
         services.AddScoped<IAiProviderResolver, AiProviderResolver>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
+        services.AddScoped<IAiProviderTester, AiProviderTester>();
 
         // CEFR assessment
         services.AddScoped<ICefrAssessmentHandler, CefrAssessmentHandler>();

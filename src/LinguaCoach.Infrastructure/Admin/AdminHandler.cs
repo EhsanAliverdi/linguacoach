@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
@@ -15,11 +16,13 @@ public sealed class AdminHandler :
 {
     private readonly LinguaCoachDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAiProviderTester _tester;
 
-    public AdminHandler(LinguaCoachDbContext db, UserManager<ApplicationUser> userManager)
+    public AdminHandler(LinguaCoachDbContext db, UserManager<ApplicationUser> userManager, IAiProviderTester tester)
     {
         _db = db;
         _userManager = userManager;
+        _tester = tester;
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -161,16 +164,30 @@ public sealed class AdminHandler :
     public async Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default)
     {
         var configs = await _db.AiProviderConfigs.OrderBy(c => c.FeatureKey).ToListAsync(ct);
-        return configs.Select(ToItem).ToList();
+        return configs.Select(c => new AiProviderConfigItem(c.Id, c.FeatureKey, c.ProviderName, c.ModelName)).ToList();
     }
 
-    public Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default)
     {
+        var credentials = await _db.AiProviderCredentials.ToListAsync(ct);
+        var credByProvider = credentials.ToDictionary(c => c.ProviderName, StringComparer.OrdinalIgnoreCase);
+
         var catalog = AiProviderConfig.AllowedModels
-            .Select(kvp => new AiProviderCatalogItem(kvp.Key, kvp.Value.Order().ToList()))
+            .Select(kvp =>
+            {
+                credByProvider.TryGetValue(kvp.Key, out var cred);
+                return new AiProviderCatalogItem(
+                    kvp.Key,
+                    kvp.Value.Order().ToList(),
+                    HasApiKey: cred?.ApiKey is not null,
+                    LastTestOk: cred?.LastTestOk ?? false,
+                    LastTestedAt: cred?.LastTestedAt,
+                    LastTestError: cred?.LastTestError);
+            })
             .OrderBy(p => p.ProviderName)
             .ToList();
-        return Task.FromResult<IReadOnlyList<AiProviderCatalogItem>>(catalog);
+
+        return catalog;
     }
 
     public async Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default)
@@ -181,20 +198,54 @@ public sealed class AdminHandler :
         config.Update(command.ProviderName, command.ModelName);
         await _db.SaveChangesAsync(ct);
 
-        return ToItem(config);
+        return new AiProviderConfigItem(config.Id, config.FeatureKey, config.ProviderName, config.ModelName);
     }
 
-    public async Task<AiProviderConfigItem> UpdateApiKeyAsync(UpdateAiProviderApiKeyCommand command, CancellationToken ct = default)
+    public async Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default)
     {
-        var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Id == command.ConfigId, ct)
-            ?? throw new InvalidOperationException("AI provider config not found.");
-
-        config.UpdateApiKey(command.ApiKey);
+        var normalised = command.ProviderName.Trim().ToLowerInvariant();
+        var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
+        if (cred is null)
+        {
+            cred = new AiProviderCredential(normalised);
+            _db.AiProviderCredentials.Add(cred);
+        }
+        cred.SetApiKey(command.ApiKey);
         await _db.SaveChangesAsync(ct);
 
-        return ToItem(config);
+        return ToCatalogItem(normalised, cred, AiProviderConfig.AllowedModels);
     }
 
-    private static AiProviderConfigItem ToItem(AiProviderConfig c)
-        => new(c.Id, c.FeatureKey, c.ProviderName, c.ModelName, c.ApiKey is not null);
+    public async Task<ProviderTestResult> TestProviderAsync(string providerName, CancellationToken ct = default)
+    {
+        var normalised = providerName.Trim().ToLowerInvariant();
+        var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
+
+        var (ok, latencyMs, error) = await _tester.TestAsync(normalised, cred?.ApiKey, ct);
+
+        if (cred is null)
+        {
+            cred = new AiProviderCredential(normalised);
+            _db.AiProviderCredentials.Add(cred);
+        }
+        cred.RecordTestResult(ok, error);
+        await _db.SaveChangesAsync(ct);
+
+        return new ProviderTestResult(ok, latencyMs, error);
+    }
+
+    private static AiProviderCatalogItem ToCatalogItem(
+        string providerName,
+        AiProviderCredential? cred,
+        IReadOnlyDictionary<string, IReadOnlySet<string>> allowedModels)
+    {
+        allowedModels.TryGetValue(providerName, out var models);
+        return new AiProviderCatalogItem(
+            providerName,
+            models?.Order().ToList() ?? [],
+            HasApiKey: cred?.ApiKey is not null,
+            LastTestOk: cred?.LastTestOk ?? false,
+            LastTestedAt: cred?.LastTestedAt,
+            LastTestError: cred?.LastTestError);
+    }
 }

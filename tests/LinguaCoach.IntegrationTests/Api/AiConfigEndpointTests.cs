@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,12 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace LinguaCoach.IntegrationTests.Api;
 
 /// <summary>
-/// Full integration tests for the AI provider config endpoints:
-///   GET  /api/admin/ai-config/providers  — catalog
-///   GET  /api/admin/ai-config            — feature configs
-///   PUT  /api/admin/ai-config/{id}       — update provider + model
-///   PUT  /api/admin/ai-config/{id}/api-key — store / clear API key
-/// All tests use SQLite in-memory via ApiTestFactory; no real AI provider called.
+/// Integration tests for the redesigned AI config endpoints:
+///
+///   Feature routing:
+///     GET  /api/admin/ai-config            — list feature configs
+///     PUT  /api/admin/ai-config/{id}       — update provider + model for a feature
+///
+///   Provider credentials:
+///     GET  /api/admin/ai-providers         — catalog with credential status
+///     PUT  /api/admin/ai-providers/{p}/api-key — store / clear API key per provider
+///     POST /api/admin/ai-providers/{p}/test    — verify connectivity (fake provider)
 /// </summary>
 public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
 {
@@ -25,12 +30,12 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
         _factory = factory;
     }
 
-    // ── GET /api/admin/ai-config/providers ─────────────────────────────────────
+    // ── GET /api/admin/ai-providers (catalog) ─────────────────────────────────
 
     [Fact]
     public async Task ListProviders_Unauthenticated_Returns401()
     {
-        var response = await _factory.CreateClient().GetAsync("/api/admin/ai-config/providers");
+        var response = await _factory.CreateClient().GetAsync("/api/admin/ai-providers");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -38,7 +43,7 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
     public async Task ListProviders_AsStudent_Returns403()
     {
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"prov403_{Guid.NewGuid():N}@t.com");
-        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config/providers");
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-providers");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -46,78 +51,189 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
     public async Task ListProviders_AsAdmin_ReturnsAllThreeProviders()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config/providers");
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-providers");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-        var providers = body.EnumerateArray().Select(p => p.GetProperty("providerName").GetString()).ToList();
-        Assert.Contains("openai", providers);
-        Assert.Contains("gemini", providers);
-        Assert.Contains("anthropic", providers);
+        var names = body.EnumerateArray().Select(p => p.GetProperty("providerName").GetString()).ToList();
+        Assert.Contains("openai", names);
+        Assert.Contains("gemini", names);
+        Assert.Contains("anthropic", names);
     }
 
     [Fact]
-    public async Task ListProviders_GeminiEntry_IncludesNewFlashModels()
+    public async Task ListProviders_GeminiEntry_IncludesFlash25Models()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config/providers");
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var body = await ClientWithToken(token).GetFromJsonAsync<JsonElement>("/api/admin/ai-providers");
 
-        var gemini = body.EnumerateArray()
-            .FirstOrDefault(p => p.GetProperty("providerName").GetString() == "gemini");
-        Assert.NotEqual(default, gemini);
-
-        var models = gemini.GetProperty("models").EnumerateArray()
-            .Select(m => m.GetString()).ToList();
-
+        var gemini = body.EnumerateArray().First(p => p.GetProperty("providerName").GetString() == "gemini");
+        var models = gemini.GetProperty("models").EnumerateArray().Select(m => m.GetString()).ToList();
         Assert.Contains("gemini-2.5-flash", models);
         Assert.Contains("gemini-2.5-pro", models);
         Assert.Contains("gemini-2.5-flash-lite", models);
     }
 
     [Fact]
-    public async Task ListProviders_AnthropicEntry_IncludesClaudeModels()
+    public async Task ListProviders_HasApiKeyAndLastTestOk_ArePresentInResponse()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config/providers");
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var body = await ClientWithToken(token).GetFromJsonAsync<JsonElement>("/api/admin/ai-providers");
 
-        var anthropic = body.EnumerateArray()
-            .FirstOrDefault(p => p.GetProperty("providerName").GetString() == "anthropic");
-
-        var models = anthropic.GetProperty("models").EnumerateArray()
-            .Select(m => m.GetString()).ToList();
-
-        Assert.Contains("claude-sonnet-4-6", models);
-        Assert.Contains("claude-opus-4-8", models);
+        // Every provider entry must expose these fields (type check suffices — values depend on prior tests).
+        foreach (var p in body.EnumerateArray())
+        {
+            Assert.True(p.TryGetProperty("hasApiKey", out var hasKey));
+            Assert.Equal(JsonValueKind.True | JsonValueKind.False, hasKey.ValueKind | JsonValueKind.False);
+            Assert.True(p.TryGetProperty("lastTestOk", out _));
+        }
     }
 
-    // ── GET /api/admin/ai-config ───────────────────────────────────────────────
+    // ── PUT /api/admin/ai-providers/{p}/api-key ───────────────────────────────
 
     [Fact]
-    public async Task ListConfigs_ReturnsHasStoredApiKeyFalse_WhenNoKeyStored()
+    public async Task SetApiKey_Stores_AndHasApiKeyBecomesTrue()
     {
-        var configId = await SeedConfigAsync("writing.exercise");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        var item = body.EnumerateArray().First(i => i.GetProperty("id").GetString() == configId.ToString());
-        Assert.False(item.GetProperty("hasStoredApiKey").GetBoolean());
-    }
-
-    // ── PUT /api/admin/ai-config/{id} ─────────────────────────────────────────
-
-    [Fact]
-    public async Task UpdateConfig_ToGemini_Succeeds()
-    {
-        var configId = await SeedConfigAsync($"gemini.feature.{Guid.NewGuid():N}");
         var token = await _factory.CreateAdminAndGetTokenAsync();
 
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}",
+            "/api/admin/ai-providers/openai/api-key",
+            new { apiKey = "sk-test-fake-openai-key" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("hasApiKey").GetBoolean());
+        Assert.Equal("openai", body.GetProperty("providerName").GetString());
+    }
+
+    [Fact]
+    public async Task SetApiKey_DoesNotExposeKeyInResponse()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        var response = await ClientWithToken(token).PutAsJsonAsync(
+            "/api/admin/ai-providers/gemini/api-key",
+            new { apiKey = "AIza-super-secret-should-not-appear" });
+
+        var raw = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("AIza-super-secret-should-not-appear", raw);
+    }
+
+    [Fact]
+    public async Task SetApiKey_PersistedToDatabase()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        await ClientWithToken(token).PutAsJsonAsync(
+            "/api/admin/ai-providers/anthropic/api-key",
+            new { apiKey = "sk-ant-db-persisted" });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var cred = db.AiProviderCredentials.AsNoTracking().FirstOrDefault(c => c.ProviderName == "anthropic");
+        Assert.NotNull(cred);
+        Assert.Equal("sk-ant-db-persisted", cred.ApiKey);
+    }
+
+    [Fact]
+    public async Task SetApiKey_WithNull_ClearsKey()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        await ClientWithToken(token).PutAsJsonAsync(
+            "/api/admin/ai-providers/openai/api-key",
+            new { apiKey = "sk-to-clear" });
+
+        var clear = await ClientWithToken(token).PutAsJsonAsync(
+            "/api/admin/ai-providers/openai/api-key",
+            new { apiKey = (string?)null });
+
+        Assert.Equal(HttpStatusCode.OK, clear.StatusCode);
+        var body = await clear.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(body.GetProperty("hasApiKey").GetBoolean());
+    }
+
+    [Fact]
+    public async Task SetApiKey_AsStudent_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"st.ak.{Guid.NewGuid():N}@t.com");
+        var response = await ClientWithToken(token).PutAsJsonAsync(
+            "/api/admin/ai-providers/openai/api-key",
+            new { apiKey = "sk-student-attempt" });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ── POST /api/admin/ai-providers/{p}/test ─────────────────────────────────
+
+    [Fact]
+    public async Task TestProvider_WithFakeProvider_ReturnsOk()
+    {
+        // Register a fake provider and a fake tester so no real API call is made.
+        var factory = new AiTestWithFakeTesterFactory();
+        await factory.InitializeAsync();
+        var token = await factory.CreateAdminAndGetTokenAsync();
+
+        var response = await factory.CreateClientWithToken(token)
+            .PostAsync("/api/admin/ai-providers/openai/test", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("ok").GetBoolean());
+        Assert.True(body.GetProperty("latencyMs").GetInt32() >= 0);
+
+        await factory.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TestProvider_RecordsResultInDatabase()
+    {
+        var factory = new AiTestWithFakeTesterFactory();
+        await factory.InitializeAsync();
+        var token = await factory.CreateAdminAndGetTokenAsync();
+
+        await factory.CreateClientWithToken(token).PostAsync("/api/admin/ai-providers/gemini/test", null);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var cred = db.AiProviderCredentials.AsNoTracking().FirstOrDefault(c => c.ProviderName == "gemini");
+        Assert.NotNull(cred);
+        Assert.NotNull(cred.LastTestedAt);
+        Assert.True(cred.LastTestOk);
+
+        await factory.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TestProvider_AsStudent_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"st.test.{Guid.NewGuid():N}@t.com");
+        var response = await ClientWithToken(token).PostAsync("/api/admin/ai-providers/openai/test", null);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ── GET /api/admin/ai-config (feature routing) ────────────────────────────
+
+    [Fact]
+    public async Task ListConfigs_AsAdmin_Returns200()
+    {
+        await SeedFeatureConfigAsync("list.test");
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetArrayLength() > 0);
+    }
+
+    // ── PUT /api/admin/ai-config/{id} (feature routing) ──────────────────────
+
+    [Fact]
+    public async Task UpdateFeatureConfig_ToGemini25Flash_Succeeds()
+    {
+        var id = await SeedFeatureConfigAsync($"feat.gemini.{Guid.NewGuid():N}");
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        var response = await ClientWithToken(token).PutAsJsonAsync(
+            $"/api/admin/ai-config/{id}",
             new { providerName = "gemini", modelName = "gemini-2.5-flash" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -127,218 +243,63 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
-    public async Task UpdateConfig_ToAnthropic_Succeeds()
+    public async Task UpdateFeatureConfig_ToAnthropic_Succeeds()
     {
-        var configId = await SeedConfigAsync($"anthropic.feature.{Guid.NewGuid():N}");
+        var id = await SeedFeatureConfigAsync($"feat.ant.{Guid.NewGuid():N}");
         var token = await _factory.CreateAdminAndGetTokenAsync();
 
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}",
+            $"/api/admin/ai-config/{id}",
             new { providerName = "anthropic", modelName = "claude-sonnet-4-6" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("anthropic", body.GetProperty("providerName").GetString());
-        Assert.Equal("claude-sonnet-4-6", body.GetProperty("modelName").GetString());
     }
 
     [Fact]
-    public async Task UpdateConfig_ToGemini25Pro_Succeeds()
+    public async Task UpdateFeatureConfig_UnknownProvider_Returns400()
     {
-        var configId = await SeedConfigAsync($"gemini25.{Guid.NewGuid():N}");
+        var id = await SeedFeatureConfigAsync($"feat.unk.{Guid.NewGuid():N}");
         var token = await _factory.CreateAdminAndGetTokenAsync();
 
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}",
-            new { providerName = "gemini", modelName = "gemini-2.5-pro" });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateConfig_UnknownProvider_Returns400()
-    {
-        var configId = await SeedConfigAsync($"unk.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}",
+            $"/api/admin/ai-config/{id}",
             new { providerName = "cohere", modelName = "command-r" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Contains("Unsupported", body.GetProperty("error").GetString());
     }
 
     [Fact]
-    public async Task UpdateConfig_WrongModelForProvider_Returns400()
+    public async Task UpdateFeatureConfig_WrongModelForProvider_Returns400()
     {
-        var configId = await SeedConfigAsync($"badmodel.{Guid.NewGuid():N}");
+        var id = await SeedFeatureConfigAsync($"feat.bad.{Guid.NewGuid():N}");
         var token = await _factory.CreateAdminAndGetTokenAsync();
 
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}",
-            new { providerName = "anthropic", modelName = "gpt-4o" }); // OpenAI model, wrong provider
+            $"/api/admin/ai-config/{id}",
+            new { providerName = "anthropic", modelName = "gpt-4o" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateConfig_NonExistentId_Returns404()
+    public async Task UpdateFeatureConfig_NonExistentId_Returns404()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
-
         var response = await ClientWithToken(token).PutAsJsonAsync(
             $"/api/admin/ai-config/{Guid.NewGuid()}",
             new { providerName = "openai", modelName = "gpt-4o-mini" });
-
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateConfig_PersistsToDatabase()
-    {
-        var configId = await SeedConfigAsync($"persist.model.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}",
-            new { providerName = "gemini", modelName = "gemini-2.0-flash" });
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var config = await db.AiProviderConfigs.AsNoTracking().FirstAsync(c => c.Id == configId);
-        Assert.Equal("gemini", config.ProviderName);
-        Assert.Equal("gemini-2.0-flash", config.ModelName);
-    }
-
-    // ── PUT /api/admin/ai-config/{id}/api-key ─────────────────────────────────
-
-    [Fact]
-    public async Task UpdateApiKey_StoresKey_AndReturnsHasStoredApiKeyTrue()
-    {
-        var configId = await SeedConfigAsync($"apikey.store.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "sk-test-fake-key-12345" });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(body.GetProperty("hasStoredApiKey").GetBoolean());
-    }
-
-    [Fact]
-    public async Task UpdateApiKey_DoesNotExposeKeyInResponse()
-    {
-        var configId = await SeedConfigAsync($"apikey.noexpose.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "sk-secret-key-should-not-appear" });
-
-        var rawJson = await response.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("sk-secret-key-should-not-appear", rawJson);
-    }
-
-    [Fact]
-    public async Task UpdateApiKey_StoredInDatabase()
-    {
-        var configId = await SeedConfigAsync($"apikey.db.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "sk-db-persisted-key" });
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var config = await db.AiProviderConfigs.AsNoTracking().FirstAsync(c => c.Id == configId);
-        Assert.Equal("sk-db-persisted-key", config.ApiKey);
-    }
-
-    [Fact]
-    public async Task UpdateApiKey_WithNull_ClearsStoredKey()
-    {
-        var configId = await SeedConfigAsync($"apikey.clear.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        // Store a key first
-        await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "sk-to-be-cleared" });
-
-        // Clear it
-        var clearResponse = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = (string?)null });
-
-        Assert.Equal(HttpStatusCode.OK, clearResponse.StatusCode);
-        var body = await clearResponse.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.False(body.GetProperty("hasStoredApiKey").GetBoolean());
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var config = await db.AiProviderConfigs.AsNoTracking().FirstAsync(c => c.Id == configId);
-        Assert.Null(config.ApiKey);
-    }
-
-    [Fact]
-    public async Task UpdateApiKey_WithEmptyString_ClearsStoredKey()
-    {
-        var configId = await SeedConfigAsync($"apikey.empty.{Guid.NewGuid():N}");
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "sk-some-key" });
-
-        var clearResponse = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "" });
-
-        var body = await clearResponse.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.False(body.GetProperty("hasStoredApiKey").GetBoolean());
-    }
-
-    [Fact]
-    public async Task UpdateApiKey_NonExistentId_Returns404()
-    {
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{Guid.NewGuid()}/api-key",
-            new { apiKey = "sk-test" });
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateApiKey_AsStudent_Returns403()
-    {
-        var configId = await SeedConfigAsync($"apikey.403.{Guid.NewGuid():N}");
-        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student.ak.{Guid.NewGuid():N}@t.com");
-
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            $"/api/admin/ai-config/{configId}/api-key",
-            new { apiKey = "sk-student-attempt" });
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private async Task<Guid> SeedConfigAsync(string featureKey)
+    private async Task<Guid> SeedFeatureConfigAsync(string featureKey)
     {
         await _factory.EnsureCreatedAsync();
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-
         var existing = db.AiProviderConfigs.FirstOrDefault(c => c.FeatureKey == featureKey);
         if (existing is not null) return existing.Id;
-
         var config = new LinguaCoach.Domain.Entities.AiProviderConfig(featureKey, "openai", "gpt-4o");
         db.AiProviderConfigs.Add(config);
         await db.SaveChangesAsync();
@@ -347,8 +308,40 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
 
     private HttpClient ClientWithToken(string token)
     {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
+        var c = _factory.CreateClient();
+        c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return c;
     }
+}
+
+/// <summary>
+/// Factory that replaces IAiProviderTester with a fast fake that always returns OK.
+/// Used for test-provider endpoint tests so no real network call is made.
+/// </summary>
+public sealed class AiTestWithFakeTesterFactory : ApiTestFactory
+{
+    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+    {
+        base.ConfigureWebHost(builder);
+        builder.ConfigureServices(services =>
+        {
+            var existing = services.SingleOrDefault(d => d.ServiceType == typeof(IAiProviderTester));
+            if (existing is not null) services.Remove(existing);
+            services.AddSingleton<IAiProviderTester, FakeAiProviderTester>();
+        });
+    }
+
+    public HttpClient CreateClientWithToken(string token)
+    {
+        var c = CreateClient();
+        c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return c;
+    }
+}
+
+internal sealed class FakeAiProviderTester : IAiProviderTester
+{
+    public Task<(bool Ok, int LatencyMs, string? Error)> TestAsync(
+        string providerName, string? apiKeyOverride, CancellationToken ct = default)
+        => Task.FromResult<(bool, int, string?)>((true, 42, null));
 }

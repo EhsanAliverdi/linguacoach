@@ -12,10 +12,6 @@ public sealed class AiProviderConfig : BaseEntity
     public string FeatureKey { get; private set; }
     public string ProviderName { get; private set; }
     public string ModelName { get; private set; }
-
-    // Stored encrypted in the DB. Null means "use the environment variable".
-    public string? ApiKey { get; private set; }
-
     public DateTime UpdatedAt { get; private set; }
 
     private AiProviderConfig() { FeatureKey = string.Empty; ProviderName = string.Empty; ModelName = string.Empty; }
@@ -80,10 +76,4 @@ public sealed class AiProviderConfig : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateApiKey(string? apiKey)
-    {
-        // Null or empty string clears the stored key (falls back to env var).
-        ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
-        UpdatedAt = DateTime.UtcNow;
-    }
 }

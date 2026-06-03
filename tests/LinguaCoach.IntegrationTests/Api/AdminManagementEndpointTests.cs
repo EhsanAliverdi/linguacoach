@@ -312,6 +312,18 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ListAiProviders_ReturnsProviderCatalog()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.GetAsync("/api/admin/ai-providers");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(items.GetArrayLength() >= 3);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task SeedPromptAsync()

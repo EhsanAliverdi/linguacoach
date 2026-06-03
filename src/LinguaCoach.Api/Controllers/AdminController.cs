@@ -134,9 +134,7 @@ public sealed class AdminController : ControllerBase
 
     // ── AI provider config ────────────────────────────────────────────────────
 
-    [HttpGet("ai-config/providers")]
-    public async Task<IActionResult> ListAiProviders(CancellationToken ct)
-        => Ok(await _aiConfigHandler.ListProvidersAsync(ct));
+    // ── AI feature routing (which provider+model handles each feature) ──────────
 
     [HttpGet("ai-config")]
     public async Task<IActionResult> ListAiConfigs(CancellationToken ct)
@@ -155,16 +153,33 @@ public sealed class AdminController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
-    [HttpPut("ai-config/{configId:guid}/api-key")]
-    public async Task<IActionResult> UpdateAiConfigApiKey(Guid configId, [FromBody] UpdateAiApiKeyRequest request, CancellationToken ct)
+    // ── AI provider credentials (one key per provider, shared across features) ──
+
+    [HttpGet("ai-providers")]
+    public async Task<IActionResult> ListAiProviders(CancellationToken ct)
+        => Ok(await _aiConfigHandler.ListProvidersAsync(ct));
+
+    [HttpPut("ai-providers/{provider}/api-key")]
+    public async Task<IActionResult> SetProviderApiKey(string provider, [FromBody] SetProviderApiKeyRequest request, CancellationToken ct)
     {
         try
         {
-            var result = await _aiConfigHandler.UpdateApiKeyAsync(
-                new UpdateAiProviderApiKeyCommand(configId, request.ApiKey), ct);
+            var result = await _aiConfigHandler.SetProviderApiKeyAsync(
+                new SetProviderApiKeyCommand(provider, request.ApiKey), ct);
             return Ok(result);
         }
-        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("ai-providers/{provider}/test")]
+    public async Task<IActionResult> TestProvider(string provider, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.TestProviderAsync(provider, ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }
 
@@ -173,5 +188,4 @@ public sealed record CreatePromptVersionRequest(string Key, string Content, int?
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateAiConfigRequest(string ProviderName, string ModelName);
-// ApiKey null/empty means "clear stored key — fall back to environment variable".
-public sealed record UpdateAiApiKeyRequest(string? ApiKey);
+public sealed record SetProviderApiKeyRequest(string? ApiKey);

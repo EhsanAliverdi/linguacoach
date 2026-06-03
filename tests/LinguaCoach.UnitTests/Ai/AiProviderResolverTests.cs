@@ -68,7 +68,7 @@ public sealed class AiProviderResolverTests
         var act = () => resolver.ResolveWritingFeedbackProvider();
 
         act.Should().Throw<AiConfigurationUnavailableException>()
-            .WithMessage("*GEMINI_API_KEY*");
+            .WithMessage("*API key is not configured*");
     }
 
     private static AiProviderResolver BuildResolver(

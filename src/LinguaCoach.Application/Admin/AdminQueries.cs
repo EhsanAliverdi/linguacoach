@@ -93,27 +93,36 @@ public sealed record AiProviderConfigItem(
     Guid Id,
     string FeatureKey,
     string ProviderName,
-    string ModelName,
-    bool HasStoredApiKey);
+    string ModelName);
 
+/// <summary>One entry per provider in the catalog — includes credential status.</summary>
 public sealed record AiProviderCatalogItem(
     string ProviderName,
-    IReadOnlyList<string> Models);
+    IReadOnlyList<string> Models,
+    bool HasApiKey,
+    bool LastTestOk,
+    DateTime? LastTestedAt,
+    string? LastTestError);
 
 public sealed record UpdateAiProviderConfigCommand(
     Guid ConfigId,
     string ProviderName,
     string ModelName);
 
-// ApiKey is nullable — null/empty clears the stored key (falls back to env var).
-public sealed record UpdateAiProviderApiKeyCommand(
-    Guid ConfigId,
+public sealed record SetProviderApiKeyCommand(
+    string ProviderName,
     string? ApiKey);
+
+public sealed record ProviderTestResult(
+    bool Ok,
+    int LatencyMs,
+    string? Error);
 
 public interface IAdminAiConfigHandler
 {
     Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default);
     Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
-    Task<AiProviderConfigItem> UpdateApiKeyAsync(UpdateAiProviderApiKeyCommand command, CancellationToken ct = default);
+    Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default);
+    Task<ProviderTestResult> TestProviderAsync(string providerName, CancellationToken ct = default);
 }
