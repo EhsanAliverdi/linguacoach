@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
@@ -17,6 +17,17 @@ export class DashboardComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   notice = signal('');
+
+  firstName = computed(() => {
+    const name = this.data()?.studentName ?? '';
+    return name.includes('@') ? name.split('@')[0] : name.split(' ')[0] || name;
+  });
+
+  pathProgress = computed(() => {
+    const lp = this.data()?.learningPath;
+    if (!lp || lp.totalModules === 0) return 0;
+    return Math.round((lp.modulesCompleted / lp.totalModules) * 100);
+  });
 
   constructor(
     private dashboardService: DashboardService,

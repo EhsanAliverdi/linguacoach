@@ -53,6 +53,12 @@ export const routes: Routes = [
   },
 
   {
+    path: 'my-path',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/learning-path/learning-path.component').then(m => m.LearningPathComponent),
+  },
+
+  {
     path: 'activity',
     canActivate: [authGuard],
     loadComponent: () => import('./features/activity/activity-lesson/activity-lesson.component').then(m => m.ActivityLessonComponent),
