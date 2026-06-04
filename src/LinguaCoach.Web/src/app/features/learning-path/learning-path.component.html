@@ -1,180 +1,218 @@
-<div class="sp-page">
+<div class="sp-app">
 
-  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
-  <nav class="sp-nav">
-    <div class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center gap-5">
-        <a routerLink="/dashboard" class="sp-brand">
-          <svg width="32" height="32" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="lg-path" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
-              </linearGradient>
-            </defs>
-            <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-path)"/>
-            <circle cx="14" cy="33" r="3.4" fill="#fff"/>
-            <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
-            <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
-            <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
-          </svg>
-          <span class="hidden sm:inline"><span class="sp-wordmark-speak">Speak</span><span class="sp-wordmark-path">Path</span></span>
-        </a>
-        <div class="hidden items-center gap-0.5 sm:flex">
-          <a routerLink="/dashboard" class="sp-nav-link">Dashboard</a>
-          <a routerLink="/my-path"   class="sp-nav-link sp-nav-link-active">My Path</a>
-          <a routerLink="/activity"  class="sp-nav-link">Activities</a>
-        </div>
-      </div>
-      <a routerLink="/dashboard" class="sp-link text-xs font-bold">← Dashboard</a>
+  <!-- ── Desktop sidebar ────────────────────────────────────────────────── -->
+  <aside class="sp-side">
+    <a routerLink="/dashboard" class="sp-sidebrand">
+      <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg-path-side" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-path-side)"/>
+        <circle cx="14" cy="33" r="3.4" fill="#fff"/>
+        <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
+        <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
+        <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
+      </svg>
+      <span style="font-size:17px;font-weight:800;color:var(--sp-ink)"><span>Speak</span><span style="color:var(--sp-writing)">Path</span></span>
+    </a>
+    <nav style="display:flex;flex-direction:column;gap:4px;flex:1">
+      <a routerLink="/dashboard" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a routerLink="/my-path" class="sp-sidelink is-active">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        My Path
+      </a>
+      <a routerLink="/activity" class="sp-sidelink is-practice">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Practice
+      </a>
+      <a routerLink="/progress" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Progress
+      </a>
+      <a routerLink="/profile" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </a>
+    </nav>
+    <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:14px;margin-top:16px">
+      <div style="font-size:22px;margin-bottom:6px">🔥</div>
+      <p style="font-size:13px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Build your streak</p>
+      <p style="font-size:12px;font-weight:500;color:var(--sp-text)">Practice every day!</p>
     </div>
-    <div class="flex border-t sm:hidden" style="border-color:var(--sp-border)">
-      <a routerLink="/dashboard" class="flex-1 py-2 text-center text-xs font-semibold" style="color:var(--sp-muted)">Dashboard</a>
-      <a routerLink="/my-path"   class="flex-1 py-2 text-center text-xs font-bold" style="color:var(--sp-writing);background:var(--sp-writing-soft)">My Path</a>
-      <a routerLink="/activity"  class="flex-1 py-2 text-center text-xs font-semibold" style="color:var(--sp-muted)">Activities</a>
-    </div>
-  </nav>
+  </aside>
 
-  <main class="sp-shell">
-
-    <!-- Loading -->
-    @if (loading()) {
-      <div class="space-y-4">
-        <div class="sp-loading-pulse h-48"></div>
-        <div class="sp-loading-pulse h-24"></div>
-        <div class="sp-loading-pulse h-24"></div>
-        <div class="sp-loading-pulse h-24"></div>
+  <!-- ── Main column ─────────────────────────────────────────────────────── -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header class="sp-topbar">
+      <div>
+        <div class="sp-greet-sm">Your journey</div>
+        <div class="sp-greet-lg">My Path</div>
       </div>
+    </header>
 
-    } @else if (error()) {
-      <div class="sp-empty-state">
-        <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px]"
-          style="background:var(--sp-writing-soft)">
-          <svg width="28" height="28" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
+    <main class="sp-content">
+
+      <!-- Loading -->
+      @if (loading()) {
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="sp-loading-pulse" style="height:192px"></div>
+          <div class="sp-loading-pulse" style="height:96px"></div>
+          <div class="sp-loading-pulse" style="height:96px"></div>
         </div>
-        <h2 class="text-lg font-extrabold" style="color:var(--sp-ink)">No path yet</h2>
-        <p class="mt-2 max-w-sm text-sm font-medium leading-6" style="color:var(--sp-muted)">{{ error() }}</p>
-        <a routerLink="/activity" class="sp-button-primary mt-5">Start an activity</a>
-      </div>
 
-    } @else if (path()) {
-
-      <!-- ── Path hero — cool gradient header ─────────────────────────── -->
-      <div class="mb-5 overflow-hidden rounded-[22px] shadow-md" style="box-shadow:var(--sp-sh-md)">
-        <div class="px-5 pt-6 pb-6 sm:px-6" style="background:var(--sp-grad-cool);color:#fff">
-          <div class="mb-3">
-            <span class="sp-ai-badge">✦ AI-personalised path</span>
+      } @else if (error()) {
+        <div class="sp-empty-state">
+          <div style="width:56px;height:56px;border-radius:18px;background:var(--sp-writing-soft);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+            <svg width="28" height="28" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
-          <h1 class="text-xl font-extrabold leading-snug sm:text-2xl" style="color:#fff;letter-spacing:-.02em;max-width:460px">
-            {{ path()!.title }}
-          </h1>
-          <!-- Progress ring + label -->
-          <div class="mt-4 flex items-center gap-4">
-            <!-- SVG ring -->
-            <div class="relative h-14 w-14 shrink-0">
-              <svg width="56" height="56" style="transform:rotate(-90deg)">
-                <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,.25)" stroke-width="6" fill="none"/>
-                <circle cx="28" cy="28" r="22" stroke="#fff" stroke-width="6" fill="none"
-                  stroke-linecap="round"
-                  [attr.stroke-dasharray]="138.23"
-                  [attr.stroke-dashoffset]="138.23 * (1 - overallProgress() / 100)"/>
-              </svg>
-              <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-sm font-extrabold" style="color:#fff">{{ overallProgress() }}%</span>
+          <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink)">No path yet</h2>
+          <p style="margin-top:8px;font-size:14px;font-weight:500;color:var(--sp-muted);max-width:340px;text-align:center;line-height:1.6">{{ error() }}</p>
+          <a routerLink="/activity" class="sp-button-primary" style="margin-top:20px">Start an activity</a>
+        </div>
+
+      } @else if (path()) {
+
+        <!-- Path hero — cool gradient -->
+        <div style="overflow:hidden;border-radius:var(--sp-r-xl);box-shadow:var(--sp-sh-md);margin-bottom:20px">
+          <div style="background:var(--sp-grad-cool);padding:22px 22px 24px;color:#fff">
+            <div style="margin-bottom:12px">
+              <span class="sp-ai-badge">✦ AI-personalised path</span>
+            </div>
+            <h1 style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em;max-width:460px;line-height:1.2;margin:0">
+              {{ path()!.title }}
+            </h1>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:16px">
+              <!-- Ring -->
+              <div style="position:relative;width:56px;height:56px;flex-shrink:0">
+                <svg width="56" height="56" style="transform:rotate(-90deg)">
+                  <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,.25)" stroke-width="6" fill="none"/>
+                  <circle cx="28" cy="28" r="22" stroke="#fff" stroke-width="6" fill="none"
+                    stroke-linecap="round"
+                    [attr.stroke-dasharray]="138.23"
+                    [attr.stroke-dashoffset]="138.23 * (1 - overallProgress() / 100)"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                  <span style="font-size:13px;font-weight:800;color:#fff">{{ overallProgress() }}%</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:15px;font-weight:800;color:#fff">{{ path()!.modulesCompleted }} of {{ path()!.totalModules }} modules</div>
+                <div style="font-size:12px;font-weight:500;opacity:.8">on your way to confident workplace English</div>
               </div>
             </div>
-            <div>
-              <div class="text-base font-extrabold" style="color:#fff">{{ path()!.modulesCompleted }} of {{ path()!.totalModules }} modules</div>
-              <div class="text-xs font-semibold opacity-80">on your way to confident workplace English</div>
-            </div>
           </div>
         </div>
-      </div>
 
-      <!-- ── Module journey ────────────────────────────────────────────── -->
-      <p class="sp-eyebrow mb-3">Your journey</p>
-      <div class="relative space-y-3">
-        <!-- Connecting spine -->
-        <div aria-hidden="true" class="absolute left-[31px] top-8 bottom-8 w-0.5"
-          style="background:repeating-linear-gradient(var(--sp-border2) 0 6px, transparent 6px 12px);z-index:0"></div>
+        <!-- Module journey -->
+        <p class="sp-eyebrow" style="margin-bottom:12px">Your journey</p>
+        <div style="position:relative;display:flex;flex-direction:column;gap:12px">
+          <!-- Connecting spine -->
+          <div aria-hidden="true" style="position:absolute;left:31px;top:32px;bottom:32px;width:2px;background:repeating-linear-gradient(var(--sp-border2) 0 6px, transparent 6px 12px);z-index:0"></div>
 
-        @for (mod of path()!.modules; track mod.moduleId) {
-          <div class="relative z-10 sp-module-card flex items-center gap-4"
-            [class.sp-module-card-current]="moduleStatus(mod) === 'current'"
-            [class.sp-module-card-complete]="moduleStatus(mod) === 'complete'"
-            [class.sp-module-card-locked]="moduleStatus(mod) === 'locked'">
+          @for (mod of path()!.modules; track mod.moduleId) {
+            <div class="sp-module-card" style="position:relative;z-index:1;display:flex;align-items:center;gap:16px"
+              [class.sp-module-card-current]="moduleStatus(mod) === 'current'"
+              [class.sp-module-card-complete]="moduleStatus(mod) === 'complete'"
+              [class.sp-module-card-locked]="moduleStatus(mod) === 'locked'">
 
-            <!-- Skill icon -->
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px]"
-              [style.background]="moduleStatus(mod) === 'complete' ? 'var(--sp-success-soft)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing-soft)' : 'var(--sp-canvas2)'"
-              [style.color]="moduleStatus(mod) === 'complete' ? 'var(--sp-success)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing)' : 'var(--sp-faint)'">
-              @if (moduleStatus(mod) === 'complete') {
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              } @else if (moduleStatus(mod) === 'locked') {
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              } @else {
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              }
-            </div>
-
-            <!-- Content -->
-            <div class="flex-1 min-w-0">
-              <div class="mb-0.5 flex flex-wrap items-center gap-2">
-                <span class="text-xs font-extrabold uppercase tracking-widest" style="color:var(--sp-muted)">MODULE {{ mod.order }}</span>
-                @if (moduleStatus(mod) === 'current') {
-                  <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink);padding:2px 8px;font-size:10px">IN PROGRESS</span>
-                } @else if (moduleStatus(mod) === 'complete') {
-                  <span class="sp-pill" style="background:var(--sp-success-soft);color:var(--sp-success);padding:2px 8px;font-size:10px">✓ COMPLETE</span>
+              <div style="width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0"
+                [style.background]="moduleStatus(mod) === 'complete' ? 'var(--sp-success-soft)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing-soft)' : 'var(--sp-canvas2)'"
+                [style.color]="moduleStatus(mod) === 'complete' ? 'var(--sp-success)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing)' : 'var(--sp-faint)'">
+                @if (moduleStatus(mod) === 'complete') {
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                } @else if (moduleStatus(mod) === 'locked') {
+                  <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 } @else {
-                  <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);padding:2px 8px;font-size:10px">SOON</span>
+                  <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 }
               </div>
-              <h3 class="text-sm font-extrabold" style="color:var(--sp-ink)">{{ mod.title }}</h3>
-              <p class="mt-0.5 text-xs font-medium leading-5" style="color:var(--sp-muted)">{{ mod.description }}</p>
-              @if (moduleStatus(mod) === 'current' || moduleStatus(mod) === 'complete') {
-                <div class="mt-2 flex items-center gap-2">
-                  <div class="sp-progress-track flex-1" style="height:7px">
-                    <div class="sp-progress-fill" [style.width.%]="progressPercent(mod)"></div>
-                  </div>
-                  <span class="shrink-0 text-xs font-bold" style="color:var(--sp-muted)">{{ mod.completedActivities }}/{{ mod.totalActivities }}</span>
+
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:2px">
+                  <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--sp-muted)">MODULE {{ mod.order }}</span>
+                  @if (moduleStatus(mod) === 'current') {
+                    <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink);padding:2px 8px;font-size:10px">IN PROGRESS</span>
+                  } @else if (moduleStatus(mod) === 'complete') {
+                    <span class="sp-pill" style="background:var(--sp-success-soft);color:var(--sp-success);padding:2px 8px;font-size:10px">✓ COMPLETE</span>
+                  } @else {
+                    <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);padding:2px 8px;font-size:10px">SOON</span>
+                  }
                 </div>
-              }
+                <h3 style="font-size:14px;font-weight:800;color:var(--sp-ink);margin:0">{{ mod.title }}</h3>
+                <p style="margin-top:2px;font-size:12px;font-weight:500;color:var(--sp-muted);line-height:1.5">{{ mod.description }}</p>
+                @if (moduleStatus(mod) === 'current' || moduleStatus(mod) === 'complete') {
+                  <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+                    <div class="sp-progress-track" style="flex:1;height:7px">
+                      <div class="sp-progress-fill" [style.width.%]="progressPercent(mod)"></div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:var(--sp-muted);flex-shrink:0">{{ mod.completedActivities }}/{{ mod.totalActivities }}</span>
+                  </div>
+                }
+              </div>
+
+              <div style="flex-shrink:0">
+                @if (moduleStatus(mod) === 'locked') {
+                  <svg width="18" height="18" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                } @else {
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                }
+              </div>
             </div>
 
-            <!-- Arrow / lock -->
-            <div class="shrink-0">
-              @if (moduleStatus(mod) === 'locked') {
-                <svg width="18" height="18" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-              } @else {
-                <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-              }
-            </div>
-          </div>
-
-          @if (moduleStatus(mod) === 'current') {
-            <div class="relative z-10 -mt-1 ml-16">
-              <a routerLink="/activity" class="sp-button-primary inline-flex px-4 py-2 text-xs">
-                Continue this module →
-              </a>
-            </div>
+            @if (moduleStatus(mod) === 'current') {
+              <div style="position:relative;z-index:1;margin-top:-4px;margin-left:64px">
+                <a routerLink="/activity" class="sp-button-primary" style="display:inline-flex;padding:8px 18px;font-size:12px">
+                  Continue this module →
+                </a>
+              </div>
+            }
           }
-        }
-      </div>
-
-      <!-- ── Adapts banner ────────────────────────────────────────────── -->
-      <div class="sp-card-soft mt-5 flex items-center gap-3">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]" style="background:#fff;color:#B45CF0">
-          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
         </div>
-        <div>
-          <p class="text-sm font-extrabold" style="color:var(--sp-ink)">Your path adapts as you learn</p>
-          <p class="text-xs font-medium leading-5" style="color:var(--sp-text)">SpeakPath adds new modules based on what you find easy or tricky.</p>
-        </div>
-      </div>
 
-    }
-  </main>
+        <!-- Adapts banner -->
+        <div class="sp-card-soft" style="margin-top:20px;display:flex;align-items:center;gap:12px;border-radius:var(--sp-r-lg)">
+          <div style="width:44px;height:44px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;color:#B45CF0;flex-shrink:0">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div>
+            <p style="font-size:13px;font-weight:800;color:var(--sp-ink)">Your path adapts as you learn</p>
+            <p style="font-size:12px;font-weight:500;color:var(--sp-text);line-height:1.5">SpeakPath adds new modules based on what you find easy or tricky.</p>
+          </div>
+        </div>
+
+      }
+    </main>
+  </div>
+
+  <!-- ── Mobile bottom nav ──────────────────────────────────────────────── -->
+  <nav class="sp-bottomnav">
+    <a routerLink="/dashboard" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Home
+    </a>
+    <a routerLink="/my-path" class="sp-navbtn is-active">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      My Path
+    </a>
+    <a routerLink="/activity" class="sp-navbtn" style="position:relative">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;box-shadow:var(--sp-sh-glow);position:absolute;top:-16px">
+        <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      <span style="margin-top:22px">Practice</span>
+    </a>
+    <a routerLink="/progress" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Progress
+    </a>
+    <a routerLink="/profile" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
+
 </div>

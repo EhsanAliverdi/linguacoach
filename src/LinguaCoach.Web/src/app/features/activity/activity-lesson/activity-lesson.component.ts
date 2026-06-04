@@ -103,4 +103,8 @@ export class ActivityLessonComponent implements OnInit {
   isAiGenerated(): boolean {
     return this.activity()?.source === 'aiGenerated';
   }
+
+  get wordCount(): number {
+    return this.draftText.trim().split(/\s+/).filter(Boolean).length;
+  }
 }

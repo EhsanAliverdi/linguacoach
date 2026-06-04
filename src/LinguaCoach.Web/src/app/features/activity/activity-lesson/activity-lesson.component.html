@@ -1,133 +1,164 @@
-<div class="sp-page">
+<div class="sp-app">
 
-  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
-  <nav class="sp-nav">
-    <div class="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-      <!-- Logo mark -->
-      <a routerLink="/dashboard" class="sp-brand mr-2" aria-label="SpeakPath home">
-        <svg width="30" height="30" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="lg-act" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
-            </linearGradient>
-          </defs>
-          <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-act)"/>
-          <circle cx="14" cy="33" r="3.4" fill="#fff"/>
-          <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
-          <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
-          <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
-        </svg>
-      </a>
-
-      <!-- Back breadcrumb -->
-      <button (click)="backToDashboard()" class="flex items-center gap-1.5 text-sm font-bold transition-colors" style="color:var(--sp-muted)">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+  <!-- ── Desktop sidebar ────────────────────────────────────────────────── -->
+  <aside class="sp-side">
+    <a routerLink="/dashboard" class="sp-sidebrand">
+      <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg-act-side" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-act-side)"/>
+        <circle cx="14" cy="33" r="3.4" fill="#fff"/>
+        <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
+        <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
+        <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
+      </svg>
+      <span style="font-size:17px;font-weight:800;color:var(--sp-ink)"><span>Speak</span><span style="color:var(--sp-writing)">Path</span></span>
+    </a>
+    <nav style="display:flex;flex-direction:column;gap:4px;flex:1">
+      <a routerLink="/dashboard" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Dashboard
-      </button>
-      <span style="color:var(--sp-border2)">/</span>
-      <span class="text-sm font-bold" style="color:var(--sp-ink)">Practice</span>
+      </a>
+      <a routerLink="/my-path" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        My Path
+      </a>
+      <a routerLink="/activity" class="sp-sidelink is-practice">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Practice
+      </a>
+      <a routerLink="/progress" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Progress
+      </a>
+      <a routerLink="/profile" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </a>
+    </nav>
+    <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:14px;margin-top:16px">
+      <div style="font-size:22px;margin-bottom:6px">🔥</div>
+      <p style="font-size:13px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Build your streak</p>
+      <p style="font-size:12px;font-weight:500;color:var(--sp-text)">Practice every day!</p>
+    </div>
+  </aside>
 
-      <!-- Step dots (learning → practice → feedback) -->
+  <!-- ── Main column ─────────────────────────────────────────────────────── -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+    <!-- Top bar / breadcrumb -->
+    <header style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--sp-border);background:rgba(255,255,255,.88);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10">
+      <button (click)="backToDashboard()" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--sp-muted);background:none;border:none;cursor:pointer;padding:0">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        My Path
+      </button>
+
+      <!-- Step dots -->
       @if (state() !== 'loading' && state() !== 'error') {
-        <div class="ml-auto flex items-center gap-1.5">
+        <div style="display:flex;align-items:center;gap:6px;margin:0 auto">
           @for (step of stepDots; track step.label) {
-            <div class="flex items-center gap-1.5">
-              <div class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold"
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800"
                 [style.background]="stepState(step.key) === 'done' ? 'var(--sp-success)' : stepState(step.key) === 'active' ? 'var(--sp-grad-brand)' : 'var(--sp-canvas2)'"
                 [style.color]="stepState(step.key) === 'future' ? 'var(--sp-faint)' : '#fff'">
                 @if (stepState(step.key) === 'done') { ✓ } @else { {{ step.n }} }
               </div>
-              <span class="hidden text-xs font-bold sm:inline"
+              <span style="font-size:11px;font-weight:700"
                 [style.color]="stepState(step.key) === 'active' ? 'var(--sp-ink)' : 'var(--sp-muted)'">
                 {{ step.label }}
               </span>
             </div>
             @if (!$last) {
-              <div class="h-0.5 w-3 rounded" style="background:var(--sp-border2)"></div>
+              <div style="height:2px;width:20px;border-radius:1px;background:var(--sp-border2)"></div>
             }
           }
         </div>
       }
 
-      <!-- AI badge -->
-      @if (isAiGenerated()) {
-        <span class="sp-ai-badge shrink-0">✦ AI generated</span>
+      <!-- Module name right -->
+      @if (activity()) {
+        <span style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">
+          {{ activity()!.title }}
+        </span>
       }
-    </div>
-  </nav>
+    </header>
 
-  <main class="sp-shell">
+    <main class="sp-content">
 
-    <!-- ── Loading ──────────────────────────────────────────────────────── -->
-    @if (state() === 'loading') {
-      <div class="sp-empty-state py-16">
-        <div class="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-violet-200" style="border-top-color:var(--sp-writing)"></div>
-        <p class="text-sm font-semibold" style="color:var(--sp-muted)">Preparing your next activity…</p>
-      </div>
-    }
+      <!-- ── Loading ──────────────────────────────────────────────────── -->
+      @if (state() === 'loading') {
+        <div class="sp-empty-state py-16">
+          <div style="width:40px;height:40px;border-radius:50%;border:4px solid rgba(91,75,232,.2);border-top-color:var(--sp-writing);animation:spin 1s linear infinite;margin-bottom:16px"></div>
+          <p style="font-size:14px;font-weight:600;color:var(--sp-muted)">Preparing your next activity…</p>
+        </div>
+      }
 
-    <!-- ── Error ─────────────────────────────────────────────────────────── -->
-    @if (state() === 'error') {
-      <div class="sp-alert-error mb-4">{{ errorMessage() }}</div>
-      <button (click)="backToDashboard()" class="sp-button-ghost">← Back to dashboard</button>
-    }
+      <!-- ── Error ────────────────────────────────────────────────────── -->
+      @if (state() === 'error') {
+        <div class="sp-alert-error" style="margin-bottom:16px">{{ errorMessage() }}</div>
+        <button (click)="backToDashboard()" class="sp-button-ghost">← Back to dashboard</button>
+      }
 
-    <!-- ── Learning (intro) phase ─────────────────────────────────────── -->
-    @if (state() === 'learning') {
-      @if (activity(); as act) {
+      <!-- ── Learning (intro) phase ────────────────────────────────── -->
+      @if (state() === 'learning') {
+        @if (activity(); as act) {
 
-        <!-- Header -->
-        <div class="mb-5">
-          <div class="mb-3 flex flex-wrap items-center gap-2">
-            <span class="sp-skill-badge sp-skill-badge-writing">✏ Writing</span>
-            @if (isAiGenerated()) {
-              <span class="sp-ai-badge">✦ AI generated</span>
-            } @else {
-              <span class="sp-fallback-badge">🛡 Backup content</span>
-            }
-            <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted)">
-              ⏱ ~8 min
-            </span>
+          <!-- Badges + title -->
+          <div style="margin-bottom:20px">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px">
+              <span class="sp-skill-badge sp-skill-badge-writing">✏ Writing</span>
+              @if (isAiGenerated()) {
+                <span class="sp-ai-badge">✦ AI generated</span>
+              } @else {
+                <span class="sp-fallback-badge">🛡 Backup content</span>
+              }
+              <span style="display:inline-flex;align-items:center;gap:4px;background:var(--sp-canvas2);color:var(--sp-muted);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:700">⏱ ~8 min</span>
+            </div>
+            <h1 class="sp-h1">{{ act.title }}</h1>
           </div>
-          <h1 class="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl" style="color:var(--sp-ink);letter-spacing:-.02em">
-            {{ act.title }}
-          </h1>
-          @if (act.learningGoal) {
-            <p class="mt-2 max-w-2xl text-sm font-medium leading-6" style="color:var(--sp-muted)">{{ act.learningGoal }}</p>
-          }
-        </div>
 
-        <div class="grid gap-4 lg:grid-cols-2">
-          <!-- Left column -->
-          <div class="space-y-4">
+          <div style="display:flex;flex-direction:column;gap:14px">
 
-            <!-- Situation -->
+            <!-- The situation -->
             @if (act.situation) {
-              <div class="sp-info-block" style="border-left:3px solid var(--sp-writing)">
-                <div class="mb-2 flex items-center gap-2">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-[9px]" style="background:rgba(91,75,232,.12);color:var(--sp-writing)">
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+                  <div class="sp-icobox" style="width:30px;height:30px;border-radius:9px;background:rgba(91,75,232,.1);color:var(--sp-writing)">
                     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
-                  <span class="sp-eyebrow">The situation</span>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">The situation</span>
                 </div>
-                <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ act.situation }}</p>
+                <p style="font-size:14.5px;color:var(--sp-text);line-height:1.6;font-weight:500">{{ act.situation }}</p>
               </div>
             }
 
-            <!-- Persian instruction -->
-            @if (act.instructionInSourceLanguage) {
-              <div class="sp-source-lang-block" dir="rtl" lang="fa">
-                <p class="mb-1 text-left text-xs font-extrabold uppercase tracking-widest" dir="ltr" style="color:var(--sp-writing)">In Persian</p>
-                {{ act.instructionInSourceLanguage }}
+            <!-- Goal card -->
+            @if (act.learningGoal) {
+              <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:16px;display:flex;gap:12px;align-items:flex-start">
+                <div class="sp-icobox" style="width:36px;height:36px;border-radius:12px;background:#fff;color:#B45CF0;flex-shrink:0;box-shadow:var(--sp-sh-sm)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Your goal</div>
+                  <p style="font-size:14px;font-weight:600;color:var(--sp-ink);line-height:1.5">{{ act.learningGoal }}</p>
+                </div>
               </div>
             }
 
-            <!-- Target phrases -->
+            <!-- Phrases to try -->
             @if (act.targetPhrases.length > 0) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-2">Target phrases</p>
-                <p class="mb-3 text-xs font-medium" style="color:var(--sp-muted)">Try to use at least one of these:</p>
-                <div class="flex flex-wrap gap-2">
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:30px;height:30px;border-radius:9px;background:rgba(155,92,246,.1);color:var(--sp-listening)">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zM15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Phrases to try</span>
+                </div>
+                <p style="font-size:12px;color:var(--sp-muted);margin-bottom:10px;font-weight:500">Try to use at least one of these:</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
                   @for (phrase of act.targetPhrases; track phrase) {
                     <span class="sp-phrase-chip">{{ phrase }}</span>
                   }
@@ -137,170 +168,271 @@
 
             <!-- Vocabulary -->
             @if (act.targetVocabulary.length > 0) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-2">Vocabulary to practise</p>
-                <div class="flex flex-wrap gap-2">
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:30px;height:30px;border-radius:9px;background:rgba(240,152,44,.1);color:var(--sp-vocabulary)">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Vocabulary</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
                   @for (word of act.targetVocabulary; track word) {
                     <span class="sp-vocab-chip">
-                      <span class="text-sm font-extrabold" style="color:var(--sp-vocabulary-ink)">{{ word }}</span>
+                      <span style="font-size:13px;font-weight:800;color:var(--sp-vocabulary-ink)">{{ word }}</span>
                     </span>
                   }
                 </div>
               </div>
             }
-          </div>
 
-          <!-- Right column -->
-          <div class="space-y-4">
-            <!-- Example -->
+            <!-- Collapsible example -->
             @if (act.exampleText) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-3" style="color:var(--sp-success)">Example</p>
-                <pre class="whitespace-pre-wrap rounded-[14px] border p-4 font-sans text-sm leading-7"
-                  style="background:var(--sp-canvas);border-color:var(--sp-border);color:var(--sp-text)">{{ act.exampleText }}</pre>
-              </div>
+              <details class="sp-card" style="overflow:hidden;padding:0">
+                <summary style="display:flex;align-items:center;gap:10px;padding:15px;cursor:pointer;list-style:none;font-weight:700;font-size:14px;color:var(--sp-ink)">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:rgba(19,176,124,.12);color:var(--sp-success);flex-shrink:0">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  </div>
+                  See an example message
+                </summary>
+                <div style="padding:0 15px 15px">
+                  <pre style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.7;color:var(--sp-text);background:var(--sp-canvas);border-radius:12px;padding:14px;border:1px solid var(--sp-border)">{{ act.exampleText }}</pre>
+                </div>
+              </details>
             }
 
-            <!-- Common mistake -->
+            <!-- Common mistake warning -->
             @if (act.commonMistakeToAvoid) {
-              <div class="rounded-[18px] border p-4" style="background:var(--sp-vocabulary-soft);border-color:#F6CAAA">
-                <p class="mb-2 sp-eyebrow" style="color:var(--sp-vocabulary-ink)">Common mistake to avoid</p>
-                <p class="text-sm font-medium leading-6" style="color:var(--sp-vocabulary-ink)">{{ act.commonMistakeToAvoid }}</p>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Start writing CTA -->
-        <div class="mt-6">
-          <button (click)="startWriting()" class="sp-button-primary">
-            Start writing
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-      }
-    }
-
-    <!-- ── Writing / submitting phase ───────────────────────────────── -->
-    @if (state() === 'writing' || state() === 'submitting') {
-      @if (activity(); as act) {
-        <div class="mb-5">
-          <p class="sp-eyebrow mb-1">Writing practice</p>
-          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl" style="color:var(--sp-ink);letter-spacing:-.02em">{{ act.title }}</h1>
-          <p class="mt-1 text-sm font-medium" style="color:var(--sp-muted)">Focus on clarity, professional tone, and the target phrases.</p>
-        </div>
-
-        <div class="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-
-          <!-- Left: reference sidebar -->
-          <aside class="space-y-4">
-            @if (act.situation) {
-              <div class="sp-info-block" style="border-left:3px solid var(--sp-writing)">
-                <p class="sp-eyebrow mb-2">Situation</p>
-                <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ act.situation }}</p>
-              </div>
-            }
-            @if (act.instructionInSourceLanguage) {
-              <div class="sp-source-lang-block" dir="rtl" lang="fa">{{ act.instructionInSourceLanguage }}</div>
-            }
-            @if (act.targetPhrases.length > 0) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-2">Phrases to use</p>
-                <div class="flex flex-wrap gap-2">
-                  @for (phrase of act.targetPhrases; track phrase) {
-                    <span class="sp-phrase-chip">{{ phrase }}</span>
-                  }
+              <div style="background:var(--sp-warn-soft);border:1px solid #F6E2C2;border-radius:var(--sp-r-lg);padding:16px;display:flex;gap:10px;align-items:flex-start">
+                <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:rgba(240,152,44,.15);color:var(--sp-warn);flex-shrink:0">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:800;color:var(--sp-vocabulary-ink);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Common mistake to avoid</div>
+                  <p style="font-size:13.5px;color:var(--sp-vocabulary-ink);line-height:1.6;font-weight:500">{{ act.commonMistakeToAvoid }}</p>
                 </div>
               </div>
             }
-          </aside>
 
-          <!-- Right: textarea -->
-          <div class="sp-card">
-            <label class="sp-label" for="draftText">Write your response</label>
+            <!-- Persian instruction -->
+            @if (act.instructionInSourceLanguage) {
+              <div class="sp-source-lang-block" dir="rtl" lang="fa">
+                <p style="margin-bottom:6px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--sp-writing)" dir="ltr">In Persian</p>
+                {{ act.instructionInSourceLanguage }}
+              </div>
+            }
+
+            <!-- Start writing CTA -->
+            <button (click)="startWriting()" class="sp-button-primary" style="width:100%;padding:16px;font-size:16px;margin-top:4px">
+              Start writing
+              <svg style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+          </div>
+        }
+      }
+
+      <!-- ── Writing / submitting phase ──────────────────────────── -->
+      @if (state() === 'writing' || state() === 'submitting') {
+        @if (activity(); as act) {
+
+          <!-- Header -->
+          <div style="margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span class="sp-skill-badge sp-skill-badge-writing">✏ Writing</span>
+            </div>
+            <h1 class="sp-h1">Write your message</h1>
+          </div>
+
+          <!-- Task card -->
+          <div style="background:var(--sp-writing-soft);border:1px solid #DAD6FF;border-radius:var(--sp-r-lg);padding:14px 16px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px">
+            <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:rgba(91,75,232,.15);color:var(--sp-writing);flex-shrink:0">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <p style="font-size:13.5px;color:var(--sp-writing-ink);line-height:1.6;font-weight:600">{{ act.situation }}</p>
+          </div>
+
+          <!-- Email card -->
+          <div class="sp-card" style="padding:0;overflow:hidden;margin-bottom:14px">
+            <!-- Header row -->
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--sp-border)">
+              <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:var(--sp-writing-soft);color:var(--sp-writing)">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <span style="font-size:13px;font-weight:600;color:var(--sp-text)">To: your manager</span>
+            </div>
+            <!-- Textarea -->
+            <label for="draftText" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Write your response</label>
             <textarea
               id="draftText"
               [(ngModel)]="draftText"
               [disabled]="state() === 'submitting'"
-              rows="13"
               placeholder="Dear [Name],&#10;&#10;I hope you are well..."
-              class="sp-input min-h-72 resize-y leading-7"
+              style="width:100%;min-height:180px;border:none;outline:none;resize:vertical;padding:15px;font-size:14.5px;font-family:inherit;color:var(--sp-ink);line-height:1.7;background:transparent;box-sizing:border-box"
             ></textarea>
-            <div class="mt-2 flex items-center justify-between">
-              <span class="text-xs font-semibold" style="color:var(--sp-muted)">{{ draftText.length }}/3000</span>
-              @if (draftText.length > 3000) {
-                <span class="text-xs font-bold" style="color:var(--sp-speaking)">Too long</span>
-              }
+            <!-- Footer -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-top:1px solid var(--sp-border)">
+              <span style="font-size:12px;font-weight:600"
+                [style.color]="wordCount >= 30 ? 'var(--sp-success)' : 'var(--sp-muted)'">
+                {{ wordCount }} words {{ wordCount >= 30 ? '✓' : '' }}
+              </span>
+              <span style="font-size:12px;color:var(--sp-faint)">{{ draftText.length }}/3000 · Autosaved</span>
             </div>
-
-            @if (errorMessage() && state() === 'writing') {
-              <div class="sp-alert-error mt-4">{{ errorMessage() }}</div>
-            }
-
-            <button
-              (click)="onSubmit()"
-              [disabled]="!draftText.trim() || state() === 'submitting' || draftText.length > 3000"
-              class="sp-button-primary mt-5 w-full">
-              @if (state() === 'submitting') {
-                <span class="flex items-center justify-center gap-2">
-                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                  Getting feedback…
-                </span>
-              } @else {
-                Get feedback
-              }
-            </button>
           </div>
-        </div>
-      }
-    }
 
-    <!-- ── Feedback phase ────────────────────────────────────────────── -->
-    @if (state() === 'feedback') {
-      @if (feedback(); as fb) {
-        <div class="mb-5">
-          <p class="sp-eyebrow mb-1">Feedback</p>
-          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl" style="color:var(--sp-ink);letter-spacing:-.02em">{{ activity()?.title }}</h1>
-        </div>
-
-        <div class="grid gap-4 lg:grid-cols-[0.65fr_1.35fr]">
-
-          <!-- Left: score + highlights -->
-          <aside class="space-y-4">
-
-            <!-- Score ring + band -->
-            <div class="sp-card text-center">
-              <p class="sp-eyebrow mb-3">Overall score</p>
-              <div class="relative mx-auto mb-3" style="width:96px;height:96px">
-                <svg width="96" height="96" style="transform:rotate(-90deg)">
-                  <circle cx="48" cy="48" r="38" stroke="var(--sp-canvas2)" stroke-width="10" fill="none"/>
-                  <circle cx="48" cy="48" r="38" stroke-width="10" fill="none"
-                    stroke-linecap="round"
-                    [attr.stroke]="scoreRingColour(fb.score)"
-                    [attr.stroke-dasharray]="238.76"
-                    [attr.stroke-dashoffset]="fb.score !== null ? 238.76 * (1 - fb.score / 100) : 238.76"/>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span class="text-3xl font-extrabold" style="color:var(--sp-ink)">{{ fb.score !== null ? fb.score : '–' }}</span>
-                  <span class="text-xs font-bold" style="color:var(--sp-muted)">/100</span>
-                </div>
+          <!-- Phrase chips -->
+          @if (act.targetPhrases.length > 0) {
+            <div style="margin-bottom:14px">
+              <p style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sp-muted);margin-bottom:8px">TAP A PHRASE TO ADD IT</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                @for (phrase of act.targetPhrases; track phrase) {
+                  <span class="sp-phrase-chip">{{ phrase }}</span>
+                }
               </div>
+            </div>
+          }
+
+          <!-- Collapsible vocab hints -->
+          @if (act.targetVocabulary.length > 0) {
+            <details class="sp-card" style="overflow:hidden;padding:0;margin-bottom:10px">
+              <summary style="display:flex;align-items:center;gap:10px;padding:13px 15px;cursor:pointer;list-style:none;font-weight:700;font-size:13px;color:var(--sp-ink)">
+                <svg width="16" height="16" fill="none" stroke="var(--sp-vocabulary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Vocabulary hints
+              </summary>
+              <div style="padding:0 15px 15px;display:flex;flex-wrap:wrap;gap:8px">
+                @for (word of act.targetVocabulary; track word) {
+                  <span class="sp-vocab-chip"><span style="font-size:13px;font-weight:800;color:var(--sp-vocabulary-ink)">{{ word }}</span></span>
+                }
+              </div>
+            </details>
+          }
+
+          <!-- Collapsible example peek -->
+          @if (act.exampleText) {
+            <details class="sp-card" style="overflow:hidden;padding:0;margin-bottom:14px">
+              <summary style="display:flex;align-items:center;gap:10px;padding:13px 15px;cursor:pointer;list-style:none;font-weight:700;font-size:13px;color:var(--sp-ink)">
+                <svg width="16" height="16" fill="none" stroke="var(--sp-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Peek at the example
+              </summary>
+              <div style="padding:0 15px 15px">
+                <pre style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.7;color:var(--sp-text);background:var(--sp-canvas);border-radius:10px;padding:12px;border:1px solid var(--sp-border)">{{ act.exampleText }}</pre>
+              </div>
+            </details>
+          }
+
+          <!-- Coach row -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✦</div>
+            <p style="font-size:13px;color:var(--sp-muted);font-weight:500;line-height:1.5">No pressure — write naturally and I'll help you polish it.</p>
+          </div>
+
+          <!-- Error -->
+          @if (errorMessage() && state() === 'writing') {
+            <div class="sp-alert-error" style="margin-bottom:12px">{{ errorMessage() }}</div>
+          }
+
+          <!-- Submit -->
+          <button
+            (click)="onSubmit()"
+            [disabled]="!draftText.trim() || state() === 'submitting' || draftText.length > 3000"
+            class="sp-button-primary"
+            style="width:100%;padding:16px;font-size:15px">
+            @if (state() === 'submitting') {
+              <span style="display:flex;align-items:center;justify-content:center;gap:8px">
+                <span style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin 1s linear infinite"></span>
+                Getting feedback…
+              </span>
+            } @else {
+              Get coach feedback
+            }
+          </button>
+
+        }
+      }
+
+      <!-- ── Feedback phase ───────────────────────────────────────── -->
+      @if (state() === 'feedback') {
+        @if (feedback(); as fb) {
+
+          <!-- Score card -->
+          <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <!-- Ring -->
+            <div style="position:relative;width:96px;height:96px;flex-shrink:0">
+              <svg width="96" height="96" style="transform:rotate(-90deg)">
+                <circle cx="48" cy="48" r="38" stroke="var(--sp-canvas2)" stroke-width="9" fill="none"/>
+                <circle cx="48" cy="48" r="38" stroke-width="9" fill="none"
+                  stroke-linecap="round"
+                  [attr.stroke]="scoreRingColour(fb.score)"
+                  [attr.stroke-dasharray]="238.76"
+                  [attr.stroke-dashoffset]="fb.score !== null ? 238.76 * (1 - fb.score / 100) : 238.76"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <span style="font-size:28px;font-weight:800;color:var(--sp-ink)">{{ fb.score !== null ? fb.score : '–' }}</span>
+                <span style="font-size:11px;font-weight:700;color:var(--sp-muted)">/100</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Overall score</div>
               @if (fb.score !== null) {
-                <span class="sp-pill" [style.background]="fb.score >= 85 ? 'var(--sp-success-soft)' : fb.score >= 70 ? 'var(--sp-vocabulary-soft)' : 'var(--sp-speaking-soft)'"
+                <span class="sp-pill" style="margin-bottom:10px"
+                  [style.background]="fb.score >= 85 ? 'var(--sp-success-soft)' : fb.score >= 70 ? 'var(--sp-vocabulary-soft)' : 'var(--sp-speaking-soft)'"
                   [style.color]="fb.score >= 85 ? 'var(--sp-success)' : fb.score >= 70 ? 'var(--sp-vocabulary-ink)' : 'var(--sp-speaking-ink)'">
                   ✦ {{ fb.score >= 85 ? 'Great work' : fb.score >= 70 ? 'Good effort' : 'Keep going' }}
                 </span>
               }
+              <!-- Coach message -->
+              <div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✦</div>
+                <div>
+                  <div style="font-size:12px;font-weight:800;color:var(--sp-ink)">Pace</div>
+                  <div style="font-size:10px;color:var(--sp-muted);margin-bottom:6px">your AI coach</div>
+                  <div style="background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:4px 14px 14px 14px;padding:11px 13px;font-size:13px;color:var(--sp-text);line-height:1.6;max-width:360px">
+                    @if (fb.feedbackInSourceLanguage) {
+                      Your message was submitted. Here is your feedback below.
+                    } @else {
+                      Your message was submitted. Here is your feedback.
+                    }
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Feedback in Persian -->
+            @if (fb.feedbackInSourceLanguage) {
+              <div class="sp-source-lang-block" dir="rtl" lang="fa">
+                <p style="margin-bottom:6px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--sp-writing)" dir="ltr">Feedback in Persian</p>
+                {{ fb.feedbackInSourceLanguage }}
+              </div>
+            }
+
+            <!-- Polished version -->
+            @if (fb.correctedText) {
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:var(--sp-success-soft);color:var(--sp-success)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Polished version</span>
+                </div>
+                <pre style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.7;color:var(--sp-text);background:var(--sp-success-soft);border-radius:12px;padding:14px;border:1px solid #C7EEDD">{{ fb.correctedText }}</pre>
+              </div>
+            }
 
             <!-- What you did well -->
             @if (fb.whatYouDidWell.length) {
-              <div class="sp-coach-message flex-col">
-                <p class="sp-eyebrow mb-2" style="color:var(--sp-success)">What you did well</p>
-                <ul class="space-y-2">
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:var(--sp-success-soft);color:var(--sp-success)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">What you did well</span>
+                </div>
+                <ul style="display:flex;flex-direction:column;gap:8px;list-style:none;padding:0;margin:0">
                   @for (item of fb.whatYouDidWell; track item) {
-                    <li class="flex items-start gap-2 text-sm font-medium leading-6" style="color:var(--sp-text)">
-                      <span class="mt-0.5 shrink-0 font-bold" style="color:var(--sp-success)">✓</span>
+                    <li style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--sp-text);line-height:1.6;font-weight:500">
+                      <span style="color:var(--sp-success);font-weight:800;flex-shrink:0;margin-top:1px">✓</span>
                       {{ item }}
                     </li>
                   }
@@ -308,102 +440,134 @@
               </div>
             }
 
+            <!-- Gentle improvements -->
+            @if (fb.mainMistakes.length) {
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:rgba(91,75,232,.1);color:var(--sp-writing)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Gentle improvements</span>
+                </div>
+                @for (mistake of fb.mainMistakes; track mistake) {
+                  <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6;font-weight:500;display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+                    <span style="color:var(--sp-vocabulary);font-weight:800;flex-shrink:0">→</span>{{ mistake }}
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- Grammar focus -->
+            @if (fb.grammarExplanation) {
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:var(--sp-writing-soft);color:var(--sp-writing)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Grammar focus</span>
+                </div>
+                <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6;font-weight:500">{{ fb.grammarExplanation }}</p>
+              </div>
+            }
+
+            <!-- Tone & politeness -->
+            @if (fb.toneExplanation) {
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:var(--sp-listening-soft);color:var(--sp-listening)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Tone &amp; politeness</span>
+                </div>
+                <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6;font-weight:500">{{ fb.toneExplanation }}</p>
+              </div>
+            }
+
             <!-- Vocabulary to remember -->
             @if (fb.vocabularyToRemember.length) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-2">Vocabulary to remember</p>
-                <div class="flex flex-wrap gap-2">
+              <div class="sp-card" style="padding:16px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                  <div class="sp-icobox" style="width:28px;height:28px;border-radius:8px;background:var(--sp-vocabulary-soft);color:var(--sp-vocabulary)">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  </div>
+                  <span style="font-weight:800;font-size:12.5px;color:var(--sp-ink);letter-spacing:.02em;text-transform:uppercase">Vocabulary to remember</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
                   @for (word of fb.vocabularyToRemember; track word) {
-                    <span class="sp-vocab-chip">
-                      <span class="text-sm font-extrabold" style="color:var(--sp-vocabulary-ink)">{{ word }}</span>
-                    </span>
+                    <span class="sp-vocab-chip"><span style="font-size:13px;font-weight:800;color:var(--sp-vocabulary-ink)">{{ word }}</span></span>
                   }
                 </div>
-              </div>
-            }
-          </aside>
-
-          <!-- Right: detailed feedback -->
-          <section class="space-y-4">
-
-            <!-- Feedback in Persian -->
-            @if (fb.feedbackInSourceLanguage) {
-              <div class="sp-source-lang-block" dir="rtl" lang="fa">
-                <p class="mb-2 text-left text-xs font-extrabold uppercase tracking-widest" dir="ltr" style="color:var(--sp-writing)">Feedback in Persian</p>
-                {{ fb.feedbackInSourceLanguage }}
-              </div>
-            }
-
-            <!-- Corrected version -->
-            @if (fb.correctedText) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-3" style="color:var(--sp-success)">Clearer version</p>
-                <pre class="whitespace-pre-wrap rounded-[14px] border p-4 font-sans text-sm leading-7"
-                  style="background:var(--sp-canvas);border-color:var(--sp-border);color:var(--sp-text)">{{ fb.correctedText }}</pre>
-              </div>
-            }
-
-            <!-- Grammar + tone -->
-            @if (fb.grammarExplanation || fb.toneExplanation) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-3">Lessons from this activity</p>
-                <div class="space-y-3">
-                  @if (fb.grammarExplanation) {
-                    <div class="rounded-[14px] border p-4" style="background:var(--sp-speaking-soft);border-color:#F5BDB3">
-                      <p class="mb-1 sp-eyebrow" style="color:var(--sp-speaking-ink)">Grammar lesson</p>
-                      <p class="text-sm font-medium leading-6" style="color:var(--sp-speaking-ink)">{{ fb.grammarExplanation }}</p>
-                    </div>
-                  }
-                  @if (fb.toneExplanation) {
-                    <div class="rounded-[14px] border p-4" style="background:var(--sp-writing-soft);border-color:#C4BAFF">
-                      <p class="mb-1 sp-eyebrow" style="color:var(--sp-writing-ink)">Tone &amp; register</p>
-                      <p class="text-sm font-medium leading-6" style="color:var(--sp-writing-ink)">{{ fb.toneExplanation }}</p>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- Main mistakes -->
-            @if (fb.mainMistakes.length) {
-              <div class="sp-info-block">
-                <p class="sp-eyebrow mb-2">Main mistake to fix</p>
-                @for (mistake of fb.mainMistakes; track mistake) {
-                  <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ mistake }}</p>
-                }
               </div>
             }
 
             <!-- Rewrite challenge -->
             @if (fb.rewriteChallenge) {
-              <div class="rounded-[18px] border p-4" style="background:var(--sp-vocabulary-soft);border-color:#F6CAAA">
-                <p class="mb-1 sp-eyebrow" style="color:var(--sp-vocabulary-ink)">Challenge</p>
-                <p class="text-sm font-medium leading-6" style="color:var(--sp-vocabulary-ink)">{{ fb.rewriteChallenge }}</p>
+              <div style="background:var(--sp-grad-cool);border-radius:var(--sp-r-lg);padding:18px;color:#fff">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <svg width="16" height="16" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  <span style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.9">Rewrite challenge</span>
+                </div>
+                <p style="font-size:14px;font-weight:600;line-height:1.6;margin-bottom:14px;opacity:.95">{{ fb.rewriteChallenge }}</p>
+                <button (click)="tryAgain()" style="background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:12px;padding:9px 18px;font-size:13px;font-weight:800;cursor:pointer;transition:background .15s">
+                  Take the challenge
+                </button>
               </div>
             }
 
-            <!-- Next suggestion -->
+            <!-- Suggested next -->
             @if (fb.nextPracticeSuggestion) {
-              <div class="rounded-[18px] border p-4" style="background:var(--sp-canvas2);border-color:var(--sp-border2)">
-                <p class="mb-1 sp-eyebrow">Next time</p>
-                <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ fb.nextPracticeSuggestion }}</p>
+              <div style="background:var(--sp-writing-soft);border:1px solid #DAD6FF;border-radius:var(--sp-r-lg);padding:16px">
+                <div style="font-size:11px;font-weight:800;color:var(--sp-writing-ink);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Suggested next</div>
+                <p style="font-size:13.5px;color:var(--sp-writing-ink);line-height:1.6;font-weight:500">{{ fb.nextPracticeSuggestion }}</p>
               </div>
             }
 
             <!-- Actions -->
-            <div class="flex flex-col gap-3 sm:flex-row">
-              <button (click)="tryAgain()" class="sp-button-ghost flex-1">Try again</button>
-              <button (click)="nextActivity()" class="sp-button-primary flex-1">Next activity →</button>
+            <div style="display:flex;gap:10px">
+              <button (click)="tryAgain()" class="sp-button-ghost" style="flex:1">Try again</button>
+              <button (click)="nextActivity()" class="sp-button-primary" style="flex:2">Continue to next →</button>
             </div>
 
             <!-- Back to path -->
-            <div class="text-center">
-              <a routerLink="/my-path" class="sp-link text-xs">Back to my path</a>
+            <div style="text-align:center">
+              <a routerLink="/my-path" style="font-size:13px;font-weight:700;color:var(--sp-muted);text-decoration:none;display:inline-block;background:var(--sp-canvas2);border-radius:12px;padding:10px 20px">Back to my path</a>
             </div>
-          </section>
-        </div>
-      }
-    }
 
-  </main>
+          </div>
+        }
+      }
+
+    </main>
+  </div>
+
+  <!-- ── Mobile bottom nav ──────────────────────────────────────────────── -->
+  <nav class="sp-bottomnav">
+    <a routerLink="/dashboard" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Home
+    </a>
+    <a routerLink="/my-path" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      My Path
+    </a>
+    <a routerLink="/activity" class="sp-navbtn is-active" style="position:relative">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;box-shadow:var(--sp-sh-glow);position:absolute;top:-16px">
+        <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      <span style="margin-top:22px">Practice</span>
+    </a>
+    <a routerLink="/progress" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Progress
+    </a>
+    <a routerLink="/profile" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
+
 </div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>

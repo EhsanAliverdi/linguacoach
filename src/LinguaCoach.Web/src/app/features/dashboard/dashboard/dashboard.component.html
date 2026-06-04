@@ -1,288 +1,350 @@
-<div class="sp-page">
+<div class="sp-app">
 
-  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
-  <nav class="sp-nav">
-    <div class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
-      <!-- Logo + desktop links -->
-      <div class="flex items-center gap-5">
-        <a routerLink="/dashboard" class="sp-brand">
-          <!-- Prototype SVG logo mark -->
-          <svg width="32" height="32" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="lg-dash" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
-              </linearGradient>
-            </defs>
-            <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-dash)"/>
-            <circle cx="14" cy="33" r="3.4" fill="#fff"/>
-            <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
-            <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
-            <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
-          </svg>
-          <span class="hidden sm:inline"><span class="sp-wordmark-speak">Speak</span><span class="sp-wordmark-path">Path</span></span>
-        </a>
-        <div class="hidden items-center gap-0.5 sm:flex">
-          <a routerLink="/dashboard" class="sp-nav-link sp-nav-link-active">Dashboard</a>
-          <a routerLink="/my-path"   class="sp-nav-link">My Path</a>
-          <a routerLink="/activity"  class="sp-nav-link">Activities</a>
+  <!-- ── Desktop sidebar ────────────────────────────────────────────────── -->
+  <aside class="sp-side">
+    <a routerLink="/dashboard" class="sp-sidebrand">
+      <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg-db-side" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-db-side)"/>
+        <circle cx="14" cy="33" r="3.4" fill="#fff"/>
+        <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
+        <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
+        <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
+      </svg>
+      <span style="font-size:17px;font-weight:800;color:var(--sp-ink)"><span>Speak</span><span style="color:var(--sp-writing)">Path</span></span>
+    </a>
+    <nav style="display:flex;flex-direction:column;gap:4px;flex:1">
+      <a routerLink="/dashboard" class="sp-sidelink is-active">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a routerLink="/my-path" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        My Path
+      </a>
+      <a routerLink="/activity" class="sp-sidelink is-practice">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Practice
+      </a>
+      <a routerLink="/progress" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Progress
+      </a>
+      <a routerLink="/profile" class="sp-sidelink">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </a>
+    </nav>
+    <!-- Sidebar streak card -->
+    <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:14px;margin-top:16px">
+      <div style="font-size:22px;margin-bottom:6px">🔥</div>
+      <p style="font-size:13px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Build your streak</p>
+      <p style="font-size:12px;font-weight:500;color:var(--sp-text)">Practice every day to build your streak!</p>
+    </div>
+    <!-- Sign out -->
+    <button (click)="auth.logout()" class="sp-sidelink" style="margin-top:8px;color:var(--sp-muted)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </button>
+  </aside>
+
+  <!-- ── Main column ─────────────────────────────────────────────────────── -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+    <!-- Top bar -->
+    <header class="sp-topbar">
+      <div>
+        <div class="sp-greet-sm">{{ greetingTime() }} 👋</div>
+        <div class="sp-greet-lg">Hi, {{ firstName() }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <!-- Streak pill -->
+        <div style="display:flex;align-items:center;gap:5px;background:var(--sp-warn-soft);border:1px solid #F6E2C2;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--sp-vocabulary-ink)">
+          🔥 <span>— day streak</span>
+        </div>
+        <!-- Avatar -->
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">
+          {{ firstName().charAt(0).toUpperCase() }}
         </div>
       </div>
-      <!-- Right side -->
-      <div class="flex items-center gap-3">
-        <span class="hidden text-sm font-medium md:block" style="color:var(--sp-muted)">{{ auth.currentUser()?.email }}</span>
-        <button (click)="auth.logout()" class="sp-button-ghost min-h-0 rounded-xl px-3 py-1.5 text-xs">Sign out</button>
-      </div>
-    </div>
-    <!-- Mobile strip -->
-    <div class="flex border-t sm:hidden" style="border-color:var(--sp-border)">
-      <a routerLink="/dashboard" class="flex-1 py-2 text-center text-xs font-bold" style="color:var(--sp-writing);background:var(--sp-writing-soft)">Dashboard</a>
-      <a routerLink="/my-path"   class="flex-1 py-2 text-center text-xs font-semibold" style="color:var(--sp-muted)">My Path</a>
-      <a routerLink="/activity"  class="flex-1 py-2 text-center text-xs font-semibold" style="color:var(--sp-muted)">Activities</a>
-    </div>
-  </nav>
+    </header>
 
-  <main class="sp-shell">
+    <main class="sp-content">
 
-    <!-- Notice -->
-    @if (notice()) {
-      <div class="sp-alert-info mb-5">{{ notice() }}</div>
-    }
+      <!-- Notice -->
+      @if (notice()) {
+        <div class="sp-alert-info mb-5">{{ notice() }}</div>
+      }
 
-    <!-- Loading skeleton -->
-    @if (loading()) {
-      <div class="space-y-4">
-        <div class="sp-loading-pulse h-56"></div>
-        <div class="sp-loading-pulse h-10"></div>
-        <div class="sp-loading-pulse h-40"></div>
-      </div>
+      <!-- Loading skeleton -->
+      @if (loading()) {
+        <div class="space-y-4">
+          <div class="sp-loading-pulse h-56"></div>
+          <div class="sp-loading-pulse h-10"></div>
+          <div class="sp-loading-pulse h-40"></div>
+        </div>
 
-    } @else if (error()) {
-      <div class="sp-alert-error">{{ error() }}</div>
+      } @else if (error()) {
+        <div class="sp-alert-error">{{ error() }}</div>
 
-    } @else if (data()) {
+      } @else if (data()) {
 
-      <!-- ── Welcome strip ─────────────────────────────────────────────── -->
-      <div class="mb-5">
-        <p class="sp-eyebrow mb-1">Your SpeakPath journey</p>
-        <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl" style="color:var(--sp-ink);letter-spacing:-.03em">
-          Welcome back, {{ firstName() }}.
-        </h1>
-        <p class="mt-1 text-sm font-medium" style="color:var(--sp-muted)">
-          Workplace English coaching for {{ data()!.careerProfile }}.
-        </p>
-      </div>
-
-      <!-- ── Up-next hero card ─────────────────────────────────────────── -->
-      <div class="mb-5 overflow-hidden rounded-[22px] shadow-lg" style="box-shadow:var(--sp-sh-lg)">
-        <!-- Gradient header -->
-        <div class="px-5 pt-5 pb-6 sm:px-6" style="background:var(--sp-grad-brand);color:#fff">
-          <div class="mb-3 flex flex-wrap items-center gap-2">
-            <span class="sp-pill" style="background:rgba(255,255,255,.2);color:#fff">
-              ✦ Recommended next
-            </span>
-            @if (data()!.learningPath?.currentModule) {
-              <span class="text-xs font-semibold opacity-80">
-                {{ data()!.learningPath!.title }} · Module {{ data()!.learningPath!.currentModule!.order }}
+        <!-- ── Hero card ──────────────────────────────────────────────── -->
+        <div style="overflow:hidden;border-radius:var(--sp-r-xl);box-shadow:var(--sp-sh-lg);margin-bottom:22px">
+          <!-- Gradient header -->
+          <div style="background:var(--sp-grad-brand);padding:22px 22px 24px">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px">
+              <span style="background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:4px 12px;letter-spacing:.02em">
+                ✦ Recommended next
               </span>
+              @if (data()!.learningPath?.currentModule) {
+                <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">
+                  {{ data()!.learningPath!.title }} · Module {{ data()!.learningPath!.currentModule!.order }}
+                </span>
+              }
+            </div>
+            <h2 style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.02em;max-width:420px;line-height:1.2;margin:0">
+              @if (data()!.learningPath?.currentModule) {
+                {{ data()!.learningPath!.currentModule!.title }}
+              } @else {
+                Start your first activity
+              }
+            </h2>
+            @if (data()!.learningPath?.currentModule?.description) {
+              <p style="margin-top:6px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.85)">{{ data()!.learningPath!.currentModule!.description }}</p>
             }
+            <div style="margin-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+              <a routerLink="/activity"
+                style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--sp-writing);border-radius:14px;padding:10px 20px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:opacity .15s">
+                ▶ Continue learning
+              </a>
+              <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.85)">≈ 8 min · Writing</span>
+            </div>
           </div>
-          <h2 class="text-xl font-extrabold leading-snug sm:text-2xl" style="color:#fff;letter-spacing:-.02em;max-width:420px">
-            @if (data()!.learningPath?.currentModule) {
-              {{ data()!.learningPath!.currentModule!.title }}
-            } @else {
-              Start your first activity
-            }
-          </h2>
-          @if (data()!.learningPath?.currentModule) {
-            <p class="mt-1 text-sm font-medium opacity-85">
-              {{ data()!.learningPath!.currentModule!.description }}
-            </p>
+          <!-- Module progress footer -->
+          @if (data()!.learningPath?.currentModule; as mod) {
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--sp-surface);border-top:1px solid var(--sp-border)">
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--sp-text);margin-bottom:6px">
+                  <span>Module progress</span>
+                  <span style="color:var(--sp-writing)">{{ mod.completedActivities }}/{{ mod.totalActivities }} done</span>
+                </div>
+                <div class="sp-progress-track">
+                  <div class="sp-progress-fill" [style.width.%]="moduleProgress()"></div>
+                </div>
+              </div>
+              <a routerLink="/my-path" style="font-size:12px;font-weight:700;color:var(--sp-muted);text-decoration:none;flex-shrink:0">Full path →</a>
+            </div>
+          } @else if (!data()!.learningPath) {
+            <div style="padding:14px 22px;background:var(--sp-surface);border-top:1px solid var(--sp-border)">
+              <p style="font-size:12px;font-weight:600;color:var(--sp-muted)">Your personalised path is being prepared.</p>
+            </div>
           }
-          <div class="mt-5 flex flex-wrap items-center gap-4">
-            <a routerLink="/activity"
-              class="inline-flex min-h-10 items-center gap-2 rounded-[14px] px-5 py-2.5 text-sm font-bold shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
-              style="background:#fff;color:var(--sp-writing)">
-              ▶ Continue learning
-            </a>
-            <span class="text-xs font-semibold opacity-85">≈ 8 min · Writing</span>
+        </div>
+
+        <!-- ── Stat tiles ────────────────────────────────────────────── -->
+        <div class="sp-statgrid" style="margin-bottom:6px">
+          <!-- Streak -->
+          <div class="sp-card" style="padding:14px;text-align:center">
+            <div style="font-size:22px;margin-bottom:4px">🔥</div>
+            <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">—</div>
+            <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">day streak</div>
+            <div style="font-size:10px;color:var(--sp-faint);margin-top:4px">Coming soon</div>
+          </div>
+          <!-- Minutes -->
+          <div class="sp-card" style="padding:14px;text-align:center">
+            <div style="font-size:22px;margin-bottom:4px">⏱</div>
+            <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">—</div>
+            <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">min this week</div>
+            <div style="font-size:10px;color:var(--sp-faint);margin-top:4px">Coming soon</div>
+          </div>
+          <!-- Activities -->
+          <div class="sp-card" style="padding:14px;text-align:center">
+            <div style="font-size:22px;margin-bottom:4px">✅</div>
+            <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">—</div>
+            <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">activities done</div>
+            <div style="font-size:10px;color:var(--sp-faint);margin-top:4px">Coming soon</div>
           </div>
         </div>
-        <!-- Module progress footer -->
-        @if (data()!.learningPath?.currentModule; as mod) {
-          <div class="flex items-center gap-3 px-5 py-3 sm:px-6" style="background:var(--sp-surface);border-top:1px solid var(--sp-border)">
-            <div style="flex:1">
-              <div class="mb-1.5 flex justify-between text-xs font-bold" style="color:var(--sp-text)">
-                <span>Module progress</span>
-                <span style="color:var(--sp-writing)">{{ mod.completedActivities }}/{{ mod.totalActivities }} done</span>
-              </div>
-              <div class="sp-progress-track">
-                <div class="sp-progress-fill" [style.width.%]="moduleProgress()"></div>
-              </div>
+
+        <!-- ── Two-col grid ───────────────────────────────────────────── -->
+        <div class="sp-grid2">
+
+          <!-- Left column -->
+          <div class="sp-col" style="gap:0">
+
+            <!-- Skill grid -->
+            <div class="sp-section-h">
+              <h3>Practise your skills</h3>
             </div>
-            @if (data()!.learningPath) {
-              <a routerLink="/my-path" class="shrink-0 text-xs font-bold" style="color:var(--sp-muted)">Full path →</a>
+            <div class="sp-skillgrid">
+
+              <!-- Writing — active -->
+              <a routerLink="/activity"
+                class="sp-card"
+                style="display:flex;flex-direction:column;gap:10px;padding:14px;border-color:var(--sp-writing);text-decoration:none;transition:transform .18s,box-shadow .2s">
+                <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-writing-soft);display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Writing</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Level 3 · Building</div>
+                </div>
+                <div class="sp-progress-track" style="height:6px">
+                  <div class="sp-progress-fill" style="width:64%;background:var(--sp-writing)"></div>
+                </div>
+              </a>
+
+              <!-- Speaking -->
+              <div class="sp-card" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:0.6">
+                <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-speaking-soft);display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Speaking</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Coming soon</div>
+                </div>
+                <div class="sp-progress-track" style="height:6px"><div style="width:0"></div></div>
+              </div>
+
+              <!-- Listening -->
+              <div class="sp-card" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:0.6">
+                <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-listening-soft);display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-listening)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Listening</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Coming soon</div>
+                </div>
+                <div class="sp-progress-track" style="height:6px"><div style="width:0"></div></div>
+              </div>
+
+              <!-- Vocabulary -->
+              <div class="sp-card" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:0.6">
+                <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-vocabulary-soft);display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-vocabulary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Vocabulary</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Coming soon</div>
+                </div>
+                <div class="sp-progress-track" style="height:6px"><div style="width:0"></div></div>
+              </div>
+
+              <!-- Pronunciation -->
+              <div class="sp-card" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:0.6">
+                <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-pronunciation-soft);display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-pronunciation)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Pronunciation</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Coming soon</div>
+                </div>
+                <div class="sp-progress-track" style="height:6px"><div style="width:0"></div></div>
+              </div>
+
+            </div>
+
+            <!-- Up next -->
+            <div class="sp-section-h">
+              <h3>Up next in your path</h3>
+              <a routerLink="/my-path">My Path →</a>
+            </div>
+
+            @if (data()!.learningPath?.currentModule; as mod) {
+              <div class="sp-card" style="display:flex;align-items:center;gap:14px;padding:16px">
+                <div style="width:44px;height:44px;border-radius:14px;background:var(--sp-writing-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Writing · ~8 min</div>
+                  <div style="font-size:14px;font-weight:800;color:var(--sp-ink)">{{ mod.title }}</div>
+                  <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">{{ mod.completedActivities }}/{{ mod.totalActivities }} activities done</div>
+                </div>
+                <a routerLink="/activity" style="font-size:13px;font-weight:700;color:var(--sp-writing);text-decoration:none;flex-shrink:0">Start →</a>
+              </div>
+            } @else {
+              <div class="sp-card" style="padding:20px;text-align:center">
+                <p style="font-size:13px;font-weight:600;color:var(--sp-muted)">Complete onboarding to unlock your personalised path.</p>
+              </div>
             }
-          </div>
-        } @else if (!data()!.learningPath) {
-          <div class="px-5 py-3 sm:px-6" style="background:var(--sp-surface);border-top:1px solid var(--sp-border)">
-            <p class="text-xs font-semibold" style="color:var(--sp-muted)">Your personalised path is being prepared.</p>
-          </div>
-        }
-      </div>
-
-      <!-- ── Two-column grid ───────────────────────────────────────────── -->
-      <div class="grid gap-5 lg:grid-cols-[1.5fr_0.5fr]">
-
-        <!-- Left: Skills ──────────────────────────────────────────────── -->
-        <div>
-          <p class="sp-eyebrow mb-3">Practise your skills</p>
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-
-            <!-- Writing — active -->
-            <a routerLink="/activity"
-              class="sp-card flex flex-col gap-3 transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
-              style="border-color:var(--sp-writing);padding:14px;text-decoration:none">
-              <div class="flex h-10 w-10 items-center justify-center rounded-[14px]" style="background:var(--sp-writing-soft)">
-                <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                </svg>
-              </div>
-              <div>
-                <div class="text-sm font-extrabold" style="color:var(--sp-ink)">Writing</div>
-                <div class="text-xs font-semibold" style="color:var(--sp-muted)">Level 3 · Building</div>
-              </div>
-              <div class="sp-progress-track" style="height:6px">
-                <div class="sp-progress-fill" style="width:64%;background:var(--sp-writing)"></div>
-              </div>
-            </a>
-
-            <!-- Speaking — coming soon -->
-            <div class="sp-card flex flex-col gap-3 opacity-60" style="padding:14px">
-              <div class="flex h-10 w-10 items-center justify-center rounded-[14px]" style="background:var(--sp-speaking-soft)">
-                <svg width="20" height="20" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                </svg>
-              </div>
-              <div>
-                <div class="text-sm font-extrabold" style="color:var(--sp-ink)">Speaking</div>
-                <div class="text-xs font-semibold" style="color:var(--sp-muted)">Coming soon</div>
-              </div>
-              <div class="sp-progress-track" style="height:6px">
-                <div class="sp-progress-fill" style="width:0%;background:var(--sp-speaking)"></div>
-              </div>
-            </div>
-
-            <!-- Listening — coming soon -->
-            <div class="sp-card flex flex-col gap-3 opacity-60" style="padding:14px">
-              <div class="flex h-10 w-10 items-center justify-center rounded-[14px]" style="background:var(--sp-listening-soft)">
-                <svg width="20" height="20" fill="none" stroke="var(--sp-listening)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
-                </svg>
-              </div>
-              <div>
-                <div class="text-sm font-extrabold" style="color:var(--sp-ink)">Listening</div>
-                <div class="text-xs font-semibold" style="color:var(--sp-muted)">Coming soon</div>
-              </div>
-              <div class="sp-progress-track" style="height:6px">
-                <div style="width:0%"></div>
-              </div>
-            </div>
-
-            <!-- Vocabulary — coming soon -->
-            <div class="sp-card flex flex-col gap-3 opacity-60" style="padding:14px">
-              <div class="flex h-10 w-10 items-center justify-center rounded-[14px]" style="background:var(--sp-vocabulary-soft)">
-                <svg width="20" height="20" fill="none" stroke="var(--sp-vocabulary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-              </div>
-              <div>
-                <div class="text-sm font-extrabold" style="color:var(--sp-ink)">Vocabulary</div>
-                <div class="text-xs font-semibold" style="color:var(--sp-muted)">Coming soon</div>
-              </div>
-              <div class="sp-progress-track" style="height:6px">
-                <div style="width:0%"></div>
-              </div>
-            </div>
-
-            <!-- Pronunciation — coming soon -->
-            <div class="sp-card flex flex-col gap-3 opacity-60" style="padding:14px">
-              <div class="flex h-10 w-10 items-center justify-center rounded-[14px]" style="background:var(--sp-pronunciation-soft)">
-                <svg width="20" height="20" fill="none" stroke="var(--sp-pronunciation)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                </svg>
-              </div>
-              <div>
-                <div class="text-sm font-extrabold" style="color:var(--sp-ink)">Pronunciation</div>
-                <div class="text-xs font-semibold" style="color:var(--sp-muted)">Coming soon</div>
-              </div>
-              <div class="sp-progress-track" style="height:6px">
-                <div style="width:0%"></div>
-              </div>
-            </div>
-
-            <!-- Reading — coming soon -->
-            <div class="sp-card flex flex-col gap-3 opacity-60" style="padding:14px">
-              <div class="flex h-10 w-10 items-center justify-center rounded-[14px]" style="background:var(--sp-success-soft)">
-                <svg width="20" height="20" fill="none" stroke="var(--sp-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                </svg>
-              </div>
-              <div>
-                <div class="text-sm font-extrabold" style="color:var(--sp-ink)">Reading</div>
-                <div class="text-xs font-semibold" style="color:var(--sp-muted)">Coming soon</div>
-              </div>
-              <div class="sp-progress-track" style="height:6px">
-                <div style="width:0%"></div>
-              </div>
-            </div>
 
           </div>
-        </div>
 
-        <!-- Right: Context ─────────────────────────────────────────────── -->
-        <aside class="space-y-4">
-          <!-- Your context -->
-          <div class="sp-card">
-            <p class="sp-eyebrow mb-4">Your context</p>
-            <div class="space-y-4">
-              <div>
-                <p class="mb-1 text-xs font-bold uppercase tracking-wide" style="color:var(--sp-muted)">Career focus</p>
-                <p class="font-extrabold" style="color:var(--sp-ink)">{{ data()!.careerProfile }}</p>
+          <!-- Right column -->
+          <div class="sp-col" style="gap:0">
+
+            <!-- Coach card -->
+            <div class="sp-section-h">
+              <h3>Latest from your coach</h3>
+            </div>
+            <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:18px;margin-bottom:12px">
+              <!-- Coach message -->
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:40px;height:40px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✦</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Pace</div>
+                  <div style="font-size:11px;color:var(--sp-muted);margin-bottom:8px">your AI coach</div>
+                  <div style="background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:4px 16px 16px 16px;padding:13px 15px;font-size:13.5px;color:var(--sp-text);line-height:1.6">
+                    Complete your first activity to unlock coach insights. I'm ready when you are! 🚀
+                  </div>
+                </div>
               </div>
-              <div>
-                <p class="mb-1 text-xs font-bold uppercase tracking-wide" style="color:var(--sp-muted)">English level</p>
-                @if (data()!.cefrLevel) {
-                  <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink)">
-                    🏆 {{ data()!.cefrLevel }}
-                  </span>
-                } @else {
-                  <p class="text-sm font-semibold" style="color:var(--sp-faint)">Not assessed yet</p>
+            </div>
+
+            <!-- Streak calendar -->
+            <div class="sp-section-h" style="margin-top:18px">
+              <h3>This week</h3>
+            </div>
+            <div class="sp-card" style="padding:16px">
+              <div style="display:flex;justify-content:space-between;gap:4px">
+                @for (day of ['M','T','W','T','F','S','S']; track $index) {
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1">
+                    <div style="width:32px;height:32px;border-radius:50%;background:var(--sp-canvas2);display:flex;align-items:center;justify-content:center"></div>
+                    <span style="font-size:10px;font-weight:700;color:var(--sp-faint)">{{ day }}</span>
+                  </div>
                 }
               </div>
-              @if (data()!.message) {
-                <div style="background:var(--sp-canvas2);border-radius:12px;padding:10px 12px">
-                  <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ data()!.message }}</p>
-                </div>
-              }
+              <p style="font-size:11px;color:var(--sp-faint);text-align:center;margin-top:12px">Your progress history will appear here as you practise.</p>
             </div>
+
           </div>
 
-          <!-- How it works -->
-          <div class="sp-card">
-            <p class="sp-eyebrow mb-3">How it works</p>
-            <div class="space-y-3">
-              @for (step of howItWorks; track step.n) {
-                <div class="flex items-start gap-3">
-                  <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-extrabold text-white"
-                    style="background:var(--sp-grad-brand)">{{ step.n }}</span>
-                  <p class="text-sm font-medium leading-6" style="color:var(--sp-text)">{{ step.text }}</p>
-                </div>
-              }
-            </div>
-          </div>
-        </aside>
+        </div><!-- end sp-grid2 -->
 
+      }
+    </main>
+  </div>
+
+  <!-- ── Mobile bottom nav ──────────────────────────────────────────────── -->
+  <nav class="sp-bottomnav">
+    <a routerLink="/dashboard" class="sp-navbtn is-active">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Home
+    </a>
+    <a routerLink="/my-path" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      My Path
+    </a>
+    <!-- Practice center raised button -->
+    <a routerLink="/activity" class="sp-navbtn" style="position:relative">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;box-shadow:var(--sp-sh-glow);position:absolute;top:-16px">
+        <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       </div>
-    }
-  </main>
+      <span style="margin-top:22px">Practice</span>
+    </a>
+    <a routerLink="/progress" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Progress
+    </a>
+    <a routerLink="/profile" class="sp-navbtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
+
 </div>

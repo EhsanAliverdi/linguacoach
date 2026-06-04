@@ -24,6 +24,13 @@ export class DashboardComponent implements OnInit {
     { n: 3, text: 'Get coaching feedback on grammar, tone, and professional phrasing.' },
   ];
 
+  greetingTime = computed(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  });
+
   firstName = computed(() => {
     const name = this.data()?.studentName ?? '';
     return name.includes('@') ? name.split('@')[0] : name.split(' ')[0] || name;

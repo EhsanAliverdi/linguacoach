@@ -76,5 +76,17 @@ export const routes: Routes = [
     loadComponent: () => import('./features/speaking/speaking-session/speaking-session.component').then(m => m.SpeakingSessionComponent),
   },
 
+  {
+    path: 'progress',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent),
+  },
+
+  {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
+  },
+
   { path: '**', redirectTo: 'login' },
 ];
