@@ -1,0 +1,54 @@
+:host {
+  display: block;
+}
+
+.sp-admin-topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, .95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sp-border);
+  padding: 12px 18px;
+}
+
+.sp-admin-topnav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sp-admin-navlink {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sp-muted);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: color .15s, background .15s;
+}
+
+.sp-admin-navlink:hover {
+  background: var(--sp-canvas2);
+  color: var(--sp-ink);
+}
+
+.sp-admin-navlink-active {
+  background: var(--sp-writing-soft);
+  color: var(--sp-writing-ink);
+}
+
+.sp-admin-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 18px 60px;
+}
+
+@media (min-width: 900px) {
+  .sp-admin-content {
+    padding: 32px 40px 80px;
+  }
+}

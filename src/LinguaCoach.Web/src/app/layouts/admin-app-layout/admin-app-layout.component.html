@@ -1,0 +1,31 @@
+<div class="sp-admin-app">
+
+  <!-- Admin top navigation -->
+  <nav class="sp-admin-topnav">
+    <div class="sp-admin-topnav-inner">
+      <a routerLink="/admin" class="sp-brand mr-2">
+        <span class="sp-brand-mark">S</span>
+        <span>SpeakPath Admin</span>
+      </a>
+      <a routerLink="students" routerLinkActive="sp-admin-navlink-active" class="sp-admin-navlink">
+        Students
+      </a>
+      <a routerLink="prompts" routerLinkActive="sp-admin-navlink-active" class="sp-admin-navlink">
+        Prompts
+      </a>
+      <a routerLink="careers" routerLinkActive="sp-admin-navlink-active" class="sp-admin-navlink">
+        Curriculum
+      </a>
+      <a routerLink="ai-config" routerLinkActive="sp-admin-navlink-active" class="sp-admin-navlink">
+        AI Config
+      </a>
+      <button (click)="logout()" class="sp-link ml-auto">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- Admin content area -->
+  <main class="sp-admin-content">
+    <router-outlet />
+  </main>
+
+</div>
