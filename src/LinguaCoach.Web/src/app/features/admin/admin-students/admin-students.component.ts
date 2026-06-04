@@ -9,51 +9,57 @@ import { StudentListItem } from '../../../core/models/admin.models';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-bold text-slate-900">Students</h2>
-      <a routerLink="../create-student" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
-        + Create student
-      </a>
+    <div class="sp-admin-page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1 class="sp-admin-page-title">Students</h1>
+          <p class="sp-admin-page-sub">Manage pilot student accounts</p>
+        </div>
+        <a routerLink="../create-student" class="sp-admin-btn-primary">
+          + Create student
+        </a>
+      </div>
     </div>
     @if (loading()) {
-      <div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+      <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
     } @else if (error()) {
-      <div class="text-sm text-red-600">{{ error() }}</div>
+      <div class="sp-admin-alert-error">{{ error() }}</div>
     } @else {
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-200">
+      <div class="sp-admin-table-card">
+        <table class="sp-admin-table">
+          <thead>
             <tr>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">Email</th>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">Onboarding</th>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">CEFR</th>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">Joined</th>
+              <th>Email</th>
+              <th>Onboarding</th>
+              <th>CEFR</th>
+              <th>Joined</th>
             </tr>
           </thead>
           <tbody>
             @for (s of students(); track s.userId) {
-              <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td class="px-4 py-3 text-slate-800">{{ s.email }}</td>
-                <td class="px-4 py-3">
-                  <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium
-                    {{ s.onboardingStatus === 'Complete' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+              <tr>
+                <td>{{ s.email }}</td>
+                <td>
+                  <span class="sp-admin-badge"
+                    [class.sp-admin-badge-green]="s.onboardingStatus === 'Complete'"
+                    [class.sp-admin-badge-amber]="s.onboardingStatus !== 'Complete'">
                     {{ s.onboardingStatus }}
                   </span>
                 </td>
-                <td class="px-4 py-3">
+                <td>
                   @if (s.cefrLevel) {
-                    <span class="inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">{{ s.cefrLevel }}</span>
+                    <span class="sp-admin-badge sp-admin-badge-indigo">{{ s.cefrLevel }}</span>
                   } @else {
-                    <span class="text-slate-400 text-xs">—</span>
+                    <span class="sp-admin-table-empty">—</span>
                   }
                 </td>
-                <td class="px-4 py-3 text-slate-500 text-xs">{{ s.createdAt | date:'mediumDate' }}</td>
+                <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
               </tr>
             }
           </tbody>
         </table>
         @if (students().length === 0) {
-          <p class="px-4 py-6 text-sm text-slate-400 text-center">No students yet.</p>
+          <div class="sp-admin-empty-row">No students yet.</div>
         }
       </div>
     }

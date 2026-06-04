@@ -2,53 +2,244 @@
   display: block;
 }
 
-.sp-admin-topnav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(255, 255, 255, .95);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--sp-border);
-  padding: 12px 18px;
+/* ── Shell ──────────────────────────────────────────────────────────────── */
+.sp-admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #F8FAFC;
 }
 
-.sp-admin-topnav-inner {
-  max-width: 1200px;
-  margin: 0 auto;
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
+.sp-admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 40;
+  overflow-y: auto;
+}
+
+/* Brand */
+.sp-admin-brand {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.sp-admin-brand-link {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.sp-admin-navlink {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--sp-muted);
+  gap: 10px;
   text-decoration: none;
-  padding: 8px 12px;
-  border-radius: 10px;
-  transition: color .15s, background .15s;
 }
 
-.sp-admin-navlink:hover {
-  background: var(--sp-canvas2);
-  color: var(--sp-ink);
+.sp-admin-brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -.01em;
+  line-height: 1.1;
 }
 
-.sp-admin-navlink-active {
-  background: var(--sp-writing-soft);
-  color: var(--sp-writing-ink);
+.sp-admin-brand-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: .02em;
+  text-transform: uppercase;
 }
 
+/* Nav */
+.sp-admin-nav {
+  flex: 1;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-admin-nav-group-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 12px 8px 4px;
+  margin-top: 4px;
+}
+
+.sp-admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748B;
+  text-decoration: none;
+  transition: background .14s, color .14s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+
+.sp-admin-nav-item:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.sp-admin-nav-item-active {
+  background: #EEF2FF;
+  color: #4338CA;
+  font-weight: 700;
+}
+
+.sp-admin-nav-item-active svg {
+  stroke: #4338CA;
+}
+
+.sp-admin-nav-item-soon {
+  color: #CBD5E1;
+  pointer-events: none;
+}
+
+.sp-admin-nav-soon-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  background: #F1F5F9;
+  color: #94A3B8;
+  padding: 2px 6px;
+  border-radius: 99px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* Sidebar footer */
+.sp-admin-sidebar-footer {
+  padding: 12px 10px 16px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.sp-admin-signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94A3B8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background .14s, color .14s;
+}
+
+.sp-admin-signout-btn:hover {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+
+/* ── Main area ──────────────────────────────────────────────────────────── */
+.sp-admin-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: 240px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.sp-admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #E2E8F0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.sp-admin-header-inner {
+  padding: 0 28px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sp-admin-header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sp-admin-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF7A59, #B45CF0);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sp-admin-header-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.sp-admin-role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #EEF2FF;
+  color: #4338CA;
+  padding: 2px 8px;
+  border-radius: 99px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ── Content ────────────────────────────────────────────────────────────── */
 .sp-admin-content {
+  flex: 1;
+  padding: 28px 28px 60px;
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 18px 60px;
+  width: 100%;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .sp-admin-content {
     padding: 32px 40px 80px;
+  }
+}
+
+/* ── Mobile: hide sidebar, full-width main ─────────────────────────────── */
+@media (max-width: 899px) {
+  .sp-admin-sidebar {
+    display: none;
+  }
+
+  .sp-admin-main {
+    margin-left: 0;
   }
 }

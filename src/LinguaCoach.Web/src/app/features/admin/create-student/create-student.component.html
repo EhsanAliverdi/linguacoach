@@ -1,8 +1,11 @@
-<div class="max-w-2xl">
-  <div class="sp-card">
-    <p class="sp-eyebrow mb-2">Pilot user setup</p>
-    <h1 class="text-2xl font-bold text-slate-950">Create student account</h1>
-    <p class="mt-2 text-sm leading-6 text-slate-600">Create a private pilot account. The student will use the temporary password once, then set their own password before onboarding.</p>
+<div class="sp-admin-page-header">
+  <h1 class="sp-admin-page-title">Create student</h1>
+  <p class="sp-admin-page-sub">Add a new pilot account</p>
+</div>
+
+<div style="max-width:520px">
+  <div class="sp-admin-form-card">
+    <p class="sp-admin-form-desc">Create a private pilot account. The student will use the temporary password once, then set their own password before onboarding.</p>
 
     @if (error()) {
       <div class="sp-alert-error mt-5">{{ error() }}</div>

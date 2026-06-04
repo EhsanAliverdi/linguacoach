@@ -19,8 +19,13 @@ interface ProviderState {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+    <div class="sp-admin-page-header">
+      <h1 class="sp-admin-page-title">AI Configuration</h1>
+      <p class="sp-admin-page-sub">Provider credentials, model routing, and connection tests</p>
+    </div>
+
     @if (loading()) {
-      <p class="text-sm text-slate-400 py-6">Loading…</p>
+      <div class="sp-admin-table-loading">Loading…</div>
     } @else {
 
       <!-- ── Section 1: Feature routing ──────────────────────────────── -->

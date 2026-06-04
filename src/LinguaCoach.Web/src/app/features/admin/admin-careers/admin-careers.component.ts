@@ -10,7 +10,10 @@ import { ReferenceService } from '../../../core/services/reference.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <h2 class="text-lg font-bold text-slate-900 mb-4">Curriculum Words</h2>
+    <div class="sp-admin-page-header">
+      <h1 class="sp-admin-page-title">Curriculum</h1>
+      <p class="sp-admin-page-sub">Career profiles and vocabulary word lists</p>
+    </div>
 
     <!-- Career picker -->
     <div class="flex gap-3 mb-5">

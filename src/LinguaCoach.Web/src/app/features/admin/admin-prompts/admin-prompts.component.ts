@@ -9,11 +9,14 @@ import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/a
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-bold text-slate-900">Prompt Templates</h2>
-      <button (click)="showForm.set(!showForm())" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
-        + New version
-      </button>
+    <div class="sp-admin-page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1 class="sp-admin-page-title">Prompt Templates</h1>
+          <p class="sp-admin-page-sub">Manage and version AI prompt templates</p>
+        </div>
+        <button (click)="showForm.set(!showForm())" class="sp-admin-btn-primary">+ New version</button>
+      </div>
     </div>
 
     @if (showForm()) {

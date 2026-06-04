@@ -6,6 +6,7 @@ import { StudentAppLayoutComponent } from './layouts/student-app-layout/student-
 import { AdminAppLayoutComponent } from './layouts/admin-app-layout/admin-app-layout.component';
 
 export const routes: Routes = [
+  // ── Public (unauthenticated) ──────────────────────────────────────────
   {
     path: '',
     component: PublicLayoutComponent,
@@ -14,45 +15,57 @@ export const routes: Routes = [
         path: '',
         loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
       },
-    ],
-  },
-
-  {
-    path: 'login',
-    component: PublicLayoutComponent,
-    children: [
       {
-        path: '',
+        path: 'login',
         loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
       },
-    ],
-  },
-  {
-    path: 'change-password',
-    component: PublicLayoutComponent,
-    children: [
       {
-        path: '',
+        path: 'change-password',
         canActivate: [authGuard],
         loadComponent: () => import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent),
       },
     ],
   },
 
+  // ── Admin ─────────────────────────────────────────────────────────────
   {
     path: 'admin',
     component: AdminAppLayoutComponent,
     canActivate: [adminGuard],
     children: [
-      { path: '', redirectTo: 'students', pathMatch: 'full' },
-      { path: 'students', loadComponent: () => import('./features/admin/admin-students/admin-students.component').then(m => m.AdminStudentsComponent) },
-      { path: 'prompts', loadComponent: () => import('./features/admin/admin-prompts/admin-prompts.component').then(m => m.AdminPromptsComponent) },
-      { path: 'careers', loadComponent: () => import('./features/admin/admin-careers/admin-careers.component').then(m => m.AdminCareersComponent) },
-      { path: 'ai-config', loadComponent: () => import('./features/admin/admin-ai-config/admin-ai-config.component').then(m => m.AdminAiConfigComponent) },
-      { path: 'create-student', loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent) },
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
+      },
+      {
+        path: 'students',
+        loadComponent: () => import('./features/admin/admin-students/admin-students.component').then(m => m.AdminStudentsComponent),
+      },
+      {
+        path: 'create-student',
+        loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent),
+      },
+      {
+        path: 'ai-config',
+        loadComponent: () => import('./features/admin/admin-ai-config/admin-ai-config.component').then(m => m.AdminAiConfigComponent),
+      },
+      {
+        path: 'prompts',
+        loadComponent: () => import('./features/admin/admin-prompts/admin-prompts.component').then(m => m.AdminPromptsComponent),
+      },
+      {
+        path: 'careers',
+        loadComponent: () => import('./features/admin/admin-careers/admin-careers.component').then(m => m.AdminCareersComponent),
+      },
+      {
+        path: 'usage',
+        loadComponent: () => import('./features/admin/admin-usage/admin-usage.component').then(m => m.AdminUsageComponent),
+      },
     ],
   },
 
+  // ── Onboarding (student, authenticated) ──────────────────────────────
   {
     path: 'onboarding',
     component: StudentAppLayoutComponent,
@@ -67,6 +80,7 @@ export const routes: Routes = [
     ],
   },
 
+  // ── Student app (authenticated) ───────────────────────────────────────
   {
     path: '',
     component: StudentAppLayoutComponent,
