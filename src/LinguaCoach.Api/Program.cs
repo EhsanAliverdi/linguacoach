@@ -3,7 +3,9 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using LinguaCoach.Api.Middleware;
 using LinguaCoach.Infrastructure;
+using LinguaCoach.Infrastructure.Diagnostics;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using LinguaCoach.Persistence.Seed;
@@ -13,6 +15,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Log level from environment variables ────────────────────────────────────
+// Override via: LOG_LEVEL=Debug, LOG_LEVEL_MICROSOFT=Warning, LOG_LEVEL_EFCORE=Warning
+var logLevel = builder.Configuration["LOG_LEVEL"] ?? "Information";
+var logLevelMicrosoft = builder.Configuration["LOG_LEVEL_MICROSOFT"] ?? "Warning";
+var logLevelEfCore = builder.Configuration["LOG_LEVEL_EFCORE"] ?? "Warning";
+
+builder.Logging.SetMinimumLevel(Enum.Parse<LogLevel>(logLevel, ignoreCase: true));
+builder.Logging.AddFilter("Microsoft", Enum.Parse<LogLevel>(logLevelMicrosoft, ignoreCase: true));
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", Enum.Parse<LogLevel>(logLevelEfCore, ignoreCase: true));
 
 // ── Database ────────────────────────────────────────────────────────────────
 if (builder.Environment.IsEnvironment("Testing"))
@@ -132,6 +144,17 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
+// ── Correlation ID (scoped per request) ────────────────────────────────────
+builder.Services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
+
+// ── Diagnostic event buffer ─────────────────────────────────────────────────
+var enableDiagEvents = builder.Configuration.GetValue<bool>("Diagnostics:EnableAdminDiagnosticEvents", true);
+var diagEventLimit = builder.Configuration.GetValue<int>("Diagnostics:AdminDiagnosticEventLimit", 500);
+var diagBuffer = new DiagnosticEventBuffer(diagEventLimit, enableDiagEvents);
+builder.Services.AddSingleton(diagBuffer);
+if (enableDiagEvents)
+    builder.Logging.AddProvider(new DiagnosticLoggerProvider(diagBuffer));
+
 // ── Infrastructure services ─────────────────────────────────────────────────
 builder.Services.AddInfrastructure();
 
@@ -179,6 +202,10 @@ if (!app.Environment.IsEnvironment("Testing"))
 
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment()) app.UseCors("AngularDev");

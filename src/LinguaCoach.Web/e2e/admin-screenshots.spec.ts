@@ -252,3 +252,102 @@ test('admin: mobile hamburger', async ({ page }) => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'e2e/screenshots/mobile-admin-drawer.png', fullPage: false });
 });
+
+test('admin: diagnostics page loads with status section', async ({ page }) => {
+  await mockAdmin(page);
+  // Mock diagnostics endpoints
+  await page.route('**/api/admin/diagnostics/status', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        environment: 'Testing',
+        version: '1.0.0',
+        serverTimeUtc: new Date().toISOString(),
+        uptimeSeconds: 120,
+        logLevel: 'Information',
+        diagnosticEventsEnabled: true,
+        diagnosticEventCount: 42,
+        database: { reachable: true },
+        ai: { providerConfigured: true, activeProvider: 'OpenAI', activeModel: 'gpt-4o-mini' },
+      }),
+    });
+  });
+  await page.route('**/api/admin/diagnostics/events', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        enabled: true,
+        total: 2,
+        items: [
+          { timestampUtc: new Date().toISOString(), level: 'Information', category: 'Activity.ActivityGetHandler', message: 'Next activity requested', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
+          { timestampUtc: new Date().toISOString(), level: 'Warning', category: 'Activity.ActivityGetHandler', message: 'AI generation failed — using SystemFallback', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
+        ],
+      }),
+    });
+  });
+
+  await adminLogin(page);
+  await page.goto('/admin/diagnostics');
+  await page.waitForTimeout(600);
+
+  // Status section should be visible
+  await page.waitForSelector('text=System status', { timeout: 5000 });
+  await page.waitForSelector('text=Environment', { timeout: 3000 });
+  await page.waitForSelector('text=Reachable', { timeout: 3000 });
+
+  // Events section should be visible
+  await page.waitForSelector('text=Recent events', { timeout: 3000 });
+
+  await page.screenshot({ path: 'e2e/screenshots/admin-diagnostics.png', fullPage: true });
+});
+
+test('admin: diagnostics sidebar nav item present', async ({ page }) => {
+  await mockAdmin(page);
+  await adminLogin(page);
+
+  // Diagnostics link should be in the DOM (may be collapsed/hidden in rail mode)
+  await page.waitForSelector('[routerlink="/admin/diagnostics"]', { state: 'attached', timeout: 5000 });
+});
+
+test('student dashboard: no unexpected console errors', async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      const text = msg.text();
+      // Ignore known harmless errors (e.g. favicon 404, extension errors)
+      if (!text.includes('favicon') && !text.includes('chrome-extension')) {
+        consoleErrors.push(text);
+      }
+    }
+  });
+
+  await mockStudent(page);
+  await studentLogin(page);
+  await page.goto('/dashboard');
+  await page.waitForTimeout(800);
+
+  if (consoleErrors.length > 0) {
+    throw new Error(`Unexpected console errors on dashboard:\n${consoleErrors.join('\n')}`);
+  }
+});
+
+test('activity page: no unexpected console errors', async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      const text = msg.text();
+      if (!text.includes('favicon') && !text.includes('chrome-extension')) {
+        consoleErrors.push(text);
+      }
+    }
+  });
+
+  await mockStudent(page);
+  await studentLogin(page);
+  await page.goto('/activity');
+  await page.waitForTimeout(800);
+
+  if (consoleErrors.length > 0) {
+    throw new Error(`Unexpected console errors on activity page:\n${consoleErrors.join('\n')}`);
+  }
+});

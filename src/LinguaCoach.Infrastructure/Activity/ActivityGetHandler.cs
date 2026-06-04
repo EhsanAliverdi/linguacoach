@@ -54,13 +54,21 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
             throw new InvalidOperationException("Activity requires completed onboarding.");
 
         var activityType = query.PreferredType ?? ActivityType.WritingScenario;
+        _logger.LogInformation("Next activity requested UserId={UserId} ActivityType={ActivityType}",
+            query.UserId, activityType);
 
         // Resolve active learning path + current module (lazy-generate if missing).
         var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
+        if (currentModuleId.HasValue)
+            _logger.LogInformation("Module resolved ModuleId={ModuleId} TopicHint={TopicHint}",
+                currentModuleId.Value, topicHint ?? "none");
 
         // Detect focus area from recent feedback to guide AI generation.
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
         var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
+        if (focusArea is not null)
+            _logger.LogInformation("Focus area detected FocusCategory={Category} Frequency={Frequency}",
+                focusArea.Category, focusArea.Frequency);
 
         // Primary path — AI generation.
         try
@@ -75,7 +83,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 TopicHint: topicHint,
                 RecentMistakesSummary: recentMistakes);
 
+            _logger.LogInformation("AI activity generation started ActivityType={ActivityType} CefrLevel={CefrLevel}",
+                activityType, context.CefrLevel);
             var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
+            _logger.LogInformation("AI activity generation succeeded ActivityType={ActivityType}", activityType);
 
             var cefrLevel = profile.CefrLevel ?? "B1";
             var title = ExtractTitle(contentJson, activityType);
@@ -96,8 +107,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "AI activity generation failed for user {UserId}, activityType {Type}. Returning SystemFallback.",
-                query.UserId, activityType);
+                "AI activity generation failed UserId={UserId} ActivityType={ActivityType} ExceptionType={ExType} — using SystemFallback",
+                query.UserId, activityType, ex.GetType().Name);
         }
 
         // Fallback path — return a seeded SystemFallback activity.

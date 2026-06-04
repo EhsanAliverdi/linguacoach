@@ -50,6 +50,10 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             .FirstOrDefaultAsync(a => a.Id == command.ActivityId && a.IsActive, ct)
             ?? throw new InvalidOperationException("Activity not found.");
 
+        _logger.LogInformation(
+            "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ContentLength={Length}",
+            command.ActivityId, command.UserId, command.SubmittedContent.Length);
+
         // Evaluate with AI.
         string feedbackJson;
         double? score = null;
@@ -66,14 +70,18 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
                 TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English");
 
+            _logger.LogInformation("AI evaluation started ActivityId={ActivityId} PromptKey={PromptKey}",
+                command.ActivityId, promptKey);
             feedbackJson = await _aiGenerator.EvaluateAttemptAsync(evalContext, ct);
             score = ExtractScore(feedbackJson);
+            _logger.LogInformation("AI evaluation succeeded ActivityId={ActivityId} Score={Score}",
+                command.ActivityId, score);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "AI evaluation failed for activity {ActivityId}, user {UserId}. Saving attempt with empty feedback.",
-                command.ActivityId, command.UserId);
+                "AI evaluation failed ActivityId={ActivityId} UserId={UserId} ExceptionType={ExType} — saving attempt with empty feedback",
+                command.ActivityId, command.UserId, ex.GetType().Name);
             feedbackJson = "{}";
         }
 
@@ -88,6 +96,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         _db.ActivityAttempts.Add(attempt);
         await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Attempt saved AttemptId={AttemptId} ActivityId={ActivityId} Score={Score}",
+            attempt.Id, activity.Id, score);
 
         return ParseFeedback(attempt.Id, feedbackJson, score);
     }

@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto } from '../../../core/models/activity.models';
 
@@ -38,11 +39,17 @@ export class ActivityLessonComponent implements OnInit {
   ngOnInit(): void {
     this.activityService.getNext().subscribe({
       next: a => { this.activity.set(a); this.state.set('learning'); },
-      error: err => {
-        this.errorMessage.set(err.error?.error ?? 'Could not load activity. Please try again.');
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(this.extractError(err, 'Could not load activity. Please try again.'));
         this.state.set('error');
       },
     });
+  }
+
+  private extractError(err: HttpErrorResponse, fallback: string): string {
+    const msg = err.error?.error ?? err.error?.message ?? fallback;
+    const cid = err.error?.correlationId ?? err.headers?.get('x-correlation-id');
+    return cid ? `${msg}\nReference: ${cid}` : msg;
   }
 
   stepState(key: string): 'done' | 'active' | 'future' {
@@ -120,8 +127,8 @@ export class ActivityLessonComponent implements OnInit {
         this.attemptCount.update(n => n + 1);
         this.state.set('feedback');
       },
-      error: err => {
-        this.errorMessage.set(err.error?.error ?? 'Failed to get feedback. Please try again.');
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(this.extractError(err, 'Failed to get feedback. Please try again.'));
         this.state.set('writing');
       },
     });
