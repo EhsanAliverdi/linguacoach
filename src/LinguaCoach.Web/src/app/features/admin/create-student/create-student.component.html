@@ -68,7 +68,7 @@
           <p class="mt-1 text-xs text-red-600">{{ passwordError() }}</p>
         }
       </div>
-      <button type="submit" [disabled]="loading()" class="sp-button-primary w-full">
+      <button type="submit" [disabled]="loading()" class="sp-admin-btn-primary" style="width:100%;justify-content:center;min-height:44px;font-size:14px">
         @if (loading()) { Creating... } @else { Create student }
       </button>
     </form>

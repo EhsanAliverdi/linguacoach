@@ -146,15 +146,12 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ## Design system follow-ups
 
-- [ ] Extract repeated app shell into a reusable `AppShellComponent`. `Planned`
-  - Currently the sidebar + topbar + bottom nav HTML is duplicated across:
-    - `dashboard.component.html`
-    - `activity-lesson.component.html`
-    - `learning-path.component.html`
-    - `progress.component.ts` (inline template)
-    - `profile.component.ts` (inline template)
-  - Extract to a shared `AppShellComponent` with `[activeRoute]` input
-  - Use Angular `<router-outlet>` or `@ContentChild` for page body
+- [x] Extract repeated app shell into layout components. `Done`
+  - Shell HTML removed from all page components
+  - `StudentAppLayoutComponent` owns sidebar, header, bottom nav
+  - `AdminAppLayoutComponent` owns left sidebar, header
+  - `PublicLayoutComponent` owns centered background wrapper
+  - Pages render content only — no shell duplication remains
 - [ ] Extract `StatCard` component. `Planned`
   - Repeated 3× on dashboard and progress page
   - Input: `icon`, `value`, `label`, `color`, `bg`
@@ -173,6 +170,44 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 - [ ] Add screenshot/visual reference notes for future agents. `Not started`
   - Annotated screenshots of prototype screens in `docs/design/references/`
   - Reference prototype JSX files when making UI decisions
+
+---
+
+## Admin dashboard — real data
+
+- [ ] Replace KPI card placeholders with real counts. `Not started`
+  - "Total students" already live from `GET /api/admin/students` count
+  - "Onboarded" already live from same endpoint (filter by `onboardingStatus === 'Complete'`)
+  - "Activities tracked": requires `GET /api/admin/stats` endpoint returning `totalActivityAttempts`
+  - "AI provider": hardcoded "Configured" — wire to check if at least one provider has a non-null API key
+- [ ] Implement real usage analytics. `Not started`
+  - AI token usage per provider per day: log `promptTokens` + `completionTokens` from AI responses
+  - Cost estimate per student: requires provider pricing table in DB
+  - Expose via `GET /api/admin/usage?from=&to=`
+- [ ] Implement activity completion trends. `Not started`
+  - `GET /api/admin/analytics/activity-completion` returning daily counts over a date range
+  - Chart on admin analytics page once data exists
+- [ ] Implement feedback quality review. `Not started`
+  - Score distribution histogram across all ActivityAttempts
+  - Average score per skill type, per career profile
+  - Flag unusually low-quality feedback (score = null more than X% of attempts)
+- [ ] Add system health / API health card to admin dashboard. `Not started`
+  - Real-time ping to each configured AI provider (or display last test result from ai-config)
+  - Show green/amber/red per provider
+  - Do not fake — only show if a recent test result is stored
+- [ ] Build admin settings page. `Not started`
+  - Route: `/admin/settings`
+  - Planned content: platform name/branding config, pilot programme dates, allowed email domains
+  - Currently a placeholder / disabled nav item
+- [ ] Improve admin student list page. `Not started`
+  - Add search/filter by email
+  - Add sort by joined date or onboarding status
+  - Add pagination if student count exceeds 25
+  - Add ability to view individual student's learning path and activity history
+- [ ] Design system: use `sp-admin-*` classes consistently across all admin components. `Planned`
+  - `admin-prompts` and `admin-careers` still use raw Tailwind for their form/table bodies
+  - Migrate incrementally — do not break functionality
+  - Document final admin class list in `frontend-layout-system.md`
 
 ---
 
