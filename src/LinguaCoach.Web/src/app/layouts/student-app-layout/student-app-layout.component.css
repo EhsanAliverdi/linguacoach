@@ -77,6 +77,25 @@
   color: var(--sp-writing);
 }
 
+/* Practice FAB — mobile only */
+.sp-navbtn-practice {
+  position: relative;
+  overflow: visible;
+}
+
+.sp-practice-fab {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--sp-grad-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sp-sh-glow);
+  position: absolute;
+  top: -36px;
+}
+
 /* ── Sticky frosted header ───────────────────────────────────────────── */
 .sp-student-header {
   position: sticky;
