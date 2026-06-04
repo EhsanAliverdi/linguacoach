@@ -1,27 +1,48 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { PublicLayoutComponent } from './layouts/public-layout/public-layout.component';
+import { StudentAppLayoutComponent } from './layouts/student-app-layout/student-app-layout.component';
+import { AdminAppLayoutComponent } from './layouts/admin-app-layout/admin-app-layout.component';
 
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
+    component: PublicLayoutComponent,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
+      },
+    ],
   },
 
   {
     path: 'login',
-    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
+    component: PublicLayoutComponent,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
+      },
+    ],
   },
   {
     path: 'change-password',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent),
+    component: PublicLayoutComponent,
+    children: [
+      {
+        path: '',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/auth/change-password/change-password.component').then(m => m.ChangePasswordComponent),
+      },
+    ],
   },
 
   {
     path: 'admin',
+    component: AdminAppLayoutComponent,
     canActivate: [adminGuard],
-    loadComponent: () => import('./features/admin/admin-shell/admin-shell.component').then(m => m.AdminShellComponent),
     children: [
       { path: '', redirectTo: 'students', pathMatch: 'full' },
       { path: 'students', loadComponent: () => import('./features/admin/admin-students/admin-students.component').then(m => m.AdminStudentsComponent) },
@@ -34,8 +55,8 @@ export const routes: Routes = [
 
   {
     path: 'onboarding',
+    component: StudentAppLayoutComponent,
     canActivate: [authGuard],
-    loadComponent: () => import('./features/onboarding/onboarding-shell/onboarding-shell.component').then(m => m.OnboardingShellComponent),
     children: [
       { path: '', redirectTo: 'resume', pathMatch: 'full' },
       { path: 'resume', loadComponent: () => import('./features/onboarding/onboarding-resume/onboarding-resume.component').then(m => m.OnboardingResumeComponent) },
@@ -47,45 +68,39 @@ export const routes: Routes = [
   },
 
   {
-    path: 'dashboard',
+    path: '',
+    component: StudentAppLayoutComponent,
     canActivate: [authGuard],
-    loadComponent: () => import('./features/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent),
-  },
-
-  {
-    path: 'my-path',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/learning-path/learning-path.component').then(m => m.LearningPathComponent),
-  },
-
-  {
-    path: 'activity',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/activity/activity-lesson/activity-lesson.component').then(m => m.ActivityLessonComponent),
-  },
-
-  {
-    path: 'assessment',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/assessment/cefr-assessment/cefr-assessment.component').then(m => m.CefrAssessmentComponent),
-  },
-
-  {
-    path: 'speaking',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/speaking/speaking-session/speaking-session.component').then(m => m.SpeakingSessionComponent),
-  },
-
-  {
-    path: 'progress',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent),
-  },
-
-  {
-    path: 'profile',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent),
+      },
+      {
+        path: 'my-path',
+        loadComponent: () => import('./features/learning-path/learning-path.component').then(m => m.LearningPathComponent),
+      },
+      {
+        path: 'activity',
+        loadComponent: () => import('./features/activity/activity-lesson/activity-lesson.component').then(m => m.ActivityLessonComponent),
+      },
+      {
+        path: 'assessment',
+        loadComponent: () => import('./features/assessment/cefr-assessment/cefr-assessment.component').then(m => m.CefrAssessmentComponent),
+      },
+      {
+        path: 'speaking',
+        loadComponent: () => import('./features/speaking/speaking-session/speaking-session.component').then(m => m.SpeakingSessionComponent),
+      },
+      {
+        path: 'progress',
+        loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
+      },
+    ],
   },
 
   { path: '**', redirectTo: 'login' },

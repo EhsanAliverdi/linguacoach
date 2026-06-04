@@ -2,7 +2,6 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 import { DashboardResponse } from '../../../core/models/dashboard.models';
 
@@ -24,18 +23,6 @@ export class DashboardComponent implements OnInit {
     { n: 3, text: 'Get coaching feedback on grammar, tone, and professional phrasing.' },
   ];
 
-  greetingTime = computed(() => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  });
-
-  firstName = computed(() => {
-    const name = this.data()?.studentName ?? '';
-    return name.includes('@') ? name.split('@')[0] : name.split(' ')[0] || name;
-  });
-
   pathProgress = computed(() => {
     const lp = this.data()?.learningPath;
     if (!lp || lp.totalModules === 0) return 0;
@@ -50,7 +37,6 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private dashboardService: DashboardService,
-    public auth: AuthService,
     private authNotice: AuthNoticeService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');

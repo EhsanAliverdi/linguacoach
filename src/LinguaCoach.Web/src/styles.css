@@ -269,3 +269,93 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 
 /* == Narrow shell (auth/onboarding) ======================================== */
 .sp-narrow-shell{max-width:480px;margin:0 auto;padding:32px 18px;width:100%;}
+
+/* == Public layout (login, landing) ======================================== */
+.sp-public-layout{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:32px 18px;
+  background:
+    radial-gradient(1100px 520px at 88% -8%,#F1ECFF 0%,transparent 60%),
+    radial-gradient(900px 460px at -6% 4%,#FFEDE6 0%,transparent 55%),
+    var(--sp-canvas);
+}
+.sp-public-card{
+  width:100%;max-width:460px;
+  background:var(--sp-surface);
+  border:1px solid var(--sp-border);
+  border-radius:var(--sp-r-xl);
+  box-shadow:var(--sp-sh-md);
+  padding:28px;
+}
+
+/* == Student app layout ==================================================== */
+.sp-student-app{
+  display:flex;min-height:100vh;
+  background:
+    radial-gradient(1100px 520px at 88% -8%,#F1ECFF 0%,transparent 60%),
+    radial-gradient(900px 460px at -6% 4%,#FFEDE6 0%,transparent 55%),
+    var(--sp-canvas);
+}
+.sp-student-sidebar{
+  display:none;flex-direction:column;
+  width:264px;flex-shrink:0;
+  position:sticky;top:0;align-self:flex-start;max-height:100vh;
+  padding:26px 18px;
+  background:rgba(255,255,255,.66);backdrop-filter:blur(12px);
+  border-right:1px solid var(--sp-border);
+  overflow-y:auto;
+}
+@media(min-width:900px){.sp-student-sidebar{display:flex;}}
+.sp-student-main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.sp-student-header{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:1080px;margin:0 auto;width:100%;
+  padding:16px 18px 4px;
+}
+@media(min-width:900px){.sp-student-header{padding:30px 40px 4px;}}
+.sp-student-content{
+  flex:1;width:100%;max-width:520px;margin:0 auto;
+  padding:18px 18px 108px;
+}
+@media(min-width:900px){.sp-student-content{max-width:1080px;padding:30px 40px 60px;}}
+
+/* == Admin app layout ====================================================== */
+.sp-admin-app{min-height:100vh;background:var(--sp-canvas);}
+.sp-admin-topnav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--sp-border);
+  padding:12px 18px;
+}
+.sp-admin-topnav-inner{
+  max-width:1200px;margin:0 auto;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.sp-admin-content{
+  max-width:1200px;margin:0 auto;
+  padding:24px 18px 60px;
+}
+@media(min-width:900px){.sp-admin-content{padding:32px 40px 80px;}}
+.sp-admin-navlink{
+  font-size:13.5px;font-weight:700;color:var(--sp-muted);
+  text-decoration:none;padding:8px 12px;border-radius:10px;
+  transition:color .15s,background .15s;
+}
+.sp-admin-navlink:hover{background:var(--sp-canvas2);color:var(--sp-ink);}
+.sp-admin-navlink-active{
+  background:var(--sp-writing-soft);color:var(--sp-writing-ink);
+}
+
+/* == Layout utilities ====================================================== */
+.sp-page{min-height:100vh;}
+.sp-page-header{margin-bottom:20px;}
+.sp-section-title{
+  font-size:16px;font-weight:800;color:var(--sp-ink);
+  letter-spacing:-.01em;margin:26px 2px 12px;
+}
+.sp-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+.sp-skill-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;}
+@media(min-width:900px){.sp-skill-grid{grid-template-columns:repeat(5,1fr);}}
+.sp-grid-2col{display:grid;gap:18px;}
+@media(min-width:900px){.sp-grid-2col{grid-template-columns:1.55fr 1fr;align-items:start;}}
