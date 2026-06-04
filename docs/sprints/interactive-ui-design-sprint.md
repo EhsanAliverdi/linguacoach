@@ -4,217 +4,129 @@
 
 Make SpeakPath feel like a polished, colourful, interactive AI English learning app — not a plain enterprise dashboard. Deliver a strong brand identity, a motivating dashboard, a beautiful activity lesson flow, and a learning path UI that helps students understand exactly where they are and what to do next.
 
-## Current state
+---
 
-- All screens use a minimal white/slate palette with indigo accents
-- Dashboard: welcome message + path/module card + sidebar — functional but visually flat
-- Activity lesson: three-phase flow (learning → writing → feedback) — works correctly, lacks visual warmth
-- Learning path endpoint exists (`GET /api/learning-path`) but no dedicated frontend page
-- Global styles: 100-line `styles.css` using Tailwind `@layer components` with `sp-*` utility classes
-- No font import (falls back to Inter/system-ui)
-- No brand colour tokens beyond slate/indigo
-- Angular 18 standalone components, Tailwind CSS v4, no component library
+## Status: Phase 1 + prototype alignment complete
 
-## In scope
+All Phase 1 and prototype-alignment work is committed to `main`. See [Product Backlog](../backlog/product-backlog.md) for outstanding items.
 
-- Global design tokens: colour palette, typography, spacing rhythm
-- `styles.css` — extend `sp-*` component classes; no structural breakage
-- `index.html` — add Google Fonts (Inter variable or similar)
-- Dashboard: hero section, learning path card, module progress, skill cards placeholder, CTA polish
-- Activity lesson: learning/practice/feedback phases — visual warmth, better chips, coach-feel feedback
-- Learning Path page: new `/my-path` route with module list (read-only, no edits)
-- App shell: top nav on mobile and desktop; section links to Dashboard, My Path, Activities (stub), Profile (stub)
-- Design system: new `sp-*` classes for LearningPathCard, ModuleCard, SkillBadge, PhraseChip, VocabularyChip, FeedbackCard, CoachMessage, ScoreBadge, EmptyState, LoadingState, ErrorState, AI Generated badge
-- Playwright smoke test updated to match any changed selectors
-- All existing backend functionality unchanged
+---
 
-## Out of scope
+## What was completed
 
-- Speaking, Listening, Vocabulary, Pronunciation backend implementation
-- Any database schema changes
-- New API endpoints
-- CEFR assessment changes
-- Admin panel redesign
-- Authentication flow changes
+### Phase 1 — Brand foundation + dashboard polish
 
-## Screens affected
+- `index.html`: Plus Jakarta Sans font (replaced Inter)
+- `styles.css`: full SpeakPath prototype token system:
+  - `--sp-grad-brand`, `--sp-grad-cool`, `--sp-grad-warm`, `--sp-grad-soft`
+  - All skill colour tokens: writing, speaking, listening, vocabulary, pronunciation
+  - Neutral and status tokens matching prototype exactly
+  - Shadow tokens: `sh-xs`, `sh-sm`, `sh-md`, `sh-lg`, `sh-glow`
+  - Radius tokens: `r-sm`, `r`, `r-lg`, `r-xl`, `r-full`
+  - Gradient utility classes: `.grad-brand`, `.grad-cool`, `.grad-warm`, `.grad-soft`
+- App shell pattern: desktop left sidebar + mobile bottom nav (5 items, raised Practice centre button)
+  - `.sp-app`, `.sp-shell-app`, `.sp-side`, `.sp-sidebrand`, `.sp-sidelink`, `.sp-main`, `.sp-topbar`, `.sp-content`, `.sp-bottomnav`, `.sp-navbtn`
+- Layout helpers: `.sp-statgrid`, `.sp-skillgrid`, `.sp-grid2`, `.sp-h1`, `.sp-section-h`, `.sp-icobox`, `.sp-col`
+- Dashboard redesigned: topbar greeting ("Good afternoon 👋" / "Hi, {name}"), hero card, 3 stat tiles, 2-column grid, skill cards, coach card, streak calendar placeholder, bottom nav
+- My Path page: wrapped in sp-app shell, cool gradient header with SVG progress ring, vertical spine journey, module cards with status states and progress bars
+- Activity lesson: wrapped in sp-app shell; InfoBlock pattern; collapsible example (`<details>`); word count in textarea footer; coach avatar microcopy row; prototype feedback layout with score ring, coach bubble, wins/improvements/grammar/tone/vocabulary sections; rewrite challenge card (cool gradient)
+- Landing page: prototype logo mark, phrase chips, gradient CTA button
+- Progress page (new): placeholder page in sp-app shell with gradient header, stat tiles, skill progress bars, honest empty state for recent results
+- Profile page (new): placeholder page with avatar card, settings rows, sign-out button
+- Routes: `/progress` and `/profile` added to `app.routes.ts`
+- Playwright smoke test updated: removed stale `heading: /Welcome back/` assertion; updated CTA to `role: link, name: /Continue learning/i`; updated button text to `/Get.*feedback/i` and `/Continue to next|Next activity/i`
+- Sidebar CSS: fixed `align-self:flex-start` to prevent pointer-event interception of main content
+- All Angular build, Playwright, and dotnet tests passing (309/309)
 
-| Screen | Route | Changes |
-|--------|-------|---------|
-| Landing | `/` | Typography + colour lift; CTA button colours |
-| App shell / nav | all | New mobile-first navigation bar |
-| Dashboard | `/dashboard` | Hero, path card, module card, skill section, CTA |
-| Activity lesson | `/activity` | All three phases polished |
-| Learning Path | `/my-path` *(new)* | Module list, progress journey |
+### Design tokens aligned to prototype
 
-## Component plan
+The app now uses the exact CSS variable names and values from the SpeakPath prototype (`SpeakPath.html` and `SpeakPath Brand & System.html`). The prototype is the canonical visual reference.
 
-### New Angular components (only where justified)
+---
 
-| Component | Path | Purpose |
-|-----------|------|---------|
-| `SkillBadgeComponent` | `core/components/skill-badge/` | Coloured pill showing activity type (Writing, Speaking, etc.) — used on ModuleCard and ActivityCard |
-| `ScoreBadgeComponent` | `core/components/score-badge/` | Large animated score circle used on feedback screen |
-| `ModuleCardComponent` | `core/components/module-card/` | Reusable card for learning path module list |
+## What remains intentionally placeholder
 
-Everything else is `sp-*` utility classes in `styles.css`. Angular components only where template complexity justifies encapsulation.
+The following dashboard and inner-page elements show honest placeholder UI because the backend data does not exist yet. **Do not replace these with fake real data.**
 
-### New `sp-*` classes (styles.css)
+| Element | Placeholder shown | What will replace it |
+|---------|------------------|----------------------|
+| Practice streak stat tile | `—` | Real streak count from `StudentProfile` |
+| Minutes this week stat tile | `—` | Derived from `ActivityAttempt` timestamps |
+| Activities done stat tile | `—` | Count of `ActivityAttempt` rows |
+| Coach card message | "Complete your first activity to unlock coach insights." | Latest `ActivityAttempt` feedback summary |
+| Latest completed activity card | "No activity completed yet" | Last `ActivityAttempt` with score and title |
+| Streak calendar (7 days) | All empty dots | `[M,T,W,T,F,S,S]` boolean array from streak system |
+| Progress page stat tiles | `—` | Real values from progress API |
+| Progress page recent results | Empty state | ActivityAttempt list with scores and dates |
+| Profile learning goal | "Workplace English" | `LearningTrack.Name` from `StudentProfile` |
+| Profile current level | "Not assessed yet" | CEFR level from assessment |
+| Profile skill cards (4 of 5) | "Coming soon" | Remove label when backend feature ships |
 
-```
-sp-module-card         card with left colour bar + status indicator
-sp-phrase-chip         indigo rounded pill (target phrase)
-sp-vocab-chip          slate rounded pill (vocabulary word)
-sp-skill-badge         small coloured tag with icon prefix
-sp-score-ring          large score number inside coloured ring
-sp-coach-message       warm coach comment block (emerald tint)
-sp-feedback-card       structured feedback section card
-sp-empty-state         centred icon + text empty state block
-sp-loading-pulse       animated skeleton loading card
-sp-source-lang-block   RTL Persian instruction block (already exists, refine)
-sp-ai-badge            indigo "AI generated" small badge
-sp-fallback-badge      slate "System" small badge
-sp-progress-track      slim progress bar row (already exists as inline, extract)
-sp-module-status       coloured dot — current / complete / locked
-```
+---
 
-## Colour palette
+## Remaining sprint phases (not started)
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `brand-ink` | `#0c0a1e` | Primary text, nav background |
-| `brand-violet` | `#6d28d9` | Primary action colour (replaces slate-950 buttons) |
-| `brand-violet-light` | `#ede9fe` | Violet tint surfaces |
-| `brand-teal` | `#0d9488` | Progress, success, "what you did well" |
-| `brand-amber` | `#d97706` | Warnings, challenges, "common mistake" |
-| `brand-coral` | `#e11d48` | Errors, grammar issues |
-| `brand-sky` | `#0284c7` | Speaking/listening skill (future) |
-| `brand-emerald` | `#059669` | Scores ≥ 75 |
-| Slate palette | existing | Surfaces, borders, secondary text |
-| Indigo palette | existing | Accent (kept for continuity) |
+### Phase 2 — Activity lesson deeper polish
 
-Custom tokens added to Tailwind config `theme.extend` (or CSS vars in v4 using `@theme`).
+- Phrase chips as interactive toggles (tap to insert into textarea — prototype Practice state)
+- Score ring animation on mount
+- Collapsible example section in Learning state (currently `<details>` — could be smoother)
+- Coach avatar component shared between dashboard card and feedback phase
+- More structured feedback diff view (strikethrough → green replacement pattern from prototype)
 
-## Typography direction
+### Phase 3 — My Path deeper polish
 
-- **Font:** Inter (Variable font via Google Fonts) — already in system stack, just needs explicit import for weight variety
-- **Display headings (h1):** `text-3xl–5xl font-extrabold tracking-tight` — stronger than current `font-bold`
-- **Section labels (eyebrow):** keep `sp-eyebrow` pattern, upgrade to violet
-- **Body:** `text-sm/text-base leading-relaxed` — already good
-- **Module titles:** `font-bold text-lg` with left colour bar accent
+- Locked module visual treatment improvements (blur, lock overlay)
+- Journey visualisation refinements (animated spine, better mobile stacking)
+- Module detail view (`/my-path/modules/:id`) — deferred pending backend support
 
-## Layout rules
+### Phase 4 — Future activity type visual placeholders
 
-1. Mobile-first — all layouts stack vertically, expand on `sm:`/`lg:`
-2. Max content width: `max-w-5xl` (unchanged)
-3. Card radius: `rounded-2xl` for cards, `rounded-xl` for inputs/chips (unchanged)
-4. Page background: gradient from `#f8fafc` → `#eef2ff` (violet tint, not stone) — update `.sp-page`
-5. Section spacing: `gap-5` between cards (unchanged)
-6. Nav: sticky top, `backdrop-blur`, height `h-14`
+- Dashboard skill section: currently shows 5 skill cards (Writing active, 4 others "Coming soon")
+- No backend work required for placeholders
+- Remove "Coming soon" labels only when backend feature is shipped
 
-## Activity UI patterns
+### Phase 5 — Component extraction
 
-### Learning phase
-- Situation: full-width card with coloured left border (violet)
-- Persian instruction: RTL block, indigo-tinted, visible label "In Persian"
-- Target phrases: `sp-phrase-chip` pills in a wrap row
-- Vocabulary: `sp-vocab-chip` pills, slightly different shade
-- Example: collapsible `<details>` for space saving on mobile
-- Common mistake: amber warning card
-- CTA: full-width violet `sp-button-primary` on mobile
+- Extract `AppShellComponent` (sidebar + topbar + bottom nav) — currently duplicated across 5 pages
+- Extract `StatCard`, `SkillCard`, `ModuleCard`, `ScoreRing`, `CoachMessage` as reusable Angular components
+- See [Product Backlog — Design system follow-ups](../backlog/product-backlog.md) for full list
 
-### Practice phase
-- Situation mini-card stays visible in sidebar/above
-- Phrase chips remain visible as reference
-- Textarea: large, `min-h-56`, rounded, warm shadow on focus
-- Character count: subtle `xs` text below
-- Submit CTA: full-width violet
+---
 
-### Feedback phase
-- Score: `sp-score-ring` — large number, coloured ring (green/amber/red)
-- "What you did well": emerald coach card `sp-coach-message`
-- "Feedback in Persian": RTL block, persists with label
-- Corrected version: clean code-style block
-- Grammar / tone / vocabulary: collapsible cards to avoid overwhelming
-- Rewrite challenge: amber challenge card
-- Next suggestion: slate-soft info block
-- CTAs: Try again (secondary) + Next activity (violet primary)
+## Files changed (cumulative)
 
-## Future activity type visual patterns (placeholders only)
+| File | Change |
+|------|--------|
+| `src/LinguaCoach.Web/src/index.html` | Plus Jakarta Sans font |
+| `src/LinguaCoach.Web/src/styles.css` | Full prototype token + shell CSS |
+| `dashboard.component.html` | Full redesign — sidebar shell, hero, stats, skills, coach |
+| `dashboard.component.ts` | `greetingTime()` computed, `weekDays` array |
+| `activity-lesson.component.html` | Full redesign — sidebar shell, InfoBlock, collapsibles |
+| `activity-lesson.component.ts` | `wordCount` getter |
+| `learning-path.component.html` | Wrapped in sp-app shell |
+| `progress.component.ts` | New placeholder page (inline template) |
+| `profile.component.ts` | New placeholder page (inline template) |
+| `app.routes.ts` | Added `/progress` and `/profile` routes |
+| `e2e/core-flow-smoke.spec.ts` | Updated selectors to match new UI text |
+| `docs/sprints/interactive-ui-design-sprint.md` | This file |
+| `docs/architecture/speakpath-design-system.md` | Prototype alignment section added |
+| `docs/backlog/product-backlog.md` | New — full product backlog |
 
-| Type | Badge colour | Icon concept | Phase |
-|------|-------------|--------------|-------|
-| WritingScenario | Violet | Pencil | ✅ now |
-| SpeakingRolePlay | Sky | Microphone | Phase 4 |
-| ListeningComprehension | Teal | Headphones | Phase 4 |
-| VocabularyPractice | Amber | BookOpen | Phase 4 |
-| PronunciationPractice | Rose | Waveform | Phase 4 |
-| ReadingTask | Emerald | FileText | Phase 4 |
-
-## Implementation phases
-
-### Phase 1 — Brand foundation + dashboard polish *(this sprint)*
-- `index.html`: Inter variable font import
-- `styles.css`: new colour tokens, update `sp-*` classes, add new utility classes
-- Dashboard: hero, path card, module card, skill preview section, Start activity CTA
-- App shell nav: responsive navigation with section links
-- Landing: colour/type lift only
-
-### Phase 2 — Activity lesson polish *(next sprint or continuation)*
-- Learning/practice/feedback states with new chips and coach-feel cards
-- `ScoreBadgeComponent`
-- Example collapsible
-- All three phases polished
-
-### Phase 3 — Learning Path page *(follow sprint)*
-- `/my-path` route
-- `ModuleCardComponent`
-- Progress journey
-- Module status states
-
-### Phase 4 — Future activity visual patterns *(follow sprint)*
-- `SkillBadgeComponent`
-- Activity type placeholder cards on dashboard skill section
-- No backend work
+---
 
 ## Test plan
 
-| Test | Tool | Scope |
-|------|------|-------|
-| Angular build | `ng build --configuration=production` | After every phase |
-| Playwright smoke | `playwright test` | After dashboard or activity HTML changes |
-| dotnet tests | `dotnet test` | No backend changes; run once to confirm no regression |
-| Visual review | Browser | Dashboard, activity lesson, landing |
+| Test | Status |
+|------|--------|
+| Angular production build | ✅ Clean |
+| Playwright smoke test | ✅ 1/1 passed |
+| dotnet unit + integration tests | ✅ 309/309 passed |
 
-Selectors to keep stable (Playwright depends on them):
-- `heading: /Welcome back/` — dashboard h1
-- `link: 'Start activity'` — dashboard CTA
-- `text: "Today's activity"` — activity lesson eyebrow
-- `heading: /Follow-up email/` — activity h1 (driven by AI data, not hardcoded)
-- `button: 'Start writing'`
-- `label: 'Write your response'`
-- `button: 'Get feedback'`
-- `text: 'Overall score'`
-- `button: 'Next activity'`
+---
 
-## Risks
+## Reference
 
-| Risk | Mitigation |
-|------|-----------|
-| Tailwind v4 `@theme` syntax unfamiliar | Use CSS custom properties in `:root` instead of `tailwind.config.js` for v4 compatibility |
-| Playwright selectors break after text changes | Keep eyebrow/label/button text identical; only change visual styling |
-| Over-engineering component tree | Default to `sp-*` classes; only extract components for reused templates |
-| Font import adds latency | Use `display=swap` and preconnect; fallback to system Inter is already good |
-| Phase 1 scope creep | Hard stop after dashboard + nav + styles; activity lesson is Phase 2 |
-
-## Files to change (Phase 1)
-
-```
-src/LinguaCoach.Web/src/index.html
-src/LinguaCoach.Web/src/styles.css
-src/LinguaCoach.Web/src/app/features/dashboard/dashboard/dashboard.component.html
-src/LinguaCoach.Web/src/app/features/dashboard/dashboard/dashboard.component.ts
-src/LinguaCoach.Web/src/app/features/landing/landing.component.ts
-src/LinguaCoach.Web/src/app/app.routes.ts                        (add /my-path stub)
-src/LinguaCoach.Web/src/app/features/learning-path/ (new)        (LearningPathPage)
-```
+- Prototype files: `docs/design/references/speakpath-prototype/`
+- Design system: [speakpath-design-system.md](../architecture/speakpath-design-system.md)
+- Product backlog: [product-backlog.md](../backlog/product-backlog.md)

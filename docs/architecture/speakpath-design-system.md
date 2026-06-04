@@ -1,5 +1,29 @@
 # SpeakPath Design System
 
+## The prototype is the target
+
+The visual reference for all student-facing screens is the SpeakPath prototype at:
+
+```
+docs/design/references/speakpath-prototype/
+```
+
+Key prototype files:
+
+| File | Purpose |
+|------|---------|
+| `SpeakPath.html` | Full app prototype with exact CSS tokens and layout rules |
+| `SpeakPath Brand & System.html` | Brand canvas — tokens, components, component examples |
+| `app/app.jsx` | App shell: sidebar, topbar, bottom nav, routing |
+| `app/screens.jsx` | Dashboard, My Path, Progress, Profile screen layouts |
+| `app/activity.jsx` | Activity flow: Intro, Practice, Feedback states |
+| `app/components.jsx` | Shared components: Logo, SkillIcon, ScoreBadge, CoachMessage, etc. |
+| `app/data.jsx` | Mock data structure — defines the shape of all UI data |
+
+When making any UI decision, inspect the prototype first. Use prototype CSS class names and token values exactly. Do not invent tokens or layouts that conflict with the prototype.
+
+---
+
 ## Brand direction
 
 SpeakPath is an AI-powered English learning platform for practical workplace and real-life communication. The brand supports immigrant professionals who are skilled at their jobs but need confidence and clarity in workplace English — writing emails, following up professionally, asking for approvals, and navigating workplace culture.
@@ -7,7 +31,7 @@ SpeakPath is an AI-powered English learning platform for practical workplace and
 The brand should feel:
 
 - **Warm and supportive** — like a knowledgeable friend coaching you through a real situation, not a red-pen teacher marking your work
-- **Confident and professional** — the product is serious and career-relevant, not childish or gamified
+- **Confident and professional** — the product is serious and career-relevant
 - **Modern and interactive** — colourful, responsive, and rewarding to use
 - **Focused and clear** — every screen communicates one purpose; no clutter
 
@@ -15,275 +39,421 @@ The brand does **not** feel like:
 - A corporate HR compliance tool
 - A grammar textbook
 - A generic SaaS dashboard
-- A consumer language-learning game (no streaks, no coins, no cartoon characters)
+- A consumer language-learning game
 
-## Colour palette
+---
 
-### Brand tokens
+## Design tokens (exact prototype values)
+
+All tokens are CSS custom properties defined in `styles.css` `:root`. They match the prototype exactly.
+
+### Brand gradients
 
 ```css
-:root {
-  --sp-violet:        #6d28d9;   /* primary actions, brand accent */
-  --sp-violet-mid:    #7c3aed;   /* hover states */
-  --sp-violet-light:  #ede9fe;   /* violet tint surfaces */
-  --sp-violet-dark:   #4c1d95;   /* dark backgrounds, nav */
-
-  --sp-teal:          #0d9488;   /* progress, success, "what you did well" */
-  --sp-teal-light:    #ccfbf1;   /* teal tint */
-
-  --sp-amber:         #d97706;   /* challenges, warnings, common mistakes */
-  --sp-amber-light:   #fef3c7;   /* amber tint */
-
-  --sp-coral:         #e11d48;   /* errors, grammar issues */
-  --sp-coral-light:   #ffe4e6;   /* coral tint */
-
-  --sp-sky:           #0284c7;   /* speaking/listening future skill type */
-  --sp-emerald:       #059669;   /* scores ≥ 75, positive reinforcement */
-
-  --sp-ink:           #0c0a1e;   /* primary text, nav background */
-  --sp-surface:       #f8fafc;   /* page background base */
-}
+--sp-grad-brand:      linear-gradient(135deg, #FF7A59 0%, #B45CF0 52%, #5B4BE8 100%);
+--sp-grad-brand-soft: linear-gradient(135deg, #FFF0EA 0%, #F4ECFF 55%, #ECEAFF 100%);
+--sp-grad-warm:       linear-gradient(135deg, #FF8A6B 0%, #FF6FA0 100%);
+--sp-grad-cool:       linear-gradient(135deg, #7C6CFF 0%, #5B4BE8 100%);
 ```
 
-### Semantic usage
+Gradient utility classes (apply to elements directly):
+- `.grad-brand` — brand gradient with radial highlight overlays (hero cards)
+- `.grad-cool` — cool indigo gradient (My Path header, rewrite challenge card)
+- `.grad-warm` — warm coral gradient (streak dots, coming-soon accents)
+- `.grad-soft` — soft pastel gradient (profile card, soft backgrounds)
 
-| Context | Token | Tailwind equivalent |
-|---------|-------|---------------------|
-| Primary CTA | `--sp-violet` | `bg-violet-700` |
-| Hover CTA | `--sp-violet-mid` | `bg-violet-600` |
-| Brand tint surface | `--sp-violet-light` | `bg-violet-50` |
-| Progress bar fill | `--sp-teal` | `bg-teal-600` |
-| "What you did well" | `--sp-teal` | `bg-teal-50 border-teal-200` |
-| Common mistake | `--sp-amber` | `bg-amber-50 border-amber-200` |
-| Grammar error | `--sp-coral` | `bg-rose-50 border-rose-200` |
-| Score ≥ 75 | `--sp-emerald` | `text-emerald-600` |
-| Score 50–74 | `--sp-amber` | `text-amber-600` |
-| Score < 50 | `--sp-coral` | `text-rose-600` |
-| Nav / dark surface | `--sp-ink` | `bg-[#0c0a1e]` |
-| Page background | gradient | `bg-gradient-to-b from-slate-50 to-violet-50` |
+### Skill colour palette
 
-### Activity type colours
+Each skill has three tokens: solid, soft background, ink (on-soft text).
 
-| Activity type | Colour | Badge class |
-|---------------|--------|-------------|
-| WritingScenario | Violet | `sp-skill-badge-writing` |
-| SpeakingRolePlay | Sky | `sp-skill-badge-speaking` |
-| ListeningComprehension | Teal | `sp-skill-badge-listening` |
-| VocabularyPractice | Amber | `sp-skill-badge-vocabulary` |
-| PronunciationPractice | Rose | `sp-skill-badge-pronunciation` |
-| ReadingTask | Emerald | `sp-skill-badge-reading` |
+| Skill | Solid | Soft | Ink |
+|-------|-------|------|-----|
+| Writing | `#5B4BE8` | `#EDEBFF` | `#3A2EA8` |
+| Speaking | `#FB6B57` | `#FFEAE4` | `#C23C2C` |
+| Listening | `#9B5CF6` | `#F2E9FF` | `#6B2EB8` |
+| Vocabulary | `#F0982C` | `#FFF1DC` | `#B26410` |
+| Pronunciation | `#10B5A4` | `#DFF6F2` | `#0A7468` |
+
+CSS custom properties follow the pattern `--sp-{skill}`, `--sp-{skill}-soft`, `--sp-{skill}-ink`.
+
+### Neutral palette (warm lilac-tinted)
+
+```css
+--sp-ink:     #211B36;  /* primary text */
+--sp-text:    #4B4462;  /* body text */
+--sp-muted:   #8B85A0;  /* secondary/caption text */
+--sp-faint:   #BDB8CC;  /* disabled, placeholder */
+--sp-border:  #ECE9F5;  /* default border */
+--sp-border2: #E2DEF0;  /* stronger border */
+--sp-surface: #FFFFFF;  /* card background */
+--sp-surface2:#FBFAFE;  /* elevated surface */
+--sp-canvas:  #F6F4FB;  /* page background */
+--sp-canvas2: #EFECF9;  /* inset background, stat tile bg */
+```
+
+### Status tokens
+
+```css
+--sp-success:      #13B07C;
+--sp-success-soft: #E0F6EE;
+--sp-warn:         #F0982C;
+--sp-warn-soft:    #FFF1DC;
+```
+
+### Shadow tokens
+
+```css
+--sp-sh-xs:   0 1px 2px rgba(33,27,54,.06);
+--sp-sh-sm:   0 2px 8px rgba(60,48,140,.07);
+--sp-sh-md:   0 8px 24px rgba(60,48,140,.10);
+--sp-sh-lg:   0 16px 40px rgba(60,48,140,.14);
+--sp-sh-glow: 0 10px 30px rgba(123,80,220,.30);  /* brand button glow */
+```
+
+### Radius tokens
+
+```css
+--sp-r-sm: 14px;   /* buttons, chips, inputs */
+--sp-r:    18px;   /* standard cards */
+--sp-r-lg: 22px;   /* main cards */
+--sp-r-xl: 28px;   /* hero/gradient cards */
+--sp-r-full: 999px; /* pills, full-round */
+```
+
+---
 
 ## Typography
 
-### Font stack
+### Font
 
-```css
-font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+```
+'Plus Jakarta Sans' — geometric, warm, professional
 ```
 
-Import via Google Fonts in `index.html`:
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-```
+Loaded via Google Fonts in `index.html`. Weights: 400, 500, 600, 700, 800, italic 500.
 
 ### Scale
 
-| Role | Class | Size | Weight |
-|------|-------|------|--------|
-| Page hero | `sp-display` | `text-4xl sm:text-5xl` | `font-extrabold` |
-| Section heading | `sp-heading` | `text-2xl sm:text-3xl` | `font-bold` |
-| Card title | `sp-card-title` | `text-lg` | `font-bold` |
-| Eyebrow label | `sp-eyebrow` | `text-xs uppercase` | `font-bold` letter-spacing wide |
-| Body | (base) | `text-sm leading-relaxed` | `font-normal` |
-| Caption | `sp-caption` | `text-xs` | `font-medium` |
+| Role | Size | Weight |
+|------|------|--------|
+| Page/screen heading | `sp-h1` (25px / 30px desktop) | 800 |
+| Section heading | 16px (`sp-section-h h3`) | 800 |
+| Card title | 14–15px | 800 |
+| Body | 14–15px | 500 |
+| Caption / muted | 11–12px | 600–700 |
+| Eyebrow | 11px, uppercase, letter-spacing .08em | 800 |
 
-## Reusable component classes (styles.css)
+---
 
-All defined in `@layer components` using Tailwind `@apply`.
+## App shell pattern
 
-### Layout
+The prototype defines two nav patterns. The Angular app now implements both.
 
-```
-.sp-page           — page wrapper, gradient background, min-h-dvh
-.sp-shell          — max-w-5xl, horizontal padding, vertical padding
-.sp-narrow-shell   — max-w-xl, for auth/onboarding flows
-```
-
-### Brand
+### Desktop (≥ 900px): Left sidebar
 
 ```
-.sp-brand          — logo lockup inline-flex
-.sp-brand-mark     — square brand icon (S monogram)
+┌──────────────┬────────────────────────────────┐
+│  sp-side     │  sp-main                        │
+│  (264px)     │  ┌────────────────────────┐    │
+│              │  │  sp-topbar             │    │
+│  Logo        │  │  Good afternoon 👋     │    │
+│              │  │  Hi, {name}            │    │
+│  Dashboard   │  └────────────────────────┘    │
+│  My Path     │  ┌────────────────────────┐    │
+│  Practice    │  │  sp-content            │    │
+│  Progress    │  │  (page content here)   │    │
+│  Profile     │  └────────────────────────┘    │
+│              │                                  │
+│  streak card │                                  │
+└──────────────┴────────────────────────────────┘
+```
+
+Sidebar CSS classes: `.sp-side`, `.sp-sidebrand`, `.sp-sidelink`, `.sp-sidelink.is-active`
+
+Active state: white background + `sh-sm` shadow + 4px gradient left bar (`.sp-sidelink.is-active::before`).
+
+### Mobile: Bottom nav
+
+```
+┌──────────────────────────────────────────────┐
+│  page content                                 │
+│  (scrolls above the fixed nav)                │
+└──────────────────────────────────────────────┘
+┌────┬────┬──────────┬────┬────┐  ← fixed bottom
+│Home│Path│[Practice]│Prg.│Prof│
+│    │    │  raised  │    │    │
+└────┴────┴──────────┴────┴────┘
+```
+
+Practice (centre) button: raised gradient circle (`sp-sh-glow`, `border:3px solid canvas`), floats 22px above the bar.
+
+Classes: `.sp-bottomnav`, `.sp-navbtn`, `.sp-navbtn.is-active`.
+
+---
+
+## Placeholder UI rules
+
+> **Rule: never show fake real data. Always show honest placeholders.**
+
+When a backend feature is not implemented, the UI must:
+
+1. Show `—` for numeric values (not `0`, not `7`, not invented numbers)
+2. Show "Coming soon" for unimplemented skill cards — not a progress bar with fake values
+3. Show an empty state with clear copy ("Complete your first activity to see your progress here.") — not fake activity entries
+4. Keep "Coming soon" cards visually present — do not remove them; they communicate the roadmap
+
+When a backend feature ships:
+1. Remove the `—` placeholder and bind to real data
+2. Remove the "Coming soon" label from skill cards
+3. Remove the honest placeholder text from coach/streak cards
+
+Current placeholders and their replacement conditions are tracked in [product-backlog.md](../backlog/product-backlog.md).
+
+---
+
+## Component classes (styles.css)
+
+### App shell
+
+```
+.sp-app          — page root; radial gradient background
+.sp-shell-app    — flex row (sidebar + main)
+.sp-side         — desktop sidebar (display:none mobile, flex desktop ≥900px)
+.sp-sidebrand    — logo lockup at top of sidebar
+.sp-sidelink     — nav item; .is-active variant
+.sp-main         — flex column (topbar + content)
+.sp-topbar       — greeting row; max-width 1080px
+.sp-content      — scrollable page content; max-width 520px mobile / 1080px desktop
+.sp-bottomnav    — fixed mobile bottom nav (hidden ≥900px)
+.sp-navbtn       — bottom nav item; .is-active variant
+```
+
+### Layout helpers
+
+```
+.sp-col          — flex column
+.sp-row          — flex row align-center
+.sp-icobox       — square icon container (grid place-items-center, radius r-sm)
+.sp-statgrid     — 3-column equal stat tiles grid
+.sp-skillgrid    — 2-col mobile, 5-col desktop skill cards grid
+.sp-grid2        — 2-col desktop grid (1.55fr / 1fr) — dashboard main layout
+.sp-h1           — 25px/30px bold heading
+.sp-section-h    — section header row (title left, action link right)
+.sp-muted        — colour: muted
+.sp-faint        — colour: faint
 ```
 
 ### Cards
 
 ```
-.sp-card           — white card, rounded-2xl, border, shadow-sm
-.sp-card-soft      — tinted soft card (violet-50)
-.sp-module-card    — module list card with left status bar
-.sp-feedback-card  — feedback section card with subtle left border
-.sp-coach-message  — warm coach comment (teal tint)
+.sp-card         — white card, border, r-lg, sh-sm
+.sp-card-pad     — padding 18px (add to sp-card when needed)
+.sp-card-soft    — grad-brand-soft background, #EADBFF border (coach card, streak card)
+.sp-info-block   — activity lesson info section (same as sp-card, sh-xs)
+.sp-module-card  — module journey card; variants: .sp-module-card-current / -complete / -locked
 ```
 
 ### Buttons
 
 ```
-.sp-button-primary    — violet filled (replaces slate-950)
-.sp-button-accent     — indigo filled (kept for variety)
-.sp-button-secondary  — white bordered
-.sp-button-ghost      — transparent, hover tint
-.sp-link              — text link
+.sp-button-primary   — gradient brand button with glow shadow
+.sp-button-ghost     — white bordered button
+.sp-button-secondary — canvas-2 soft button
+.sp-btn              — prototype-exact button base
+.sp-btn-primary      — prototype-exact gradient variant
+.sp-btn-ghost        — prototype-exact ghost variant
+.sp-btn-soft         — prototype-exact soft variant
+.sp-btn-block        — full-width button
 ```
 
-### Form controls
+### Pills, chips, badges
 
 ```
-.sp-label    — form label
-.sp-input    — text input / textarea base
-.sp-option   — selectable option card (onboarding)
+.sp-pill               — small rounded label (inline-flex, r-full)
+.sp-chip               — interactive phrase chip (clickable, hover/active states)
+.sp-phrase-chip        — display-only phrase chip (activity lesson)
+.sp-vocab-chip         — vocabulary chip (vocabulary-soft background, column layout)
+.sp-ai-badge           — "✦ AI generated" gradient badge
+.sp-fallback-badge     — "Backup content" warning badge
+.sp-skill-badge        — skill type badge; variants: -writing, -speaking, etc.
+.sp-eyebrow            — uppercase section eyebrow label
 ```
 
-### Status + feedback
+### Progress
 
 ```
-.sp-eyebrow          — section label (uppercase, small, coloured)
-.sp-score-ring       — large score display with coloured ring
-.sp-skill-badge      — activity type pill (writing/speaking/etc.)
-.sp-phrase-chip      — target phrase pill (violet-tinted)
-.sp-vocab-chip       — vocabulary word pill (slate-tinted)
-.sp-ai-badge         — "AI generated" label badge
-.sp-fallback-badge   — "System" label badge
-.sp-module-status    — coloured dot (current / complete / locked)
-.sp-progress-track   — slim progress bar row with label
+.sp-progress-track          — progress bar container (9px height)
+.sp-progress-fill           — brand gradient fill
+.sp-progress-fill-writing   — writing-colour fill
+.sp-progress-fill-speaking  — speaking-colour fill
+.sp-progress-fill-vocabulary
+.sp-progress-fill-pronunciation
+.sp-progress-fill-listening
+```
+
+### Collapsible
+
+```
+details.sp-collapsible              — wrapper
+details.sp-collapsible > summary    — header row (no default marker)
+summary .sp-chevron                 — rotating chevron icon
+.sp-collapsible-body                — padded content below summary
+```
+
+### Coach
+
+```
+.sp-coach-bubble   — speech bubble (border-radius: 4px 16px 16px 16px)
 ```
 
 ### State patterns
 
 ```
-.sp-empty-state      — centred empty state (icon + heading + body)
-.sp-loading-pulse    — skeleton loading animation
-.sp-alert-info       — info alert (violet tint)
-.sp-alert-error      — error alert (rose tint)
-.sp-alert-success    — success alert (emerald tint)
-.sp-alert-warning    — warning alert (amber tint)
+.sp-empty-state     — centred empty state card (dashed border)
+.sp-loading-pulse   — skeleton animation
+.sp-alert-info      — writing-soft tinted info alert
+.sp-alert-error     — speaking-soft tinted error alert
+.sp-alert-success   — success-soft tinted success alert
+.sp-alert-warning   — vocabulary-soft tinted warning alert
 ```
 
-## Layout rules
+### RTL
 
-1. **Mobile-first** — all grids start single column, expand at `sm:` and `lg:`
-2. **Content max-width** — `max-w-5xl` (`1024px`) for main content
-3. **Narrow shell** — `max-w-xl` for onboarding, auth, settings
-4. **Card radius** — `rounded-2xl` (16px) for cards; `rounded-xl` (12px) for inputs and chips
-5. **Page background** — gradient: `from-slate-50 to-violet-50/40`
-6. **Section spacing** — `gap-5` (`20px`) between stacked cards; `gap-4` inside card content
-7. **Navigation** — sticky top, height `h-14`, backdrop blur, white/translucent background
-8. **Touch targets** — min height `min-h-11` (44px) for all interactive elements
-9. **RTL text** — Persian/source language blocks use `dir="rtl" lang="fa"` with explicit LTR override for labels
+```
+.sp-source-lang-block   — Persian/RTL instruction block (writing-soft, dir:rtl)
+```
+
+---
 
 ## Activity UI patterns
 
-### Learning phase card structure
+### Learning (Intro) phase — from prototype `activity.jsx` Intro component
 
 ```
-┌──────────────────────────────────────┐
-│ [Eyebrow] Today's activity           │
-│ [H1] Activity title                  │
-│ [Body] Learning goal                 │
-├──────────────────────────────────────┤
-│ Situation card (violet left border)  │
-│ Persian instruction (RTL, indigo)    │
-│ Target phrases (phrase chips)        │
-│ Vocabulary (vocab chips)             │
-│ Example (collapsible)                │
-│ Common mistake (amber warning)       │
-├──────────────────────────────────────┤
-│ [CTA] Start writing →                │
-└──────────────────────────────────────┘
+[skill badge] [AI badge] [time pill]
+h1.sp-h1  — activity title
+InfoBlock "The situation"   (icon: chat, accent: writing)
+Goal card                   (grad-brand-soft, target icon)
+InfoBlock "Phrases to try"  (icon: quote, phrase chips)
+InfoBlock "Vocabulary"      (icon: book, vocab chips)
+details.sp-collapsible "See an example message"
+Warning card                (warn-soft, bulb icon, mistake text)
+RTL source-language block   (sp-source-lang-block)
+sp-button-primary (full width) "Start writing"
 ```
 
-### Practice phase
+### Practice phase — from prototype `activity.jsx` Practice component
 
 ```
-┌──────────────────────────────────────┐
-│ Situation (mini, always visible)     │
-│ Phrase chips (reference row)         │
-├──────────────────────────────────────┤
-│ Textarea — "Write your response"     │
-│ [Character count]                    │
-│ [CTA] Get feedback                   │
-└──────────────────────────────────────┘
+[skill badge]
+h1 "Write your message"
+Task card (writing-soft bg, target icon)
+Email card (sp-card, no-pad):
+  header row: [pen icon] "To: your manager"
+  textarea (no border/outline, min-height 180px)
+  footer: [word count] [char count / Autosaved]
+"TAP A PHRASE TO ADD IT" + phrase chips
+details.sp-collapsible "Vocabulary hints"
+details.sp-collapsible "Peek at the example"
+Coach row: [gradient circle avatar] [microcopy]
+sp-button-primary (full width) "Get coach feedback"
 ```
 
-### Feedback phase
+### Feedback phase — from prototype `activity.jsx` Feedback component
 
 ```
-┌────────────────┬─────────────────────┐
-│ Score ring     │ Corrected version   │
-│ (green/amber/  │ Grammar lesson      │
-│  red)          │ Tone lesson         │
-│                │ Vocabulary          │
-│ What you did   │ Rewrite challenge   │
-│ well (emerald) │ Next suggestion     │
-│                │                     │
-│ Vocab to       │ [Try again]         │
-│ remember       │ [Next activity]     │
-└────────────────┴─────────────────────┘
-Feedback in Persian (full width, RTL)
+Score card (grad-brand-soft):
+  SVG ProgressRing (r=38, C=238.76)
+  Score number + /100
+  Band pill (Great work / Good effort / Keep going)
+
+Coach message row:
+  [gradient circle avatar] Pace / your AI coach
+  sp-coach-bubble (4px 16px 16px 16px border-radius)
+
+InfoBlock "Polished version"     (corrected pre, success-soft)
+InfoBlock "What you did well"    (checkCircle list, success accent)
+InfoBlock "Gentle improvements"  (arrow list, vocabulary accent)
+InfoBlock "Grammar focus"        (writing accent)
+InfoBlock "Tone & politeness"    (listening accent)
+InfoBlock "Vocabulary to remember" (vocab pills)
+
+Rewrite challenge card (grad-cool, refresh icon, white text)
+
+InfoBlock "Suggested next"       (next activity card)
+
+Actions: [Try again (ghost, flex-1)] [Continue to next (primary, flex-2)]
+sp-button-secondary (full width) "Back to my path"  →  /my-path
 ```
 
-## Module card pattern
+---
+
+## Module card pattern — from prototype `components.jsx` ModuleCard
 
 ```
-┌─[status bar]──────────────────────────┐
-│ [Module N] [SkillBadge]               │
-│ Module title                  [●●○○○] │
-│ Short description                     │
-│ 1 of 3 activities completed           │
-└───────────────────────────────────────┘
+sp-module-card
+  [SkillIcon 48px, soft or solid depending on state]  [content]  [chevron/lock]
+
+content:
+  MODULE {n}  [IN PROGRESS / ✓ COMPLETE / SOON] pill
+  h3 title (15px, 800)
+  description (12.5px, muted)
+  [progress bar + X/Y count]  ← only for current or complete
+
+States:
+  current  → border: writing, shadow: sh-md
+  complete → border: success
+  locked   → border: border2, opacity: .72, cursor: default
 ```
 
-Status bar colours:
-- Current module: violet left border, violet-50 background
-- Completed: teal left border, teal-50 background
-- Locked (future modules): slate-200 left border, white background, opacity-60
+---
 
-## Skill badge patterns
+## Skill badge / card patterns
 
-Each activity type gets a small badge used on module cards, activity headers, and the dashboard skill section.
-
+### Skill badge (pill)
 ```
-[✏ Writing]      violet bg, white text
-[🎤 Speaking]    sky bg, white text
-[🎧 Listening]   teal bg, white text
-[📖 Vocabulary]  amber bg, white text
-[🔊 Pronunciation] rose bg, white text
-[📄 Reading]     emerald bg, white text
+.sp-skill-badge.sp-skill-badge-{skill}
+  background: var(--sp-{skill}-soft)
+  color: var(--sp-{skill}-ink)
 ```
 
-Implementation: simple `<span>` with `sp-skill-badge sp-skill-badge-{type}` classes. No Angular component needed until used in 3+ templates.
-
-## Future activity type visual placeholders (Phase 4)
-
-The dashboard skill section shows all 6 activity types as cards. Currently only Writing is active. Others show as "Coming soon" with their brand colour and icon. This communicates the product roadmap to testers without requiring backend implementation.
-
+### Skill card (dashboard grid)
 ```
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ ✏ Writing    │ │ 🎤 Speaking  │ │ 🎧 Listening │
-│ Active       │ │ Coming soon  │ │ Coming soon  │
-└──────────────┘ └──────────────┘ └──────────────┘
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ 📖 Vocab     │ │ 🔊 Pronunc.  │ │ 📄 Reading   │
-│ Coming soon  │ │ Coming soon  │ │ Coming soon  │
-└──────────────┘ └──────────────┘ └──────────────┘
+sp-card (padding 14px, flex column, gap 11px)
+  SkillIcon (38px, soft=true)
+  skill name (14px, 800) + level label (11.5px, muted)
+  sp-progress-track
+    sp-progress-fill-{skill}
+
+Active (Writing): border-color: writing, hover: translateY(-3px)
+Coming soon: opacity: .65, no hover, no link
 ```
+
+---
+
+## Future activity type placeholders
+
+All unimplemented skill cards must remain on the dashboard with "Coming soon" state. Remove the label only when the backend feature ships. Do not remove cards from the grid.
+
+| Skill | Badge colour | Status |
+|-------|-------------|--------|
+| Writing | `--sp-writing` | ✅ Active |
+| Speaking | `--sp-speaking` | Coming soon |
+| Listening | `--sp-listening` | Coming soon |
+| Vocabulary | `--sp-vocabulary` | Coming soon |
+| Pronunciation | `--sp-pronunciation` | Coming soon |
+
+---
 
 ## Implementation constraints
 
-1. **Tailwind v4** — use `@theme` block in `styles.css` for custom tokens (not `tailwind.config.js` which is not used in v4 CSS-first mode)
-2. **No component library** — pure Tailwind + `sp-*` classes
-3. **Angular components** — only for templates shared across ≥ 3 screens and containing non-trivial logic
-4. **No backend changes** — all changes are frontend-only
-5. **Progressive enhancement** — Playwright smoke test selectors must not break; use stable text labels for interactive elements
+1. **Prototype first** — inspect `docs/design/references/speakpath-prototype/` before adding or changing any UI
+2. **Exact token values** — use the CSS custom properties; do not hardcode hex colours in templates
+3. **No fake data** — placeholder UI must always be honest. See [placeholder rules](#placeholder-ui-rules)
+4. **No component library** — pure `sp-*` classes; Angular components only where justified (≥3 uses, non-trivial logic)
+5. **Tailwind v4** — CSS-first; no `tailwind.config.js` for custom tokens; use `:root` CSS custom properties
+6. **Mobile-first** — all layouts stack single column, expand at 900px (sidebar breakpoint) or earlier
+7. **Touch targets** — all interactive elements: `min-height: 44px`
+8. **RTL text** — Persian source-language blocks: `dir="rtl" lang="fa"`; labels and eyebrows use `dir="ltr"` override
+9. **Coming soon features** — remain visible in the UI, visually present but functionally disabled (no `href`, no `routerLink`, reduced opacity)
+10. **Playwright stability** — use `getByRole` + regex names for interactive elements so text changes do not silently break tests; always run smoke test after HTML changes
