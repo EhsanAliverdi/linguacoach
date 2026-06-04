@@ -270,24 +270,77 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 /* == Narrow shell (auth/onboarding) ======================================== */
 .sp-narrow-shell{max-width:480px;margin:0 auto;padding:32px 18px;width:100%;}
 
-/* == Public layout (login, landing) ======================================== */
+/* == Public layout ========================================================== */
+/* Shell: background only. Child pages control their own width/centering.     */
 .sp-public-layout{
   min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  padding:32px 18px;
   background:
     radial-gradient(1100px 520px at 88% -8%,#F1ECFF 0%,transparent 60%),
     radial-gradient(900px 460px at -6% 4%,#FFEDE6 0%,transparent 55%),
     var(--sp-canvas);
 }
+
+/* Login/change-password: centered card page */
+.sp-public-centered{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 18px;
+}
+.sp-public-logo{
+  display:flex;align-items:center;gap:10px;margin-bottom:22px;text-decoration:none;
+}
+.sp-public-logo-name{
+  font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;
+}
+.sp-public-logo-name span{color:var(--sp-writing);}
+.sp-public-form-card{
+  width:100%;max-width:460px;
+  background:var(--sp-surface);
+  border:1px solid var(--sp-border);
+  border-radius:var(--sp-r-xl);
+  box-shadow:var(--sp-sh-md);
+  padding:32px;
+}
+/* Keep sp-public-card as alias */
 .sp-public-card{
   width:100%;max-width:460px;
   background:var(--sp-surface);
   border:1px solid var(--sp-border);
   border-radius:var(--sp-r-xl);
   box-shadow:var(--sp-sh-md);
-  padding:28px;
+  padding:32px;
 }
+
+/* Landing: full-width page */
+.sp-public-shell{
+  max-width:1120px;margin:0 auto;padding:0 20px;
+  width:100%;
+}
+.sp-public-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0;
+}
+.sp-public-hero{
+  display:grid;gap:40px;
+  padding:56px 0 64px;
+  align-items:center;
+}
+@media(min-width:760px){.sp-public-hero{grid-template-columns:1.1fr 0.9fr;padding:72px 0 80px;}}
+.sp-marketing-grid{display:grid;gap:16px;}
+@media(min-width:600px){.sp-marketing-grid{grid-template-columns:repeat(3,1fr);}}
+.sp-marketing-card{
+  background:var(--sp-surface);border:1px solid var(--sp-border);
+  border-radius:var(--sp-r-lg);padding:22px;
+  box-shadow:var(--sp-sh-xs);
+}
+.sp-marketing-icon{
+  width:42px;height:42px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:12px;
+}
+.sp-features-grid{display:grid;gap:12px;}
+@media(min-width:600px){.sp-features-grid{grid-template-columns:repeat(2,1fr);}}
+@media(min-width:900px){.sp-features-grid{grid-template-columns:repeat(4,1fr);}}
 
 /* == Student app layout ==================================================== */
 .sp-student-app{
@@ -306,10 +359,35 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
   border-right:1px solid var(--sp-border);
   overflow-y:auto;
   z-index:40;
+  transition:width .22s ease,padding .22s ease;
+  overflow-x:hidden;
 }
 @media(min-width:900px){.sp-student-sidebar{display:flex;}}
+/* Collapsed student sidebar */
+@media(min-width:900px){
+  .sp-student-sidebar.sp-sidebar-collapsed{width:76px;padding:26px 12px;}
+  .sp-student-sidebar.sp-sidebar-collapsed .sp-sidebar-label{display:none;}
+  .sp-student-sidebar.sp-sidebar-collapsed .sp-sidebrand span{display:none;}
+  .sp-student-sidebar.sp-sidebar-collapsed .sp-sidelink{justify-content:center;gap:0;}
+  .sp-student-sidebar.sp-sidebar-collapsed .sp-sidebar-streak{display:none;}
+}
 .sp-student-main{flex:1;min-width:0;display:flex;flex-direction:column;}
-@media(min-width:900px){.sp-student-main{margin-left:264px;}}
+@media(min-width:900px){
+  .sp-student-main{margin-left:264px;transition:margin-left .22s ease;}
+  .sp-student-main.sp-main-collapsed{margin-left:76px;}
+}
+/* Sidebar toggle button */
+.sp-sidebar-toggle{
+  display:none;
+  align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:8px;
+  border:1px solid var(--sp-border);background:var(--sp-surface);
+  color:var(--sp-muted);cursor:pointer;
+  transition:background .14s,color .14s;
+  flex-shrink:0;
+}
+.sp-sidebar-toggle:hover{background:var(--sp-canvas2);color:var(--sp-ink);}
+@media(min-width:900px){.sp-sidebar-toggle{display:flex;}}
 .sp-student-header{
   display:flex;align-items:center;justify-content:space-between;
   max-width:1080px;margin:0 auto;width:100%;

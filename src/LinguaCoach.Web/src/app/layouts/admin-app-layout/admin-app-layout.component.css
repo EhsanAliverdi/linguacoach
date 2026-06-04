@@ -23,6 +23,77 @@
   height: 100vh;
   z-index: 40;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: width .22s ease;
+}
+
+/* Collapsed admin sidebar */
+.sp-admin-sidebar.sp-sidebar-collapsed {
+  width: 72px;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-brand-name,
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-brand-role,
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-nav-group-label,
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-nav-label,
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-nav-soon-badge,
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-signout-label {
+  display: none;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-nav-item {
+  justify-content: center;
+  padding: 10px;
+  gap: 0;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-brand {
+  padding: 16px 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-nav {
+  padding: 8px 6px;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-signout-btn {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-sidebar-footer {
+  padding: 10px 6px 14px;
+}
+
+/* Toggle button */
+.sp-admin-toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 10px 2px;
+}
+
+.sp-admin-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid #E2E8F0;
+  background: #fff;
+  color: #94A3B8;
+  cursor: pointer;
+  transition: background .14s, color .14s;
+}
+
+.sp-admin-toggle-btn:hover {
+  background: #F1F5F9;
+  color: #334155;
+}
+
+.sp-admin-sidebar.sp-sidebar-collapsed .sp-admin-toggle-row {
+  justify-content: center;
 }
 
 /* Brand */
@@ -160,6 +231,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  transition: margin-left .22s ease;
+}
+
+.sp-admin-main.sp-main-collapsed {
+  margin-left: 72px;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */

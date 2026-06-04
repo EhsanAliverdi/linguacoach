@@ -1,7 +1,7 @@
 # Frontend Layout System
 
 **Date**: 2026-06-04
-**Status**: Stable — v2 (full UI stabilisation + admin sidebar sprint)
+**Status**: Stable — v3 (sidebar collapse, landing page, login polish)
 
 ---
 
@@ -15,13 +15,36 @@ Both issues were fixed in the layout stabilisation sprints.
 
 ---
 
+## Collapsible Sidebar
+
+Both `StudentAppLayoutComponent` and `AdminAppLayoutComponent` support a collapsible desktop sidebar (≥900px).
+
+- **Expanded**: full width (264px student / 240px admin) — icon + label
+- **Collapsed**: icon-only rail (76px student / 72px admin)
+- **Toggle**: chevron button near the top of the sidebar
+- **Persistence**: `localStorage` keys `speakpath.sidebarCollapsed` (student) and `speakpath.adminSidebarCollapsed` (admin)
+- **Mobile**: collapse does not apply — mobile uses the fixed bottom nav (student) or hidden sidebar (admin)
+- **Transition**: CSS `transition: width .22s ease` + matching `margin-left` on the main area
+
+CSS classes involved:
+- `.sp-sidebar-collapsed` — applied to the sidebar element
+- `.sp-main-collapsed` — applied to the main content area
+- `.sp-sidebar-toggle` — student sidebar toggle button
+- `.sp-sidebar-label` — text labels hidden when collapsed
+- `.sp-sidebar-streak` — streak card hidden when collapsed
+- `.sp-admin-toggle-btn` / `.sp-admin-toggle-row` — admin toggle button
+- `.sp-admin-nav-label` / `.sp-admin-signout-label` — admin text labels hidden when collapsed
+
+---
+
 ## Final Layout Architecture
 
 ```
 AppComponent (router-outlet)
 ├── PublicLayoutComponent            → /, /login, /change-password
 │   └── router-outlet
-│       └── Page renders sp-public-card itself
+│       ├── LandingComponent         (full-width, uses sp-public-shell)
+│       └── LoginComponent           (uses sp-public-centered + sp-public-form-card)
 │
 ├── StudentAppLayoutComponent        → /dashboard, /my-path, /activity, /progress, /profile, /onboarding/**
 │   ├── .sp-student-sidebar          fixed left sidebar (≥900px), full 100vh
@@ -73,10 +96,12 @@ Every component rendered inside a layout outputs **only page content**. No `<asi
 
 ## PublicLayout Rules
 
-- Full-page gradient background (`sp-public-layout`)
+- `sp-public-layout` provides background gradient only — no centering, no card wrapper
 - No sidebar, no topnav, no bottom nav
-- Each child page renders its own `sp-public-card` wrapper
-- Login card: max-width 460px, centered, white, rounded
+- **Landing page**: uses `sp-public-shell` (max-width 1120px) + `sp-public-hero`, `sp-marketing-grid`, `sp-features-grid` — full-width design
+- **Login / change-password**: uses `sp-public-centered` (min-height 100vh flex column center) + `sp-public-logo` above + `sp-public-form-card` for the form
+- Logo appears **above** the login card — not inside it
+- Login card contains: title, subtitle, email field, password field, sign in button, alerts only
 
 ## StudentAppLayout Rules
 

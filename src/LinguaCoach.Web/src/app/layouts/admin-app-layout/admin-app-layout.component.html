@@ -1,12 +1,12 @@
 <div class="sp-admin-shell">
 
   <!-- ── Left sidebar ──────────────────────────────────────────────────── -->
-  <aside class="sp-admin-sidebar">
+  <aside class="sp-admin-sidebar" [class.sp-sidebar-collapsed]="collapsed()">
 
     <!-- Brand -->
     <div class="sp-admin-brand">
       <a routerLink="/admin" class="sp-admin-brand-link">
-        <svg width="32" height="32" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 48 48" fill="none" aria-hidden="true" style="flex-shrink:0">
           <defs>
             <linearGradient id="lg-admin-brand" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
               <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
@@ -25,43 +25,54 @@
       </a>
     </div>
 
+    <!-- Toggle button -->
+    <div class="sp-admin-toggle-row">
+      <button (click)="toggleSidebar()" class="sp-admin-toggle-btn" [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+        @if (collapsed()) {
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        } @else {
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        }
+      </button>
+    </div>
+
     <!-- Nav -->
     <nav class="sp-admin-nav">
 
       <div class="sp-admin-nav-group-label">Overview</div>
-      <a routerLink="/admin" routerLinkActive="sp-admin-nav-item-active" [routerLinkActiveOptions]="{exact:true}" class="sp-admin-nav-item">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Dashboard
+      <a routerLink="/admin" routerLinkActive="sp-admin-nav-item-active" [routerLinkActiveOptions]="{exact:true}" class="sp-admin-nav-item" [title]="collapsed() ? 'Dashboard' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="sp-admin-nav-label">Dashboard</span>
       </a>
 
       <div class="sp-admin-nav-group-label">Students</div>
-      <a routerLink="/admin/students" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Students
+      <a routerLink="/admin/students" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Students' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="sp-admin-nav-label">Students</span>
       </a>
-      <a routerLink="/admin/create-student" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-        Create student
+      <a routerLink="/admin/create-student" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Create student' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        <span class="sp-admin-nav-label">Create student</span>
       </a>
 
       <div class="sp-admin-nav-group-label">AI System</div>
-      <a routerLink="/admin/ai-config" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-        AI Config
+      <a routerLink="/admin/ai-config" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'AI Config' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+        <span class="sp-admin-nav-label">AI Config</span>
       </a>
-      <a routerLink="/admin/prompts" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Prompts
+      <a routerLink="/admin/prompts" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Prompts' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="sp-admin-nav-label">Prompts</span>
       </a>
-      <a routerLink="/admin/careers" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        Curriculum
+      <a routerLink="/admin/careers" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Curriculum' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span class="sp-admin-nav-label">Curriculum</span>
       </a>
 
       <div class="sp-admin-nav-group-label">Analytics</div>
-      <a routerLink="/admin/usage" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item sp-admin-nav-item-soon">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Usage &amp; Analytics
+      <a routerLink="/admin/usage" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item sp-admin-nav-item-soon" [title]="collapsed() ? 'Usage & Analytics (coming soon)' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="sp-admin-nav-label">Usage &amp; Analytics</span>
         <span class="sp-admin-nav-soon-badge">Soon</span>
       </a>
 
@@ -69,21 +80,20 @@
 
     <!-- Bottom: sign out -->
     <div class="sp-admin-sidebar-footer">
-      <button (click)="logout()" class="sp-admin-signout-btn">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Sign out
+      <button (click)="logout()" class="sp-admin-signout-btn" [title]="collapsed() ? 'Sign out' : ''">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="sp-admin-signout-label">Sign out</span>
       </button>
     </div>
 
   </aside>
 
   <!-- ── Main area ─────────────────────────────────────────────────────── -->
-  <div class="sp-admin-main">
+  <div class="sp-admin-main" [class.sp-main-collapsed]="collapsed()">
 
     <!-- Admin header -->
     <header class="sp-admin-header">
       <div class="sp-admin-header-inner">
-        <!-- Mobile menu toggle (future) -->
         <div style="flex:1"></div>
         <!-- Right: user chip -->
         <div class="sp-admin-header-user">

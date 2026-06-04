@@ -204,3 +204,30 @@ test('student: profile', async ({ page }) => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'e2e/screenshots/student-05-profile.png' });
 });
+
+test('admin: sidebar collapsed state', async ({ page }) => {
+  await mockAdmin(page);
+  // Pre-set collapsed state
+  await page.addInitScript(() => {
+    localStorage.setItem('speakpath.adminSidebarCollapsed', 'true');
+  });
+  await adminLogin(page);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'e2e/screenshots/admin-collapsed.png' });
+});
+
+test('student: sidebar collapsed state', async ({ page }) => {
+  await mockStudent(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('speakpath.sidebarCollapsed', 'true');
+  });
+  await studentLogin(page);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'e2e/screenshots/student-collapsed.png' });
+});
+
+test('landing page', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'e2e/screenshots/landing-full.png', fullPage: true });
+});

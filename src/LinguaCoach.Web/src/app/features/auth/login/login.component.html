@@ -1,60 +1,72 @@
-<div class="sp-public-card">
-  <div class="sp-page-header">
-    <a href="/" class="sp-brand justify-center">
-      <span class="sp-brand-mark">S</span>
-      <span>SpeakPath</span>
-    </a>
-    <p class="mt-2 text-sm leading-6 text-slate-600">Practise workplace messages before you send them.</p>
+<div class="sp-public-centered">
+
+  <!-- Logo above the card -->
+  <a routerLink="/" class="sp-public-logo">
+    <svg width="36" height="36" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="lg-login-logo" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-login-logo)"/>
+      <circle cx="14" cy="33" r="3.4" fill="#fff"/>
+      <circle cx="24" cy="26" r="3.4" fill="#fff" opacity=".92"/>
+      <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
+      <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
+    </svg>
+    <div class="sp-public-logo-name">Speak<span>Path</span></div>
+  </a>
+
+  <!-- Form card -->
+  <div class="sp-public-form-card">
+
+    <h1 style="font-size:20px;font-weight:800;color:var(--sp-ink);margin:0 0 4px">Sign in</h1>
+    <p style="font-size:14px;color:var(--sp-muted);margin:0 0 24px">Pilot access for SpeakPath students and admins.</p>
+
+    @if (notice()) {
+      <div class="sp-alert-info" style="margin-bottom:16px">{{ notice() }}</div>
+    }
+
+    @if (error()) {
+      <div class="sp-alert-error" style="margin-bottom:16px">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="onSubmit()" #f="ngForm" novalidate>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div>
+          <label for="email" class="sp-label">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            [(ngModel)]="email"
+            required
+            autocomplete="email"
+            placeholder="you@example.com"
+            class="sp-input"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="sp-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            [(ngModel)]="password"
+            required
+            autocomplete="current-password"
+            placeholder="Password"
+            class="sp-input"
+          />
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="loading()" class="sp-button-primary" style="width:100%;margin-top:24px">
+        @if (loading()) { Signing in… } @else { Sign in }
+      </button>
+    </form>
+
   </div>
 
-  <h1 class="text-xl font-bold text-slate-950">Sign in</h1>
-  <p class="mt-1 text-sm text-slate-500">Pilot access for SpeakPath students and admins.</p>
-
-  @if (notice()) {
-    <div class="sp-alert-info mt-5">
-      {{ notice() }}
-    </div>
-  }
-
-  @if (error()) {
-    <div class="sp-alert-error mt-5">
-      {{ error() }}
-    </div>
-  }
-
-  <form (ngSubmit)="onSubmit()" #f="ngForm" novalidate class="mt-6">
-    <div class="space-y-4">
-      <div>
-        <label for="email" class="sp-label">Email</label>
-        <input
-          id="email"
-          type="email"
-          name="email"
-          [(ngModel)]="email"
-          required
-          autocomplete="email"
-          placeholder="you@example.com"
-          class="sp-input"
-        />
-      </div>
-
-      <div>
-        <label for="password" class="sp-label">Password</label>
-        <input
-          id="password"
-          type="password"
-          name="password"
-          [(ngModel)]="password"
-          required
-          autocomplete="current-password"
-          placeholder="Password"
-          class="sp-input"
-        />
-      </div>
-    </div>
-
-    <button type="submit" [disabled]="loading()" class="sp-button-primary mt-6 w-full">
-      @if (loading()) { Signing in... } @else { Sign in }
-    </button>
-  </form>
 </div>

@@ -1,7 +1,9 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+
+const STORAGE_KEY = 'speakpath.adminSidebarCollapsed';
 
 @Component({
   selector: 'app-admin-app-layout',
@@ -11,6 +13,8 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrls: ['./admin-app-layout.component.css'],
 })
 export class AdminAppLayoutComponent {
+  collapsed = signal(this.readCollapsed());
+
   adminEmail = computed(() => this.auth.currentUser()?.email ?? '');
   adminInitial = computed(() => {
     const email = this.auth.currentUser()?.email ?? '';
@@ -19,7 +23,17 @@ export class AdminAppLayoutComponent {
 
   constructor(public auth: AuthService) {}
 
+  toggleSidebar(): void {
+    const next = !this.collapsed();
+    this.collapsed.set(next);
+    try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* ignore */ }
+  }
+
   logout(): void {
     this.auth.logout();
+  }
+
+  private readCollapsed(): boolean {
+    try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
   }
 }
