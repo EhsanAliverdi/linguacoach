@@ -1,158 +1,114 @@
 # Layout Stabilisation Sprint
 
-**Date**: 2026-06-04  
-**Status**: In Progress
+**Date**: 2026-06-04
+**Status**: Complete
 
-## Current State
+---
 
-The UI has reached feature completion but suffers from inconsistent layout implementation across pages. The recent design pass added visual polish but scattered layout logic across individual page components, resulting in:
+## Problem
 
-- Duplicated sidebar/header HTML in every student page
-- Inconsistent spacing and alignment
-- Activity page content starting too low with blank areas
-- Login page cramped and poorly spaced
+The UI reached feature completion but suffered from inconsistent layout implementation across pages. The design pass added visual polish but scattered layout logic across individual page components, resulting in:
+
+- Duplicated sidebar/header HTML in every student page (learning-path, progress, profile)
+- Activity page had an empty HTML file — no content at all
+- PublicLayout had a double `sp-public-card` wrapper causing cramped login
+- Inconsistent spacing and alignment across pages
 - Admin pages visually inconsistent with student pages
-- No centralised layout system or reusable components
 
-## Product Goal
+---
 
-Stabilise the frontend layout architecture to ensure:
+## What Was Fixed
 
-1. All authenticated pages share a consistent, maintainable layout structure
-2. Student and admin experiences have appropriate visual distinction
-3. Public pages (login, landing) use a clean, centered layout
-4. Styles are centralised in `styles.css` for reusability
-5. The core user flow is demo-ready and visually coherent
+### Layout components (already existed, routing was correct)
 
-## Architecture Decision
+All three layout components already existed and the routing was already correct:
+- `PublicLayoutComponent` — login/landing
+- `StudentAppLayoutComponent` — dashboard/my-path/activity/progress/profile/onboarding
+- `AdminAppLayoutComponent` — admin pages
 
-Implement three distinct layout variants:
+### Files changed
 
-### 1. PublicLayout
-- Used for: login, landing, change password (unauthenticated)
-- Style: Clean centered card, no sidebar, max-width ~480px
+| File | Change |
+|---|---|
+| `layouts/public-layout/public-layout.component.ts` | Removed extra `sp-public-card` wrapper (login provides its own) |
+| `features/learning-path/learning-path.component.html` | Stripped full duplicated sidebar + bottomnav — kept page content only |
+| `features/progress/progress.component.ts` | Stripped full duplicated sidebar + bottomnav — kept stat/skill/results content only |
+| `features/profile/profile.component.ts` | Stripped full duplicated sidebar + bottomnav — kept profile card/settings/signout only |
+| `features/activity/activity-lesson/activity-lesson.component.html` | Written from scratch — all three states (lesson, writing, feedback) |
+| `features/activity/activity-lesson/activity-lesson.component.ts` | Removed unused `RouterLink` import |
+| `docs/architecture/frontend-layout-system.md` | Updated to reflect final state |
 
-### 2. StudentAppLayout
-- Used for: dashboard, my path, activity, progress, profile
-- Style: Warm SpeakPath learning-app aesthetic
-- Components: Fixed left sidebar, top header, content area, mobile bottom nav
+---
 
-### 3. AdminAppLayout
-- Used for: admin dashboard, students, AI config, prompts, careers
-- Style: Professional admin dashboard, structured and clean
-- Components: Top navigation bar, content area, management-focused cards
+## Architecture: Correct Layout Rules
 
-## Central CSS Strategy
+### Rule: pages render content only
 
-Move repeated styles into `styles.css` as reusable classes:
+Every component rendered inside a layout outputs **only page content** — no `<aside>`, no `<nav>`, no full-page wrappers.
 
-```css
-/* Layout primitives */
-.sp-layout          /* Main page wrapper */
-.sp-sidebar         /* Left sidebar container */
-.sp-sidebar-collapsed /* Collapsed state */
-.sp-main            /* Main content column */
-.sp-header          /* Page header bar */
-.sp-content         /* Content area with max-width + padding */
+### PublicLayout
+- Full-page centered background (`sp-public-layout`)
+- Child page renders its own `sp-public-card`
 
-/* Card patterns */
-.sp-card            /* Base card */
-.sp-admin-card      /* Admin-specific card style */
-.sp-student-card    /* Student-specific card style */
-.sp-stat-card       /* Stat tile */
+### StudentAppLayout
+- Desktop (≥900px): sticky left sidebar + main column
+- Mobile: fixed bottom nav (5 items, Practice raised center)
+- Header: greeting + avatar + streak pill
+- `sp-student-content`: max 520px mobile / 1080px desktop
+- Child pages: content only
 
-/* Navigation */
-.sp-nav-item        /* Nav link */
-.sp-nav-item-active /* Active nav link */
-.sp-bottom-nav      /* Mobile bottom nav */
+### AdminAppLayout
+- Sticky top nav with brand + links + sign-out
+- `sp-admin-content`: max 1200px
+- No sidebar, no bottom nav
+- Professional clean aesthetic (no gamification)
+- Child pages: content only
 
-/* Typography & sections */
-.sp-section-title   /* Section heading */
-.sp-page-header     /* Page-level header */
+---
 
-/* Form elements */
-.sp-input           /* Input field */
-.sp-button-primary  /* Primary button */
-.sp-button-secondary /* Secondary button */
+## Activity Page (written from scratch)
+
+Three states driven by `PageState` signal in `ActivityLessonComponent`:
+
+1. **Learning** (`state() === 'learning'`) — shows situation card, Persian instruction, target phrases, common mistake hint, "Start writing" button
+2. **Writing** (`state() === 'writing' | 'submitting'`) — compact situation reminder, Persian instruction, textarea labelled "Write your response", word count, submit/back buttons
+3. **Feedback** (`state() === 'feedback'`) — score ring with "Overall score" label, "What you did well" list, main mistakes, Persian feedback block, corrected text (collapsible), rewrite challenge, next/try-again/back buttons
+
+Step dots shown above all states except loading/error.
+
+---
+
+## Test Results
+
+```
+npm run build           ✓ Application bundle generation complete
+playwright smoke test   ✓ 1 passed (14.1s)
 ```
 
-## In Scope
+---
 
-- [x] Audit current layout structure
-- [ ] Create layout stabilisation documentation
-- [ ] Implement centralised CSS classes
-- [ ] Create PublicLayout component
-- [ ] Create StudentAppLayout component
-- [ ] Create AdminAppLayout component
-- [ ] Migrate login page to PublicLayout
-- [ ] Migrate all student pages to StudentAppLayout
-- [ ] Migrate all admin pages to AdminAppLayout
-- [ ] Fix activity page layout (remove giant top blank area)
-- [ ] Fix dashboard layout consistency
-- [ ] Update routing to use layouts correctly
-- [ ] Run build and E2E smoke test
-- [ ] Manual verification of all pages
+## Manual Verification Checklist
 
-## Out of Scope
+- [ ] `/login` — centered card, no sidebar, no double card
+- [ ] `/dashboard` — sidebar on desktop, hero, stats, skill grid
+- [ ] `/my-path` — no duplicate sidebar, module journey renders
+- [ ] `/activity` — stepper, lesson/writing/feedback states, Persian instruction
+- [ ] `/progress` — no duplicate sidebar, stat tiles, skill levels
+- [ ] `/profile` — no duplicate sidebar, sign-out visible
+- [ ] `/admin/students` — admin topnav, no sidebar, table
+- [ ] `/admin/create-student` — clean form
+- [ ] `/admin/ai-config` — provider cards
 
-- New product features
-- Backend API changes
-- Redesigning the visual language
-- Adding new pages or routes
-- Right slide-in panel implementation (plan structure only)
+---
 
-## Files to Change
+## Risks Remaining
 
-### New files
-- `src/app/layouts/public-layout/`
-- `src/app/layouts/student-app-layout/`
-- `src/app/layouts/admin-app-layout/`
+- Admin pages use raw Tailwind classes rather than `sp-*` system — cosmetically fine but inconsistent
+- Onboarding steps not audited for duplicated shell (low risk — they are simpler forms)
+- Right slide-in panel not implemented — deferred
 
-### Modified files
-- `src/styles.css` – Add centralised layout classes
-- `src/app/app.routes.ts` – Route restructuring for layouts
-- `src/app/features/auth/login/login.component.*` – Use PublicLayout
-- `src/app/features/dashboard/dashboard.component.*` – Use StudentAppLayout
-- `src/app/features/activity/activity-lesson.component.*` – Use StudentAppLayout
-- `src/app/features/learning-path/learning-path.component.*` – Use StudentAppLayout
-- `src/app/features/progress/progress.component.*` – Use StudentAppLayout
-- `src/app/features/profile/profile.component.*` – Use StudentAppLayout
-- `src/app/features/admin/admin-shell.component.*` – Replace with AdminAppLayout
-- `src/app/features/admin/admin-*.component.*` – Use AdminAppLayout
+---
 
-## Test Plan
+## CSS Classes in Use
 
-### Automated
-1. `npm run build` – Angular production build must succeed
-2. `dotnet test --no-build` – Backend tests (if untouched, skip)
-3. Playwright E2E: `core-flow-smoke.spec.ts` – Must pass
-
-### Manual Verification Checklist
-- [ ] Login page renders cleanly, centered, proper spacing
-- [ ] Student dashboard shows sidebar, header, content correctly
-- [ ] Activity page has no giant top blank area
-- [ ] My Path page aligns with dashboard layout
-- [ ] Progress page uses same layout
-- [ ] Profile page uses same layout
-- [ ] Admin dashboard uses professional admin layout
-- [ ] Admin create student page works correctly
-- [ ] Admin AI config page works correctly
-- [ ] Mobile responsive: bottom nav appears on student pages
-- [ ] Sign out accessible from all authenticated pages
-- [ ] Active nav state works correctly
-
-## Risks and Mitigations
-
-| Risk | Mitigation |
-|------|------------|
-| Breaking existing page functionality | Keep page component logic intact; only wrap with layout |
-| CSS conflicts between old and new styles | Use specific class naming; test each page |
-| Routing complexity | Use Angular route children pattern for layouts |
-| Mobile responsiveness regression | Verify bottom nav on all student pages |
-
-## Future Follow-up
-
-- Right slide-in panel structural support
-- Sidebar collapsible animation
-- Admin usage analytics dashboard
-- Student notification preferences UI
+See [frontend-layout-system.md](../architecture/frontend-layout-system.md) for the full class reference.

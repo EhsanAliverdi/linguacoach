@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
 
@@ -10,7 +10,7 @@ type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' 
 @Component({
   selector: 'app-activity-lesson',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './activity-lesson.component.html',
 })
 export class ActivityLessonComponent implements OnInit {

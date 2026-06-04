@@ -7,9 +7,7 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: `
 <div class="sp-public-layout">
-  <div class="sp-public-card">
-    <router-outlet />
-  </div>
+  <router-outlet />
 </div>
   `,
   styles: [`

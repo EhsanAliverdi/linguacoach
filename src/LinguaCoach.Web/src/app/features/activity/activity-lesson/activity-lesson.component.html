@@ -1,2 +1,252 @@
-<!-- This component is now integrated with the StudentAppLayout and should not contain layout HTML -->
-<!-- All layout elements are now handled by the parent layout component -->
+<!-- Step progress dots -->
+@if (state() !== 'loading' && state() !== 'error') {
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px">
+    @for (dot of stepDots; track dot.n) {
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;transition:all .2s"
+          [style.background]="stepState(dot.key) === 'done' ? 'var(--sp-success)' : stepState(dot.key) === 'active' ? 'var(--sp-grad-brand)' : 'var(--sp-canvas2)'"
+          [style.color]="stepState(dot.key) === 'future' ? 'var(--sp-faint)' : '#fff'">
+          @if (stepState(dot.key) === 'done') {
+            <svg width="14" height="14" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          } @else {
+            {{ dot.n }}
+          }
+        </div>
+        <span style="font-size:10px;font-weight:700;letter-spacing:.02em"
+          [style.color]="stepState(dot.key) === 'active' ? 'var(--sp-writing)' : 'var(--sp-faint)'">
+          {{ dot.label }}
+        </span>
+      </div>
+      @if (dot.n < stepDots.length) {
+        <div style="width:32px;height:2px;border-radius:1px;margin-bottom:14px"
+          [style.background]="stepState(dot.key) === 'done' ? 'var(--sp-success)' : 'var(--sp-canvas2)'"></div>
+      }
+    }
+  </div>
+}
+
+<!-- Loading -->
+@if (state() === 'loading') {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="sp-loading-pulse" style="height:180px"></div>
+    <div class="sp-loading-pulse" style="height:120px"></div>
+    <div class="sp-loading-pulse" style="height:52px"></div>
+  </div>
+}
+
+<!-- Error -->
+@if (state() === 'error') {
+  <div class="sp-empty-state">
+    <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Could not load activity</h3>
+    <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">{{ errorMessage() }}</p>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to dashboard</button>
+  </div>
+}
+
+<!-- Learning state -->
+@if (state() === 'learning' && activity()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge sp-skill-badge-writing">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Writing
+      </span>
+      @if (isAiGenerated()) {
+        <span class="sp-ai-badge">✦ AI-generated</span>
+      } @else {
+        <span class="sp-fallback-badge">⚡ Fallback activity</span>
+      }
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity()!.difficulty }}</span>
+    </div>
+
+    <!-- Title -->
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity()!.title }}</h2>
+
+    <!-- Situation card -->
+    @if (activity()!.situation) {
+      <div class="sp-card" style="padding:20px">
+        <p class="sp-eyebrow" style="margin-bottom:8px">Situation</p>
+        <p style="font-size:15px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ activity()!.situation }}</p>
+      </div>
+    }
+
+    <!-- Persian instruction -->
+    @if (activity()!.instructionInSourceLanguage) {
+      <div class="sp-source-lang-block">{{ activity()!.instructionInSourceLanguage }}</div>
+    }
+
+    <!-- Target phrases -->
+    @if (activity()!.targetPhrases.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">Try to use these phrases</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          @for (phrase of activity()!.targetPhrases; track phrase) {
+            <span class="sp-phrase-chip">{{ phrase }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Common mistake hint -->
+    @if (activity()!.commonMistakeToAvoid) {
+      <div class="sp-alert-info" style="font-size:13px">
+        <strong>Watch out:</strong> {{ activity()!.commonMistakeToAvoid }}
+      </div>
+    }
+
+    <button (click)="startWriting()" class="sp-button-primary" style="width:100%;margin-top:4px">
+      Start writing →
+    </button>
+  </div>
+}
+
+<!-- Writing state -->
+@if ((state() === 'writing' || state() === 'submitting') && activity()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Compact situation reminder -->
+    @if (activity()!.situation) {
+      <div class="sp-card" style="padding:14px 18px">
+        <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity()!.situation }}</p>
+      </div>
+    }
+
+    <!-- Persian instruction reminder -->
+    @if (activity()!.instructionInSourceLanguage) {
+      <div class="sp-source-lang-block" style="font-size:13px">{{ activity()!.instructionInSourceLanguage }}</div>
+    }
+
+    <!-- Example text hint (collapsed) -->
+    @if (activity()!.exampleText) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          See an example
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13.5px;line-height:1.7;color:var(--sp-text)">{{ activity()!.exampleText }}</p>
+        </div>
+      </details>
+    }
+
+    <div>
+      <label class="sp-label" for="draft">Write your response</label>
+      <textarea
+        id="draft"
+        [(ngModel)]="draftText"
+        [disabled]="state() === 'submitting'"
+        rows="6"
+        placeholder="Write your response here…"
+        class="sp-input"
+        style="resize:vertical;min-height:140px;line-height:1.7"
+      ></textarea>
+      <span style="display:block;text-align:right;font-size:12px;color:var(--sp-faint);margin-top:4px">{{ wordCount }} words</span>
+    </div>
+
+    <button (click)="onSubmit()"
+      [disabled]="state() === 'submitting' || !draftText.trim()"
+      class="sp-button-primary"
+      style="width:100%">
+      @if (state() === 'submitting') { Getting feedback… } @else { Get feedback }
+    </button>
+
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">
+      Back to dashboard
+    </button>
+  </div>
+}
+
+<!-- Feedback state -->
+@if (state() === 'feedback' && feedback()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Score ring -->
+    <div class="sp-card" style="padding:20px;display:flex;align-items:center;gap:18px">
+      <div style="position:relative;width:68px;height:68px;flex-shrink:0">
+        <svg width="68" height="68" style="transform:rotate(-90deg)">
+          <circle cx="34" cy="34" r="28" stroke="var(--sp-canvas2)" stroke-width="7" fill="none"/>
+          <circle cx="34" cy="34" r="28" [attr.stroke]="scoreRingColour(feedback()!.score)" stroke-width="7" fill="none"
+            stroke-linecap="round"
+            [attr.stroke-dasharray]="175.93"
+            [attr.stroke-dashoffset]="feedback()!.score !== null ? 175.93 * (1 - feedback()!.score! / 100) : 175.93"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:17px;font-weight:800;color:var(--sp-ink)">
+            {{ feedback()!.score !== null ? feedback()!.score : '—' }}
+          </span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:var(--sp-ink)">Activity complete!</div>
+        <div style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-top:3px">Overall score</div>
+      </div>
+    </div>
+
+    <!-- What you did well -->
+    @if (feedback()!.whatYouDidWell.length) {
+      <div class="sp-card" style="padding:18px">
+        <p style="font-size:13px;font-weight:800;color:var(--sp-success);margin-bottom:10px">What you did well</p>
+        <ul style="display:flex;flex-direction:column;gap:6px;padding:0;margin:0;list-style:none">
+          @for (point of feedback()!.whatYouDidWell; track point) {
+            <li style="font-size:13.5px;color:var(--sp-text);line-height:1.55;display:flex;gap:8px;align-items:flex-start">
+              <span style="color:var(--sp-success);flex-shrink:0;margin-top:2px">●</span>{{ point }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Main mistakes -->
+    @if (feedback()!.mainMistakes.length) {
+      <div class="sp-card" style="padding:18px">
+        <p style="font-size:13px;font-weight:800;color:var(--sp-speaking);margin-bottom:10px">Areas to improve</p>
+        <ul style="display:flex;flex-direction:column;gap:6px;padding:0;margin:0;list-style:none">
+          @for (point of feedback()!.mainMistakes; track point) {
+            <li style="font-size:13.5px;color:var(--sp-text);line-height:1.55;display:flex;gap:8px;align-items:flex-start">
+              <span style="color:var(--sp-speaking);flex-shrink:0;margin-top:2px">●</span>{{ point }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Coach feedback in Persian -->
+    @if (feedback()!.feedbackInSourceLanguage) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Feedback in Persian</p>
+        <div class="sp-source-lang-block">{{ feedback()!.feedbackInSourceLanguage }}</div>
+      </div>
+    }
+
+    <!-- Corrected text -->
+    @if (feedback()!.correctedText) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="16" height="16" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Suggested rewrite
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:14px;line-height:1.7;color:var(--sp-text)">{{ feedback()!.correctedText }}</p>
+        </div>
+      </details>
+    }
+
+    <!-- Rewrite challenge -->
+    @if (feedback()!.rewriteChallenge) {
+      <div class="sp-card-soft" style="padding:16px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);margin-bottom:6px">✦ Rewrite challenge</p>
+        <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6">{{ feedback()!.rewriteChallenge }}</p>
+      </div>
+    }
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+      <button (click)="nextActivity()" class="sp-button-primary" style="width:100%">Next activity →</button>
+      <button (click)="tryAgain()" class="sp-button-ghost" style="width:100%">Try again</button>
+      <button (click)="backToDashboard()" class="sp-button-secondary" style="width:100%">Back to dashboard</button>
+    </div>
+  </div>
+}

@@ -1,364 +1,162 @@
-# Frontend Layout System Architecture
+# Frontend Layout System
 
-**Date**: 2026-06-04  
-**Status**: New
-
-## Why This Exists
-
-The previous design implementation scattered layout logic across individual page components. Every page duplicated:
-- Sidebar HTML and navigation links
-- Header structure
-- Mobile bottom nav
-- Content area wrappers
-- Card styling patterns
-
-This created maintenance burden and visual inconsistency. The layout system centralises these concerns so pages focus on their specific content and functionality.
-
-## Problem Statement
-
-### Previous Issues
-
-1. **Duplicated sidebar code**: Dashboard, activity, my-path, progress, and profile all had ~80 lines of identical sidebar HTML
-2. **Inconsistent content areas**: Each page defined its own padding, max-width, and spacing
-3. **Activity page broken layout**: Content started too low, leaving a giant blank area at the top
-4. **Login page cramped**: No proper public layout wrapper; inputs and cards poorly spaced
-5. **Admin pages visually inconsistent**: Some used top nav, some had no clear structure
-6. **No style centralisation**: Same padding, border-radius, and card styles repeated everywhere
-
-## Layout Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     App Component                        │
-│                    <router-outlet />                     │
-└─────────────────────────────────────────────────────────┘
-                          │
-          ┌───────────────┼───────────────┐
-          │               │               │
-          ▼               ▼               ▼
-   ┌──────────┐   ┌──────────────┐   ┌───────────┐
-   │  Public  │   │ StudentApp   │   │ AdminApp  │
-   │  Layout  │   │    Layout    │   │   Layout  │
-   └──────────┘   └──────────────┘   └───────────┘
-          │               │               │
-          │               │               │
-          ▼               ▼               ▼
-   ┌──────────┐   ┌──────────────┐   ┌───────────┐
-   │  Login   │   │  Dashboard   │   │  Admin    │
-   │ Landing  │   │  My Path     │   │ Dashboard │
-   │  Change  │   │  Activity    │   │ Students  │
-   │ Password │   │  Progress    │   │ AI Config │
-   │          │   │  Profile     │   │ Prompts   │
-   └──────────┘   └──────────────┘   └───────────┘
-```
-
-## Layout Variants
-
-### 1. PublicLayout
-
-**Purpose**: Unauthenticated pages that need a clean, focused presentation.
-
-**Structure**:
-```html
-<div class="sp-public-layout">
-  <div class="sp-public-card">
-    <!-- Page content here -->
-  </div>
-</div>
-```
-
-**Style characteristics**:
-- Centered content vertically and horizontally
-- Max width: 480px
-- Warm gradient background from `sp-app`
-- Clean white card with subtle shadow
-- No sidebar, no navigation
-
-**Used by**:
-- `/login`
-- `/` (landing)
-- `/change-password` (when unauthenticated flow needed)
+**Date**: 2026-06-04
+**Status**: Stabilised (layout-stabilisation-sprint)
 
 ---
 
-### 2. StudentAppLayout
+## Why the UI broke
 
-**Purpose**: Authenticated student experience – warm, encouraging, learning-focused.
+Several pages were written as standalone self-contained components that embedded the full sidebar, header, and mobile bottom-nav HTML directly in their own templates. These components were later moved under layout wrapper routes (e.g., `StudentAppLayoutComponent`) without removing the duplicated shell. This caused:
 
-**Structure**:
-```text
-┌─────────────────────────────────────────────────────────┐
-│                   sp-student-app                         │
-│  ┌────────────┐  ┌───────────────────────────────────┐  │
-│  │            │  │           sp-header               │  │
-│  │  sp-sidebar│  │  - Greeting                       │  │
-│  │            │  │  - User avatar/actions            │  │
-│  │  - Logo    │  ├───────────────────────────────────┤  │
-│  │  - Nav     │  │                                   │  │
-│  │  - Streak  │  │         sp-content                │  │
-│  │  - Sign out│  │                                   │  │
-│  │            │  │    Page-specific content here     │  │
-│  │            │  │                                   │  │
-│  └────────────┘  └───────────────────────────────────┘  │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │              sp-bottom-nav (mobile only)            ││
-│  └─────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────┘
-```
+- **Double sidebar** on desktop (one from layout, one from the page template)
+- **Double mobile bottom nav** (fixed-position overlay stacking)
+- **Giant blank space** on pages where an inner header competed with the layout header
+- **Cramped or broken spacing** because inner `.sp-content` max-width was inside another `.sp-content`
 
-**Style characteristics**:
-- Left sidebar: Fixed/sticky, 264px wide on desktop, hidden on mobile
-- Sidebar background: Semi-transparent with backdrop blur
-- Main header: Sticky top, greeting + user actions
-- Content area: Max-width 1080px, consistent padding
-- Mobile bottom nav: Fixed position, appears <900px
+Affected pages at the time of the layout stabilisation sprint:
+- `learning-path.component.html` — full sidebar + bottomnav duplicated
+- `progress.component.ts` — full sidebar + bottomnav duplicated
+- `profile.component.ts` — full sidebar + bottomnav duplicated
+- `activity-lesson.component.html` — empty file (template was never written)
 
-**Visual tone**:
-- Warm gradient backgrounds
-- Colourful skill badges
-- Encouraging microcopy
-- Rounded corners (18–28px)
-- Soft shadows and glows
-
-**Used by**:
-- `/dashboard`
-- `/my-path`
-- `/activity`
-- `/progress`
-- `/profile`
+An additional issue: `PublicLayoutComponent` had an extra `sp-public-card` wrapper inside it, causing a double-card on the login page (the login component already renders its own `sp-public-card`).
 
 ---
 
-### 3. AdminAppLayout
+## Final Layout Architecture
 
-**Purpose**: Admin management interface – professional, structured, efficient.
-
-**Structure**:
-```text
-┌─────────────────────────────────────────────────────────┐
-│                   sp-admin-app                           │
-│  ┌───────────────────────────────────────────────────┐  │
-│  │              sp-admin-topnav                      │  │
-│  │  - Logo      - Students - AI Config - Settings   │  │
-│  └───────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────┐  │
-│  │                                                   │  │
-│  │              sp-admin-content                     │  │
-│  │                                                   │  │
-│  │    Management cards, tables, forms                │  │
-│  │                                                   │  │
-│  └───────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
+```
+AppComponent (router-outlet)
+├── PublicLayoutComponent       → login, landing, change-password
+│   └── <router-outlet>         (child renders sp-public-card directly)
+├── StudentAppLayoutComponent   → dashboard, my-path, activity, progress, profile, onboarding
+│   ├── sp-student-sidebar      (desktop only, ≥900px)
+│   ├── sp-student-header       (greeting + avatar)
+│   ├── sp-student-content      (router-outlet — page content only)
+│   └── sp-bottomnav            (mobile, fixed bottom)
+└── AdminAppLayoutComponent     → /admin/**
+    ├── sp-admin-topnav          (sticky top nav)
+    └── sp-admin-content         (router-outlet — page content only)
 ```
 
-**Style characteristics**:
-- Top navigation bar (not sidebar)
-- Clean white/neutral backgrounds
-- Professional card designs
-- Less playful than student UI
-- Clear data tables and forms
-- Management-focused layouts
+### Rule: pages render content only
 
-**Visual tone**:
-- Slate/neutral colour palette
-- Indigo accent colour
-- Structured grids
-- Professional typography
-- Minimal decorative elements
-
-**Used by**:
-- `/admin` (redirects to students)
-- `/admin/students`
-- `/admin/create-student`
-- `/admin/ai-config`
-- `/admin/prompts`
-- `/admin/careers`
+Every component rendered inside a layout must output **only page content** — no `<aside>`, no `<nav>`, no full-page wrappers. The layout component owns the shell.
 
 ---
 
-## Central CSS Classes
+## Route → Layout Mapping
 
-### Layout Primitives
+| Route | Layout |
+|---|---|
+| `/` | `PublicLayoutComponent` |
+| `/login` | `PublicLayoutComponent` |
+| `/change-password` | `PublicLayoutComponent` |
+| `/dashboard` | `StudentAppLayoutComponent` |
+| `/my-path` | `StudentAppLayoutComponent` |
+| `/activity` | `StudentAppLayoutComponent` |
+| `/progress` | `StudentAppLayoutComponent` |
+| `/profile` | `StudentAppLayoutComponent` |
+| `/assessment` | `StudentAppLayoutComponent` |
+| `/speaking` | `StudentAppLayoutComponent` |
+| `/onboarding/**` | `StudentAppLayoutComponent` |
+| `/admin/**` | `AdminAppLayoutComponent` |
 
-```css
-.sp-public-layout       /* Full-page centered layout wrapper */
-.sp-public-card         /* Centered card for public pages */
+---
 
-.sp-student-app         /* Student app root */
-.sp-sidebar             /* Left sidebar container */
-.sp-sidebar-collapsed   /* Collapsed sidebar state (future) */
-.sp-main                /* Main content column */
-.sp-header              /* Page header bar */
-.sp-content             /* Content area with max-width + padding */
+## PublicLayout Rules
 
-.sp-admin-app           /* Admin app root */
-.sp-admin-topnav        /* Admin top navigation bar */
-.sp-admin-content       /* Admin content area */
+- Full-page centered background (`sp-public-layout`)
+- No sidebar, no topnav, no bottom nav
+- Each child page is responsible for rendering its own `sp-public-card` wrapper
+- Used for: login, landing, change-password
 
-.sp-bottom-nav          /* Mobile bottom navigation */
-```
+## StudentAppLayout Rules
 
-### Card Patterns
+- Desktop (≥900px): sticky left sidebar (264px) + main column
+- Mobile (<900px): fixed bottom nav (5 items, Practice is raised center button)
+- Header shows greeting + avatar + streak pill
+- `sp-student-content` caps width at `520px` mobile / `1080px` desktop with correct padding
+- Child pages must not add their own sidebar, header, or bottom nav
+- Child pages must not use `sp-app`, `sp-side`, or `sp-bottomnav`
 
-```css
-.sp-card                /* Base card – surface, border, radius, shadow */
-.sp-card-pad            /* Card with padding */
-.sp-card-soft           /* Card with soft gradient background */
-.sp-admin-card          /* Admin-specific card style */
-.sp-student-card        /* Student-specific card style */
-.sp-stat-card           /* Stat tile grid item */
-.sp-module-card         /* Learning module card */
-```
+## AdminAppLayout Rules
 
-### Navigation
+- Sticky top navigation bar with brand + nav links + sign-out
+- `sp-admin-content` max-width 1200px with padding
+- No sidebar, no bottom nav
+- Visually distinct from student UI (no gamification, clean data-table aesthetic)
+- Child pages output content only (headings, tables, forms)
 
-```css
-.sp-sidelink            /* Sidebar navigation link */
-.sp-sidelink-active     /* Active sidebar link */
-.sp-navbtn              /* Mobile bottom nav button */
-.sp-navbtn-active       /* Active bottom nav button */
-.sp-admin-navlink       /* Admin top nav link */
-.sp-admin-navlink-active /* Active admin nav link */
-```
+---
 
-### Typography & Sections
+## Central CSS Class Strategy
 
-```css
-.sp-h1                  /* H1 heading – responsive size */
-.sp-section-h           /* Section header with optional action link */
-.sp-page-header         /* Page-level header block */
-.sp-greet-sm            /* Small greeting text */
-.sp-greet-lg            /* Large greeting text */
-```
+All design tokens and utility classes live in `src/styles.css`. Key classes:
 
-### Form Elements
+| Class | Purpose |
+|---|---|
+| `sp-student-app` | Student layout root flex container |
+| `sp-student-sidebar` | Desktop sidebar (hidden on mobile) |
+| `sp-student-main` | Main column flex container |
+| `sp-student-header` | Top header bar inside main column |
+| `sp-student-content` | Scrollable content area (max-width + padding) |
+| `sp-admin-app` | Admin layout root |
+| `sp-admin-topnav` | Sticky admin top nav |
+| `sp-admin-content` | Admin content area |
+| `sp-public-layout` | Full-page centered wrapper for auth pages |
+| `sp-public-card` | White card for login/auth forms |
+| `sp-card`, `sp-card-soft` | Content cards |
+| `sp-stat-grid` | 3-column stat grid |
+| `sp-skill-grid` | 2-col mobile / 5-col desktop skill grid |
+| `sp-grid-2col` | 2-column responsive grid |
+| `sp-section-h` | Section heading row with optional action link |
+| `sp-button-primary`, `sp-button-ghost`, `sp-button-secondary` | Button variants |
+| `sp-input`, `sp-label` | Form elements |
+| `sp-alert-info`, `sp-alert-error`, etc. | Alert banners |
+| `sp-source-lang-block` | RTL Persian text block |
+| `sp-empty-state` | Centered empty/placeholder state |
+| `sp-loading-pulse` | Animated skeleton loader |
 
-```css
-.sp-input               /* Input field with focus states */
-.sp-label               /* Form label */
-.sp-button-primary      /* Primary button with gradient */
-.sp-button-secondary    /* Secondary button */
-.sp-button-ghost        /* Ghost/outline button */
-```
+Do not add random `margin-top` or `padding-top` to fix spacing issues. Fix the layout structure instead.
 
-## Right Slide-In Panel (Future)
+---
 
-The StudentAppLayout includes structural support for a future right slide-in panel:
+## Placeholder Strategy
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  Sidebar  │  Main Content  │  [Right Panel – Future]   │
-│           │                │                           │
-│           │                │  - Context hints          │
-│           │                │  - Vocabulary preview     │
-│           │                │  - Related activities     │
-│           │                │  - Coach tips             │
-│           │                │                           │
-└─────────────────────────────────────────────────────────┘
-```
+- Stats not yet tracked: show `—` value + `Coming soon` label below
+- Skills not yet implemented: show at 60% opacity with `Coming soon` badge
+- Features not yet built: `sp-empty-state` with honest label + CTA to available feature
+- Never show fake data (e.g., fake streak count, fake score)
 
-**Implementation notes**:
-- Panel should be fixed/sticky on desktop
-- Slide-in animation from right
-- Overlay on mobile when open
-- Not implemented in this sprint – only structural consideration
+---
 
-## How It Works
+## Future: Right Slide-In Panel
 
-### Routing Pattern
+The activity flow may eventually use a right-side slide-in panel for coach feedback, keeping the scenario visible on the left. This is not implemented yet. When added, it should be a fixed overlay or CSS Grid column extension inside `StudentAppLayoutComponent`, not added inline per page.
 
-Angular routes use outlet patterns to assign layouts:
+---
 
-```typescript
-{
-  path: '',
-  component: PublicLayoutComponent,
-  children: [
-    { path: '', component: LandingComponent },
-    { path: 'login', component: LoginComponent },
-  ]
-},
-{
-  path: '',
-  component: StudentAppLayoutComponent,
-  canActivate: [authGuard],
-  children: [
-    { path: 'dashboard', component: DashboardComponent },
-    { path: 'my-path', component: LearningPathComponent },
-    // ...
-  ]
-},
-{
-  path: 'admin',
-  component: AdminAppLayoutComponent,
-  canActivate: [adminGuard],
-  children: [
-    // ...
-  ]
-}
-```
+## Testing Checklist
 
-### Component Usage
+After any layout change, verify these pages in browser:
 
-Pages no longer include sidebar/header HTML. They only define their content:
+- [ ] `/login` — centered card, no sidebar, works on mobile
+- [ ] `/dashboard` — sidebar visible on desktop, hero card, stat grid, skill cards
+- [ ] `/my-path` — no duplicate sidebar, module journey renders
+- [ ] `/activity` — stepper visible, lesson/writing/feedback states work
+- [ ] `/progress` — no duplicate sidebar, stat tiles, skill levels
+- [ ] `/profile` — no duplicate sidebar, sign-out button accessible
+- [ ] `/admin` → `/admin/students` — admin topnav, no sidebar, clean table
+- [ ] `/admin/create-student` — clean form, no sidebar
+- [ ] `/admin/ai-config` — provider cards render
 
-```html
-<!-- Before: dashboard.component.html -->
-<div class="sp-app">
-  <aside class="sp-side">
-    <!-- 80 lines of sidebar -->
-  </aside>
-  <div style="flex:1...">
-    <header class="sp-topbar">...</header>
-    <main class="sp-content">...</main>
-  </div>
-</div>
-
-<!-- After: dashboard.component.html -->
-<h1>Your Dashboard</h1>
-<p>Welcome back, {{ firstName() }}</p>
-<!-- Just the page-specific content -->
-```
-
-## Failure Modes
-
-### What Happens If Layout Fails to Load?
-
-- Router falls back to bare `<router-outlet />`
-- Page content still renders, just without layout wrapper
-- No white screen of death
-
-### What Happens If CSS Classes Conflict?
-
-- Specific naming (`sp-` prefix) avoids collisions
-- Tailwind utilities can override where needed
-- Page-specific styles should be minimal and additive
-
-## Extension Points
-
-### Adding a New Student Page
-
-1. Create component in `features/your-feature/`
-2. Add route under StudentAppLayout children
-3. Write page content only – no layout HTML needed
-4. Use central CSS classes for consistency
-
-### Adding a New Admin Page
-
-1. Create component in `features/admin/your-feature/`
-2. Add route under AdminAppLayout children
-3. Use admin card patterns and data tables
-
-### Modifying the Sidebar
-
-1. Edit `student-app-layout` component only
-2. Changes propagate to all student pages
-3. No need to touch individual page components
-
-## Key Invariants
-
-1. **Student pages never duplicate sidebar HTML** – Single source of truth in layout component
-2. **Admin pages never use student layout** – Visual distinction maintained
-3. **Public pages never require auth** – Login flow remains accessible
-4. **Mobile bottom nav only on student layout** – Admin uses responsive top nav
-5. **Content area max-width consistent** – 1080px on desktop, full width on mobile
+Check for:
+- No double sidebar on desktop
+- No double bottom nav on mobile
+- No giant blank area at top of pages
+- No horizontal overflow
+- Active nav state highlights correct item
+- Sign out accessible from student profile and admin topnav
+- Mobile layout usable (bottom nav, content readable)
