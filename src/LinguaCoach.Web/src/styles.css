@@ -434,10 +434,10 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 }
 .sp-student-header{
   display:flex;align-items:center;justify-content:space-between;
-  max-width:1080px;margin:0 auto;width:100%;
+  width:100%;
   padding:16px 18px 4px;
 }
-@media(min-width:900px){.sp-student-header{padding:30px 40px 4px;}}
+@media(min-width:900px){.sp-student-header{padding:16px 32px;}}
 .sp-student-content{
   flex:1;width:100%;max-width:520px;margin:0 auto;
   padding:18px 18px 108px;
