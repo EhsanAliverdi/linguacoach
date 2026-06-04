@@ -142,7 +142,7 @@ public class ActivityTestFactory : ApiTestFactory
     }
 }
 
-/// <summary>Deterministic fake AI provider. Returns a valid structured JSON response. No real API calls.</summary>
+/// <summary>Deterministic fake AI provider. Returns a valid structured JSON response including new diff/changes fields. No real API calls.</summary>
 internal sealed class FakeAiProvider : IAiProvider
 {
     public string ProviderName => "fake-provider";
@@ -152,18 +152,40 @@ internal sealed class FakeAiProvider : IAiProvider
         const string json = """
             {
               "overallScore": 68,
+              "coachSummary": "Good effort — your message is clear but the tone needs polishing.",
+              "focusFirst": false,
+              "changes": [
+                {
+                  "type": "replace",
+                  "original": "please send",
+                  "suggested": "Could you please send",
+                  "reason": "Modal verbs make requests more polite in professional emails.",
+                  "category": "tone",
+                  "severity": "high"
+                },
+                {
+                  "type": "replace",
+                  "original": "Dear John",
+                  "suggested": "Dear John,",
+                  "reason": "Always place a comma after the salutation in formal emails.",
+                  "category": "punctuation",
+                  "severity": "medium"
+                }
+              ],
+              "improvedVersion": "Dear John,\n\nI hope this email finds you well. Could you please send the updated document at your earliest convenience?\n\nBest regards",
               "correctedEmail": "Dear John,\n\nI hope this email finds you well. I wanted to follow up on the submittal we sent last week.\n\nBest regards",
               "feedbackInSourceLanguage": "ایمیل شما خوب بود اما می‌توانید رسمی‌تر بنویسید.",
               "grammarIssues": ["Missing comma after 'John'"],
               "vocabularyIssues": [],
-              "toneIssues": [],
-              "suggestedPhrases": ["I would appreciate your response at your earliest convenience"],
-              "mistakesToTrack": ["comma after salutation"],
+              "toneIssues": ["'please send' should be 'Could you please send'"],
+              "clarityIssues": [],
               "whatYouDidWell": ["Good use of formal greeting"],
               "mainMistakes": ["Missing comma after salutation"],
               "grammarExplanation": "Always place a comma after the salutation in formal emails.",
               "toneExplanation": "Your tone was professional throughout.",
               "vocabularyToRemember": ["at your earliest convenience"],
+              "miniLesson": "Use modal verbs like 'could' and 'would' to make requests polite.",
+              "nextImprovementStep": "Try rewriting your request sentence using 'Could you please...'",
               "rewriteChallenge": "Rewrite the opening using 'I hope this email finds you well'.",
               "nextPracticeSuggestion": "Try writing an email to explain a delay.",
               "situation": "Test situation",

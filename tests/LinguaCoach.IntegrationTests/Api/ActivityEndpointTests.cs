@@ -111,6 +111,126 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
 }
 
 /// <summary>
+/// T-Sprint4: Structured feedback (changes list, coachSummary, miniLesson, etc.) and retry flow.
+/// </summary>
+public sealed class ActivityStructuredFeedbackTests : IClassFixture<ActivityTestFactory>
+{
+    private readonly ActivityTestFactory _factory;
+
+    public ActivityStructuredFeedbackTests(ActivityTestFactory factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task SubmitAttempt_WithFakeAi_ReturnsFeedbackWithChangesArray()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"struct_fb_{Guid.NewGuid():N}@test.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
+        var activityId = nextBody.GetProperty("activityId").GetString()!;
+
+        var resp = await client.PostAsJsonAsync(
+            $"/api/activity/{activityId}/attempt",
+            new { submittedContent = "Dear John please send me the document." });
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        // New fields must be present
+        Assert.True(body.TryGetProperty("coachSummary", out var cs) && cs.GetString() is { Length: > 0 });
+        Assert.True(body.TryGetProperty("changes", out var changes));
+        Assert.Equal(JsonValueKind.Array, changes.ValueKind);
+        Assert.True(changes.GetArrayLength() >= 1);
+
+        var firstChange = changes[0];
+        Assert.True(firstChange.TryGetProperty("type", out _));
+        Assert.True(firstChange.TryGetProperty("original", out _));
+        Assert.True(firstChange.TryGetProperty("suggested", out _));
+        Assert.True(firstChange.TryGetProperty("reason", out _));
+        Assert.True(firstChange.TryGetProperty("category", out _));
+        Assert.True(firstChange.TryGetProperty("severity", out _));
+
+        // Improved version must come from improvedVersion field (not old correctedEmail)
+        Assert.True(body.TryGetProperty("correctedText", out var ct) && ct.GetString() is { Length: > 0 });
+
+        // Mini lesson and next improvement step
+        Assert.True(body.TryGetProperty("miniLesson", out var ml) && ml.GetString() is { Length: > 0 });
+        Assert.True(body.TryGetProperty("nextImprovementStep", out var ni) && ni.GetString() is { Length: > 0 });
+    }
+
+    [Fact]
+    public async Task SubmitAttempt_TwiceForSameActivity_CreatesTwoSeparateAttempts()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"retry_{Guid.NewGuid():N}@test.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
+        var activityId = nextBody.GetProperty("activityId").GetString()!;
+
+        // First attempt
+        var resp1 = await client.PostAsJsonAsync(
+            $"/api/activity/{activityId}/attempt",
+            new { submittedContent = "Dear John please send me the document." });
+        Assert.Equal(HttpStatusCode.OK, resp1.StatusCode);
+        var body1 = await resp1.Content.ReadFromJsonAsync<JsonElement>();
+        var attemptId1 = body1.GetProperty("attemptId").GetString()!;
+
+        // Second attempt (same activity — improved version)
+        var resp2 = await client.PostAsJsonAsync(
+            $"/api/activity/{activityId}/attempt",
+            new { submittedContent = "Dear John, could you please send me the document at your earliest convenience?" });
+        Assert.Equal(HttpStatusCode.OK, resp2.StatusCode);
+        var body2 = await resp2.Content.ReadFromJsonAsync<JsonElement>();
+        var attemptId2 = body2.GetProperty("attemptId").GetString()!;
+
+        // Two different attempt IDs
+        Assert.NotEqual(attemptId1, attemptId2);
+
+        // Both attempts persisted in DB, neither overwrote the other
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        var attempts = db.ActivityAttempts
+            .Where(a => a.StudentProfileId == profile.Id && a.LearningActivityId == Guid.Parse(activityId))
+            .OrderBy(a => a.CreatedAt)
+            .ToList();
+
+        Assert.Equal(2, attempts.Count);
+        Assert.Contains(attempts, a => a.Id == Guid.Parse(attemptId1));
+        Assert.Contains(attempts, a => a.Id == Guid.Parse(attemptId2));
+        // First attempt data not overwritten
+        Assert.Contains("please send me the document", attempts[0].SubmittedContent);
+        Assert.Contains("earliest convenience", attempts[1].SubmittedContent);
+    }
+
+    [Fact]
+    public async Task SubmitAttempt_WhenAiReturnsFocusFirst_FeedbackReflectsFlag()
+    {
+        // The FakeAiProvider returns focusFirst: false by default — this test
+        // verifies the flag passes through correctly (value is false from fake).
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"focusfirst_{Guid.NewGuid():N}@test.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
+        var activityId = nextBody.GetProperty("activityId").GetString()!;
+
+        var resp = await client.PostAsJsonAsync(
+            $"/api/activity/{activityId}/attempt",
+            new { submittedContent = "Test message for focus first check." });
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.TryGetProperty("focusFirst", out var ff));
+        Assert.Equal(JsonValueKind.False, ff.ValueKind); // fake provider returns false
+    }
+}
+
+/// <summary>
 /// Test factory with a failing IAiActivityGenerator so we can test the SystemFallback path.
 /// </summary>
 public sealed class ActivityFallbackTestFactory : ActivityTestFactory

@@ -1,5 +1,14 @@
 namespace LinguaCoach.Application.LearningPath;
 
+// ── Complete module ───────────────────────────────────────────────────────────
+
+public sealed record CompleteModuleCommand(Guid UserId, Guid ModuleId);
+
+public interface ICompleteModuleHandler
+{
+    Task HandleAsync(CompleteModuleCommand command, CancellationToken ct = default);
+}
+
 // ── Generate learning path ────────────────────────────────────────────────────
 
 public sealed record GenerateLearningPathCommand(Guid UserId);
@@ -25,6 +34,25 @@ public interface IGetLearningPathHandler
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
+/// <summary>The student's current weakness focus area, derived from recent feedback.</summary>
+public sealed record LearningFocusAreaDto(
+    string Category,           // e.g. "tone"
+    string FriendlyLabel,      // e.g. "Polite workplace tone"
+    int Frequency);            // how many times this category appeared in last 5 attempts
+
+public sealed record LearningModuleDto(
+    Guid ModuleId,
+    string Title,
+    string Description,
+    int Order,
+    int CompletedActivities,   // distinct LearningActivity IDs attempted (not retry count)
+    int TotalActivities,       // CompletionThreshold (3)
+    bool IsCurrent,
+    bool IsCompleted,          // CompletedAt is set on the module
+    bool IsReadyToComplete,    // distinctCompleted >= 3 AND averageScore >= 75
+    double? AverageScore,      // average score across all attempts in this module
+    double? LatestScore);      // most recent attempt score in this module
+
 public sealed record LearningPathDto(
     Guid PathId,
     string Title,
@@ -32,13 +60,5 @@ public sealed record LearningPathDto(
     LearningModuleDto? CurrentModule,
     int ModulesCompleted,
     int TotalModules,
-    IReadOnlyList<LearningModuleDto> Modules);
-
-public sealed record LearningModuleDto(
-    Guid ModuleId,
-    string Title,
-    string Description,
-    int Order,
-    int CompletedActivities,
-    int TotalActivities,
-    bool IsCurrent);
+    IReadOnlyList<LearningModuleDto> Modules,
+    LearningFocusAreaDto? CurrentFocus = null);

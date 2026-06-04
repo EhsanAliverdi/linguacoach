@@ -72,6 +72,14 @@
       </div>
     }
 
+    <!-- Learning goal -->
+    @if (activity()!.learningGoal) {
+      <div style="display:flex;align-items:flex-start;gap:10px;background:var(--sp-success-soft);border-radius:var(--sp-r);padding:14px 16px">
+        <svg width="16" height="16" fill="none" stroke="var(--sp-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <p style="font-size:13px;font-weight:600;color:var(--sp-text);line-height:1.55;margin:0">{{ activity()!.learningGoal }}</p>
+      </div>
+    }
+
     <!-- Persian instruction -->
     @if (activity()!.instructionInSourceLanguage) {
       <div class="sp-source-lang-block">{{ activity()!.instructionInSourceLanguage }}</div>
@@ -96,6 +104,20 @@
       </div>
     }
 
+    <!-- Example (collapsed) -->
+    @if (activity()!.exampleText) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          See an example
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13.5px;line-height:1.7;color:var(--sp-text)">{{ activity()!.exampleText }}</p>
+        </div>
+      </details>
+    }
+
     <button (click)="startWriting()" class="sp-button-primary" style="width:100%;margin-top:4px">
       Start writing →
     </button>
@@ -105,6 +127,14 @@
 <!-- Writing state -->
 @if ((state() === 'writing' || state() === 'submitting') && activity()) {
   <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Attempt counter if retrying -->
+    @if (attemptCount() > 0) {
+      <div style="display:flex;align-items:center;gap:8px;background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 14px">
+        <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span style="font-size:12.5px;font-weight:700;color:var(--sp-text)">Attempt {{ attemptCount() + 1 }} — apply the suggestions and rewrite</span>
+      </div>
+    }
 
     <!-- Compact situation reminder -->
     @if (activity()!.situation) {
@@ -116,6 +146,15 @@
     <!-- Persian instruction reminder -->
     @if (activity()!.instructionInSourceLanguage) {
       <div class="sp-source-lang-block" style="font-size:13px">{{ activity()!.instructionInSourceLanguage }}</div>
+    }
+
+    <!-- Phrase chips -->
+    @if (activity()!.targetPhrases.length) {
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        @for (phrase of activity()!.targetPhrases; track phrase) {
+          <span class="sp-phrase-chip" style="font-size:12px;cursor:pointer" (click)="draftText = draftText + (draftText.endsWith(' ') || !draftText ? '' : ' ') + phrase">{{ phrase }}</span>
+        }
+      </div>
     }
 
     <!-- Example text hint (collapsed) -->
@@ -138,10 +177,10 @@
         id="draft"
         [(ngModel)]="draftText"
         [disabled]="state() === 'submitting'"
-        rows="6"
+        rows="7"
         placeholder="Write your response here…"
         class="sp-input"
-        style="resize:vertical;min-height:140px;line-height:1.7"
+        style="resize:vertical;min-height:160px;line-height:1.7"
       ></textarea>
       <span style="display:block;text-align:right;font-size:12px;color:var(--sp-faint);margin-top:4px">{{ wordCount }} words</span>
     </div>
@@ -150,7 +189,7 @@
       [disabled]="state() === 'submitting' || !draftText.trim()"
       class="sp-button-primary"
       style="width:100%">
-      @if (state() === 'submitting') { Getting feedback… } @else { Get feedback }
+      @if (state() === 'submitting') { Getting coach feedback… } @else { Get coach feedback }
     </button>
 
     <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">
@@ -163,79 +202,151 @@
 @if (state() === 'feedback' && feedback()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
-    <!-- Score ring -->
-    <div class="sp-card" style="padding:20px;display:flex;align-items:center;gap:18px">
-      <div style="position:relative;width:68px;height:68px;flex-shrink:0">
-        <svg width="68" height="68" style="transform:rotate(-90deg)">
-          <circle cx="34" cy="34" r="28" stroke="var(--sp-canvas2)" stroke-width="7" fill="none"/>
-          <circle cx="34" cy="34" r="28" [attr.stroke]="scoreRingColour(feedback()!.score)" stroke-width="7" fill="none"
+    <!-- Score card -->
+    <div class="sp-card-soft" style="padding:20px;display:flex;align-items:center;gap:18px;border-radius:var(--sp-r-lg)">
+      <div style="position:relative;width:72px;height:72px;flex-shrink:0">
+        <svg width="72" height="72" style="transform:rotate(-90deg)">
+          <circle cx="36" cy="36" r="30" stroke="var(--sp-border2)" stroke-width="7" fill="none"/>
+          <circle cx="36" cy="36" r="30" [attr.stroke]="scoreRingColour(feedback()!.score)" stroke-width="7" fill="none"
             stroke-linecap="round"
-            [attr.stroke-dasharray]="175.93"
-            [attr.stroke-dashoffset]="feedback()!.score !== null ? 175.93 * (1 - feedback()!.score! / 100) : 175.93"/>
+            [attr.stroke-dasharray]="188.5"
+            [attr.stroke-dashoffset]="feedback()!.score !== null ? 188.5 * (1 - feedback()!.score! / 100) : 188.5"/>
         </svg>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-          <span style="font-size:17px;font-weight:800;color:var(--sp-ink)">
+          <span style="font-size:18px;font-weight:800;color:var(--sp-ink)">
             {{ feedback()!.score !== null ? feedback()!.score : '—' }}
           </span>
         </div>
       </div>
-      <div>
-        <div style="font-size:14px;font-weight:800;color:var(--sp-ink)">Activity complete!</div>
-        <div style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-top:3px">Overall score</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:800;color:var(--sp-ink)">{{ scoreBandLabel(feedback()!.score) }}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-top:2px">
+          Attempt {{ attemptCount() }}
+          @if (previousScore() !== null && feedback()!.score !== null) {
+            <span style="margin-left:6px;font-weight:700"
+              [style.color]="feedback()!.score! > previousScore()! ? 'var(--sp-success)' : 'var(--sp-speaking)'">
+              {{ scoreImprovementMessage() }}
+            </span>
+          }
+        </div>
       </div>
     </div>
+
+    <!-- Coach summary -->
+    @if (feedback()!.coachSummary) {
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="sp-coach-bubble" style="flex:1;font-size:13.5px;color:var(--sp-text);line-height:1.65">
+          {{ feedback()!.coachSummary }}
+        </div>
+      </div>
+    }
 
     <!-- What you did well -->
     @if (feedback()!.whatYouDidWell.length) {
       <div class="sp-card" style="padding:18px">
-        <p style="font-size:13px;font-weight:800;color:var(--sp-success);margin-bottom:10px">What you did well</p>
-        <ul style="display:flex;flex-direction:column;gap:6px;padding:0;margin:0;list-style:none">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-success);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">What you did well</p>
+        <ul style="display:flex;flex-direction:column;gap:7px;padding:0;margin:0;list-style:none">
           @for (point of feedback()!.whatYouDidWell; track point) {
-            <li style="font-size:13.5px;color:var(--sp-text);line-height:1.55;display:flex;gap:8px;align-items:flex-start">
-              <span style="color:var(--sp-success);flex-shrink:0;margin-top:2px">●</span>{{ point }}
+            <li style="font-size:13.5px;color:var(--sp-text);line-height:1.55;display:flex;gap:9px;align-items:flex-start">
+              <svg width="14" height="14" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:3px"><polyline points="20 6 9 17 4 12"/></svg>
+              {{ point }}
             </li>
           }
         </ul>
       </div>
     }
 
-    <!-- Main mistakes -->
-    @if (feedback()!.mainMistakes.length) {
+    <!-- Suggested changes (diff list) -->
+    @if (feedback()!.changes.length) {
       <div class="sp-card" style="padding:18px">
-        <p style="font-size:13px;font-weight:800;color:var(--sp-speaking);margin-bottom:10px">Areas to improve</p>
-        <ul style="display:flex;flex-direction:column;gap:6px;padding:0;margin:0;list-style:none">
-          @for (point of feedback()!.mainMistakes; track point) {
-            <li style="font-size:13.5px;color:var(--sp-text);line-height:1.55;display:flex;gap:8px;align-items:flex-start">
-              <span style="color:var(--sp-speaking);flex-shrink:0;margin-top:2px">●</span>{{ point }}
-            </li>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);letter-spacing:.04em;text-transform:uppercase;margin:0">Suggested changes</p>
+          @if (feedback()!.focusFirst) {
+            <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:11px">Focus on these first</span>
           }
-        </ul>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          @for (change of feedback()!.changes; track $index) {
+            <div class="sp-diff-item">
+              <!-- Original phrase (removed style) -->
+              @if (change.type !== 'add' && change.original) {
+                <div class="sp-diff-remove" style="margin-bottom:6px">
+                  <span style="font-size:11px;font-weight:700;color:var(--sp-warn);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">Before</span>
+                  <span style="font-size:13.5px;font-weight:500;text-decoration:line-through">{{ change.original }}</span>
+                </div>
+              }
+              <!-- Suggested phrase (added style) -->
+              @if (change.type !== 'remove' && change.suggested) {
+                <div class="sp-diff-add" style="margin-bottom:8px">
+                  <span style="font-size:11px;font-weight:700;color:var(--sp-success);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">After</span>
+                  <span style="font-size:13.5px;font-weight:600">{{ change.suggested }}</span>
+                </div>
+              }
+              <!-- Reason + category badge -->
+              <div style="display:flex;align-items:flex-start;gap:8px">
+                @if (change.category) {
+                  <span class="sp-pill" style="font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px"
+                    [style.background]="categoryColour(change.category) + '22'"
+                    [style.color]="categoryColour(change.category)">
+                    {{ categoryLabel(change.category) }}
+                  </span>
+                }
+                @if (change.reason) {
+                  <span style="font-size:12.5px;color:var(--sp-muted);line-height:1.55">{{ change.reason }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        @if (feedback()!.focusFirst) {
+          <p style="font-size:12px;color:var(--sp-muted);margin-top:14px;border-top:1px solid var(--sp-border);padding-top:10px">There are more improvements possible. Fix these first, then try again.</p>
+        }
       </div>
     }
 
-    <!-- Coach feedback in Persian -->
+    <!-- Persian explanation -->
     @if (feedback()!.feedbackInSourceLanguage) {
       <div>
-        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Feedback in Persian</p>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">توضیح به فارسی</p>
         <div class="sp-source-lang-block">{{ feedback()!.feedbackInSourceLanguage }}</div>
       </div>
     }
 
-    <!-- Corrected text -->
+    <!-- Mini lesson -->
+    @if (feedback()!.miniLesson) {
+      <div style="background:var(--sp-writing-soft);border-radius:var(--sp-r);padding:16px;border-left:3px solid var(--sp-writing)">
+        <p style="font-size:11px;font-weight:800;color:var(--sp-writing-ink);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Lesson</p>
+        <p style="font-size:13.5px;color:var(--sp-text);line-height:1.65;margin:0">{{ feedback()!.miniLesson }}</p>
+      </div>
+    }
+
+    <!-- Next improvement step -->
+    @if (feedback()!.nextImprovementStep) {
+      <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Next step to try</p>
+        <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ feedback()!.nextImprovementStep }}</p>
+      </div>
+    }
+
+    <!-- Suggested improved version (collapsible — clearly labelled as suggestion) -->
     @if (feedback()!.correctedText) {
       <details class="sp-collapsible">
         <summary>
-          <svg width="16" height="16" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Suggested rewrite
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Suggested improved version
           <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </summary>
         <div class="sp-collapsible-body">
-          <p style="font-size:14px;line-height:1.7;color:var(--sp-text)">{{ feedback()!.correctedText }}</p>
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">This is one possible improvement — try writing your own version first.</p>
+          <p style="font-size:14px;line-height:1.75;color:var(--sp-text);white-space:pre-wrap">{{ feedback()!.correctedText }}</p>
         </div>
       </details>
     }
 
-    <!-- Rewrite challenge -->
+    <!-- Rewrite challenge card -->
     @if (feedback()!.rewriteChallenge) {
       <div class="sp-card-soft" style="padding:16px">
         <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);margin-bottom:6px">✦ Rewrite challenge</p>
@@ -243,10 +354,20 @@
       </div>
     }
 
+    <!-- Action buttons -->
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
-      <button (click)="nextActivity()" class="sp-button-primary" style="width:100%">Next activity →</button>
-      <button (click)="tryAgain()" class="sp-button-ghost" style="width:100%">Try again</button>
-      <button (click)="backToDashboard()" class="sp-button-secondary" style="width:100%">Back to dashboard</button>
+      <button (click)="improveAnswer()" class="sp-button-primary" style="width:100%">
+        Improve my answer →
+      </button>
+      <button (click)="tryAgain()" class="sp-button-ghost" style="width:100%">
+        Try again from scratch
+      </button>
+      <button (click)="nextActivity()" class="sp-button-secondary" style="width:100%">
+        Next activity
+      </button>
+      <button (click)="backToDashboard()" class="sp-button-secondary" style="width:100%;margin-top:2px">
+        Back to dashboard
+      </button>
     </div>
   </div>
 }

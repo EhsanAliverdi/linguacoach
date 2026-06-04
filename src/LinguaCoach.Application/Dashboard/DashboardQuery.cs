@@ -7,7 +7,20 @@ public sealed record DashboardResult(
     string CareerProfileName,
     string? CefrLevel,
     string Message,
-    DashboardLearningPathSummary? LearningPath = null);
+    DashboardLearningPathSummary? LearningPath = null,
+    DashboardActivityStats? ActivityStats = null,
+    DashboardFocusArea? CurrentFocus = null,
+    string? NextRecommendedPractice = null,
+    string? LatestImprovement = null);
+
+public sealed record DashboardActivityStats(
+    int ActivitiesCompleted,
+    double? LatestScore,
+    double? AverageScore);
+
+public sealed record DashboardFocusArea(
+    string Category,
+    string FriendlyLabel);
 
 public sealed record DashboardLearningPathSummary(
     Guid PathId,
@@ -22,7 +35,9 @@ public sealed record DashboardModuleSummary(
     string Description,
     int Order,
     int CompletedActivities,
-    int TotalActivities);
+    int TotalActivities,
+    bool IsReadyToComplete = false,
+    double? AverageScore = null);
 
 public interface IDashboardQueryHandler
 {

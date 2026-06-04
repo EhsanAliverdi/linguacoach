@@ -19,6 +19,7 @@ using LinguaCoach.Infrastructure.LearningPath;
 using LinguaCoach.Infrastructure.LearningPlan;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
+using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -45,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingStatusQuery, OnboardingHandler>();
 
         // Dashboard
+        services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();
 
         // Reference data
@@ -69,6 +71,7 @@ public static class DependencyInjection
         // Learning path generation
         services.AddScoped<ILearningPathGenerator, AiLearningPathGeneratorHandler>();
         services.AddScoped<IGetLearningPathHandler, LearningPathQueryHandler>();
+        services.AddScoped<ICompleteModuleHandler, CompleteModuleHandler>();
 
         // Activity (AI-first learning flow)
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();

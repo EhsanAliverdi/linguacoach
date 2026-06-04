@@ -70,26 +70,31 @@
 
   <!-- ── Stat tiles ────────────────────────────────────────────── -->
   <div class="sp-stat-grid" style="margin-bottom:6px">
-    <!-- Streak -->
+    <!-- Streak — not yet tracked -->
     <div class="sp-card" style="padding:14px;text-align:center">
       <div style="font-size:22px;margin-bottom:4px">🔥</div>
       <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">—</div>
       <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">day streak</div>
       <div style="font-size:10px;color:var(--sp-faint);margin-top:4px">Coming soon</div>
     </div>
-    <!-- Minutes -->
-    <div class="sp-card" style="padding:14px;text-align:center">
-      <div style="font-size:22px;margin-bottom:4px">⏱</div>
-      <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">—</div>
-      <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">min this week</div>
-      <div style="font-size:10px;color:var(--sp-faint);margin-top:4px">Coming soon</div>
-    </div>
-    <!-- Activities -->
+    <!-- Activities done — real data -->
     <div class="sp-card" style="padding:14px;text-align:center">
       <div style="font-size:22px;margin-bottom:4px">✅</div>
-      <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">—</div>
+      <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">
+        {{ data()?.activityStats?.activitiesCompleted ?? '—' }}
+      </div>
       <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">activities done</div>
-      <div style="font-size:10px;color:var(--sp-faint);margin-top:4px">Coming soon</div>
+    </div>
+    <!-- Average score — real data -->
+    <div class="sp-card" style="padding:14px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">⭐</div>
+      <div style="font-size:20px;font-weight:800;color:var(--sp-ink)">
+        {{ data()?.activityStats?.averageScore !== null && data()?.activityStats?.averageScore !== undefined ? data()!.activityStats!.averageScore : '—' }}
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--sp-muted);margin-top:2px">avg score</div>
+      @if (data()?.activityStats?.latestScore !== null && data()?.activityStats?.latestScore !== undefined) {
+        <div style="font-size:10px;color:var(--sp-success);margin-top:4px">Latest: {{ data()!.activityStats!.latestScore }}</div>
+      }
     </div>
   </div>
 
@@ -212,10 +217,31 @@
             <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Pace</div>
             <div style="font-size:11px;color:var(--sp-muted);margin-bottom:8px">your AI coach</div>
             <div style="background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:4px 16px 16px 16px;padding:13px 15px;font-size:13.5px;color:var(--sp-text);line-height:1.6">
-              Complete your first activity to unlock coach insights. I'm ready when you are! 🚀
+              @if (data()?.nextRecommendedPractice) {
+                {{ data()!.nextRecommendedPractice }}
+              } @else {
+                Complete your first activity to unlock coach insights. I'm ready when you are!
+              }
             </div>
           </div>
         </div>
+
+        <!-- Focus area pill -->
+        @if (data()?.currentFocus) {
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--sp-border)">
+            <p style="font-size:11px;font-weight:700;color:var(--sp-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Current focus</p>
+            <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:12px;font-weight:700;padding:4px 10px">
+              {{ data()!.currentFocus!.friendlyLabel }}
+            </span>
+          </div>
+        }
+
+        <!-- Improvement message -->
+        @if (data()?.latestImprovement) {
+          <div style="margin-top:10px;font-size:12px;color:var(--sp-muted);line-height:1.55">
+            {{ data()!.latestImprovement }}
+          </div>
+        }
       </div>
 
       <!-- Streak calendar -->

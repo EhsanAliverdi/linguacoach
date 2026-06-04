@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -21,17 +22,20 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
     private readonly ILearningPathGenerator _pathGenerator;
+    private readonly StudentProgressService _progress;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
         LinguaCoachDbContext db,
         IAiActivityGenerator aiGenerator,
         ILearningPathGenerator pathGenerator,
+        StudentProgressService progress,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
         _aiGenerator = aiGenerator;
         _pathGenerator = pathGenerator;
+        _progress = progress;
         _logger = logger;
     }
 
@@ -54,6 +58,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         // Resolve active learning path + current module (lazy-generate if missing).
         var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
 
+        // Detect focus area from recent feedback to guide AI generation.
+        var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
+        var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
+
         // Primary path — AI generation.
         try
         {
@@ -64,7 +72,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 LanguagePairCode: BuildPairCode(profile.LanguagePair),
                 SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
                 TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
-                TopicHint: topicHint);
+                TopicHint: topicHint,
+                RecentMistakesSummary: recentMistakes);
 
             var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
 

@@ -12,4 +12,8 @@ export class LearningPathService {
   getActivePath(): Observable<LearningPathDetail> {
     return this.http.get<LearningPathDetail>(this.base);
   }
+
+  completeModule(moduleId: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/modules/${moduleId}/complete`, null);
+  }
 }

@@ -218,6 +218,54 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## Learning path progression (post Learning Path Progression sprint)
+
+- [ ] Persist explicit module completion confirmation to a dedicated `ModuleCompletion` table instead of `CompletedAt` column, to support future multi-path learners. `Not started`
+- [ ] Show per-module score history chart (last 5 attempts per module). `Not started`
+- [ ] Module completion certificates or achievement badges. `Not started`
+- [ ] Admin / teacher progress view per student (current module, focus area, average score). `Not started`
+- [ ] Long-term trend chart: score progression over 10+ attempts. `Not started`
+- [ ] Spaced repetition for repeated mistakes (re-surface activities in weak categories). `Not started`
+- [ ] Auto-advance module when ready without explicit student confirmation (optional preference). `Not started`
+- [ ] Notify student when module is ready to complete (push notification or dashboard badge). `Not started`
+
+---
+
+## Learning experience improvements (post Learning Experience sprint)
+
+- [ ] Richer attempt history page showing all attempts side by side. `Not started`
+  - Route: `/activity/history/:activityId`
+  - Show all `ActivityAttempt` rows for a given activity, ordered by date
+  - Each row: attempt number, score, date, first few words of submission
+- [ ] Side-by-side diff viewer for attempts. `Not started`
+  - Compare attempt N with attempt N-1 visually
+  - Highlight what changed between submissions
+  - Deferred — requires richer attempt history page first
+- [ ] Inline sentence-level comment annotations. `Not started`
+  - AI returns comments anchored to specific sentence positions
+  - UI renders inline margin annotations (like Google Docs)
+  - Requires new AI prompt output format
+- [ ] Teacher / admin review of AI feedback quality. `Not started`
+  - Admin can browse recent `ActivityAttempt` feedback JSONs
+  - Admin can flag poor feedback for prompt review
+  - Requires admin UI extension
+- [ ] Skill-based progress analytics from `changes.category` data. `Not started`
+  - Aggregate `changes.category` values from recent attempts per student
+  - Show: "Grammar is your most common issue this week"
+  - Requires data aggregation query on `FeedbackJson` or new field on `ActivityAttempt`
+- [ ] Vocabulary extraction from writing attempt mistakes. `Not started`
+  - Extract vocabulary from `vocabularyIssues` and `changes` with category=vocabulary
+  - Add to student's vocabulary list for spaced repetition
+  - Requires vocabulary tracking feature
+- [ ] Speaking and listening activity types. `Not started`
+  - See future activity types section above
+- [ ] Client-side LCS-based visual diff for richer comparison. `Not started`
+  - Compute diff between student's draft and improved version in the browser
+  - Highlight word-level insertions and deletions
+  - Lower priority — server-side `changes` list already covers this
+
+---
+
 ## Legacy database cleanup
 
 > ⚠️ These items require explicit confirmation before execution. Do not run without a backup.

@@ -14,6 +14,8 @@ export class LearningPathComponent implements OnInit {
   path = signal<LearningPathDetail | null>(null);
   loading = signal(true);
   error = signal('');
+  completingModuleId = signal<string | null>(null);
+  completeSuccess = signal(false);
 
   overallProgress = computed(() => {
     const p = this.path();
@@ -24,6 +26,11 @@ export class LearningPathComponent implements OnInit {
   constructor(private pathService: LearningPathService) {}
 
   ngOnInit(): void {
+    this.load();
+  }
+
+  private load(): void {
+    this.loading.set(true);
     this.pathService.getActivePath().subscribe({
       next: p => { this.path.set(p); this.loading.set(false); },
       error: err => {
@@ -38,14 +45,30 @@ export class LearningPathComponent implements OnInit {
   }
 
   moduleStatus(mod: LearningModuleSummary): 'current' | 'complete' | 'locked' {
+    if (mod.isCompleted || mod.completedActivities >= mod.totalActivities) return 'complete';
     if (mod.isCurrent) return 'current';
-    if (mod.completedActivities >= mod.totalActivities) return 'complete';
     return 'locked';
   }
 
   progressPercent(mod: LearningModuleSummary): number {
     if (mod.totalActivities === 0) return 0;
     return Math.round((mod.completedActivities / mod.totalActivities) * 100);
+  }
+
+  completeModule(moduleId: string): void {
+    if (this.completingModuleId()) return;
+    this.completingModuleId.set(moduleId);
+    this.pathService.completeModule(moduleId).subscribe({
+      next: () => {
+        this.completingModuleId.set(null);
+        this.completeSuccess.set(true);
+        this.load(); // refresh to show updated state
+      },
+      error: err => {
+        this.completingModuleId.set(null);
+        this.error.set(err.error?.error ?? 'Could not complete module. Please try again.');
+      },
+    });
   }
 
   activityDots(total: number): number[] {

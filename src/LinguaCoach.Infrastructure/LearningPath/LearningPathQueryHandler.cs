@@ -1,4 +1,5 @@
 using LinguaCoach.Application.LearningPath;
+using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,8 +10,13 @@ public sealed class LearningPathQueryHandler : IGetLearningPathHandler
     private const int CompletionThreshold = 3;
 
     private readonly LinguaCoachDbContext _db;
+    private readonly StudentProgressService _progress;
 
-    public LearningPathQueryHandler(LinguaCoachDbContext db) => _db = db;
+    public LearningPathQueryHandler(LinguaCoachDbContext db, StudentProgressService progress)
+    {
+        _db = db;
+        _progress = progress;
+    }
 
     public async Task<LearningPathDto?> HandleAsync(GetLearningPathQuery query, CancellationToken ct = default)
     {
@@ -28,34 +34,42 @@ public sealed class LearningPathQueryHandler : IGetLearningPathHandler
         var modules = path.Modules.OrderBy(m => m.Order).ToList();
         var moduleIds = modules.Select(m => m.Id).ToList();
 
-        var completedCounts = await _db.ActivityAttempts
-            .Where(a => a.StudentProfileId == profile.Id)
-            .Join(_db.LearningActivities.Where(la => la.LearningModuleId.HasValue && moduleIds.Contains(la.LearningModuleId!.Value)),
-                  attempt => attempt.LearningActivityId,
-                  activity => activity.Id,
-                  (attempt, activity) => activity.LearningModuleId!.Value)
-            .GroupBy(moduleId => moduleId)
-            .Select(g => new { ModuleId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ModuleId, x => x.Count, ct);
+        var progressByModule = await _progress.GetModuleProgressAsync(profile.Id, moduleIds, ct);
+        var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
 
-        Domain.Entities.LearningModule? currentModule = modules
-            .FirstOrDefault(m => completedCounts.GetValueOrDefault(m.Id, 0) < CompletionThreshold)
-            ?? modules.LastOrDefault();
+        // Current module = first non-completed module (by explicit completion or by threshold)
+        Domain.Entities.LearningModule? currentModule = modules.FirstOrDefault(m =>
+        {
+            if (m.IsCompleted) return false;
+            var p = progressByModule.GetValueOrDefault(m.Id);
+            return p is null || p.DistinctCompleted < CompletionThreshold;
+        }) ?? modules.LastOrDefault();
 
         int modulesCompleted = modules.Count(m =>
-            completedCounts.GetValueOrDefault(m.Id, 0) >= CompletionThreshold);
+        {
+            if (m.IsCompleted) return true;
+            var p = progressByModule.GetValueOrDefault(m.Id);
+            return p is not null && p.DistinctCompleted >= CompletionThreshold;
+        });
 
         var moduleDtos = modules.Select(m =>
         {
-            int completed = completedCounts.GetValueOrDefault(m.Id, 0);
+            var pd = progressByModule.GetValueOrDefault(m.Id);
+            bool isComplete = m.IsCompleted
+                || (pd is not null && pd.DistinctCompleted >= CompletionThreshold);
+
             return new LearningModuleDto(
                 ModuleId: m.Id,
                 Title: m.Title,
                 Description: m.Description,
                 Order: m.Order,
-                CompletedActivities: completed,
+                CompletedActivities: pd?.DistinctCompleted ?? 0,
                 TotalActivities: CompletionThreshold,
-                IsCurrent: currentModule is not null && m.Id == currentModule.Id);
+                IsCurrent: currentModule is not null && m.Id == currentModule.Id,
+                IsCompleted: isComplete,
+                IsReadyToComplete: pd?.IsReadyToComplete ?? false,
+                AverageScore: pd?.AverageScore,
+                LatestScore: pd?.LatestScore);
         }).ToList();
 
         var currentDto = currentModule is null ? null
@@ -68,6 +82,7 @@ public sealed class LearningPathQueryHandler : IGetLearningPathHandler
             CurrentModule: currentDto,
             ModulesCompleted: modulesCompleted,
             TotalModules: modules.Count,
-            Modules: moduleDtos);
+            Modules: moduleDtos,
+            CurrentFocus: focusArea);
     }
 }

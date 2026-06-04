@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using LinguaCoach.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -23,29 +25,47 @@ Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to address: {{recentMistakes}}
 
-Generate a realistic workplace writing scenario and return ONLY valid JSON (no markdown) matching this exact structure:
+Choose a varied, realistic workplace writing task. Examples of task types (pick one that fits the context):
+- workplace email (follow-up, update, request, confirmation)
+- Teams or chat message (brief professional message to a colleague)
+- incident explanation (explain a delay or problem professionally)
+- polite request (ask for approval, information, or support)
+- complaint response (respond professionally to a complaint)
+- meeting follow-up (summarise action points after a meeting)
+- apology message (apologise professionally for an error)
+- clarification message (ask for or provide clarification)
+- update to manager (brief status update on a task)
+- customer support response (respond helpfully to a client question)
+
+Generate a realistic task and return ONLY valid JSON (no markdown) matching this exact structure:
 
 {
   "title": "<short descriptive title for this activity, 5-10 words>",
+  "taskType": "<one of: workplace-email | chat-message | incident-explanation | polite-request | complaint-response | meeting-follow-up | apology-message | clarification-message | manager-update | customer-support>",
   "situation": "<2-3 sentences describing the realistic workplace situation the student must respond to>",
+  "audience": "<who the student is writing to, e.g. 'your direct manager', 'a client', 'a colleague'>",
+  "tone": "<expected tone: formal | semi-formal | polite>",
+  "expectedLength": "<guidance on length, e.g. '3-5 sentences' or '1 short paragraph'>",
   "learningGoal": "<one sentence stating what communication skill this activity practises>",
+  "skillFocus": "<one key skill, e.g. 'polite requests', 'professional tone', 'follow-up emails'>",
   "targetPhrases": ["<useful phrase 1>", "<useful phrase 2>", "<useful phrase 3>", "<useful phrase 4>", "<useful phrase 5>"],
   "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>", "<word 4>", "<word 5>"],
   "exampleText": "<a complete, polished example response the student can study>",
-  "commonMistakeToAvoid": "<one sentence describing the single most common mistake {{sourceLanguageName}} speakers make in this type of email, and how to avoid it>",
+  "commonMistakeToAvoid": "<one sentence describing the single most common mistake {{sourceLanguageName}} speakers make in this type of message, and how to avoid it>",
   "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} telling the student what to write and why>"
 }
 
 Rules:
 - The situation must be specific and believable for {{careerContext}} professionals.
+- Do not repeat the same task type every time — vary it based on the context.
 - targetPhrases must be phrases the student should actively try to use in their response.
-- The example must be a complete, professional email (not a fragment).
+- The example must be a complete, professional response (not a fragment).
 - instructionInSourceLanguage must be written entirely in {{sourceLanguageName}}.
 - Do not include any text outside the JSON object.
 """;
 
     private const string ActivityEvaluateWritingContent = """
-You are an expert English writing coach evaluating a professional email written by a {{sourceLanguageName}}-speaking student learning {{targetLanguageName}}.
+You are a warm, professional English writing coach evaluating a workplace message written by a {{sourceLanguageName}}-speaking student learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
@@ -53,25 +73,42 @@ Career context: {{careerContext}}
 Activity content:
 {{activityContent}}
 
-Student's submitted email:
+Student's submitted message:
 ---
 {{studentSubmission}}
 ---
 
-Evaluate the submission and return ONLY valid JSON (no markdown) matching this exact structure:
+Your job is to coach the student to improve their own writing — not to replace it.
+
+IMPORTANT: The most valuable output is the "changes" list. Focus on targeted, specific improvements.
+If the student has many issues (5 or more), set "focusFirst": true and include only the 3-5 most important changes.
+The "improvedVersion" is a reference — label it clearly as a suggestion, not the correct answer.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON):
 
 {
   "overallScore": <number 0-100>,
-  "correctedEmail": "<a corrected, professional version of their email>",
-  "feedbackInSourceLanguage": "<2-3 sentences of warm, specific encouragement written entirely in {{sourceLanguageName}}>",
-  "whatYouDidWell": ["<specific strength 1>", "<specific strength 2>"],
-  "mainMistakes": ["<most important mistake to fix>"],
+  "coachSummary": "<1-2 warm sentences summarising the overall quality and the most important thing to improve>",
+  "whatYouDidWell": ["<specific genuine strength 1>", "<specific genuine strength 2>"],
+  "focusFirst": <true if student has 5+ issues and you are limiting to top 3-5, otherwise false>,
+  "changes": [
+    {
+      "type": "<replace | add | remove | reorder>",
+      "original": "<the exact phrase from the student's text>",
+      "suggested": "<the improved phrase>",
+      "reason": "<1 sentence plain explanation of why this change matters>",
+      "category": "<grammar | vocabulary | tone | clarity | structure | punctuation>",
+      "severity": "<high | medium | low>"
+    }
+  ],
   "grammarIssues": ["<specific grammar issue>"],
   "vocabularyIssues": ["<specific vocabulary issue>"],
   "toneIssues": ["<specific tone issue>"],
-  "grammarExplanation": "<1-2 sentence teaching moment on the key grammar rule>",
-  "toneExplanation": "<1-2 sentence teaching moment on professional tone or register>",
-  "vocabularyToRemember": ["<word or phrase worth memorising>"],
+  "clarityIssues": ["<specific clarity issue>"],
+  "feedbackInSourceLanguage": "<2-3 sentences of warm, specific encouragement written entirely in {{sourceLanguageName}}>",
+  "miniLesson": "<1-2 sentences teaching the single most important rule illustrated by this submission>",
+  "nextImprovementStep": "<one actionable sentence telling the student exactly what to try when they rewrite>",
+  "improvedVersion": "<a suggested improved version of the student's message — label this as a suggestion, not the answer>",
   "rewriteChallenge": "<one sentence challenge: rewrite one specific part better>",
   "nextPracticeSuggestion": "<one sentence recommending what to practise next>"
 }
@@ -79,9 +116,12 @@ Evaluate the submission and return ONLY valid JSON (no markdown) matching this e
 Rules:
 - overallScore must be a number between 0 and 100.
 - whatYouDidWell must include at least one genuine positive observation.
+- changes must reference exact phrases from the student's submission — not invented examples.
+- changes should be ordered by severity (high first).
 - feedbackInSourceLanguage must be written entirely in {{sourceLanguageName}}.
 - All arrays may be empty [] if there are no issues.
 - Do not include any text outside the JSON object.
+- The improved version is a coaching reference — do not frame it as "the correct answer".
 """;
 
     private const string LearningPathGenerateContent = """
@@ -207,71 +247,67 @@ Rules:
         }
 
         // Activity generation prompt
-        var hasGenerateWritingPrompt = await db.AiPrompts
-            .AnyAsync(p => p.Key == ActivityGenerateWritingKey && p.IsActive, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateWritingKey, ActivityGenerateWritingContent,
+            maxInputTokens: 900, maxOutputTokens: 1200, ct);
 
-        if (!hasGenerateWritingPrompt)
-        {
-            var nextVersion = (await db.AiPrompts
-                .Where(p => p.Key == ActivityGenerateWritingKey)
-                .MaxAsync(p => (int?)p.Version, ct) ?? 0) + 1;
-
-            db.AiPrompts.Add(new AiPrompt(
-                ActivityGenerateWritingKey,
-                ActivityGenerateWritingContent,
-                version: nextVersion,
-                maxInputTokens: 800,
-                maxOutputTokens: 1000));
-
-            logger.LogInformation(
-                "Seeded AI prompt {PromptKey} version {Version}.",
-                ActivityGenerateWritingKey, nextVersion);
-        }
-
-        // Activity evaluation prompt
-        var hasEvaluateWritingPrompt = await db.AiPrompts
-            .AnyAsync(p => p.Key == ActivityEvaluateWritingKey && p.IsActive, ct);
-
-        if (!hasEvaluateWritingPrompt)
-        {
-            var nextVersion = (await db.AiPrompts
-                .Where(p => p.Key == ActivityEvaluateWritingKey)
-                .MaxAsync(p => (int?)p.Version, ct) ?? 0) + 1;
-
-            db.AiPrompts.Add(new AiPrompt(
-                ActivityEvaluateWritingKey,
-                ActivityEvaluateWritingContent,
-                version: nextVersion,
-                maxInputTokens: 2000,
-                maxOutputTokens: 1500));
-
-            logger.LogInformation(
-                "Seeded AI prompt {PromptKey} version {Version}.",
-                ActivityEvaluateWritingKey, nextVersion);
-        }
+        // Activity evaluation prompt (v2 — structured diff/changes output)
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateWritingKey, ActivityEvaluateWritingContent,
+            maxInputTokens: 2000, maxOutputTokens: 2000, ct);
 
         // Learning path generation prompt
-        var hasLearningPathPrompt = await db.AiPrompts
-            .AnyAsync(p => p.Key == LearningPathGenerateKey && p.IsActive, ct);
-
-        if (!hasLearningPathPrompt)
-        {
-            var nextVersion = (await db.AiPrompts
-                .Where(p => p.Key == LearningPathGenerateKey)
-                .MaxAsync(p => (int?)p.Version, ct) ?? 0) + 1;
-
-            db.AiPrompts.Add(new AiPrompt(
-                LearningPathGenerateKey,
-                LearningPathGenerateContent,
-                version: nextVersion,
-                maxInputTokens: 600,
-                maxOutputTokens: 800));
-
-            logger.LogInformation(
-                "Seeded AI prompt {PromptKey} version {Version}.",
-                LearningPathGenerateKey, nextVersion);
-        }
+        await SeedOrUpgradePromptAsync(db, logger,
+            LearningPathGenerateKey, LearningPathGenerateContent,
+            maxInputTokens: 600, maxOutputTokens: 800, ct);
 
         await db.SaveChangesAsync(ct);
+    }
+
+    // Seeds a prompt if no active version exists, or upgrades it if the content has changed.
+    private static async Task SeedOrUpgradePromptAsync(
+        LinguaCoachDbContext db,
+        ILogger logger,
+        string key,
+        string content,
+        int? maxInputTokens,
+        int? maxOutputTokens,
+        CancellationToken ct)
+    {
+        var contentHash = ComputeHash(content);
+        var activePrompt = await db.AiPrompts
+            .Where(p => p.Key == key && p.IsActive)
+            .FirstOrDefaultAsync(ct);
+
+        if (activePrompt is not null && ComputeHash(activePrompt.Content) == contentHash)
+            return; // Already up to date
+
+        // Deactivate old active version if content changed
+        if (activePrompt is not null)
+        {
+            activePrompt.Deactivate();
+            logger.LogInformation(
+                "Deactivated outdated AI prompt {PromptKey} version {Version}.",
+                key, activePrompt.Version);
+        }
+
+        var nextVersion = (await db.AiPrompts
+            .Where(p => p.Key == key)
+            .MaxAsync(p => (int?)p.Version, ct) ?? 0) + 1;
+
+        db.AiPrompts.Add(new AiPrompt(key, content,
+            version: nextVersion,
+            maxInputTokens: maxInputTokens,
+            maxOutputTokens: maxOutputTokens));
+
+        logger.LogInformation(
+            "Seeded AI prompt {PromptKey} version {Version}.",
+            key, nextVersion);
+    }
+
+    private static string ComputeHash(string content)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(bytes)[..16];
     }
 }

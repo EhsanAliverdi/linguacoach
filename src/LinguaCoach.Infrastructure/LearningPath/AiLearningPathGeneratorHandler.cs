@@ -176,7 +176,11 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
                 Order: m.Order,
                 CompletedActivities: completed,
                 TotalActivities: CompletionThreshold,
-                IsCurrent: currentModule is not null && m.Id == currentModule.Id);
+                IsCurrent: currentModule is not null && m.Id == currentModule.Id,
+                IsCompleted: m.IsCompleted,
+                IsReadyToComplete: false,
+                AverageScore: null,
+                LatestScore: null);
         }).ToList();
 
         var currentDto = currentModule is null ? null

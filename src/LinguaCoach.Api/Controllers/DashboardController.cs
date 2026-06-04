@@ -32,6 +32,19 @@ public sealed class DashboardController : ControllerBase
                 careerProfile = result.CareerProfileName,
                 cefrLevel = result.CefrLevel,
                 message = result.Message,
+                activityStats = result.ActivityStats is null ? null : new
+                {
+                    activitiesCompleted = result.ActivityStats.ActivitiesCompleted,
+                    latestScore = result.ActivityStats.LatestScore,
+                    averageScore = result.ActivityStats.AverageScore,
+                },
+                currentFocus = result.CurrentFocus is null ? null : new
+                {
+                    category = result.CurrentFocus.Category,
+                    friendlyLabel = result.CurrentFocus.FriendlyLabel,
+                },
+                nextRecommendedPractice = result.NextRecommendedPractice,
+                latestImprovement = result.LatestImprovement,
                 learningPath = result.LearningPath is null ? null : new
                 {
                     pathId = result.LearningPath.PathId,
@@ -46,6 +59,8 @@ public sealed class DashboardController : ControllerBase
                         order = result.LearningPath.CurrentModule.Order,
                         completedActivities = result.LearningPath.CurrentModule.CompletedActivities,
                         totalActivities = result.LearningPath.CurrentModule.TotalActivities,
+                        isReadyToComplete = result.LearningPath.CurrentModule.IsReadyToComplete,
+                        averageScore = result.LearningPath.CurrentModule.AverageScore,
                     }
                 }
             });

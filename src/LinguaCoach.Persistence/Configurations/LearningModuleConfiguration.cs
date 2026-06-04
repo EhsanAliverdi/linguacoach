@@ -19,6 +19,7 @@ internal sealed class LearningModuleConfiguration : IEntityTypeConfiguration<Lea
         builder.Property(e => e.Title).HasColumnName("title").HasMaxLength(500).IsRequired();
         builder.Property(e => e.Description).HasColumnName("description").IsRequired();
         builder.Property(e => e.Order).HasColumnName("order").IsRequired();
+        builder.Property(e => e.CompletedAt).HasColumnName("completed_at").IsRequired(false);
 
         builder.HasIndex(e => new { e.LearningPathId, e.Order })
             .HasDatabaseName("ix_learning_modules_path_order");

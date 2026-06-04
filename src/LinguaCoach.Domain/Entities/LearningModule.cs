@@ -16,6 +16,13 @@ public sealed class LearningModule : BaseEntity
     // Display order within the parent LearningPath.
     public int Order { get; private set; }
 
+    // Null until the student explicitly confirms module completion.
+    public DateTime? CompletedAt { get; private set; }
+
+    public bool IsCompleted => CompletedAt.HasValue;
+
+    public void MarkCompleted() => CompletedAt ??= DateTime.UtcNow;
+
     public IReadOnlyList<LearningActivity> Activities => _activities.AsReadOnly();
     private readonly List<LearningActivity> _activities = [];
 

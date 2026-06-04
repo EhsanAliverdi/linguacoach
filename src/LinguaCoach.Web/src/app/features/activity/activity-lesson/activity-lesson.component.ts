@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivityService } from '../../../core/services/activity.service';
-import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto } from '../../../core/models/activity.models';
 
 type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error';
 
@@ -19,6 +19,10 @@ export class ActivityLessonComponent implements OnInit {
   feedback = signal<ActivityFeedbackDto | null>(null);
   draftText = '';
   errorMessage = signal('');
+
+  // Retry/improve tracking
+  attemptCount = signal(0);
+  previousScore = signal<number | null>(null);
 
   readonly stepDots = [
     { n: 1, key: 'learning', label: 'Lesson' },
@@ -59,6 +63,48 @@ export class ActivityLessonComponent implements OnInit {
     return 'var(--sp-speaking)';
   }
 
+  scoreBandLabel(score: number | null): string {
+    if (score === null) return '';
+    if (score >= 85) return 'Great work';
+    if (score >= 70) return 'Good effort';
+    return 'Keep going';
+  }
+
+  scoreImprovementMessage(): string {
+    const current = this.feedback()?.score ?? null;
+    const prev = this.previousScore();
+    if (prev === null || current === null) return '';
+    const diff = Math.round(current - prev);
+    if (diff > 0) return `+${diff} — great improvement!`;
+    if (diff < 0) return `${diff} — don't worry, keep practising.`;
+    return 'Same score — try the suggestions above.';
+  }
+
+  categoryColour(category: string | null): string {
+    switch (category) {
+      case 'grammar': return 'var(--sp-writing)';
+      case 'vocabulary': return 'var(--sp-vocabulary)';
+      case 'tone': return 'var(--sp-listening)';
+      case 'clarity': return 'var(--sp-pronunciation)';
+      case 'structure': return 'var(--sp-speaking)';
+      case 'punctuation': return 'var(--sp-muted)';
+      default: return 'var(--sp-muted)';
+    }
+  }
+
+  categoryLabel(category: string | null): string {
+    if (!category) return '';
+    return category.charAt(0).toUpperCase() + category.slice(1);
+  }
+
+  severityOrder(c: FeedbackChangeDto): number {
+    switch (c.severity) {
+      case 'high': return 0;
+      case 'medium': return 1;
+      default: return 2;
+    }
+  }
+
   startWriting(): void {
     this.state.set('writing');
   }
@@ -68,7 +114,12 @@ export class ActivityLessonComponent implements OnInit {
     if (!this.draftText.trim() || !a) return;
     this.state.set('submitting');
     this.activityService.submitAttempt(a.activityId, this.draftText).subscribe({
-      next: fb => { this.feedback.set(fb); this.state.set('feedback'); },
+      next: fb => {
+        this.previousScore.set(this.feedback()?.score ?? null);
+        this.feedback.set(fb);
+        this.attemptCount.update(n => n + 1);
+        this.state.set('feedback');
+      },
       error: err => {
         this.errorMessage.set(err.error?.error ?? 'Failed to get feedback. Please try again.');
         this.state.set('writing');
@@ -76,8 +127,13 @@ export class ActivityLessonComponent implements OnInit {
     });
   }
 
+  // Pre-fill textarea with previous submission and start a new attempt
+  improveAnswer(): void {
+    // draftText already contains the previous draft — just go back to writing
+    this.state.set('writing');
+  }
+
   tryAgain(): void {
-    this.feedback.set(null);
     this.draftText = '';
     this.state.set('writing');
   }
@@ -87,6 +143,8 @@ export class ActivityLessonComponent implements OnInit {
     this.feedback.set(null);
     this.activity.set(null);
     this.draftText = '';
+    this.attemptCount.set(0);
+    this.previousScore.set(null);
     this.activityService.getNext().subscribe({
       next: a => { this.activity.set(a); this.state.set('learning'); },
       error: err => {

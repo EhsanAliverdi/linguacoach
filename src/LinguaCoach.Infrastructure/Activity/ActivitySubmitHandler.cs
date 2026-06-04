@@ -124,31 +124,74 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         }
         catch { /* return safe defaults */ }
 
+        var changes = payload?.Changes?
+            .Select(c => new FeedbackChangeDto(
+                Type: c.Type ?? "replace",
+                Original: c.Original,
+                Suggested: c.Suggested,
+                Reason: c.Reason,
+                Category: c.Category,
+                Severity: c.Severity))
+            .ToList()
+            ?? (IReadOnlyList<FeedbackChangeDto>)[];
+
         return new ActivityFeedbackDto(
             AttemptId: attemptId,
             Score: score ?? payload?.OverallScore,
-            CorrectedText: payload?.CorrectedEmail,
+            CoachSummary: payload?.CoachSummary,
+            FocusFirst: payload?.FocusFirst ?? false,
+            Changes: changes,
+            // improvedVersion is the primary improved text; fall back to correctedEmail for legacy prompts
+            CorrectedText: payload?.ImprovedVersion ?? payload?.CorrectedEmail,
             WhatYouDidWell: payload?.WhatYouDidWell ?? [],
             MainMistakes: payload?.MainMistakes ?? [],
+            GrammarIssues: payload?.GrammarIssues ?? [],
+            VocabularyIssues: payload?.VocabularyIssues ?? [],
+            ToneIssues: payload?.ToneIssues ?? [],
+            ClarityIssues: payload?.ClarityIssues ?? [],
             GrammarExplanation: payload?.GrammarExplanation,
             ToneExplanation: payload?.ToneExplanation,
             VocabularyToRemember: payload?.VocabularyToRemember ?? [],
+            MiniLesson: payload?.MiniLesson,
+            NextImprovementStep: payload?.NextImprovementStep,
             RewriteChallenge: payload?.RewriteChallenge,
             NextPracticeSuggestion: payload?.NextPracticeSuggestion,
             FeedbackInSourceLanguage: payload?.FeedbackInSourceLanguage);
     }
 }
 
+internal sealed class ActivityFeedbackChangePayload
+{
+    [JsonPropertyName("type")] public string? Type { get; set; }
+    [JsonPropertyName("original")] public string? Original { get; set; }
+    [JsonPropertyName("suggested")] public string? Suggested { get; set; }
+    [JsonPropertyName("reason")] public string? Reason { get; set; }
+    [JsonPropertyName("category")] public string? Category { get; set; }
+    [JsonPropertyName("severity")] public string? Severity { get; set; }
+}
+
 internal sealed class ActivityFeedbackPayload
 {
     [JsonPropertyName("overallScore")] public double? OverallScore { get; set; }
+    [JsonPropertyName("coachSummary")] public string? CoachSummary { get; set; }
+    [JsonPropertyName("focusFirst")] public bool? FocusFirst { get; set; }
+    [JsonPropertyName("changes")] public List<ActivityFeedbackChangePayload>? Changes { get; set; }
+    // Legacy field — kept for old prompt responses
     [JsonPropertyName("correctedEmail")] public string? CorrectedEmail { get; set; }
+    // New field — preferred improved version label
+    [JsonPropertyName("improvedVersion")] public string? ImprovedVersion { get; set; }
     [JsonPropertyName("feedbackInSourceLanguage")] public string? FeedbackInSourceLanguage { get; set; }
     [JsonPropertyName("whatYouDidWell")] public List<string>? WhatYouDidWell { get; set; }
     [JsonPropertyName("mainMistakes")] public List<string>? MainMistakes { get; set; }
+    [JsonPropertyName("grammarIssues")] public List<string>? GrammarIssues { get; set; }
+    [JsonPropertyName("vocabularyIssues")] public List<string>? VocabularyIssues { get; set; }
+    [JsonPropertyName("toneIssues")] public List<string>? ToneIssues { get; set; }
+    [JsonPropertyName("clarityIssues")] public List<string>? ClarityIssues { get; set; }
     [JsonPropertyName("grammarExplanation")] public string? GrammarExplanation { get; set; }
     [JsonPropertyName("toneExplanation")] public string? ToneExplanation { get; set; }
     [JsonPropertyName("vocabularyToRemember")] public List<string>? VocabularyToRemember { get; set; }
+    [JsonPropertyName("miniLesson")] public string? MiniLesson { get; set; }
+    [JsonPropertyName("nextImprovementStep")] public string? NextImprovementStep { get; set; }
     [JsonPropertyName("rewriteChallenge")] public string? RewriteChallenge { get; set; }
     [JsonPropertyName("nextPracticeSuggestion")] public string? NextPracticeSuggestion { get; set; }
 }

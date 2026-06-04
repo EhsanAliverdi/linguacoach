@@ -262,6 +262,14 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 /* == Coach bubble ========================================================== */
 .sp-coach-bubble{background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:4px 16px 16px 16px;padding:13px 15px;color:var(--sp-text);font-size:14px;line-height:1.55;font-weight:500;}
 
+/* == Diff / change list (feedback page) ==================================== */
+.sp-diff-item{padding:12px 14px;border-radius:var(--sp-r-sm);border:1px solid var(--sp-border);background:var(--sp-surface2);}
+.sp-diff-item+.sp-diff-item{margin-top:0;}
+.sp-diff-remove{display:flex;align-items:baseline;gap:6px;background:var(--sp-warn-soft);border-radius:6px;padding:7px 10px;}
+.sp-diff-remove span:last-child{color:var(--sp-warn);text-decoration:line-through;text-decoration-thickness:2px;}
+.sp-diff-add{display:flex;align-items:baseline;gap:6px;background:var(--sp-success-soft);border-radius:6px;padding:7px 10px;}
+.sp-diff-add span:last-child{color:#065F46;}
+
 /* == Links ================================================================= */
 .sp-link{font-size:14px;font-weight:700;color:var(--sp-writing);text-decoration:none;transition:color .15s;}
 .sp-link:hover{color:var(--sp-writing-ink);}

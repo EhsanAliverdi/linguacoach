@@ -211,12 +211,30 @@ async function mockApi(page: Page) {
       body: JSON.stringify({
         attemptId: 'attempt-id-001',
         score: 78,
+        coachSummary: 'Good effort — your message is clear but the tone needs polishing.',
+        focusFirst: false,
+        changes: [
+          {
+            type: 'replace',
+            original: 'please send',
+            suggested: 'Could you please send',
+            reason: 'Modal verbs make requests more polite.',
+            category: 'tone',
+            severity: 'high',
+          },
+        ],
         correctedText: 'Dear Mr. Ahmadi,\n\nI hope you are well. I wanted to follow up on the document I submitted last week.\n\nBest regards,\nSara',
         whatYouDidWell: ['Good use of formal greeting', 'Clear structure'],
         mainMistakes: ['Missing comma after salutation'],
+        grammarIssues: [],
+        vocabularyIssues: [],
+        toneIssues: [],
+        clarityIssues: [],
         grammarExplanation: 'Always place a comma after the salutation in formal emails.',
         toneExplanation: 'Your tone was professional throughout.',
         vocabularyToRemember: ['at your earliest convenience'],
+        miniLesson: 'Use modal verbs like could and would to make requests polite.',
+        nextImprovementStep: "Try rewriting your request sentence using 'Could you please...'",
         rewriteChallenge: "Rewrite the opening using 'I hope this email finds you well'.",
         nextPracticeSuggestion: 'Try writing an email to explain a delay.',
         feedbackInSourceLanguage: 'ایمیل شما خوب بود اما می‌توانید رسمی‌تر بنویسید.',
@@ -303,12 +321,14 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.getByRole('button', { name: /Get.*feedback/i }).click();
 
   // ── Feedback phase ────────────────────────────────────────────────────────────
-  await expect(page.getByText('Overall score')).toBeVisible();
   await expect(page.getByText('78')).toBeVisible();
-  await expect(page.getByText('What you did well')).toBeVisible();
-  await expect(page.getByText(/Feedback in Persian/i)).toBeVisible();
+  await expect(page.getByText(/what you did well/i)).toBeVisible();
   await expect(page.getByText('ایمیل شما خوب بود')).toBeVisible();
 
-  // Next activity button is present
-  await expect(page.getByRole('button', { name: /Continue to next|Next activity/i })).toBeVisible();
+  // Change list (diff) should be visible
+  await expect(page.getByText(/Suggested changes/i)).toBeVisible();
+
+  // Action buttons
+  await expect(page.getByRole('button', { name: /Improve my answer/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Next activity/i })).toBeVisible();
 });
