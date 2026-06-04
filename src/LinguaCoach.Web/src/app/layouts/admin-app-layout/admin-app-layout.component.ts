@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
-const STORAGE_KEY = 'speakpath.adminSidebarCollapsed';
+const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
 
 @Component({
   selector: 'app-admin-app-layout',
@@ -14,6 +14,7 @@ const STORAGE_KEY = 'speakpath.adminSidebarCollapsed';
 })
 export class AdminAppLayoutComponent {
   collapsed = signal(this.readCollapsed());
+  drawerOpen = signal(false);
 
   adminEmail = computed(() => this.auth.currentUser()?.email ?? '');
   adminInitial = computed(() => {
@@ -26,14 +27,17 @@ export class AdminAppLayoutComponent {
   toggleSidebar(): void {
     const next = !this.collapsed();
     this.collapsed.set(next);
-    try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* ignore */ }
+    try { localStorage.setItem(COLLAPSE_KEY, String(next)); } catch { /* ignore */ }
   }
+
+  openDrawer(): void { this.drawerOpen.set(true); }
+  closeDrawer(): void { this.drawerOpen.set(false); }
 
   logout(): void {
     this.auth.logout();
   }
 
   private readCollapsed(): boolean {
-    try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
+    try { return localStorage.getItem(COLLAPSE_KEY) === 'true'; } catch { return false; }
   }
 }

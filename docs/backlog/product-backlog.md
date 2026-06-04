@@ -208,6 +208,13 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
   - `admin-prompts` and `admin-careers` still use raw Tailwind for their form/table bodies
   - Migrate incrementally — do not break functionality
   - Document final admin class list in `frontend-layout-system.md`
+- [ ] Improve admin mobile drawer. `Planned`
+  - Current drawer works but has no swipe-to-close gesture
+  - Could add route-change auto-close (RouterEvents subscription in AdminAppLayoutComponent)
+  - Could add keyboard Escape to close
+- [ ] Add admin mobile bottom navigation or persistent tab bar as alternative to drawer. `Not started`
+  - Drawer pattern is sufficient for a desktop-first admin tool used on mobile rarely
+  - If admin mobile usage is significant, consider a simplified bottom tab bar for admin
 
 ---
 

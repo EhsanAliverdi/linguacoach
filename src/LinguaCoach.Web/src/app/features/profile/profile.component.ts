@@ -8,12 +8,12 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [CommonModule],
   template: `
     <!-- Profile card -->
-    <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-xl);padding:24px;display:flex;align-items:center;gap:20px;margin-bottom:20px">
-      <div style="width:64px;height:64px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0">
+    <div style="background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-xl);padding:24px;display:flex;align-items:center;gap:16px;margin-bottom:20px;min-width:0">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--sp-grad-brand);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0">
         {{ avatarLetter() }}
       </div>
-      <div>
-        <div style="font-size:18px;font-weight:800;color:var(--sp-ink)">{{ displayEmail() }}</div>
+      <div style="min-width:0;flex:1">
+        <div style="font-size:16px;font-weight:800;color:var(--sp-ink);overflow-wrap:anywhere;word-break:break-all">{{ displayEmail() }}</div>
         <div style="font-size:13px;color:var(--sp-muted);margin-top:3px">Student · Persian to English</div>
       </div>
     </div>

@@ -231,3 +231,24 @@ test('landing page', async ({ page }) => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'e2e/screenshots/landing-full.png', fullPage: true });
 });
+
+test('student: profile mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockStudent(page);
+  await studentLogin(page);
+  await page.goto('/profile');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'e2e/screenshots/mobile-profile.png', fullPage: false });
+});
+
+test('admin: mobile hamburger', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockAdmin(page);
+  await adminLogin(page);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'e2e/screenshots/mobile-admin.png', fullPage: false });
+  // Open drawer
+  await page.getByRole('button', { name: /Open navigation/i }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'e2e/screenshots/mobile-admin-drawer.png', fullPage: false });
+});

@@ -1,7 +1,7 @@
 # Layout Stabilisation Sprint
 
 **Date**: 2026-06-04
-**Status**: Complete
+**Status**: Complete — v3 final cleanup (collapse in header, admin drawer, overflow, change-password)
 
 ---
 
@@ -47,21 +47,30 @@ All three layout components already existed and the routing was already correct:
 Every component rendered inside a layout outputs **only page content** — no `<aside>`, no `<nav>`, no full-page wrappers.
 
 ### PublicLayout
-- Full-page centered background (`sp-public-layout`)
-- Child page renders its own `sp-public-card`
+- `sp-public-layout` = background gradient only, no centering, no card
+- Landing: full-width via `sp-public-shell` (max-width 1120px)
+- Login / change-password: `sp-public-centered` + `sp-public-logo` above + `sp-public-form-card`
+- Logo lives **above** the card — never inside it
 
 ### StudentAppLayout
-- Desktop (≥900px): sticky left sidebar + main column
-- Mobile: fixed bottom nav (5 items, Practice raised center)
-- Header: greeting + avatar + streak pill
-- `sp-student-content`: max 520px mobile / 1080px desktop
+- Desktop (≥900px): fixed left sidebar (264px expanded / 76px collapsed) + main column
+- Sidebar collapse toggle lives in the **header** (hamburger icon, desktop only)
+- State persisted via `localStorage` key `speakpath.sidebarCollapsed`
+- Collapsed: icon-only rail (76px), CSS transition `width .22s ease`
+- Mobile (<900px): sidebar hidden, bottom nav fixed (5 items, Practice raised center)
+- **Mobile bottom nav is unchanged and must not be modified**
+- Header: collapse button + greeting + avatar + streak pill
+- `sp-student-content`: max 520px mobile / 1080px desktop, `overflow-x:hidden`
 - Child pages: content only
 
 ### AdminAppLayout
-- Sticky top nav with brand + links + sign-out
-- `sp-admin-content`: max 1200px
-- No sidebar, no bottom nav
-- Professional clean aesthetic (no gamification)
+- Desktop (≥900px): fixed left sidebar (240px expanded / 72px collapsed)
+- Collapse toggle lives in the **admin header** (hamburger icon, desktop only)
+- State persisted via `localStorage` key `speakpath.adminSidebarCollapsed`
+- Mobile (<900px): sidebar hidden; hamburger in header opens a **slide-out drawer**
+- Drawer: `sp-sidebar-drawer` + `sp-sidebar-backdrop` — closes on backdrop click, close button, or nav item click
+- No top navigation — all navigation via sidebar/drawer
+- `sp-admin-content`: max 1200px, `overflow-x:hidden`
 - Child pages: content only
 
 ---
