@@ -43,8 +43,14 @@ public sealed class GeminiProvider : IAiProvider
         // Only request JSON output for real feature prompts; test pings use plain text.
         var isTestCall = request.PromptKey == "admin.test";
         var generationConfig = isTestCall
-            ? new GeminiGenerationConfig(ResponseMimeType: null, MaxOutputTokens: request.MaxOutputTokens)
-            : new GeminiGenerationConfig(ResponseMimeType: "application/json", MaxOutputTokens: request.MaxOutputTokens);
+            ? new GeminiGenerationConfig(
+                ResponseMimeType: null,
+                MaxOutputTokens: request.MaxOutputTokens,
+                ThinkingConfig: BuildThinkingConfig(modelToUse))
+            : new GeminiGenerationConfig(
+                ResponseMimeType: "application/json",
+                MaxOutputTokens: request.MaxOutputTokens,
+                ThinkingConfig: BuildThinkingConfig(modelToUse));
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri);
         httpRequest.Headers.Add("x-goog-api-key", apiKey);
@@ -138,6 +144,26 @@ public sealed class GeminiProvider : IAiProvider
             modelToUse,
             ProviderName);
     }
+
+    private static GeminiThinkingConfig? BuildThinkingConfig(string modelName)
+    {
+        var normalised = modelName.ToLowerInvariant();
+        if (!normalised.Contains("gemini-2.5", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        // Gemini 2.5 Flash and Flash-Lite can disable thinking. This prevents
+        // thought tokens from consuming the entire maxOutputTokens budget and
+        // returning MAX_TOKENS with no text content for simple JSON/test prompts.
+        if (normalised.Contains("flash", StringComparison.OrdinalIgnoreCase))
+            return new GeminiThinkingConfig(0);
+
+        // Gemini 2.5 Pro cannot disable thinking. Keep the budget low so simple
+        // admin test pings and short structured prompts still have room to answer.
+        if (normalised.Contains("pro", StringComparison.OrdinalIgnoreCase))
+            return new GeminiThinkingConfig(128);
+
+        return null;
+    }
 }
 
 internal sealed record GeminiGenerateContentRequest(
@@ -152,7 +178,11 @@ internal sealed record GeminiPart(
 
 internal sealed record GeminiGenerationConfig(
     [property: JsonPropertyName("responseMimeType")] string? ResponseMimeType,
-    [property: JsonPropertyName("maxOutputTokens")] int MaxOutputTokens);
+    [property: JsonPropertyName("maxOutputTokens")] int MaxOutputTokens,
+    [property: JsonPropertyName("thinkingConfig")] GeminiThinkingConfig? ThinkingConfig);
+
+internal sealed record GeminiThinkingConfig(
+    [property: JsonPropertyName("thinkingBudget")] int ThinkingBudget);
 
 internal sealed class GeminiGenerateContentResponse
 {

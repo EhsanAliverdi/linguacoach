@@ -29,6 +29,7 @@ public sealed class AiExecutionService
         CancellationToken ct)
     {
         var pair = _resolver.ResolveWithFallback(featureKey);
+        var started = DateTime.UtcNow;
         try
         {
             return await ExecuteOneAsync(pair.Primary, baseRequest, featureKey, false, studentProfileId, correlationId, ct);
@@ -40,7 +41,8 @@ public sealed class AiExecutionService
                 featureKey, pair.Primary.ProviderName, pair.Primary.ModelName, correlationId);
 
             await LogUsageAsync(new AiResponse("", 0, 0, 0m, pair.Primary.ModelName, pair.Primary.ProviderName),
-                featureKey, false, false, primaryEx.GetType().Name, studentProfileId, correlationId, ct);
+                featureKey, false, false, primaryEx.GetType().Name, studentProfileId, correlationId, ct,
+                (long)(DateTime.UtcNow - started).TotalMilliseconds);
 
             if (pair.Fallback is null)
                 throw new AiUnavailableException($"AI provider '{pair.Primary.ProviderName}' failed and no fallback is configured.", primaryEx);
@@ -48,6 +50,7 @@ public sealed class AiExecutionService
 
         try
         {
+            started = DateTime.UtcNow;
             return await ExecuteOneAsync(pair.Fallback!, baseRequest, featureKey, true, studentProfileId, correlationId, ct);
         }
         catch (Exception fallbackEx) when (fallbackEx is not AiUnavailableException)
@@ -57,7 +60,8 @@ public sealed class AiExecutionService
                 featureKey, pair.Fallback!.ProviderName, pair.Fallback.ModelName, correlationId);
 
             await LogUsageAsync(new AiResponse("", 0, 0, 0m, pair.Fallback.ModelName, pair.Fallback.ProviderName),
-                featureKey, true, false, fallbackEx.GetType().Name, studentProfileId, correlationId, ct);
+                featureKey, true, false, fallbackEx.GetType().Name, studentProfileId, correlationId, ct,
+                (long)(DateTime.UtcNow - started).TotalMilliseconds);
 
             throw new AiUnavailableException($"All AI providers failed for feature '{featureKey}'.", fallbackEx);
         }

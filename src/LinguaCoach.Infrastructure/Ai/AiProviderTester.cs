@@ -9,7 +9,7 @@ public sealed class AiProviderTester : IAiProviderTester
 {
     private const string TestPromptKey = "admin.test";
     private const string TestPrompt = "Reply with just the word: OK";
-    private const int MaxOutputTokens = 16;
+    private const int MaxOutputTokens = 256;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AiProviderTester> _logger;

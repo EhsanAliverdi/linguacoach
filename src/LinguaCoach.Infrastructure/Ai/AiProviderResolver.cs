@@ -35,8 +35,9 @@ public sealed class AiProviderResolver : IAiProviderResolver
 
     public AiProviderPair ResolveWithFallback(string featureKey)
     {
+        var canonicalFeatureKey = CanonicalFeatureKey(featureKey);
         var (providerName, modelName, fallbackProvider, fallbackModel, fallbackEnabled)
-            = ResolveFeatureFromDb(featureKey);
+            = ResolveFeatureFromDb(canonicalFeatureKey);
 
         // Fall back to config-based primary if DB returns nothing
         if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
@@ -70,12 +71,12 @@ public sealed class AiProviderResolver : IAiProviderResolver
                 var fallbackKey = GetStoredApiKey(fallbackProvider!) ?? GetEnvApiKey(fallbackProvider!);
                 fallback = Resolve(fallbackProvider!.Trim(), fallbackModel!.Trim(), fallbackKey);
                 _logger.LogDebug("Fallback provider configured Feature={Feature} Fallback={Provider}/{Model}",
-                    featureKey, fallbackProvider, fallbackModel);
+                    canonicalFeatureKey, fallbackProvider, fallbackModel);
             }
             catch (AiConfigurationUnavailableException ex)
             {
                 _logger.LogWarning("Fallback provider configured but not usable Feature={Feature}: {Message}",
-                    featureKey, ex.Message);
+                    canonicalFeatureKey, ex.Message);
             }
         }
 
@@ -104,6 +105,14 @@ public sealed class AiProviderResolver : IAiProviderResolver
             return (null, null, null, null, false);
         }
     }
+
+    private static string CanonicalFeatureKey(string featureKey) => featureKey switch
+    {
+        "activity_generate_writing" => WritingFeatureKey,
+        "activity_evaluate_writing" => WritingFeatureKey,
+        "writing.exercise.v2" => WritingFeatureKey,
+        _ => featureKey
+    };
 
     private string? GetStoredApiKey(string providerName)
     {
