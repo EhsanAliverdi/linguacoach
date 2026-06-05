@@ -42,7 +42,6 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             throw new NotSupportedException(
                 $"AI generation for {context.ActivityType} is not implemented in this sprint.");
 
-        var promptKey = GenerateWritingPromptKey;
         var variables = new Dictionary<string, string>
         {
             ["cefrLevel"] = context.CefrLevel,
@@ -53,15 +52,13 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["topicHint"] = context.TopicHint ?? "workplace communication",
         };
 
-        var selection = _aiProviderResolver.ResolveWritingFeedbackProvider();
-        var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
-        aiRequest = aiRequest with { ModelHint = selection.ModelName, ApiKeyOverride = selection.ApiKeyOverride };
+        var pair = _aiProviderResolver.ResolveWithFallback("activity_generate_writing");
+        var aiRequest = await _contextBuilder.BuildAsync(GenerateWritingPromptKey, variables, ct);
 
-        var aiResponse = await selection.Provider.CompleteAsync(aiRequest, ct);
+        var response = await ExecuteWithFallbackAsync(
+            pair, aiRequest, GenerateWritingPromptKey, studentProfileId: null, ct);
 
-        await LogUsageAsync(aiResponse, selection.ProviderName, studentProfileId: null, ct);
-
-        var cleaned = CleanJson(aiResponse.ResponseJson);
+        var cleaned = CleanJson(response);
         ValidateWritingActivityJson(cleaned);
         return cleaned;
     }
@@ -74,7 +71,6 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             throw new NotSupportedException(
                 $"AI evaluation for {context.ActivityType} is not implemented in this sprint.");
 
-        var promptKey = EvaluateWritingPromptKey;
         var variables = new Dictionary<string, string>
         {
             ["activityContent"] = context.ActivityContentJson,
@@ -85,42 +81,116 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["targetLanguageName"] = context.TargetLanguageName,
         };
 
-        var selection = _aiProviderResolver.ResolveWritingFeedbackProvider();
-        var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
-        aiRequest = aiRequest with { ModelHint = selection.ModelName, ApiKeyOverride = selection.ApiKeyOverride };
+        var pair = _aiProviderResolver.ResolveWithFallback("activity_evaluate_writing");
+        var aiRequest = await _contextBuilder.BuildAsync(EvaluateWritingPromptKey, variables, ct);
 
-        var aiResponse = await selection.Provider.CompleteAsync(aiRequest, ct);
+        var response = await ExecuteWithFallbackAsync(
+            pair, aiRequest, EvaluateWritingPromptKey, studentProfileId: null, ct);
 
-        await LogUsageAsync(aiResponse, selection.ProviderName, studentProfileId: null, ct);
+        return CleanJson(response);
+    }
 
-        return CleanJson(aiResponse.ResponseJson);
+    private async Task<string> ExecuteWithFallbackAsync(
+        Application.Ai.AiProviderPair pair,
+        Application.Ai.AiRequest baseRequest,
+        string featureKey,
+        Guid? studentProfileId,
+        CancellationToken ct)
+    {
+        // Try primary
+        var primaryRequest = baseRequest with
+        {
+            ModelHint = pair.Primary.ModelName,
+            ApiKeyOverride = pair.Primary.ApiKeyOverride,
+        };
+
+        try
+        {
+            var resp = await pair.Primary.Provider.CompleteAsync(primaryRequest, ct);
+            await LogUsageAsync(resp, pair.Primary.ProviderName, featureKey, isFallback: false,
+                wasSuccessful: true, failureReason: null, studentProfileId, ct);
+            return resp.ResponseJson;
+        }
+        catch (Exception primaryEx)
+        {
+            _logger.LogWarning(primaryEx,
+                "Primary AI provider failed FeatureKey={Feature} Provider={Provider} Model={Model} ExType={ExType}",
+                featureKey, pair.Primary.ProviderName, pair.Primary.ModelName, primaryEx.GetType().Name);
+
+            await LogUsageAsync(
+                new Application.Ai.AiResponse("", 0, 0, 0m, pair.Primary.ModelName, pair.Primary.ProviderName),
+                pair.Primary.ProviderName, featureKey, isFallback: false,
+                wasSuccessful: false, failureReason: primaryEx.GetType().Name, studentProfileId, ct);
+
+            if (pair.Fallback is null)
+                throw new AiUnavailableException(
+                    $"AI provider '{pair.Primary.ProviderName}' failed and no fallback is configured.", primaryEx);
+        }
+
+        // Try fallback
+        var fallbackRequest = baseRequest with
+        {
+            ModelHint = pair.Fallback!.ModelName,
+            ApiKeyOverride = pair.Fallback.ApiKeyOverride,
+        };
+
+        try
+        {
+            _logger.LogInformation(
+                "Attempting fallback provider FeatureKey={Feature} FallbackProvider={Provider} FallbackModel={Model}",
+                featureKey, pair.Fallback.ProviderName, pair.Fallback.ModelName);
+
+            var fallbackResp = await pair.Fallback.Provider.CompleteAsync(fallbackRequest, ct);
+            await LogUsageAsync(fallbackResp, pair.Fallback.ProviderName, featureKey, isFallback: true,
+                wasSuccessful: true, failureReason: null, studentProfileId, ct);
+            return fallbackResp.ResponseJson;
+        }
+        catch (Exception fallbackEx)
+        {
+            _logger.LogError(fallbackEx,
+                "Fallback AI provider also failed FeatureKey={Feature} FallbackProvider={Provider} ExType={ExType}",
+                featureKey, pair.Fallback.ProviderName, fallbackEx.GetType().Name);
+
+            await LogUsageAsync(
+                new Application.Ai.AiResponse("", 0, 0, 0m, pair.Fallback.ModelName, pair.Fallback.ProviderName),
+                pair.Fallback.ProviderName, featureKey, isFallback: true,
+                wasSuccessful: false, failureReason: fallbackEx.GetType().Name, studentProfileId, ct);
+
+            throw new AiUnavailableException(
+                $"All AI providers failed for feature '{featureKey}'.", fallbackEx);
+        }
     }
 
     private async Task LogUsageAsync(
         Application.Ai.AiResponse aiResponse,
         string providerName,
+        string featureKey,
+        bool isFallback,
+        bool wasSuccessful,
+        string? failureReason,
         Guid? studentProfileId,
-        CancellationToken ct)
+        CancellationToken ct,
+        long durationMs = 0)
     {
-        if (studentProfileId is null || studentProfileId == Guid.Empty)
-        {
-            // Generation context has no profile — log telemetry only, no DB row
-            _logger.LogDebug("AI usage: {Provider}, in={In}, out={Out}, cost={Cost:F6}",
-                providerName, aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd);
-            return;
-        }
-
         try
         {
             var modelName = string.IsNullOrEmpty(aiResponse.ModelName) ? "unknown" : aiResponse.ModelName;
             var usedProvider = string.IsNullOrWhiteSpace(aiResponse.ProviderName) ? providerName : aiResponse.ProviderName;
+
             var usageLog = new Domain.Entities.AiUsageLog(
-                studentProfileId.Value,
+                studentProfileId == Guid.Empty ? null : studentProfileId,
+                featureKey,
                 usedProvider,
                 modelName,
+                isFallback,
+                wasSuccessful,
+                failureReason,
                 aiResponse.InputTokens,
                 aiResponse.OutputTokens,
-                aiResponse.CostUsd);
+                aiResponse.CostUsd,
+                durationMs,
+                correlationId: null); // correlation ID injected in future if needed
+
             _db.AiUsageLogs.Add(usageLog);
             await _db.SaveChangesAsync(ct);
         }

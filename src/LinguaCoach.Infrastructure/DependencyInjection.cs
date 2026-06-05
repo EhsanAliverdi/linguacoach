@@ -19,6 +19,8 @@ using LinguaCoach.Infrastructure.LearningPath;
 using LinguaCoach.Infrastructure.LearningPlan;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
+using LinguaCoach.Application.History;
+using LinguaCoach.Infrastructure.History;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,6 +51,10 @@ public static class DependencyInjection
         services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();
 
+        // Learning history
+        services.AddScoped<IGetModuleActivitiesHandler, ModuleActivitiesHandler>();
+        services.AddScoped<IGetActivityAttemptsHandler, ActivityAttemptsHandler>();
+
         // Reference data
         services.AddScoped<IReferenceQueryService, ReferenceQueryService>();
 
@@ -58,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<OpenAiProvider>();
         services.AddScoped<GeminiProvider>();
         services.AddScoped<AnthropicProvider>();
+        services.AddScoped<QwenProvider>();
         services.AddScoped<IAiProviderResolver, AiProviderResolver>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
         services.AddScoped<IAiProviderTester, AiProviderTester>();
@@ -72,6 +79,7 @@ public static class DependencyInjection
         services.AddScoped<ILearningPathGenerator, AiLearningPathGeneratorHandler>();
         services.AddScoped<IGetLearningPathHandler, LearningPathQueryHandler>();
         services.AddScoped<ICompleteModuleHandler, CompleteModuleHandler>();
+        services.AddScoped<IAdminAiUsageHandler, AiUsageHandler>();
 
         // Activity (AI-first learning flow)
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();

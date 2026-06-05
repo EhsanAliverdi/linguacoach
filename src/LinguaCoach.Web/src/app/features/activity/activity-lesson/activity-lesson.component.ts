@@ -25,6 +25,9 @@ export class ActivityLessonComponent implements OnInit {
   attemptCount = signal(0);
   previousScore = signal<number | null>(null);
 
+  // Native-language explanation visibility (hidden by default)
+  showNativeExplanation = signal(false);
+
   readonly stepDots = [
     { n: 1, key: 'learning', label: 'Lesson' },
     { n: 2, key: 'writing',  label: 'Practice' },

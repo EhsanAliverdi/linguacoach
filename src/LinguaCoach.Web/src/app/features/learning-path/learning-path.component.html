@@ -153,6 +153,62 @@
           <a routerLink="/activity" class="sp-button-ghost" style="display:inline-flex;padding:8px 18px;font-size:12px;width:fit-content">
             Continue practising →
           </a>
+          @if (mod.completedActivities > 0) {
+            <button (click)="toggleModuleHistory(mod.moduleId)"
+              class="sp-button-ghost"
+              style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;font-size:12px;width:fit-content">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {{ expandedModuleId() === mod.moduleId ? 'Hide activities' : 'View activities' }}
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Completed module actions -->
+      @if (moduleStatus(mod) === 'complete' && mod.completedActivities > 0) {
+        <div style="position:relative;z-index:1;margin-top:-4px;margin-left:64px">
+          <button (click)="toggleModuleHistory(mod.moduleId)"
+            class="sp-button-ghost"
+            style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;font-size:12px">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ expandedModuleId() === mod.moduleId ? 'Hide activities' : 'Review activities' }}
+          </button>
+        </div>
+      }
+
+      <!-- Module history drill-down -->
+      @if (expandedModuleId() === mod.moduleId) {
+        <div style="position:relative;z-index:1;margin-left:64px;margin-top:8px;background:var(--sp-surface2);border:1px solid var(--sp-border);border-radius:var(--sp-r-lg);padding:14px">
+          @if (loadingHistory()) {
+            <div class="sp-loading-pulse" style="height:60px"></div>
+          } @else if (historyError()) {
+            <p style="font-size:12px;color:var(--sp-speaking)">{{ historyError() }}</p>
+          } @else if (moduleHistory()) {
+            @if (moduleHistory()!.activities.length === 0) {
+              <p style="font-size:13px;color:var(--sp-muted)">No activities attempted in this module yet.</p>
+            } @else {
+              <div style="display:flex;flex-direction:column;gap:10px">
+                @for (act of moduleHistory()!.activities; track act.activityId) {
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--sp-surface);border-radius:var(--sp-r-sm);border:1px solid var(--sp-border)">
+                    <div style="flex:1;min-width:0">
+                      <p style="font-size:13px;font-weight:700;color:var(--sp-ink);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ act.title }}</p>
+                      <p style="font-size:11px;color:var(--sp-muted)">
+                        {{ act.attemptCount }} {{ act.attemptCount === 1 ? 'attempt' : 'attempts' }}
+                        @if (act.bestScore !== null) { · Best: <span [style.color]="scoreColour(act.bestScore)">{{ act.bestScore }}</span> }
+                        @if (act.latestScore !== null && act.attemptCount > 1) { · Latest: <span [style.color]="scoreColour(act.latestScore)">{{ act.latestScore }}</span> }
+                      </p>
+                    </div>
+                    @if (act.hasFeedback) {
+                      <a [routerLink]="['/activity', act.activityId, 'history']"
+                        style="font-size:12px;font-weight:700;color:var(--sp-writing);text-decoration:none;white-space:nowrap;flex-shrink:0">
+                        Review →
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
         </div>
       }
     }

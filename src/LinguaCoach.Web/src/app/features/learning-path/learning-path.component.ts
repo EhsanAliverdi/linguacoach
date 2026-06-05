@@ -2,7 +2,9 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LearningPathService } from '../../core/services/learning-path.service';
+import { HistoryService } from '../../core/services/history.service';
 import { LearningPathDetail, LearningModuleSummary } from '../../core/models/learning-path.models';
+import { ModuleActivityHistory } from '../../core/models/history.models';
 
 @Component({
   selector: 'app-learning-path',
@@ -17,13 +19,22 @@ export class LearningPathComponent implements OnInit {
   completingModuleId = signal<string | null>(null);
   completeSuccess = signal(false);
 
+  // Module drill-down
+  expandedModuleId = signal<string | null>(null);
+  moduleHistory = signal<ModuleActivityHistory | null>(null);
+  loadingHistory = signal(false);
+  historyError = signal('');
+
   overallProgress = computed(() => {
     const p = this.path();
     if (!p || p.totalModules === 0) return 0;
     return Math.round((p.modulesCompleted / p.totalModules) * 100);
   });
 
-  constructor(private pathService: LearningPathService) {}
+  constructor(
+    private pathService: LearningPathService,
+    private historySvc: HistoryService,
+  ) {}
 
   ngOnInit(): void {
     this.load();
@@ -62,7 +73,7 @@ export class LearningPathComponent implements OnInit {
       next: () => {
         this.completingModuleId.set(null);
         this.completeSuccess.set(true);
-        this.load(); // refresh to show updated state
+        this.load();
       },
       error: err => {
         this.completingModuleId.set(null);
@@ -71,7 +82,33 @@ export class LearningPathComponent implements OnInit {
     });
   }
 
+  toggleModuleHistory(moduleId: string): void {
+    if (this.expandedModuleId() === moduleId) {
+      this.expandedModuleId.set(null);
+      this.moduleHistory.set(null);
+      return;
+    }
+    this.expandedModuleId.set(moduleId);
+    this.moduleHistory.set(null);
+    this.loadingHistory.set(true);
+    this.historyError.set('');
+    this.historySvc.getModuleActivities(moduleId).subscribe({
+      next: h => { this.moduleHistory.set(h); this.loadingHistory.set(false); },
+      error: err => {
+        this.loadingHistory.set(false);
+        this.historyError.set(err.error?.error ?? 'Could not load module activities.');
+      },
+    });
+  }
+
   activityDots(total: number): number[] {
     return Array.from({ length: total }, (_, i) => i);
+  }
+
+  scoreColour(score: number | null): string {
+    if (score === null) return 'var(--sp-faint)';
+    if (score >= 85) return 'var(--sp-success)';
+    if (score >= 70) return 'var(--sp-vocabulary)';
+    return 'var(--sp-speaking)';
   }
 }

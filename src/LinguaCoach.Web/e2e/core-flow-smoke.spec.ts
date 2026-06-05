@@ -323,10 +323,15 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   // ── Feedback phase ────────────────────────────────────────────────────────────
   await expect(page.getByText('78')).toBeVisible();
   await expect(page.getByText(/what you did well/i)).toBeVisible();
-  await expect(page.getByText('ایمیل شما خوب بود')).toBeVisible();
 
   // Change list (diff) should be visible
   await expect(page.getByText(/Suggested changes/i)).toBeVisible();
+
+  // Persian explanation is hidden by default — toggle button should be visible
+  await expect(page.getByRole('button', { name: /Show Persian explanation/i })).toBeVisible();
+  // Click to reveal
+  await page.getByRole('button', { name: /Show Persian explanation/i }).click();
+  await expect(page.getByText('ایمیل شما خوب بود')).toBeVisible();
 
   // Action buttons
   await expect(page.getByRole('button', { name: /Improve my answer/i })).toBeVisible();

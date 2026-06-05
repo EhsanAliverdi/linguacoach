@@ -28,6 +28,38 @@ public sealed class AiProviderConfig : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    // Fallback provider — null means no fallback configured
+    public string? FallbackProviderName { get; private set; }
+    public string? FallbackModelName { get; private set; }
+    public bool FallbackEnabled { get; private set; }
+
+    public void SetFallback(string? providerName, string? modelName, bool enabled)
+    {
+        if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
+        {
+            FallbackProviderName = null;
+            FallbackModelName = null;
+            FallbackEnabled = false;
+            UpdatedAt = DateTime.UtcNow;
+            return;
+        }
+
+        var normProvider = providerName.Trim().ToLowerInvariant();
+        if (!KnownModelsByProvider.TryGetValue(normProvider, out var allowedModels))
+            throw new ArgumentException(
+                $"Unsupported fallback provider '{normProvider}'.", nameof(providerName));
+
+        var normModel = modelName.Trim();
+        if (!allowedModels.Contains(normModel))
+            throw new ArgumentException(
+                $"Unknown model '{normModel}' for fallback provider '{normProvider}'.", nameof(modelName));
+
+        FallbackProviderName = normProvider;
+        FallbackModelName = normModel;
+        FallbackEnabled = enabled;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     private static readonly Dictionary<string, HashSet<string>> KnownModelsByProvider = new(StringComparer.OrdinalIgnoreCase)
     {
         ["openai"] = new(StringComparer.OrdinalIgnoreCase)
@@ -44,6 +76,10 @@ public sealed class AiProviderConfig : BaseEntity
             "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5",
             "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
             "claude-3-opus-20240229",
+        },
+        ["qwen"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "qwen-plus", "qwen-max", "qwen-turbo", "qwen3-235b-a22b", "qwen3-coder-plus",
         },
     };
 

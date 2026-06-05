@@ -60,7 +60,7 @@ export const routes: Routes = [
       },
       {
         path: 'usage',
-        loadComponent: () => import('./features/admin/admin-usage/admin-usage.component').then(m => m.AdminUsageComponent),
+        loadComponent: () => import('./features/admin/admin-ai-usage/admin-ai-usage.component').then(m => m.AdminAiUsageComponent),
       },
       {
         path: 'diagnostics',
@@ -101,6 +101,10 @@ export const routes: Routes = [
       {
         path: 'activity',
         loadComponent: () => import('./features/activity/activity-lesson/activity-lesson.component').then(m => m.ActivityLessonComponent),
+      },
+      {
+        path: 'activity/:activityId/history',
+        loadComponent: () => import('./features/activity/activity-history/activity-history.component').then(m => m.ActivityHistoryComponent),
       },
       {
         path: 'assessment',

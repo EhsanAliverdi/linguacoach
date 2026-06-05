@@ -10,6 +10,7 @@ namespace LinguaCoach.Infrastructure.Ai;
 
 public sealed class AiProviderResolver : IAiProviderResolver
 {
+    private const string WritingFeatureKey = "writing.exercise";
     private const string WritingProviderKey = "AI:WritingFeedback:Provider";
     private const string WritingModelKey = "AI:WritingFeedback:Model";
     private const string DefaultDevelopmentProvider = "OpenAI";
@@ -32,11 +33,12 @@ public sealed class AiProviderResolver : IAiProviderResolver
         _logger = logger;
     }
 
-    public AiProviderSelection ResolveWritingFeedbackProvider()
+    public AiProviderPair ResolveWithFallback(string featureKey)
     {
-        // DB config (feature routing) takes precedence over appsettings.
-        var (providerName, modelName) = ResolveFeatureFromDb("writing.exercise");
+        var (providerName, modelName, fallbackProvider, fallbackModel, fallbackEnabled)
+            = ResolveFeatureFromDb(featureKey);
 
+        // Fall back to config-based primary if DB returns nothing
         if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
         {
             providerName = _configuration[WritingProviderKey];
@@ -47,11 +49,8 @@ public sealed class AiProviderResolver : IAiProviderResolver
         {
             if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
             {
-                providerName = string.IsNullOrWhiteSpace(providerName) ? DefaultDevelopmentProvider : providerName;
-                modelName = string.IsNullOrWhiteSpace(modelName) ? DefaultDevelopmentModel : modelName;
-                _logger.LogWarning(
-                    "AI writing feedback provider/model not configured. Using default {Provider}/{Model}.",
-                    providerName, modelName);
+                providerName ??= DefaultDevelopmentProvider;
+                modelName ??= DefaultDevelopmentModel;
             }
             else
             {
@@ -60,12 +59,34 @@ public sealed class AiProviderResolver : IAiProviderResolver
             }
         }
 
-        // Resolve API key from the per-provider credential store, then fall back to env.
-        var apiKey = GetStoredApiKey(providerName) ?? GetEnvApiKey(providerName);
-        return Resolve(providerName.Trim(), modelName.Trim(), apiKey);
+        var primaryKey = GetStoredApiKey(providerName) ?? GetEnvApiKey(providerName);
+        var primary = Resolve(providerName.Trim(), modelName.Trim(), primaryKey);
+
+        AiProviderSelection? fallback = null;
+        if (fallbackEnabled && !string.IsNullOrWhiteSpace(fallbackProvider) && !string.IsNullOrWhiteSpace(fallbackModel))
+        {
+            try
+            {
+                var fallbackKey = GetStoredApiKey(fallbackProvider!) ?? GetEnvApiKey(fallbackProvider!);
+                fallback = Resolve(fallbackProvider!.Trim(), fallbackModel!.Trim(), fallbackKey);
+                _logger.LogDebug("Fallback provider configured Feature={Feature} Fallback={Provider}/{Model}",
+                    featureKey, fallbackProvider, fallbackModel);
+            }
+            catch (AiConfigurationUnavailableException ex)
+            {
+                _logger.LogWarning("Fallback provider configured but not usable Feature={Feature}: {Message}",
+                    featureKey, ex.Message);
+            }
+        }
+
+        return new AiProviderPair(primary, fallback);
     }
 
-    private (string? Provider, string? Model) ResolveFeatureFromDb(string featureKey)
+    public AiProviderSelection ResolveWritingFeedbackProvider()
+        => ResolveWithFallback(WritingFeatureKey).Primary;
+
+    private (string? Provider, string? Model, string? FallbackProvider, string? FallbackModel, bool FallbackEnabled)
+        ResolveFeatureFromDb(string featureKey)
     {
         try
         {
@@ -73,12 +94,14 @@ public sealed class AiProviderResolver : IAiProviderResolver
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
             var config = db.AiProviderConfigs.AsNoTracking()
                 .FirstOrDefault(c => c.FeatureKey == featureKey);
-            return config is null ? (null, null) : (config.ProviderName, config.ModelName);
+            if (config is null) return (null, null, null, null, false);
+            return (config.ProviderName, config.ModelName,
+                    config.FallbackProviderName, config.FallbackModelName, config.FallbackEnabled);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not read AI feature config from DB for {Feature}.", featureKey);
-            return (null, null);
+            return (null, null, null, null, false);
         }
     }
 
@@ -105,6 +128,7 @@ public sealed class AiProviderResolver : IAiProviderResolver
             "openai" => _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY"),
             "gemini" => _configuration["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY"),
             "anthropic" => _configuration["Anthropic:ApiKey"] ?? Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY"),
+            "qwen" => _configuration["Qwen:ApiKey"] ?? Environment.GetEnvironmentVariable("QWEN_API_KEY"),
             _ => null
         };
 
@@ -124,8 +148,10 @@ public sealed class AiProviderResolver : IAiProviderResolver
                 _serviceProvider.GetRequiredService<GeminiProvider>(), "gemini", model, apiKeyOverride),
             "anthropic" => new AiProviderSelection(
                 _serviceProvider.GetRequiredService<AnthropicProvider>(), "anthropic", model, apiKeyOverride),
+            "qwen" => new AiProviderSelection(
+                _serviceProvider.GetRequiredService<QwenProvider>(), "qwen", model, apiKeyOverride),
             _ => throw new AiConfigurationUnavailableException(
-                $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic.")
+                $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic, Qwen.")
         };
     }
 }

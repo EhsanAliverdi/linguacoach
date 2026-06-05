@@ -1,0 +1,185 @@
+<!-- Loading -->
+@if (loading()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="sp-loading-pulse" style="height:80px"></div>
+    <div class="sp-loading-pulse" style="height:200px"></div>
+  </div>
+} @else if (error()) {
+  <div class="sp-empty-state">
+    <p style="color:var(--sp-muted)">{{ error() }}</p>
+    <a routerLink="/my-path" class="sp-button-ghost" style="margin-top:12px">Back to My Path</a>
+  </div>
+} @else if (history()) {
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <a routerLink="/my-path" style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--sp-muted);text-decoration:none">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      My Path
+    </a>
+    <span style="color:var(--sp-border2)">/</span>
+    <span style="font-size:13px;font-weight:700;color:var(--sp-ink)">{{ history()!.title }}</span>
+  </div>
+
+  <!-- Activity brief -->
+  @if (history()!.situation) {
+    <div class="sp-card" style="margin-bottom:16px;padding:14px">
+      <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Scenario</p>
+      <p style="font-size:13px;color:var(--sp-text);line-height:1.6">{{ history()!.situation }}</p>
+    </div>
+  }
+
+  <!-- Attempt timeline -->
+  <p class="sp-eyebrow" style="margin-bottom:10px">Attempt history</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+    @for (attempt of history()!.attempts; track attempt.attemptId) {
+      <button (click)="selectAttempt($index)"
+        style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 14px;border-radius:10px;border:2px solid;cursor:pointer;min-width:70px;background:none"
+        [style.border-color]="selectedAttemptIndex() === $index ? 'var(--sp-writing)' : 'var(--sp-border2)'"
+        [style.background]="selectedAttemptIndex() === $index ? 'var(--sp-writing-soft)' : 'var(--sp-surface)'">
+        <span style="font-size:11px;font-weight:700"
+          [style.color]="selectedAttemptIndex() === $index ? 'var(--sp-writing)' : 'var(--sp-muted)'">
+          Attempt {{ attempt.attemptNumber }}
+        </span>
+        @if (attempt.score !== null) {
+          <span style="font-size:16px;font-weight:800"
+            [style.color]="scoreColour(attempt.score)">
+            {{ attempt.score }}
+          </span>
+        } @else {
+          <span style="font-size:12px;color:var(--sp-faint)">—</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Selected attempt detail -->
+  @if (selectedAttempt) {
+    <div>
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <h2 style="font-size:16px;font-weight:800;color:var(--sp-ink)">Attempt {{ selectedAttempt.attemptNumber }}</h2>
+        <span style="font-size:12px;color:var(--sp-muted)">{{ selectedAttempt.submittedAt | date:'d MMM yyyy, h:mm a' }}</span>
+        @if (scoreImprovement(selectedAttempt)) {
+          <span style="font-size:12px;font-weight:600;color:var(--sp-muted)">{{ scoreImprovement(selectedAttempt) }}</span>
+        }
+      </div>
+
+      <!-- Score ring -->
+      @if (selectedAttempt.score !== null) {
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <div style="position:relative;width:64px;height:64px;flex-shrink:0">
+            <svg width="64" height="64" style="transform:rotate(-90deg)">
+              <circle cx="32" cy="32" r="26" stroke="var(--sp-canvas2)" stroke-width="7" fill="none"/>
+              <circle cx="32" cy="32" r="26" [attr.stroke]="scoreColour(selectedAttempt.score)" stroke-width="7" fill="none"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="163.4"
+                [attr.stroke-dashoffset]="163.4 * (1 - selectedAttempt.score / 100)"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:15px;font-weight:800" [style.color]="scoreColour(selectedAttempt.score)">
+                {{ selectedAttempt.score }}
+              </span>
+            </div>
+          </div>
+          @if (selectedAttempt.coachSummary) {
+            <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6;flex:1">{{ selectedAttempt.coachSummary }}</p>
+          }
+        </div>
+      }
+
+      <!-- What you did well -->
+      @if (selectedAttempt.whatYouDidWell.length > 0) {
+        <div style="background:var(--sp-success-soft);border-radius:var(--sp-r-sm);padding:12px 14px;margin-bottom:12px">
+          <p style="font-size:11px;font-weight:800;color:var(--sp-success);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">What you did well</p>
+          @for (item of selectedAttempt.whatYouDidWell; track $index) {
+            <p style="font-size:13px;color:var(--sp-text);margin-bottom:4px">✓ {{ item }}</p>
+          }
+        </div>
+      }
+
+      <!-- Change list (visual diff) -->
+      @if (selectedAttempt.changes.length > 0) {
+        <div style="margin-bottom:16px">
+          <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Suggested changes</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            @for (change of selectedAttempt.changes; track $index) {
+              <div class="sp-diff-item">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                  <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px"
+                    [style.background]="categoryColour(change.category) + '1A'"
+                    [style.color]="categoryColour(change.category)">
+                    {{ categoryLabel(change.category) }}
+                  </span>
+                </div>
+                @if (change.original) {
+                  <div class="sp-diff-remove" style="margin-bottom:4px">
+                    <span style="font-size:11px;font-weight:700;color:var(--sp-warn)">Before</span>
+                    <span style="font-size:13px">{{ change.original }}</span>
+                  </div>
+                }
+                @if (change.suggested) {
+                  <div class="sp-diff-add" style="margin-bottom:4px">
+                    <span style="font-size:11px;font-weight:700;color:var(--sp-success)">After</span>
+                    <span style="font-size:13px">{{ change.suggested }}</span>
+                  </div>
+                }
+                @if (change.reason) {
+                  <p style="font-size:12px;color:var(--sp-muted);margin-top:4px">{{ change.reason }}</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Mini lesson -->
+      @if (selectedAttempt.miniLesson) {
+        <div style="background:var(--sp-writing-soft);border-left:3px solid var(--sp-writing);padding:12px 14px;border-radius:0 8px 8px 0;margin-bottom:12px">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-writing);margin-bottom:4px">Mini lesson</p>
+          <p style="font-size:13px;color:var(--sp-text);line-height:1.6">{{ selectedAttempt.miniLesson }}</p>
+        </div>
+      }
+
+      <!-- Native language explanation -->
+      @if (selectedAttempt.nativeLanguageExplanation) {
+        <div style="margin-bottom:12px">
+          <button (click)="showNativeExplanation.set(!showNativeExplanation())"
+            style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 0;font-size:13px;font-weight:700;color:var(--sp-muted)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              @if (showNativeExplanation()) {
+                <polyline points="18 15 12 9 6 15"/>
+              } @else {
+                <polyline points="6 9 12 15 18 9"/>
+              }
+            </svg>
+            {{ showNativeExplanation() ? 'Hide Persian explanation' : 'Show Persian explanation' }}
+          </button>
+          @if (showNativeExplanation()) {
+            <div class="sp-source-lang-block" style="margin-top:8px">
+              {{ selectedAttempt.nativeLanguageExplanation }}
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Submitted text -->
+      @if (selectedAttempt.submittedContent) {
+        <details style="margin-bottom:16px">
+          <summary style="font-size:12px;font-weight:700;color:var(--sp-muted);cursor:pointer;padding:6px 0">
+            Your submitted text
+          </summary>
+          <div style="background:var(--sp-surface2);border:1px solid var(--sp-border);border-radius:8px;padding:12px;margin-top:8px;font-size:13px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap">{{ selectedAttempt.submittedContent }}</div>
+        </details>
+      }
+    </div>
+  }
+
+  <!-- Improve again CTA -->
+  <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
+    <a [routerLink]="['/activity']" [queryParams]="{resume: history()!.activityId}"
+      class="sp-button-primary">
+      Improve again →
+    </a>
+    <a routerLink="/my-path" class="sp-button-ghost">Back to My Path</a>
+  </div>
+}

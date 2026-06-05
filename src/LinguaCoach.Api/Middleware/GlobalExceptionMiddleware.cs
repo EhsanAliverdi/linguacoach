@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LinguaCoach.Application.Ai;
 
 namespace LinguaCoach.Api.Middleware;
 
@@ -48,6 +49,7 @@ public sealed class GlobalExceptionMiddleware
             context.Response.StatusCode = ex is KeyNotFoundException ? 404
                 : ex is UnauthorizedAccessException ? 403
                 : ex is ArgumentException or InvalidOperationException ? 400
+                : ex is AiUnavailableException ? 503
                 : 500;
 
             context.Response.ContentType = "application/json";
@@ -55,9 +57,13 @@ public sealed class GlobalExceptionMiddleware
             // Only include detail in Development — never in Production
             var detail = _env.IsDevelopment() ? ex.Message : null;
 
+            var userMessage = ex is AiUnavailableException
+                ? "The AI coach is temporarily unavailable. Please try again shortly."
+                : "Something went wrong. Please try again.";
+
             await context.Response.WriteAsJsonAsync(new
             {
-                message = "Something went wrong. Please try again.",
+                message = userMessage,
                 correlationId = cid,
                 detail,
             });

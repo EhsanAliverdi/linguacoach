@@ -63,8 +63,10 @@ public sealed class CefrAssessmentHandler : ICefrAssessmentHandler
         // Log cost immediately — before any parsing.
         var modelName = string.IsNullOrEmpty(aiResponse.ModelName) ? "unknown" : aiResponse.ModelName;
         _db.AiUsageLogs.Add(new AiUsageLog(
-            profile.Id, _aiProvider.ProviderName, modelName,
-            aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd));
+            profile.Id, "cefr_assessment", _aiProvider.ProviderName, modelName,
+            isFallback: false, wasSuccessful: true, failureReason: null,
+            aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd,
+            durationMs: 0, correlationId: null));
         await _db.SaveChangesAsync(ct);
 
         var parsed = ParseResponse(aiResponse.ResponseJson);

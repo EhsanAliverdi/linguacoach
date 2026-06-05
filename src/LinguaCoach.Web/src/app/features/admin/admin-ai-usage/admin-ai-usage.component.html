@@ -1,0 +1,144 @@
+<div class="sp-admin-page-header">
+  <h1 class="sp-admin-page-title">AI Usage</h1>
+  <p class="sp-admin-page-sub">Token usage, cost, provider performance, and fallback rates.</p>
+</div>
+
+<!-- Summary cards -->
+@if (loadingSummary()) {
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px">
+    @for (i of [1,2,3,4,5]; track i) { <div class="sp-loading-pulse" style="height:72px"></div> }
+  </div>
+} @else if (summaryError()) {
+  <div class="sp-admin-alert-error">{{ summaryError() }}</div>
+} @else if (summary()) {
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px">
+    <div class="sp-admin-form-card" style="padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Total calls</div>
+      <div style="font-size:22px;font-weight:800;color:var(--sp-ink)">{{ summary()!.totalCalls }}</div>
+    </div>
+    <div class="sp-admin-form-card" style="padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Success rate</div>
+      <div style="font-size:22px;font-weight:800;color:var(--sp-success)">{{ summary()!.successRate }}%</div>
+    </div>
+    <div class="sp-admin-form-card" style="padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Failed calls</div>
+      <div style="font-size:22px;font-weight:800"
+        [style.color]="summary()!.failedCalls > 0 ? 'var(--sp-speaking)' : 'var(--sp-faint)'">
+        {{ summary()!.failedCalls }}
+      </div>
+    </div>
+    <div class="sp-admin-form-card" style="padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Fallback calls</div>
+      <div style="font-size:22px;font-weight:800"
+        [style.color]="summary()!.fallbackCalls > 0 ? 'var(--sp-warn)' : 'var(--sp-faint)'">
+        {{ summary()!.fallbackCalls }}
+      </div>
+    </div>
+    <div class="sp-admin-form-card" style="padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Total cost</div>
+      <div style="font-size:22px;font-weight:800;color:var(--sp-ink)">${{ summary()!.totalCostUsd.toFixed(4) }}</div>
+    </div>
+  </div>
+
+  <!-- By provider + by feature -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div class="sp-admin-table-card">
+      <div style="padding:12px 16px;border-bottom:1px solid #E2E8F0;font-size:13px;font-weight:700;color:var(--sp-ink)">By provider</div>
+      @if (summary()!.byProvider.length === 0) {
+        <div style="padding:16px;font-size:13px;color:var(--sp-muted)">No calls yet.</div>
+      } @else {
+        <table class="sp-admin-table" style="font-size:12px">
+          <thead><tr><th>Provider</th><th>Calls</th><th>OK</th><th>Fallback</th><th>Cost</th></tr></thead>
+          <tbody>
+            @for (p of summary()!.byProvider; track p.provider) {
+              <tr>
+                <td style="font-weight:700;text-transform:capitalize">{{ p.provider }}</td>
+                <td>{{ p.calls }}</td>
+                <td style="color:var(--sp-success)">{{ p.successful }}</td>
+                <td [style.color]="p.fallback > 0 ? 'var(--sp-warn)' : 'var(--sp-faint)'">{{ p.fallback }}</td>
+                <td>${{ p.costUsd.toFixed(4) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+    <div class="sp-admin-table-card">
+      <div style="padding:12px 16px;border-bottom:1px solid #E2E8F0;font-size:13px;font-weight:700;color:var(--sp-ink)">By feature</div>
+      @if (summary()!.byFeature.length === 0) {
+        <div style="padding:16px;font-size:13px;color:var(--sp-muted)">No calls yet.</div>
+      } @else {
+        <table class="sp-admin-table" style="font-size:12px">
+          <thead><tr><th>Feature</th><th>Calls</th><th>OK</th><th>Cost</th></tr></thead>
+          <tbody>
+            @for (f of summary()!.byFeature; track f.feature) {
+              <tr>
+                <td style="font-size:11px">{{ featureLabel(f.feature) }}</td>
+                <td>{{ f.calls }}</td>
+                <td style="color:var(--sp-success)">{{ f.successful }}</td>
+                <td>${{ f.costUsd.toFixed(4) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+}
+
+<!-- Recent calls table -->
+<h2 style="font-size:15px;font-weight:700;color:var(--sp-ink);margin-bottom:12px">Recent calls</h2>
+@if (loadingRecent()) {
+  <div class="sp-loading-pulse" style="height:120px"></div>
+} @else if (recentError()) {
+  <div class="sp-admin-alert-error">{{ recentError() }}</div>
+} @else {
+  <div class="sp-admin-table-card">
+    @if (recentItems().length === 0) {
+      <div style="padding:24px;text-align:center;font-size:13px;color:var(--sp-muted)">No AI calls recorded yet. AI calls will appear here once the system is used.</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table class="sp-admin-table" style="font-size:12px">
+          <thead>
+            <tr>
+              <th style="width:68px">Time</th>
+              <th style="width:120px">Feature</th>
+              <th style="width:80px">Provider</th>
+              <th style="width:110px">Model</th>
+              <th style="width:60px">Status</th>
+              <th style="width:60px">Fallback</th>
+              <th style="width:60px">Duration</th>
+              <th style="width:110px">Correlation</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of recentItems(); track item.id) {
+              <tr>
+                <td style="font-family:monospace;font-size:11px;white-space:nowrap;color:var(--sp-muted)">{{ formatTime(item.createdAt) }}</td>
+                <td style="font-size:11px;color:var(--sp-text)">{{ featureLabel(item.featureKey) }}</td>
+                <td style="text-transform:capitalize;font-weight:600">{{ item.provider }}</td>
+                <td style="font-size:11px;color:var(--sp-muted)">{{ item.model }}</td>
+                <td>
+                  <span style="border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700"
+                    [style.background]="item.wasSuccessful ? 'var(--sp-success-soft)' : '#FEE2E2'"
+                    [style.color]="item.wasSuccessful ? 'var(--sp-success)' : 'var(--sp-speaking)'">
+                    {{ item.wasSuccessful ? 'OK' : 'FAIL' }}
+                  </span>
+                </td>
+                <td>
+                  @if (item.isFallback) {
+                    <span style="border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;background:var(--sp-warn-soft);color:var(--sp-warn)">FB</span>
+                  } @else {
+                    <span style="color:var(--sp-faint)">—</span>
+                  }
+                </td>
+                <td style="color:var(--sp-muted)">{{ item.durationMs }}ms</td>
+                <td style="font-family:monospace;font-size:10px;color:var(--sp-muted)">{{ item.correlationId ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

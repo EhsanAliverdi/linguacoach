@@ -138,9 +138,11 @@ public sealed class SpeakingSessionHandler : ICreateSpeakingSessionHandler, ISub
 
         // Stage AI usage log — saved atomically with the turn response below.
         _db.AiUsageLogs.Add(new AiUsageLog(
-            profile.Id, _aiProvider.ProviderName,
+            profile.Id, "speaking_turn", _aiProvider.ProviderName,
             string.IsNullOrEmpty(aiResponse.ModelName) ? "unknown" : aiResponse.ModelName,
-            aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd));
+            isFallback: false, wasSuccessful: true, failureReason: null,
+            aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd,
+            durationMs: 0, correlationId: null));
 
         var parsed = ParseTurnResponse(aiResponse.ResponseJson);
 
@@ -234,9 +236,11 @@ public sealed class SpeakingSessionHandler : ICreateSpeakingSessionHandler, ISub
         var aiResponse = await _aiProvider.CompleteAsync(aiRequest, ct);
 
         _db.AiUsageLogs.Add(new AiUsageLog(
-            profile.Id, _aiProvider.ProviderName,
+            profile.Id, "speaking_turn", _aiProvider.ProviderName,
             string.IsNullOrEmpty(aiResponse.ModelName) ? "unknown" : aiResponse.ModelName,
-            aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd));
+            isFallback: false, wasSuccessful: true, failureReason: null,
+            aiResponse.InputTokens, aiResponse.OutputTokens, aiResponse.CostUsd,
+            durationMs: 0, correlationId: null));
         await _db.SaveChangesAsync(ct);
 
         try

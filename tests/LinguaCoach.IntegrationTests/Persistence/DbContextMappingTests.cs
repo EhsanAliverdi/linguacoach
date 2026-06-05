@@ -147,7 +147,9 @@ public sealed class DbContextMappingTests : IDisposable
         _db.StudentProfiles.Add(student);
         _db.SaveChanges();
 
-        var log = new AiUsageLog(student.Id, "openai", "gpt-4o", 500, 200, 0.003m);
+        var log = new AiUsageLog(student.Id, "cefr_assessment", "openai", "gpt-4o",
+            isFallback: false, wasSuccessful: true, failureReason: null,
+            500, 200, 0.003m, durationMs: 100, correlationId: null);
         _db.AiUsageLogs.Add(log);
         _db.SaveChanges();
         _db.ChangeTracker.Clear();

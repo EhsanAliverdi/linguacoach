@@ -307,11 +307,26 @@
       </div>
     }
 
-    <!-- Persian explanation -->
+    <!-- Native-language explanation (hidden by default, revealed on demand) -->
     @if (feedback()!.feedbackInSourceLanguage) {
       <div>
-        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">توضیح به فارسی</p>
-        <div class="sp-source-lang-block">{{ feedback()!.feedbackInSourceLanguage }}</div>
+        <button (click)="showNativeExplanation.set(!showNativeExplanation())"
+          style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 0;font-size:13px;font-weight:700;color:var(--sp-muted)">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            @if (showNativeExplanation()) {
+              <polyline points="18 15 12 9 6 15"/>
+            } @else {
+              <polyline points="6 9 12 15 18 9"/>
+            }
+          </svg>
+          {{ showNativeExplanation() ? 'Hide Persian explanation' : 'Show Persian explanation' }}
+        </button>
+        @if (showNativeExplanation()) {
+          <div>
+            <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">توضیح به فارسی</p>
+            <div class="sp-source-lang-block">{{ feedback()!.feedbackInSourceLanguage }}</div>
+          </div>
+        }
       </div>
     }
 
