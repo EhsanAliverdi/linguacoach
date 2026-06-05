@@ -1,120 +1,82 @@
-# SpeakPath / LinguaCoach Agent Instructions
+# SpeakPath / LinguaCoach — Agent Instructions
 
-## Purpose
-
-This file defines how AI coding agents such as Codex should work inside this repository.
-
-Read this file before making changes.
+Read this file before making any changes to the repository.
 
 The public product is **SpeakPath**.
-
-The internal repository/project name may still contain **LinguaCoach**, especially in .NET project names, namespaces, migrations, and older docs. That is acceptable internally.
-
-User-facing UI, page titles, product copy, emails, landing pages, and public documentation should use **SpeakPath**.
+The internal repo/project name is **LinguaCoach** (keep in .NET namespaces, migrations, infrastructure — do not rename unless asked).
+User-facing UI, page titles, copy, and public docs should use **SpeakPath**.
 
 ---
 
 # 1. Product Identity
 
-## Product Name
+SpeakPath is an AI-powered English learning platform for practical workplace and real-life communication.
 
-Public name:
+It is **professional communication coaching software for immigrant professionals**.
 
-```text
-SpeakPath
+First wedge:
+
 ```
-
-Internal/repo name:
-
-```text
-LinguaCoach
-```
-
-Do not rename .NET projects, namespaces, migrations, or infrastructure unless explicitly requested.
-
-Do rename user-facing text from LinguaCoach to SpeakPath where appropriate.
-
----
-
-## Product Positioning
-
-SpeakPath is not a generic language app.
-
-SpeakPath is **professional communication coaching software for immigrant professionals**.
-
-The first wedge is:
-
-```text
 Persian-speaking professionals in Australia improving workplace English.
+First role-specific path: Document Controller / admin-document-control worker.
 ```
 
-The first role-specific path is:
-
-```text
-Document Controller / admin-document-control worker.
-```
-
-Core positioning:
-
-```text
-Professional dignity software, not a generic language app.
-```
-
-The user is not buying “English lessons”.
+Core positioning: **Professional dignity software, not a generic language app.**
 
 The user is buying the ability to:
 
-```text
-send workplace emails,
-speak in meetings,
-follow up professionally,
-explain delays clearly,
-ask for clarification politely,
-and communicate at work without needing a colleague to fix every message.
+```
+send workplace emails
+speak in meetings
+follow up professionally
+explain delays clearly
+ask for clarification politely
+communicate at work without asking a colleague to fix every message
 ```
 
----
+SpeakPath is **not**:
 
-## First User Persona
+- only an email correction tool
+- a generic grammar checker
+- a static scenario generator
+- a random AI exercise generator
 
-The first user is:
+Current implemented focus:
 
-```text
-A Persian-speaking immigrant professional in Australia,
-around A2-B1 English level,
-working or trying to work in an admin, project support, or document-control role,
-who can survive daily English but struggles with professional workplace communication.
-```
+- workplace writing activities (`WritingScenario`)
+- AI-generated learning paths
+- structured AI feedback with retry/improve loop
+- module progress and completion tracking
+- learning history (revisit modules, activities, all retry iterations)
+- optional native-language explanation (hidden by default)
+- AI provider fallback and Qwen support
+- AI usage tracking per call
 
-Specific pain:
+Long-term direction (do not build until sprint explicitly asks):
 
-```text
-They ask colleagues, friends, Google Translate, or ChatGPT to fix important emails.
-They feel embarrassed or less professional.
-They avoid speaking in meetings.
-They are worried their English makes them look less competent than they are.
-```
-
-SpeakPath should help them practise real workplace communication.
+- speaking practice
+- listening practice
+- vocabulary practice
+- pronunciation practice
+- reading practice
+- student learning memory
+- adaptive next-step recommendations
+- coaching trend insights
 
 ---
 
 # 2. Product Promise
 
-The product promise is:
-
-```text
+```
 Practise the workplace message before you send it.
 Sound clear, polite, and professional.
 Build confidence for real work situations.
 ```
 
-Good product copy examples:
+Good copy:
 
-```text
+```
 Practise the email before you send it.
-Sound clear, polite, and professional.
-Build confidence for real workplace situations.
 Your next practice: follow up a pending document approval.
 Learn the phrases you actually need at work.
 Stop depending on colleagues to fix every message.
@@ -122,11 +84,9 @@ Stop depending on colleagues to fix every message.
 
 Avoid generic copy:
 
-```text
-Learn English fast.
-AI-powered English learning.
-Improve your grammar with AI.
-Chat with your AI tutor.
+```
+Learn English fast. AI-powered English learning.
+Improve your grammar. Chat with your AI tutor.
 Become fluent in 30 days.
 ```
 
@@ -134,55 +94,22 @@ Become fluent in 30 days.
 
 # 3. Tech Stack
 
-Backend:
-
-```text
-.NET 10 Web API
-ASP.NET Identity
-JWT authentication
-Entity Framework Core
-PostgreSQL
-Clean Architecture
-Modular Monolith
 ```
-
-Frontend:
-
-```text
-Angular
-Tailwind CSS
-Mobile-first responsive UI
-```
-
-Infrastructure:
-
-```text
-Docker
-Docker Compose
-GitHub Actions
-VPS deployment
-speakpath.app
-```
-
-AI:
-
-```text
-AI provider abstraction
-Prompt templates
-Token budgets
-AI usage logging
-Small context packets only
+Backend:   .NET 10 Web API, ASP.NET Identity, JWT, EF Core, PostgreSQL
+           Clean Architecture + Modular Monolith
+Frontend:  Angular, Tailwind CSS, mobile-first
+Infra:     Docker, Docker Compose, GitHub Actions, VPS (speakpath.app)
+AI:        Provider abstraction, prompt templates in PostgreSQL,
+           token budgets, AI usage logging, fallback providers
 ```
 
 ---
 
-# 4. Architecture Rules
+# 4. Core Architecture
 
-## Clean Architecture
+## Project structure
 
-Maintain the current architecture:
-
-```text
+```
 src/LinguaCoach.Domain
 src/LinguaCoach.Application
 src/LinguaCoach.Infrastructure
@@ -192,121 +119,70 @@ src/LinguaCoach.Worker
 src/LinguaCoach.Web
 ```
 
-Rules:
+## Rules
 
-```text
-Domain must not depend on EF Core.
-Domain must not depend on ASP.NET Identity.
-Domain must not depend on Infrastructure.
-Domain must not depend on API.
-Application defines interfaces and use cases.
-Infrastructure implements external providers.
-Persistence owns EF Core, Identity mapping, migrations, and database configuration.
-API owns controllers, middleware, auth wiring, CORS, health checks, and HTTP concerns.
-Angular owns UI only.
+- Domain must not depend on EF Core, ASP.NET Identity, Infrastructure, or API.
+- Application defines interfaces and use cases.
+- Infrastructure implements external providers.
+- Persistence owns EF Core, Identity mapping, migrations, DB config.
+- API owns controllers, middleware, auth wiring, CORS, health checks.
+- Angular owns UI only.
+- Do not put business logic in controllers.
+- Do not put EF Core attributes in Domain entities.
+
+## Core learning model
+
+```
+LearningPath
+  → LearningModule
+    → LearningActivity
+      → ActivityAttempt
 ```
 
-Do not put business logic in controllers.
+**Agents must not bring back the old writing-only architecture.**
 
-Do not put EF Core attributes in Domain entities.
+Do not recreate:
 
-Do not add infrastructure dependencies into Domain.
+- `WritingExerciseController`
+- `/api/writing/*` endpoints
+- old writing pages or writing service flow
 
----
+`/activity` is the main student practice path.
 
-## Domain Model Rules
+Current `ActivityType` values:
 
-Domain entities should enforce meaningful invariants.
+- `WritingScenario` ✅ implemented
 
-Examples:
+Future values (do not implement unless sprint asks):
 
-```text
-StudentProfile should not mutate after onboarding is complete.
-LanguagePair should not allow same source and target language.
-VocabularyEntry should protect valid mastery states and counters.
-SpeakingSession should protect valid state transitions.
-AiPrompt should enforce token budget validity.
-```
+- `SpeakingRolePlay`
+- `ListeningComprehension`
+- `VocabularyPractice`
+- `PronunciationPractice`
+- `ReadingTask`
 
-Domain exceptions must be handled by the API layer and should not become uncontrolled 500 responses.
+## Completed activity vs retry
 
----
+A "completed activity" = at least one `ActivityAttempt` submitted for a given `LearningActivity`.
 
-## Persistence Rules
+Count `COUNT(DISTINCT LearningActivityId)`, not total `ActivityAttempt` rows.
 
-Persistence uses PostgreSQL.
-
-Use EF Core configurations in Persistence.
-
-Use deterministic seed data where needed.
-
-Do not edit old migrations unless there is a strong reason. Prefer additive migrations.
-
-Seed data is allowed for the initial product slice:
-
-```text
-Persian language
-English language
-Persian → English language pair
-Workplace English learning track
-Document Controller career profile
-Initial writing exercise prompt/template
-```
-
-Persian and English are allowed as seed data, but do not hard-code Persian or English as assumptions in business logic.
+A student retrying the same activity 3 times does not count as completing 3 activities.
 
 ---
 
 # 5. Language-Pair Architecture
 
-The MVP is:
+MVP: Persian → English.
+Architecture: any source language → any target language.
 
-```text
-Persian → English
-```
+Do not hard-code `IsPersianUser`, `LearningEnglish`, `PersianEnglishOnly`.
 
-But the architecture must support:
+Prefer: `SourceLanguage`, `TargetLanguage`, `LanguagePair`, `SourceLanguageDirection`, `TargetLanguageDirection`.
 
-```text
-Any source language → any target language
-```
+Prompt variables: `{{SourceLanguageName}}`, `{{TargetLanguageName}}`, `{{SourceLanguageCode}}`, `{{TargetLanguageCode}}`.
 
-Do not hard-code:
-
-```text
-IsPersianUser
-LearningEnglish
-PersianEnglishOnly
-```
-
-Prefer:
-
-```text
-SourceLanguage
-TargetLanguage
-LanguagePair
-SourceLanguageDirection
-TargetLanguageDirection
-```
-
-Prompt variables should use:
-
-```text
-{{SourceLanguageName}}
-{{TargetLanguageName}}
-{{SourceLanguageCode}}
-{{TargetLanguageCode}}
-```
-
-UI should be ready for:
-
-```text
-Source language: RTL or LTR
-Target language: RTL or LTR
-Mixed Persian/English content
-```
-
-Do not overbuild full i18n unless explicitly requested.
+Persian and English are allowed as seed data, but not as hard-coded assumptions in business logic.
 
 ---
 
@@ -316,59 +192,30 @@ AI is expensive and must be controlled.
 
 AI must not be the system planner.
 
-The backend owns:
+The backend owns: lesson selection, vocabulary selection, review scheduling, progress calculation, context reduction, scenario selection, token budget enforcement.
 
-```text
-lesson selection
-vocabulary selection
-review scheduling
-progress calculation
-context reduction
-scenario selection
-token budget enforcement
-```
-
-AI should only:
-
-```text
-generate or evaluate one small task at a time
-return structured JSON
-explain or correct user text
-```
+AI should only: generate or evaluate one small task at a time, return structured JSON, explain or correct user text.
 
 Correct flow:
 
-```text
+```
 PostgreSQL
-→ LearningPlanner
-→ AiContextBuilder
+→ LearningPlanner / AiContextBuilder
 → IAiProvider
 → validated JSON response
 → saved result
 → UI display
 ```
 
-Incorrect flow:
-
-```text
-Send full user history to AI and ask it what to do next.
-```
+Do not send full student history to AI and ask it what to do next.
 
 ---
 
-## AI Context Rules
+# 7. AI Context Rules
 
-Do not send full history.
+Do not send: full history, full vocabulary list, all previous attempts, full curriculum.
 
-Do not send full vocabulary list.
-
-Do not send all previous attempts.
-
-Do not send full curriculum.
-
-Send compact packets only.
-
-Example writing feedback context:
+Send compact packets only. Example writing feedback context:
 
 ```json
 {
@@ -377,293 +224,224 @@ Example writing feedback context:
   "careerProfile": "Document Controller",
   "level": "A2",
   "scenario": "Follow up pending document approval",
-  "targetVocabulary": [
-    "pending approval",
-    "revised version",
-    "could you please review"
-  ],
-  "recentWeaknesses": [
-    "too direct tone",
-    "confuses approve and approval"
-  ],
+  "targetVocabulary": ["pending approval", "revised version", "could you please review"],
+  "recentWeaknesses": ["too direct tone", "confuses approve and approval"],
   "userDraft": "..."
 }
 ```
 
-AI context should be bounded by token budgets.
+AI context must be bounded by token budgets.
 
 ---
 
-## AI Cost Rules
+# 8. Student Learning Memory Rules
 
-Every AI call must have:
+Student learning memory is a first-class product concept.
 
-```text
-feature key
-provider
-model
-input token count if available
-output token count if available
-estimated cost if available
-duration
-status
-error if failed
-user id where applicable
+The student should feel:
+
+- the app remembers what they already practised
+- the next module connects to previous mistakes
+- the app avoids repeating the same scenario
+- the path feels like a continuing learning journey
+
+When working on learning generation, prefer compact database-driven memory over passing full history to AI.
+
+Use compact summaries such as:
+
+```
+journey summary          strong skills
+weak skills              recurring mistakes
+covered scenarios        next recommended focus
+skill mastery scores     recent performance summary
+completed module fingerprints
 ```
 
-No AI call should happen silently.
+Memory update is best-effort:
 
-No AI call should be added without considering:
-
-```text
-Can this be done by SQL/code?
-Can this be cached?
-Can this be generated once and reused?
-Can this use a cheaper model?
-Can the prompt be smaller?
-```
-
-Tests and CI must not depend on real AI providers.
-
-Use fake/mock providers in tests.
-
-Real provider must use environment variables/secrets only.
-
-Never commit API keys.
+- if memory update fails, do not fail the student's activity submission
+- log the failure with correlation ID
+- record AI usage if an AI call was attempted
+- continue returning evaluation feedback to the student
 
 ---
 
-# 7. Vocabulary and Learning Rules
+# 9. Adaptive Module Generation Rules
 
-Seeing a word is not the same as learning it.
+Initial onboarding may generate a starter path.
 
-Track different stages:
+After the student has history, **do not generate another generic full path**.
 
-```text
-New
-Seen
-Recognised
-Practised
-Weak
-Learning
-Mastered
-Retired
+Prefer generating:
+
+- next 3–5 recommended modules
+- continuation modules
+- targeted reinforcement modules
+- modules based on memory and progress
+
+Adaptive generation must consider:
+
+```
+completed modules         last few modules
+module fingerprints       recurring mistakes
+weak skills               strong skills
+covered scenarios         current CEFR level
+career context            curriculum map
 ```
 
-Track separate skill dimensions:
+Each generated module should include where supported:
 
-```text
-recognition
-recall
-usage
 ```
-
-The backend should choose vocabulary using the database and LearningPlanner.
-
-The AI should not randomly choose vocabulary from a large list.
-
-A lesson should use a controlled mix:
-
-```text
-new words
-weak/review words
-mastered words in natural context
-```
-
-Avoid boring repetition, but allow intentional varied repetition.
-
-Examples of good workplace vocabulary/phrases for Document Controller:
-
-```text
-pending approval
-revised version
-document register
-could you please review
-when you have a chance
-the latest revision
-submitted for review
-awaiting confirmation
-missing information
-follow up today
+title        description    focusSkill
+reason       difficulty     fingerprint
+avoidsRepeating
 ```
 
 ---
 
-# 8. Speaking and Conversation Rules
+# 10. Anti-Repetition Rules
 
-The product will eventually support speaking, but do not start with real-time voice.
+Generated modules and activities must avoid repetition.
 
-MVP speaking strategy:
+Do not rely only on module titles to detect repetition.
 
-```text
-push-to-talk
-turn-based sessions
-browser speech recognition where practical
-browser text-to-speech where practical
-no audio upload in MVP
-no stored user audio in MVP
+Use module/activity fingerprints:
+
+```
+communicationMode    scenarioType    audience
+tone                 difficulty      grammarFocus
+vocabularyTheme
 ```
 
-A speaking session should be structured:
+Avoid generating modules with the same `scenarioType + audience + communicationMode`.
 
-```text
-one scenario
-one learning goal
-max turns
-target phrases
-rubric
-small context packet
-structured JSON feedback
+These may look different but are effectively duplicates:
+
+```
+Explaining Delays
+Reporting a Schedule Delay
+Notifying Manager of Delay
 ```
 
-Do not build uncontrolled endless chat.
+Prefer:
 
-Do not send the full conversation history to AI.
-
-Send only:
-
-```text
-scenario
-current turn
-previous turn summary
-current transcript
-target phrases
-recent weakness summary
-rubric
-```
+- new workplace situations for weak skills
+- gradual difficulty progression
+- reinforcement without repeating the exact same task
+- career-relevant communication
 
 ---
 
-# 9. Product Quality Gate
+# 11. Feedback and Coaching Rules
 
-A task is not complete just because tests pass.
+AI feedback should coach the student, not simply replace their work with a perfect answer.
 
-A task is complete only when:
+Feedback should be iterative:
 
-```text
-The user flow works in a real browser or is clearly not browser-facing.
-There are no obvious dead buttons.
-Loading states exist.
-Empty states exist.
-Success states exist.
-Error states are visible.
-The UI is mobile-friendly.
-The product copy is understandable to a first-time user.
-Backend tests pass.
-Angular tests/build pass if frontend changed.
-No secrets are committed.
-No scope creep beyond the approved task.
-```
+- explain what changed
+- show before/after changes
+- prioritise top issues (3–5 max when many issues exist)
+- provide mini lesson
+- suggest next improvement
+- allow retry/improve
 
-For browser-facing work, validate the actual flow.
-
-Do not declare a frontend feature complete based only on unit tests.
+The "improved version" is a suggestion, not "the correct answer".
 
 ---
 
-# 10. Current Critical Flow
+# 12. Native-Language Support Rules
 
-The current product must support this flow before roadmap features continue:
+Native-language explanations are support, not the main learning experience.
 
-```text
-Admin logs in
-→ Admin creates student
-→ Student logs in
-→ Student changes temporary password
-→ Student completes onboarding
-→ Student reaches dashboard
-→ Student starts writing exercise
-→ Student submits draft
-→ Student sees useful feedback
-```
+Main feedback must remain in English.
 
-Do not continue roadmap features until this flow is stable, understandable, and demo-ready.
+For Persian/Farsi learners:
+
+- Persian explanation may be generated
+- hidden/collapsed by default
+- user clicks "Show Persian explanation" to reveal
+- do not show all feedback in Farsi by default
+
+Do not hard-code Farsi everywhere — use generic support language names where the model supports it.
 
 ---
 
-# 11. Current Rescue Sprint Priority
+# 13. AI Provider Resilience Rules
 
-The current priority is product stabilisation and polish.
+Respect: primary provider, fallback provider, Qwen provider support, provider/model configuration, API key safety, AI usage tracking.
 
-Do not add new product features until the existing product is usable.
+If primary provider fails:
 
-Current rescue priorities:
+- log failure with correlation ID
+- record failed usage
+- try fallback if configured
 
-```text
-Fix blockers.
-Stabilise the core flow.
-Improve UX and copy.
-Improve visual quality.
-Add minimum E2E smoke test.
-Prepare for first real user demo.
-```
+If fallback succeeds:
 
-Do not continue with broad roadmap work until these are done.
+- record fallback usage with `IsFallback = true`
+- return result
 
----
+If all providers fail:
 
-# 12. Scope Rules
+- return a controlled AI unavailable response
+- frontend shows friendly message with correlation ID
+- do not show broken JSON, do not fake detailed AI feedback
 
-Do not add these unless explicitly requested:
-
-```text
-public registration
-payments
-organisations
-real-time voice
-audio upload
-new AI providers
-full admin AI management
-full CEFR assessment
-full spaced repetition product
-large dashboard analytics
-teacher/classroom features
-mobile native app
-```
-
-Do not overbuild.
-
-Do not add new architecture when a UI/UX or flow fix is needed.
-
-Do not create a new framework inside the app.
+Never expose: API keys, tokens, secrets, raw Authorization headers.
 
 ---
 
-# 13. UI/UX Rules
+# 14. AI Usage Tracking Rules
 
-Use Tailwind CSS.
+Every attempted AI provider call must be tracked.
 
-The UI should feel:
+Track:
 
-```text
-modern SaaS
-warm
-trustworthy
-professional
-calm
-mobile-first
-language-learning focused
-workplace-confidence focused
+```
+featureKey          provider          model
+userId              isFallback        wasSuccessful
+failureReason       durationMs        inputTokens
+outputTokens        estimatedCost     correlationId
 ```
 
-Avoid:
+Do not invent token counts or costs.
+Tests must not depend on real AI providers — use fake/mock providers.
 
-```text
-raw Angular scaffold look
-childish gamification
-generic AI app vibes
-dense enterprise dashboard clutter
-vague filler copy
-unstyled forms
-dead-end pages
-hidden errors
-excessive gradients
-emoji-heavy UI
-```
+---
+
+# 15. Observability Rules
+
+Every backend request must preserve correlation ID behaviour.
+
+Respect: `CorrelationIdMiddleware`, `GlobalExceptionMiddleware`, `RequestLoggingMiddleware`, structured logging, admin diagnostics.
+
+When adding handlers/services:
+
+- add useful structured logs
+- include correlation ID through logging scope
+- do not log secrets
+- do not log full student submitted text in Production
+- do not log full prompts or AI responses in Production unless explicitly allowed by safe Development settings
+
+---
+
+# 16. UI Rules
+
+Do not redesign the whole app unless the sprint explicitly asks.
+
+Respect layout architecture: `PublicLayout`, `StudentAppLayout`, `AdminAppLayout`.
+
+Pages render page content only. Layouts own sidebar/header/shell.
+
+Avoid: duplicated headers, duplicated sidebars, raw JSON shown to users, unprofessional placeholder text, horizontal overflow, broken mobile layout.
+
+The UI should feel: modern SaaS, warm, trustworthy, professional, mobile-first, workplace-confidence focused.
+
+Avoid: childish gamification, excessive gradients, emoji-heavy UI, generic AI startup copy, dense enterprise clutter, raw Angular scaffold styling.
 
 Every page should answer:
 
-```text
+```
 Where am I?
 What should I do next?
 Why does this matter?
@@ -672,600 +450,149 @@ What happens if something goes wrong?
 
 ---
 
-## Design Direction
+# 17. Testing Rules
 
-SpeakPath should feel like:
+Before reporting completion, run:
 
-```text
-a practical workplace communication coach
-a modern SaaS product
-a safe place to practise before speaking/writing at work
+```
+Backend:   dotnet test
+Frontend:  npm run build
+           npx playwright test
 ```
 
-Not like:
+When AI prompts or AI provider logic changes: test fallback behaviour, safe failure, usage tracking, no secrets exposed.
 
-```text
-Duolingo clone
-generic ChatGPT wrapper
-corporate LMS
-raw admin panel
-```
+When learning memory/adaptive generation changes: test memory creation/update, duplicate prevention, module fingerprint persistence, adaptive context construction, generation does not pass full attempt history.
 
-Visual direction:
-
-```text
-warm neutral background
-clean white cards
-subtle borders
-generous spacing
-clear typography
-professional accent colour
-mobile-first layout
-clear primary action
-```
-
-Use restrained colour.
-
-Prefer:
-
-```text
-slate / zinc / stone neutrals
-blue / indigo / teal / emerald accents
-clear red/amber error states
-clear green success states
-```
-
-Do not randomly mix many colours.
+Do not declare a frontend feature complete based only on unit tests.
 
 ---
 
-# 14. UI/UX Skill Usage
+# 18. Documentation Rules
 
-When doing UI, UX, design review, redesign, layout, component styling, landing page, dashboard, onboarding, admin UI, or form polish work, use the Codex skill:
+Every major sprint creates/updates:
 
-```text
-ui-ux-pro-max
 ```
-
-However, generic visual recommendations from that skill must be filtered through SpeakPath product identity.
-
-SpeakPath is not a childish language game and not a generic AI chatbot.
-
-SpeakPath should feel:
-
-```text
-modern SaaS
-warm
-trustworthy
-professional
-mobile-first
-focused on workplace communication confidence
-designed for immigrant professionals
-```
-
-Avoid:
-
-```text
-childish gamification
-excessive gradients
-emoji-heavy UI
-generic AI startup landing page copy
-dense enterprise dashboard clutter
-raw Angular scaffold styling
-```
-
-Critical flow to preserve:
-
-```text
-Admin creates student
-→ Student logs in
-→ Student changes password
-→ Student completes onboarding
-→ Dashboard
-→ Writing exercise
-→ Feedback
-```
-
-Any UI redesign must preserve and improve this flow.
-
----
-
-# 15. Design System Minimum
-
-When redesigning, prefer reusable patterns.
-
-Minimum UI patterns:
-
-```text
-Page shell
-Card
-Button
-Form field
-Status message
-Dashboard card
-Page header
-```
-
-Button variants:
-
-```text
-primary
-secondary
-ghost
-danger
-disabled/loading
-```
-
-Status components:
-
-```text
-loading
-error
-success
-empty
-AI unavailable
-permission denied
-session expired
-```
-
-Forms should have:
-
-```text
-label
-helper text
-validation error
-loading/disabled state
-success state where appropriate
-```
-
-Dashboard should include:
-
-```text
-recommended next action
-learning goal
-career context
-skill focus
-progress placeholder
-coming soon section
-```
-
----
-
-# 16. Page Expectations
-
-## Public Landing Page
-
-Must communicate:
-
-```text
-SpeakPath helps professionals practise workplace communication.
-The first path is workplace English for Document Controllers.
-It is role-specific, not generic English.
-Access is admin-created during pilot/MVP.
-```
-
-Should include:
-
-```text
-hero
-problem statement
-how it works
-first scenario preview
-login CTA
-```
-
----
-
-## Login Page
-
-Must:
-
-```text
-use SpeakPath branding
-explain product in one sentence
-show clear errors
-not feel like an internal admin panel
-```
-
----
-
-## Admin Create Student
-
-Must:
-
-```text
-explain that admin creates pilot users
-show success clearly
-show student credentials clearly if applicable
-offer next step after creating student
-validate fields
-avoid losing created credentials before admin can copy them
-```
-
----
-
-## Change Password
-
-Must:
-
-```text
-explain why password change is required
-show validation
-show success
-guide to onboarding
-```
-
----
-
-## Onboarding
-
-Must:
-
-```text
-explain why each step matters
-show progress
-allow recovery/back where practical
-show selected values
-avoid dead ends
-work after refresh
-```
-
----
-
-## Dashboard
-
-Must not be a generic menu.
-
-Must show:
-
-```text
-user goal
-career context
-recommended next action
-writing exercise CTA
-progress/learning placeholder
-what is coming later
-```
-
----
-
-## Writing Exercise
-
-Must:
-
-```text
-show a realistic workplace scenario
-explain task clearly
-show target phrases/vocabulary
-provide a comfortable writing area
-prevent duplicate submission
-show feedback in a structured readable way
-handle missing AI configuration gracefully
-```
-
----
-
-# 17. Auth and Security Rules
-
-Do not commit secrets.
-
-JWT signing key must come from environment variables/secrets outside Development.
-
-Production must fail startup if JWT key is missing, too short, or equals placeholder.
-
-MustChangePassword must be enforced server-side before first real user.
-
-Students with temporary passwords should not access onboarding, dashboard, reference data, writing exercise, or other protected app features until password is changed.
-
-Admin-only endpoints must require Admin role.
-
-Student endpoints must require authentication.
-
-No public registration unless explicitly requested.
-
-Invalid login should not leak whether user exists.
-
----
-
-# 18. Deployment Rules
-
-Domain:
-
-```text
-speakpath.app
-```
-
-Deployment should support:
-
-```text
-HTTPS
-API health check
-frontend route refresh
-/api routing
-Docker Compose
-GitHub Actions
-VPS deployment
-```
-
-Production checks should verify:
-
-```text
-web responds
-/api or API route responds
-/health returns actual API health, not SPA HTML
-login route loads
-unauthenticated protected API returns 401, not 500
-```
-
-Do not rely only on “workflow succeeded”.
-
----
-
-# 19. Testing Rules
-
-Use tests intentionally.
-
-Backend:
-
-```text
-unit tests for domain and application logic
-integration tests for API endpoints
-tests for auth/authorization boundaries
-tests for AI response parsing and validation
-tests for missing AI config behaviour
-```
-
-Frontend:
-
-```text
-component tests for key forms
-guard tests
-interceptor tests
-route behaviour tests where practical
-```
-
-E2E:
-
-```text
-At minimum, add a Playwright smoke journey before first real user.
-```
-
-Minimum E2E happy path:
-
-```text
-admin login
-→ create student
-→ student login
-→ change password
-→ onboarding
-→ dashboard
-→ writing exercise
-→ submit draft
-→ feedback
-→ refresh
-→ session remains valid
-```
-
-Do not overbuild test suites at the cost of product progress, but do not skip critical browser-flow validation.
-
----
-
-# 20. Git and Commit Rules
-
-Keep changes scoped.
-
-Before editing, understand the current task.
-
-After editing, report:
-
-```text
-changed files
-what changed
-tests run
-build result
-known risks
-what was not done
-```
-
-Use clear commits.
-
-Do not include local-only tool settings unless required.
-
-Do not commit secrets.
-
-Do not commit generated junk.
-
----
-
-# 21. Review Rules
-
-Use lightweight self-checks by default.
-
-Run full review only for risky work:
-
-```text
-auth/security
-AI provider/prompt changes
-new migrations
-major frontend flow
-deployment
-before ship
-```
-
-Lightweight self-check should verify:
-
-```text
-build passes
-tests pass
-scope is clean
-architecture boundaries preserved
-no secrets
-no obvious user-flow breakage
-```
-
----
-
-# 22. Documentation Rules
-
-Every major sprint must create or update a sprint document:
-
-```text
 docs/sprints/<sprint-name>.md
 ```
 
-Every major architecture change must create or update an architecture document:
+Every major architecture change creates/updates:
 
-```text
+```
 docs/architecture/<topic>.md
 ```
 
-These documents must be committed with the code so that future AI sessions (Claude, Codex, or other agents) can read them and continue from the same context without needing the full conversation history.
+Maintain:
 
-A sprint document must include:
-
-```text
-Sprint name
-Current state
-Product goal
-Architecture decision
-In scope
-Out of scope
-API changes
-Prompt keys
-DB changes
-Frontend changes
-Test plan
-Implementation tasks
-Risks and mitigations
-Future follow-up items
+```
+docs/backlog/product-backlog.md
 ```
 
-An architecture document must explain:
+Agent-specific files:
 
-```text
-Why the component exists and what problem it solves
-How it relates to other components
-How it works (flow, not just names)
-How it handles failure
-How future extensions fit without breaking the design
-Key invariants that must not be violated
-```
+- `AGENTS.md` = shared rules for all agents
+- `CLAUDE.md` = Claude-specific rules, should align with AGENTS.md
+- `QWEN.md` = Qwen-specific rules, should align with AGENTS.md
 
-Do not write documentation as an afterthought.
-
-Write it before coding complex features.
+Sprint documents must include: sprint name, current state, product goal, architecture decisions, in scope, out of scope, API changes, DB changes, frontend changes, test plan, tasks, risks.
 
 ---
 
-# 23. Working With Existing Plans
+# 19. Auth and Security Rules
 
-Use these as source of truth:
+Do not commit secrets.
 
-```text
-CLAUDE.md
-AGENTS.md
-docs/implementation-roadmap.md
-README.md
-approved product/design docs if present
-current code
-```
+JWT signing key must come from environment variables/secrets outside Development. Production must fail startup if JWT key is missing, too short, or equals placeholder.
 
-If roadmap and current product reality conflict, prioritise:
+`MustChangePassword` must be enforced server-side. Students with temporary passwords cannot access onboarding, dashboard, or any protected feature until password is changed.
 
-```text
-working user flow
-security
-product quality
-approved rescue sprint
-```
-
-Do not blindly continue old roadmap tasks if the current product is broken.
+Admin-only endpoints require Admin role. Student endpoints require authentication. No public registration. Invalid login must not leak whether user exists.
 
 ---
 
-# 24. How To Start Any UI/UX Task
+# 20. Deployment Rules
 
-Before editing UI, produce:
+Domain: `speakpath.app`
 
-```md
-## UI/UX Audit
+Must support: HTTPS, API health check, frontend route refresh, `/api` routing, Docker Compose, GitHub Actions, VPS deployment.
 
-### Blockers
-
-### Functional Issues
-
-### UX/Design Issues
-
-### Polish Issues
-
-### Proposed Fix Order
-```
-
-Then ask for approval unless the user has already approved a specific phase.
-
-For Phase 1/2 rescue work, fix blockers before visual polish.
+Production checks must verify: web responds, `/health` returns API health (not SPA HTML), unauthenticated protected API returns 401 not 500.
 
 ---
 
-# 25. How To Start Any Backend Task
+# 21. Scope Rules
 
-Before editing backend, confirm:
+Do not add unless explicitly requested:
 
-```text
-Which endpoint/service is affected?
-Is this a product blocker or architecture work?
-Does it touch auth/security?
-Does it require a migration?
-Does it affect API contracts?
-What tests should change?
+```
+public registration          payments              organisations
+real-time voice              audio upload          new AI providers
+full admin AI management     full CEFR assessment  full spaced repetition
+large dashboard analytics    teacher features      mobile native app
+speaking / listening / vocabulary / pronunciation activities
 ```
 
-Do not change backend architecture for cosmetic frontend issues.
+Do not overbuild. Do not add new architecture when a UI/UX or flow fix is needed.
 
 ---
 
-# 26. Current Product Rescue Instruction
+# 22. Git and Commit Rules
 
-The product has reached broad feature completion, but the actual deployed app was judged not demo-ready.
+Keep changes scoped. After editing, report: changed files, what changed, tests run, build result, known risks, what was not done.
 
-The current work mode is:
-
-```text
-Product Rescue / Stabilisation Sprint
-```
-
-This means:
-
-```text
-No new roadmap features.
-Fix current product blockers.
-Stabilise the first user flow.
-Improve product clarity.
-Improve UI quality.
-Prepare for first real user/demo.
-```
-
-Approved Phase 1 blockers:
-
-```text
-Fix API health probes and /health routing.
-Add dashboard cefrLevel response.
-Restore sessions across refresh and clear auth consistently.
-Enforce MustChangePassword server-side.
-Validate AI configuration and show controlled unavailable states.
-```
-
-After Phase 1, continue only with approval.
+Do not commit: secrets, generated junk, local-only tool settings.
 
 ---
 
-# 27. Final Principle
+# 23. Review Rules
 
-Do not optimise for “tasks completed”.
+Run full review for: auth/security changes, AI provider/prompt changes, new migrations, major frontend flow, deployment, before ship.
+
+Lightweight self-check for other work: build passes, tests pass, scope is clean, architecture boundaries preserved, no secrets, no obvious user-flow breakage.
+
+---
+
+# 24. Current Product Priority
+
+Current priority: **build a personalised learning journey, not more random content.**
+
+Next major direction: **Student Learning Memory + Adaptive Curriculum.**
+
+Do not add speaking/listening/vocabulary/pronunciation until the writing-learning journey, memory, progress, and AI reliability are stable.
+
+**When unsure, choose the option that makes SpeakPath feel more like a real English coach that remembers the student's journey.**
+
+---
+
+# 25. Current Critical Flow
+
+The product must support this flow:
+
+```
+Admin logs in
+→ Admin creates student
+→ Student logs in
+→ Student changes temporary password
+→ Student completes onboarding
+→ Student reaches dashboard
+→ Student starts writing activity
+→ Student submits draft
+→ Student sees structured feedback
+→ Student retries or continues to next activity
+→ Student can revisit learning history
+```
+
+Do not continue roadmap features until this flow is stable, understandable, and demo-ready.
+
+---
+
+# 26. Final Principle
+
+Do not optimise for tasks completed.
 
 Optimise for:
 
-```text
+```
 A real user can understand it.
 A real user can complete the flow.
 A real user can get value.
