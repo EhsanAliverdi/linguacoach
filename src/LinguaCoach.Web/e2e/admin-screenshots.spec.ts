@@ -1,4 +1,4 @@
-import { test, Page } from '@playwright/test';
+import { expect, test, Page } from '@playwright/test';
 
 // ── Shared JWT helpers ────────────────────────────────────────────────────────
 
@@ -51,7 +51,8 @@ async function mockAdmin(page: Page) {
   });
 }
 
-async function mockStudent(page: Page) {
+async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnavailable?: boolean } = {}) {
+  let generatedNext = false;
   await page.route('**/api/auth/login', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
@@ -75,6 +76,56 @@ async function mockStudent(page: Page) {
       }),
     });
   });
+  await page.route('**/api/learning-path/memory', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify(options.emptyMemory ? {
+        journeySummary: null,
+        strongSkills: [],
+        weakSkills: [],
+        recurringMistakes: [],
+        nextRecommendedFocus: [],
+        coveredScenarioCount: 0,
+        skillProfile: [],
+      } : {
+        journeySummary: 'You are improving at workplace writing and your next focus is polite follow-up messages.',
+        strongSkills: ['Clear main message', 'Useful workplace vocabulary'],
+        weakSkills: ['Too direct tone'],
+        recurringMistakes: ['Missing softening phrase'],
+        nextRecommendedFocus: ['Softening requests', 'Concise follow-up messages'],
+        coveredScenarioCount: 4,
+        skillProfile: [
+          { skillKey: 'formal_tone', skillLabel: 'Formal workplace tone', isWeak: true },
+          { skillKey: 'workplace_vocabulary', skillLabel: 'Workplace vocabulary', isWeak: false },
+        ],
+      }),
+    });
+  });
+  await page.route('**/api/learning-path/generate-next', async route => {
+    if (options.aiUnavailable) {
+      await route.fulfill({
+        status: 503, contentType: 'application/json',
+        headers: { 'x-correlation-id': 'ref-503' },
+        body: JSON.stringify({ error: 'AI coach is unavailable.', correlationId: 'ref-503' }),
+      });
+      return;
+    }
+    generatedNext = true;
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        pathId: 'p1', title: 'Workplace English for Document Controller â€” B1',
+        isActive: true,
+        totalModules: 2, modulesCompleted: 1,
+        currentFocus: null,
+        currentModule: { moduleId: 'm3', order: 2, title: 'Softening manager requests', description: 'Practise asking for support politely.', completedActivities: 0, totalActivities: 3, isCurrent: true, isCompleted: false, isReadyToComplete: false, averageScore: null, latestScore: null, focusSkill: 'softening_language', reason: 'Recommended because recent attempts show direct tone.', difficulty: 'B1+' },
+        modules: [
+          { moduleId: 'm0', order: 1, title: 'Getting started', description: 'Introduction.', completedActivities: 3, totalActivities: 3, isCompleted: true, isCurrent: false, isReadyToComplete: false, averageScore: 78, latestScore: 80 },
+          { moduleId: 'm3', order: 2, title: 'Softening manager requests', description: 'Practise asking for support politely.', completedActivities: 0, totalActivities: 3, isCompleted: false, isCurrent: true, isReadyToComplete: false, averageScore: null, latestScore: null, focusSkill: 'softening_language', reason: 'Recommended because recent attempts show direct tone.', difficulty: 'B1+' },
+        ],
+      }),
+    });
+  });
   await page.route('**/api/learning-path', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
@@ -82,11 +133,14 @@ async function mockStudent(page: Page) {
         pathId: 'p1', title: 'Workplace English for Document Controller — B1',
         totalModules: 5, modulesCompleted: 1,
         currentModule: { moduleId: 'm1', order: 2, title: 'Writing professional emails', description: 'Learn emails.', completedActivities: 1, totalActivities: 4 },
-        modules: [
-          { moduleId: 'm0', order: 1, title: 'Getting started', description: 'Introduction.', completedActivities: 3, totalActivities: 3 },
-          { moduleId: 'm1', order: 2, title: 'Writing professional emails', description: 'Clear email writing.', completedActivities: 1, totalActivities: 4 },
-          { moduleId: 'm2', order: 3, title: 'Meeting vocabulary', description: 'Workplace meetings.', completedActivities: 0, totalActivities: 5 },
-        ],
+        modules: generatedNext
+          ? [
+              { moduleId: 'm0', order: 1, title: 'Getting started', description: 'Introduction.', completedActivities: 3, totalActivities: 3, isCompleted: true, isCurrent: false },
+              { moduleId: 'm3', order: 2, title: 'Softening manager requests', description: 'Practise asking for support politely.', completedActivities: 0, totalActivities: 3, isCompleted: false, isCurrent: true, focusSkill: 'softening_language', reason: 'Recommended because recent attempts show direct tone.', difficulty: 'B1+' },
+            ]
+          : [
+              { moduleId: 'm0', order: 1, title: 'Getting started', description: 'Introduction.', completedActivities: 3, totalActivities: 3, isCompleted: true, isCurrent: false },
+            ],
       }),
     });
   });
@@ -170,6 +224,7 @@ test('login page', async ({ page }) => {
 test('student: dashboard', async ({ page }) => {
   await mockStudent(page);
   await studentLogin(page);
+  await page.waitForSelector('text=Your learning focus', { timeout: 5000 });
   await page.screenshot({ path: 'e2e/screenshots/student-01-dashboard.png' });
 });
 
@@ -185,8 +240,38 @@ test('student: my-path', async ({ page }) => {
   await mockStudent(page);
   await studentLogin(page);
   await page.goto('/my-path');
-  await page.waitForTimeout(600);
+  await page.waitForSelector('text=Your learning focus', { timeout: 5000 });
+  await page.waitForSelector('text=Softening requests', { timeout: 5000 });
   await page.screenshot({ path: 'e2e/screenshots/student-03-my-path.png' });
+});
+
+test('student: my-path can continue learning path', async ({ page }) => {
+  await mockStudent(page);
+  await studentLogin(page);
+  await page.goto('/my-path');
+  await page.getByRole('button', { name: /Continue my learning path/i }).click();
+  await page.waitForSelector('text=New recommended modules have been added', { timeout: 5000 });
+  await page.waitForSelector('text=Softening manager requests', { timeout: 5000 });
+  await page.waitForSelector('text=Recommended because recent attempts show direct tone', { timeout: 5000 });
+  await page.screenshot({ path: 'e2e/screenshots/student-03-my-path-generated.png' });
+});
+
+test('student: my-path handles empty learning memory', async ({ page }) => {
+  await mockStudent(page, { emptyMemory: true });
+  await studentLogin(page);
+  await page.goto('/my-path');
+  await page.waitForSelector('text=Building your profile', { timeout: 5000 });
+  await expect(page.locator('body')).not.toContainText('{');
+  await page.screenshot({ path: 'e2e/screenshots/student-03-my-path-empty-memory.png' });
+});
+
+test('student: my-path shows friendly AI unavailable message', async ({ page }) => {
+  await mockStudent(page, { aiUnavailable: true });
+  await studentLogin(page);
+  await page.goto('/my-path');
+  await page.getByRole('button', { name: /Continue my learning path/i }).click();
+  await page.waitForSelector('text=The AI coach is temporarily unavailable', { timeout: 5000 });
+  await page.waitForSelector('text=Reference: ref-503', { timeout: 5000 });
 });
 
 test('student: progress', async ({ page }) => {

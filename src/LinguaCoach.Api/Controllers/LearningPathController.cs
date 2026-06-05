@@ -44,6 +44,23 @@ public sealed class LearningPathController : ControllerBase
                 pathId = path.PathId,
                 title = path.Title,
                 isActive = path.IsActive,
+                currentModule = path.CurrentModule is null ? null : new
+                {
+                    moduleId = path.CurrentModule.ModuleId,
+                    title = path.CurrentModule.Title,
+                    description = path.CurrentModule.Description,
+                    order = path.CurrentModule.Order,
+                    completedActivities = path.CurrentModule.CompletedActivities,
+                    totalActivities = path.CurrentModule.TotalActivities,
+                    isCurrent = path.CurrentModule.IsCurrent,
+                    isCompleted = path.CurrentModule.IsCompleted,
+                    isReadyToComplete = path.CurrentModule.IsReadyToComplete,
+                    averageScore = path.CurrentModule.AverageScore,
+                    latestScore = path.CurrentModule.LatestScore,
+                    focusSkill = path.CurrentModule.FocusSkill,
+                    reason = path.CurrentModule.Reason,
+                    difficulty = path.CurrentModule.Difficulty,
+                },
                 modulesCompleted = path.ModulesCompleted,
                 totalModules = path.TotalModules,
                 currentFocus = path.CurrentFocus is null ? null : new
@@ -65,6 +82,9 @@ public sealed class LearningPathController : ControllerBase
                     isReadyToComplete = m.IsReadyToComplete,
                     averageScore = m.AverageScore,
                     latestScore = m.LatestScore,
+                    focusSkill = m.FocusSkill,
+                    reason = m.Reason,
+                    difficulty = m.Difficulty,
                 })
             });
         }
@@ -137,6 +157,23 @@ public sealed class LearningPathController : ControllerBase
         pathId = path.PathId,
         title = path.Title,
         isActive = path.IsActive,
+        currentModule = path.CurrentModule is null ? null : new
+        {
+            moduleId = path.CurrentModule.ModuleId,
+            title = path.CurrentModule.Title,
+            description = path.CurrentModule.Description,
+            order = path.CurrentModule.Order,
+            completedActivities = path.CurrentModule.CompletedActivities,
+            totalActivities = path.CurrentModule.TotalActivities,
+            isCurrent = path.CurrentModule.IsCurrent,
+            isCompleted = path.CurrentModule.IsCompleted,
+            isReadyToComplete = path.CurrentModule.IsReadyToComplete,
+            averageScore = path.CurrentModule.AverageScore,
+            latestScore = path.CurrentModule.LatestScore,
+            focusSkill = path.CurrentModule.FocusSkill,
+            reason = path.CurrentModule.Reason,
+            difficulty = path.CurrentModule.Difficulty,
+        },
         modulesCompleted = path.ModulesCompleted,
         totalModules = path.TotalModules,
         modules = path.Modules.Select(m => new

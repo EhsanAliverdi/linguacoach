@@ -3,7 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
-  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem, AiProviderCatalogItem
+  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem,
+  AiProviderCatalogItem, AdminStudentLearningMemory
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -16,6 +17,9 @@ export class AdminApiService {
   // Students
   listStudents(): Observable<StudentListItem[]> {
     return this.http.get<StudentListItem[]>(`${this.api}/students`);
+  }
+  getStudentLearningMemory(studentProfileId: string): Observable<AdminStudentLearningMemory> {
+    return this.http.get<AdminStudentLearningMemory>(`${this.api}/students/${studentProfileId}/learning-memory`);
   }
 
   // Prompts

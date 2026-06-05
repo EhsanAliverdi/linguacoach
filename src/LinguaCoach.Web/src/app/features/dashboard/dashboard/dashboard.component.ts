@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 import { DashboardResponse } from '../../../core/models/dashboard.models';
+import { LearningPathService } from '../../../core/services/learning-path.service';
+import { StudentLearningMemory } from '../../../core/models/learning-path.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,6 +18,7 @@ export class DashboardComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   notice = signal('');
+  memory = signal<StudentLearningMemory | null>(null);
 
   readonly howItWorks = [
     { n: 1, text: 'AI generates a realistic workplace scenario for your career and level.' },
@@ -37,6 +40,7 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private dashboardService: DashboardService,
+    private learningPathService: LearningPathService,
     private authNotice: AuthNoticeService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');
@@ -54,5 +58,17 @@ export class DashboardComponent implements OnInit {
         this.error.set(err.error?.error ?? 'Could not load your dashboard.');
       },
     });
+    this.learningPathService.getLearningMemory().subscribe({
+      next: memory => this.memory.set(memory),
+      error: () => this.memory.set(null),
+    });
+  }
+
+  primaryMemoryFocus(): string | null {
+    const memory = this.memory();
+    return memory?.nextRecommendedFocus?.[0]
+      ?? memory?.weakSkills?.[0]
+      ?? memory?.skillProfile?.find(s => s.isWeak)?.skillLabel
+      ?? null;
   }
 }

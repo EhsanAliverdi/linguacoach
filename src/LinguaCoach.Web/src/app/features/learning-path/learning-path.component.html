@@ -57,6 +57,84 @@
     </div>
   </div>
 
+  <!-- Learning memory summary -->
+  <div class="sp-card" style="padding:18px;margin-bottom:16px;border-color:var(--sp-border2)">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+      <div style="min-width:0;flex:1">
+        <p class="sp-eyebrow" style="margin-bottom:6px">Your learning focus</p>
+        @if (memoryLoading()) {
+          <div class="sp-loading-pulse" style="height:52px;max-width:520px"></div>
+        } @else if (hasMemory()) {
+          <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.6;max-width:680px;margin:0">
+            {{ memory()?.journeySummary || 'SpeakPath is building a clearer picture of your workplace writing.' }}
+          </p>
+        } @else {
+          <p style="font-size:14px;font-weight:600;color:var(--sp-muted);line-height:1.6;max-width:620px;margin:0">
+            Building your profile. After a few practice attempts, this section will show strengths, weak spots, and what to practise next.
+          </p>
+        }
+      </div>
+      @if (memory()?.coveredScenarioCount) {
+        <div style="padding:10px 12px;border-radius:var(--sp-r-sm);background:var(--sp-canvas2);min-width:112px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--sp-ink)">{{ memory()!.coveredScenarioCount }}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em">scenarios covered</div>
+        </div>
+      }
+    </div>
+
+    @if (!memoryLoading() && hasMemory()) {
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px">
+        @if (memory()?.strongSkills?.length) {
+          <div style="border:1px solid var(--sp-border);border-radius:var(--sp-r-sm);padding:12px;background:var(--sp-surface2)">
+            <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Strengths</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              @for (item of memory()!.strongSkills.slice(0, 4); track item) {
+                <span class="sp-pill" style="background:var(--sp-success-soft);color:var(--sp-success);font-size:11px;padding:4px 8px">{{ item }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (memory()?.weakSkills?.length || weakSkills().length) {
+          <div style="border:1px solid var(--sp-border);border-radius:var(--sp-r-sm);padding:12px;background:var(--sp-surface2)">
+            <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Areas to improve</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              @for (item of memory()!.weakSkills.slice(0, 3); track item) {
+                <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:11px;padding:4px 8px">{{ item }}</span>
+              }
+              @for (skill of weakSkills().slice(0, 3); track skill.skillKey) {
+                <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:11px;padding:4px 8px">{{ skill.skillLabel }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (memory()?.nextRecommendedFocus?.length) {
+          <div style="border:1px solid var(--sp-border);border-radius:var(--sp-r-sm);padding:12px;background:var(--sp-surface2)">
+            <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Practise next</p>
+            <ul style="margin:0;padding-left:16px;color:var(--sp-text);font-size:12px;font-weight:600;line-height:1.6">
+              @for (item of memory()!.nextRecommendedFocus.slice(0, 4); track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      @if (weakSkills().length || strongSkillProfiles().length) {
+        <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em">Skill profile</span>
+          @for (skill of weakSkills().slice(0, 3); track skill.skillKey) {
+            <span class="sp-pill" style="font-size:11px;padding:4px 8px;background:var(--sp-warn-soft);color:var(--sp-warn)">{{ skill.skillLabel }}</span>
+          }
+          @for (skill of strongSkillProfiles().slice(0, 2); track skill.skillKey) {
+            <span class="sp-pill" style="font-size:11px;padding:4px 8px;background:var(--sp-success-soft);color:var(--sp-success)">{{ skill.skillLabel }}</span>
+          }
+        </div>
+      }
+    }
+  </div>
+
   <!-- Current focus area -->
   @if (path()!.currentFocus) {
     <div style="display:flex;align-items:flex-start;gap:12px;background:var(--sp-warn-soft);border-radius:var(--sp-r);padding:14px 16px;margin-bottom:16px">
@@ -110,6 +188,21 @@
           </div>
           <h3 style="font-size:14px;font-weight:800;color:var(--sp-ink);margin:0">{{ mod.title }}</h3>
           <p style="margin-top:2px;font-size:12px;font-weight:500;color:var(--sp-muted);line-height:1.5">{{ mod.description }}</p>
+          @if (mod.focusSkill || mod.reason || mod.difficulty) {
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                @if (mod.focusSkill) {
+                  <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink);padding:3px 8px;font-size:10px">Focus: {{ skillLabel(mod.focusSkill) }}</span>
+                }
+                @if (mod.difficulty) {
+                  <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);padding:3px 8px;font-size:10px">Level: {{ mod.difficulty }}</span>
+                }
+              </div>
+              @if (mod.reason) {
+                <p style="font-size:11.5px;font-weight:600;color:var(--sp-text);line-height:1.45;margin:0">{{ mod.reason }}</p>
+              }
+            </div>
+          }
           @if (moduleStatus(mod) === 'current' || moduleStatus(mod) === 'complete') {
             <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
               <div class="sp-progress-track" style="flex:1;height:7px">
@@ -223,6 +316,33 @@
       <p style="font-size:13px;font-weight:800;color:var(--sp-ink)">Your path adapts as you learn</p>
       <p style="font-size:12px;font-weight:500;color:var(--sp-text);line-height:1.5">Activities are chosen based on your focus area and recent progress.</p>
     </div>
+  </div>
+
+  <div class="sp-card" style="margin-top:14px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+    <div style="min-width:0;flex:1">
+      <p style="font-size:13px;font-weight:800;color:var(--sp-ink);margin:0">Ready for the next step?</p>
+      <p style="font-size:12px;font-weight:500;color:var(--sp-muted);line-height:1.5;margin-top:3px">
+        Add a small set of recommended modules based on your learning memory and recent progress.
+      </p>
+      @if (continueSuccess()) {
+        <p style="font-size:12px;font-weight:700;color:var(--sp-success);margin-top:8px">{{ continueSuccess() }}</p>
+      }
+      @if (continueError()) {
+        <p style="font-size:12px;font-weight:700;color:var(--sp-speaking);margin-top:8px">{{ continueError() }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="sp-button-primary"
+      [disabled]="!canGenerateNext()"
+      (click)="generateNextModules()"
+      style="min-height:44px;white-space:nowrap">
+      @if (continueLoading()) {
+        Adding modules...
+      } @else {
+        Continue my learning path
+      }
+    </button>
   </div>
 
 }

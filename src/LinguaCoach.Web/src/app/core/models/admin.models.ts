@@ -54,3 +54,13 @@ export interface AiProviderCatalogItem {
   hasApiKey: boolean;
   modelTests: ModelTestStatus[];
 }
+
+export interface AdminStudentLearningMemory {
+  journeySummary: string | null;
+  strongSkills: string[];
+  weakSkills: string[];
+  recurringMistakes: string[];
+  nextRecommendedFocus: string[];
+  coveredScenarioCount: number;
+  skillProfile: { skillKey: string; skillLabel: string; isWeak: boolean }[];
+}

@@ -16,6 +16,9 @@ export interface LearningModuleSummary {
   isReadyToComplete: boolean;
   averageScore: number | null;
   latestScore: number | null;
+  focusSkill?: string | null;
+  reason?: string | null;
+  difficulty?: string | null;
 }
 
 export interface LearningPathSummary {
@@ -30,4 +33,20 @@ export interface LearningPathDetail extends LearningPathSummary {
   isActive: boolean;
   modules: LearningModuleSummary[];
   currentFocus: LearningFocusArea | null;
+}
+
+export interface StudentSkillProfile {
+  skillKey: string;
+  skillLabel: string;
+  isWeak: boolean;
+}
+
+export interface StudentLearningMemory {
+  journeySummary: string | null;
+  strongSkills: string[];
+  weakSkills: string[];
+  recurringMistakes: string[];
+  nextRecommendedFocus: string[];
+  coveredScenarioCount: number;
+  skillProfile: StudentSkillProfile[];
 }

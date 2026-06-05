@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LearningPathDetail } from '../models/learning-path.models';
+import { LearningPathDetail, StudentLearningMemory } from '../models/learning-path.models';
 
 @Injectable({ providedIn: 'root' })
 export class LearningPathService {
@@ -15,5 +15,13 @@ export class LearningPathService {
 
   completeModule(moduleId: string): Observable<void> {
     return this.http.post<void>(`${this.base}/modules/${moduleId}/complete`, null);
+  }
+
+  getLearningMemory(): Observable<StudentLearningMemory> {
+    return this.http.get<StudentLearningMemory>(`${this.base}/memory`);
+  }
+
+  generateNextModules(pathId?: string): Observable<LearningPathDetail> {
+    return this.http.post<LearningPathDetail>(`${this.base}/generate-next`, pathId ? { pathId } : {});
   }
 }

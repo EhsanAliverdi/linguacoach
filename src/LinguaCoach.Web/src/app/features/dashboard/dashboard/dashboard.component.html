@@ -98,6 +98,29 @@
     </div>
   </div>
 
+  @if (memory()?.journeySummary || primaryMemoryFocus()) {
+    <div class="sp-card" style="margin:16px 0 6px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-color:var(--sp-border2)">
+      <div style="min-width:0;flex:1">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Your learning focus</p>
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);line-height:1.45;margin:0">
+          @if (primaryMemoryFocus()) {
+            Your current focus is {{ primaryMemoryFocus() }}.
+          } @else {
+            SpeakPath is tracking your workplace writing progress.
+          }
+        </p>
+        @if (memory()?.journeySummary) {
+          <p style="font-size:12.5px;font-weight:500;color:var(--sp-muted);line-height:1.55;margin-top:4px;max-width:620px">
+            {{ memory()!.journeySummary }}
+          </p>
+        }
+      </div>
+      <a routerLink="/my-path" class="sp-button-ghost" style="min-height:44px;display:inline-flex;align-items:center">
+        View focus
+      </a>
+    </div>
+  }
+
   <!-- ── Two-col grid ───────────────────────────────────────────── -->
   <div class="sp-grid-2col">
 

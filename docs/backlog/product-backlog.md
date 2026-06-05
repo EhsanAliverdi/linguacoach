@@ -244,6 +244,10 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
   - Add sort by joined date or onboarding status
   - Add pagination if student count exceeds 25
   - Add ability to view individual student's learning path and activity history
+- [ ] Add admin student learning memory view. `Not started`
+  - Backend endpoint and Angular API client exist: `GET /api/admin/students/{id}/learning-memory`
+  - Deferred from Student Learning Memory UI phase because there is no admin student detail page yet
+  - Show compact memory only: journey summary, strengths, weaknesses, recurring mistakes, next focus, covered scenario count, skill profile
 - [ ] Design system: use `sp-admin-*` classes consistently across all admin components. `Planned`
   - `admin-prompts` and `admin-careers` still use raw Tailwind for their form/table bodies
   - Migrate incrementally — do not break functionality
