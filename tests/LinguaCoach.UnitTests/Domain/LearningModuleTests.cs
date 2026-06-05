@@ -61,4 +61,17 @@ public sealed class LearningModuleTests
         var module = new LearningModule(ValidPathId, "  Trimmed  ", "Desc", 1);
         Assert.Equal("Trimmed", module.Title);
     }
+
+    [Fact]
+    public void SetAdaptiveMetadata_TrimsAndStoresFields()
+    {
+        var module = new LearningModule(ValidPathId, "Title", "Desc", 1);
+
+        module.SetAdaptiveMetadata(" formal_tone ", " recommended ", " B1+ ", """{"scenarioType":"follow_up"}""");
+
+        Assert.Equal("formal_tone", module.FocusSkill);
+        Assert.Equal("recommended", module.Reason);
+        Assert.Equal("B1+", module.Difficulty);
+        Assert.Contains("follow_up", module.FingerprintJson);
+    }
 }

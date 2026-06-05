@@ -1,4 +1,5 @@
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.ValueObjects;
 
 namespace LinguaCoach.Domain.Entities;
 
@@ -11,14 +12,34 @@ namespace LinguaCoach.Domain.Entities;
 public sealed class UserLearningSummary : BaseEntity
 {
     public const int MaxSummaryLength = 200;
+    private const int MaxStrongSkills = 10;
+    private const int MaxWeakSkills = 10;
+    private const int MaxRecurringMistakes = 10;
+    private const int MaxCoveredScenarios = 20;
+    private const int MaxNextFocus = 5;
 
     public Guid StudentProfileId { get; private set; }
 
     public string RecentWeaknesses { get; private set; }
     public string RecentProgress { get; private set; }
+    public string? JourneySummary { get; private set; }
+    public string StrongSkillsJson { get; private set; }
+    public string WeakSkillsJson { get; private set; }
+    public string RecurringMistakesJson { get; private set; }
+    public string CoveredScenariosJson { get; private set; }
+    public string NextFocusJson { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
-    private UserLearningSummary() { RecentWeaknesses = string.Empty; RecentProgress = string.Empty; }
+    private UserLearningSummary()
+    {
+        RecentWeaknesses = string.Empty;
+        RecentProgress = string.Empty;
+        StrongSkillsJson = "[]";
+        WeakSkillsJson = "[]";
+        RecurringMistakesJson = "[]";
+        CoveredScenariosJson = "[]";
+        NextFocusJson = "[]";
+    }
 
     public UserLearningSummary(Guid studentProfileId)
     {
@@ -26,6 +47,11 @@ public sealed class UserLearningSummary : BaseEntity
         StudentProfileId = studentProfileId;
         RecentWeaknesses = string.Empty;
         RecentProgress = string.Empty;
+        StrongSkillsJson = "[]";
+        WeakSkillsJson = "[]";
+        RecurringMistakesJson = "[]";
+        CoveredScenariosJson = "[]";
+        NextFocusJson = "[]";
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -38,6 +64,25 @@ public sealed class UserLearningSummary : BaseEntity
 
         RecentWeaknesses = recentWeaknesses?.Trim() ?? string.Empty;
         RecentProgress = recentProgress?.Trim() ?? string.Empty;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ApplyDelta(MemoryUpdateDelta delta)
+    {
+        if (!string.IsNullOrWhiteSpace(delta.JourneySummaryDelta))
+        {
+            var current = JourneySummary?.Trim();
+            var next = string.IsNullOrWhiteSpace(current)
+                ? delta.JourneySummaryDelta.Trim()
+                : $"{current} {delta.JourneySummaryDelta.Trim()}";
+            JourneySummary = next.Length <= 1000 ? next : next[^1000..];
+        }
+
+        StrongSkillsJson = JsonStringList.Merge(StrongSkillsJson, delta.NewStrengths, MaxStrongSkills);
+        WeakSkillsJson = JsonStringList.Merge(WeakSkillsJson, delta.NewWeaknesses, MaxWeakSkills);
+        RecurringMistakesJson = JsonStringList.Merge(RecurringMistakesJson, delta.RecurringMistakesToAdd, MaxRecurringMistakes);
+        CoveredScenariosJson = JsonStringList.Merge(CoveredScenariosJson, delta.CoveredScenariosToAdd, MaxCoveredScenarios);
+        NextFocusJson = JsonStringList.Replace(delta.RecommendedNextFocus, MaxNextFocus);
         UpdatedAt = DateTime.UtcNow;
     }
 }

@@ -6,6 +6,46 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## Student learning memory (in sprint: student-learning-memory-adaptive-curriculum-sprint)
+
+- [x] Extend `UserLearningSummary` with 6 new JSON fields. `Planned`
+  - `journey_summary`, `strong_skills_json`, `weak_skills_json`,
+    `recurring_mistakes_json`, `covered_scenarios_json`, `next_focus_json`
+  - Domain method `ApplyDelta(MemoryUpdateDeltaDto)` enforces list caps
+- [x] Add `StudentSkillProfile` table (skill_key, is_weak per student). `Planned`
+  - 10 skill keys: grammar_accuracy, formal_tone, sentence_clarity, message_structure,
+    workplace_vocabulary, concise_writing, softening_language, summarising_information,
+    clarifying_questions, escalation_language
+- [x] Add `fingerprint_json` column to `LearningModule`. `Planned`
+  - Fields: communicationMode, scenarioType, audience, tone, difficulty, grammarFocus, vocabularyTheme
+- [x] Add xmin concurrency token to `LearningPath`. `Planned`
+- [x] Extract `AiExecutionService` shared fallback pattern. `Planned`
+- [x] Extract `LearningPathDtoBuilder` shared DTO builder. `Planned`
+- [x] Add `student_memory_update` AI prompt to seed data. `Planned`
+- [x] Implement `StudentMemoryService` with best-effort update. `Planned`
+- [x] Wire memory update into `ActivitySubmitHandler` (8s timeout). `Planned`
+- [x] Add `learning_path_generate_adaptive` AI prompt. `Planned`
+- [x] Implement `AdaptivePathGeneratorHandler`. `Planned`
+- [x] `POST /api/learning-path/generate-next` endpoint. `Planned`
+- [x] `GET /api/learning-path/memory` endpoint. `Planned`
+- [x] `GET /api/admin/students/{id}/learning-memory` endpoint. `Planned`
+- [x] "Your learning focus" panel on dashboard / /my-path. `Planned`
+- [x] Module card enrichment (focusSkill, reason, difficulty). `Planned`
+- [x] "Generate next modules" button with loading / error states. `Planned`
+- [ ] Add staleness flag / alert when memory update fails repeatedly. `Not started`
+  - If `UserLearningSummary.UpdatedAt` is > 7 days old and student has recent attempts,
+    surface an admin alert or background refresh attempt
+- [ ] Add numeric skill score tracking (0–100) to `StudentSkillProfile`. `Not started`
+  - Deferred from current sprint — add after validating the is_weak approach
+- [ ] Admin curriculum map editor. `Not started`
+  - Currently curriculum is seeded/static for Workplace Writing B1/B1+/B2
+  - Future: admin can add career-specific curriculum maps
+- [ ] Move memory update to background job. `Not started`
+  - Currently synchronous with 8-second timeout in ActivitySubmitHandler
+  - When student volume grows, move to LinguaCoach.Worker queue
+
+---
+
 ## Progress and activity tracking
 
 - [ ] Implement real practice streak tracking. `Not started`

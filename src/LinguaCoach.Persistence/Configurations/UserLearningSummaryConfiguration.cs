@@ -20,6 +20,12 @@ internal sealed class UserLearningSummaryConfiguration : IEntityTypeConfiguratio
             .HasMaxLength(200).IsRequired();
         builder.Property(e => e.RecentProgress).HasColumnName("recent_progress")
             .HasMaxLength(200).IsRequired();
+        builder.Property(e => e.JourneySummary).HasColumnName("journey_summary").IsRequired(false);
+        builder.Property(e => e.StrongSkillsJson).HasColumnName("strong_skills_json").IsRequired().HasDefaultValue("[]");
+        builder.Property(e => e.WeakSkillsJson).HasColumnName("weak_skills_json").IsRequired().HasDefaultValue("[]");
+        builder.Property(e => e.RecurringMistakesJson).HasColumnName("recurring_mistakes_json").IsRequired().HasDefaultValue("[]");
+        builder.Property(e => e.CoveredScenariosJson).HasColumnName("covered_scenarios_json").IsRequired().HasDefaultValue("[]");
+        builder.Property(e => e.NextFocusJson).HasColumnName("next_focus_json").IsRequired().HasDefaultValue("[]");
         builder.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
 
         // One summary record per student.

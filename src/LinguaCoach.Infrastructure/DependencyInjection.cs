@@ -20,7 +20,9 @@ using LinguaCoach.Infrastructure.LearningPlan;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
 using LinguaCoach.Application.History;
+using LinguaCoach.Application.Memory;
 using LinguaCoach.Infrastructure.History;
+using LinguaCoach.Infrastructure.Memory;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,6 +70,7 @@ public static class DependencyInjection
         services.AddScoped<IAiProviderResolver, AiProviderResolver>();
         services.AddScoped<IAiProvider, OpenAiProvider>();
         services.AddScoped<IAiProviderTester, AiProviderTester>();
+        services.AddScoped<AiExecutionService>();
 
         // CEFR assessment
         services.AddScoped<ICefrAssessmentHandler, CefrAssessmentHandler>();
@@ -79,6 +82,10 @@ public static class DependencyInjection
         services.AddScoped<ILearningPathGenerator, AiLearningPathGeneratorHandler>();
         services.AddScoped<IGetLearningPathHandler, LearningPathQueryHandler>();
         services.AddScoped<ICompleteModuleHandler, CompleteModuleHandler>();
+        services.AddScoped<LearningPathDtoBuilder>();
+        services.AddScoped<IAdaptivePathGenerator, AdaptivePathGeneratorHandler>();
+        services.AddScoped<IStudentMemoryService, StudentMemoryService>();
+        services.AddScoped<IStudentMemoryQuery, StudentMemoryService>();
         services.AddScoped<IAdminAiUsageHandler, AiUsageHandler>();
 
         // Activity (AI-first learning flow)

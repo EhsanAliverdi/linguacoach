@@ -12,6 +12,10 @@ public sealed class LearningModule : BaseEntity
 
     public string Title { get; private set; }
     public string Description { get; private set; }
+    public string? FocusSkill { get; private set; }
+    public string? Reason { get; private set; }
+    public string? Difficulty { get; private set; }
+    public string? FingerprintJson { get; private set; }
 
     // Display order within the parent LearningPath.
     public int Order { get; private set; }
@@ -42,5 +46,13 @@ public sealed class LearningModule : BaseEntity
         Title = title.Trim();
         Description = description?.Trim() ?? string.Empty;
         Order = order;
+    }
+
+    public void SetAdaptiveMetadata(string? focusSkill, string? reason, string? difficulty, string? fingerprintJson)
+    {
+        FocusSkill = string.IsNullOrWhiteSpace(focusSkill) ? null : focusSkill.Trim();
+        Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        Difficulty = string.IsNullOrWhiteSpace(difficulty) ? null : difficulty.Trim();
+        FingerprintJson = string.IsNullOrWhiteSpace(fingerprintJson) ? null : fingerprintJson.Trim();
     }
 }

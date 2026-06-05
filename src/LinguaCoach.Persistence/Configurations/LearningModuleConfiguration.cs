@@ -18,6 +18,10 @@ internal sealed class LearningModuleConfiguration : IEntityTypeConfiguration<Lea
         builder.Property(e => e.LearningPathId).HasColumnName("learning_path_id").IsRequired();
         builder.Property(e => e.Title).HasColumnName("title").HasMaxLength(500).IsRequired();
         builder.Property(e => e.Description).HasColumnName("description").IsRequired();
+        builder.Property(e => e.FocusSkill).HasColumnName("focus_skill").HasMaxLength(200).IsRequired(false);
+        builder.Property(e => e.Reason).HasColumnName("reason").IsRequired(false);
+        builder.Property(e => e.Difficulty).HasColumnName("difficulty").HasMaxLength(50).IsRequired(false);
+        builder.Property(e => e.FingerprintJson).HasColumnName("fingerprint_json").IsRequired(false);
         builder.Property(e => e.Order).HasColumnName("order").IsRequired();
         builder.Property(e => e.CompletedAt).HasColumnName("completed_at").IsRequired(false);
 

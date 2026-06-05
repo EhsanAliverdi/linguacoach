@@ -16,6 +16,8 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
     public const string LearningPathGenerateKey = "learning_path_generate";
+    public const string StudentMemoryUpdateKey = "student_memory_update";
+    public const string LearningPathGenerateAdaptiveKey = "learning_path_generate_adaptive";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English language teacher creating a writing practice activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -156,6 +158,80 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string StudentMemoryUpdateContent = """
+You update a compact learning memory for SpeakPath, a workplace English coach.
+
+Input context:
+{{memoryUpdateContext}}
+
+Return ONLY valid JSON. Return deltas only, not a full rewrite:
+
+{
+  "journeySummaryDelta": "<one short sentence, max 30 words>",
+  "newStrengths": ["<short observed strength>"],
+  "newWeaknesses": ["<short weakness to practise>"],
+  "recurringMistakesToAdd": ["<short recurring mistake>"],
+  "coveredScenariosToAdd": ["<short scenario label>"],
+  "weakSkillKeys": ["formal_tone"],
+  "strongSkillKeys": ["workplace_vocabulary"],
+  "recommendedNextFocus": ["<short next focus>"]
+}
+
+Allowed skill keys:
+grammar_accuracy, formal_tone, sentence_clarity, message_structure,
+workplace_vocabulary, concise_writing, softening_language,
+summarising_information, clarifying_questions, escalation_language.
+
+Rules:
+- Keep every array small: 0-3 items.
+- Do not include markdown.
+- Do not quote or store the student's full submitted text.
+- Focus on workplace communication coaching, not generic grammar.
+- Main feedback is handled elsewhere; this is only compact memory.
+""";
+
+    private const string LearningPathGenerateAdaptiveContent = """
+You are designing the next 3-5 workplace writing modules for SpeakPath.
+
+Adaptive context:
+{{adaptiveGenerationContext}}
+
+Return ONLY valid JSON:
+
+{
+  "journeySummary": "<short explanation of why these modules are next>",
+  "modules": [
+    {
+      "order": 1,
+      "title": "<3-7 word module title>",
+      "description": "<1-2 sentences describing the workplace practice>",
+      "focusSkill": "<one allowed skill key or short skill label>",
+      "reason": "<why this is recommended from the memory>",
+      "difficulty": "B1+",
+      "fingerprint": {
+        "communicationMode": "email",
+        "scenarioType": "delay_explanation",
+        "audience": "manager",
+        "tone": "professional_apologetic",
+        "difficulty": "B1+",
+        "grammarFocus": "modal_verbs",
+        "vocabularyTheme": "project_schedule"
+      },
+      "avoidsRepeating": ["<covered scenario avoided>"]
+    }
+  ]
+}
+
+Rules:
+- Generate 3-5 modules only.
+- Do not repeat an existing scenarioType + audience + communicationMode.
+- Reuse weak skills through new workplace situations.
+- Progress difficulty gradually.
+- Keep modules relevant to the student's career context.
+- Do not generate a generic full 10-module path.
+- Do not include any text outside JSON.
+""";
+
     private const string WritingPromptContent = """
 You are an expert English writing coach for {{sourceLanguageName}}-speaking professionals learning {{targetLanguageName}}.
 
@@ -260,6 +336,14 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             LearningPathGenerateKey, LearningPathGenerateContent,
             maxInputTokens: 600, maxOutputTokens: 800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            StudentMemoryUpdateKey, StudentMemoryUpdateContent,
+            maxInputTokens: 1200, maxOutputTokens: 700, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            LearningPathGenerateAdaptiveKey, LearningPathGenerateAdaptiveContent,
+            maxInputTokens: 1800, maxOutputTokens: 1200, ct);
 
         await db.SaveChangesAsync(ct);
     }

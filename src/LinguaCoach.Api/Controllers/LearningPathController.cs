@@ -12,11 +12,19 @@ public sealed class LearningPathController : ControllerBase
 {
     private readonly IGetLearningPathHandler _handler;
     private readonly ICompleteModuleHandler _completeModule;
+    private readonly IAdaptivePathGenerator _adaptiveGenerator;
+    private readonly IStudentMemoryQuery _memoryQuery;
 
-    public LearningPathController(IGetLearningPathHandler handler, ICompleteModuleHandler completeModule)
+    public LearningPathController(
+        IGetLearningPathHandler handler,
+        ICompleteModuleHandler completeModule,
+        IAdaptivePathGenerator adaptiveGenerator,
+        IStudentMemoryQuery memoryQuery)
     {
         _handler = handler;
         _completeModule = completeModule;
+        _adaptiveGenerator = adaptiveGenerator;
+        _memoryQuery = memoryQuery;
     }
 
     [HttpGet]
@@ -91,7 +99,68 @@ public sealed class LearningPathController : ControllerBase
         }
     }
 
+    [HttpPost("generate-next")]
+    public async Task<IActionResult> GenerateNext([FromBody] GenerateNextRequest? request, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var path = await _adaptiveGenerator.GenerateNextAsync(new GenerateNextModulesCommand(userId, request?.PathId), ct);
+            return Ok(ToResponse(path));
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            return Conflict(new { error = "Path was updated concurrently. Please refresh." });
+        }
+        catch (LinguaCoach.Application.Ai.AiUnavailableException)
+        {
+            return StatusCode(503, new { error = "AI unavailable.", correlationId = (string?)null });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("memory")]
+    public async Task<IActionResult> GetMemory(CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+        return Ok(await _memoryQuery.GetForUserAsync(userId, ct));
+    }
+
+    private static object ToResponse(LearningPathDto path) => new
+    {
+        pathId = path.PathId,
+        title = path.Title,
+        isActive = path.IsActive,
+        modulesCompleted = path.ModulesCompleted,
+        totalModules = path.TotalModules,
+        modules = path.Modules.Select(m => new
+        {
+            moduleId = m.ModuleId,
+            title = m.Title,
+            description = m.Description,
+            order = m.Order,
+            completedActivities = m.CompletedActivities,
+            totalActivities = m.TotalActivities,
+            isCurrent = m.IsCurrent,
+            isCompleted = m.IsCompleted,
+            isReadyToComplete = m.IsReadyToComplete,
+            averageScore = m.AverageScore,
+            latestScore = m.LatestScore,
+            focusSkill = m.FocusSkill,
+            reason = m.Reason,
+            difficulty = m.Difficulty,
+        })
+    };
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 }
+
+public sealed record GenerateNextRequest(Guid? PathId);

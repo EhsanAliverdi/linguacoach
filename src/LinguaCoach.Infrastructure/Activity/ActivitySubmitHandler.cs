@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Memory;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -13,15 +14,18 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
+    private readonly IStudentMemoryService _memoryService;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
         LinguaCoachDbContext db,
         IAiActivityGenerator aiGenerator,
+        IStudentMemoryService memoryService,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
         _aiGenerator = aiGenerator;
+        _memoryService = memoryService;
         _logger = logger;
     }
 
@@ -49,6 +53,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         var activity = await _db.LearningActivities
             .FirstOrDefaultAsync(a => a.Id == command.ActivityId && a.IsActive, ct)
             ?? throw new InvalidOperationException("Activity not found.");
+        var module = activity.LearningModuleId.HasValue
+            ? await _db.LearningModules.FirstOrDefaultAsync(m => m.Id == activity.LearningModuleId.Value, ct)
+            : null;
 
         _logger.LogInformation(
             "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ContentLength={Length}",
@@ -99,6 +106,15 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         _logger.LogInformation("Attempt saved AttemptId={AttemptId} ActivityId={ActivityId} Score={Score}",
             attempt.Id, activity.Id, score);
+
+        await _memoryService.UpdateMemoryAsync(new ActivityMemoryUpdateRequest(
+            profile,
+            activity,
+            module,
+            attempt,
+            feedbackJson,
+            score,
+            CorrelationId: null), ct);
 
         return ParseFeedback(attempt.Id, feedbackJson, score);
     }

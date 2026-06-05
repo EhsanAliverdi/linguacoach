@@ -22,6 +22,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<VocabularyEntry> VocabularyEntries => Set<VocabularyEntry>();
     public DbSet<CurriculumWordList> CurriculumWordLists => Set<CurriculumWordList>();
     public DbSet<UserLearningSummary> UserLearningSummaries => Set<UserLearningSummary>();
+    public DbSet<StudentSkillProfile> StudentSkillProfiles => Set<StudentSkillProfile>();
     public DbSet<SpeakingScenario> SpeakingScenarios => Set<SpeakingScenario>();
     public DbSet<SpeakingSession> SpeakingSessions => Set<SpeakingSession>();
     public DbSet<SpeakingTurn> SpeakingTurns => Set<SpeakingTurn>();
@@ -37,5 +38,15 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LinguaCoachDbContext).Assembly);
+
+        if (Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            modelBuilder.Entity<LearningPath>()
+                .Property<uint>("xmin")
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+        }
     }
 }

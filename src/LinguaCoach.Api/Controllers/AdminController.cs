@@ -15,19 +15,22 @@ public sealed class AdminController : ControllerBase
     private readonly IAdminPromptHandler _promptHandler;
     private readonly IAdminCurriculumHandler _curriculumHandler;
     private readonly IAdminAiConfigHandler _aiConfigHandler;
+    private readonly LinguaCoach.Application.LearningPath.IStudentMemoryQuery _memoryQuery;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
         IAdminStudentQuery studentQuery,
         IAdminPromptHandler promptHandler,
         IAdminCurriculumHandler curriculumHandler,
-        IAdminAiConfigHandler aiConfigHandler)
+        IAdminAiConfigHandler aiConfigHandler,
+        LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
         _promptHandler = promptHandler;
         _curriculumHandler = curriculumHandler;
         _aiConfigHandler = aiConfigHandler;
+        _memoryQuery = memoryQuery;
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -52,6 +55,19 @@ public sealed class AdminController : ControllerBase
     [HttpGet("students")]
     public async Task<IActionResult> ListStudents(CancellationToken ct)
         => Ok(await _studentQuery.ListStudentsAsync(ct));
+
+    [HttpGet("students/{studentId:guid}/learning-memory")]
+    public async Task<IActionResult> GetStudentMemory(Guid studentId, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _memoryQuery.GetForStudentProfileAsync(studentId, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
 
     // ── Prompt templates ──────────────────────────────────────────────────────
 

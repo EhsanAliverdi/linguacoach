@@ -32,6 +32,19 @@ public interface IGetLearningPathHandler
     Task<LearningPathDto?> HandleAsync(GetLearningPathQuery query, CancellationToken ct = default);
 }
 
+public sealed record GenerateNextModulesCommand(Guid UserId, Guid? PathId = null);
+
+public interface IAdaptivePathGenerator
+{
+    Task<LearningPathDto> GenerateNextAsync(GenerateNextModulesCommand command, CancellationToken ct = default);
+}
+
+public interface IStudentMemoryQuery
+{
+    Task<StudentLearningMemoryDto> GetForUserAsync(Guid userId, CancellationToken ct = default);
+    Task<StudentLearningMemoryDto> GetForStudentProfileAsync(Guid studentProfileId, CancellationToken ct = default);
+}
+
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
 /// <summary>The student's current weakness focus area, derived from recent feedback.</summary>
@@ -51,7 +64,10 @@ public sealed record LearningModuleDto(
     bool IsCompleted,          // CompletedAt is set on the module
     bool IsReadyToComplete,    // distinctCompleted >= 3 AND averageScore >= 75
     double? AverageScore,      // average score across all attempts in this module
-    double? LatestScore);      // most recent attempt score in this module
+    double? LatestScore,       // most recent attempt score in this module
+    string? FocusSkill = null,
+    string? Reason = null,
+    string? Difficulty = null);
 
 public sealed record LearningPathDto(
     Guid PathId,
@@ -62,3 +78,17 @@ public sealed record LearningPathDto(
     int TotalModules,
     IReadOnlyList<LearningModuleDto> Modules,
     LearningFocusAreaDto? CurrentFocus = null);
+
+public sealed record StudentSkillProfileDto(
+    string SkillKey,
+    string SkillLabel,
+    bool IsWeak);
+
+public sealed record StudentLearningMemoryDto(
+    string? JourneySummary,
+    IReadOnlyList<string> StrongSkills,
+    IReadOnlyList<string> WeakSkills,
+    IReadOnlyList<string> RecurringMistakes,
+    IReadOnlyList<string> NextRecommendedFocus,
+    int CoveredScenarioCount,
+    IReadOnlyList<StudentSkillProfileDto> SkillProfile);

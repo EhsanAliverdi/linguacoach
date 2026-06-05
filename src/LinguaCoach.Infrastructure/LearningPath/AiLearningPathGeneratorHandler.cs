@@ -3,6 +3,7 @@ using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,22 +19,23 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
 {
     private const string PromptKey = "learning_path_generate";
     private const int DefaultModuleCount = 5;
-    private const int CompletionThreshold = 3;
-
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
-    private readonly IAiProviderResolver _aiProviderResolver;
+    private readonly AiExecutionService _aiExecution;
+    private readonly LearningPathDtoBuilder _dtoBuilder;
     private readonly ILogger<AiLearningPathGeneratorHandler> _logger;
 
     public AiLearningPathGeneratorHandler(
         LinguaCoachDbContext db,
         IAiContextBuilder contextBuilder,
-        IAiProviderResolver aiProviderResolver,
+        AiExecutionService aiExecution,
+        LearningPathDtoBuilder dtoBuilder,
         ILogger<AiLearningPathGeneratorHandler> logger)
     {
         _db = db;
         _contextBuilder = contextBuilder;
-        _aiProviderResolver = aiProviderResolver;
+        _aiExecution = aiExecution;
+        _dtoBuilder = dtoBuilder;
         _logger = logger;
     }
 
@@ -56,7 +58,7 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
             .FirstOrDefaultAsync(p => p.StudentProfileId == profile.Id && p.IsActive, ct);
 
         if (existingPath is not null)
-            return await BuildDtoAsync(existingPath, profile.Id, ct);
+            return await _dtoBuilder.BuildAsync(existingPath, profile.Id, ct);
 
         var careerContext = profile.CareerProfile?.Name ?? "General workplace";
         var cefrLevel = profile.CefrLevel ?? "B1";
@@ -91,7 +93,7 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
             .Include(p => p.Modules)
             .FirstAsync(p => p.Id == path.Id, ct);
 
-        return await BuildDtoAsync(saved, profile.Id, ct);
+        return await _dtoBuilder.BuildAsync(saved, profile.Id, ct);
     }
 
     private async Task<(Domain.Entities.LearningPath Path, List<LearningModule> Modules)> GenerateViaAiAsync(
@@ -113,16 +115,10 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
             ["moduleCount"] = DefaultModuleCount.ToString(),
         };
 
-        var selection = _aiProviderResolver.ResolveWritingFeedbackProvider();
         var aiRequest = await _contextBuilder.BuildAsync(PromptKey, variables, ct);
-        aiRequest = aiRequest with { ModelHint = selection.ModelName, ApiKeyOverride = selection.ApiKeyOverride };
-
-        var aiResponse = await selection.Provider.CompleteAsync(aiRequest, ct);
-
-        _logger.LogDebug("AI path generation: provider={Provider}, in={In}, out={Out}",
-            selection.ProviderName, aiResponse.InputTokens, aiResponse.OutputTokens);
-
-        var parsed = ParseAiResponse(aiResponse.ResponseJson);
+        var response = await _aiExecution.ExecuteWithFallbackAsync(
+            PromptKey, aiRequest, studentProfileId, correlationId: null, ct);
+        var parsed = ParseAiResponse(response);
 
         var path = new Domain.Entities.LearningPath(
             studentProfileId,
@@ -137,63 +133,6 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
             .ToList();
 
         return (path, modules);
-    }
-
-    private async Task<LearningPathDto> BuildDtoAsync(
-        Domain.Entities.LearningPath path,
-        Guid studentProfileId,
-        CancellationToken ct)
-    {
-        var modules = path.Modules.OrderBy(m => m.Order).ToList();
-
-        // Count completed attempts per module.
-        var moduleIds = modules.Select(m => m.Id).ToList();
-        var completedCounts = await _db.ActivityAttempts
-            .Where(a => a.StudentProfileId == studentProfileId)
-            .Join(_db.LearningActivities.Where(la => la.LearningModuleId.HasValue && moduleIds.Contains(la.LearningModuleId!.Value)),
-                  attempt => attempt.LearningActivityId,
-                  activity => activity.Id,
-                  (attempt, activity) => activity.LearningModuleId!.Value)
-            .GroupBy(moduleId => moduleId)
-            .Select(g => new { ModuleId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ModuleId, x => x.Count, ct);
-
-        // Current module = lowest-order module with fewer than threshold completed attempts.
-        LearningModule? currentModule = modules
-            .FirstOrDefault(m => (completedCounts.GetValueOrDefault(m.Id, 0)) < CompletionThreshold)
-            ?? modules.LastOrDefault();
-
-        int modulesCompleted = modules.Count(m =>
-            completedCounts.GetValueOrDefault(m.Id, 0) >= CompletionThreshold);
-
-        var moduleDtos = modules.Select(m =>
-        {
-            int completed = completedCounts.GetValueOrDefault(m.Id, 0);
-            return new LearningModuleDto(
-                ModuleId: m.Id,
-                Title: m.Title,
-                Description: m.Description,
-                Order: m.Order,
-                CompletedActivities: completed,
-                TotalActivities: CompletionThreshold,
-                IsCurrent: currentModule is not null && m.Id == currentModule.Id,
-                IsCompleted: m.IsCompleted,
-                IsReadyToComplete: false,
-                AverageScore: null,
-                LatestScore: null);
-        }).ToList();
-
-        var currentDto = currentModule is null ? null
-            : moduleDtos.First(m => m.ModuleId == currentModule.Id);
-
-        return new LearningPathDto(
-            PathId: path.Id,
-            Title: path.Title,
-            IsActive: path.IsActive,
-            CurrentModule: currentDto,
-            ModulesCompleted: modulesCompleted,
-            TotalModules: modules.Count,
-            Modules: moduleDtos);
     }
 
     private static ParsedAiPath ParseAiResponse(string raw)
