@@ -40,7 +40,7 @@ public class ActivityTestFactory : ApiTestFactory
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-        foreach (var key in new[] { "activity_generate_writing", "activity_evaluate_writing", "learning_path_generate" })
+        foreach (var key in new[] { "activity_generate_writing", "activity_evaluate_writing", "learning_path_generate", "learning_path_generate_adaptive" })
         {
             if (!db.AiPrompts.Any(p => p.Key == key))
             {
@@ -198,11 +198,57 @@ internal sealed class FakeAiProvider : IAiProvider
               "title": "Follow up on pending approval",
               "pathTitle": "Workplace English for Document Controller — B1",
               "modules": [
-                { "order": 1, "title": "Professional email writing", "description": "Practice formal workplace emails." },
-                { "order": 2, "title": "Meeting communication", "description": "Build confidence in meetings." },
-                { "order": 3, "title": "Document control language", "description": "Practice transmittals and approvals." },
-                { "order": 4, "title": "Formal requests", "description": "Learn to write and respond to formal requests." },
-                { "order": 5, "title": "Workplace relationships", "description": "Everyday professional communication." }
+                {
+                  "order": 1,
+                  "title": "Softening manager requests",
+                  "description": "Practice asking managers for support without sounding too direct.",
+                  "focusSkill": "softening_language",
+                  "reason": "Recent attempts show direct requests need softer phrasing.",
+                  "difficulty": "B1+",
+                  "fingerprint": {
+                    "communicationMode": "email",
+                    "scenarioType": "support_request",
+                    "audience": "manager",
+                    "tone": "polite_professional",
+                    "difficulty": "B1+",
+                    "grammarFocus": "modal_verbs",
+                    "vocabularyTheme": "workplace_support"
+                  }
+                },
+                {
+                  "order": 2,
+                  "title": "Concise progress updates",
+                  "description": "Practice short status updates with clear next steps.",
+                  "focusSkill": "concise_writing",
+                  "reason": "The learning memory shows long sentences and weak summarising.",
+                  "difficulty": "B1+",
+                  "fingerprint": {
+                    "communicationMode": "email",
+                    "scenarioType": "progress_update",
+                    "audience": "manager",
+                    "tone": "clear_professional",
+                    "difficulty": "B1+",
+                    "grammarFocus": "sentence_boundaries",
+                    "vocabularyTheme": "project_progress"
+                  }
+                },
+                {
+                  "order": 3,
+                  "title": "Summarising meeting outcomes",
+                  "description": "Practice summarising decisions and action items after a meeting.",
+                  "focusSkill": "summarising_information",
+                  "reason": "This adds a new workplace situation while reinforcing concise structure.",
+                  "difficulty": "B2",
+                  "fingerprint": {
+                    "communicationMode": "email",
+                    "scenarioType": "meeting_summary",
+                    "audience": "team",
+                    "tone": "professional_neutral",
+                    "difficulty": "B2",
+                    "grammarFocus": "past_tense",
+                    "vocabularyTheme": "actions_decisions"
+                  }
+                }
               ]
             }
             """;

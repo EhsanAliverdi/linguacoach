@@ -6,6 +6,24 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## End-to-end product validation (in sprint: end-to-end-product-validation-learning-quality-sprint)
+
+- [x] Document validation sprint plan and quality criteria. `Done`
+  - Created `docs/sprints/end-to-end-product-validation-learning-quality-sprint.md`
+- [x] Add UI QA validation report for the writing-learning loop. `Done`
+  - Created `docs/testing/e2e-learning-journey-validation-report.md`
+- [x] Extend Playwright full-flow coverage through retry, history, memory, module completion, and adaptive generation. `Done`
+- [x] Add adaptive module guardrail tests for reason, focusSkill, difficulty, and fingerprint persistence. `Done`
+- [x] Add duplicate adaptive fingerprint rejection test. `Done`
+- [ ] Seed additional pilot career profiles for validation personas. `Not started`
+  - Project Planner
+  - Customer Support Officer
+  - Deferred because current seed model is reference data, not demo users, and the admin-created student flow must remain part of validation
+- [ ] Run live AI quality review with the two validation personas in staging/production. `Not started`
+  - Record repetitive activities, generic feedback, noisy memory, or weak adaptive module reasons before changing prompts
+
+---
+
 ## Student learning memory (in sprint: student-learning-memory-adaptive-curriculum-sprint)
 
 - [x] Extend `UserLearningSummary` with 6 new JSON fields. `Planned`

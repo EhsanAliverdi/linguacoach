@@ -229,6 +229,93 @@ public sealed class LearningPathProgressionTests : IClassFixture<ActivityTestFac
         Assert.Equal(1, stats.GetProperty("activitiesCompleted").GetInt32());
     }
 
+    [Fact]
+    public async Task GenerateNext_AddsAdaptiveModulesWithQualityMetadataAndFingerprint()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"adaptive_meta_{Guid.NewGuid():N}@test.com");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == userId);
+            var path = new LinguaCoach.Domain.Entities.LearningPath(profile.Id, "Validation Path - B1", "Manual validation path");
+            db.LearningPaths.Add(path);
+            await db.SaveChangesAsync();
+
+            var completed = new LinguaCoach.Domain.Entities.LearningModule(path.Id, "Completed basics", "Already practised.", 1);
+            completed.MarkCompleted();
+            db.LearningModules.Add(completed);
+            await db.SaveChangesAsync();
+        }
+
+        var client = ClientWithToken(token);
+        var response = await client.PostAsJsonAsync("/api/learning-path/generate-next", new { });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var generated = body.GetProperty("modules").EnumerateArray()
+            .FirstOrDefault(m => m.GetProperty("title").GetString() == "Softening manager requests");
+
+        Assert.NotEqual(JsonValueKind.Undefined, generated.ValueKind);
+        Assert.Equal("softening_language", generated.GetProperty("focusSkill").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(generated.GetProperty("reason").GetString()));
+        Assert.Equal("B1+", generated.GetProperty("difficulty").GetString());
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var stored = await verifyDb.LearningModules
+            .Where(m => m.Title == "Softening manager requests" && !string.IsNullOrWhiteSpace(m.FingerprintJson))
+            .FirstAsync();
+        Assert.Contains("support_request", stored.FingerprintJson);
+    }
+
+    [Fact]
+    public async Task GenerateNext_RejectsDuplicateScenarioAudienceModeFingerprint()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"adaptive_dupe_{Guid.NewGuid():N}@test.com");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == userId);
+            var path = new LinguaCoach.Domain.Entities.LearningPath(profile.Id, "Duplicate Guard Path - B1", "Manual validation path");
+            db.LearningPaths.Add(path);
+            await db.SaveChangesAsync();
+
+            var existing = new LinguaCoach.Domain.Entities.LearningModule(path.Id, "Earlier support request", "Already covered.", 1);
+            existing.MarkCompleted();
+            existing.SetAdaptiveMetadata(
+                "softening_language",
+                "Already practised support requests.",
+                "B1+",
+                """
+                {
+                  "communicationMode": "email",
+                  "scenarioType": "support_request",
+                  "audience": "manager",
+                  "tone": "polite_professional",
+                  "difficulty": "B1+",
+                  "grammarFocus": "modal_verbs",
+                  "vocabularyTheme": "workplace_support"
+                }
+                """);
+            db.LearningModules.Add(existing);
+            await db.SaveChangesAsync();
+        }
+
+        var client = ClientWithToken(token);
+        var response = await client.PostAsJsonAsync("/api/learning-path/generate-next", new { });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var titles = body.GetProperty("modules").EnumerateArray()
+            .Select(m => m.GetProperty("title").GetString())
+            .ToList();
+
+        Assert.DoesNotContain("Softening manager requests", titles);
+        Assert.Contains("Concise progress updates", titles);
+    }
+
     private HttpClient ClientWithToken(string token)
     {
         var client = _factory.CreateClient();

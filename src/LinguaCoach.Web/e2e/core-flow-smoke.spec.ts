@@ -29,6 +29,16 @@ function toBase64Url(value: object) {
 async function mockApi(page: Page) {
   let createdStudentEmail = '';
   let onboardingStep = 'None';
+  let attemptCount = 0;
+  let moduleCompleted = false;
+  let generatedNextModules = false;
+  const attempts: Array<{
+    attemptId: string;
+    attemptNumber: number;
+    score: number;
+    submittedContent: string;
+    coachSummary: string;
+  }> = [];
 
   await page.route('**/api/auth/login', async route => {
     const request = route.request();
@@ -143,17 +153,41 @@ async function mockApi(page: Page) {
         learningPath: {
           pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
           title: 'Workplace English for Document Controller — B1',
-          modulesCompleted: 0,
-          totalModules: 5,
+          modulesCompleted: moduleCompleted ? 1 : 0,
+          totalModules: generatedNextModules ? 2 : 1,
           currentModule: {
-            moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
-            title: 'Professional email writing',
-            description: 'Practice writing clear, polite workplace emails.',
-            order: 1,
-            completedActivities: 0,
+            moduleId: generatedNextModules ? 'nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn' : 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
+            title: generatedNextModules ? 'Concise progress updates' : 'Professional email writing',
+            description: generatedNextModules ? 'Practice short status updates with clear next steps.' : 'Practice writing clear, polite workplace emails.',
+            order: generatedNextModules ? 2 : 1,
+            completedActivities: generatedNextModules ? 0 : Math.min(attemptCount, 3),
             totalActivities: 3,
           },
         },
+      }),
+    });
+  });
+
+  await page.route('**/api/learning-path/memory', async route => {
+    const hasAttempts = attemptCount > 0;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        journeySummary: hasAttempts
+          ? 'You are improving at workplace follow-up emails. Your next focus is softer requests and shorter status updates.'
+          : null,
+        strongSkills: hasAttempts ? ['Clear workplace context', 'Professional greeting'] : [],
+        weakSkills: hasAttempts ? ['Too direct tone', 'Long sentences'] : [],
+        recurringMistakes: hasAttempts ? ['Needs softer request language'] : [],
+        nextRecommendedFocus: hasAttempts ? ['Softening requests', 'Concise progress updates'] : [],
+        coveredScenarioCount: hasAttempts ? 1 : 0,
+        skillProfile: hasAttempts
+          ? [
+              { skillKey: 'softening_language', skillLabel: 'Softening language', isWeak: true },
+              { skillKey: 'message_structure', skillLabel: 'Message structure', isWeak: false },
+            ]
+          : [],
       }),
     });
   });
@@ -166,17 +200,132 @@ async function mockApi(page: Page) {
         pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
         title: 'Workplace English for Document Controller — B1',
         isActive: true,
-        modulesCompleted: 0,
-        totalModules: 5,
+        modulesCompleted: moduleCompleted ? 1 : 0,
+        totalModules: generatedNextModules ? 2 : 1,
         modules: [
           {
             moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
             title: 'Professional email writing',
             description: 'Practice writing clear, polite workplace emails.',
             order: 1,
+            completedActivities: moduleCompleted ? 3 : attemptCount >= 2 ? 2 : attemptCount,
+            totalActivities: 3,
+            isCurrent: !moduleCompleted,
+            isCompleted: moduleCompleted,
+            isReadyToComplete: attemptCount >= 2 && !moduleCompleted,
+            averageScore: attemptCount >= 2 ? 82 : attemptCount === 1 ? 78 : null,
+            latestScore: attemptCount >= 2 ? 86 : attemptCount === 1 ? 78 : null,
+          },
+          ...(generatedNextModules ? [{
+            moduleId: 'nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn',
+            title: 'Concise progress updates',
+            description: 'Practice short status updates with clear next steps.',
+            order: 2,
             completedActivities: 0,
             totalActivities: 3,
             isCurrent: true,
+            isCompleted: false,
+            isReadyToComplete: false,
+            averageScore: null,
+            latestScore: null,
+            focusSkill: 'concise_writing',
+            reason: 'Recommended because your recent attempts used long sentences.',
+            difficulty: 'B1+',
+          }] : []),
+        ],
+      }),
+    });
+  });
+
+  await page.route('**/api/learning-path/modules/mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm/complete', async route => {
+    moduleCompleted = true;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+
+  await page.route('**/api/learning-path/modules/mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm/activities', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
+        title: 'Professional email writing',
+        description: 'Practice writing clear, polite workplace emails.',
+        completedActivities: attemptCount >= 2 ? 3 : attemptCount,
+        totalRequired: 3,
+        averageScore: attemptCount >= 2 ? 82 : attemptCount === 1 ? 78 : null,
+        latestScore: attemptCount >= 2 ? 86 : attemptCount === 1 ? 78 : null,
+        isReadyToComplete: attemptCount >= 2,
+        isCompleted: moduleCompleted,
+        activities: attempts.length ? [{
+          activityId: ids.activityId,
+          title: 'Follow-up email for a pending document approval',
+          activityType: 'writingScenario',
+          attemptCount: attempts.length,
+          bestScore: Math.max(...attempts.map(a => a.score)),
+          latestScore: attempts[attempts.length - 1].score,
+          latestAttemptAt: '2026-06-07T02:00:00Z',
+          hasFeedback: true,
+        }] : [],
+      }),
+    });
+  });
+
+  await page.route('**/api/learning-path/generate-next', async route => {
+    generatedNextModules = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
+        title: 'Workplace English for Document Controller - B1',
+        isActive: true,
+        modulesCompleted: 1,
+        totalModules: 2,
+        currentModule: {
+          moduleId: 'nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn',
+          title: 'Concise progress updates',
+          description: 'Practice short status updates with clear next steps.',
+          order: 2,
+          completedActivities: 0,
+          totalActivities: 3,
+          isCurrent: true,
+          isCompleted: false,
+          isReadyToComplete: false,
+          averageScore: null,
+          latestScore: null,
+          focusSkill: 'concise_writing',
+          reason: 'Recommended because your recent attempts used long sentences.',
+          difficulty: 'B1+',
+        },
+        modules: [
+          {
+            moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
+            title: 'Professional email writing',
+            description: 'Practice writing clear, polite workplace emails.',
+            order: 1,
+            completedActivities: 3,
+            totalActivities: 3,
+            isCurrent: false,
+            isCompleted: true,
+            isReadyToComplete: false,
+            averageScore: 82,
+            latestScore: 86,
+          },
+          {
+            moduleId: 'nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn',
+            title: 'Concise progress updates',
+            description: 'Practice short status updates with clear next steps.',
+            order: 2,
+            completedActivities: 0,
+            totalActivities: 3,
+            isCurrent: true,
+            isCompleted: false,
+            isReadyToComplete: false,
+            averageScore: null,
+            latestScore: null,
+            focusSkill: 'concise_writing',
+            reason: 'Recommended because your recent attempts used long sentences.',
+            difficulty: 'B1+',
           },
         ],
       }),
@@ -205,19 +354,33 @@ async function mockApi(page: Page) {
   });
 
   await page.route(`**/api/activity/${ids.activityId}/attempt`, async route => {
+    const requestBody = route.request().postDataJSON() as { submittedContent: string };
+    attemptCount += 1;
+    const score = attemptCount === 1 ? 78 : 86;
+    const coachSummary = attemptCount === 1
+      ? 'Good effort - your message is clear but the tone needs polishing.'
+      : 'This is clearer and more polite. The request now sounds professional.';
+    attempts.push({
+      attemptId: `attempt-id-00${attemptCount}`,
+      attemptNumber: attemptCount,
+      score,
+      submittedContent: requestBody.submittedContent,
+      coachSummary,
+    });
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        attemptId: 'attempt-id-001',
-        score: 78,
+        attemptId: `attempt-id-00${attemptCount}`,
+        score,
         coachSummary: 'Good effort — your message is clear but the tone needs polishing.',
         focusFirst: false,
         changes: [
           {
             type: 'replace',
-            original: 'please send',
-            suggested: 'Could you please send',
+            original: attemptCount === 1 ? 'please send' : 'can you approve',
+            suggested: 'Could you please review',
             reason: 'Modal verbs make requests more polite.',
             category: 'tone',
             severity: 'high',
@@ -238,6 +401,47 @@ async function mockApi(page: Page) {
         rewriteChallenge: "Rewrite the opening using 'I hope this email finds you well'.",
         nextPracticeSuggestion: 'Try writing an email to explain a delay.',
         feedbackInSourceLanguage: 'ایمیل شما خوب بود اما می‌توانید رسمی‌تر بنویسید.',
+      }),
+    });
+  });
+
+  await page.route(`**/api/activity/${ids.activityId}/attempts`, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        activityId: ids.activityId,
+        title: 'Follow-up email for a pending document approval',
+        activityType: 'writingScenario',
+        situation: 'You submitted an important document to your project manager 5 working days ago.',
+        learningGoal: 'Practice following up professionally without sounding pushy.',
+        targetPhrases: ['I wanted to follow up on', 'Please let me know'],
+        attempts: attempts.map(a => ({
+          attemptId: a.attemptId,
+          attemptNumber: a.attemptNumber,
+          submittedAt: '2026-06-07T02:00:00Z',
+          score: a.score,
+          coachSummary: a.coachSummary,
+          focusFirst: false,
+          changes: [{
+            type: 'replace',
+            original: a.attemptNumber === 1 ? 'please send' : 'can you approve',
+            suggested: 'Could you please review',
+            reason: 'A softer request keeps the message professional.',
+            category: 'tone',
+            severity: 'high',
+          }],
+          whatYouDidWell: ['Clear workplace context'],
+          grammarIssues: [],
+          vocabularyIssues: [],
+          toneIssues: ['Request can be softened'],
+          clarityIssues: [],
+          miniLesson: 'Use modal verbs like could and would to soften workplace requests.',
+          nextImprovementStep: 'Keep the follow-up short and add a clear next step.',
+          suggestedImprovedVersion: 'Dear Mr. Ahmadi,\n\nI wanted to follow up on the pending approval. Could you please review it when you have a chance?\n\nBest regards,\nSara',
+          nativeLanguageExplanation: 'Ø§ÛŒÙ…ÛŒÙ„ Ø´Ù…Ø§ Ø®ÙˆØ¨ Ø¨ÙˆØ¯ Ø§Ù…Ø§ Ù…ÛŒâ€ŒØªÙˆØ§Ù†ÛŒØ¯ Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ø±Ø§ Ù†Ø±Ù…â€ŒØªØ± Ø¨Ù†ÙˆÛŒØ³ÛŒØ¯.',
+          submittedContent: a.submittedContent,
+        })),
       }),
     });
   });
@@ -336,4 +540,41 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   // Action buttons
   await expect(page.getByRole('button', { name: /Improve my answer/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Next activity/i })).toBeVisible();
+
+  // Retry/improve loop
+  await page.getByRole('button', { name: /Improve my answer/i }).click();
+  await expect(page.getByText(/Attempt 2/i)).toBeVisible();
+  await page.getByLabel('Write your response').fill('Dear Mr. Ahmadi, I wanted to follow up on the pending approval. Could you please review it when you have a chance?');
+  await page.getByRole('button', { name: /Get.*feedback/i }).click();
+  await expect(page.getByText('86')).toBeVisible();
+  await expect(page.getByText(/\+8/)).toBeVisible();
+
+  // Attempt history shows both attempts and keeps native-language support hidden by default.
+  await page.goto(`/activity/${ids.activityId}/history`);
+  await expect(page.getByText('Attempt history')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Attempt 1/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Attempt 2/i })).toBeVisible();
+  await expect(page.getByText('+8 from attempt 1')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Show Persian explanation/i })).toBeVisible();
+
+  // Learning memory and module readiness update on My Path.
+  await page.goto('/my-path');
+  await expect(page.getByText('You are improving at workplace follow-up emails')).toBeVisible();
+  await expect(page.getByText('Softening requests')).toBeVisible();
+  await expect(page.getByText('This module is ready to complete')).toBeVisible();
+  await page.getByRole('button', { name: /Complete this module/i }).click();
+  await expect(page.getByText(/Module completed/i)).toBeVisible();
+
+  // Continue path adds a non-duplicate adaptive module with reason/focus/difficulty.
+  await page.getByRole('button', { name: /Continue my learning path/i }).click();
+  await expect(page.getByText('New recommended modules have been added')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Concise progress updates' })).toBeVisible();
+  await expect(page.getByText('Recommended because your recent attempts used long sentences.')).toBeVisible();
+  await expect(page.getByText('Focus: Concise Writing')).toBeVisible();
+  await expect(page.getByText('Level: B1+')).toBeVisible();
+
+  // Dashboard focus summary reflects memory after attempts and no raw JSON leaks.
+  await page.goto('/dashboard');
+  await expect(page.getByText('Your current focus is Softening requests')).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('{');
 });
