@@ -11,8 +11,20 @@ export class ActivityService {
   constructor(private http: HttpClient) {}
 
   getNext(type?: ActivityType): Observable<ActivityDto> {
-    const params = type ? { type: String(type) } : undefined;
+    const params = type ? { type: this.toApiActivityType(type) } : undefined;
     return this.http.get<ActivityDto>(`${this.base}/next`, { params });
+  }
+
+  private toApiActivityType(type: ActivityType): string {
+    switch (type) {
+      case 'writingScenario': return 'WritingScenario';
+      case 'listeningComprehension': return 'ListeningComprehension';
+      case 'vocabularyPractice': return 'VocabularyPractice';
+      case 'speakingRolePlay': return 'SpeakingRolePlay';
+      case 'pronunciationPractice': return 'PronunciationPractice';
+      case 'readingTask': return 'ReadingTask';
+      default: return String(type);
+    }
   }
 
   submitAttempt(activityId: string, submittedContent: string, audioUrl?: string): Observable<ActivityFeedbackDto> {

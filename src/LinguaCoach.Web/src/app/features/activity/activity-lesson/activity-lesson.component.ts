@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
@@ -43,16 +43,30 @@ export class ActivityLessonComponent implements OnInit {
   constructor(
     private activityService: ActivityService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
-    this.activityService.getNext().subscribe({
+    this.activityService.getNext(this.preferredActivityType()).subscribe({
       next: a => { this.activity.set(a); this.state.set('learning'); },
       error: (err: HttpErrorResponse) => {
         this.errorMessage.set(this.extractError(err, 'Could not load activity. Please try again.'));
         this.state.set('error');
       },
     });
+  }
+
+  private preferredActivityType(): ActivityDto['activityType'] | undefined {
+    const raw = this.route.snapshot.queryParamMap.get('type');
+    switch (raw) {
+      case 'WritingScenario':
+      case 'writingScenario': return 'writingScenario';
+      case 'VocabularyPractice':
+      case 'vocabularyPractice': return 'vocabularyPractice';
+      case 'ListeningComprehension':
+      case 'listeningComprehension': return 'listeningComprehension';
+      default: return undefined;
+    }
   }
 
   private extractError(err: HttpErrorResponse, fallback: string): string {
@@ -239,7 +253,7 @@ export class ActivityLessonComponent implements OnInit {
     this.listeningResponseText = '';
     this.attemptCount.set(0);
     this.previousScore.set(null);
-    this.activityService.getNext().subscribe({
+    this.activityService.getNext(this.preferredActivityType()).subscribe({
       next: a => { this.activity.set(a); this.state.set('learning'); },
       error: err => {
         this.errorMessage.set(err.error?.error ?? 'Could not load next activity.');

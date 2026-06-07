@@ -8,17 +8,30 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ## VocabularyPractice activity (in sprint: vocabulary-practice-activity-sprint)
 
-- [ ] Add `StrengthScore` to `StudentVocabularyItem` + migration T27. `Planned`
-- [ ] Extend `ActivityDto` + `SubmitActivityAttemptCommand` for VocabularyPractice fields. `Planned`
-- [ ] Add `VocabularyPracticeGenerator` (deterministic fill-blank, no AI). `Planned`
-- [ ] Add VocabularyPractice selection logic to `ActivityGetHandler`. `Planned`
-- [ ] Add `VocabularyPracticeEvaluator` (deterministic scoring + vocab status updates). `Planned`
-- [ ] Update `ActivitySubmitHandler` for VocabularyPractice evaluation. `Planned`
-- [ ] Update `ActivityController` response to include VocabularyPractice fields. `Planned`
-- [ ] Update Angular activity-lesson component to render VocabularyPractice. `Planned`
-- [ ] Update activity-history component for VocabularyPractice attempts. `Planned`
-- [ ] Add backend integration tests for VocabularyPractice. `Planned`
-- [ ] Add Angular unit tests and Playwright tests. `Planned`
+- [x] Add `StrengthScore` to `StudentVocabularyItem` + migration T27. `Done`
+- [x] Extend `ActivityDto` + `SubmitActivityAttemptCommand` for VocabularyPractice fields. `Done`
+- [x] Add `VocabularyPracticeGenerator` (deterministic fill-blank, no AI). `Done`
+- [x] Add VocabularyPractice selection logic to `ActivityGetHandler`. `Done`
+- [x] Add `VocabularyPracticeEvaluator` (deterministic scoring + vocab status updates). `Done`
+- [x] Update `ActivitySubmitHandler` for VocabularyPractice evaluation. `Done`
+- [x] Update `ActivityController` response to include VocabularyPractice fields. `Done`
+- [x] Update Angular activity-lesson component to render VocabularyPractice. `Done`
+- [x] Update activity-history component for VocabularyPractice attempts. `Done`
+- [x] Add backend integration tests for VocabularyPractice. `Done`
+- [x] Add Angular unit tests and Playwright tests. `Done`
+
+---
+
+## Full app verification and disabled actions cleanup (in sprint: full-app-verification-disabled-actions-cleanup-sprint)
+
+- [x] Add sprint documentation for full app verification and disabled-actions cleanup. `Done`
+- [x] Enable implemented Writing, Listening, and Vocabulary dashboard entry points. `Done`
+- [x] Keep only unimplemented Speaking and Pronunciation dashboard cards marked "Coming soon". `Done`
+- [x] Route dashboard Writing/Listening cards through typed `/activity` requests. `Done`
+- [x] Remove stale listening/vocabulary "coming soon" copy from profile and landing surfaces. `Done`
+- [x] Add Playwright coverage for implemented dashboard actions. `Done`
+- [x] Add Playwright coverage for admin AI usage loading. `Done`
+- [x] Add Playwright coverage for student denial on admin-only routes. `Done`
 
 ---
 
@@ -237,10 +250,10 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
   - Backend: hidden transcript generation, comprehension questions, deterministic scoring
   - Frontend: text-based listening task with transcript reveal after submit
   - Real audio/TTS remains deferred
-- [ ] Implement VocabularyPractice activity type. `Not started`
-  - Backend: flashcard-style or gap-fill prompt generation
-  - Frontend: new interaction pattern (tap to reveal, match, fill)
-  - Keep Vocabulary card as "Coming soon" until fully implemented
+- [x] Implement VocabularyPractice activity type. `Done`
+  - Backend: deterministic practice generation and evaluation
+  - Frontend: vocabulary practice rendering, submission, and history support
+  - Dashboard links to the implemented vocabulary experience
 - [ ] Implement PronunciationPractice activity type. `Not started`
   - Backend: target word/sentence selection, pronunciation scoring via AI or speech API
   - Frontend: microphone UI, waveform or score display

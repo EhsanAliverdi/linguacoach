@@ -136,7 +136,7 @@ export class LandingComponent {
   readonly features = [
     { icon: '🗂️', title: 'Personalised learning path', desc: 'An AI-built module sequence matched to your career, CEFR level, and weekly goals.' },
     { icon: '✉️', title: 'Workplace writing practice', desc: 'Emails, follow-ups, meeting recaps — real scenarios from your professional context.' },
-    { icon: '🔊', title: 'Speaking & listening (coming soon)', desc: 'Role-play spoken conversations and practise listening comprehension for meetings.' },
+    { icon: '🔊', title: 'Listening and vocabulary practice', desc: 'Practise workplace audio messages, transcript review, and useful professional phrases.' },
     { icon: '🌍', title: 'Built for immigrant professionals', desc: 'Persian to English as the first language pair, with more pairs planned.' },
   ];
 }

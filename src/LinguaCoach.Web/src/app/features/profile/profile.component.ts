@@ -41,14 +41,14 @@ import { AuthService } from '../../core/services/auth.service';
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--sp-border)">
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--sp-ink)">Practising</div>
-            <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Writing · Speaking coming soon</div>
+            <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Writing · Listening · Vocabulary</div>
           </div>
           <svg width="16" height="16" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--sp-ink)">Daily reminder</div>
-            <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Coming soon</div>
+            <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Not configured</div>
           </div>
           <svg width="16" height="16" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
@@ -63,7 +63,7 @@ import { AuthService } from '../../core/services/auth.service';
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
         <div>
           <div style="font-size:13px;font-weight:700;color:var(--sp-ink)">Notifications</div>
-          <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Coming soon</div>
+          <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Not configured</div>
         </div>
         <div style="width:40px;height:24px;border-radius:12px;background:var(--sp-canvas2);position:relative">
           <div style="width:20px;height:20px;border-radius:50%;background:var(--sp-faint);position:absolute;top:2px;left:2px"></div>
