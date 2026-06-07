@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Memory;
+using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -15,17 +16,23 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
     private readonly IStudentMemoryService _memoryService;
+    private readonly IVocabularyExtractionService _vocabExtraction;
+    private readonly VocabularyPracticeEvaluator _vocabEvaluator;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
         LinguaCoachDbContext db,
         IAiActivityGenerator aiGenerator,
         IStudentMemoryService memoryService,
+        IVocabularyExtractionService vocabExtraction,
+        VocabularyPracticeEvaluator vocabEvaluator,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
         _aiGenerator = aiGenerator;
         _memoryService = memoryService;
+        _vocabExtraction = vocabExtraction;
+        _vocabEvaluator = vocabEvaluator;
         _logger = logger;
     }
 
@@ -33,10 +40,15 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         SubmitActivityAttemptCommand command,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(command.SubmittedContent))
-            throw new ArgumentException("SubmittedContent is required.", nameof(command));
-        if (command.SubmittedContent.Length > 3000)
-            throw new ArgumentException("SubmittedContent must be at most 3000 characters.", nameof(command));
+        // VocabularyPractice may have empty SubmittedContent (answers go in VocabAnswers)
+        var hasVocabAnswers = command.VocabAnswers is { Count: > 0 };
+        if (!hasVocabAnswers)
+        {
+            if (string.IsNullOrWhiteSpace(command.SubmittedContent))
+                throw new ArgumentException("SubmittedContent is required.", nameof(command));
+            if (command.SubmittedContent.Length > 3000)
+                throw new ArgumentException("SubmittedContent must be at most 3000 characters.", nameof(command));
+        }
 
         var profile = await _db.StudentProfiles
             .Include(p => p.LanguagePair)
@@ -58,10 +70,42 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             : null;
 
         _logger.LogInformation(
-            "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ContentLength={Length}",
-            command.ActivityId, command.UserId, command.SubmittedContent.Length);
+            "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ActivityType={ActivityType}",
+            command.ActivityId, command.UserId, activity.ActivityType);
 
-        // Evaluate with AI.
+        // VocabularyPractice: deterministic evaluation — no AI call.
+        if (activity.ActivityType == Domain.Enums.ActivityType.VocabularyPractice)
+        {
+            var answers = command.VocabAnswers ?? [];
+            var (vpFeedbackJson, vpScore) = await _vocabEvaluator.EvaluateAsync(
+                profile.Id, activity.AiGeneratedContentJson, answers, ct);
+
+            // Encode answers as submitted content JSON for audit trail
+            var submittedContentJson = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                answers = answers.Select(a => new { vocabularyItemId = a.VocabularyItemId, answer = a.Answer })
+            });
+
+            var vpAttempt = new ActivityAttempt(
+                studentProfileId: profile.Id,
+                learningActivityId: activity.Id,
+                submittedContent: submittedContentJson,
+                feedbackJson: vpFeedbackJson,
+                promptKey: "vocabulary_practice_deterministic",
+                score: vpScore);
+
+            _db.ActivityAttempts.Add(vpAttempt);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("VocabularyPractice attempt saved AttemptId={AttemptId} Score={Score}",
+                vpAttempt.Id, vpScore);
+
+            // Memory update not needed for vocabulary practice (it's not a writing attempt)
+            // Vocabulary extraction not needed (no AI feedback to extract from)
+            return ParseVocabularyFeedback(vpAttempt.Id, vpFeedbackJson, vpScore);
+        }
+
+        // Evaluate with AI (WritingScenario and other future types).
         string feedbackJson;
         double? score = null;
         var promptKey = GetPromptKey(activity.ActivityType);
@@ -116,7 +160,66 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             score,
             CorrelationId: null), ct);
 
+        // Best-effort vocabulary extraction — must not fail the submission
+        var improvedVersion = ExtractImprovedVersion(feedbackJson);
+        await _vocabExtraction.ExtractAsync(new ExtractVocabularyCommand(
+            UserId: command.UserId,
+            ActivityAttemptId: attempt.Id,
+            ActivityId: activity.Id,
+            ModuleId: activity.LearningModuleId,
+            SubmittedContent: command.SubmittedContent,
+            FeedbackJson: feedbackJson,
+            ImprovedVersion: improvedVersion,
+            CorrelationId: null), ct);
+
         return ParseFeedback(attempt.Id, feedbackJson, score);
+    }
+
+    private static ActivityFeedbackDto ParseVocabularyFeedback(Guid attemptId, string feedbackJson, double score)
+    {
+        // Parse vocab feedback into the standard ActivityFeedbackDto shape.
+        VocabFeedbackPayload? payload = null;
+        try
+        {
+            payload = JsonSerializer.Deserialize<VocabFeedbackPayload>(feedbackJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch { /* safe defaults */ }
+
+        return new ActivityFeedbackDto(
+            AttemptId: attemptId,
+            Score: score,
+            CoachSummary: payload?.CoachSummary,
+            FocusFirst: false,
+            Changes: [],
+            CorrectedText: null,
+            WhatYouDidWell: payload?.WhatYouDidWell ?? [],
+            MainMistakes: payload?.MainMistakes ?? [],
+            GrammarIssues: [],
+            VocabularyIssues: [],
+            ToneIssues: [],
+            ClarityIssues: [],
+            GrammarExplanation: null,
+            ToneExplanation: null,
+            VocabularyToRemember: [],
+            MiniLesson: payload?.MiniLesson,
+            NextImprovementStep: payload?.NextImprovementStep,
+            RewriteChallenge: null,
+            NextPracticeSuggestion: null,
+            FeedbackInSourceLanguage: null);
+    }
+
+    private static string? ExtractImprovedVersion(string feedbackJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(feedbackJson);
+            if (doc.RootElement.TryGetProperty("improvedVersion", out var iv)
+                && iv.ValueKind == JsonValueKind.String)
+                return iv.GetString();
+        }
+        catch { /* ignore */ }
+        return null;
     }
 
     private static string GetPromptKey(ActivityType type) => type switch
@@ -185,6 +288,16 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             NextPracticeSuggestion: payload?.NextPracticeSuggestion,
             FeedbackInSourceLanguage: payload?.FeedbackInSourceLanguage);
     }
+}
+
+internal sealed class VocabFeedbackPayload
+{
+    [JsonPropertyName("overallScore")] public double? OverallScore { get; set; }
+    [JsonPropertyName("coachSummary")] public string? CoachSummary { get; set; }
+    [JsonPropertyName("miniLesson")] public string? MiniLesson { get; set; }
+    [JsonPropertyName("nextImprovementStep")] public string? NextImprovementStep { get; set; }
+    [JsonPropertyName("whatYouDidWell")] public List<string>? WhatYouDidWell { get; set; }
+    [JsonPropertyName("mainMistakes")] public List<string>? MainMistakes { get; set; }
 }
 
 internal sealed class ActivityFeedbackChangePayload

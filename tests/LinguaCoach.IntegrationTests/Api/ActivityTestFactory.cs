@@ -40,7 +40,7 @@ public class ActivityTestFactory : ApiTestFactory
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-        foreach (var key in new[] { "activity_generate_writing", "activity_evaluate_writing", "learning_path_generate", "learning_path_generate_adaptive" })
+        foreach (var key in new[] { "activity_generate_writing", "activity_evaluate_writing", "learning_path_generate", "learning_path_generate_adaptive", "vocabulary_extract_from_attempt" })
         {
             if (!db.AiPrompts.Any(p => p.Key == key))
             {

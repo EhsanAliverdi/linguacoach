@@ -119,6 +119,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent),
       },
       {
+        path: 'vocabulary',
+        loadComponent: () => import('./features/vocabulary/vocabulary.component').then(m => m.VocabularyComponent),
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
       },

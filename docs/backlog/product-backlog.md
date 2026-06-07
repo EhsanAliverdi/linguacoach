@@ -6,6 +6,47 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## VocabularyPractice activity (in sprint: vocabulary-practice-activity-sprint)
+
+- [ ] Add `StrengthScore` to `StudentVocabularyItem` + migration T27. `Planned`
+- [ ] Extend `ActivityDto` + `SubmitActivityAttemptCommand` for VocabularyPractice fields. `Planned`
+- [ ] Add `VocabularyPracticeGenerator` (deterministic fill-blank, no AI). `Planned`
+- [ ] Add VocabularyPractice selection logic to `ActivityGetHandler`. `Planned`
+- [ ] Add `VocabularyPracticeEvaluator` (deterministic scoring + vocab status updates). `Planned`
+- [ ] Update `ActivitySubmitHandler` for VocabularyPractice evaluation. `Planned`
+- [ ] Update `ActivityController` response to include VocabularyPractice fields. `Planned`
+- [ ] Update Angular activity-lesson component to render VocabularyPractice. `Planned`
+- [ ] Update activity-history component for VocabularyPractice attempts. `Planned`
+- [ ] Add backend integration tests for VocabularyPractice. `Planned`
+- [ ] Add Angular unit tests and Playwright tests. `Planned`
+
+---
+
+## Vocabulary extraction from writing attempts (in sprint: vocabulary-extraction-from-writing-attempts-sprint)
+
+- [ ] Add `StudentVocabularyItem` entity, EF config, and migration. `Planned`
+- [ ] Add `vocabulary_extract_from_attempt` AI prompt to `DefaultAiSeeder`. `Planned`
+- [ ] Add `VocabularyExtractionService` (best-effort, post-submit). `Planned`
+- [ ] Wire extraction into `ActivitySubmitHandler` (does not block response). `Planned`
+- [ ] Add `GET /api/vocabulary` and `PATCH /api/vocabulary/{id}/status` endpoints. `Planned`
+- [ ] Add Angular `/vocabulary` page with summary cards, filters, and status buttons. `Planned`
+- [ ] Add vocabulary preview section to progress page. `Planned`
+- [ ] Add vocabulary nav item to sidebar. `Planned`
+- [ ] Add backend integration tests for vocabulary endpoints and extraction. `Planned`
+- [ ] Add frontend unit tests and Playwright tests for vocabulary page. `Planned`
+
+---
+
+## Real progress page (in sprint: real-progress-page-sprint)
+
+- [ ] Add `GET /api/progress` endpoint returning summary stats, score trend, skill profile, module progress, learning focus. `Planned`
+- [ ] Replace placeholder progress component with real data-driven UI. `Planned`
+- [ ] Add backend integration tests for `/api/progress`. `Planned`
+- [ ] Add frontend unit tests for progress component. `Planned`
+- [ ] Add Playwright tests for progress page (desktop + mobile). `Planned`
+
+---
+
 ## Live AI quality review (in sprint: live-ai-quality-review-prompt-calibration-sprint)
 
 - [x] Document live AI quality review sprint plan. `Done`

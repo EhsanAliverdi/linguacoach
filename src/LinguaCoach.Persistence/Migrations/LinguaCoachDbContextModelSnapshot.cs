@@ -1113,6 +1113,101 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("student_skill_profiles", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentVocabularyItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("ExampleSentence")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("example_sentence");
+
+                    b.Property<DateTime?>("LastSeenAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at_utc");
+
+                    b.Property<string>("MeaningOrExplanation")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("meaning_or_explanation");
+
+                    b.Property<DateTime?>("NextReviewAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_review_at_utc");
+
+                    b.Property<int>("SeenCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("seen_count");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.Property<Guid?>("SourceActivityAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_activity_attempt_id");
+
+                    b.Property<Guid?>("SourceLearningActivityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_learning_activity_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<int>("StrengthScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("strength_score");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_profile_id");
+
+                    b.Property<string>("SuggestedPhrase")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("suggested_phrase");
+
+                    b.Property<string>("Term")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("term");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentProfileId", "Status")
+                        .HasDatabaseName("ix_student_vocabulary_items_student_status");
+
+                    b.HasIndex("StudentProfileId", "Term", "Category")
+                        .IsUnique()
+                        .HasDatabaseName("ix_student_vocabulary_items_student_term_cat");
+
+                    b.ToTable("student_vocabulary_items", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.UserLearningSummary", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1827,6 +1922,15 @@ namespace LinguaCoach.Persistence.Migrations
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentSkillProfile", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.StudentProfile", null)
+                        .WithMany()
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentVocabularyItem", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.StudentProfile", null)
                         .WithMany()

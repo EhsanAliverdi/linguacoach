@@ -19,7 +19,23 @@ public sealed record ActivityDto(
     string[] TargetVocabulary,
     string? ExampleText,
     string? CommonMistakeToAvoid,
-    string? InstructionInSourceLanguage);
+    string? InstructionInSourceLanguage,
+    // VocabularyPractice fields — null for other activity types
+    string? Instructions = null,
+    string? PracticeMode = null,
+    IReadOnlyList<VocabPracticeItemDto>? VocabItems = null);
+
+/// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
+public sealed record VocabPracticeItemDto(
+    Guid VocabularyItemId,
+    string Term,
+    string Prompt,
+    string Hint,
+    string Explanation);
+
+// ── Vocabulary practice submission answers ────────────────────────────────────
+
+public sealed record VocabAnswerDto(Guid VocabularyItemId, string Answer);
 
 public interface IGetNextActivityHandler
 {
@@ -32,7 +48,8 @@ public sealed record SubmitActivityAttemptCommand(
     Guid UserId,
     Guid ActivityId,
     string SubmittedContent,
-    string? AudioUrl = null);
+    string? AudioUrl = null,
+    IReadOnlyList<VocabAnswerDto>? VocabAnswers = null);
 
 /// <summary>A single targeted change suggestion from the AI coach.</summary>
 public sealed record FeedbackChangeDto(

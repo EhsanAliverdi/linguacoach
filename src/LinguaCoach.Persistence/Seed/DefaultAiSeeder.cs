@@ -18,6 +18,7 @@ public static class DefaultAiSeeder
     public const string LearningPathGenerateKey = "learning_path_generate";
     public const string StudentMemoryUpdateKey = "student_memory_update";
     public const string LearningPathGenerateAdaptiveKey = "learning_path_generate_adaptive";
+    public const string VocabularyExtractFromAttemptKey = "vocabulary_extract_from_attempt";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English language teacher creating a writing practice activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -190,6 +191,42 @@ Rules:
 - Main feedback is handled elsewhere; this is only compact memory.
 """;
 
+    private const string VocabularyExtractFromAttemptContent = """
+You are a vocabulary coach for SpeakPath, a workplace English learning platform.
+
+Extract 0-5 useful vocabulary items from this writing attempt to help the student improve their workplace English.
+
+Context:
+{{extractionContext}}
+
+Return ONLY valid JSON (no markdown):
+
+{
+  "items": [
+    {
+      "term": "<the word or phrase to learn, lowercased>",
+      "suggestedPhrase": "<a complete workplace sentence showing this phrase in use>",
+      "meaningOrExplanation": "<1-2 sentences: what this means and why it matters in workplace English>",
+      "exampleSentence": "<another example sentence in a different workplace context>",
+      "category": "<one of: workplace_phrase | polite_request | grammar_pattern | connector | tone_softener | project_vocabulary | common_mistake | useful_expression>",
+      "reason": "<one sentence: why this item is useful for this student based on their submission>"
+    }
+  ]
+}
+
+Rules:
+- Return 0-5 items only. If there is nothing useful, return an empty items array.
+- Prefer tone softeners, polite requests, connectors, and professional expressions.
+- Prefer phrases the student got wrong or that would improve their message.
+- Do NOT extract simple everyday words (e.g. "send", "the", "please").
+- Do NOT extract proper nouns, names, phone numbers, email addresses, company names, or IDs.
+- Do NOT extract anything that looks like private or sensitive data.
+- Do NOT include items already in the student's known terms.
+- Keep explanations friendly and learner-appropriate.
+- All text must be in English.
+- Do not include any text outside the JSON object.
+""";
+
     private const string LearningPathGenerateAdaptiveContent = """
 You are designing the next 3-5 workplace writing modules for SpeakPath.
 
@@ -344,6 +381,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             LearningPathGenerateAdaptiveKey, LearningPathGenerateAdaptiveContent,
             maxInputTokens: 1800, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            VocabularyExtractFromAttemptKey, VocabularyExtractFromAttemptContent,
+            maxInputTokens: 1500, maxOutputTokens: 600, ct);
 
         await db.SaveChangesAsync(ct);
     }

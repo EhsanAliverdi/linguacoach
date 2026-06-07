@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ActivityDto, ActivityFeedbackDto, ActivityType } from '../models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, ActivityType, VocabAnswer } from '../models/activity.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -19,6 +19,13 @@ export class ActivityService {
     return this.http.post<ActivityFeedbackDto>(`${this.base}/${activityId}/attempt`, {
       submittedContent,
       audioUrl: audioUrl ?? null,
+    });
+  }
+
+  submitVocabAttempt(activityId: string, answers: VocabAnswer[]): Observable<ActivityFeedbackDto> {
+    return this.http.post<ActivityFeedbackDto>(`${this.base}/${activityId}/attempt`, {
+      submittedContent: '',
+      answers,
     });
   }
 }

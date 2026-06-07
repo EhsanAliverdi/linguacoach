@@ -44,6 +44,10 @@ export class ActivityHistoryComponent implements OnInit {
     this.showNativeExplanation.set(false);
   }
 
+  isVocabPractice(): boolean {
+    return this.history()?.activityType === 'vocabularyPractice';
+  }
+
   scoreColour(score: number | null): string {
     if (score === null) return 'var(--sp-faint)';
     if (score >= 85) return 'var(--sp-success)';

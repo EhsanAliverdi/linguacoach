@@ -33,6 +33,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<LearningModule> LearningModules => Set<LearningModule>();
     public DbSet<LearningActivity> LearningActivities => Set<LearningActivity>();
     public DbSet<ActivityAttempt> ActivityAttempts => Set<ActivityAttempt>();
+    public DbSet<StudentVocabularyItem> StudentVocabularyItems => Set<StudentVocabularyItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

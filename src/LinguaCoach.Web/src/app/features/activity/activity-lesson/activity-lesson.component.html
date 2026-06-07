@@ -44,8 +44,41 @@
   </div>
 }
 
-<!-- Learning state -->
-@if (state() === 'learning' && activity()) {
+<!-- VocabularyPractice: Learning state -->
+@if (state() === 'learning' && activity() && isVocabPractice()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge" style="background:#ede9fe;color:#6d28d9">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Vocabulary
+      </span>
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity()!.difficulty }}</span>
+    </div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity()!.title }}</h2>
+    @if (activity()!.instructions) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.6">{{ activity()!.instructions }}</p>
+      </div>
+    }
+    @if (activity()!.vocabItems?.length) {
+      <div style="display:flex;flex-direction:column;gap:8px">
+        @for (item of activity()!.vocabItems!; track item.vocabularyItemId) {
+          <div class="sp-card" style="padding:14px;border-left:3px solid #6d28d9">
+            <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ item.term }}</div>
+            <div style="font-size:12.5px;color:var(--sp-muted);margin-top:4px">{{ item.explanation }}</div>
+          </div>
+        }
+      </div>
+    }
+    <button (click)="startPractice()" class="sp-button-primary" style="width:100%">
+      Start practice
+    </button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+  </div>
+}
+
+<!-- WritingScenario: Learning state -->
+@if (state() === 'learning' && activity() && !isVocabPractice()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -124,8 +157,55 @@
   </div>
 }
 
-<!-- Writing state -->
-@if ((state() === 'writing' || state() === 'submitting') && activity()) {
+<!-- VocabularyPractice: Writing/Practice state -->
+@if ((state() === 'writing' || state() === 'submitting') && activity() && isVocabPractice()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity()!.title }}</h2>
+    <p style="font-size:13px;color:var(--sp-muted)">{{ activity()!.instructions }}</p>
+
+    @if (attemptCount() > 0) {
+      <div style="background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--sp-text)">
+        Attempt {{ attemptCount() + 1 }} — try again with the suggestions in mind
+      </div>
+    }
+
+    @for (item of activity()!.vocabItems!; track item.vocabularyItemId) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin-bottom:10px">{{ item.prompt }}</p>
+        <input
+          type="text"
+          [attr.aria-label]="'Answer for ' + item.term"
+          [(ngModel)]="vocabAnswers[item.vocabularyItemId]"
+          placeholder="Type the missing phrase…"
+          class="sp-input"
+          style="font-size:14px"
+          [disabled]="state() === 'submitting'"
+        />
+        <div style="margin-top:8px">
+          <button (click)="toggleHint(item.vocabularyItemId)"
+                  class="sp-button-ghost"
+                  style="font-size:12px;padding:4px 10px">
+            {{ showHints[item.vocabularyItemId] ? 'Hide hint' : 'Show hint' }}
+          </button>
+          @if (showHints[item.vocabularyItemId]) {
+            <p style="font-size:12.5px;color:var(--sp-muted);margin-top:6px;font-style:italic">{{ item.hint }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <button (click)="onSubmitVocab()"
+            [disabled]="state() === 'submitting' || !vocabItemsFilled()"
+            class="sp-button-primary"
+            style="width:100%">
+      @if (state() === 'submitting') { Checking answers… } @else { Check answers }
+    </button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+  </div>
+}
+
+<!-- WritingScenario: Writing state -->
+@if ((state() === 'writing' || state() === 'submitting') && activity() && !isVocabPractice()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <!-- Attempt counter if retrying -->

@@ -23,7 +23,11 @@ using LinguaCoach.Application.History;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Infrastructure.History;
 using LinguaCoach.Infrastructure.Memory;
+using LinguaCoach.Application.Progress;
+using LinguaCoach.Application.Vocabulary;
+using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Progress;
+using LinguaCoach.Infrastructure.Vocabulary;
 using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,6 +56,14 @@ public static class DependencyInjection
         // Dashboard
         services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();
+
+        // Progress
+        services.AddScoped<IGetProgressHandler, GetProgressHandler>();
+
+        // Vocabulary
+        services.AddScoped<IVocabularyExtractionService, VocabularyExtractionService>();
+        services.AddScoped<IGetVocabularyHandler, GetVocabularyHandler>();
+        services.AddScoped<IUpdateVocabularyStatusHandler, UpdateVocabularyStatusHandler>();
 
         // Learning history
         services.AddScoped<IGetModuleActivitiesHandler, ModuleActivitiesHandler>();
@@ -90,6 +102,8 @@ public static class DependencyInjection
 
         // Activity (AI-first learning flow)
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();
+        services.AddScoped<VocabularyPracticeGenerator>();
+        services.AddScoped<VocabularyPracticeEvaluator>();
         services.AddScoped<IGetNextActivityHandler, ActivityGetHandler>();
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 

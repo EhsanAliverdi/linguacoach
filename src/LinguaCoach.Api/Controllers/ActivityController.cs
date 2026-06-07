@@ -25,8 +25,7 @@ public sealed class ActivityController : ControllerBase
 
     /// <summary>
     /// Returns the next recommended activity for the student.
-    /// Primary: AI-generated. Fallback: SystemFallback from seed data.
-    /// Never returns 500 — if AI fails, a fallback activity is returned.
+    /// Primary: AI-generated or deterministic. Fallback: SystemFallback from seed data.
     /// </summary>
     [HttpGet("next")]
     [EnableRateLimiting("WritingAi")]
@@ -40,7 +39,7 @@ public sealed class ActivityController : ControllerBase
         try
         {
             var result = await _getNextActivity.HandleAsync(new GetNextActivityQuery(userId, type), ct);
-            return Ok(result);
+            return Ok(ToActivityResponse(result));
         }
         catch (InvalidOperationException ex)
         {
@@ -49,8 +48,7 @@ public sealed class ActivityController : ControllerBase
     }
 
     /// <summary>
-    /// Submits a student attempt for AI evaluation.
-    /// If AI evaluation fails, the attempt is still saved with empty feedback (no data loss).
+    /// Submits a student attempt. Supports both WritingScenario (text) and VocabularyPractice (answers array).
     /// </summary>
     [HttpPost("{activityId:guid}/attempt")]
     [EnableRateLimiting("WritingAi")]
@@ -62,13 +60,27 @@ public sealed class ActivityController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
-        if (string.IsNullOrWhiteSpace(request.SubmittedContent))
-            return BadRequest(new { error = "SubmittedContent is required." });
+        // For VocabularyPractice, answers array is used; submittedContent may be empty.
+        // For WritingScenario, submittedContent is required.
+        var hasContent = !string.IsNullOrWhiteSpace(request.SubmittedContent);
+        var hasAnswers = request.Answers is { Count: > 0 };
+
+        if (!hasContent && !hasAnswers)
+            return BadRequest(new { error = "Either SubmittedContent or Answers is required." });
+
+        var vocabAnswers = request.Answers?
+            .Select(a => new VocabAnswerDto(a.VocabularyItemId, a.Answer ?? string.Empty))
+            .ToList()
+            as IReadOnlyList<VocabAnswerDto>;
 
         try
         {
             var result = await _submitAttempt.HandleAsync(
-                new SubmitActivityAttemptCommand(userId, activityId, request.SubmittedContent, request.AudioUrl),
+                new SubmitActivityAttemptCommand(
+                    userId, activityId,
+                    request.SubmittedContent ?? string.Empty,
+                    request.AudioUrl,
+                    vocabAnswers),
                 ct);
             return Ok(result);
         }
@@ -82,9 +94,45 @@ public sealed class ActivityController : ControllerBase
         }
     }
 
+    private static object ToActivityResponse(ActivityDto dto) => new
+    {
+        activityId = dto.ActivityId,
+        activityType = ToCamelCase(dto.ActivityType.ToString()),
+        source = ToCamelCase(dto.Source.ToString()),
+        title = dto.Title,
+        difficulty = dto.Difficulty,
+        // WritingScenario fields
+        situation = dto.Situation,
+        learningGoal = dto.LearningGoal,
+        targetPhrases = dto.TargetPhrases,
+        targetVocabulary = dto.TargetVocabulary,
+        exampleText = dto.ExampleText,
+        commonMistakeToAvoid = dto.CommonMistakeToAvoid,
+        instructionInSourceLanguage = dto.InstructionInSourceLanguage,
+        // VocabularyPractice fields
+        instructions = dto.Instructions,
+        practiceMode = dto.PracticeMode,
+        vocabItems = dto.VocabItems?.Select(i => new
+        {
+            vocabularyItemId = i.VocabularyItemId,
+            term = i.Term,
+            prompt = i.Prompt,
+            hint = i.Hint,
+            explanation = i.Explanation,
+        }),
+    };
+
+    private static string ToCamelCase(string s) =>
+        string.IsNullOrEmpty(s) ? s : char.ToLowerInvariant(s[0]) + s[1..];
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 }
 
-public sealed record SubmitAttemptRequest(string SubmittedContent, string? AudioUrl = null);
+public sealed record SubmitAttemptRequest(
+    string? SubmittedContent,
+    string? AudioUrl = null,
+    IReadOnlyList<AnswerRequest>? Answers = null);
+
+public sealed record AnswerRequest(Guid VocabularyItemId, string? Answer);

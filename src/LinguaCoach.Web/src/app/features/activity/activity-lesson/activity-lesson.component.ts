@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
-import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, VocabAnswer } from '../../../core/models/activity.models';
 
 type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error';
 
@@ -27,6 +27,10 @@ export class ActivityLessonComponent implements OnInit {
 
   // Native-language explanation visibility (hidden by default)
   showNativeExplanation = signal(false);
+
+  // VocabularyPractice state
+  vocabAnswers: Record<string, string> = {};
+  showHints: Record<string, boolean> = {};
 
   readonly stepDots = [
     { n: 1, key: 'learning', label: 'Lesson' },
@@ -115,8 +119,47 @@ export class ActivityLessonComponent implements OnInit {
     }
   }
 
+  isVocabPractice(): boolean {
+    return this.activity()?.activityType === 'vocabularyPractice';
+  }
+
+  vocabItemsFilled(): boolean {
+    const items = this.activity()?.vocabItems ?? [];
+    return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
+  }
+
+  toggleHint(itemId: string): void {
+    this.showHints[itemId] = !this.showHints[itemId];
+  }
+
+  startPractice(): void {
+    this.state.set('writing');
+  }
+
   startWriting(): void {
     this.state.set('writing');
+  }
+
+  onSubmitVocab(): void {
+    const a = this.activity();
+    if (!a?.vocabItems?.length) return;
+    const answers: VocabAnswer[] = a.vocabItems.map(item => ({
+      vocabularyItemId: item.vocabularyItemId,
+      answer: this.vocabAnswers[item.vocabularyItemId] ?? '',
+    }));
+    this.state.set('submitting');
+    this.activityService.submitVocabAttempt(a.activityId, answers).subscribe({
+      next: fb => {
+        this.previousScore.set(this.feedback()?.score ?? null);
+        this.feedback.set(fb);
+        this.attemptCount.update(n => n + 1);
+        this.state.set('feedback');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(this.extractError(err, 'Failed to submit answers. Please try again.'));
+        this.state.set('writing');
+      },
+    });
   }
 
   onSubmit(): void {
@@ -145,6 +188,8 @@ export class ActivityLessonComponent implements OnInit {
 
   tryAgain(): void {
     this.draftText = '';
+    this.vocabAnswers = {};
+    this.showHints = {};
     this.state.set('writing');
   }
 
@@ -153,6 +198,8 @@ export class ActivityLessonComponent implements OnInit {
     this.feedback.set(null);
     this.activity.set(null);
     this.draftText = '';
+    this.vocabAnswers = {};
+    this.showHints = {};
     this.attemptCount.set(0);
     this.previousScore.set(null);
     this.activityService.getNext().subscribe({

@@ -8,6 +8,14 @@ export type ActivityType =
 
 export type ActivitySource = 'aiGenerated' | 'systemFallback';
 
+export interface VocabPracticeItem {
+  vocabularyItemId: string;
+  term: string;
+  prompt: string;
+  hint: string;
+  explanation: string;
+}
+
 export interface ActivityDto {
   activityId: string;
   activityType: ActivityType;
@@ -22,6 +30,15 @@ export interface ActivityDto {
   exampleText: string | null;
   commonMistakeToAvoid: string | null;
   instructionInSourceLanguage: string | null;
+  // VocabularyPractice fields — null for other activity types
+  instructions: string | null;
+  practiceMode: string | null;
+  vocabItems: VocabPracticeItem[] | null;
+}
+
+export interface VocabAnswer {
+  vocabularyItemId: string;
+  answer: string;
 }
 
 export type FeedbackChangeType = 'replace' | 'add' | 'remove' | 'reorder';
