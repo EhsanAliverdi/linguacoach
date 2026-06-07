@@ -48,6 +48,10 @@ export class ActivityHistoryComponent implements OnInit {
     return this.history()?.activityType === 'vocabularyPractice';
   }
 
+  isListeningComprehension(): boolean {
+    return this.history()?.activityType === 'listeningComprehension';
+  }
+
   scoreColour(score: number | null): string {
     if (score === null) return 'var(--sp-faint)';
     if (score >= 85) return 'var(--sp-success)';

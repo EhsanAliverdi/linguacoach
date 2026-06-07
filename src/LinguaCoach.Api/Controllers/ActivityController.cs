@@ -64,14 +64,22 @@ public sealed class ActivityController : ControllerBase
         // For WritingScenario, submittedContent is required.
         var hasContent = !string.IsNullOrWhiteSpace(request.SubmittedContent);
         var hasAnswers = request.Answers is { Count: > 0 };
+        var hasResponseText = !string.IsNullOrWhiteSpace(request.ResponseText);
 
-        if (!hasContent && !hasAnswers)
-            return BadRequest(new { error = "Either SubmittedContent or Answers is required." });
+        if (!hasContent && !hasAnswers && !hasResponseText)
+            return BadRequest(new { error = "Either SubmittedContent, Answers, or ResponseText is required." });
 
         var vocabAnswers = request.Answers?
-            .Select(a => new VocabAnswerDto(a.VocabularyItemId, a.Answer ?? string.Empty))
+            .Where(a => a.VocabularyItemId.HasValue)
+            .Select(a => new VocabAnswerDto(a.VocabularyItemId!.Value, a.Answer ?? string.Empty))
             .ToList()
             as IReadOnlyList<VocabAnswerDto>;
+
+        var listeningAnswers = request.Answers?
+            .Where(a => !string.IsNullOrWhiteSpace(a.QuestionId))
+            .Select(a => new ListeningAnswerDto(a.QuestionId!, a.Answer ?? string.Empty))
+            .ToList()
+            as IReadOnlyList<ListeningAnswerDto>;
 
         try
         {
@@ -80,7 +88,9 @@ public sealed class ActivityController : ControllerBase
                     userId, activityId,
                     request.SubmittedContent ?? string.Empty,
                     request.AudioUrl,
-                    vocabAnswers),
+                    vocabAnswers,
+                    listeningAnswers,
+                    request.ResponseText),
                 ct);
             return Ok(result);
         }
@@ -120,6 +130,22 @@ public sealed class ActivityController : ControllerBase
             hint = i.Hint,
             explanation = i.Explanation,
         }),
+        // ListeningComprehension fields. Transcript and expected answers are intentionally omitted.
+        scenario = dto.Scenario,
+        speakerRole = dto.SpeakerRole,
+        listenerRole = dto.ListenerRole,
+        transcriptAvailableAfterSubmit = dto.TranscriptAvailableAfterSubmit,
+        listeningQuestions = dto.ListeningQuestions?.Select(q => new
+        {
+            id = q.Id,
+            question = q.Question,
+            type = q.Type,
+        }),
+        responseTask = dto.ResponseTask is null ? null : new
+        {
+            prompt = dto.ResponseTask.Prompt,
+            expectedFocus = dto.ResponseTask.ExpectedFocus,
+        },
     };
 
     private static string ToCamelCase(string s) =>
@@ -133,6 +159,7 @@ public sealed class ActivityController : ControllerBase
 public sealed record SubmitAttemptRequest(
     string? SubmittedContent,
     string? AudioUrl = null,
-    IReadOnlyList<AnswerRequest>? Answers = null);
+    IReadOnlyList<AnswerRequest>? Answers = null,
+    string? ResponseText = null);
 
-public sealed record AnswerRequest(Guid VocabularyItemId, string? Answer);
+public sealed record AnswerRequest(Guid? VocabularyItemId, string? QuestionId, string? Answer);

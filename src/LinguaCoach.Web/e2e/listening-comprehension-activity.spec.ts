@@ -1,0 +1,122 @@
+import { expect, test, type Page } from '@playwright/test';
+
+function fakeJwt(email: string) {
+  const header = toBase64Url({ alg: 'none', typ: 'JWT' });
+  const payload = toBase64Url({
+    sub: 'student-user-id',
+    email,
+    role: 'Student',
+    exp: Math.floor(Date.now() / 1000) + 60 * 60,
+  });
+  return `${header}.${payload}.signature`;
+}
+
+function toBase64Url(value: object) {
+  return Buffer.from(JSON.stringify(value))
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+async function withAuth(page: Page) {
+  const token = fakeJwt('student@test.com');
+  await page.addInitScript((s) => sessionStorage.setItem('speakpath.auth', s), JSON.stringify({ token, mustChangePassword: false }));
+}
+
+const listeningActivity = {
+  activityId: 'listening-act-1',
+  activityType: 'listeningComprehension',
+  source: 'aiGenerated',
+  title: 'Understand a project update',
+  difficulty: 'B1',
+  situation: null,
+  learningGoal: null,
+  targetPhrases: [],
+  targetVocabulary: [],
+  exampleText: null,
+  commonMistakeToAvoid: null,
+  instructionInSourceLanguage: null,
+  instructions: 'Read the situation first. Then answer the questions as if you listened to the message.',
+  practiceMode: null,
+  vocabItems: null,
+  scenario: 'Your manager leaves a short voice message about a project delay.',
+  speakerRole: 'Manager',
+  listenerRole: 'Document Controller',
+  transcriptAvailableAfterSubmit: true,
+  listeningQuestions: [
+    { id: 'q1', question: 'What should you check?', type: 'short_answer' },
+    { id: 'q2', question: 'How long is the delay?', type: 'short_answer' },
+  ],
+  responseTask: {
+    prompt: 'Write a short reply confirming what you will do.',
+    expectedFocus: 'confirm task and timeline',
+  },
+};
+
+const listeningFeedback = {
+  attemptId: 'attempt-1',
+  score: 90,
+  coachSummary: 'You understood the main workplace message and responded professionally.',
+  focusFirst: false,
+  changes: [],
+  correctedText: null,
+  whatYouDidWell: [],
+  mainMistakes: [],
+  grammarIssues: [],
+  vocabularyIssues: [],
+  toneIssues: [],
+  clarityIssues: [],
+  grammarExplanation: null,
+  toneExplanation: null,
+  vocabularyToRemember: [],
+  miniLesson: 'Listen for the action, reason, and deadline.',
+  nextImprovementStep: 'Underline the task and time, then answer again.',
+  rewriteChallenge: null,
+  nextPracticeSuggestion: null,
+  feedbackInSourceLanguage: null,
+  questionFeedback: [
+    {
+      questionId: 'q1',
+      question: 'What should you check?',
+      studentAnswer: 'the latest delivery schedule',
+      expectedAnswerSummary: 'the latest delivery schedule',
+      isCorrect: true,
+      score: 100,
+      feedback: 'You found the key information.',
+    },
+  ],
+  transcript: 'Hi, could you please check the latest delivery schedule? The supplier has confirmed a two-day delay.',
+  responseFeedback: 'Your reply confirms the task and keeps a professional tone.',
+};
+
+test('listening comprehension activity hides transcript before submit and reveals it after feedback', async ({ page }) => {
+  await withAuth(page);
+  await page.route('**/api/activity/next', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(listeningActivity) });
+  });
+  await page.route('**/api/activity/*/attempt', async route => {
+    const body = route.request().postDataJSON();
+    expect(body.answers).toEqual([
+      { questionId: 'q1', answer: 'the latest delivery schedule' },
+      { questionId: 'q2', answer: 'two days' },
+    ]);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(listeningFeedback) });
+  });
+
+  await page.goto('/activity');
+  await expect(page.getByText('Understand a project update')).toBeVisible();
+  await expect(page.getByText('Transcript unlocks after you answer.')).toBeVisible();
+  await expect(page.getByText('supplier has confirmed a two-day delay')).not.toBeVisible();
+
+  await page.getByRole('button', { name: /Answer questions/i }).click();
+  await page.getByLabel('What should you check?').fill('the latest delivery schedule');
+  await page.getByLabel('How long is the delay?').fill('two days');
+  await page.getByLabel('Write a short reply confirming what you will do.').fill('Sure, I will check the schedule and send the update before 3 pm.');
+  await page.getByRole('button', { name: /Check understanding/i }).click();
+
+  await expect(page.getByText('You understood the main workplace message')).toBeVisible();
+  await expect(page.getByText('supplier has confirmed a two-day delay')).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('"expectedAnswer"');
+  await expect(page.locator('body')).not.toContainText('{"');
+});

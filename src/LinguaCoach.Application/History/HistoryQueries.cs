@@ -68,7 +68,19 @@ public sealed record AttemptDetailDto(
     string? NextImprovementStep,
     string? SuggestedImprovedVersion,
     string? NativeLanguageExplanation,
-    string? SubmittedContent);
+    string? SubmittedContent,
+    IReadOnlyList<ListeningAttemptQuestionDto>? ListeningQuestionFeedback = null,
+    string? Transcript = null,
+    string? ResponseFeedback = null);
+
+public sealed record ListeningAttemptQuestionDto(
+    string QuestionId,
+    string Question,
+    string StudentAnswer,
+    string ExpectedAnswerSummary,
+    bool IsCorrect,
+    double Score,
+    string Feedback);
 
 public sealed record AttemptChangeDto(
     string Type,

@@ -34,10 +34,33 @@ export interface ActivityDto {
   instructions: string | null;
   practiceMode: string | null;
   vocabItems: VocabPracticeItem[] | null;
+  // ListeningComprehension fields. Transcript and expected answers are only in feedback.
+  scenario: string | null;
+  speakerRole: string | null;
+  listenerRole: string | null;
+  transcriptAvailableAfterSubmit: boolean | null;
+  listeningQuestions: ListeningQuestion[] | null;
+  responseTask: ListeningResponseTask | null;
 }
 
 export interface VocabAnswer {
   vocabularyItemId: string;
+  answer: string;
+}
+
+export interface ListeningQuestion {
+  id: string;
+  question: string;
+  type: string;
+}
+
+export interface ListeningResponseTask {
+  prompt: string;
+  expectedFocus: string | null;
+}
+
+export interface ListeningAnswer {
+  questionId: string;
   answer: string;
 }
 
@@ -79,4 +102,17 @@ export interface ActivityFeedbackDto {
   rewriteChallenge: string | null;
   nextPracticeSuggestion: string | null;
   feedbackInSourceLanguage: string | null;
+  questionFeedback: ListeningQuestionFeedback[] | null;
+  transcript: string | null;
+  responseFeedback: string | null;
+}
+
+export interface ListeningQuestionFeedback {
+  questionId: string;
+  question: string;
+  studentAnswer: string;
+  expectedAnswerSummary: string;
+  isCorrect: boolean;
+  score: number;
+  feedback: string;
 }

@@ -18,6 +18,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IStudentMemoryService _memoryService;
     private readonly IVocabularyExtractionService _vocabExtraction;
     private readonly VocabularyPracticeEvaluator _vocabEvaluator;
+    private readonly ListeningComprehensionEvaluator _listeningEvaluator;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -26,6 +27,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IStudentMemoryService memoryService,
         IVocabularyExtractionService vocabExtraction,
         VocabularyPracticeEvaluator vocabEvaluator,
+        ListeningComprehensionEvaluator listeningEvaluator,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -33,6 +35,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _memoryService = memoryService;
         _vocabExtraction = vocabExtraction;
         _vocabEvaluator = vocabEvaluator;
+        _listeningEvaluator = listeningEvaluator;
         _logger = logger;
     }
 
@@ -42,7 +45,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     {
         // VocabularyPractice may have empty SubmittedContent (answers go in VocabAnswers)
         var hasVocabAnswers = command.VocabAnswers is { Count: > 0 };
-        if (!hasVocabAnswers)
+        var hasListeningAnswers = command.ListeningAnswers is { Count: > 0 };
+        if (!hasVocabAnswers && !hasListeningAnswers)
         {
             if (string.IsNullOrWhiteSpace(command.SubmittedContent))
                 throw new ArgumentException("SubmittedContent is required.", nameof(command));
@@ -68,6 +72,13 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         var module = activity.LearningModuleId.HasValue
             ? await _db.LearningModules.FirstOrDefaultAsync(m => m.Id == activity.LearningModuleId.Value, ct)
             : null;
+        if (module is not null)
+        {
+            var ownsModule = await _db.LearningPaths
+                .AnyAsync(p => p.Id == module.LearningPathId && p.StudentProfileId == profile.Id, ct);
+            if (!ownsModule)
+                throw new InvalidOperationException("Activity not found.");
+        }
 
         _logger.LogInformation(
             "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ActivityType={ActivityType}",
@@ -103,6 +114,35 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             // Memory update not needed for vocabulary practice (it's not a writing attempt)
             // Vocabulary extraction not needed (no AI feedback to extract from)
             return ParseVocabularyFeedback(vpAttempt.Id, vpFeedbackJson, vpScore);
+        }
+
+        if (activity.ActivityType == ActivityType.ListeningComprehension)
+        {
+            var answers = command.ListeningAnswers ?? [];
+            var (listeningFeedbackJson, listeningScore) = _listeningEvaluator.Evaluate(
+                activity.AiGeneratedContentJson, answers, command.ResponseText);
+
+            var submittedContentJson = JsonSerializer.Serialize(new
+            {
+                answers = answers.Select(a => new { questionId = a.QuestionId, answer = a.Answer }),
+                responseText = command.ResponseText ?? command.SubmittedContent
+            });
+
+            var listeningAttempt = new ActivityAttempt(
+                studentProfileId: profile.Id,
+                learningActivityId: activity.Id,
+                submittedContent: submittedContentJson,
+                feedbackJson: listeningFeedbackJson,
+                promptKey: "listening_comprehension_deterministic",
+                score: listeningScore);
+
+            _db.ActivityAttempts.Add(listeningAttempt);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("ListeningComprehension attempt saved AttemptId={AttemptId} Score={Score}",
+                listeningAttempt.Id, listeningScore);
+
+            return ParseListeningFeedback(listeningAttempt.Id, listeningFeedbackJson, listeningScore);
         }
 
         // Evaluate with AI (WritingScenario and other future types).
@@ -207,6 +247,52 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             RewriteChallenge: null,
             NextPracticeSuggestion: null,
             FeedbackInSourceLanguage: null);
+    }
+
+    private static ActivityFeedbackDto ParseListeningFeedback(Guid attemptId, string feedbackJson, double score)
+    {
+        ListeningFeedbackPayload? payload = null;
+        try
+        {
+            payload = JsonSerializer.Deserialize<ListeningFeedbackPayload>(feedbackJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch { /* safe defaults */ }
+
+        var questions = payload?.QuestionFeedback?.Select(q => new ListeningQuestionFeedbackDto(
+            q.QuestionId ?? string.Empty,
+            q.Question ?? string.Empty,
+            q.StudentAnswer ?? string.Empty,
+            q.ExpectedAnswerSummary ?? string.Empty,
+            q.IsCorrect,
+            q.Score,
+            q.Feedback ?? string.Empty)).ToList()
+            as IReadOnlyList<ListeningQuestionFeedbackDto> ?? [];
+
+        return new ActivityFeedbackDto(
+            AttemptId: attemptId,
+            Score: score,
+            CoachSummary: payload?.CoachSummary,
+            FocusFirst: false,
+            Changes: [],
+            CorrectedText: null,
+            WhatYouDidWell: [],
+            MainMistakes: [],
+            GrammarIssues: [],
+            VocabularyIssues: [],
+            ToneIssues: [],
+            ClarityIssues: [],
+            GrammarExplanation: null,
+            ToneExplanation: null,
+            VocabularyToRemember: [],
+            MiniLesson: payload?.MiniLesson,
+            NextImprovementStep: payload?.NextImprovementStep,
+            RewriteChallenge: null,
+            NextPracticeSuggestion: null,
+            FeedbackInSourceLanguage: null,
+            QuestionFeedback: questions,
+            Transcript: payload?.Transcript,
+            ResponseFeedback: payload?.ResponseFeedback);
     }
 
     private static string? ExtractImprovedVersion(string feedbackJson)
@@ -334,4 +420,26 @@ internal sealed class ActivityFeedbackPayload
     [JsonPropertyName("nextImprovementStep")] public string? NextImprovementStep { get; set; }
     [JsonPropertyName("rewriteChallenge")] public string? RewriteChallenge { get; set; }
     [JsonPropertyName("nextPracticeSuggestion")] public string? NextPracticeSuggestion { get; set; }
+}
+
+internal sealed class ListeningFeedbackPayload
+{
+    [JsonPropertyName("overallScore")] public double? OverallScore { get; set; }
+    [JsonPropertyName("coachSummary")] public string? CoachSummary { get; set; }
+    [JsonPropertyName("questionFeedback")] public List<ListeningQuestionFeedbackPayload>? QuestionFeedback { get; set; }
+    [JsonPropertyName("transcript")] public string? Transcript { get; set; }
+    [JsonPropertyName("responseFeedback")] public string? ResponseFeedback { get; set; }
+    [JsonPropertyName("miniLesson")] public string? MiniLesson { get; set; }
+    [JsonPropertyName("nextImprovementStep")] public string? NextImprovementStep { get; set; }
+}
+
+internal sealed class ListeningQuestionFeedbackPayload
+{
+    [JsonPropertyName("questionId")] public string? QuestionId { get; set; }
+    [JsonPropertyName("question")] public string? Question { get; set; }
+    [JsonPropertyName("studentAnswer")] public string? StudentAnswer { get; set; }
+    [JsonPropertyName("expectedAnswerSummary")] public string? ExpectedAnswerSummary { get; set; }
+    [JsonPropertyName("isCorrect")] public bool IsCorrect { get; set; }
+    [JsonPropertyName("score")] public double Score { get; set; }
+    [JsonPropertyName("feedback")] public string? Feedback { get; set; }
 }

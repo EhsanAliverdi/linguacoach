@@ -23,7 +23,14 @@ public sealed record ActivityDto(
     // VocabularyPractice fields — null for other activity types
     string? Instructions = null,
     string? PracticeMode = null,
-    IReadOnlyList<VocabPracticeItemDto>? VocabItems = null);
+    IReadOnlyList<VocabPracticeItemDto>? VocabItems = null,
+    // ListeningComprehension fields — transcript and expected answers are not exposed before submit
+    string? Scenario = null,
+    string? SpeakerRole = null,
+    string? ListenerRole = null,
+    bool? TranscriptAvailableAfterSubmit = null,
+    IReadOnlyList<ListeningQuestionDto>? ListeningQuestions = null,
+    ListeningResponseTaskDto? ResponseTask = null);
 
 /// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
 public sealed record VocabPracticeItemDto(
@@ -37,6 +44,17 @@ public sealed record VocabPracticeItemDto(
 
 public sealed record VocabAnswerDto(Guid VocabularyItemId, string Answer);
 
+public sealed record ListeningAnswerDto(string QuestionId, string Answer);
+
+public sealed record ListeningQuestionDto(
+    string Id,
+    string Question,
+    string Type);
+
+public sealed record ListeningResponseTaskDto(
+    string Prompt,
+    string? ExpectedFocus = null);
+
 public interface IGetNextActivityHandler
 {
     Task<ActivityDto> HandleAsync(GetNextActivityQuery query, CancellationToken ct = default);
@@ -49,7 +67,9 @@ public sealed record SubmitActivityAttemptCommand(
     Guid ActivityId,
     string SubmittedContent,
     string? AudioUrl = null,
-    IReadOnlyList<VocabAnswerDto>? VocabAnswers = null);
+    IReadOnlyList<VocabAnswerDto>? VocabAnswers = null,
+    IReadOnlyList<ListeningAnswerDto>? ListeningAnswers = null,
+    string? ResponseText = null);
 
 /// <summary>A single targeted change suggestion from the AI coach.</summary>
 public sealed record FeedbackChangeDto(
@@ -85,7 +105,20 @@ public sealed record ActivityFeedbackDto(
     string? RewriteChallenge,
     string? NextPracticeSuggestion,
     // Generic feedback in source language
-    string? FeedbackInSourceLanguage);
+    string? FeedbackInSourceLanguage,
+    // ListeningComprehension feedback fields
+    IReadOnlyList<ListeningQuestionFeedbackDto>? QuestionFeedback = null,
+    string? Transcript = null,
+    string? ResponseFeedback = null);
+
+public sealed record ListeningQuestionFeedbackDto(
+    string QuestionId,
+    string Question,
+    string StudentAnswer,
+    string ExpectedAnswerSummary,
+    bool IsCorrect,
+    double Score,
+    string Feedback);
 
 public interface ISubmitActivityAttemptHandler
 {

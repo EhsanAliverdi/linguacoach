@@ -140,6 +140,36 @@
         </div>
       }
 
+      @if (selectedAttempt.listeningQuestionFeedback?.length) {
+        <div class="sp-card" style="padding:16px;margin-bottom:12px">
+          <p style="font-size:12px;font-weight:800;color:var(--sp-listening);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Listening details</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            @for (q of selectedAttempt.listeningQuestionFeedback!; track q.questionId) {
+              <div style="border-left:3px solid var(--sp-border2);padding-left:12px">
+                <p style="font-size:13px;font-weight:700;color:var(--sp-ink);margin-bottom:4px">{{ q.question }}</p>
+                <p style="font-size:12.5px;color:var(--sp-muted);margin:0">Your answer: {{ q.studentAnswer || 'No answer' }}</p>
+                <p style="font-size:12.5px;color:var(--sp-text);margin:4px 0 0">Expected: {{ q.expectedAnswerSummary }}</p>
+                <p style="font-size:12.5px;color:var(--sp-muted);margin:4px 0 0">{{ q.feedback }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (selectedAttempt.transcript) {
+        <details style="margin-bottom:16px" open>
+          <summary style="font-size:12px;font-weight:700;color:var(--sp-muted);cursor:pointer;padding:6px 0">Transcript</summary>
+          <div style="background:var(--sp-surface2);border:1px solid var(--sp-border);border-radius:8px;padding:12px;margin-top:8px;font-size:13px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap">{{ selectedAttempt.transcript }}</div>
+        </details>
+      }
+
+      @if (selectedAttempt.responseFeedback) {
+        <div style="background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:12px 14px;margin-bottom:12px">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-ink);margin-bottom:4px">Response feedback</p>
+          <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ selectedAttempt.responseFeedback }}</p>
+        </div>
+      }
+
       <!-- Native language explanation -->
       @if (selectedAttempt.nativeLanguageExplanation) {
         <div style="margin-bottom:12px">
@@ -163,7 +193,7 @@
       }
 
       <!-- Submitted text (WritingScenario only — VocabularyPractice submittedContent is JSON) -->
-      @if (selectedAttempt.submittedContent && !isVocabPractice()) {
+      @if (selectedAttempt.submittedContent && !isVocabPractice() && !isListeningComprehension()) {
         <details style="margin-bottom:16px">
           <summary style="font-size:12px;font-weight:700;color:var(--sp-muted);cursor:pointer;padding:6px 0">
             Your submitted text
@@ -173,6 +203,9 @@
       }
       @if (isVocabPractice()) {
         <p style="font-size:12px;color:var(--sp-muted);margin-bottom:8px">Vocabulary practice attempt — see feedback above.</p>
+      }
+      @if (isListeningComprehension()) {
+        <p style="font-size:12px;color:var(--sp-muted);margin-bottom:8px">Listening comprehension attempt — transcript and question feedback are shown above.</p>
       }
     </div>
   }

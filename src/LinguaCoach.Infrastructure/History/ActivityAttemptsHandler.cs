@@ -81,6 +81,7 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
             var vocabIssues = ParseStringArray(root, "vocabularyIssues");
             var toneIssues = ParseStringArray(root, "toneIssues");
             var clarityIssues = ParseStringArray(root, "clarityIssues");
+            var listeningQuestions = ParseListeningQuestions(root);
 
             return new AttemptDetailDto(
                 AttemptId: attempt.Id,
@@ -99,7 +100,10 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
                 NextImprovementStep: GetString(root, "nextImprovementStep"),
                 SuggestedImprovedVersion: GetString(root, "improvedVersion") ?? GetString(root, "correctedEmail"),
                 NativeLanguageExplanation: GetString(root, "feedbackInSourceLanguage"),
-                SubmittedContent: attempt.SubmittedContent);
+                SubmittedContent: attempt.SubmittedContent,
+                ListeningQuestionFeedback: listeningQuestions,
+                Transcript: GetString(root, "transcript"),
+                ResponseFeedback: GetString(root, "responseFeedback"));
         }
         catch
         {
@@ -117,6 +121,21 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
                 NativeLanguageExplanation: null,
                 SubmittedContent: attempt.SubmittedContent);
         }
+    }
+
+    private static IReadOnlyList<ListeningAttemptQuestionDto> ParseListeningQuestions(JsonElement root)
+    {
+        if (!root.TryGetProperty("questionFeedback", out var arr) || arr.ValueKind != JsonValueKind.Array)
+            return [];
+
+        return arr.EnumerateArray().Select(q => new ListeningAttemptQuestionDto(
+            QuestionId: GetString(q, "questionId") ?? string.Empty,
+            Question: GetString(q, "question") ?? string.Empty,
+            StudentAnswer: GetString(q, "studentAnswer") ?? string.Empty,
+            ExpectedAnswerSummary: GetString(q, "expectedAnswerSummary") ?? string.Empty,
+            IsCorrect: GetBool(q, "isCorrect"),
+            Score: GetDouble(q, "score"),
+            Feedback: GetString(q, "feedback") ?? string.Empty)).ToList();
     }
 
     private static IReadOnlyList<AttemptChangeDto> ParseChanges(JsonElement root)
@@ -159,6 +178,13 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
             if (v.ValueKind == JsonValueKind.False) return false;
         }
         return false;
+    }
+
+    private static double GetDouble(JsonElement el, string key)
+    {
+        if (el.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out var d))
+            return d;
+        return 0;
     }
 
     private sealed class WritingContent

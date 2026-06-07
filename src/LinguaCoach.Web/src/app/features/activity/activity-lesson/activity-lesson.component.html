@@ -77,8 +77,39 @@
   </div>
 }
 
+<!-- ListeningComprehension: Learning state -->
+@if (state() === 'learning' && activity() && isListeningComprehension()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge" style="background:#e0f2fe;color:#0369a1">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        Listening
+      </span>
+      @if (isAiGenerated()) { <span class="sp-ai-badge">AI-generated</span> } @else { <span class="sp-fallback-badge">Fallback activity</span> }
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity()!.difficulty }}</span>
+    </div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity()!.title }}</h2>
+    <div class="sp-card" style="padding:18px">
+      <p class="sp-eyebrow" style="margin-bottom:8px">Workplace message</p>
+      <p style="font-size:14.5px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ activity()!.scenario }}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        @if (activity()!.speakerRole) { <span class="sp-pill">Speaker: {{ activity()!.speakerRole }}</span> }
+        @if (activity()!.listenerRole) { <span class="sp-pill">You: {{ activity()!.listenerRole }}</span> }
+      </div>
+    </div>
+    @if (activity()!.instructions) {
+      <div class="sp-alert-info" style="font-size:13px">{{ activity()!.instructions }}</div>
+    }
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;font-size:13px;font-weight:700;color:var(--sp-text)">
+      Transcript unlocks after you answer.
+    </div>
+    <button (click)="startPractice()" class="sp-button-primary" style="width:100%">Answer questions</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+  </div>
+}
+
 <!-- WritingScenario: Learning state -->
-@if (state() === 'learning' && activity() && !isVocabPractice()) {
+@if (state() === 'learning' && activity() && !isVocabPractice() && !isListeningComprehension()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -204,8 +235,58 @@
   </div>
 }
 
+<!-- ListeningComprehension: Practice state -->
+@if ((state() === 'writing' || state() === 'submitting') && activity() && isListeningComprehension()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity()!.title }}</h2>
+    <div class="sp-card" style="padding:14px 18px">
+      <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity()!.scenario }}</p>
+    </div>
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;font-size:13px;color:var(--sp-text);line-height:1.6">
+      Imagine you listened to this workplace message. Answer from what you understood. The transcript stays hidden until you submit.
+    </div>
+
+    @for (question of activity()!.listeningQuestions ?? []; track question.id) {
+      <div class="sp-card" style="padding:16px">
+        <label class="sp-label" [for]="'listening-' + question.id">{{ question.question }}</label>
+        <input
+          [id]="'listening-' + question.id"
+          type="text"
+          [(ngModel)]="listeningAnswers[question.id]"
+          class="sp-input"
+          placeholder="Type your answer"
+          [disabled]="state() === 'submitting'"
+        />
+      </div>
+    }
+
+    @if (activity()!.responseTask) {
+      <div class="sp-card" style="padding:16px">
+        <label class="sp-label" for="listening-response">{{ activity()!.responseTask!.prompt }}</label>
+        <textarea
+          id="listening-response"
+          [(ngModel)]="listeningResponseText"
+          [disabled]="state() === 'submitting'"
+          rows="4"
+          class="sp-input"
+          style="resize:vertical;line-height:1.7"
+          placeholder="Write a short professional reply"
+        ></textarea>
+      </div>
+    }
+
+    <button (click)="onSubmitListening()"
+      [disabled]="state() === 'submitting' || !listeningItemsFilled()"
+      class="sp-button-primary"
+      style="width:100%">
+      @if (state() === 'submitting') { Checking understanding... } @else { Check understanding }
+    </button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+  </div>
+}
+
 <!-- WritingScenario: Writing state -->
-@if ((state() === 'writing' || state() === 'submitting') && activity() && !isVocabPractice()) {
+@if ((state() === 'writing' || state() === 'submitting') && activity() && !isVocabPractice() && !isListeningComprehension()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <!-- Attempt counter if retrying -->
@@ -336,6 +417,43 @@
             </li>
           }
         </ul>
+      </div>
+    }
+
+    <!-- Listening question feedback -->
+    @if (feedback()!.questionFeedback?.length) {
+      <div class="sp-card" style="padding:18px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">Listening details</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          @for (q of feedback()!.questionFeedback!; track q.questionId) {
+            <div style="border-left:3px solid var(--sp-border2);padding-left:12px">
+              <p style="font-size:13.5px;font-weight:700;color:var(--sp-ink);margin-bottom:6px">{{ q.question }}</p>
+              <p style="font-size:12.5px;color:var(--sp-muted);line-height:1.55;margin:0">Your answer: {{ q.studentAnswer || 'No answer' }}</p>
+              <p style="font-size:12.5px;color:var(--sp-text);line-height:1.55;margin:4px 0 0">Expected: {{ q.expectedAnswerSummary }}</p>
+              <p style="font-size:12.5px;color:var(--sp-muted);line-height:1.55;margin:4px 0 0">{{ q.feedback }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (feedback()!.transcript) {
+      <details class="sp-collapsible" open>
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-listening)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Transcript
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:14px;line-height:1.75;color:var(--sp-text);white-space:pre-wrap">{{ feedback()!.transcript }}</p>
+        </div>
+      </details>
+    }
+
+    @if (feedback()!.responseFeedback) {
+      <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Response feedback</p>
+        <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ feedback()!.responseFeedback }}</p>
       </div>
     }
 

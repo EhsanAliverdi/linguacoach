@@ -19,6 +19,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
 {
     private const int CompletionThreshold = 3;
     private const int VocabPracticeIntervalAttempts = 4; // every 4th activity
+    private const int ListeningIntervalAttempts = 5; // every 5th activity
 
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
@@ -149,6 +150,22 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 query.UserId, activityType, ex.GetType().Name);
         }
 
+        if (activityType == ActivityType.ListeningComprehension)
+        {
+            var fallbackJson = BuildListeningFallbackJson(profile.CefrLevel ?? "B1", profile.CareerProfile?.Name ?? "General");
+            var fallbackActivity = new Domain.Entities.LearningActivity(
+                activityType: ActivityType.ListeningComprehension,
+                source: ActivitySource.SystemFallback,
+                title: ExtractTitle(fallbackJson, activityType),
+                difficulty: profile.CefrLevel ?? "B1",
+                aiGeneratedContentJson: fallbackJson,
+                learningModuleId: currentModuleId);
+
+            _db.LearningActivities.Add(fallbackActivity);
+            await _db.SaveChangesAsync(ct);
+            return MapToDto(fallbackActivity);
+        }
+
         // Fallback path — return a seeded SystemFallback activity.
         var fallbacks = await _db.LearningActivities
             .Where(a => a.ActivityType == activityType
@@ -186,6 +203,14 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 "VocabularyPractice selected StudentProfileId={ProfileId} TotalAttempts={Count}",
                 studentProfileId, totalAttempts);
             return ActivityType.VocabularyPractice;
+        }
+
+        if (totalAttempts > 0 && totalAttempts % ListeningIntervalAttempts == 0)
+        {
+            _logger.LogInformation(
+                "ListeningComprehension selected StudentProfileId={ProfileId} TotalAttempts={Count}",
+                studentProfileId, totalAttempts);
+            return ActivityType.ListeningComprehension;
         }
 
         return ActivityType.WritingScenario;
@@ -290,6 +315,49 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 VocabItems: vocabItems);
         }
 
+        if (activity.ActivityType == ActivityType.ListeningComprehension)
+        {
+            ListeningContent? lc = null;
+            try
+            {
+                lc = JsonSerializer.Deserialize<ListeningContent>(
+                    activity.AiGeneratedContentJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch { /* safe defaults */ }
+
+            var questions = lc?.Questions?.Select(q => new ListeningQuestionDto(
+                Id: q.Id ?? string.Empty,
+                Question: q.Question ?? string.Empty,
+                Type: q.Type ?? "short_answer")).ToList()
+                as IReadOnlyList<ListeningQuestionDto> ?? [];
+
+            var responseTask = lc?.ResponseTask is null
+                ? null
+                : new ListeningResponseTaskDto(lc.ResponseTask.Prompt ?? string.Empty, lc.ResponseTask.ExpectedFocus);
+
+            return new ActivityDto(
+                ActivityId: activity.Id,
+                ActivityType: activity.ActivityType,
+                Source: activity.Source,
+                Title: activity.Title,
+                Difficulty: activity.Difficulty,
+                Situation: null,
+                LearningGoal: null,
+                TargetPhrases: [],
+                TargetVocabulary: [],
+                ExampleText: null,
+                CommonMistakeToAvoid: null,
+                InstructionInSourceLanguage: null,
+                Scenario: lc?.Scenario,
+                Instructions: lc?.Instructions,
+                SpeakerRole: lc?.SpeakerRole,
+                ListenerRole: lc?.ListenerRole,
+                TranscriptAvailableAfterSubmit: lc?.TranscriptAvailableAfterSubmit ?? true,
+                ListeningQuestions: questions,
+                ResponseTask: responseTask);
+        }
+
         WritingContent? wc = null;
         if (activity.ActivityType == ActivityType.WritingScenario)
         {
@@ -334,6 +402,32 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         return $"AI {type} activity";
     }
 
+    private static string BuildListeningFallbackJson(string cefrLevel, string careerContext)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            activityType = "ListeningComprehension",
+            title = "Understand a project update",
+            scenario = $"Imagine you listened to a short workplace message for a {careerContext} task.",
+            instructions = "Read the situation first. Answer the questions as if you listened to the message. Transcript unlocks after you answer.",
+            speakerRole = "Manager",
+            listenerRole = careerContext,
+            difficulty = cefrLevel,
+            audioScript = "Hi, could you please check the latest delivery schedule? The supplier has confirmed a two-day delay, and I need an updated timeline before our 3 pm meeting.",
+            transcriptAvailableAfterSubmit = true,
+            questions = new[]
+            {
+                new { id = "q1", question = "What does the manager ask the listener to check?", expectedAnswer = "the latest delivery schedule", type = "short_answer" },
+                new { id = "q2", question = "How long is the supplier delay?", expectedAnswer = "two days", type = "short_answer" }
+            },
+            responseTask = new
+            {
+                prompt = "Write a short reply confirming what you will do.",
+                expectedFocus = "confirm task, updated timeline, before 3 pm, professional tone"
+            }
+        });
+    }
+
     private sealed class WritingContent
     {
         public string? Situation { get; set; }
@@ -360,5 +454,30 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         public string? ExpectedAnswer { get; set; }
         public string? Hint { get; set; }
         public string? Explanation { get; set; }
+    }
+
+    private sealed class ListeningContent
+    {
+        public string? Scenario { get; set; }
+        public string? Instructions { get; set; }
+        public string? SpeakerRole { get; set; }
+        public string? ListenerRole { get; set; }
+        public bool? TranscriptAvailableAfterSubmit { get; set; }
+        public List<ListeningQuestionContent>? Questions { get; set; }
+        public ListeningResponseTaskContent? ResponseTask { get; set; }
+    }
+
+    private sealed class ListeningQuestionContent
+    {
+        public string? Id { get; set; }
+        public string? Question { get; set; }
+        public string? Type { get; set; }
+        public string? ExpectedAnswer { get; set; }
+    }
+
+    private sealed class ListeningResponseTaskContent
+    {
+        public string? Prompt { get; set; }
+        public string? ExpectedFocus { get; set; }
     }
 }

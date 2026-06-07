@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
-import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, VocabAnswer } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
 
 type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error';
 
@@ -31,6 +31,8 @@ export class ActivityLessonComponent implements OnInit {
   // VocabularyPractice state
   vocabAnswers: Record<string, string> = {};
   showHints: Record<string, boolean> = {};
+  listeningAnswers: Record<string, string> = {};
+  listeningResponseText = '';
 
   readonly stepDots = [
     { n: 1, key: 'learning', label: 'Lesson' },
@@ -123,6 +125,10 @@ export class ActivityLessonComponent implements OnInit {
     return this.activity()?.activityType === 'vocabularyPractice';
   }
 
+  isListeningComprehension(): boolean {
+    return this.activity()?.activityType === 'listeningComprehension';
+  }
+
   vocabItemsFilled(): boolean {
     const items = this.activity()?.vocabItems ?? [];
     return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
@@ -130,6 +136,11 @@ export class ActivityLessonComponent implements OnInit {
 
   toggleHint(itemId: string): void {
     this.showHints[itemId] = !this.showHints[itemId];
+  }
+
+  listeningItemsFilled(): boolean {
+    const questions = this.activity()?.listeningQuestions ?? [];
+    return questions.length > 0 && questions.every(q => (this.listeningAnswers[q.id] ?? '').trim().length > 0);
   }
 
   startPractice(): void {
@@ -157,6 +168,28 @@ export class ActivityLessonComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.errorMessage.set(this.extractError(err, 'Failed to submit answers. Please try again.'));
+        this.state.set('writing');
+      },
+    });
+  }
+
+  onSubmitListening(): void {
+    const a = this.activity();
+    if (!a?.listeningQuestions?.length) return;
+    const answers: ListeningAnswer[] = a.listeningQuestions.map(q => ({
+      questionId: q.id,
+      answer: this.listeningAnswers[q.id] ?? '',
+    }));
+    this.state.set('submitting');
+    this.activityService.submitListeningAttempt(a.activityId, answers, this.listeningResponseText).subscribe({
+      next: fb => {
+        this.previousScore.set(this.feedback()?.score ?? null);
+        this.feedback.set(fb);
+        this.attemptCount.update(n => n + 1);
+        this.state.set('feedback');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(this.extractError(err, 'Failed to submit listening answers. Please try again.'));
         this.state.set('writing');
       },
     });
@@ -190,6 +223,8 @@ export class ActivityLessonComponent implements OnInit {
     this.draftText = '';
     this.vocabAnswers = {};
     this.showHints = {};
+    this.listeningAnswers = {};
+    this.listeningResponseText = '';
     this.state.set('writing');
   }
 
@@ -200,6 +235,8 @@ export class ActivityLessonComponent implements OnInit {
     this.draftText = '';
     this.vocabAnswers = {};
     this.showHints = {};
+    this.listeningAnswers = {};
+    this.listeningResponseText = '';
     this.attemptCount.set(0);
     this.previousScore.set(null);
     this.activityService.getNext().subscribe({

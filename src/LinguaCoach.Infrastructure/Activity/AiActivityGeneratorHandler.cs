@@ -9,12 +9,12 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Infrastructure.Activity;
 
 /// <summary>
-/// Implements IAiActivityGenerator for WritingScenario activities.
-/// Other ActivityTypes will add their generation logic here in future sprints.
+/// Implements IAiActivityGenerator for supported AI-generated activity types.
 /// </summary>
 public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 {
     private const string GenerateWritingPromptKey = "activity_generate_writing";
+    private const string GenerateListeningPromptKey = "activity_generate_listening";
     private const string EvaluateWritingPromptKey = "activity_evaluate_writing";
 
     private readonly LinguaCoachDbContext _db;
@@ -38,7 +38,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         ActivityGenerationContext context,
         CancellationToken ct = default)
     {
-        if (context.ActivityType != ActivityType.WritingScenario)
+        if (context.ActivityType is not ActivityType.WritingScenario and not ActivityType.ListeningComprehension)
             throw new NotSupportedException(
                 $"AI generation for {context.ActivityType} is not implemented in this sprint.");
 
@@ -52,13 +52,20 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["topicHint"] = context.TopicHint ?? "workplace communication",
         };
 
-        var aiRequest = await _contextBuilder.BuildAsync(GenerateWritingPromptKey, variables, ct);
+        var promptKey = context.ActivityType == ActivityType.ListeningComprehension
+            ? GenerateListeningPromptKey
+            : GenerateWritingPromptKey;
+
+        var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
 
         var response = await _aiExecution.ExecuteWithFallbackAsync(
-            GenerateWritingPromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
+            promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         var cleaned = CleanJson(response);
-        ValidateWritingActivityJson(cleaned);
+        if (context.ActivityType == ActivityType.ListeningComprehension)
+            ValidateListeningActivityJson(cleaned);
+        else
+            ValidateWritingActivityJson(cleaned);
         return cleaned;
     }
 
@@ -110,5 +117,16 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         if (!root.TryGetProperty("situation", out _) && !root.TryGetProperty("learningGoal", out _))
             throw new AiResponseValidationException(
                 "AI writing activity response missing required fields (situation, learningGoal).");
+    }
+
+    private static void ValidateListeningActivityJson(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (!root.TryGetProperty("audioScript", out var script) || script.ValueKind != JsonValueKind.String)
+            throw new AiResponseValidationException("AI listening activity response missing audioScript.");
+        if (!root.TryGetProperty("questions", out var questions) || questions.ValueKind != JsonValueKind.Array || questions.GetArrayLength() == 0)
+            throw new AiResponseValidationException("AI listening activity response missing questions.");
     }
 }

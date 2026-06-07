@@ -14,6 +14,7 @@ public static class DefaultAiSeeder
     public const string DefaultModel = "gpt-4o-mini";
 
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
+    public const string ActivityGenerateListeningKey = "activity_generate_listening";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
     public const string LearningPathGenerateKey = "learning_path_generate";
     public const string StudentMemoryUpdateKey = "student_memory_update";
@@ -125,6 +126,52 @@ Rules:
 - All arrays may be empty [] if there are no issues.
 - Do not include any text outside the JSON object.
 - The improved version is a coaching reference — do not frame it as "the correct answer".
+""";
+
+    private const string ActivityGenerateListeningContent = """
+You are an expert English workplace communication coach creating a text-based listening comprehension activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to consider: {{recentMistakes}}
+
+Create a realistic short workplace voice-message task. There is no real audio yet, so the transcript must be hidden from the student until after submit.
+
+Return ONLY valid JSON (no markdown) matching this exact structure:
+
+{
+  "activityType": "ListeningComprehension",
+  "title": "<short descriptive title, 5-10 words>",
+  "scenario": "<1-2 sentences describing who left the message and why>",
+  "instructions": "Read the situation first. Then answer the questions as if you listened to the message. The transcript is hidden until after you submit.",
+  "speakerRole": "<workplace role speaking>",
+  "listenerRole": "<student workplace role>",
+  "difficulty": "{{cefrLevel}}",
+  "audioScript": "<short realistic workplace voice message, 35-80 words>",
+  "transcriptAvailableAfterSubmit": true,
+  "questions": [
+    {
+      "id": "q1",
+      "question": "<question answerable from the script>",
+      "expectedAnswer": "<short expected answer for backend scoring>",
+      "type": "short_answer"
+    }
+  ],
+  "responseTask": {
+    "prompt": "<optional short workplace reply task>",
+    "expectedFocus": "<what the response should include>"
+  }
+}
+
+Rules:
+- Include 2-4 comprehension questions.
+- Questions must be answerable from audioScript.
+- Use realistic workplace communication for {{careerContext}}.
+- Keep vocabulary appropriate for {{cefrLevel}}.
+- Do not use real company names, real person names, secrets, phone numbers, or sensitive content.
+- expectedAnswer is for backend evaluation only.
+- Do not include text outside the JSON object.
 """;
 
     private const string LearningPathGenerateContent = """
@@ -363,6 +410,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWritingKey, ActivityGenerateWritingContent,
             maxInputTokens: 900, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateListeningKey, ActivityGenerateListeningContent,
+            maxInputTokens: 900, maxOutputTokens: 1000, ct);
 
         // Activity evaluation prompt (v2 — structured diff/changes output)
         await SeedOrUpgradePromptAsync(db, logger,

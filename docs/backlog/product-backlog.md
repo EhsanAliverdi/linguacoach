@@ -22,6 +22,25 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## ListeningComprehension text MVP (in sprint: listening-comprehension-text-mvp-sprint)
+
+- [x] Add sprint documentation for the text-based listening MVP. `Done`
+- [x] Add `activity_generate_listening` prompt seed. `Done`
+- [x] Extend `ActivityDto` and attempt submission contract for listening fields. `Done`
+- [x] Add `ListeningComprehension` selection rule in `ActivityGetHandler`. `Done`
+- [x] Hide transcript/audioScript and expected answers before submit. `Done`
+- [x] Add deterministic listening comprehension evaluation. `Done`
+- [x] Reveal transcript and expected answer summaries after submit. `Done`
+- [x] Update Angular `/activity` to render listening comprehension. `Done`
+- [x] Add backend integration tests for selection, safe DTO, scoring, transcript reveal, and ownership. `Done`
+- [ ] Add richer activity history UI for listening attempts. `Planned`
+- [ ] Add Playwright coverage for listening activity flow. `Planned`
+- [ ] Add real generated audio/TTS. `Not started`
+- [ ] Add audio player, replay controls, speed controls, timed captions. `Not started`
+- [ ] Add listening-specific memory and skill profile updates. `Not started`
+
+---
+
 ## Vocabulary extraction from writing attempts (in sprint: vocabulary-extraction-from-writing-attempts-sprint)
 
 - [ ] Add `StudentVocabularyItem` entity, EF config, and migration. `Planned`
@@ -193,10 +212,10 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
   - Backend: new `ActivityType` value, prompt template, AI handler
   - Frontend: new phase UI (audio recording or text simulation), new skill badge colour
   - Keep Speaking card as "Coming soon" until fully implemented
-- [ ] Implement ListeningComprehension activity type. `Not started`
-  - Backend: audio clip or transcript generation, comprehension questions
-  - Frontend: media player UI or transcript viewer
-  - Keep Listening card as "Coming soon" until fully implemented
+- [x] Implement ListeningComprehension text MVP activity type. `Done`
+  - Backend: hidden transcript generation, comprehension questions, deterministic scoring
+  - Frontend: text-based listening task with transcript reveal after submit
+  - Real audio/TTS remains deferred
 - [ ] Implement VocabularyPractice activity type. `Not started`
   - Backend: flashcard-style or gap-fill prompt generation
   - Frontend: new interaction pattern (tap to reveal, match, fill)

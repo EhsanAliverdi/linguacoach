@@ -49,6 +49,19 @@ export interface AttemptDetail {
   suggestedImprovedVersion: string | null;
   nativeLanguageExplanation: string | null;
   submittedContent: string | null;
+  listeningQuestionFeedback: ListeningAttemptQuestion[] | null;
+  transcript: string | null;
+  responseFeedback: string | null;
+}
+
+export interface ListeningAttemptQuestion {
+  questionId: string;
+  question: string;
+  studentAnswer: string;
+  expectedAnswerSummary: string;
+  isCorrect: boolean;
+  score: number;
+  feedback: string;
 }
 
 export interface ActivityAttemptHistory {

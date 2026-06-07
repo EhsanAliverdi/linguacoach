@@ -25,7 +25,6 @@ using LinguaCoach.Infrastructure.History;
 using LinguaCoach.Infrastructure.Memory;
 using LinguaCoach.Application.Progress;
 using LinguaCoach.Application.Vocabulary;
-using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Vocabulary;
 using LinguaCoach.Infrastructure.Speaking;
@@ -104,6 +103,7 @@ public static class DependencyInjection
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();
         services.AddScoped<VocabularyPracticeGenerator>();
         services.AddScoped<VocabularyPracticeEvaluator>();
+        services.AddScoped<ListeningComprehensionEvaluator>();
         services.AddScoped<IGetNextActivityHandler, ActivityGetHandler>();
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 
