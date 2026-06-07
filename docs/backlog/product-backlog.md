@@ -6,6 +6,29 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## Live AI quality review (in sprint: live-ai-quality-review-prompt-calibration-sprint)
+
+- [x] Document live AI quality review sprint plan. `Done`
+  - Created `docs/sprints/live-ai-quality-review-prompt-calibration-sprint.md`
+- [x] Add live AI quality review report template. `Done`
+  - Created `docs/testing/live-ai-quality-review-report.md`
+- [x] Add synthetic answer fixtures for manual prompt review. `Done`
+  - Created `docs/testing/live-ai-quality-fixtures.md`
+  - Fixtures cover direct tone, long unclear answer, missing articles/tense issue, overly casual customer reply, and improved second attempt
+- [ ] Run live AI review for Project Planner persona. `Blocked`
+  - Requires staging/production access and configured live AI provider credentials
+  - Use Project Planner career if seeded; otherwise document Document Controller proxy run
+- [ ] Run live AI review for Customer Support Officer persona. `Blocked`
+  - Requires staging/production access and configured live AI provider credentials
+  - Use Customer Support Officer career if seeded; otherwise document proxy career used
+- [ ] Calibrate `learning_path_generate` prompt only if live path evidence shows generic, repetitive, wrong-level, or career-mismatched modules. `Not started`
+- [ ] Calibrate `activity_generate_writing` prompt only if live activities lack audience/tone/length clarity or repeat task types. `Not started`
+- [ ] Calibrate `activity_evaluate_writing` prompt only if live feedback misses important issues, overwhelms learners, or frames improved text as the answer. `Not started`
+- [ ] Calibrate `student_memory_update` prompt only if live memory is noisy, exaggerated, bloated, or drifts after minimal evidence. `Not started`
+- [ ] Calibrate `learning_path_generate_adaptive` prompt only if live adaptive modules ignore memory, repeat fingerprints, or generate a generic full path. `Not started`
+
+---
+
 ## End-to-end product validation (in sprint: end-to-end-product-validation-learning-quality-sprint)
 
 - [x] Document validation sprint plan and quality criteria. `Done`
