@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Api.Controllers;
 
@@ -14,13 +17,19 @@ public sealed class ActivityController : ControllerBase
 {
     private readonly IGetNextActivityHandler _getNextActivity;
     private readonly ISubmitActivityAttemptHandler _submitAttempt;
+    private readonly LinguaCoachDbContext _db;
+    private readonly ListeningAudioService _listeningAudio;
 
     public ActivityController(
         IGetNextActivityHandler getNextActivity,
-        ISubmitActivityAttemptHandler submitAttempt)
+        ISubmitActivityAttemptHandler submitAttempt,
+        LinguaCoachDbContext db,
+        ListeningAudioService listeningAudio)
     {
         _getNextActivity = getNextActivity;
         _submitAttempt = submitAttempt;
+        _db = db;
+        _listeningAudio = listeningAudio;
     }
 
     /// <summary>
@@ -45,6 +54,37 @@ public sealed class ActivityController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    [HttpGet("{activityId:guid}/audio")]
+    public async Task<IActionResult> GetAudio(Guid activityId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.IsActive, ct);
+        if (activity is null || activity.ActivityType != ActivityType.ListeningComprehension)
+            return NotFound();
+
+        if (activity.LearningModuleId.HasValue)
+        {
+            var ownsActivity = await _db.LearningModules
+                .Where(m => m.Id == activity.LearningModuleId.Value)
+                .Join(_db.LearningPaths.Where(p => p.StudentProfileId == profile.Id),
+                    m => m.LearningPathId,
+                    p => p.Id,
+                    (m, p) => m.Id)
+                .AnyAsync(ct);
+            if (!ownsActivity) return NotFound();
+        }
+
+        var audio = await _listeningAudio.GetAudioAsync(activity, ct);
+        if (audio is null) return NotFound();
+        return File(audio.Bytes, audio.ContentType);
     }
 
     /// <summary>
@@ -146,6 +186,11 @@ public sealed class ActivityController : ControllerBase
             prompt = dto.ResponseTask.Prompt,
             expectedFocus = dto.ResponseTask.ExpectedFocus,
         },
+        audioAvailable = dto.AudioAvailable,
+        audioUrl = dto.AudioUrl,
+        audioContentType = dto.AudioContentType,
+        audioDurationSeconds = dto.AudioDurationSeconds,
+        audioUnavailableMessage = dto.AudioUnavailableMessage,
     };
 
     private static string ToCamelCase(string s) =>

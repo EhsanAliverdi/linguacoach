@@ -104,12 +104,13 @@ public static class DependencyInjection
         services.AddScoped<VocabularyPracticeGenerator>();
         services.AddScoped<VocabularyPracticeEvaluator>();
         services.AddScoped<ListeningComprehensionEvaluator>();
+        services.AddScoped<ListeningAudioService>();
         services.AddScoped<IGetNextActivityHandler, ActivityGetHandler>();
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 
         // STT/TTS — no-op stubs for MVP; interfaces registered so DI doesn't fail
         services.AddScoped<ISpeechToTextService, NoOpSpeechToTextService>();
-        services.AddScoped<ITextToSpeechService, NoOpTextToSpeechService>();
+        services.AddScoped<ITextToSpeechService, FakeTextToSpeechService>();
 
         // Speaking sessions
         services.AddScoped<ICreateSpeakingSessionHandler, SpeakingSessionHandler>();

@@ -49,7 +49,11 @@ public sealed record ActivityAttemptHistoryDto(
     string? Situation,
     string? LearningGoal,
     IReadOnlyList<string> TargetPhrases,
-    IReadOnlyList<AttemptDetailDto> Attempts);
+    IReadOnlyList<AttemptDetailDto> Attempts,
+    bool? AudioAvailable = null,
+    string? AudioUrl = null,
+    string? AudioContentType = null,
+    string? AudioUnavailableMessage = null);
 
 public sealed record AttemptDetailDto(
     Guid AttemptId,

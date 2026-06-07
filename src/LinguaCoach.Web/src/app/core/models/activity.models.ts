@@ -41,6 +41,11 @@ export interface ActivityDto {
   transcriptAvailableAfterSubmit: boolean | null;
   listeningQuestions: ListeningQuestion[] | null;
   responseTask: ListeningResponseTask | null;
+  audioAvailable: boolean | null;
+  audioUrl: string | null;
+  audioContentType: string | null;
+  audioDurationSeconds: number | null;
+  audioUnavailableMessage: string | null;
 }
 
 export interface VocabAnswer {

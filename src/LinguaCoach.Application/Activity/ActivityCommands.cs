@@ -30,7 +30,12 @@ public sealed record ActivityDto(
     string? ListenerRole = null,
     bool? TranscriptAvailableAfterSubmit = null,
     IReadOnlyList<ListeningQuestionDto>? ListeningQuestions = null,
-    ListeningResponseTaskDto? ResponseTask = null);
+    ListeningResponseTaskDto? ResponseTask = null,
+    bool? AudioAvailable = null,
+    string? AudioUrl = null,
+    string? AudioContentType = null,
+    double? AudioDurationSeconds = null,
+    string? AudioUnavailableMessage = null);
 
 /// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
 public sealed record VocabPracticeItemDto(

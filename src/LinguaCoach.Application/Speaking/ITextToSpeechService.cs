@@ -1,19 +1,22 @@
 namespace LinguaCoach.Application.Speaking;
 
-/// <summary>
-/// Abstraction for cloud-based text-to-speech synthesis.
-/// MVP: not implemented. The browser handles TTS via window.speechSynthesis —
-/// this interface is defined for future cloud TTS (Azure TTS, ElevenLabs) and for test injection.
-/// </summary>
 public interface ITextToSpeechService
 {
-    /// <summary>
-    /// Synthesises speech from text. Not called in MVP — browser TTS handles output.
-    /// </summary>
-    Task<TtsResult> SynthesizeAsync(
+    Task<TtsResult> GenerateSpeechAsync(
         string text,
-        string targetLanguageCode,
+        TextToSpeechOptions options,
         CancellationToken ct = default);
 }
 
-public sealed record TtsResult(byte[] AudioBytes, string MimeType);
+public sealed record TextToSpeechOptions(
+    string TargetLanguageCode,
+    string? Voice = null);
+
+public sealed record TtsResult(
+    bool Success,
+    byte[]? AudioBytes,
+    string AudioContentType,
+    string Provider,
+    string Voice,
+    long DurationMs,
+    string? FailureReason = null);

@@ -38,10 +38,51 @@ public sealed class ListeningComprehensionActivityTests : IClassFixture<Activity
         Assert.Equal("listeningComprehension", body.GetProperty("activityType").GetString());
         Assert.True(body.TryGetProperty("listeningQuestions", out var questions));
         Assert.True(questions.GetArrayLength() >= 2);
+        Assert.True(body.GetProperty("audioAvailable").GetBoolean());
+        Assert.Equal($"/api/activity/{body.GetProperty("activityId").GetString()}/audio", body.GetProperty("audioUrl").GetString());
         Assert.False(body.TryGetProperty("audioScript", out _));
         Assert.False(body.TryGetProperty("transcript", out _));
+        Assert.False(body.ToString().Contains("StorageKey", StringComparison.OrdinalIgnoreCase));
         foreach (var q in questions.EnumerateArray())
             Assert.False(q.TryGetProperty("expectedAnswer", out _));
+    }
+
+    [Fact]
+    public async Task AudioEndpoint_RequiresAuth()
+    {
+        var (_, userId) = await _factory.CreateOnboardedStudentAsync($"listen_audio_auth_{Guid.NewGuid():N}@test.com");
+        var activityId = await CreateListeningActivityForStudent(userId, attachToOwnedModule: true, generateAudio: true);
+
+        var resp = await _factory.CreateClient().GetAsync($"/api/activity/{activityId}/audio");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AudioEndpoint_ReturnsOwnAudioWithContentType()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"listen_audio_own_{Guid.NewGuid():N}@test.com");
+        var activityId = await CreateListeningActivityForStudent(userId, attachToOwnedModule: true, generateAudio: true);
+
+        var resp = await ClientWithToken(token).GetAsync($"/api/activity/{activityId}/audio");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("audio/wav", resp.Content.Headers.ContentType?.MediaType);
+        var bytes = await resp.Content.ReadAsByteArrayAsync();
+        Assert.True(bytes.Length > 44);
+        Assert.Equal((byte)'R', bytes[0]);
+    }
+
+    [Fact]
+    public async Task AudioEndpoint_OtherStudentCannotAccessModuleOwnedAudio()
+    {
+        var (_, ownerUserId) = await _factory.CreateOnboardedStudentAsync($"listen_audio_owner_{Guid.NewGuid():N}@test.com");
+        var (otherToken, _) = await _factory.CreateOnboardedStudentAsync($"listen_audio_other_{Guid.NewGuid():N}@test.com");
+        var activityId = await CreateListeningActivityForStudent(ownerUserId, attachToOwnedModule: true, generateAudio: true);
+
+        var resp = await ClientWithToken(otherToken).GetAsync($"/api/activity/{activityId}/audio");
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
     [Fact]
@@ -90,7 +131,10 @@ public sealed class ListeningComprehensionActivityTests : IClassFixture<Activity
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
-    private async Task<Guid> CreateListeningActivityForStudent(Guid userId, bool attachToOwnedModule = false)
+    private async Task<Guid> CreateListeningActivityForStudent(
+        Guid userId,
+        bool attachToOwnedModule = false,
+        bool generateAudio = false)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
@@ -134,6 +178,12 @@ public sealed class ListeningComprehensionActivityTests : IClassFixture<Activity
             learningModuleId: moduleId);
         db.LearningActivities.Add(activity);
         await db.SaveChangesAsync();
+        if (generateAudio)
+        {
+            var audio = scope.ServiceProvider.GetRequiredService<LinguaCoach.Infrastructure.Activity.ListeningAudioService>();
+            await audio.EnsureAudioAsync(activity, "en", CancellationToken.None);
+            await db.SaveChangesAsync();
+        }
         return activity.Id;
     }
 

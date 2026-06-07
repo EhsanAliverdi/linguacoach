@@ -26,6 +26,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
     private readonly ILearningPathGenerator _pathGenerator;
     private readonly StudentProgressService _progress;
     private readonly VocabularyPracticeGenerator _vocabGenerator;
+    private readonly ListeningAudioService _listeningAudio;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
@@ -34,6 +35,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         ILearningPathGenerator pathGenerator,
         StudentProgressService progress,
         VocabularyPracticeGenerator vocabGenerator,
+        ListeningAudioService listeningAudio,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
@@ -41,6 +43,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         _pathGenerator = pathGenerator;
         _progress = progress;
         _vocabGenerator = vocabGenerator;
+        _listeningAudio = listeningAudio;
         _logger = logger;
     }
 
@@ -141,6 +144,12 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
             _db.LearningActivities.Add(activity);
             await _db.SaveChangesAsync(ct);
 
+            if (activityType == ActivityType.ListeningComprehension)
+            {
+                await _listeningAudio.EnsureAudioAsync(activity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
+                await _db.SaveChangesAsync(ct);
+            }
+
             return MapToDto(activity);
         }
         catch (Exception ex)
@@ -162,6 +171,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 learningModuleId: currentModuleId);
 
             _db.LearningActivities.Add(fallbackActivity);
+            await _db.SaveChangesAsync(ct);
+            await _listeningAudio.EnsureAudioAsync(fallbackActivity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
             await _db.SaveChangesAsync(ct);
             return MapToDto(fallbackActivity);
         }
@@ -335,6 +346,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
             var responseTask = lc?.ResponseTask is null
                 ? null
                 : new ListeningResponseTaskDto(lc.ResponseTask.Prompt ?? string.Empty, lc.ResponseTask.ExpectedFocus);
+            var audio = lc?.Audio;
 
             return new ActivityDto(
                 ActivityId: activity.Id,
@@ -355,7 +367,12 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 ListenerRole: lc?.ListenerRole,
                 TranscriptAvailableAfterSubmit: lc?.TranscriptAvailableAfterSubmit ?? true,
                 ListeningQuestions: questions,
-                ResponseTask: responseTask);
+                ResponseTask: responseTask,
+                AudioAvailable: audio?.AudioAvailable ?? false,
+                AudioUrl: audio?.AudioAvailable == true ? $"/api/activity/{activity.Id}/audio" : null,
+                AudioContentType: audio?.ContentType,
+                AudioDurationSeconds: audio?.DurationMs is > 0 ? Math.Round(audio.DurationMs.Value / 1000.0, 1) : null,
+                AudioUnavailableMessage: audio?.AudioAvailable == false ? audio.UnavailableMessage : null);
         }
 
         WritingContent? wc = null;
@@ -465,6 +482,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         public bool? TranscriptAvailableAfterSubmit { get; set; }
         public List<ListeningQuestionContent>? Questions { get; set; }
         public ListeningResponseTaskContent? ResponseTask { get; set; }
+        public ListeningAudioMetadata? Audio { get; set; }
     }
 
     private sealed class ListeningQuestionContent

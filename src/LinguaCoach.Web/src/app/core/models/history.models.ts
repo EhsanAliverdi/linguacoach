@@ -72,4 +72,8 @@ export interface ActivityAttemptHistory {
   learningGoal: string | null;
   targetPhrases: string[];
   attempts: AttemptDetail[];
+  audioAvailable: boolean | null;
+  audioUrl: string | null;
+  audioContentType: string | null;
+  audioUnavailableMessage: string | null;
 }

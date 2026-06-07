@@ -44,6 +44,11 @@ const listeningActivity = {
   speakerRole: 'Manager',
   listenerRole: 'Document Controller',
   transcriptAvailableAfterSubmit: true,
+  audioAvailable: true,
+  audioUrl: '/api/activity/listening-act-1/audio',
+  audioContentType: 'audio/wav',
+  audioDurationSeconds: 12,
+  audioUnavailableMessage: null,
   listeningQuestions: [
     { id: 'q1', question: 'What should you check?', type: 'short_answer' },
     { id: 'q2', question: 'How long is the delay?', type: 'short_answer' },
@@ -52,6 +57,15 @@ const listeningActivity = {
     prompt: 'Write a short reply confirming what you will do.',
     expectedFocus: 'confirm task and timeline',
   },
+};
+
+const listeningActivityWithoutAudio = {
+  ...listeningActivity,
+  audioAvailable: false,
+  audioUrl: null,
+  audioContentType: null,
+  audioDurationSeconds: null,
+  audioUnavailableMessage: 'Audio is temporarily unavailable. Complete this as a transcript-based listening practice.',
 };
 
 const listeningFeedback = {
@@ -106,6 +120,7 @@ test('listening comprehension activity hides transcript before submit and reveal
 
   await page.goto('/activity');
   await expect(page.getByText('Understand a project update')).toBeVisible();
+  await expect(page.locator('audio')).toBeVisible();
   await expect(page.getByText('Transcript unlocks after you answer.')).toBeVisible();
   await expect(page.getByText('supplier has confirmed a two-day delay')).not.toBeVisible();
 
@@ -119,4 +134,17 @@ test('listening comprehension activity hides transcript before submit and reveal
   await expect(page.getByText('supplier has confirmed a two-day delay')).toBeVisible();
   await expect(page.locator('body')).not.toContainText('"expectedAnswer"');
   await expect(page.locator('body')).not.toContainText('{"');
+});
+
+test('listening comprehension activity shows fallback note when audio is unavailable', async ({ page }) => {
+  await withAuth(page);
+  await page.route('**/api/activity/next', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(listeningActivityWithoutAudio) });
+  });
+
+  await page.goto('/activity');
+
+  await expect(page.locator('audio')).toHaveCount(0);
+  await expect(page.getByText('Audio is temporarily unavailable')).toBeVisible();
+  await expect(page.getByText('supplier has confirmed a two-day delay')).not.toBeVisible();
 });

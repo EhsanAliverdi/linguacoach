@@ -41,6 +41,27 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## Listening audio/TTS (in sprint: listening-audio-tts-sprint)
+
+- [x] Add sprint documentation for listening audio/TTS. `Done`
+- [x] Upgrade `ITextToSpeechService` for generated listening audio. `Done`
+- [x] Add fake deterministic TTS provider for tests and local development. `Done`
+- [x] Add local audio storage service for listening activities. `Done`
+- [x] Store audio metadata in listening activity content. `Done`
+- [x] Add authenticated `GET /api/activity/{activityId}/audio` endpoint. `Done`
+- [x] Hide transcript and expected answers before submit while exposing only audio URL. `Done`
+- [x] Add native audio player to `/activity`. `Done`
+- [x] Add listening audio support to activity history. `Done`
+- [x] Add config defaults and `.env.example` entries. `Done`
+- [x] Add backend tests for safe DTO and audio endpoint auth/ownership/content type. `Done`
+- [x] Add Playwright coverage for audio player and no-audio fallback. `Done`
+- [ ] Integrate real provider-backed TTS. `Not started`
+- [ ] Add audio replay limits, speed controls, and timed captions. `Not started`
+- [ ] Add audio cache cleanup. `Not started`
+- [ ] Add admin audio usage reporting. `Not started`
+
+---
+
 ## Vocabulary extraction from writing attempts (in sprint: vocabulary-extraction-from-writing-attempts-sprint)
 
 - [ ] Add `StudentVocabularyItem` entity, EF config, and migration. `Planned`

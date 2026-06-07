@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.History;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -41,6 +42,7 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
 
         // Parse the activity content for display
         WritingContent? wc = null;
+        ListeningContent? lc = null;
         if (activity.ActivityType == ActivityType.WritingScenario)
         {
             try
@@ -50,6 +52,10 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch { /* safe fallback */ }
+        }
+        else if (activity.ActivityType == ActivityType.ListeningComprehension)
+        {
+            lc = ListeningAudioService.Parse(activity.AiGeneratedContentJson);
         }
 
         var attemptDtos = attempts.Select((a, i) => ParseAttempt(a, i + 1)).ToList();
@@ -65,7 +71,11 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
             Situation: wc?.Situation,
             LearningGoal: wc?.LearningGoal,
             TargetPhrases: wc?.TargetPhrases ?? [],
-            Attempts: attemptDtos);
+            Attempts: attemptDtos,
+            AudioAvailable: lc?.Audio?.AudioAvailable,
+            AudioUrl: lc?.Audio?.AudioAvailable == true ? $"/api/activity/{activity.Id}/audio" : null,
+            AudioContentType: lc?.Audio?.ContentType,
+            AudioUnavailableMessage: lc?.Audio?.AudioAvailable == false ? lc.Audio.UnavailableMessage : null);
     }
 
     private static AttemptDetailDto ParseAttempt(Domain.Entities.ActivityAttempt attempt, int number)
