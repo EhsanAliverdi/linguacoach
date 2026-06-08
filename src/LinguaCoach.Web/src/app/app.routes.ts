@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { placementRequiredRedirectGuard, placementAccessGuard } from './core/guards/placement.guard';
 import { PublicLayoutComponent } from './layouts/public-layout/public-layout.component';
 import { StudentAppLayoutComponent } from './layouts/student-app-layout/student-app-layout.component';
 import { AdminAppLayoutComponent } from './layouts/admin-app-layout/admin-app-layout.component';
@@ -84,6 +85,19 @@ export const routes: Routes = [
     ],
   },
 
+  // ── Placement (authenticated, not yet completed) ──────────────────────
+  {
+    path: 'placement',
+    component: StudentAppLayoutComponent,
+    canActivate: [authGuard, placementAccessGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/placement/placement.component').then(m => m.PlacementComponent),
+      },
+    ],
+  },
+
   // ── Student app (authenticated) ───────────────────────────────────────
   {
     path: '',
@@ -92,14 +106,17 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {
         path: 'my-path',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/learning-path/learning-path.component').then(m => m.LearningPathComponent),
       },
       {
         path: 'activity',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/activity/activity-lesson/activity-lesson.component').then(m => m.ActivityLessonComponent),
       },
       {
