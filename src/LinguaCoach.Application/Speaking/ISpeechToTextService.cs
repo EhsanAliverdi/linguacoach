@@ -1,21 +1,26 @@
 namespace LinguaCoach.Application.Speaking;
 
 /// <summary>
-/// Abstraction for cloud-based speech-to-text transcription.
-/// MVP: not implemented. The browser handles STT via Web Speech API and sends
-/// the transcript directly — this interface is defined for future cloud STT
-/// (OpenAI Whisper, Azure STT) and for test injection.
+/// Abstraction for server-side speech-to-text transcription.
+/// MVP uses FakeSpeechToTextService (deterministic placeholder).
+/// Real providers (OpenAI Whisper, Azure STT) wired in a later sprint.
 /// </summary>
 public interface ISpeechToTextService
 {
-    /// <summary>
-    /// Transcribes audio to text. Not called in MVP — browser sends transcript directly.
-    /// </summary>
-    Task<TranscriptionResult> TranscribeAsync(
+    Task<SpeechToTextResult> TranscribeAsync(
         Stream audioStream,
-        string audioMimeType,
-        string targetLanguageCode,
+        SpeechToTextOptions options,
         CancellationToken ct = default);
 }
 
-public sealed record TranscriptionResult(string Transcript, double? ConfidenceScore);
+public sealed record SpeechToTextOptions(
+    string AudioMimeType,
+    string TargetLanguageCode,
+    int? MaxDurationSeconds = null);
+
+public sealed record SpeechToTextResult(
+    bool Success,
+    string? Transcript,
+    string Provider,
+    long DurationMs,
+    string? FailureReason = null);

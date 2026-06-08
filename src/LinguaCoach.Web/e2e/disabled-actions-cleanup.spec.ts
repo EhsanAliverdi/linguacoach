@@ -83,7 +83,9 @@ test('dashboard enables implemented practice cards and only marks future skills 
   await expect(page.getByRole('link', { name: /Listening Audio workplace updates/i })).toHaveAttribute('href', /type=ListeningComprehension/);
   await expect(page.getByRole('link', { name: /Vocabulary Practice saved phrases/i })).toHaveAttribute('href', /type=VocabularyPractice/);
 
-  await expect(page.getByText('Speaking').locator('..')).toContainText('Coming soon');
+  // Speaking is now active (SpeakingRolePlay MVP)
+  await expect(page.getByTestId('speaking-card')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', /type=SpeakingRolePlay/);
   await expect(page.getByText('Pronunciation').locator('..')).toContainText('Coming soon');
   await expect(page.getByRole('link', { name: /Listening Audio workplace updates/i })).not.toContainText('Coming soon');
   await expect(page.getByRole('link', { name: /Vocabulary Practice saved phrases/i })).not.toContainText('Coming soon');

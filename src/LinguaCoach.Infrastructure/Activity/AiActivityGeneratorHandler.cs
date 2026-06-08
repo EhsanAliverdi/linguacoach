@@ -15,7 +15,9 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 {
     private const string GenerateWritingPromptKey = "activity_generate_writing";
     private const string GenerateListeningPromptKey = "activity_generate_listening";
+    private const string GenerateSpeakingRolePlayPromptKey = "activity_generate_speaking_roleplay";
     private const string EvaluateWritingPromptKey = "activity_evaluate_writing";
+    private const string EvaluateSpeakingRolePlayPromptKey = SpeakingRolePlayEvaluator.EvaluatePromptKey;
 
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
@@ -38,9 +40,11 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         ActivityGenerationContext context,
         CancellationToken ct = default)
     {
-        if (context.ActivityType is not ActivityType.WritingScenario and not ActivityType.ListeningComprehension)
+        if (context.ActivityType is not ActivityType.WritingScenario
+            and not ActivityType.ListeningComprehension
+            and not ActivityType.SpeakingRolePlay)
             throw new NotSupportedException(
-                $"AI generation for {context.ActivityType} is not implemented in this sprint.");
+                $"AI generation for {context.ActivityType} is not yet implemented.");
 
         var variables = new Dictionary<string, string>
         {
@@ -52,9 +56,12 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["topicHint"] = context.TopicHint ?? "workplace communication",
         };
 
-        var promptKey = context.ActivityType == ActivityType.ListeningComprehension
-            ? GenerateListeningPromptKey
-            : GenerateWritingPromptKey;
+        var promptKey = context.ActivityType switch
+        {
+            ActivityType.ListeningComprehension => GenerateListeningPromptKey,
+            ActivityType.SpeakingRolePlay => GenerateSpeakingRolePlayPromptKey,
+            _ => GenerateWritingPromptKey,
+        };
 
         var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
 
@@ -62,10 +69,18 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         var cleaned = CleanJson(response);
-        if (context.ActivityType == ActivityType.ListeningComprehension)
-            ValidateListeningActivityJson(cleaned);
-        else
-            ValidateWritingActivityJson(cleaned);
+        switch (context.ActivityType)
+        {
+            case ActivityType.ListeningComprehension:
+                ValidateListeningActivityJson(cleaned);
+                break;
+            case ActivityType.SpeakingRolePlay:
+                ValidateSpeakingRolePlayJson(cleaned);
+                break;
+            default:
+                ValidateWritingActivityJson(cleaned);
+                break;
+        }
         return cleaned;
     }
 
@@ -73,9 +88,10 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         ActivityEvaluationContext context,
         CancellationToken ct = default)
     {
-        if (context.ActivityType != ActivityType.WritingScenario)
+        if (context.ActivityType is not ActivityType.WritingScenario
+            and not ActivityType.SpeakingRolePlay)
             throw new NotSupportedException(
-                $"AI evaluation for {context.ActivityType} is not implemented in this sprint.");
+                $"AI evaluation for {context.ActivityType} is not yet implemented.");
 
         var variables = new Dictionary<string, string>
         {
@@ -87,10 +103,14 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["targetLanguageName"] = context.TargetLanguageName,
         };
 
-        var aiRequest = await _contextBuilder.BuildAsync(EvaluateWritingPromptKey, variables, ct);
+        var evalPromptKey = context.ActivityType == ActivityType.SpeakingRolePlay
+            ? EvaluateSpeakingRolePlayPromptKey
+            : EvaluateWritingPromptKey;
+
+        var aiRequest = await _contextBuilder.BuildAsync(evalPromptKey, variables, ct);
 
         var response = await _aiExecution.ExecuteWithFallbackAsync(
-            EvaluateWritingPromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
+            evalPromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         return CleanJson(response);
     }
@@ -117,6 +137,15 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         if (!root.TryGetProperty("situation", out _) && !root.TryGetProperty("learningGoal", out _))
             throw new AiResponseValidationException(
                 "AI writing activity response missing required fields (situation, learningGoal).");
+    }
+
+    private static void ValidateSpeakingRolePlayJson(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        if (!root.TryGetProperty("scenario", out _) && !root.TryGetProperty("speakingGoal", out _))
+            throw new AiResponseValidationException(
+                "AI speaking activity response missing required fields (scenario, speakingGoal).");
     }
 
     private static void ValidateListeningActivityJson(string json)

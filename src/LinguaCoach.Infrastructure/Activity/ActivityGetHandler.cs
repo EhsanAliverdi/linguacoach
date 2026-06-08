@@ -191,6 +191,22 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
             return MapToDto(fallbackActivity);
         }
 
+        if (activityType == ActivityType.SpeakingRolePlay)
+        {
+            var fallbackJson = BuildSpeakingFallbackJson(profile.CefrLevel ?? "B1", profile.CareerProfile?.Name ?? "General");
+            var fallbackActivity = new Domain.Entities.LearningActivity(
+                activityType: ActivityType.SpeakingRolePlay,
+                source: ActivitySource.SystemFallback,
+                title: ExtractTitle(fallbackJson, activityType),
+                difficulty: profile.CefrLevel ?? "B1",
+                aiGeneratedContentJson: fallbackJson,
+                learningModuleId: currentModuleId);
+
+            _db.LearningActivities.Add(fallbackActivity);
+            await _db.SaveChangesAsync(ct);
+            return MapToDto(fallbackActivity);
+        }
+
         // Fallback path — return a seeded SystemFallback activity.
         var fallbacks = await _db.LearningActivities
             .Where(a => a.ActivityType == activityType
@@ -389,6 +405,40 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 AudioUnavailableMessage: audio?.AudioAvailable == false ? audio.UnavailableMessage : null);
         }
 
+        if (activity.ActivityType == ActivityType.SpeakingRolePlay)
+        {
+            SpeakingContent? sc = null;
+            try
+            {
+                sc = JsonSerializer.Deserialize<SpeakingContent>(
+                    activity.AiGeneratedContentJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch { /* safe defaults */ }
+
+            return new ActivityDto(
+                ActivityId: activity.Id,
+                ActivityType: activity.ActivityType,
+                Source: activity.Source,
+                Title: activity.Title,
+                Difficulty: activity.Difficulty,
+                Situation: null,
+                LearningGoal: null,
+                TargetPhrases: [],
+                TargetVocabulary: [],
+                ExampleText: null,
+                CommonMistakeToAvoid: null,
+                InstructionInSourceLanguage: null,
+                SpeakingScenario: sc?.Scenario,
+                StudentRole: sc?.StudentRole,
+                SpeakingListenerRole: sc?.ListenerRole,
+                SpeakingGoal: sc?.SpeakingGoal,
+                SpeakingPrompt: sc?.Prompt,
+                ExpectedPoints: sc?.ExpectedPoints?.AsReadOnly(),
+                SuggestedPhrases: sc?.SuggestedPhrases?.AsReadOnly(),
+                MaxDurationSeconds: sc?.MaxDurationSeconds);
+        }
+
         WritingContent? wc = null;
         if (activity.ActivityType == ActivityType.WritingScenario)
         {
@@ -511,5 +561,46 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
     {
         public string? Prompt { get; set; }
         public string? ExpectedFocus { get; set; }
+    }
+
+    private sealed class SpeakingContent
+    {
+        public string? Scenario { get; set; }
+        public string? StudentRole { get; set; }
+        public string? ListenerRole { get; set; }
+        public string? SpeakingGoal { get; set; }
+        public string? Prompt { get; set; }
+        public List<string>? ExpectedPoints { get; set; }
+        public List<string>? SuggestedPhrases { get; set; }
+        public int? MaxDurationSeconds { get; set; }
+    }
+
+    private static string BuildSpeakingFallbackJson(string cefrLevel, string careerContext)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            activityType = "SpeakingRolePlay",
+            title = "Explain a delay to your manager",
+            scenario = $"Your manager asks why a project task has been delayed. Record a short professional response as a {careerContext}.",
+            studentRole = careerContext,
+            listenerRole = "Manager",
+            difficulty = cefrLevel,
+            speakingGoal = "Explain the delay clearly and politely.",
+            prompt = "Record a 30–60 second response explaining the delay, the reason, and your next action.",
+            expectedPoints = new[]
+            {
+                "mention the delay",
+                "give a brief reason",
+                "explain the next action",
+                "use polite professional tone"
+            },
+            suggestedPhrases = new[]
+            {
+                "I wanted to update you on...",
+                "The delay is due to...",
+                "I will follow up with..."
+            },
+            maxDurationSeconds = 60
+        });
     }
 }

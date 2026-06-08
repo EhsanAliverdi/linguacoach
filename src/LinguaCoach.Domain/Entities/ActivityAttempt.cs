@@ -17,6 +17,9 @@ public sealed class ActivityAttempt : BaseEntity
     // URL to audio recording if ActivityType involves speaking/pronunciation. Null otherwise.
     public string? AudioUrl { get; private set; }
 
+    // Filesystem storage key for uploaded speaking audio. Null for non-speaking attempts.
+    public string? AudioStorageKey { get; private set; }
+
     // Structured AI feedback stored as JSON. Shape is ActivityType-specific.
     public string FeedbackJson { get; private set; }
 
@@ -40,7 +43,8 @@ public sealed class ActivityAttempt : BaseEntity
         string feedbackJson,
         string promptKey,
         double? score = null,
-        string? audioUrl = null)
+        string? audioUrl = null,
+        string? audioStorageKey = null)
     {
         if (studentProfileId == Guid.Empty) throw new ArgumentException("StudentProfileId must not be empty.", nameof(studentProfileId));
         if (learningActivityId == Guid.Empty) throw new ArgumentException("LearningActivityId must not be empty.", nameof(learningActivityId));
@@ -54,5 +58,12 @@ public sealed class ActivityAttempt : BaseEntity
         PromptKey = promptKey?.Trim() ?? string.Empty;
         Score = score;
         AudioUrl = audioUrl?.Trim();
+        AudioStorageKey = audioStorageKey?.Trim();
+    }
+
+    /// <summary>Updates the audio storage key once the temp file has been committed to the final path.</summary>
+    public void SetAudioStorageKey(string key)
+    {
+        AudioStorageKey = key?.Trim();
     }
 }

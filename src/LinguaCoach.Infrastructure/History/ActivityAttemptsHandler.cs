@@ -43,6 +43,7 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
         // Parse the activity content for display
         WritingContent? wc = null;
         ListeningContent? lc = null;
+        SpeakingHistoryContent? sc = null;
         if (activity.ActivityType == ActivityType.WritingScenario)
         {
             try
@@ -57,8 +58,18 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
         {
             lc = ListeningAudioService.Parse(activity.AiGeneratedContentJson);
         }
+        else if (activity.ActivityType == ActivityType.SpeakingRolePlay)
+        {
+            try
+            {
+                sc = JsonSerializer.Deserialize<SpeakingHistoryContent>(
+                    activity.AiGeneratedContentJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch { /* safe fallback */ }
+        }
 
-        var attemptDtos = attempts.Select((a, i) => ParseAttempt(a, i + 1)).ToList();
+        var attemptDtos = attempts.Select((a, i) => ParseAttempt(a, i + 1, activity.Id)).ToList();
 
         _logger.LogInformation(
             "Activity attempt history returned ActivityId={ActivityId} AttemptCount={Count} UserId={UserId}",
@@ -75,10 +86,15 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
             AudioAvailable: lc?.Audio?.AudioAvailable,
             AudioUrl: lc?.Audio?.AudioAvailable == true ? $"/api/activity/{activity.Id}/audio" : null,
             AudioContentType: lc?.Audio?.ContentType,
-            AudioUnavailableMessage: lc?.Audio?.AudioAvailable == false ? lc.Audio.UnavailableMessage : null);
+            AudioUnavailableMessage: lc?.Audio?.AudioAvailable == false ? lc.Audio.UnavailableMessage : null,
+            SpeakingScenario: sc?.Scenario,
+            StudentRole: sc?.StudentRole,
+            SpeakingListenerRole: sc?.ListenerRole,
+            SpeakingGoal: sc?.SpeakingGoal,
+            SpeakingPrompt: sc?.Prompt);
     }
 
-    private static AttemptDetailDto ParseAttempt(Domain.Entities.ActivityAttempt attempt, int number)
+    private static AttemptDetailDto ParseAttempt(Domain.Entities.ActivityAttempt attempt, int number, Guid activityId)
     {
         try
         {
@@ -92,6 +108,10 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
             var toneIssues = ParseStringArray(root, "toneIssues");
             var clarityIssues = ParseStringArray(root, "clarityIssues");
             var listeningQuestions = ParseListeningQuestions(root);
+
+            var speakingAudioUrl = !string.IsNullOrWhiteSpace(attempt.AudioStorageKey)
+                ? $"/api/activity/{activityId}/attempts/{attempt.Id}/audio"
+                : null;
 
             return new AttemptDetailDto(
                 AttemptId: attempt.Id,
@@ -113,7 +133,12 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
                 SubmittedContent: attempt.SubmittedContent,
                 ListeningQuestionFeedback: listeningQuestions,
                 Transcript: GetString(root, "transcript"),
-                ResponseFeedback: GetString(root, "responseFeedback"));
+                ResponseFeedback: GetString(root, "responseFeedback"),
+                SpeakingStrengths: ParseStringArray(root, "strengths"),
+                SpeakingImprovements: ParseStringArray(root, "improvements"),
+                MissingExpectedPoints: ParseStringArray(root, "missingExpectedPoints"),
+                SuggestedImprovedResponse: GetString(root, "suggestedImprovedResponse"),
+                SpeakingAudioUrl: speakingAudioUrl);
         }
         catch
         {
@@ -129,7 +154,10 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
                 MiniLesson: null, NextImprovementStep: null,
                 SuggestedImprovedVersion: null,
                 NativeLanguageExplanation: null,
-                SubmittedContent: attempt.SubmittedContent);
+                SubmittedContent: attempt.SubmittedContent,
+                SpeakingAudioUrl: !string.IsNullOrWhiteSpace(attempt.AudioStorageKey)
+                    ? $"/api/activity/{activityId}/attempts/{attempt.Id}/audio"
+                    : null);
         }
     }
 
@@ -202,5 +230,14 @@ public sealed class ActivityAttemptsHandler : IGetActivityAttemptsHandler
         public string? Situation { get; set; }
         public string? LearningGoal { get; set; }
         public string[]? TargetPhrases { get; set; }
+    }
+
+    private sealed class SpeakingHistoryContent
+    {
+        public string? Scenario { get; set; }
+        public string? StudentRole { get; set; }
+        public string? ListenerRole { get; set; }
+        public string? SpeakingGoal { get; set; }
+        public string? Prompt { get; set; }
     }
 }

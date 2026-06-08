@@ -182,16 +182,17 @@
         </a>
 
         <!-- Speaking -->
-        <div class="sp-card" aria-disabled="true" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:0.6">
+        <a routerLink="/activity" [queryParams]="{type:'SpeakingRolePlay'}"
+          class="sp-card sp-card-hover" style="display:flex;flex-direction:column;gap:10px;padding:14px;text-decoration:none" data-testid="speaking-card">
           <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-speaking-soft);display:flex;align-items:center;justify-content:center">
             <svg width="20" height="20" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
           </div>
           <div>
             <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Speaking</div>
-            <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Coming soon</div>
+            <div style="font-size:11px;font-weight:600;color:var(--sp-speaking)">Role-play</div>
           </div>
           <div class="sp-progress-track" style="height:6px"><div style="width:0"></div></div>
-        </div>
+        </a>
 
         <!-- Pronunciation -->
         <div class="sp-card" aria-disabled="true" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:0.6">

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,7 +6,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
 
-type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error';
+type PageState =
+  | 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error'
+  | 'mic-unsupported' | 'mic-permission' | 'mic-denied'
+  | 'ready' | 'recording' | 'recorded' | 'submitting-audio';
 
 @Component({
   selector: 'app-activity-lesson',
@@ -14,7 +17,7 @@ type PageState = 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' 
   imports: [CommonModule, FormsModule],
   templateUrl: './activity-lesson.component.html',
 })
-export class ActivityLessonComponent implements OnInit {
+export class ActivityLessonComponent implements OnInit, OnDestroy {
   state = signal<PageState>('loading');
   activity = signal<ActivityDto | null>(null);
   feedback = signal<ActivityFeedbackDto | null>(null);
@@ -34,6 +37,15 @@ export class ActivityLessonComponent implements OnInit {
   listeningAnswers: Record<string, string> = {};
   listeningResponseText = '';
 
+  // SpeakingRolePlay state
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+  recordingMimeType = '';
+  audioBlob: Blob | null = null;
+  audioBlobUrl: string | null = null;
+  recordingStartTime: number | null = null;
+  recordingDurationSeconds: number | null = null;
+
   readonly stepDots = [
     { n: 1, key: 'learning', label: 'Lesson' },
     { n: 2, key: 'writing',  label: 'Practice' },
@@ -47,12 +59,17 @@ export class ActivityLessonComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Subscribe to query param changes so navigating between typed dashboard cards
-    // (e.g. Writing → Vocabulary → Listening) reloads the correct activity type.
     this.route.queryParamMap.subscribe(() => {
       this.resetState();
       this.loadActivity();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.cleanupRecording();
+    if (this.audioBlobUrl) {
+      URL.revokeObjectURL(this.audioBlobUrl);
+    }
   }
 
   private resetState(): void {
@@ -61,6 +78,7 @@ export class ActivityLessonComponent implements OnInit {
     this.showHints = {};
     this.listeningAnswers = {};
     this.listeningResponseText = '';
+    this.cleanupRecording();
     this.activity.set(null);
     this.feedback.set(null);
     this.attemptCount.set(0);
@@ -68,15 +86,46 @@ export class ActivityLessonComponent implements OnInit {
     this.errorMessage.set('');
   }
 
+  private cleanupRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+    this.mediaRecorder = null;
+    this.recordedChunks = [];
+    if (this.audioBlobUrl) {
+      URL.revokeObjectURL(this.audioBlobUrl);
+      this.audioBlobUrl = null;
+    }
+    this.audioBlob = null;
+    this.recordingMimeType = '';
+    this.recordingStartTime = null;
+    this.recordingDurationSeconds = null;
+  }
+
   private loadActivity(): void {
     this.state.set('loading');
     this.activityService.getNext(this.preferredActivityType()).subscribe({
-      next: a => { this.activity.set(a); this.state.set('learning'); },
+      next: a => {
+        this.activity.set(a);
+        if (a.activityType === 'speakingRolePlay') {
+          this.initSpeakingState();
+        } else {
+          this.state.set('learning');
+        }
+      },
       error: (err: HttpErrorResponse) => {
         this.errorMessage.set(this.extractError(err, 'Could not load activity. Please try again.'));
         this.state.set('error');
       },
     });
+  }
+
+  private initSpeakingState(): void {
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      this.state.set('mic-unsupported');
+      return;
+    }
+    this.state.set('learning');
   }
 
   private preferredActivityType(): ActivityDto['activityType'] | undefined {
@@ -88,6 +137,8 @@ export class ActivityLessonComponent implements OnInit {
       case 'vocabularyPractice': return 'vocabularyPractice';
       case 'ListeningComprehension':
       case 'listeningComprehension': return 'listeningComprehension';
+      case 'SpeakingRolePlay':
+      case 'speakingRolePlay': return 'speakingRolePlay';
       default: return undefined;
     }
   }
@@ -101,7 +152,8 @@ export class ActivityLessonComponent implements OnInit {
   stepState(key: string): 'done' | 'active' | 'future' {
     const order = ['learning', 'writing', 'feedback'];
     const current = this.state();
-    const activeKey = current === 'submitting' ? 'writing' : current;
+    const activeKey = ['submitting', 'mic-permission', 'ready', 'recording', 'recorded', 'submitting-audio'].includes(current)
+      ? 'writing' : current;
     const ki = order.indexOf(key);
     const ai = order.indexOf(activeKey);
     if (ki < ai) return 'done';
@@ -166,6 +218,10 @@ export class ActivityLessonComponent implements OnInit {
     return this.activity()?.activityType === 'listeningComprehension';
   }
 
+  isSpeakingRolePlay(): boolean {
+    return this.activity()?.activityType === 'speakingRolePlay';
+  }
+
   vocabItemsFilled(): boolean {
     const items = this.activity()?.vocabItems ?? [];
     return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
@@ -181,12 +237,98 @@ export class ActivityLessonComponent implements OnInit {
   }
 
   startPractice(): void {
-    this.state.set('writing');
+    if (this.isSpeakingRolePlay()) {
+      this.requestMicPermission();
+    } else {
+      this.state.set('writing');
+    }
   }
 
   startWriting(): void {
     this.state.set('writing');
   }
+
+  // ── Speaking: microphone + recording ──────────────────────────────────────
+
+  requestMicPermission(): void {
+    this.state.set('mic-permission');
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        stream.getTracks().forEach(t => t.stop()); // release immediately; re-request on record
+        this.state.set('ready');
+      })
+      .catch(() => {
+        this.state.set('mic-denied');
+      });
+  }
+
+  startRecording(): void {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        this.recordedChunks = [];
+        const recorder = new MediaRecorder(stream);
+        this.recordingMimeType = recorder.mimeType || 'audio/webm';
+        this.recordingStartTime = Date.now();
+        recorder.ondataavailable = e => { if (e.data.size > 0) this.recordedChunks.push(e.data); };
+        recorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          this.audioBlob = new Blob(this.recordedChunks, { type: this.recordingMimeType });
+          if (this.audioBlobUrl) URL.revokeObjectURL(this.audioBlobUrl);
+          this.audioBlobUrl = URL.createObjectURL(this.audioBlob);
+          if (this.recordingStartTime) {
+            this.recordingDurationSeconds = (Date.now() - this.recordingStartTime) / 1000;
+          }
+          this.state.set('recorded');
+        };
+        recorder.start();
+        this.mediaRecorder = recorder;
+        this.state.set('recording');
+      })
+      .catch(() => {
+        this.state.set('mic-denied');
+      });
+  }
+
+  stopRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
+    }
+  }
+
+  reRecord(): void {
+    if (this.audioBlobUrl) {
+      URL.revokeObjectURL(this.audioBlobUrl);
+      this.audioBlobUrl = null;
+    }
+    this.audioBlob = null;
+    this.recordedChunks = [];
+    this.state.set('ready');
+  }
+
+  submitRecording(): void {
+    const a = this.activity();
+    if (!a || !this.audioBlob) return;
+    this.state.set('submitting-audio');
+    this.activityService.submitSpeakingAttempt(
+      a.activityId,
+      this.audioBlob,
+      this.recordingMimeType,
+      this.recordingDurationSeconds ?? undefined,
+    ).subscribe({
+      next: fb => {
+        this.previousScore.set(this.feedback()?.score ?? null);
+        this.feedback.set(fb);
+        this.attemptCount.update(n => n + 1);
+        this.state.set('feedback');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(this.extractError(err, 'Could not process your recording. Please try again.'));
+        this.state.set('recorded');
+      },
+    });
+  }
+
+  // ── General submission ─────────────────────────────────────────────────────
 
   onSubmitVocab(): void {
     const a = this.activity();
@@ -250,9 +392,7 @@ export class ActivityLessonComponent implements OnInit {
     });
   }
 
-  // Pre-fill textarea with previous submission and start a new attempt
   improveAnswer(): void {
-    // draftText already contains the previous draft — just go back to writing
     this.state.set('writing');
   }
 
@@ -262,7 +402,12 @@ export class ActivityLessonComponent implements OnInit {
     this.showHints = {};
     this.listeningAnswers = {};
     this.listeningResponseText = '';
-    this.state.set('writing');
+    if (this.isSpeakingRolePlay()) {
+      this.cleanupRecording();
+      this.state.set('ready');
+    } else {
+      this.state.set('writing');
+    }
   }
 
   nextActivity(): void {

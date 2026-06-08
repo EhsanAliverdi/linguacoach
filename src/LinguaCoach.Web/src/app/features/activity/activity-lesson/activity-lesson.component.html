@@ -44,6 +44,174 @@
   </div>
 }
 
+<!-- SpeakingRolePlay: Unsupported browser -->
+@if (state() === 'mic-unsupported') {
+  <div class="sp-empty-state">
+    <div style="font-size:32px;margin-bottom:12px">🎙️</div>
+    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Microphone not supported</h3>
+    <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">
+      Speaking practice requires microphone access. Please use Chrome, Firefox, or Safari on a device with a microphone.
+    </p>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to dashboard</button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Mic permission denied -->
+@if (state() === 'mic-denied') {
+  <div class="sp-empty-state">
+    <div style="font-size:32px;margin-bottom:12px">🔇</div>
+    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Microphone access denied</h3>
+    <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">
+      SpeakPath needs microphone access to record your response. Please allow microphone access in your browser settings and try again.
+    </p>
+    <button (click)="requestMicPermission()" class="sp-button-primary" style="margin-top:16px">Try again</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:8px">Back to dashboard</button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Requesting permission -->
+@if (state() === 'mic-permission') {
+  <div class="sp-empty-state">
+    <div style="font-size:32px;margin-bottom:12px">🎙️</div>
+    <p style="font-size:14px;color:var(--sp-muted)">Requesting microphone access…</p>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Learning state (scenario view before recording) -->
+@if (state() === 'learning' && activity() && isSpeakingRolePlay()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge" style="background:#fef3c7;color:#92400e">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        Speaking
+      </span>
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity()!.difficulty }}</span>
+    </div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity()!.title }}</h2>
+    @if (activity()!.speakingScenario) {
+      <div class="sp-card" style="padding:16px;background:var(--sp-canvas2)">
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Scenario</p>
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.6">{{ activity()!.speakingScenario }}</p>
+      </div>
+    }
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      @if (activity()!.studentRole) {
+        <div class="sp-card" style="padding:12px;flex:1;min-width:140px">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Your role</p>
+          <p style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ activity()!.studentRole }}</p>
+        </div>
+      }
+      @if (activity()!.speakingListenerRole) {
+        <div class="sp-card" style="padding:12px;flex:1;min-width:140px">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Speaking to</p>
+          <p style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ activity()!.speakingListenerRole }}</p>
+        </div>
+      }
+    </div>
+    @if (activity()!.speakingGoal) {
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:var(--sp-canvas2);border-radius:12px">
+        <svg style="flex-shrink:0;margin-top:2px" width="16" height="16" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0"><strong>Goal:</strong> {{ activity()!.speakingGoal }}</p>
+      </div>
+    }
+    @if (activity()!.speakingPrompt) {
+      <div class="sp-card" style="padding:16px;border-left:3px solid var(--sp-speaking)">
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Your task</p>
+        <p style="font-size:14px;color:var(--sp-ink);line-height:1.6;font-weight:600">{{ activity()!.speakingPrompt }}</p>
+      </div>
+    }
+    @if (activity()!.expectedPoints?.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Cover these points</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+          @for (point of activity()!.expectedPoints!; track point) {
+            <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+              <span style="color:var(--sp-speaking);font-weight:800;margin-top:2px">·</span>{{ point }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+    @if (activity()!.suggestedPhrases?.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Suggested phrases</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          @for (phrase of activity()!.suggestedPhrases!; track phrase) {
+            <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">{{ phrase }}</span>
+          }
+        </div>
+      </div>
+    }
+    @if (activity()!.maxDurationSeconds) {
+      <p style="font-size:12px;color:var(--sp-muted);text-align:center">🕐 Record up to {{ activity()!.maxDurationSeconds }} seconds</p>
+    }
+    <button (click)="startPractice()" class="sp-button-primary" style="width:100%">
+      Start recording
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Ready to record -->
+@if (state() === 'ready' && activity() && isSpeakingRolePlay()) {
+  <div style="display:flex;flex-direction:column;gap:24px;align-items:center;text-align:center;padding:16px 0">
+    <div style="width:80px;height:80px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center">
+      <svg width="36" height="36" fill="none" stroke="#92400e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </div>
+    <div>
+      <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Ready to record</h3>
+      <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;max-width:280px">
+        When you tap Record, speak your response clearly and naturally. Aim for {{ activity()!.maxDurationSeconds ?? 60 }} seconds.
+      </p>
+    </div>
+    <button (click)="startRecording()" class="sp-button-primary" style="width:100%;max-width:300px;padding:16px;font-size:16px">
+      🔴 Record
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Recording in progress -->
+@if (state() === 'recording') {
+  <div style="display:flex;flex-direction:column;gap:24px;align-items:center;text-align:center;padding:16px 0">
+    <div style="width:80px;height:80px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;animation:pulse 1.5s infinite">
+      <svg width="36" height="36" fill="#dc2626" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+    </div>
+    <div>
+      <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Recording…</h3>
+      <p style="font-size:13px;color:var(--sp-muted)">Speak clearly. Tap Stop when finished.</p>
+    </div>
+    <button (click)="stopRecording()" class="sp-button-primary" style="width:100%;max-width:300px;background:#dc2626">
+      ⏹ Stop recording
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Recorded — preview before submit -->
+@if (state() === 'recorded' && activity() && isSpeakingRolePlay()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin:0">Preview your recording</h3>
+    @if (audioBlobUrl) {
+      <audio [src]="audioBlobUrl" controls style="width:100%;border-radius:8px"></audio>
+    }
+    @if (errorMessage()) {
+      <p style="font-size:13px;color:#dc2626;background:#fee2e2;padding:10px 14px;border-radius:8px">{{ errorMessage() }}</p>
+    }
+    <button (click)="submitRecording()" class="sp-button-primary" style="width:100%">
+      Submit recording
+    </button>
+    <button (click)="reRecord()" class="sp-button-ghost" style="width:100%">
+      Record again
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Submitting audio -->
+@if (state() === 'submitting-audio') {
+  <div style="display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;padding:24px 0">
+    <div class="sp-loading-pulse" style="width:80px;height:80px;border-radius:50%"></div>
+    <p style="font-size:14px;color:var(--sp-muted)">Transcribing and evaluating your response…</p>
+  </div>
+}
+
 <!-- VocabularyPractice: Learning state -->
 @if (state() === 'learning' && activity() && isVocabPractice()) {
   <div style="display:flex;flex-direction:column;gap:16px">
@@ -471,6 +639,58 @@
         <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Response feedback</p>
         <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ feedback()!.responseFeedback }}</p>
       </div>
+    }
+
+    <!-- SpeakingRolePlay feedback: strengths + improvements -->
+    @if (feedback()!.speakingStrengths?.length) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-success);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">What you did well</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+          @for (s of feedback()!.speakingStrengths!; track s) {
+            <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+              <span style="color:var(--sp-success);font-weight:800">✓</span>{{ s }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (feedback()!.speakingImprovements?.length) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">How to improve</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+          @for (imp of feedback()!.speakingImprovements!; track imp) {
+            <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+              <span style="color:var(--sp-speaking);font-weight:800">→</span>{{ imp }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (feedback()!.missingExpectedPoints?.length) {
+      <div class="sp-card" style="padding:16px;border-left:3px solid var(--sp-warn)">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-warn);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Points to include next time</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+          @for (pt of feedback()!.missingExpectedPoints!; track pt) {
+            <li style="font-size:13px;color:var(--sp-text)">• {{ pt }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (feedback()!.suggestedImprovedResponse) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Suggested response
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13px;color:var(--sp-muted);margin-bottom:8px;font-style:italic">This is a coaching suggestion, not the only correct answer.</p>
+          <p style="font-size:14px;line-height:1.75;color:var(--sp-text)">{{ feedback()!.suggestedImprovedResponse }}</p>
+        </div>
+      </details>
     }
 
     <!-- Suggested changes (diff list) -->

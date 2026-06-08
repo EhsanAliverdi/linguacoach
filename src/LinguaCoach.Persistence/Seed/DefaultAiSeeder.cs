@@ -15,7 +15,9 @@ public static class DefaultAiSeeder
 
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
     public const string ActivityGenerateListeningKey = "activity_generate_listening";
+    public const string ActivityGenerateSpeakingRolePlayKey = "activity_generate_speaking_roleplay";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
+    public const string ActivityEvaluateSpeakingRolePlayKey = "activity_evaluate_speaking_roleplay";
     public const string LearningPathGenerateKey = "learning_path_generate";
     public const string StudentMemoryUpdateKey = "student_memory_update";
     public const string LearningPathGenerateAdaptiveKey = "learning_path_generate_adaptive";
@@ -172,6 +174,97 @@ Rules:
 - Do not use real company names, real person names, secrets, phone numbers, or sensitive content.
 - expectedAnswer is for backend evaluation only.
 - Do not include text outside the JSON object.
+""";
+
+    private const string ActivityGenerateSpeakingRolePlayContent = """
+You are an expert English workplace communication coach creating a speaking role-play activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to consider: {{recentMistakes}}
+
+Create a realistic, short workplace speaking task where the student records a 30–60 second spoken response.
+
+Return ONLY valid JSON (no markdown) matching this exact structure:
+
+{
+  "activityType": "SpeakingRolePlay",
+  "title": "<short descriptive title, 5-10 words>",
+  "scenario": "<2-3 sentences describing the realistic workplace situation the student is responding to>",
+  "studentRole": "<the student's role, e.g. 'Project Planner', 'Document Controller'>",
+  "listenerRole": "<who the student is speaking to, e.g. 'Manager', 'Colleague', 'Client'>",
+  "difficulty": "{{cefrLevel}}",
+  "speakingGoal": "<one sentence describing the communication goal>",
+  "prompt": "<1-2 sentences telling the student exactly what to say in their recording>",
+  "expectedPoints": [
+    "<key point the response should include>",
+    "<key point the response should include>",
+    "<key point the response should include>"
+  ],
+  "suggestedPhrases": [
+    "<useful opening or linking phrase>",
+    "<useful phrase for this scenario>",
+    "<useful closing phrase>"
+  ],
+  "maxDurationSeconds": 60
+}
+
+Rules:
+- The scenario must be specific and believable for {{careerContext}} professionals.
+- Keep the speaking task short — 30–60 seconds maximum.
+- expectedPoints are what the AI will evaluate the transcript against.
+- suggestedPhrases help the student know what language to use.
+- Do not ask for long speeches or presentations.
+- Do not use real company names, real person names, phone numbers, or sensitive content.
+- B1 tasks should be simple and direct; B2 tasks may require more structure.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateSpeakingRolePlayContent = """
+You are a warm, professional English speaking coach evaluating a workplace spoken response recorded by a {{sourceLanguageName}}-speaking student learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content:
+{{activityContent}}
+
+Student's transcript (from their recording):
+---
+{{transcript}}
+---
+
+Evaluate this transcript as a spoken workplace English response. Do NOT evaluate pronunciation or accent.
+Focus on: clarity of message, professional tone, workplace appropriateness, structure, and vocabulary.
+Check whether the student covered the expected points.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON):
+
+{
+  "score": <number 0-100>,
+  "transcript": "<copy the student transcript here, unchanged>",
+  "coachSummary": "<1-2 warm sentences summarising the overall quality and the key thing to improve>",
+  "strengths": [
+    "<specific strength in their spoken response>"
+  ],
+  "improvements": [
+    "<specific improvement for clarity, tone, structure, or vocabulary>"
+  ],
+  "missingExpectedPoints": [
+    "<expected point that was not covered>"
+  ],
+  "suggestedImprovedResponse": "<a suggested improved version of what they could have said>",
+  "miniLesson": "<1-2 sentences teaching the most important communication point from this attempt>",
+  "nextImprovementStep": "<one actionable sentence telling the student what to focus on when they try again>"
+}
+
+Rules:
+- Do not score pronunciation, accent, or speech speed.
+- Be warm and specific — avoid generic feedback like "good job".
+- missingExpectedPoints must only list points that were genuinely absent.
+- suggestedImprovedResponse is a coaching reference — not "the correct answer".
+- Do not include any text outside the JSON object.
 """;
 
     private const string LearningPathGenerateContent = """
@@ -415,10 +508,18 @@ Rules:
             ActivityGenerateListeningKey, ActivityGenerateListeningContent,
             maxInputTokens: 900, maxOutputTokens: 1000, ct);
 
-        // Activity evaluation prompt (v2 — structured diff/changes output)
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSpeakingRolePlayKey, ActivityGenerateSpeakingRolePlayContent,
+            maxInputTokens: 900, maxOutputTokens: 800, ct);
+
+        // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateWritingKey, ActivityEvaluateWritingContent,
             maxInputTokens: 2000, maxOutputTokens: 2000, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateSpeakingRolePlayKey, ActivityEvaluateSpeakingRolePlayContent,
+            maxInputTokens: 1500, maxOutputTokens: 1200, ct);
 
         // Learning path generation prompt
         await SeedOrUpgradePromptAsync(db, logger,

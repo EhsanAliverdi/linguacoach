@@ -48,4 +48,26 @@ export class ActivityService {
       answers,
     });
   }
+
+  submitSpeakingAttempt(activityId: string, audioBlob: Blob, mimeType: string, durationSeconds?: number): Observable<ActivityFeedbackDto> {
+    const form = new FormData();
+    form.append('audioFile', audioBlob, `recording${this.mimeTypeToExtension(mimeType)}`);
+    if (durationSeconds != null) {
+      form.append('durationSeconds', String(durationSeconds));
+    }
+    return this.http.post<ActivityFeedbackDto>(`${this.base}/${activityId}/speaking-attempt`, form);
+  }
+
+  private mimeTypeToExtension(mimeType: string): string {
+    const base = mimeType.split(';')[0].trim();
+    switch (base) {
+      case 'audio/webm': return '.webm';
+      case 'audio/wav': return '.wav';
+      case 'audio/mpeg': return '.mp3';
+      case 'audio/mp4': return '.mp4';
+      case 'audio/x-m4a': return '.m4a';
+      case 'audio/ogg': return '.ogg';
+      default: return '.audio';
+    }
+  }
 }

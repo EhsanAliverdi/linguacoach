@@ -3,12 +3,16 @@ using LinguaCoach.Application.Speaking;
 namespace LinguaCoach.Infrastructure.Speaking;
 
 /// <summary>
-/// MVP stub. Browser sends the transcript directly; this service is never called.
-/// Replaced by a cloud STT provider (Whisper, Azure) in a later task.
+/// Fallback stub used when STT provider is unknown or unconfigured.
 /// </summary>
 internal sealed class NoOpSpeechToTextService : ISpeechToTextService
 {
-    public Task<TranscriptionResult> TranscribeAsync(
-        Stream audioStream, string audioMimeType, string targetLanguageCode, CancellationToken ct = default)
-        => throw new NotSupportedException("Cloud STT is not implemented in MVP. Browser sends transcript directly.");
+    public Task<SpeechToTextResult> TranscribeAsync(
+        Stream audioStream, SpeechToTextOptions options, CancellationToken ct = default)
+        => Task.FromResult(new SpeechToTextResult(
+            Success: false,
+            Transcript: null,
+            Provider: "NoOp",
+            DurationMs: 0,
+            FailureReason: "No STT provider is configured."));
 }

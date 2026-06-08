@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Speaking;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Persistence;
@@ -19,17 +21,26 @@ public sealed class ActivityController : ControllerBase
     private readonly ISubmitActivityAttemptHandler _submitAttempt;
     private readonly LinguaCoachDbContext _db;
     private readonly ListeningAudioService _listeningAudio;
+    private readonly SpeakingAudioService _speakingAudio;
+    private readonly ISpeechToTextService _stt;
+    private readonly SpeakingRolePlayEvaluator _speakingEvaluator;
 
     public ActivityController(
         IGetNextActivityHandler getNextActivity,
         ISubmitActivityAttemptHandler submitAttempt,
         LinguaCoachDbContext db,
-        ListeningAudioService listeningAudio)
+        ListeningAudioService listeningAudio,
+        SpeakingAudioService speakingAudio,
+        ISpeechToTextService stt,
+        SpeakingRolePlayEvaluator speakingEvaluator)
     {
         _getNextActivity = getNextActivity;
         _submitAttempt = submitAttempt;
         _db = db;
         _listeningAudio = listeningAudio;
+        _speakingAudio = speakingAudio;
+        _stt = stt;
+        _speakingEvaluator = speakingEvaluator;
     }
 
     /// <summary>
@@ -144,6 +155,185 @@ public sealed class ActivityController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Submits a spoken response for a SpeakingRolePlay activity.
+    /// Accepts multipart/form-data with the audio file.
+    /// Uses fake STT in MVP to produce a transcript, then AI evaluation.
+    /// </summary>
+    [HttpPost("{activityId:guid}/speaking-attempt")]
+    [EnableRateLimiting("WritingAi")]
+    [RequestSizeLimit(20 * 1024 * 1024)] // 20 MB hard ceiling
+    public async Task<IActionResult> SubmitSpeakingAttempt(
+        Guid activityId,
+        IFormFile audioFile,
+        [FromForm] double? durationSeconds = null,
+        CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest(new { error = "Audio file is required." });
+
+        var mimeType = audioFile.ContentType?.Split(';')[0].Trim() ?? string.Empty;
+        if (!_speakingAudio.IsAllowedMimeType(mimeType))
+            return BadRequest(new { error = $"Audio format '{mimeType}' is not supported. Use webm, wav, mp3, or mp4." });
+
+        if (audioFile.Length > _speakingAudio.GetMaxAudioBytes())
+            return BadRequest(new { error = "Recording is too large. Maximum size is 10 MB." });
+
+        var profile = await _db.StudentProfiles
+            .Include(p => p.LanguagePair).ThenInclude(lp => lp!.SourceLanguage)
+            .Include(p => p.LanguagePair).ThenInclude(lp => lp!.TargetLanguage)
+            .Include(p => p.CareerProfile)
+            .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.IsActive, ct);
+        if (activity is null) return NotFound();
+
+        if (activity.ActivityType != ActivityType.SpeakingRolePlay)
+            return BadRequest(new { error = "This endpoint is for SpeakingRolePlay activities only." });
+
+        // Ownership check — same chain as existing /attempt endpoint
+        if (activity.LearningModuleId.HasValue)
+        {
+            var ownsActivity = await _db.LearningModules
+                .Where(m => m.Id == activity.LearningModuleId.Value)
+                .Join(_db.LearningPaths.Where(p => p.StudentProfileId == profile.Id),
+                    m => m.LearningPathId,
+                    p => p.Id,
+                    (m, p) => m.Id)
+                .AnyAsync(ct);
+            if (!ownsActivity)
+                return NotFound();
+        }
+
+        // Per-student audio file limit (enforced via DB count, not filesystem scan)
+        if (await _speakingAudio.ExceedsStorageLimitAsync(profile.Id, ct))
+            return BadRequest(new { error = "Speaking history is full (50 recordings). Contact your teacher to clear old recordings." });
+
+        string? tempKey = null;
+        try
+        {
+            // 1. Store audio to temp key
+            await using var stream = audioFile.OpenReadStream();
+            tempKey = await _speakingAudio.StoreTemporaryAsync(stream, mimeType, ct);
+
+            // 2. Transcribe
+            await using var sttStream = audioFile.OpenReadStream();
+            var sttOptions = new SpeechToTextOptions(
+                AudioMimeType: mimeType,
+                TargetLanguageCode: profile.LanguagePair?.TargetLanguage?.Code ?? "en");
+            var sttResult = await _stt.TranscribeAsync(sttStream, sttOptions, ct);
+
+            if (!sttResult.Success || string.IsNullOrWhiteSpace(sttResult.Transcript))
+            {
+                _speakingAudio.DeleteTemporary(tempKey);
+                return BadRequest(new { error = "Could not transcribe your recording. Please try again." });
+            }
+
+            // 3. AI evaluation
+            var (feedbackJson, score) = await _speakingEvaluator.EvaluateAsync(
+                transcript: sttResult.Transcript,
+                activityContentJson: activity.AiGeneratedContentJson,
+                cefrLevel: profile.CefrLevel ?? "B1",
+                careerContext: profile.CareerProfile?.Name ?? "General",
+                sourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+                targetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+                ct: ct);
+
+            // 4. Ensure transcript is embedded in feedbackJson for history retrieval
+            var storedFeedbackJson = EnsureTranscriptInFeedbackJson(feedbackJson, sttResult.Transcript!);
+
+            var attempt = new ActivityAttempt(
+                studentProfileId: profile.Id,
+                learningActivityId: activityId,
+                submittedContent: sttResult.Transcript,
+                feedbackJson: storedFeedbackJson,
+                promptKey: SpeakingRolePlayEvaluator.EvaluatePromptKey,
+                score: score,
+                audioStorageKey: tempKey); // will be renamed below
+
+            _db.ActivityAttempts.Add(attempt);
+            await _db.SaveChangesAsync(ct);
+
+            // 5. Commit audio to final key keyed by attemptId
+            var finalKey = _speakingAudio.CommitAudio(tempKey, attempt.Id, mimeType);
+            tempKey = null; // already committed — nothing to delete on error
+
+            // Update the stored key to the final name
+            attempt.SetAudioStorageKey(finalKey);
+            await _db.SaveChangesAsync(ct);
+
+            var feedback = SpeakingRolePlayEvaluator.ParseFeedback(attempt.Id, storedFeedbackJson, score);
+            // Ensure transcript is always present in the returned DTO
+            var finalFeedback = feedback.Transcript is null
+                ? feedback with { Transcript = sttResult.Transcript }
+                : feedback;
+            return Ok(finalFeedback);
+        }
+        catch (Exception) when (tempKey is not null)
+        {
+            _speakingAudio.DeleteTemporary(tempKey);
+            return StatusCode(500, new { error = "Could not process your recording. Please try again." });
+        }
+    }
+
+    [HttpGet("{activityId:guid}/attempts/{attemptId:guid}/audio")]
+    public async Task<IActionResult> GetSpeakingAudio(
+        Guid activityId, Guid attemptId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var attempt = await _db.ActivityAttempts
+            .FirstOrDefaultAsync(a => a.Id == attemptId
+                                   && a.LearningActivityId == activityId
+                                   && a.StudentProfileId == profile.Id, ct);
+        if (attempt is null || string.IsNullOrWhiteSpace(attempt.AudioStorageKey))
+            return NotFound();
+
+        // Verify activity is SpeakingRolePlay
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.IsActive, ct);
+        if (activity is null || activity.ActivityType != ActivityType.SpeakingRolePlay)
+            return NotFound();
+
+        var audio = await _speakingAudio.GetAudioAsync(attempt.AudioStorageKey, ct);
+        if (audio is null) return NotFound();
+
+        return File(audio.Bytes, audio.ContentType);
+    }
+
+    private static string EnsureTranscriptInFeedbackJson(string feedbackJson, string transcript)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(feedbackJson);
+            if (doc.RootElement.TryGetProperty("transcript", out var t)
+                && t.ValueKind == System.Text.Json.JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(t.GetString()))
+                return feedbackJson; // already has transcript
+
+            // Inject transcript field
+            var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(feedbackJson)
+                ?? [];
+            var merged = new Dictionary<string, object?>();
+            foreach (var kvp in dict) merged[kvp.Key] = kvp.Value;
+            merged["transcript"] = transcript;
+            return System.Text.Json.JsonSerializer.Serialize(merged);
+        }
+        catch
+        {
+            return feedbackJson;
+        }
+    }
+
     private static object ToActivityResponse(ActivityDto dto) => new
     {
         activityId = dto.ActivityId,
@@ -191,6 +381,15 @@ public sealed class ActivityController : ControllerBase
         audioContentType = dto.AudioContentType,
         audioDurationSeconds = dto.AudioDurationSeconds,
         audioUnavailableMessage = dto.AudioUnavailableMessage,
+        // SpeakingRolePlay fields
+        speakingScenario = dto.SpeakingScenario,
+        studentRole = dto.StudentRole,
+        speakingListenerRole = dto.SpeakingListenerRole,
+        speakingGoal = dto.SpeakingGoal,
+        speakingPrompt = dto.SpeakingPrompt,
+        expectedPoints = dto.ExpectedPoints,
+        suggestedPhrases = dto.SuggestedPhrases,
+        maxDurationSeconds = dto.MaxDurationSeconds,
     };
 
     private static string ToCamelCase(string s) =>

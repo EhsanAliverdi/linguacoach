@@ -46,6 +46,15 @@ export interface ActivityDto {
   audioContentType: string | null;
   audioDurationSeconds: number | null;
   audioUnavailableMessage: string | null;
+  // SpeakingRolePlay fields — null for other activity types
+  speakingScenario: string | null;
+  studentRole: string | null;
+  speakingListenerRole: string | null;
+  speakingGoal: string | null;
+  speakingPrompt: string | null;
+  expectedPoints: string[] | null;
+  suggestedPhrases: string[] | null;
+  maxDurationSeconds: number | null;
 }
 
 export interface VocabAnswer {
@@ -110,6 +119,11 @@ export interface ActivityFeedbackDto {
   questionFeedback: ListeningQuestionFeedback[] | null;
   transcript: string | null;
   responseFeedback: string | null;
+  // SpeakingRolePlay feedback fields
+  speakingStrengths: string[] | null;
+  speakingImprovements: string[] | null;
+  missingExpectedPoints: string[] | null;
+  suggestedImprovedResponse: string | null;
 }
 
 export interface ListeningQuestionFeedback {

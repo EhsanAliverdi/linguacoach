@@ -53,7 +53,13 @@ public sealed record ActivityAttemptHistoryDto(
     bool? AudioAvailable = null,
     string? AudioUrl = null,
     string? AudioContentType = null,
-    string? AudioUnavailableMessage = null);
+    string? AudioUnavailableMessage = null,
+    // SpeakingRolePlay activity fields
+    string? SpeakingScenario = null,
+    string? StudentRole = null,
+    string? SpeakingListenerRole = null,
+    string? SpeakingGoal = null,
+    string? SpeakingPrompt = null);
 
 public sealed record AttemptDetailDto(
     Guid AttemptId,
@@ -75,7 +81,13 @@ public sealed record AttemptDetailDto(
     string? SubmittedContent,
     IReadOnlyList<ListeningAttemptQuestionDto>? ListeningQuestionFeedback = null,
     string? Transcript = null,
-    string? ResponseFeedback = null);
+    string? ResponseFeedback = null,
+    // SpeakingRolePlay attempt feedback fields
+    IReadOnlyList<string>? SpeakingStrengths = null,
+    IReadOnlyList<string>? SpeakingImprovements = null,
+    IReadOnlyList<string>? MissingExpectedPoints = null,
+    string? SuggestedImprovedResponse = null,
+    string? SpeakingAudioUrl = null);
 
 public sealed record ListeningAttemptQuestionDto(
     string QuestionId,

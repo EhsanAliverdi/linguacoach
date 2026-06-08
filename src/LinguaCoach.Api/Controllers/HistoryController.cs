@@ -82,6 +82,12 @@ public sealed class HistoryController : ControllerBase
                 situation = result.Situation,
                 learningGoal = result.LearningGoal,
                 targetPhrases = result.TargetPhrases,
+                // SpeakingRolePlay activity fields
+                speakingScenario = result.SpeakingScenario,
+                studentRole = result.StudentRole,
+                speakingListenerRole = result.SpeakingListenerRole,
+                speakingGoal = result.SpeakingGoal,
+                speakingPrompt = result.SpeakingPrompt,
                 attempts = result.Attempts.Select(a => new
                 {
                     attemptId = a.AttemptId,
@@ -109,6 +115,16 @@ public sealed class HistoryController : ControllerBase
                     suggestedImprovedVersion = a.SuggestedImprovedVersion,
                     nativeLanguageExplanation = a.NativeLanguageExplanation,
                     submittedContent = a.SubmittedContent,
+                    // ListeningComprehension attempt fields
+                    listeningQuestionFeedback = a.ListeningQuestionFeedback,
+                    transcript = a.Transcript,
+                    responseFeedback = a.ResponseFeedback,
+                    // SpeakingRolePlay attempt fields
+                    speakingStrengths = a.SpeakingStrengths,
+                    speakingImprovements = a.SpeakingImprovements,
+                    missingExpectedPoints = a.MissingExpectedPoints,
+                    suggestedImprovedResponse = a.SuggestedImprovedResponse,
+                    speakingAudioUrl = a.SpeakingAudioUrl,
                 }),
             });
         }

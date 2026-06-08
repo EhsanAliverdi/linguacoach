@@ -19,6 +19,7 @@ internal sealed class ActivityAttemptConfiguration : IEntityTypeConfiguration<Ac
         builder.Property(e => e.LearningActivityId).HasColumnName("learning_activity_id").IsRequired();
         builder.Property(e => e.SubmittedContent).HasColumnName("submitted_content").IsRequired();
         builder.Property(e => e.AudioUrl).HasColumnName("audio_url").HasMaxLength(2000);
+        builder.Property(e => e.AudioStorageKey).HasColumnName("audio_storage_key").HasMaxLength(500);
         builder.Property(e => e.FeedbackJson).HasColumnName("feedback_json")
             .HasColumnType("jsonb").IsRequired();
         builder.Property(e => e.Score).HasColumnName("score");

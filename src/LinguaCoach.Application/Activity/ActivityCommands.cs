@@ -35,7 +35,16 @@ public sealed record ActivityDto(
     string? AudioUrl = null,
     string? AudioContentType = null,
     double? AudioDurationSeconds = null,
-    string? AudioUnavailableMessage = null);
+    string? AudioUnavailableMessage = null,
+    // SpeakingRolePlay fields — null for other activity types
+    string? SpeakingScenario = null,
+    string? StudentRole = null,
+    string? SpeakingListenerRole = null,
+    string? SpeakingGoal = null,
+    string? SpeakingPrompt = null,
+    IReadOnlyList<string>? ExpectedPoints = null,
+    IReadOnlyList<string>? SuggestedPhrases = null,
+    int? MaxDurationSeconds = null);
 
 /// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
 public sealed record VocabPracticeItemDto(
@@ -114,7 +123,12 @@ public sealed record ActivityFeedbackDto(
     // ListeningComprehension feedback fields
     IReadOnlyList<ListeningQuestionFeedbackDto>? QuestionFeedback = null,
     string? Transcript = null,
-    string? ResponseFeedback = null);
+    string? ResponseFeedback = null,
+    // SpeakingRolePlay feedback fields
+    IReadOnlyList<string>? SpeakingStrengths = null,
+    IReadOnlyList<string>? SpeakingImprovements = null,
+    IReadOnlyList<string>? MissingExpectedPoints = null,
+    string? SuggestedImprovedResponse = null);
 
 public sealed record ListeningQuestionFeedbackDto(
     string QuestionId,

@@ -6,6 +6,35 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
+## SpeakingRolePlay activity MVP (in sprint: speaking-role-play-mvp-sprint)
+
+- [ ] Add sprint documentation for SpeakingRolePlay MVP. `Done`
+- [ ] Add `ISpeechToTextService` interface and `FakeSpeechToTextService`. `Planned`
+- [ ] Add `SpeakingAudioService` (store, commit, serve, per-student DB count limit). `Planned`
+- [ ] Add `SpeakingRolePlayEvaluator` (AI evaluation of transcript). `Planned`
+- [ ] Add `activity_generate_speaking_roleplay` prompt seed. `Planned`
+- [ ] Add `activity_evaluate_speaking_roleplay` prompt seed. `Planned`
+- [ ] Add SpeakingRolePlay to `AiActivityGeneratorHandler` (generation + evaluation guards). `Planned`
+- [ ] Add SpeakingRolePlay branch to `ActivityGetHandler` (AI + inline fallback + typed routing guard). `Planned`
+- [ ] Add SpeakingRolePlay branch to `ActivitySubmitHandler` (STT → evaluator dispatch). `Planned`
+- [ ] Extend `ActivityDto` with 8 speaking fields. `Planned`
+- [ ] Extend `ActivityFeedbackDto` with 4 speaking feedback fields. `Planned`
+- [ ] Add `POST /api/activity/{id}/speaking-attempt` (multipart) to `ActivityController`. `Planned`
+- [ ] Add `GET /api/activity/{id}/attempts/{attemptId}/audio` to `ActivityController`. `Planned`
+- [ ] Add `AudioStorageKey` nullable column to `ActivityAttempt` + migration. `Planned`
+- [ ] Add SpeakingRolePlay branch to `ActivityAttemptsHandler` (history). `Planned`
+- [ ] Add speaking states to Angular `activity-lesson` PageState union. `Planned`
+- [ ] Implement speaking recording UI (record, stop, preview, submit). `Planned`
+- [ ] Implement speaking feedback view (transcript, coach summary, strengths, improvements). `Planned`
+- [ ] Update activity history component for SpeakingRolePlay attempts. `Planned`
+- [ ] Activate dashboard Speaking card (remove "Coming soon"). `Planned`
+- [ ] Add config defaults and `.env.example` entries for STT and speaking audio. `Planned`
+- [ ] Add backend integration tests for SpeakingRolePlay. `Planned`
+- [ ] Add Angular unit tests for speaking states. `Planned`
+- [ ] Add Playwright E2E tests for speaking flow. `Planned`
+
+---
+
 ## VocabularyPractice activity (in sprint: vocabulary-practice-activity-sprint)
 
 - [x] Add `StrengthScore` to `StudentVocabularyItem` + migration T27. `Done`
