@@ -47,6 +47,29 @@ export class ActivityLessonComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Subscribe to query param changes so navigating between typed dashboard cards
+    // (e.g. Writing → Vocabulary → Listening) reloads the correct activity type.
+    this.route.queryParamMap.subscribe(() => {
+      this.resetState();
+      this.loadActivity();
+    });
+  }
+
+  private resetState(): void {
+    this.draftText = '';
+    this.vocabAnswers = {};
+    this.showHints = {};
+    this.listeningAnswers = {};
+    this.listeningResponseText = '';
+    this.activity.set(null);
+    this.feedback.set(null);
+    this.attemptCount.set(0);
+    this.previousScore.set(null);
+    this.errorMessage.set('');
+  }
+
+  private loadActivity(): void {
+    this.state.set('loading');
     this.activityService.getNext(this.preferredActivityType()).subscribe({
       next: a => { this.activity.set(a); this.state.set('learning'); },
       error: (err: HttpErrorResponse) => {
@@ -243,23 +266,8 @@ export class ActivityLessonComponent implements OnInit {
   }
 
   nextActivity(): void {
-    this.state.set('loading');
-    this.feedback.set(null);
-    this.activity.set(null);
-    this.draftText = '';
-    this.vocabAnswers = {};
-    this.showHints = {};
-    this.listeningAnswers = {};
-    this.listeningResponseText = '';
-    this.attemptCount.set(0);
-    this.previousScore.set(null);
-    this.activityService.getNext(this.preferredActivityType()).subscribe({
-      next: a => { this.activity.set(a); this.state.set('learning'); },
-      error: err => {
-        this.errorMessage.set(err.error?.error ?? 'Could not load next activity.');
-        this.state.set('error');
-      },
-    });
+    this.resetState();
+    this.loadActivity();
   }
 
   backToDashboard(): void {

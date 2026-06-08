@@ -81,6 +81,15 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
         // VocabularyPractice: deterministic path — no AI call needed.
         if (activityType == ActivityType.VocabularyPractice)
         {
+            // Before generating, check prerequisites explicitly so we can give a clear message.
+            var hasEnoughVocab = await _vocabGenerator.HasEnoughVocabularyAsync(profile.Id, ct);
+            if (!hasEnoughVocab)
+            {
+                throw new InvalidOperationException(
+                    "Vocabulary practice unlocks after you save at least 3 vocabulary items from writing activities. " +
+                    "Complete more writing activities to build your vocabulary bank.");
+            }
+
             try
             {
                 var (currentModuleIdVp, _) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
@@ -103,12 +112,17 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
 
                 return MapToDto(vocabActivity);
             }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex,
-                    "VocabularyPractice generation failed UserId={UserId} — falling back to WritingScenario",
+                    "VocabularyPractice generation failed UserId={UserId} — returning error (not falling back to WritingScenario)",
                     query.UserId);
-                activityType = ActivityType.WritingScenario;
+                throw new InvalidOperationException(
+                    "Could not generate vocabulary practice. Please try again shortly.");
             }
         }
 

@@ -187,6 +187,48 @@ public sealed class ListeningComprehensionActivityTests : IClassFixture<Activity
         return activity.Id;
     }
 
+    // ── Typed request: ListeningComprehension never silently falls back to WritingScenario ──
+
+    [Fact]
+    public async Task GetNext_TypedListeningComprehension_ReturnsListeningNotWritingScenario()
+    {
+        // Regression: typed request must return the requested type, not silently switch to WritingScenario.
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"listen_typed_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/activity/next?type=ListeningComprehension");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var actType = body.GetProperty("activityType").GetString();
+        Assert.Equal("listeningComprehension", actType);
+        // Must not be writing
+        Assert.NotEqual("writingScenario", actType);
+    }
+
+    [Fact]
+    public async Task GetNext_TypedWritingScenario_ReturnsWritingScenario()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"writing_typed_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/activity/next?type=WritingScenario");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("writingScenario", body.GetProperty("activityType").GetString());
+    }
+
+    [Fact]
+    public async Task GetNext_InvalidType_Returns400()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"invalid_type_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/activity/next?type=NonExistentType");
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
     private HttpClient ClientWithToken(string token)
     {
         var client = _factory.CreateClient();

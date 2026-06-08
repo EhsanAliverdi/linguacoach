@@ -36,6 +36,47 @@ public sealed class VocabularyPracticeActivityTests : IClassFixture<ActivityTest
         Assert.Equal("writingScenario", actType);
     }
 
+    // ── Typed request: VocabularyPractice returns 400 (not WritingScenario) when prerequisites missing ──
+
+    [Fact]
+    public async Task GetNext_TypedVocabularyPractice_WithNoVocabItems_Returns400NotWritingScenario()
+    {
+        // Regression: typed request must NEVER silently return a different activity type.
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"vp_typed_prereq_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/activity/next?type=VocabularyPractice");
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var error = body.GetProperty("error").GetString();
+        Assert.Contains("Vocabulary practice unlocks", error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // ── Typed request: VocabularyPractice with prerequisites returns VocabularyPractice (not WritingScenario) ──
+
+    [Fact]
+    public async Task GetNext_TypedVocabularyPractice_WithEnoughVocabItems_ReturnsVocabularyPractice()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"vp_typed_ok_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+
+        AddVocabItem(db, profile.Id, "could you please", "polite_request");
+        AddVocabItem(db, profile.Id, "at your earliest convenience", "workplace_phrase");
+        AddVocabItem(db, profile.Id, "please find attached", "workplace_phrase");
+        await db.SaveChangesAsync();
+
+        var resp = await client.GetAsync("/api/activity/next?type=VocabularyPractice");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("vocabularyPractice", body.GetProperty("activityType").GetString());
+    }
+
     // ── VocabularyPractice returned with enough vocab + correct attempt count ─
 
     [Fact]

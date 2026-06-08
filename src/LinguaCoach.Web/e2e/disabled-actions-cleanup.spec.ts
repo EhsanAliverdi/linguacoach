@@ -81,12 +81,12 @@ test('dashboard enables implemented practice cards and only marks future skills 
 
   await expect(page.getByRole('link', { name: /Writing Workplace messages/i })).toHaveAttribute('href', /type=WritingScenario/);
   await expect(page.getByRole('link', { name: /Listening Audio workplace updates/i })).toHaveAttribute('href', /type=ListeningComprehension/);
-  await expect(page.getByRole('link', { name: /Vocabulary Review saved phrases/i })).toHaveAttribute('href', /\/vocabulary/);
+  await expect(page.getByRole('link', { name: /Vocabulary Practice saved phrases/i })).toHaveAttribute('href', /type=VocabularyPractice/);
 
   await expect(page.getByText('Speaking').locator('..')).toContainText('Coming soon');
   await expect(page.getByText('Pronunciation').locator('..')).toContainText('Coming soon');
   await expect(page.getByRole('link', { name: /Listening Audio workplace updates/i })).not.toContainText('Coming soon');
-  await expect(page.getByRole('link', { name: /Vocabulary Review saved phrases/i })).not.toContainText('Coming soon');
+  await expect(page.getByRole('link', { name: /Vocabulary Practice saved phrases/i })).not.toContainText('Coming soon');
 });
 
 test('dashboard listening card requests a listening activity type', async ({ page }) => {
@@ -133,6 +133,68 @@ test('dashboard listening card requests a listening activity type', async ({ pag
 
   await expect(page).toHaveURL(/\/activity\?type=ListeningComprehension/);
   await expect(page.getByText('Understand a schedule update')).toBeVisible();
+});
+
+test('dashboard vocabulary card requests VocabularyPractice activity type', async ({ page }) => {
+  await withAuth(page);
+  await mockDashboard(page);
+  await page.route('**/api/activity/next**', async route => {
+    expect(route.request().url()).toContain('type=VocabularyPractice');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        activityId: 'vocab-1',
+        activityType: 'vocabularyPractice',
+        source: 'aiGenerated',
+        title: 'Practice polite workplace requests',
+        difficulty: 'B1',
+        situation: null,
+        learningGoal: null,
+        targetPhrases: [],
+        targetVocabulary: [],
+        exampleText: null,
+        commonMistakeToAvoid: null,
+        instructionInSourceLanguage: null,
+        instructions: 'Fill in the blank.',
+        practiceMode: 'fill_blank',
+        vocabItems: [{ vocabularyItemId: 'item-1', term: 'could you please', prompt: '_____ send me the file?', hint: 'polite request', explanation: 'Use for professional requests.' }],
+        scenario: null,
+      }),
+    });
+  });
+
+  await page.goto('/dashboard');
+  await page.getByRole('link', { name: /Vocabulary Practice saved phrases/i }).click();
+
+  await expect(page).toHaveURL(/\/activity\?type=VocabularyPractice/);
+  // Vocabulary UI renders — not writing textarea
+  await expect(page.getByText('Practice polite workplace requests')).toBeVisible();
+  // Vocab skill badge visible (inside sp-skill-badge span)
+  await expect(page.locator('.sp-skill-badge', { hasText: 'Vocabulary' })).toBeVisible();
+  // Writing-specific textarea must NOT be shown
+  await expect(page.locator('textarea#draft')).toHaveCount(0);
+});
+
+test('dashboard vocabulary card shows prerequisite message when vocab items insufficient', async ({ page }) => {
+  await withAuth(page);
+  await mockDashboard(page);
+  await page.route('**/api/activity/next**', async route => {
+    expect(route.request().url()).toContain('type=VocabularyPractice');
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'Vocabulary practice unlocks after you save at least 3 vocabulary items from writing activities. Complete more writing activities to build your vocabulary bank.',
+      }),
+    });
+  });
+
+  await page.goto('/activity?type=VocabularyPractice');
+
+  await expect(page.getByText(/Vocabulary practice unlocks/i)).toBeVisible();
+  // Must not silently load WritingScenario
+  await expect(page.locator('textarea#draft')).toHaveCount(0);
 });
 
 test('admin ai usage page loads usage data', async ({ page }) => {

@@ -165,8 +165,8 @@
           </div>
         </a>
 
-        <!-- Vocabulary — active -->
-        <a routerLink="/vocabulary"
+        <!-- Vocabulary — active (routes to practice activity) -->
+        <a routerLink="/activity" [queryParams]="{type:'VocabularyPractice'}"
           class="sp-card"
           style="display:flex;flex-direction:column;gap:10px;padding:14px;border-color:var(--sp-vocabulary);text-decoration:none;transition:transform .18s,box-shadow .2s">
           <div style="width:40px;height:40px;border-radius:14px;background:var(--sp-vocabulary-soft);display:flex;align-items:center;justify-content:center">
@@ -174,7 +174,7 @@
           </div>
           <div>
             <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Vocabulary</div>
-            <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Review saved phrases</div>
+            <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Practice saved phrases</div>
           </div>
           <div class="sp-progress-track" style="height:6px">
             <div class="sp-progress-fill" style="width:42%;background:var(--sp-vocabulary)"></div>
