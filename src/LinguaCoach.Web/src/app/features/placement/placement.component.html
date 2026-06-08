@@ -1,0 +1,211 @@
+<div class="mx-auto max-w-2xl" data-testid="placement-page">
+
+  <!-- Loading -->
+  @if (state() === 'loading') {
+    <div class="sp-card py-10 text-center">
+      <div class="mx-auto mb-3 h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+      <p class="text-sm text-slate-500">Loading your placement…</p>
+    </div>
+  }
+
+  <!-- Intro -->
+  @if (state() === 'intro') {
+    <div class="sp-card" data-testid="placement-intro">
+      <p class="sp-eyebrow mb-2">Step 1 · Find your level</p>
+      <h1 class="text-2xl font-bold text-slate-950">Let's understand your English level</h1>
+      <p class="mt-3 text-sm leading-6 text-slate-600">
+        Before we build your guided course, you'll complete a short placement assessment. It takes about
+        15–20 minutes and covers reading, listening, writing, speaking, vocabulary, and grammar — all using
+        realistic workplace situations.
+      </p>
+      <ul class="mt-4 space-y-2 text-sm text-slate-600">
+        <li>• There are no trick questions — just everyday work communication.</li>
+        <li>• You can stop and continue later from where you left off.</li>
+        <li>• Your result sets your starting level and shapes your first course.</li>
+      </ul>
+      <button (click)="begin()" [disabled]="submitting()" class="sp-button-primary mt-6 w-full" data-testid="placement-begin">
+        @if (submitting()) { Starting… } @else { Start placement }
+      </button>
+    </div>
+  }
+
+  <!-- Section flow -->
+  @if (state() === 'section') {
+    @if (section(); as sec) {
+      <div class="sp-card" data-testid="placement-section">
+        <!-- Progress -->
+        <div class="mb-5">
+          <div class="mb-2 flex items-center justify-between text-xs font-medium text-slate-500">
+            <span>Section {{ currentOrder() }} of {{ totalSections() }}</span>
+            <span>{{ progressPercent() }}% complete</span>
+          </div>
+          <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full rounded-full bg-indigo-500 transition-all" [style.width.%]="progressPercent()"></div>
+          </div>
+        </div>
+
+        <h1 class="text-xl font-bold text-slate-950">{{ sec.title }}</h1>
+        <p class="mt-2 text-sm leading-6 text-slate-600">{{ sec.instructions }}</p>
+
+        @if (error()) { <div class="sp-alert-error mt-4">{{ error() }}</div> }
+
+        <!-- Reading passage -->
+        @if (sec.passage) {
+          <div class="mt-4 whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-800" data-testid="placement-passage">{{ sec.passage }}</div>
+        }
+
+        <!-- Listening: audio (text fallback if no real audio) -->
+        @if (sec.sectionType === 'listening' && sec.audioScript) {
+          <div class="mt-4 rounded-xl bg-slate-50 p-4" data-testid="placement-audio">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Voice message</p>
+            <p class="whitespace-pre-line text-sm leading-6 text-slate-800">{{ sec.audioScript }}</p>
+          </div>
+        }
+
+        <!-- Writing prompt -->
+        @if (sec.writingPrompt) {
+          <div class="mt-4 whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-800" data-testid="placement-writing-prompt">{{ sec.writingPrompt }}</div>
+        }
+
+        <!-- Speaking prompt -->
+        @if (sec.speakingPrompt) {
+          <div class="mt-4 whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-800" data-testid="placement-speaking-prompt">{{ sec.speakingPrompt }}</div>
+        }
+
+        <!-- Questions -->
+        <div class="mt-6 space-y-6">
+          @for (q of sec.questions; track q.key) {
+            <div data-testid="placement-question">
+              <label class="mb-2 block text-sm font-semibold text-slate-900">{{ q.prompt }}</label>
+
+              @if (q.type === 'rating') {
+                <div class="grid grid-cols-5 gap-2">
+                  @for (r of ratingScale; track r) {
+                    <button type="button" (click)="setAnswer(q.key, r + '')"
+                      [class.ring-2]="answerValue(q.key) === (r + '')"
+                      [class.ring-indigo-500]="answerValue(q.key) === (r + '')"
+                      [class.border-indigo-300]="answerValue(q.key) === (r + '')"
+                      class="sp-option text-center font-semibold text-slate-900">{{ r }}</button>
+                  }
+                </div>
+                <div class="mt-1 flex justify-between text-xs text-slate-400"><span>Not confident</span><span>Very confident</span></div>
+              }
+
+              @if (q.type === 'choice') {
+                <div class="space-y-2">
+                  @for (opt of q.options; track opt) {
+                    <button type="button" (click)="setAnswer(q.key, opt)"
+                      [class.ring-2]="answerValue(q.key) === opt"
+                      [class.ring-indigo-500]="answerValue(q.key) === opt"
+                      [class.border-indigo-300]="answerValue(q.key) === opt"
+                      class="sp-option block w-full text-left text-sm text-slate-800">{{ opt }}</button>
+                  }
+                </div>
+              }
+
+              @if (q.type === 'text') {
+                <textarea
+                  rows="6"
+                  class="sp-input"
+                  [value]="answerValue(q.key)"
+                  (input)="setAnswer(q.key, $any($event.target).value)"
+                  placeholder="Type your response here…"></textarea>
+              }
+            </div>
+          }
+        </div>
+
+        <button (click)="saveAndContinue()" [disabled]="!canContinue() || submitting()" class="sp-button-primary mt-6 w-full" data-testid="placement-continue">
+          @if (submitting()) { Saving… } @else if (isLastSection()) { Finish and see my result } @else { Save and continue }
+        </button>
+      </div>
+    }
+  }
+
+  <!-- Evaluating -->
+  @if (state() === 'evaluating') {
+    <div class="sp-card py-10 text-center" data-testid="placement-evaluating">
+      <div class="mx-auto mb-3 h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+      <h2 class="text-lg font-bold text-slate-950">Working out your level…</h2>
+      <p class="mt-2 text-sm text-slate-500">We're reviewing your answers across all six sections.</p>
+    </div>
+  }
+
+  <!-- Result -->
+  @if (state() === 'result' && result(); as res) {
+    <div class="sp-card" data-testid="placement-result">
+      <p class="sp-eyebrow mb-2">Your placement result</p>
+      <div class="flex items-center gap-4">
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-2xl font-bold text-indigo-600" data-testid="placement-overall-level">
+          {{ res.estimatedOverallLevel }}
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-950">Estimated level: {{ res.estimatedOverallLevel }}</h1>
+          @if (res.placementNotes) { <p class="mt-1 text-sm leading-6 text-slate-600">{{ res.placementNotes }}</p> }
+        </div>
+      </div>
+
+      <!-- Skill breakdown -->
+      <div class="mt-6">
+        <h2 class="mb-2 text-sm font-semibold text-slate-900">Skill breakdown</h2>
+        <div class="grid grid-cols-2 gap-2">
+          @for (s of res.skillLevels; track s.skill) {
+            <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+              <span class="text-slate-600">{{ s.skill }}</span>
+              <span class="font-semibold text-slate-900">{{ s.level }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (res.strengths.length) {
+        <div class="mt-6">
+          <h2 class="mb-2 text-sm font-semibold text-slate-900">Strengths</h2>
+          <ul class="space-y-1 text-sm text-slate-600">
+            @for (item of res.strengths; track item) { <li>• {{ item }}</li> }
+          </ul>
+        </div>
+      }
+
+      @if (res.weaknesses.length) {
+        <div class="mt-6">
+          <h2 class="mb-2 text-sm font-semibold text-slate-900">Areas to improve</h2>
+          <ul class="space-y-1 text-sm text-slate-600">
+            @for (item of res.weaknesses; track item) { <li>• {{ item }}</li> }
+          </ul>
+        </div>
+      }
+
+      <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        @if (res.recommendedStartingCourse) {
+          <div class="rounded-xl bg-slate-50 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Recommended focus</p>
+            <p class="mt-1 text-sm font-semibold text-slate-900">{{ res.recommendedStartingCourse }}</p>
+          </div>
+        }
+        @if (res.recommendedSessionDuration) {
+          <div class="rounded-xl bg-slate-50 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Recommended session length</p>
+            <p class="mt-1 text-sm font-semibold text-slate-900">{{ res.recommendedSessionDuration }} minutes</p>
+          </div>
+        }
+      </div>
+
+      <div class="mt-6 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 text-sm text-indigo-900">
+        Your guided course is being prepared based on this result. You can start practising from your dashboard now.
+      </div>
+
+      <button (click)="continueToCourse()" class="sp-button-primary mt-6 w-full" data-testid="placement-continue-course">
+        Continue
+      </button>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (state() === 'error') {
+    <div class="sp-card" data-testid="placement-error">
+      <div class="sp-alert-error">{{ error() || 'Something went wrong.' }}</div>
+      <button (click)="retry()" class="sp-button-secondary mt-4 w-full">Try again</button>
+    </div>
+  }
+</div>

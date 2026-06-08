@@ -62,6 +62,12 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
   await page.route('**/api/onboarding/status', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ isComplete: true }) });
   });
+  await page.route('**/api/placement/status', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ status: 'Completed', lifecycleStage: 'CourseReady', isCompleted: true, currentSectionKey: null }),
+    });
+  });
   await page.route('**/api/dashboard', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
