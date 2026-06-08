@@ -6,32 +6,237 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## SpeakingRolePlay activity MVP (in sprint: speaking-role-play-mvp-sprint)
+## Course Session & Placement Redesign — Implementation Phases
 
-- [ ] Add sprint documentation for SpeakingRolePlay MVP. `Done`
-- [ ] Add `ISpeechToTextService` interface and `FakeSpeechToTextService`. `Planned`
-- [ ] Add `SpeakingAudioService` (store, commit, serve, per-student DB count limit). `Planned`
-- [ ] Add `SpeakingRolePlayEvaluator` (AI evaluation of transcript). `Planned`
-- [ ] Add `activity_generate_speaking_roleplay` prompt seed. `Planned`
-- [ ] Add `activity_evaluate_speaking_roleplay` prompt seed. `Planned`
-- [ ] Add SpeakingRolePlay to `AiActivityGeneratorHandler` (generation + evaluation guards). `Planned`
-- [ ] Add SpeakingRolePlay branch to `ActivityGetHandler` (AI + inline fallback + typed routing guard). `Planned`
-- [ ] Add SpeakingRolePlay branch to `ActivitySubmitHandler` (STT → evaluator dispatch). `Planned`
-- [ ] Extend `ActivityDto` with 8 speaking fields. `Planned`
-- [ ] Extend `ActivityFeedbackDto` with 4 speaking feedback fields. `Planned`
-- [ ] Add `POST /api/activity/{id}/speaking-attempt` (multipart) to `ActivityController`. `Planned`
-- [ ] Add `GET /api/activity/{id}/attempts/{attemptId}/audio` to `ActivityController`. `Planned`
-- [ ] Add `AudioStorageKey` nullable column to `ActivityAttempt` + migration. `Planned`
-- [ ] Add SpeakingRolePlay branch to `ActivityAttemptsHandler` (history). `Planned`
-- [ ] Add speaking states to Angular `activity-lesson` PageState union. `Planned`
-- [ ] Implement speaking recording UI (record, stop, preview, submit). `Planned`
-- [ ] Implement speaking feedback view (transcript, coach summary, strengths, improvements). `Planned`
-- [ ] Update activity history component for SpeakingRolePlay attempts. `Planned`
-- [ ] Activate dashboard Speaking card (remove "Coming soon"). `Planned`
-- [ ] Add config defaults and `.env.example` entries for STT and speaking audio. `Planned`
-- [ ] Add backend integration tests for SpeakingRolePlay. `Planned`
-- [ ] Add Angular unit tests for speaking states. `Planned`
-- [ ] Add Playwright E2E tests for speaking flow. `Planned`
+Architecture sprint complete (2026-06-09). See sprint doc: [course-session-placement-redesign-sprint.md](../sprints/course-session-placement-redesign-sprint.md)
+
+### Phase 1 — Placement Assessment MVP `Not started`
+
+- [ ] Add `StudentLifecycleStage` enum and column to `StudentProfile` + migration. `Not started`
+- [ ] Add `PreferredSessionDurationMinutes` to `StudentProfile` + migration. `Not started`
+- [ ] Add `ProfessionalExperienceLevel` enum and column to `StudentProfile` + migration. `Not started`
+- [ ] Add `RoleFamiliarity` enum and column to `StudentProfile` + migration. `Not started`
+- [ ] Add `WorkplaceSeniority` (DomainComplexity) computed column or property to `StudentProfile`. `Not started`
+- [ ] Update onboarding to collect session duration preference, professional experience level, and role familiarity. `Not started`
+- ~~Add `ModuleType` column to `LearningModule` (Standard, Placement)~~ `Superseded` — Placement is a standalone `PlacementAssessment` entity, not a LearningModule. No ModuleType column needed.
+- [ ] Add `PlacementAssessment` entity, EF config, migration. `Not started`
+- [ ] Add `PlacementSection` entity, EF config, migration. `Not started`
+- [ ] Add `placement_assessment_evaluate` AI prompt seed. `Not started`
+- [ ] Implement placement section handlers (self-check, vocab/grammar, reading, listening, writing, speaking). `Not started`
+- [ ] Implement `PlacementResultGeneratorService` (AI-evaluated result). `Not started`
+- [ ] Feed placement result into `StudentSkillProfile` and `UserLearningSummary`. `Not started`
+- [ ] Add placement flow to Angular (6 sections, progress, result screen). `Not started`
+- [ ] Add lifecycle-aware routing guard (redirect to correct stage). `Not started`
+- [ ] Add backend integration tests for placement flow. `Not started`
+- [ ] Add Playwright tests for placement flow. `Not started`
+
+### Phase 2 — Course Session MVP `Not started`
+
+- [ ] Add `LearningSession` entity, EF config, migration. `Not started`
+- [ ] Add `SessionExercise` entity, EF config, migration. `Not started`
+- [ ] Implement session generator (backend-driven, not AI-driven). `Not started`
+- [ ] Generate sessions based on duration, level, career context, learning memory. `Not started`
+- [ ] Add Today page (replaces activity-card dashboard as primary student entry point). `Not started`
+- [ ] Add session progress component to Today page. `Not started`
+- [ ] Add session completion tracking. `Not started`
+- [ ] Add backend integration tests for session generation. `Not started`
+- [ ] Add Playwright tests for Today page and session flow. `Not started`
+
+### Phase 3 — Exercise Pattern Engine `Not started`
+
+- [ ] Define exercise pattern library in code (pattern key → pattern config). `Not started`
+- [ ] Implement session generator pattern selection logic. `Not started`
+- [ ] Implement `teams_chat_simulation` pattern (content model, UI, evaluation). `Not started`
+- [ ] Implement `read_and_answer`, `gap_fill_with_workplace_phrase`, `phrase_match`, `collocation_match`. `Not started`
+- [ ] Link `SessionExercise` to `LearningActivity` via pattern-to-activity mapping. `Not started`
+- [ ] Add pattern-level integration tests. `Not started`
+
+### Phase 4 — Practice Gym `Not started`
+
+- [ ] Add Practice tab to student navigation. `Not started`
+- [ ] Move dashboard activity cards under Practice tab. `Not started`
+- [ ] Today page becomes primary student home. `Not started`
+- [ ] Keep existing `/activity?type=...` routing unchanged. `Not started`
+- [ ] Add Playwright tests for Practice tab navigation. `Not started`
+
+### Phase 5 — MinIO File Storage `Not started`
+
+- [ ] Define `IFileStorageService` interface in Application. `Not started`
+- [ ] Implement `LocalFileStorageService` in Infrastructure. `Not started`
+- [ ] Implement `MinioFileStorageService` in Infrastructure (Minio .NET SDK). `Not started`
+- [ ] Migrate `ListeningAudioService` to use `IFileStorageService`. `Not started`
+- [ ] Migrate `SpeakingAudioService` to use `IFileStorageService`. `Not started`
+- [ ] Update audio streaming endpoints to use `IFileStorageService`. `Not started`
+- [ ] Add MinIO to Docker Compose (staging). `Not started`
+- [ ] Add unit tests for both file storage implementations. `Not started`
+- [ ] Verify audio playback end-to-end in staging with MinIO. `Not started`
+
+### Phase 6 — Admin Reset Tools `Not started`
+
+- [ ] Add `StudentResetLog` entity, EF config, migration. `Not started`
+- [ ] Implement `POST /api/admin/students/{id}/reset` endpoint. `Not started`
+- [ ] Implement lifecycle stage transition logic in reset handler. `Not started`
+- [ ] Implement audio file cleanup via `IFileStorageService` on reset. `Not started`
+- [ ] Add admin UI: lifecycle stage badge on student detail page. `Not started`
+- [ ] Add admin UI: reset modal with confirmation and reason input. `Not started`
+- [ ] Add backend integration tests for reset endpoint. `Not started`
+- [ ] Add Playwright tests for admin reset flow. `Not started`
+
+---
+
+## Professional Experience Level & Domain Complexity `Not started`
+
+Architecture doc: [professional-experience-domain-complexity.md](../architecture/professional-experience-domain-complexity.md)
+
+Priority: P0/P1 — affects onboarding, placement, and session generation quality. Without this, SpeakPath may give students linguistically appropriate tasks that are professionally inappropriate.
+
+- [ ] Define `ProfessionalExperienceLevel` and `RoleFamiliarity` enums in domain. `Not started`
+- [ ] Define `DomainComplexity` enum (`BasicWorkplace`, `JuniorRole`, `IndependentContributor`, `SeniorSpecialist`, `LeadOrManager`). `Not started`
+- [ ] Add experience level and role familiarity steps to Angular onboarding flow. `Not started`
+- [ ] Implement `WorkplaceSeniority` computation (experience level × role familiarity → DomainComplexity). `Not started`
+- [ ] Add `WorkplaceSeniority` field to `StudentProfile` (stored, updated after onboarding). `Not started`
+- [ ] Add `{{DomainComplexity}}` and `{{ProfessionalExperienceLevel}}` prompt variables to all AI content generation prompts. `Not started`
+  - `activity_generate_writing`
+  - `activity_generate_listening`
+  - `activity_generate_speaking_roleplay`
+  - `placement_assessment_evaluate`
+  - `learning_path_generate`
+  - `learning_path_generate_adaptive`
+- [ ] Add domain complexity rule to all prompts: do not introduce concepts beyond student's DomainComplexity unless a micro-lesson teaches it first. `Not started`
+- [ ] Update session generator to filter workplace scenario topics by `WorkplaceSeniority`. `Not started`
+- [ ] Update placement assessment prompt to use `BasicWorkplace`/`JuniorRole` domain complexity by default. `Not started`
+- [ ] Add domain complexity override option to Practice Gym (simple / normal / challenge). `Not started`
+- [ ] Add `AvoidedDomainComplexity` tracking: when a new concept is introduced, mark it as "introduced" so it can be reused without a micro lesson. `Not started`
+- [ ] Add backend integration tests for WorkplaceSeniority computation and prompt variable inclusion. `Not started`
+- [ ] Add Playwright tests for onboarding experience level and role familiarity steps. `Not started`
+
+---
+
+## Competitive Gap — P1 Features `Not started`
+
+From competitive gap review (2026-06-09). See sprint doc for full matrix.
+
+### TeamsChatSimulation (P1)
+
+- [ ] Design `teams_chat_simulation` content model and API response shape. `Not started`
+- [ ] Implement `TeamsChatSimulationGenerator` (AI-generated Teams chat scenario). `Not started`
+- [ ] Implement `TeamsChatSimulationEvaluator` (tone, phrase use, conciseness, completeness). `Not started`
+- [ ] Add Teams chat UI to Angular activity-lesson (chat bubble layout, word counter, hint phrases). `Not started`
+- [ ] Add TeamsChatSimulation to Practice Gym. `Not started`
+- [ ] Add backend integration tests for TeamsChatSimulation. `Not started`
+- [ ] Add Playwright tests for Teams chat flow. `Not started`
+
+### Vocabulary Queue Cards (P1)
+
+- [ ] Design vocabulary card types: cloze, collocation, phrase, use-in-sentence. `Not started`
+- [ ] Implement card queue scheduling (new/weak/mastered spaced repetition). `Not started`
+- [ ] Add `/vocabulary` card mode UI (swipe-style or inline card deck). `Not started`
+- [ ] Add collocation card generation from student's existing vocabulary queue. `Not started`
+- [ ] Add backend integration tests for vocabulary card scheduling. `Not started`
+
+### Micro Lessons (P1)
+
+- [ ] Implement `micro_lesson_phrases` pattern: AI generates 3–5 target phrases with usage examples before a lesson session. `Not started`
+- [ ] Implement `micro_lesson_dialogue` pattern: AI generates a short workplace dialogue to model before speaking/writing tasks. `Not started`
+- [ ] Implement `micro_lesson_mistake` pattern: pulls a recurring mistake from student memory and explains it before a correction exercise. `Not started`
+- [ ] Add micro lesson step to Angular session exercise flow (read-only, no submission, auto-advance). `Not started`
+- [ ] Add micro lesson AI prompts to seed data. `Not started`
+
+### Weekly Plan (P1, part of Phase 2 session model)
+
+- [ ] Add weekly session schedule generation after placement completes. `Not started`
+- [ ] Store weekly plan as pre-generated `LearningSession` slots for the coming week. `Not started`
+- [ ] Add Today page weekly calendar strip (days of week, completed/upcoming indicators). `Not started`
+- [ ] Respect student's preferred practice frequency from onboarding. `Not started`
+
+---
+
+## Competitive Gap — P2 Features `Not started`
+
+### Call Mode / Open AI Speaking (P2)
+
+- [ ] Design Call Mode product spec: multi-turn AI-first voice conversation. `Not started`
+- [ ] Implement `call_mode_single_turn` pattern (AI speaks, student responds). `Not started`
+- [ ] Implement `call_mode_multi_turn` pattern (3–5 AI/student turns, post-call transcript + feedback). `Not started`
+- [ ] Add Call Mode UI to Practice Gym (phone-style interface, AI speaks first). `Not started`
+- [ ] Add post-call feedback screen (transcript, per-turn coaching, vocabulary, tone summary). `Not started`
+- [ ] Wire real STT provider (OpenAI Whisper or Azure Speech) for Call Mode transcription. `Not started`
+- [ ] Add backend integration tests for call mode flow. `Not started`
+- [ ] Add Playwright tests for Call Mode UI. `Not started`
+- **Note:** Call Mode requires real STT. Do not implement with fake STT only.
+
+### Pronunciation MVP (P2)
+
+- [ ] Design pronunciation engine product spec (problem words, repeat-after-me, word stress, intonation). `Not started`
+- [ ] Evaluate STT/ASR providers for phoneme-level feedback (ELSA-style vs simpler). `Not started`
+- [ ] Implement `PronunciationPractice` activity type (backend + frontend). `Not started`
+- [ ] Add pronunciation patterns to exercise library: problem word drills, repeat-after-me, stress/intonation. `Not started`
+- [ ] Add Pronunciation section to Practice Gym. `Not started`
+- **Note:** Pronunciation is separate from speaking communication. Do not conflate with SpeakingRolePlay.
+
+### Real STT Provider (P2)
+
+- [ ] Evaluate OpenAI Whisper vs Azure Speech vs Google STT for accuracy and cost. `Not started`
+- [ ] Add real STT provider implementation behind `ISpeechToTextService`. `Not started`
+- [ ] Wire into SpeakingRolePlay and Call Mode flows. `Not started`
+- [ ] Add STT usage cost tracking. `Not started`
+
+### Real TTS Provider (P2)
+
+- [ ] Evaluate OpenAI TTS vs Azure TTS vs Google TTS for quality and cost. `Not started`
+- [ ] Add real TTS provider implementation behind `ITextToSpeechService`. `Not started`
+- [ ] Wire into listening activity generation. `Not started`
+- [ ] Add TTS usage cost tracking. `Not started`
+- [ ] Add TTS audio cache cleanup job to `LinguaCoach.Worker`. `Not started`
+
+### AI Tutor Persona (P2)
+
+- [ ] Define AI teacher name and voice persona (e.g. "Alex" — encouraging, professional tone). `Not started`
+- [ ] Add AI teacher voice to session-opening micro lessons (text first, TTS audio when provider available). `Not started`
+- [ ] Add tutor persona to lesson_reflection step output. `Not started`
+- [ ] Avatar is P3 — do not design now. `Not started`
+
+---
+
+## Competitive Gap — P3 Features `Not started`
+
+- [ ] AI avatar / visual tutor interface. `Not started`
+- [ ] Video micro lessons. `Not started`
+- [ ] Multimodal workplace uploads (email/doc/screenshot → AI converts to exercise). `Not started`
+- [ ] Advanced enterprise analytics (employer dashboard, cohort progress). `Not started`
+- [ ] Organisations / teams / employer accounts. `Not started`
+
+---
+
+## SpeakingRolePlay activity MVP (in sprint: speaking-role-play-mvp-sprint) — **COMPLETE**
+
+> SpeakingRolePlay MVP was delivered in the speaking-role-play-mvp-sprint (2026-06-08).
+> All items below are Done. The Speaking dashboard card is active.
+
+- [x] Add sprint documentation for SpeakingRolePlay MVP. `Done`
+- [x] Add `ISpeechToTextService` interface and `FakeSpeechToTextService`. `Done`
+- [x] Add `SpeakingAudioService` (store, commit, serve, per-student DB count limit). `Done`
+- [x] Add `SpeakingRolePlayEvaluator` (AI evaluation of transcript). `Done`
+- [x] Add `activity_generate_speaking_roleplay` prompt seed. `Done`
+- [x] Add `activity_evaluate_speaking_roleplay` prompt seed. `Done`
+- [x] Add SpeakingRolePlay to `AiActivityGeneratorHandler` (generation + evaluation guards). `Done`
+- [x] Add SpeakingRolePlay branch to `ActivityGetHandler` (AI + inline fallback + typed routing guard). `Done`
+- [x] Add SpeakingRolePlay branch to `ActivitySubmitHandler` (STT → evaluator dispatch). `Done`
+- [x] Extend `ActivityDto` with 8 speaking fields. `Done`
+- [x] Extend `ActivityFeedbackDto` with 4 speaking feedback fields. `Done`
+- [x] Add `POST /api/activity/{id}/speaking-attempt` (multipart) to `ActivityController`. `Done`
+- [x] Add `GET /api/activity/{id}/attempts/{attemptId}/audio` to `ActivityController`. `Done`
+- [x] Add `AudioStorageKey` nullable column to `ActivityAttempt` + migration. `Done`
+- [x] Add SpeakingRolePlay branch to `ActivityAttemptsHandler` (history). `Done`
+- [x] Add speaking states to Angular `activity-lesson` PageState union. `Done`
+- [x] Implement speaking recording UI (record, stop, preview, submit). `Done`
+- [x] Implement speaking feedback view (transcript, coach summary, strengths, improvements). `Done`
+- [x] Update activity history component for SpeakingRolePlay attempts. `Done`
+- [x] Activate dashboard Speaking card (remove "Coming soon"). `Done`
+- [x] Add config defaults and `.env.example` entries for STT and speaking audio. `Done`
+- [x] Add backend integration tests for SpeakingRolePlay. `Done`
+- [x] Add Angular unit tests for speaking states. `Done`
+- [x] Add Playwright E2E tests for speaking flow. `Done`
 
 ---
 
@@ -229,8 +434,9 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
   - Return recent ActivityAttempts with score, date, activity type
 - [ ] Add per-skill progress values. `Not started`
   - Return progress percentage for: Writing, Speaking, Listening, Vocabulary, Pronunciation
-  - Writing is the only active skill currently; others return `null` until implemented
-  - UI must show `null`/`0` skills as "Not started" — never fake data
+  - Implemented activity types: WritingScenario, ListeningComprehension, VocabularyPractice, SpeakingRolePlay
+  - Pronunciation is not yet implemented; return `null` — UI shows "Not started"
+  - UI must never fake data
 
 ---
 
@@ -271,10 +477,11 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ## Future activity types
 
-- [ ] Implement SpeakingRolePlay activity type. `Not started`
-  - Backend: new `ActivityType` value, prompt template, AI handler
-  - Frontend: new phase UI (audio recording or text simulation), new skill badge colour
-  - Keep Speaking card as "Coming soon" until fully implemented
+- [x] Implement SpeakingRolePlay activity type. `Done`
+  - Backend: ActivityType value, prompt templates, AI handler, audio upload endpoint, fake STT
+  - Frontend: recording UI, transcript, feedback view, history support
+  - Dashboard Speaking card active — routes to `/activity?type=SpeakingRolePlay`
+  - See sprint: speaking-role-play-mvp-sprint.md
 - [x] Implement ListeningComprehension text MVP activity type. `Done`
   - Backend: hidden transcript generation, comprehension questions, deterministic scoring
   - Frontend: text-based listening task with transcript reveal after submit
@@ -291,9 +498,9 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
   - Backend: workplace text generation, comprehension questions
   - Frontend: reading + Q&A layout
   - Keep Reading card (if surfaced in UI) as "Coming soon" until implemented
-- [ ] Keep all unimplemented skill cards visually present but disabled. `Planned`
-  - Current: 4 skill cards show "Coming soon" with reduced opacity
-  - Do not remove them; they communicate the product roadmap to testers
+- [ ] Keep unimplemented skill cards (Pronunciation, Reading) visually present but disabled. `Planned`
+  - Writing, Listening, Vocabulary, Speaking are implemented and active
+  - Pronunciation and Reading remain "Coming soon"
   - Remove "Coming soon" label only when the backend feature is fully wired
 
 ---
@@ -302,7 +509,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 - [ ] Replace placeholder profile rows with real user/profile data. `Not started`
   - Learning goal: read from `StudentProfile.LearningGoal` or `LearningTrack.Name`
-  - Current level: read from CEFR assessment result or `StudentProfile.CefrLevel`
+  - Current level: read from `PlacementResult.estimatedOverallLevel` (source of truth); fall back to `StudentProfile.CefrLevel` only if placement not yet completed
   - Practising: read from `LanguagePair.TargetName` + skill focus
   - Career context: read from `CareerProfile.Name`
 - [ ] Add editable learning preferences if needed. `Not started`

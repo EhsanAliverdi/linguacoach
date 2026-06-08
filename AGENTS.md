@@ -10,7 +10,7 @@ User-facing UI, page titles, copy, and public docs should use **SpeakPath**.
 
 # 1. Product Identity
 
-SpeakPath is an AI-powered English learning platform for practical workplace and real-life communication.
+SpeakPath is an **AI-powered workplace English class platform**.
 
 It is **professional communication coaching software for immigrant professionals**.
 
@@ -22,6 +22,16 @@ First role-specific path: Document Controller / admin-document-control worker.
 ```
 
 Core positioning: **Professional dignity software, not a generic language app.**
+
+SpeakPath aims to combine:
+- the **structure** of a real English course (guided sessions, placement, teaching sequence)
+- the **personalisation** of AI memory (adapts to real mistakes and career goals)
+- the **realism** of workplace simulations (emails, Teams chat, calls, meetings)
+- the **convenience** of on-demand AI practice (Practice Gym, Call Mode later)
+- the **feedback depth** of a writing and pronunciation coach
+
+Main differentiator:
+> **Workplace-specific English lessons that adapt to the learner's real mistakes and daily professional goals.**
 
 The user is buying the ability to:
 
@@ -40,28 +50,46 @@ SpeakPath is **not**:
 - a generic grammar checker
 - a static scenario generator
 - a random AI exercise generator
+- a collection of isolated activity cards
 
-Current implemented focus:
+**The product must feel like a structured English class**, not a practice card generator.
 
-- workplace writing activities (`WritingScenario`)
-- AI-generated learning paths
-- structured AI feedback with retry/improve loop
-- module progress and completion tracking
-- learning history (revisit modules, activities, all retry iterations)
-- optional native-language explanation (hidden by default)
-- AI provider fallback and Qwen support
-- AI usage tracking per call
+Current implemented activity types:
+
+- `WritingScenario` ✅
+- `ListeningComprehension` ✅ (with TTS audio)
+- `VocabularyPractice` ✅
+- `SpeakingRolePlay` ✅ (MVP)
+
+Architecture direction (course-session-placement-redesign-sprint):
+
+- Placement assessment before first guided course
+- Session-based lesson model (`LearningSession` → `SessionExercise`)
+- Exercise patterns that combine multiple skills (not isolated activity types)
+- Practice Gym for on-demand practice (secondary, not primary)
+- `IFileStorageService` abstraction for all audio files
+- Student lifecycle stages and admin reset tools
 
 Long-term direction (do not build until sprint explicitly asks):
 
-- speaking practice
-- listening practice
-- vocabulary practice
-- pronunciation practice
-- reading practice
-- student learning memory
-- adaptive next-step recommendations
-- coaching trend insights
+**P1:**
+- TeamsChatSimulation pattern and Practice Gym entry
+- Vocabulary queue cards (cloze, collocation, phrase, scheduling)
+- Micro lessons (teach → practise flow, `micro_lesson_*` patterns)
+- Weekly plan generation and Today page weekly calendar
+
+**P2:**
+- Call Mode (multi-turn AI-first voice conversation; requires real STT)
+- Pronunciation MVP (problem words, repeat-after-me, word stress, intonation)
+- Real STT provider (OpenAI Whisper, Azure Speech, or Google STT)
+- Real TTS provider (OpenAI, Azure, or Google TTS)
+- AI tutor persona / teacher voice
+
+**P3:**
+- AI avatar / visual tutor
+- Video micro lessons
+- Multimodal workplace uploads
+- MinIO production file storage (Phase 5)
 
 ---
 
@@ -135,9 +163,15 @@ src/LinguaCoach.Web
 ```
 LearningPath
   → LearningModule
-    → LearningActivity
-      → ActivityAttempt
+    → LearningSession        ← session-based lesson (new)
+      → SessionExercise      ← one step in lesson (new)
+        → LearningActivity   ← existing, reused
+          → ActivityAttempt  ← existing, reused
 ```
+
+Practice Gym uses `LearningActivity` directly without a session.
+
+See: docs/architecture/course-session-learning-model.md
 
 **Agents must not bring back the old writing-only architecture.**
 
@@ -152,14 +186,18 @@ Do not recreate:
 Current `ActivityType` values:
 
 - `WritingScenario` ✅ implemented
+- `ListeningComprehension` ✅ implemented (with TTS audio)
+- `VocabularyPractice` ✅ implemented
+- `SpeakingRolePlay` ✅ implemented (MVP)
 
 Future values (do not implement unless sprint asks):
 
-- `SpeakingRolePlay`
-- `ListeningComprehension`
-- `VocabularyPractice`
 - `PronunciationPractice`
 - `ReadingTask`
+
+Note: `ActivityType` values are implementation tools, not the product experience.  
+The product experience is defined by `ExercisePattern` within `LearningSession`.  
+See: docs/architecture/exercise-pattern-library.md
 
 ## Completed activity vs retry
 
@@ -223,6 +261,9 @@ Send compact packets only. Example writing feedback context:
   "targetLanguage": "English",
   "careerProfile": "Document Controller",
   "level": "A2",
+  "domainComplexity": "JuniorRole",
+  "professionalExperienceLevel": "Junior_0_2Years",
+  "roleFamiliarity": "CurrentlyWorkingInRole",
   "scenario": "Follow up pending document approval",
   "targetVocabulary": ["pending approval", "revised version", "could you please review"],
   "recentWeaknesses": ["too direct tone", "confuses approve and approval"],
@@ -231,6 +272,8 @@ Send compact packets only. Example writing feedback context:
 ```
 
 AI context must be bounded by token budgets.
+
+**Two-dimension difficulty rule:** All AI content generation prompts must include both `level` (CEFR) and `domainComplexity` (workplace experience level). Do not introduce workplace concepts beyond the student's `domainComplexity` unless a micro-lesson in the same session introduces the concept first. See: docs/architecture/professional-experience-domain-complexity.md
 
 ---
 
@@ -526,13 +569,16 @@ Do not add unless explicitly requested:
 
 ```
 public registration          payments              organisations
-real-time voice              audio upload          new AI providers
-full admin AI management     full CEFR assessment  full spaced repetition
+real-time voice              new AI providers      full spaced repetition
 large dashboard analytics    teacher features      mobile native app
-speaking / listening / vocabulary / pronunciation activities
+Call Mode                    Pronunciation         avatar / video lessons
 ```
 
 Do not overbuild. Do not add new architecture when a UI/UX or flow fix is needed.
+
+Do not treat `ActivityType` values as isolated product features. They are implementation tools. The product experience is defined by `ExercisePattern` within `LearningSession`.
+
+Do not introduce workplace concepts beyond the student's `DomainComplexity` / `WorkplaceSeniority`. Include a `micro_lesson_*` step first if a new concept must be used.
 
 ---
 
@@ -554,19 +600,19 @@ Lightweight self-check for other work: build passes, tests pass, scope is clean,
 
 # 24. Current Product Priority
 
-Current priority: **build a personalised learning journey, not more random content.**
+Current priority: **Placement Assessment MVP, then Guided Course (LearningSession / Today page).**
 
-Next major direction: **Student Learning Memory + Adaptive Curriculum.**
+All four activity types (WritingScenario, ListeningComprehension, VocabularyPractice, SpeakingRolePlay) are implemented. The next phase is structural: placement → guided sessions → exercise pattern engine.
 
-Do not add speaking/listening/vocabulary/pronunciation until the writing-learning journey, memory, progress, and AI reliability are stable.
+Do not add more isolated activity types. Build the course structure that organises existing ones.
 
-**When unsure, choose the option that makes SpeakPath feel more like a real English coach that remembers the student's journey.**
+**When unsure, choose the option that makes SpeakPath feel more like a structured English class, not a card-based practice tool.**
 
 ---
 
 # 25. Current Critical Flow
 
-The product must support this flow:
+The product currently supports this complete flow (all steps verified):
 
 ```
 Admin logs in
@@ -575,14 +621,25 @@ Admin logs in
 → Student changes temporary password
 → Student completes onboarding
 → Student reaches dashboard
-→ Student starts writing activity
-→ Student submits draft
-→ Student sees structured feedback
+→ Student starts Writing / Listening / Vocabulary / Speaking activity
+→ Student submits draft or recording
+→ Student sees structured AI feedback
 → Student retries or continues to next activity
 → Student can revisit learning history
 ```
 
-Do not continue roadmap features until this flow is stable, understandable, and demo-ready.
+Next flow to build:
+
+```
+Student completes onboarding
+→ Student completes Placement Assessment (6 sections)
+→ PlacementResult sets CEFR level and skill profile
+→ First LearningPath and LearningSession generated
+→ Student sees Today's Lesson
+→ Student works through ordered session exercises
+→ Session reflection / AI summary
+→ Next session scheduled
+```
 
 ---
 

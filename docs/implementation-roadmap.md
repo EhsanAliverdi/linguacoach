@@ -1,6 +1,28 @@
 # LinguaCoach — Implementation Roadmap
 
-Last updated: 2026-06-02
+> **HISTORICAL DOCUMENT — Not the current source of truth.**
+>
+> This roadmap reflects the original MVP plan (T1–T12 task breakdown) written before the
+> Course Session & Placement Redesign sprint (2026-06-09).
+>
+> **Superseded items:**
+> - T10 "CEFR assessment" is superseded by the Placement Assessment MVP (standalone `PlacementAssessment` entity, 6-section structured assessment). The old T10 was a simple AI call; the new design is a full separate entity and flow.
+> - T11 "Speaking sessions" is superseded by the implemented SpeakingRolePlay MVP and future Call Mode design. The old speaking session model (`SpeakingSession` / `SpeakingTurn`) was replaced by `LearningActivity` + `ActivityAttempt` with `ActivityType = SpeakingRolePlay`.
+> - T12 "Admin management panel" remains valid but is lower priority than Placement and Course Session work.
+> - The old "no audio upload in MVP" guidance is superseded — SpeakingRolePlay audio upload is now live.
+>
+> **Current source of truth:**
+> - AGENTS.md
+> - docs/architecture/course-session-learning-model.md
+> - docs/architecture/placement-assessment-model.md
+> - docs/architecture/exercise-pattern-library.md
+> - docs/sprints/course-session-placement-redesign-sprint.md
+> - docs/backlog/product-backlog.md
+> - docs/architecture/README.md
+>
+> **When docs conflict, prefer current architecture docs and AGENTS.md over this file.**
+
+Last updated: 2026-06-02 (historical)
 Branch: main
 
 ---

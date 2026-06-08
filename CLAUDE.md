@@ -94,15 +94,20 @@ LinguaCoach is an AI-powered language learning SaaS platform.
 - Admin creates users. No public registration initially.
 - Student logs in and completes onboarding.
 - Student selects source language and target language.
+- Student selects career context, professional experience level, role familiarity, and preferred session duration.
 - Initial seeded language pair: Persian to English.
-- Student selects learning goal, career context, and skill focus.
-- Example: Workplace English for a Document Controller.
-- AI tests CEFR level.
+- Student completes placement assessment before guided course begins (not a simple AI call — a 6-section structured assessment).
+- PlacementResult is the source of truth for CEFR level and per-skill levels; self-reported level is temporary only.
+- Guided course uses LearningSession / SessionExercise layer with mixed-skill ExercisePatterns.
 - System tracks skill progress, mistakes, topic mastery, spaced repetition, progress snapshots, and AI usage/cost.
 - Admin manages AI providers, model assignments, prompt templates, learning tracks, and career profiles.
 - AI providers must be abstracted.
 - AI prompts must be stored in PostgreSQL and versioned.
 - AI usage and cost must be logged from day one.
+- All AI content generation prompts must include both LanguageDifficulty (CEFR) and DomainComplexity (professional experience level).
+
+Current implemented activity types: WritingScenario, ListeningComprehension, VocabularyPractice, SpeakingRolePlay.
+Next sprint: Placement Assessment MVP.
 
 ### Architecture rules
 
