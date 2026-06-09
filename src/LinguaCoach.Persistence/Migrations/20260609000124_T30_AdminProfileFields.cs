@@ -11,132 +11,80 @@ namespace LinguaCoach.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "career_context",
-                table: "student_profiles",
-                type: "character varying(500)",
-                maxLength: 500,
-                nullable: true);
+            // All ADD COLUMN calls use IF NOT EXISTS because T29 may have already added
+            // the shared columns (lifecycle_stage etc.) on databases that ran T29 before T30.
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS career_context character varying(500);");
 
-            migrationBuilder.AddColumn<string>(
-                name: "display_name",
-                table: "student_profiles",
-                type: "character varying(150)",
-                maxLength: 150,
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS display_name character varying(150);");
 
-            migrationBuilder.AddColumn<string>(
-                name: "first_name",
-                table: "student_profiles",
-                type: "character varying(100)",
-                maxLength: 100,
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS first_name character varying(100);");
 
-            migrationBuilder.AddColumn<string>(
-                name: "last_name",
-                table: "student_profiles",
-                type: "character varying(100)",
-                maxLength: 100,
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS last_name character varying(100);");
 
-            migrationBuilder.AddColumn<string>(
-                name: "learning_goal",
-                table: "student_profiles",
-                type: "character varying(500)",
-                maxLength: 500,
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS learning_goal character varying(500);");
 
-            migrationBuilder.AddColumn<int>(
-                name: "lifecycle_stage",
-                table: "student_profiles",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
+            // These were already added by T29 on databases that ran T29; guard them.
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS lifecycle_stage integer NOT NULL DEFAULT 0;");
 
-            migrationBuilder.AddColumn<int>(
-                name: "preferred_session_duration_minutes",
-                table: "student_profiles",
-                type: "integer",
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS preferred_session_duration_minutes integer;");
 
-            migrationBuilder.AddColumn<int>(
-                name: "professional_experience_level",
-                table: "student_profiles",
-                type: "integer",
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS professional_experience_level integer;");
 
-            migrationBuilder.AddColumn<int>(
-                name: "role_familiarity",
-                table: "student_profiles",
-                type: "integer",
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS role_familiarity integer;");
 
-            migrationBuilder.AddColumn<int>(
-                name: "workplace_seniority",
-                table: "student_profiles",
-                type: "integer",
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS workplace_seniority integer;");
 
-            migrationBuilder.CreateTable(
-                name: "placement_assessments",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    student_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    status = table.Column<int>(type: "integer", nullable: false),
-                    started_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    completed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    current_section_key = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    result_json = table.Column<string>(type: "text", nullable: true),
-                    overall_estimated_level = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
-                    skill_levels_json = table.Column<string>(type: "text", nullable: true),
-                    updated_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_placement_assessments", x => x.id);
-                    table.ForeignKey(
-                        name: "FK_placement_assessments_student_profiles_student_profile_id",
-                        column: x => x.student_profile_id,
-                        principalTable: "student_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            // These tables were already created by T29; guard them.
+            migrationBuilder.Sql("""
+                CREATE TABLE IF NOT EXISTS placement_assessments (
+                    id uuid NOT NULL,
+                    student_profile_id uuid NOT NULL,
+                    status integer NOT NULL,
+                    started_at_utc timestamp with time zone,
+                    completed_at_utc timestamp with time zone,
+                    current_section_key character varying(50) NOT NULL,
+                    result_json text,
+                    overall_estimated_level character varying(5),
+                    skill_levels_json text,
+                    updated_at_utc timestamp with time zone NOT NULL,
+                    created_at timestamp with time zone NOT NULL,
+                    CONSTRAINT "PK_placement_assessments" PRIMARY KEY (id),
+                    CONSTRAINT "FK_placement_assessments_student_profiles_student_profile_id"
+                        FOREIGN KEY (student_profile_id) REFERENCES student_profiles(id) ON DELETE CASCADE
+                );
+                """);
 
-            migrationBuilder.CreateTable(
-                name: "placement_answers",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    placement_assessment_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    section_key = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    question_key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    response_text = table.Column<string>(type: "text", nullable: true),
-                    selected_option = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    score = table.Column<double>(type: "double precision", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_placement_answers", x => x.id);
-                    table.ForeignKey(
-                        name: "FK_placement_answers_placement_assessments_placement_assessmen~",
-                        column: x => x.placement_assessment_id,
-                        principalTable: "placement_assessments",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            migrationBuilder.Sql("""
+                CREATE TABLE IF NOT EXISTS placement_answers (
+                    id uuid NOT NULL,
+                    placement_assessment_id uuid NOT NULL,
+                    section_key character varying(50) NOT NULL,
+                    question_key character varying(100) NOT NULL,
+                    response_text text,
+                    selected_option character varying(500),
+                    score double precision,
+                    created_at timestamp with time zone NOT NULL,
+                    CONSTRAINT "PK_placement_answers" PRIMARY KEY (id),
+                    CONSTRAINT "FK_placement_answers_placement_assessments_placement_assessmen~"
+                        FOREIGN KEY (placement_assessment_id) REFERENCES placement_assessments(id) ON DELETE CASCADE
+                );
+                """);
 
-            migrationBuilder.CreateIndex(
-                name: "ix_placement_answers_placement_assessment_id",
-                table: "placement_answers",
-                column: "placement_assessment_id");
+            migrationBuilder.Sql(
+                "CREATE INDEX IF NOT EXISTS ix_placement_answers_placement_assessment_id ON placement_answers(placement_assessment_id);");
 
-            migrationBuilder.CreateIndex(
-                name: "ix_placement_assessments_student_profile_id",
-                table: "placement_assessments",
-                column: "student_profile_id");
+            migrationBuilder.Sql(
+                "CREATE INDEX IF NOT EXISTS ix_placement_assessments_student_profile_id ON placement_assessments(student_profile_id);");
         }
 
         /// <inheritdoc />
