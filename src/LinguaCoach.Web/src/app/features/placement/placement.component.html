@@ -54,11 +54,31 @@
           <div class="mt-4 whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-800" data-testid="placement-passage">{{ sec.passage }}</div>
         }
 
-        <!-- Listening: audio (text fallback if no real audio) -->
+        <!-- Listening: Web Speech API player + transcript fallback -->
         @if (sec.sectionType === 'listening' && sec.audioScript) {
           <div class="mt-4 rounded-xl bg-slate-50 p-4" data-testid="placement-audio">
             <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Voice message</p>
-            <p class="whitespace-pre-line text-sm leading-6 text-slate-800">{{ sec.audioScript }}</p>
+            <div class="mb-3 flex items-center gap-3">
+              <button type="button" (click)="speakAudio(sec.audioScript)"
+                [disabled]="isSpeaking()"
+                class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                data-testid="placement-audio-play">
+                @if (isSpeaking()) {
+                  <svg class="h-4 w-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12"/><rect x="12" y="4" width="4" height="12"/></svg>
+                  Playing…
+                } @else {
+                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.8A1 1 0 005 3.7v12.6a1 1 0 001.3.9l11-6.3a1 1 0 000-1.8l-11-6.3z"/></svg>
+                  Play message
+                }
+              </button>
+              @if (isSpeaking()) {
+                <button type="button" (click)="stopAudio()" class="text-xs text-slate-500 underline">Stop</button>
+              }
+            </div>
+            <details class="text-sm">
+              <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-700">Show transcript</summary>
+              <p class="mt-2 whitespace-pre-line leading-6 text-slate-700">{{ sec.audioScript }}</p>
+            </details>
           </div>
         }
 

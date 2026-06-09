@@ -29,6 +29,7 @@ export class PlacementComponent implements OnInit {
   answers = signal<Record<string, string>>({});
 
   readonly ratingScale = [1, 2, 3, 4, 5];
+  isSpeaking = signal(false);
 
   progressPercent = computed(() => {
     const total = this.totalSections();
@@ -152,6 +153,23 @@ export class PlacementComponent implements OnInit {
 
   continueToCourse(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  speakAudio(script: string): void {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(script);
+    utt.lang = 'en-GB';
+    utt.rate = 0.95;
+    utt.onstart = () => this.isSpeaking.set(true);
+    utt.onend = () => this.isSpeaking.set(false);
+    utt.onerror = () => this.isSpeaking.set(false);
+    window.speechSynthesis.speak(utt);
+  }
+
+  stopAudio(): void {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    this.isSpeaking.set(false);
   }
 
   retry(): void {
