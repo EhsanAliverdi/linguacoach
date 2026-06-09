@@ -13,7 +13,7 @@ When any two docs disagree, prefer the source higher in this list:
 3. **docs/backlog/product-backlog.md** — current implementation state
 4. **Latest sprint docs** — what was decided and built most recently
 5. **Older sprint docs** — historical context only
-6. **docs/implementation-roadmap.md** — original MVP task breakdown, now historical
+6. **docs/engineering-plans/implementation-roadmap.md** — original MVP task breakdown, now historical
 
 ---
 
@@ -114,8 +114,8 @@ Archived
 
 | Doc | Status |
 |---|---|
-| [docs/implementation-roadmap.md](../implementation-roadmap.md) | Historical — original T1–T12 task plan. T10 (CEFR assessment) and T11 (speaking sessions) are superseded. Read AGENTS.md instead. |
-| [docs/activity-flow-migration.md](../activity-flow-migration.md) | Historical — documents the removal of old `/api/writing/*` flow. Still accurate as archive. |
+| [docs/engineering-plans/implementation-roadmap.md](../engineering-plans/implementation-roadmap.md) | Historical — original T1–T12 task plan. T10 (CEFR assessment) and T11 (speaking sessions) are superseded. Read AGENTS.md instead. |
+| [docs/decisions/activity-flow-migration.md](../decisions/activity-flow-migration.md) | Historical — documents the removal of old `/api/writing/*` flow. Still accurate as archive. |
 | Older sprint docs (pre-2026-06-09) | Historical — describe what was true at the time. Do not treat as current direction. |
 
 ---

@@ -116,7 +116,13 @@ tests/
   LinguaCoach.UnitTests/       Domain logic tests (FluentAssertions + xUnit)
   LinguaCoach.IntegrationTests/ API endpoint tests (WebApplicationFactory + SQLite)
 docs/
-  implementation-roadmap.md   T1–T12 task plan
+  engineering-plans/          implementation roadmap and work plans
+  architecture/               domain model, learning model, AI architecture
+  sprints/                    sprint plans and reports
+  backlog/                    deferred work and product backlog
+  decisions/                  technical decisions and ADR-style notes
+  qa/                         QA plans and smoke tests
+  deployment/                 deployment and infrastructure notes
 ```
 
 ---
@@ -218,7 +224,7 @@ The GitHub deployment reads production secrets from the VPS `.env` file through
 
 Before allowing trusted testers or making the system available to real users, run the production Gemini smoke test:
 
-- See [docs/production-gemini-smoke-test.md](docs/production-gemini-smoke-test.md) for step-by-step verification of:
+- See [docs/qa/production-gemini-smoke-test.md](docs/qa/production-gemini-smoke-test.md) for step-by-step verification of:
   - Required environment variables and secrets
   - Admin AI configuration UI setup
   - Gemini provider connectivity test
