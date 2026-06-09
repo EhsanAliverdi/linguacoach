@@ -135,6 +135,7 @@ public class ActivityTestFactory : ApiTestFactory
         profile.SetLearningTrack(track);
         profile.SetCareerProfile(career);
         profile.SetSkillFocus(LinguaCoach.Domain.Enums.SkillFocus.Writing);
+        profile.SetLifecycleStage(LinguaCoach.Domain.Enums.StudentLifecycleStage.PlacementRequired);
         db.StudentProfiles.Add(profile);
         await db.SaveChangesAsync();
 

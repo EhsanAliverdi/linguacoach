@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -133,12 +136,10 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         var body = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var profileId = body.GetProperty("studentProfileId").GetGuid();
 
-        var studentsResponse = await _client.GetAsync("/api/admin/students");
-        var students = await studentsResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var match = students.EnumerateArray()
-            .FirstOrDefault(s => s.TryGetProperty("studentProfileId", out var id) && id.GetGuid() == profileId);
-        // Lifecycle stage should be PlacementRequired since profile is complete and mustChangePassword=false
-        Assert.True(match.ValueKind != JsonValueKind.Undefined);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.Id == profileId);
+        Assert.Equal(StudentLifecycleStage.PlacementRequired, profile.LifecycleStage);
     }
 
     [Fact]

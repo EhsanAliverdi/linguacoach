@@ -64,6 +64,9 @@ public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQue
                 throw new InvalidOperationException($"Unknown onboarding step type: {request.GetType().Name}");
         }
 
+        if (profile.OnboardingStatus == OnboardingStatus.Complete)
+            profile.SetLifecycleStage(LinguaCoach.Domain.Enums.StudentLifecycleStage.PlacementRequired);
+
         await _db.SaveChangesAsync(ct);
 
         // When onboarding completes (after step 4 / SetSkill), kick off path generation.
