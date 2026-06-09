@@ -32,8 +32,9 @@ export class PlacementComponent implements OnInit, OnDestroy {
   readonly ratingScale = [1, 2, 3, 4, 5];
 
   // Server-side audio for the listening section
-  listeningAudioUrl = signal<string | null>(null);
+  listeningAudioUrl = signal<string | null>(null);   // blob: URL, safe for <audio src>
   listeningAudioAvailable = signal(false);
+  private listeningBlobUrl: string | null = null;    // kept for revocation
 
   // Fallback SpeechSynthesis state (used only when server audio is unavailable)
   isSpeaking = signal(false);
@@ -59,6 +60,7 @@ export class PlacementComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.cleanupRecording();
+    this.revokeBlobUrl();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
@@ -103,13 +105,31 @@ export class PlacementComponent implements OnInit, OnDestroy {
         this.currentOrder.set(cur.currentSectionOrder);
         this.totalSections.set(cur.totalSections);
         this.answers.set({});
-        // Populate server-side audio fields for the listening section
-        this.listeningAudioUrl.set(cur.audioUrl ?? null);
-        this.listeningAudioAvailable.set(cur.audioAvailable ?? false);
+        // Fetch listening audio as authenticated blob URL
+        this.revokeBlobUrl();
+        this.listeningAudioAvailable.set(false);
+        this.listeningAudioUrl.set(null);
+        if (cur.audioAvailable && cur.audioUrl) {
+          this.placement.getListeningAudioBlobUrl(cur.audioUrl).subscribe({
+            next: blobUrl => {
+              this.listeningBlobUrl = blobUrl;
+              this.listeningAudioUrl.set(blobUrl);
+              this.listeningAudioAvailable.set(true);
+            },
+            error: () => { /* leave audioAvailable false — fallback message shows */ },
+          });
+        }
         this.state.set('section');
       },
       error: () => { this.error.set('Could not load the current section.'); this.state.set('error'); },
     });
+  }
+
+  private revokeBlobUrl(): void {
+    if (this.listeningBlobUrl) {
+      URL.revokeObjectURL(this.listeningBlobUrl);
+      this.listeningBlobUrl = null;
+    }
   }
 
   // ── Speaking section recording ────────────────────────────────────────────
