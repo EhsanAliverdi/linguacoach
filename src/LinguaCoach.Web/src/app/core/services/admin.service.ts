@@ -6,6 +6,15 @@ import { environment } from '../../../environments/environment';
 export interface CreateStudentRequest {
   email: string;
   temporaryPassword: string;
+  mustChangePassword?: boolean;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  careerContext?: string;
+  learningGoal?: string;
+  preferredSessionDurationMinutes?: number;
+  professionalExperienceLevel?: number;
+  roleFamiliarity?: number;
 }
 
 export interface CreateStudentResponse {

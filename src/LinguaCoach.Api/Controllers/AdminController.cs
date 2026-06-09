@@ -41,7 +41,18 @@ public sealed class AdminController : ControllerBase
         try
         {
             var result = await _createStudentHandler.HandleAsync(
-                new CreateStudentCommand(request.Email, request.TemporaryPassword), ct);
+                new CreateStudentCommand(
+                    request.Email,
+                    request.TemporaryPassword,
+                    request.MustChangePassword,
+                    request.FirstName,
+                    request.LastName,
+                    request.DisplayName,
+                    request.CareerContext,
+                    request.LearningGoal,
+                    request.PreferredSessionDurationMinutes,
+                    request.ProfessionalExperienceLevel,
+                    request.RoleFamiliarity), ct);
             return Created($"/api/admin/students/{result.StudentProfileId}",
                 new { studentProfileId = result.StudentProfileId, userId = result.UserId });
         }
@@ -200,7 +211,18 @@ public sealed class AdminController : ControllerBase
     }
 }
 
-public sealed record CreateStudentRequest(string Email, string TemporaryPassword);
+public sealed record CreateStudentRequest(
+    string Email,
+    string TemporaryPassword,
+    bool MustChangePassword = true,
+    string? FirstName = null,
+    string? LastName = null,
+    string? DisplayName = null,
+    string? CareerContext = null,
+    string? LearningGoal = null,
+    int? PreferredSessionDurationMinutes = null,
+    LinguaCoach.Domain.Enums.ProfessionalExperienceLevel? ProfessionalExperienceLevel = null,
+    LinguaCoach.Domain.Enums.RoleFamiliarity? RoleFamiliarity = null);
 public sealed record CreatePromptVersionRequest(string Key, string Content, int? MaxInputTokens, int? MaxOutputTokens);
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);

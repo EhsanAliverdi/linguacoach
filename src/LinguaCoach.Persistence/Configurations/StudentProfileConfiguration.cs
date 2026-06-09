@@ -24,6 +24,20 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         builder.Property(sp => sp.SkillFocus).HasColumnName("skill_focus");
         builder.Property(sp => sp.CefrLevel).HasColumnName("cefr_level").HasMaxLength(2);
 
+        // T29 — lifecycle & placement fields
+        builder.Property(sp => sp.LifecycleStage).HasColumnName("lifecycle_stage").IsRequired();
+        builder.Property(sp => sp.ProfessionalExperienceLevel).HasColumnName("professional_experience_level");
+        builder.Property(sp => sp.RoleFamiliarity).HasColumnName("role_familiarity");
+        builder.Property(sp => sp.WorkplaceSeniority).HasColumnName("workplace_seniority");
+        builder.Property(sp => sp.PreferredSessionDurationMinutes).HasColumnName("preferred_session_duration_minutes");
+
+        // T30 — admin-created profile fields
+        builder.Property(sp => sp.FirstName).HasColumnName("first_name").HasMaxLength(100);
+        builder.Property(sp => sp.LastName).HasColumnName("last_name").HasMaxLength(100);
+        builder.Property(sp => sp.DisplayName).HasColumnName("display_name").HasMaxLength(150);
+        builder.Property(sp => sp.CareerContext).HasColumnName("career_context").HasMaxLength(500);
+        builder.Property(sp => sp.LearningGoal).HasColumnName("learning_goal").HasMaxLength(500);
+
         builder.HasOne(sp => sp.LanguagePair)
             .WithMany()
             .HasForeignKey(sp => sp.LanguagePairId)

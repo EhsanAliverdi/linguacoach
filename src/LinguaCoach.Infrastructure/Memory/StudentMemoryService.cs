@@ -107,6 +107,32 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
         }
     }
 
+    public async Task SeedFromPlacementAsync(PlacementMemorySeed seed, CancellationToken ct = default)
+    {
+        var existing = await _db.UserLearningSummaries
+            .FirstOrDefaultAsync(x => x.StudentProfileId == seed.StudentProfileId, ct);
+
+        var summary = existing ?? new UserLearningSummary(seed.StudentProfileId);
+
+        summary.ApplyDelta(new MemoryUpdateDelta(
+            JourneySummaryDelta: $"Placement assessment complete. Estimated level: {seed.EstimatedLevel}. " +
+                                 $"Strengths: {string.Join(", ", seed.Strengths.Take(3))}. " +
+                                 $"Areas to develop: {string.Join(", ", seed.Weaknesses.Take(3))}.",
+            NewStrengths: seed.Strengths.ToList(),
+            NewWeaknesses: seed.Weaknesses.ToList(),
+            RecurringMistakesToAdd: [],
+            CoveredScenariosToAdd: [],
+            WeakSkillKeys: seed.WeakSkillKeys.ToList(),
+            StrongSkillKeys: seed.StrongSkillKeys.ToList(),
+            RecommendedNextFocus: seed.Weaknesses.Take(2).ToList()));
+
+        if (existing is null)
+            _db.UserLearningSummaries.Add(summary);
+
+        await UpsertSkillProfilesAsync(seed.StudentProfileId, seed.WeakSkillKeys, seed.StrongSkillKeys, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task<string> BuildAdaptiveContextJsonAsync(Guid studentProfileId, int moduleCount, CancellationToken ct = default)
     {
         var summary = await GetOrCreateWithBootstrapAsync(studentProfileId, ct);

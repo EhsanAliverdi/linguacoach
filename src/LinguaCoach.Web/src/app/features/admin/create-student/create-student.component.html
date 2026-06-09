@@ -35,6 +35,8 @@
     }
 
     <form (ngSubmit)="onSubmit()" novalidate class="mt-6 space-y-4">
+
+      <!-- Required: Email -->
       <div>
         <label for="studentEmail" class="sp-label">Student email</label>
         <input
@@ -51,6 +53,8 @@
           <p class="mt-1 text-xs text-red-600">{{ emailError() }}</p>
         }
       </div>
+
+      <!-- Required: Temporary password -->
       <div>
         <label for="temporaryPassword" class="sp-label">Temporary password</label>
         <input
@@ -68,6 +72,100 @@
           <p class="mt-1 text-xs text-red-600">{{ passwordError() }}</p>
         }
       </div>
+
+      <!-- Must change password toggle -->
+      <div class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <input
+          id="mustChangePassword"
+          type="checkbox"
+          [(ngModel)]="mustChangePassword"
+          name="mustChangePassword"
+          class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 accent-indigo-600"
+        />
+        <div>
+          <label for="mustChangePassword" class="text-sm font-medium text-slate-800 cursor-pointer">Require password change on first login</label>
+          <p class="mt-0.5 text-xs text-slate-500">Recommended for real students. Disable for test accounts.</p>
+        </div>
+      </div>
+
+      <!-- Optional profile section -->
+      <div class="border-t border-slate-200 pt-4">
+        <button
+          type="button"
+          (click)="showOptional = !showOptional"
+          class="flex w-full items-center justify-between text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          <span>{{ showOptional ? 'Hide optional profile fields' : 'Add optional profile fields' }}</span>
+          <svg class="h-4 w-4 transition-transform" [class.rotate-180]="showOptional" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <p class="mt-1 text-xs text-slate-500">If provided, the student skips those onboarding steps and goes straight to placement.</p>
+      </div>
+
+      @if (showOptional) {
+        <div class="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="firstName" class="sp-label">First name</label>
+              <input id="firstName" type="text" [(ngModel)]="firstName" name="firstName" class="sp-input" placeholder="Ehsan" />
+            </div>
+            <div>
+              <label for="lastName" class="sp-label">Last name</label>
+              <input id="lastName" type="text" [(ngModel)]="lastName" name="lastName" class="sp-input" placeholder="Aliverdi" />
+            </div>
+          </div>
+
+          <div>
+            <label for="displayName" class="sp-label">Display name <span class="text-slate-400">(optional)</span></label>
+            <input id="displayName" type="text" [(ngModel)]="displayName" name="displayName" class="sp-input" placeholder="What they go by" />
+          </div>
+
+          <div>
+            <label for="careerContext" class="sp-label">Career context</label>
+            <input id="careerContext" type="text" [(ngModel)]="careerContext" name="careerContext" class="sp-input" placeholder="e.g. Software engineering, Healthcare" />
+          </div>
+
+          <div>
+            <label for="learningGoal" class="sp-label">Learning goal</label>
+            <input id="learningGoal" type="text" [(ngModel)]="learningGoal" name="learningGoal" class="sp-input" placeholder="e.g. Communicate confidently in meetings" />
+          </div>
+
+          <div>
+            <label for="sessionDuration" class="sp-label">Preferred session duration</label>
+            <select id="sessionDuration" [(ngModel)]="preferredSessionDurationMinutes" name="sessionDuration" class="sp-input">
+              <option [ngValue]="null">Not specified</option>
+              @for (d of sessionDurations; track d) {
+                <option [ngValue]="d">{{ d }} minutes</option>
+              }
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="experienceLevel" class="sp-label">Experience level</label>
+              <select id="experienceLevel" [(ngModel)]="professionalExperienceLevel" name="experienceLevel" class="sp-input">
+                <option [ngValue]="null">Not specified</option>
+                @for (l of experienceLevels; track l.value) {
+                  <option [ngValue]="l.value">{{ l.label }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="roleFamiliarity" class="sp-label">Role familiarity</label>
+              <select id="roleFamiliarity" [(ngModel)]="roleFamiliarity" name="roleFamiliarity" class="sp-input">
+                <option [ngValue]="null">Not specified</option>
+                @for (f of familiarityLevels; track f.value) {
+                  <option [ngValue]="f.value">{{ f.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+        </div>
+      }
+
       <button type="submit" [disabled]="loading()" class="sp-admin-btn-primary" style="width:100%;justify-content:center;min-height:44px;font-size:14px">
         @if (loading()) { Creating... } @else { Create student }
       </button>

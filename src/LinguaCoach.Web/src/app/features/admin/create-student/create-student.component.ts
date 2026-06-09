@@ -16,14 +16,43 @@ interface CreatedStudentCredentials {
   templateUrl: './create-student.component.html',
 })
 export class CreateStudentComponent {
+  // Required fields
   email = '';
   temporaryPassword = '';
+  mustChangePassword = true;
+
+  // Optional profile fields
+  showOptional = false;
+  firstName = '';
+  lastName = '';
+  displayName = '';
+  careerContext = '';
+  learningGoal = '';
+  preferredSessionDurationMinutes: number | null = null;
+  professionalExperienceLevel: number | null = null;
+  roleFamiliarity: number | null = null;
+
   loading = signal(false);
   error = signal('');
   success = signal('');
   emailError = signal('');
   passwordError = signal('');
   createdCredentials = signal<CreatedStudentCredentials | null>(null);
+
+  readonly experienceLevels = [
+    { value: 0, label: 'Entry level' },
+    { value: 1, label: 'Mid-level' },
+    { value: 2, label: 'Senior' },
+    { value: 3, label: 'Lead / Principal' },
+  ];
+
+  readonly familiarityLevels = [
+    { value: 0, label: 'New to role' },
+    { value: 1, label: 'Familiar' },
+    { value: 2, label: 'Very experienced' },
+  ];
+
+  readonly sessionDurations = [15, 20, 30, 45, 60];
 
   constructor(private adminService: AdminService, public auth: AuthService) {}
 
@@ -35,7 +64,24 @@ export class CreateStudentComponent {
     this.success.set('');
     this.createdCredentials.set(null);
 
-    this.adminService.createStudent({ email: this.email, temporaryPassword: this.temporaryPassword }).subscribe({
+    const request: Parameters<AdminService['createStudent']>[0] = {
+      email: this.email.trim(),
+      temporaryPassword: this.temporaryPassword,
+      mustChangePassword: this.mustChangePassword,
+    };
+
+    if (this.showOptional) {
+      if (this.firstName.trim()) request.firstName = this.firstName.trim();
+      if (this.lastName.trim()) request.lastName = this.lastName.trim();
+      if (this.displayName.trim()) request.displayName = this.displayName.trim();
+      if (this.careerContext.trim()) request.careerContext = this.careerContext.trim();
+      if (this.learningGoal.trim()) request.learningGoal = this.learningGoal.trim();
+      if (this.preferredSessionDurationMinutes) request.preferredSessionDurationMinutes = this.preferredSessionDurationMinutes;
+      if (this.professionalExperienceLevel !== null) request.professionalExperienceLevel = this.professionalExperienceLevel;
+      if (this.roleFamiliarity !== null) request.roleFamiliarity = this.roleFamiliarity;
+    }
+
+    this.adminService.createStudent(request).subscribe({
       next: () => {
         this.loading.set(false);
         this.createdCredentials.set({
@@ -58,6 +104,16 @@ export class CreateStudentComponent {
   startAnother(): void {
     this.email = '';
     this.temporaryPassword = '';
+    this.mustChangePassword = true;
+    this.showOptional = false;
+    this.firstName = '';
+    this.lastName = '';
+    this.displayName = '';
+    this.careerContext = '';
+    this.learningGoal = '';
+    this.preferredSessionDurationMinutes = null;
+    this.professionalExperienceLevel = null;
+    this.roleFamiliarity = null;
     this.success.set('');
     this.error.set('');
     this.emailError.set('');

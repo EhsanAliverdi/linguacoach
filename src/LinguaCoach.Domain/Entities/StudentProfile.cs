@@ -42,6 +42,20 @@ public sealed class StudentProfile : BaseEntity
     // Set after CEFR assessment (T10). Null until assessment is taken.
     public string? CefrLevel { get; private set; }
 
+    // ── Lifecycle & placement sprint fields (T29) ────────────────────────────
+    public StudentLifecycleStage LifecycleStage { get; private set; }
+    public ProfessionalExperienceLevel? ProfessionalExperienceLevel { get; private set; }
+    public RoleFamiliarity? RoleFamiliarity { get; private set; }
+    public DomainComplexity? WorkplaceSeniority { get; private set; }
+    public int? PreferredSessionDurationMinutes { get; private set; }
+
+    // ── Admin-created profile fields (T30) ──────────────────────────────────
+    public string? FirstName { get; private set; }
+    public string? LastName { get; private set; }
+    public string? DisplayName { get; private set; }
+    public string? CareerContext { get; private set; }
+    public string? LearningGoal { get; private set; }
+
     private StudentProfile() { }
 
     public StudentProfile(Guid userId)
@@ -51,6 +65,7 @@ public sealed class StudentProfile : BaseEntity
         UserId = userId;
         OnboardingStatus = OnboardingStatus.NotStarted;
         LastCompletedStep = OnboardingStep.None;
+        LifecycleStage = StudentLifecycleStage.Created;
     }
 
     // ── Onboarding step methods ─────────────────────────────────────────────
@@ -107,6 +122,43 @@ public sealed class StudentProfile : BaseEntity
         if (!valid.Contains(level.ToUpperInvariant()))
             throw new ArgumentException($"Invalid CEFR level '{level}'. Must be one of: A1, A2, B1, B2, C1, C2.", nameof(level));
         CefrLevel = level.ToUpperInvariant();
+    }
+
+    // ── Lifecycle stage ─────────────────────────────────────────────────────
+
+    public void SetLifecycleStage(StudentLifecycleStage stage)
+    {
+        LifecycleStage = stage;
+    }
+
+    // ── Admin-set initial profile (T30) ─────────────────────────────────────
+    // Called once when an admin creates a student with optional profile context.
+    // Does NOT advance onboarding steps — those still belong to the student.
+    public void SetInitialProfile(
+        string? firstName,
+        string? lastName,
+        string? displayName,
+        string? careerContext,
+        string? learningGoal,
+        int? preferredSessionDurationMinutes,
+        ProfessionalExperienceLevel? experienceLevel,
+        RoleFamiliarity? roleFamiliarity)
+    {
+        FirstName = string.IsNullOrWhiteSpace(firstName) ? null : firstName.Trim();
+        LastName = string.IsNullOrWhiteSpace(lastName) ? null : lastName.Trim();
+        DisplayName = string.IsNullOrWhiteSpace(displayName) ? null : displayName.Trim();
+        CareerContext = string.IsNullOrWhiteSpace(careerContext) ? null : careerContext.Trim();
+        LearningGoal = string.IsNullOrWhiteSpace(learningGoal) ? null : learningGoal.Trim();
+
+        if (preferredSessionDurationMinutes.HasValue && preferredSessionDurationMinutes.Value > 0)
+            PreferredSessionDurationMinutes = preferredSessionDurationMinutes;
+
+        if (experienceLevel.HasValue && roleFamiliarity.HasValue)
+        {
+            ProfessionalExperienceLevel = experienceLevel;
+            RoleFamiliarity = roleFamiliarity;
+            WorkplaceSeniority = WorkplaceSeniorityCalculator.Compute(experienceLevel.Value, roleFamiliarity.Value);
+        }
     }
 
     // ── Private helpers ─────────────────────────────────────────────────────

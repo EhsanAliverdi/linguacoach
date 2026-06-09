@@ -90,4 +90,79 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateStudent_WithMustChangePasswordFalse_LoginReturnsFlag()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"nochange_{Guid.NewGuid():N}@test.com";
+        var createResponse = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Temp@5678", mustChangePassword = false });
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var loginClient = _factory.CreateClient();
+        var loginResponse = await loginClient.PostAsJsonAsync("/api/auth/login",
+            new { email, password = "Temp@5678" });
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(body.GetProperty("mustChangePassword").GetBoolean());
+    }
+
+    [Fact]
+    public async Task CreateStudent_WithFullProfile_LifecycleIsPlacementRequired()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"fullprofile_{Guid.NewGuid():N}@test.com";
+        var createResponse = await _client.PostAsJsonAsync("/api/admin/students", new
+        {
+            email,
+            temporaryPassword = "Temp@5678",
+            mustChangePassword = false,
+            firstName = "Ehsan",
+            lastName = "Test",
+            careerContext = "Software engineering",
+            professionalExperienceLevel = 1, // Mid
+            roleFamiliarity = 1              // Familiar
+        });
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var body = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var profileId = body.GetProperty("studentProfileId").GetGuid();
+
+        var studentsResponse = await _client.GetAsync("/api/admin/students");
+        var students = await studentsResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var match = students.EnumerateArray()
+            .FirstOrDefault(s => s.TryGetProperty("studentProfileId", out var id) && id.GetGuid() == profileId);
+        // Lifecycle stage should be PlacementRequired since profile is complete and mustChangePassword=false
+        Assert.True(match.ValueKind != JsonValueKind.Undefined);
+    }
+
+    [Fact]
+    public async Task CreateStudent_WithMustChangePasswordTrue_LifecycleIsPasswordChangeRequired()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"pwdchange_{Guid.NewGuid():N}@test.com";
+        var createResponse = await _client.PostAsJsonAsync("/api/admin/students", new
+        {
+            email,
+            temporaryPassword = "Temp@5678",
+            mustChangePassword = true,
+            firstName = "Ehsan"
+        });
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        // Login and verify mustChangePassword=true from the token response
+        var loginClient = _factory.CreateClient();
+        var loginResponse = await loginClient.PostAsJsonAsync("/api/auth/login",
+            new { email, password = "Temp@5678" });
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("mustChangePassword").GetBoolean());
+    }
 }

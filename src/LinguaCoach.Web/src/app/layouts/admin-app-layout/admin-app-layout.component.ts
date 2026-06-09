@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, HostListener, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -15,6 +15,7 @@ const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
 export class AdminAppLayoutComponent {
   collapsed = signal(this.readCollapsed());
   drawerOpen = signal(false);
+  profileMenuOpen = signal(false);
 
   adminEmail = computed(() => this.auth.currentUser()?.email ?? '');
   adminInitial = computed(() => {
@@ -32,6 +33,16 @@ export class AdminAppLayoutComponent {
 
   openDrawer(): void { this.drawerOpen.set(true); }
   closeDrawer(): void { this.drawerOpen.set(false); }
+
+  toggleProfileMenu(event: Event): void {
+    event.stopPropagation();
+    this.profileMenuOpen.update(v => !v);
+  }
+
+  @HostListener('document:click')
+  closeProfileMenu(): void {
+    this.profileMenuOpen.set(false);
+  }
 
   logout(): void {
     this.auth.logout();

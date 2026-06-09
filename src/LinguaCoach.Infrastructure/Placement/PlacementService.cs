@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
@@ -56,7 +56,7 @@ public sealed class PlacementService :
         _logger = logger;
     }
 
-    // ── Start / resume ───────────────────────────────────────────────────────
+    // â”€â”€ Start / resume â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<PlacementStatusDto> HandleAsync(StartPlacementCommand command, CancellationToken ct = default)
     {
@@ -66,14 +66,14 @@ public sealed class PlacementService :
         if (assessment.Status != PlacementStatus.Completed)
         {
             assessment.Start();
-            profile.MarkPlacementInProgress();
+            profile.SetLifecycleStage(StudentLifecycleStage.PlacementInProgress);
             await _db.SaveChangesAsync(ct);
         }
 
         return ToStatusDto(assessment, profile);
     }
 
-    // ── Save answers for a section ─────────────────────────────────────────────
+    // â”€â”€ Save answers for a section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<PlacementStatusDto> HandleAsync(SavePlacementAnswersCommand command, CancellationToken ct = default)
     {
@@ -100,13 +100,13 @@ public sealed class PlacementService :
 
         var nextKey = PlacementContent.NextSectionKey(command.SectionKey);
         assessment.AdvanceSection(command.SectionKey, nextKey);
-        profile.MarkPlacementInProgress();
+        profile.SetLifecycleStage(StudentLifecycleStage.PlacementInProgress);
 
         await _db.SaveChangesAsync(ct);
         return ToStatusDto(assessment, profile);
     }
 
-    // ── Complete (evaluate) ────────────────────────────────────────────────────
+    // â”€â”€ Complete (evaluate) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<PlacementResultDto> HandleAsync(CompletePlacementCommand command, CancellationToken ct = default)
     {
@@ -151,12 +151,12 @@ public sealed class PlacementService :
         // PlacementResult is the source of truth for CEFR level.
         ApplyCefrLevel(profile, result.EstimatedOverallLevel);
 
-        profile.MarkPlacementCompleted();
+        profile.SetLifecycleStage(StudentLifecycleStage.PlacementCompleted);
         await _db.SaveChangesAsync(ct);
 
         // Seed learning memory + skill profile from placement, then mark course ready.
         await SeedLearningMemoryAsync(profile, result, ct);
-        profile.MarkCourseReady();
+        profile.SetLifecycleStage(StudentLifecycleStage.CourseReady);
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation(
@@ -166,7 +166,7 @@ public sealed class PlacementService :
         return MapResult(result, isCompleted: true);
     }
 
-    // ── Status ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<PlacementStatusDto> HandleAsync(GetPlacementStatusQuery query, CancellationToken ct = default)
     {
@@ -188,7 +188,7 @@ public sealed class PlacementService :
         return ToStatusDto(assessment, profile);
     }
 
-    // ── Current section ──────────────────────────────────────────────────────────
+    // â”€â”€ Current section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<PlacementCurrentSectionDto> HandleAsync(GetPlacementCurrentSectionQuery query, CancellationToken ct = default)
     {
@@ -211,7 +211,7 @@ public sealed class PlacementService :
             IsCompleted: isCompleted);
     }
 
-    // ── Result ───────────────────────────────────────────────────────────────────
+    // â”€â”€ Result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<PlacementResultDto> HandleAsync(GetPlacementResultQuery query, CancellationToken ct = default)
     {
@@ -226,7 +226,7 @@ public sealed class PlacementService :
         return await BuildResultDtoAsync(assessment, ct);
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private async Task<StudentProfile> GetProfileAsync(Guid userId, CancellationToken ct)
         => await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct)
@@ -314,7 +314,7 @@ public sealed class PlacementService :
                 continue;
             }
 
-            // writing / speaking — productive sections (text response).
+            // writing / speaking â€” productive sections (text response).
             var text = sectionAnswers
                 .Select(a => a.ResponseText)
                 .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
@@ -376,7 +376,7 @@ public sealed class PlacementService :
         }
         catch (Exception ex)
         {
-            // Best-effort — do not fail placement completion if memory seeding fails.
+            // Best-effort â€” do not fail placement completion if memory seeding fails.
             _logger.LogWarning(ex,
                 "Seeding learning memory from placement failed StudentProfileId={StudentProfileId}", profile.Id);
         }
@@ -450,3 +450,4 @@ public sealed class PlacementService :
         return trimmed.Length <= max ? trimmed : trimmed[..max];
     }
 }
+

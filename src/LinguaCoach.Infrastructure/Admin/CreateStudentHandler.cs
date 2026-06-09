@@ -29,8 +29,7 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
             UserName = command.Email,
             Email = command.Email,
             Role = UserRole.Student,
-            MustChangePassword = true,
-            // Admin-created accounts are confirmed immediately.
+            MustChangePassword = command.MustChangePassword,
             EmailConfirmed = true
         };
 
@@ -39,6 +38,37 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
             throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
 
         var profile = new StudentProfile(user.Id);
+
+        var hasProfileContext = !string.IsNullOrWhiteSpace(command.FirstName)
+            || !string.IsNullOrWhiteSpace(command.LastName)
+            || !string.IsNullOrWhiteSpace(command.DisplayName)
+            || !string.IsNullOrWhiteSpace(command.CareerContext)
+            || !string.IsNullOrWhiteSpace(command.LearningGoal)
+            || command.PreferredSessionDurationMinutes.HasValue
+            || command.ProfessionalExperienceLevel.HasValue
+            || command.RoleFamiliarity.HasValue;
+
+        if (hasProfileContext)
+        {
+            profile.SetInitialProfile(
+                command.FirstName,
+                command.LastName,
+                command.DisplayName,
+                command.CareerContext,
+                command.LearningGoal,
+                command.PreferredSessionDurationMinutes,
+                command.ProfessionalExperienceLevel,
+                command.RoleFamiliarity);
+        }
+
+        var lifecycle = command.MustChangePassword
+            ? StudentLifecycleStage.PasswordChangeRequired
+            : hasProfileContext && command.ProfessionalExperienceLevel.HasValue && command.RoleFamiliarity.HasValue
+                ? StudentLifecycleStage.PlacementRequired
+                : StudentLifecycleStage.OnboardingRequired;
+
+        profile.SetLifecycleStage(lifecycle);
+
         _db.StudentProfiles.Add(profile);
         await _db.SaveChangesAsync(ct);
 

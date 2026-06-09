@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, HostListener, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -14,6 +14,7 @@ const STORAGE_KEY = 'speakpath.sidebarCollapsed';
 })
 export class StudentAppLayoutComponent {
   collapsed = signal(this.readCollapsed());
+  profileMenuOpen = signal(false);
 
   firstName = computed(() => {
     const email = this.auth.currentUser()?.email ?? '';
@@ -39,6 +40,16 @@ export class StudentAppLayoutComponent {
     const next = !this.collapsed();
     this.collapsed.set(next);
     try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* ignore */ }
+  }
+
+  toggleProfileMenu(event: Event): void {
+    event.stopPropagation();
+    this.profileMenuOpen.update(v => !v);
+  }
+
+  @HostListener('document:click')
+  closeProfileMenu(): void {
+    this.profileMenuOpen.set(false);
   }
 
   logout(): void {
