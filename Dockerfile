@@ -29,7 +29,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user for security
-RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
+RUN groupadd --system appgroup && useradd --system --gid appgroup appuser \
+    && mkdir -p /app/audio-data && chown appuser:appgroup /app/audio-data
 USER appuser
 
 COPY --from=build /app/publish .
