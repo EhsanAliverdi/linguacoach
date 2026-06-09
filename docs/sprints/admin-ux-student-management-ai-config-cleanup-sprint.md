@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:56
+lastUpdated: 2026-06-10
 owner: engineering
 supersedes:
 supersededBy:
@@ -10,7 +10,7 @@ supersededBy:
 
 ## Status
 
-Implemented and under verification.
+Complete.
 
 ## Product Goal
 
