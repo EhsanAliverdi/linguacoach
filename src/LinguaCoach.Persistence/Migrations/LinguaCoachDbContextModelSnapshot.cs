@@ -1166,6 +1166,16 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("learning_goal");
 
+                    b.Property<string>("LearningGoalDescription")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("learning_goal_description");
+
+                    b.Property<string>("DifficultSituationsText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("difficult_situations_text");
+
                     b.Property<Guid?>("LearningTrackId")
                         .HasColumnType("uuid")
                         .HasColumnName("learning_track_id");
