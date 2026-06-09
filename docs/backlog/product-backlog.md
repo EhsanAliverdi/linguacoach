@@ -175,10 +175,12 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Implement `MinioFileStorageService` in Infrastructure (Minio .NET SDK). `Not started`
 - [ ] Migrate `ListeningAudioService` to use `IFileStorageService`. `Not started`
 - [ ] Migrate `SpeakingAudioService` to use `IFileStorageService`. `Not started`
+- [ ] Migrate `PlacementAudioService` to use `IFileStorageService`. `Not started`
 - [ ] Update audio streaming endpoints to use `IFileStorageService`. `Not started`
 - [ ] Add MinIO to Docker Compose (staging). `Not started`
 - [ ] Add unit tests for both file storage implementations. `Not started`
 - [ ] Verify audio playback end-to-end in staging with MinIO. `Not started`
+- [ ] **Fix placement audio volume permissions in Docker.** `Blocked — deferred to MinIO migration` The named Docker volume mounted at `/app/audio-data` is not writable by the container user (non-root). Placement TTS audio generation fails with `Permission denied` in production. The frontend correctly shows the fallback message. Fix options: (a) set correct ownership in the Dockerfile (`RUN mkdir -p /app/audio-data && chown app:app /app/audio-data`), or (b) migrate to MinIO (the planned Phase 5 path, already has a shared MinIO instance running on the VPS). Option (b) is preferred — do not spend time on option (a) unless MinIO migration is blocked.
 
 ### Phase 6 â€” Admin Reset Tools `Not started`
 
