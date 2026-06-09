@@ -66,3 +66,9 @@ export interface CompleteExerciseResponse {
   completedAtUtc: string;
   sessionComplete: boolean;
 }
+
+export interface PrepareExerciseResponse {
+  activityId: string;
+  activityType: string | null;
+  isReview: boolean;
+}

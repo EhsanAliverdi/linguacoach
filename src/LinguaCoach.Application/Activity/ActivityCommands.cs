@@ -74,6 +74,15 @@ public interface IGetNextActivityHandler
     Task<ActivityDto> HandleAsync(GetNextActivityQuery query, CancellationToken ct = default);
 }
 
+// ── Get activity by id ─────────────────────────────────────────────────────────
+
+public sealed record GetActivityByIdQuery(Guid UserId, Guid ActivityId);
+
+public interface IGetActivityByIdHandler
+{
+    Task<ActivityDto> HandleAsync(GetActivityByIdQuery query, CancellationToken ct = default);
+}
+
 // ── Submit activity attempt ────────────────────────────────────────────────────
 
 public sealed record SubmitActivityAttemptCommand(

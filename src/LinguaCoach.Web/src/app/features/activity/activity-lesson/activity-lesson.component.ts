@@ -104,7 +104,11 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   private loadActivity(): void {
     this.state.set('loading');
-    this.activityService.getNext(this.preferredActivityType()).subscribe({
+    const specificId = this.route.snapshot.queryParamMap.get('activityId');
+    const obs = specificId
+      ? this.activityService.getById(specificId)
+      : this.activityService.getNext(this.preferredActivityType());
+    obs.subscribe({
       next: a => {
         this.activity.set(a);
         if (a.activityType === 'speakingRolePlay') {
@@ -411,12 +415,19 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
   }
 
   nextActivity(): void {
-    this.resetState();
-    this.loadActivity();
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    if (returnTo) {
+      // In lesson context — go back to the lesson page, not the next activity.
+      this.router.navigateByUrl(returnTo);
+    } else {
+      this.resetState();
+      this.loadActivity();
+    }
   }
 
   backToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    this.router.navigateByUrl(returnTo ?? '/dashboard');
   }
 
   isAiGenerated(): boolean {

@@ -142,7 +142,8 @@ Archived
 | LearningSession / Today page — Phase 3 (backend endpoints) | ✅ Done — `SessionsController`, lifecycle handlers, 27 integration tests |
 | LearningSession / Today page — Phase 4 (frontend) | ✅ Done — Today's Lesson card, LessonPage, SessionService, 14 e2e tests |
 | LearningSession / Phase 5A (exercise activity wiring — backend) | ✅ Done — `/prepare` endpoint, ExercisePrepareHandler, 16 tests |
-| LearningSession / Phase 5B (frontend wiring + reflection) | ⬜ Next |
+| LearningSession / Phase 5B (frontend wiring) | ✅ Done — LessonComponent prepare flow, Open activity nav, 8 e2e tests |
+| Session reflection | ⬜ Next — needs AI prompt `session_reflection` |
 | Exercise Pattern Engine | ⬜ Phase 3 |
 | Practice Gym separation | ⬜ Phase 4 |
 | IFileStorageService / MinIO | ⬜ Phase 5 |

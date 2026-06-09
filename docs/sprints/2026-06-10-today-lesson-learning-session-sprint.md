@@ -382,11 +382,41 @@ Stored in onboarding data (`UserProfile.PreferredSessionDurationMinutes`). The g
 - Session reflection AI prompt
 - Advanced TTS
 
-### Phase 5B — QA and polish (deferred)
+### Phase 5B — Frontend: wire LessonPage to activity (complete — 2026-06-10)
 
-1. Wire `LessonComponent` to call `/prepare` and launch `ActivityShellComponent` in session context
-2. Session reflection (`GET /api/sessions/{id}/reflection` returns 501 stub — needs AI prompt `session_reflection`)
-3. Documentation impact review and doc updates
+1. ✅ `PrepareExerciseResponse` model added to `session.models.ts`
+2. ✅ `prepareExercise()` added to `SessionService`
+3. ✅ `getById(activityId)` added to `ActivityService`
+4. ✅ `GET /api/activity/{id}` endpoint added to `ActivityController` (backed by `IGetActivityByIdHandler` on `ActivityGetHandler`)
+5. ✅ `ActivityLessonComponent` updated:
+   - Supports `?activityId=<id>` query param → loads specific activity via `getById()` instead of `getNext()`
+   - Supports `?returnTo=<path>` → `backToDashboard()` and `nextActivity()` navigate to `returnTo` URL in lesson context
+6. ✅ `LessonComponent` updated:
+   - `prepareIfNeeded()` — calls `/prepare` when exercise panel opens if no activityId set and kind ≠ review
+   - Auto-prepares the first active exercise on page load
+   - `resolvedActivityId()` — returns server value or local prepare result
+   - `localActivityIds` signal — stores prepare results in-memory for current session without refresh
+   - `activityUrl()` — builds `/activity?activityId=<id>&returnTo=/lesson/<sessionId>`
+   - Review step: shows reflection panel + "Mark complete" only (no /prepare call, no Open activity button)
+   - Non-review with activityId: shows "Open activity" (link) + "Mark complete" (ghost button)
+   - Non-review preparing: shows loading pulse while /prepare is in-flight
+   - Fallback: "Mark step complete" if prepare fails
+7. ✅ Server-assigned `learningActivityId` (from page refresh) shows Open activity without re-calling /prepare
+8. ✅ 8 new Playwright e2e tests in `e2e/lesson-activity-wiring.spec.ts` — all pass
+   - /prepare called on load for first active exercise
+   - Open activity button appears with correct href (activityId + returnTo)
+   - Review step shows review panel, not Open activity
+   - Review step does not call /prepare
+   - Refresh preserves activityId (server-set = no re-prepare)
+   - Marking review complete triggers session complete summary
+   - Exercise with activity shows both Open + Mark complete buttons
+   - Marking complete after activity advances to next exercise
+9. ✅ 90/90 Playwright tests pass (no regressions); 645 dotnet tests pass
+
+**Out of scope (deferred):**
+- Session reflection AI prompt (`GET /api/sessions/{id}/reflection` still 501)
+- `ActivityShellComponent` embedded inline in lesson page
+- Practice Gym changes
 
 ---
 

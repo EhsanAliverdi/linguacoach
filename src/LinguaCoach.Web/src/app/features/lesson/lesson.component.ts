@@ -25,6 +25,15 @@ export class LessonComponent implements OnInit {
   completingExerciseId = signal<string | null>(null);
   startingSession = signal(false);
 
+  /** Tracks which exercise is currently being prepared (calling /prepare endpoint). */
+  preparingExerciseId = signal<string | null>(null);
+
+  /**
+   * Local activityId overrides per exercise — populated when /prepare returns in this
+   * browser session before the page is refreshed. Keyed by exerciseId.
+   */
+  localActivityIds = signal<Record<string, string>>({});
+
   sessionId = '';
 
   progress = computed(() => {
@@ -80,12 +89,60 @@ export class LessonComponent implements OnInit {
           e => e.status !== 'completed' && e.status !== 'skipped'
         );
         this.activeExerciseIndex.set(firstIncomplete >= 0 ? firstIncomplete : 0);
+        // Trigger prepare for the active exercise immediately on load
+        const active = s.exercises[firstIncomplete >= 0 ? firstIncomplete : 0];
+        if (active && active.status !== 'completed' && active.status !== 'skipped') {
+          this.prepareIfNeeded(active);
+        }
       },
       error: err => {
         this.pageState.set('error');
         this.errorMessage.set(err.error?.error ?? 'Could not load the lesson.');
       },
     });
+  }
+
+  /** Returns the resolved activityId for an exercise: server value or local override. */
+  resolvedActivityId(exercise: SessionExercise): string | null {
+    return exercise.learningActivityId ?? this.localActivityIds()[exercise.exerciseId] ?? null;
+  }
+
+  /** Calls /prepare for an exercise if it doesn't yet have an activity and isn't a Review step. */
+  prepareIfNeeded(exercise: SessionExercise): void {
+    if (exercise.kind === 'review') return;
+    if (this.resolvedActivityId(exercise)) return;
+    if (this.preparingExerciseId() === exercise.exerciseId) return;
+
+    this.preparingExerciseId.set(exercise.exerciseId);
+    this.sessionService.prepareExercise(this.sessionId, exercise.exerciseId).subscribe({
+      next: result => {
+        this.preparingExerciseId.set(null);
+        this.localActivityIds.update(ids => ({
+          ...ids,
+          [exercise.exerciseId]: result.activityId,
+        }));
+      },
+      error: () => {
+        this.preparingExerciseId.set(null);
+      },
+    });
+  }
+
+  selectExercise(index: number): void {
+    this.activeExerciseIndex.set(index);
+    const s = this.session();
+    if (!s) return;
+    const exercise = s.exercises[index];
+    if (exercise && exercise.status !== 'completed' && exercise.status !== 'skipped') {
+      this.prepareIfNeeded(exercise);
+    }
+  }
+
+  /** URL for the activity page for this exercise. */
+  activityUrl(exercise: SessionExercise): string {
+    const actId = this.resolvedActivityId(exercise);
+    if (!actId) return '/activity';
+    return `/activity?activityId=${actId}&returnTo=/lesson/${this.sessionId}`;
   }
 
   startLesson(): void {
@@ -105,7 +162,6 @@ export class LessonComponent implements OnInit {
     if (this.completingExerciseId()) return;
     this.completingExerciseId.set(exercise.exerciseId);
 
-    // Auto-start session on first exercise if still NotStarted
     const doComplete = () => {
       this.sessionService.completeExercise(this.sessionId, exercise.exerciseId).subscribe({
         next: result => {
@@ -121,11 +177,13 @@ export class LessonComponent implements OnInit {
           if (result.sessionComplete) {
             this.completeSession();
           } else {
-            // Advance to next incomplete exercise
             const next = exercises.findIndex(
               e => e.status !== 'completed' && e.status !== 'skipped'
             );
-            if (next >= 0) this.activeExerciseIndex.set(next);
+            if (next >= 0) {
+              this.activeExerciseIndex.set(next);
+              this.prepareIfNeeded(exercises[next]);
+            }
           }
         },
         error: () => this.completingExerciseId.set(null),
@@ -160,10 +218,6 @@ export class LessonComponent implements OnInit {
         this.pageState.set('completed');
       },
     });
-  }
-
-  selectExercise(index: number): void {
-    this.activeExerciseIndex.set(index);
   }
 
   kindLabel(kind: ExerciseKind): string {

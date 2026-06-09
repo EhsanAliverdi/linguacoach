@@ -8,6 +8,7 @@ import {
   StartSessionResponse,
   CompleteSessionResponse,
   CompleteExerciseResponse,
+  PrepareExerciseResponse,
 } from '../models/session.models';
 
 @Injectable({ providedIn: 'root' })
@@ -35,5 +36,10 @@ export class SessionService {
   completeExercise(sessionId: string, exerciseId: string): Observable<CompleteExerciseResponse> {
     return this.http.post<CompleteExerciseResponse>(
       `${this.base}/${sessionId}/exercises/${exerciseId}/complete`, null);
+  }
+
+  prepareExercise(sessionId: string, exerciseId: string): Observable<PrepareExerciseResponse> {
+    return this.http.post<PrepareExerciseResponse>(
+      `${this.base}/${sessionId}/exercises/${exerciseId}/prepare`, null);
   }
 }

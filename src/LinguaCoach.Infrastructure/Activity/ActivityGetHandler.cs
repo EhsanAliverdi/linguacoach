@@ -15,7 +15,7 @@ namespace LinguaCoach.Infrastructure.Activity;
 /// Fallback path: returns a SystemFallback activity from DB if AI fails or is unavailable.
 /// Never throws a 500 — fallback is always available if seed data is present.
 /// </summary>
-public sealed class ActivityGetHandler : IGetNextActivityHandler
+public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityByIdHandler
 {
     private const int CompletionThreshold = 3;
     private const int VocabPracticeIntervalAttempts = 4; // every 4th activity
@@ -223,6 +223,24 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler
                 $"No SystemFallback activity found for type {activityType}. Ensure seed data has run.");
 
         return MapToDto(fallback);
+    }
+
+    // ── IGetActivityByIdHandler ────────────────────────────────────────────────
+
+    public async Task<ActivityDto> HandleAsync(GetActivityByIdQuery query, CancellationToken ct = default)
+    {
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == query.ActivityId && a.IsActive, ct)
+            ?? throw new InvalidOperationException($"Activity {query.ActivityId} not found.");
+
+        if (activity.ActivityType == ActivityType.ListeningComprehension)
+        {
+            await _listeningAudio.EnsureAudioAsync(
+                activity, "en", ct); // language code is already embedded in audio record
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return MapToDto(activity);
     }
 
     private async Task<ActivityType> ResolveActivityTypeAsync(

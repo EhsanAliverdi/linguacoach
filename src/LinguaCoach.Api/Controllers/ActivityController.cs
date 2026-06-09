@@ -18,6 +18,7 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class ActivityController : ControllerBase
 {
     private readonly IGetNextActivityHandler _getNextActivity;
+    private readonly IGetActivityByIdHandler _getActivityById;
     private readonly ISubmitActivityAttemptHandler _submitAttempt;
     private readonly LinguaCoachDbContext _db;
     private readonly ListeningAudioService _listeningAudio;
@@ -27,6 +28,7 @@ public sealed class ActivityController : ControllerBase
 
     public ActivityController(
         IGetNextActivityHandler getNextActivity,
+        IGetActivityByIdHandler getActivityById,
         ISubmitActivityAttemptHandler submitAttempt,
         LinguaCoachDbContext db,
         ListeningAudioService listeningAudio,
@@ -35,6 +37,7 @@ public sealed class ActivityController : ControllerBase
         SpeakingRolePlayEvaluator speakingEvaluator)
     {
         _getNextActivity = getNextActivity;
+        _getActivityById = getActivityById;
         _submitAttempt = submitAttempt;
         _db = db;
         _listeningAudio = listeningAudio;
@@ -64,6 +67,24 @@ public sealed class ActivityController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Returns a specific activity by ID. Used by the lesson page to load a prepared activity.</summary>
+    [HttpGet("{activityId:guid}")]
+    public async Task<IActionResult> GetById(Guid activityId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _getActivityById.HandleAsync(new GetActivityByIdQuery(userId, activityId), ct);
+            return Ok(ToActivityResponse(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
     }
 

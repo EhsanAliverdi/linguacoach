@@ -111,7 +111,9 @@ public static class DependencyInjection
         services.AddScoped<ListeningAudioService>();
         services.AddScoped<SpeakingAudioService>();
         services.AddScoped<SpeakingRolePlayEvaluator>();
-        services.AddScoped<IGetNextActivityHandler, ActivityGetHandler>();
+        services.AddScoped<ActivityGetHandler>();
+        services.AddScoped<IGetNextActivityHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
+        services.AddScoped<IGetActivityByIdHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 
         // STT: use FakeSpeechToTextService for MVP; swap in a real provider later

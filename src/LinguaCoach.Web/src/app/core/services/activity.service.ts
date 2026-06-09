@@ -15,6 +15,10 @@ export class ActivityService {
     return this.http.get<ActivityDto>(`${this.base}/next`, { params });
   }
 
+  getById(activityId: string): Observable<ActivityDto> {
+    return this.http.get<ActivityDto>(`${this.base}/${activityId}`);
+  }
+
   private toApiActivityType(type: ActivityType): string {
     switch (type) {
       case 'writingScenario': return 'WritingScenario';

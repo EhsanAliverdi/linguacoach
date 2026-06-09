@@ -123,10 +123,20 @@ Placement Assessment MVP is implemented:
 - VocabularyPractice and `ReadingTask` (not yet in `IAiActivityGenerator`) use `SystemFallback` placeholders
 - 16 new integration + unit tests; 645 total (328 unit + 317 integration)
 
+## Exercise activity wiring — frontend (Phase 5B complete — 2026-06-10)
+
+- `LessonComponent` now calls `POST /api/sessions/{id}/exercises/{eid}/prepare` when student opens an exercise
+- "Open activity" button navigates to `/activity?activityId=<id>&returnTo=/lesson/<sessionId>`
+- `ActivityLessonComponent` supports `?activityId=<id>` (loads specific prepared activity) and `?returnTo=<path>`
+- Review steps show a reflection prompt + "Mark complete" — no activity generated
+- Server-assigned `learningActivityId` (persists across refresh) skips re-prepare
+- `GET /api/activity/{id}` backend endpoint added
+- 8 new Playwright tests; 90/90 pass
+
 ## Known gaps / not yet built
 
-- Exercise steps in `LessonComponent` not yet wired to call `/prepare` and launch `ActivityShellComponent` (frontend Phase 5B)
 - Session reflection (`GET /api/sessions/{id}/reflection` returns 501; needs AI prompt key `session_reflection`)
+- `ActivityShellComponent` not yet embedded inline in lesson page (navigates away instead)
 - No real STT provider (SpeakingRolePlay uses `FakeSpeechToTextService`)
 - No email delivery for temp passwords (admin copies manually)
 - No admin CRUD for career profiles / learning tracks (seed data only)
@@ -136,7 +146,7 @@ See `docs/backlog/deferred-work.md` for the full deferred work list.
 
 ## Next recommended work
 
-1. **Wire `LessonComponent` to activities** — call `POST /api/sessions/{id}/exercises/{eid}/prepare` when student opens an exercise step; launch `ActivityShellComponent` with the returned `activityId`; requires `ActivityShellComponent` refactor to accept `sessionId`/`exerciseId` context
-2. **Session reflection AI prompt** — `GET /api/sessions/{id}/reflection` currently returns 501; requires AI prompt key `session_reflection` + service implementation
+1. **Session reflection AI prompt** — `GET /api/sessions/{id}/reflection` currently returns 501; requires AI prompt key `session_reflection` + service implementation
+2. **Inline activity embed** — optionally embed `ActivityShellComponent` directly inside `LessonComponent` rather than navigating away; requires component refactor to accept `activityId` as `@Input()`
 
 See `docs/sprints/current-sprint.md` for the active sprint scope.

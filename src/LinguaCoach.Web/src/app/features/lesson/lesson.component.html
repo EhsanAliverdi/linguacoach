@@ -144,18 +144,15 @@
               {{ exercise.instructions }}
             </p>
 
-            <!-- Placeholder state: no activity generated yet -->
-            @if (!exercise.learningActivityId) {
-              <div style="border:1.5px dashed var(--sp-border2);border-radius:var(--sp-r-sm);padding:14px 16px;background:var(--sp-surface);margin-bottom:16px">
-                <p style="font-size:12.5px;font-weight:700;color:var(--sp-muted);line-height:1.55;margin:0">
-                  This step is planned. Activity generation will be connected in the next phase.
-                </p>
-              </div>
-            }
-
-            <!-- Action buttons -->
             @if (exercise.status !== 'completed' && exercise.status !== 'skipped') {
-              <div style="display:flex;flex-wrap:wrap;gap:10px">
+
+              <!-- Review step: no activity — just reflect and mark complete -->
+              @if (exercise.kind === 'review') {
+                <div data-testid="review-panel" style="border:1.5px solid var(--sp-success);border-radius:var(--sp-r-sm);padding:14px 16px;background:var(--sp-success-soft);margin-bottom:16px">
+                  <p style="font-size:12.5px;font-weight:700;color:var(--sp-success);line-height:1.55;margin:0">
+                    Take a moment to reflect on what you practised today. When you're ready, mark this step complete.
+                  </p>
+                </div>
                 <button
                   data-testid="complete-exercise-btn"
                   (click)="$event.stopPropagation(); completeExercise(exercise)"
@@ -168,7 +165,55 @@
                     Mark step complete
                   }
                 </button>
-              </div>
+
+              <!-- Non-review step with activity ready -->
+              } @else if (resolvedActivityId(exercise)) {
+                <div style="display:flex;flex-wrap:wrap;gap:10px">
+                  <a
+                    data-testid="open-activity-btn"
+                    [href]="activityUrl(exercise)"
+                    (click)="$event.stopPropagation()"
+                    class="sp-button-primary"
+                    style="min-height:42px;font-size:13.5px;display:inline-flex;align-items:center;text-decoration:none">
+                    Open activity
+                  </a>
+                  <button
+                    data-testid="complete-exercise-btn"
+                    (click)="$event.stopPropagation(); completeExercise(exercise)"
+                    [disabled]="completingExerciseId() === exercise.exerciseId"
+                    class="sp-button-ghost"
+                    style="min-height:42px;font-size:13.5px">
+                    @if (completingExerciseId() === exercise.exerciseId) {
+                      Saving…
+                    } @else {
+                      Mark complete
+                    }
+                  </button>
+                </div>
+
+              <!-- Preparing: spinner while /prepare runs -->
+              } @else if (preparingExerciseId() === exercise.exerciseId) {
+                <div data-testid="prepare-loading" style="display:flex;align-items:center;gap:10px;padding:12px 0">
+                  <div class="sp-loading-pulse" style="width:120px;height:38px;border-radius:var(--sp-r-sm)"></div>
+                  <span style="font-size:12.5px;color:var(--sp-muted);font-weight:600">Preparing activity…</span>
+                </div>
+
+              <!-- Fallback: activity prepare failed or not yet triggered -->
+              } @else {
+                <button
+                  data-testid="complete-exercise-btn"
+                  (click)="$event.stopPropagation(); completeExercise(exercise)"
+                  [disabled]="completingExerciseId() === exercise.exerciseId"
+                  class="sp-button-primary"
+                  style="min-height:42px;font-size:13.5px">
+                  @if (completingExerciseId() === exercise.exerciseId) {
+                    Saving…
+                  } @else {
+                    Mark step complete
+                  }
+                </button>
+              }
+
             } @else {
               <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700"
                    [style.color]="exercise.status === 'completed' ? 'var(--sp-success)' : 'var(--sp-muted)'">
@@ -179,6 +224,7 @@
                 }
               </div>
             }
+
           </div>
         }
       </div>
