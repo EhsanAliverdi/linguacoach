@@ -8,6 +8,8 @@ import { LearningPathService } from '../../../core/services/learning-path.servic
 import { StudentLearningMemory } from '../../../core/models/learning-path.models';
 import { PlacementService } from '../../../core/services/placement.service';
 import { PlacementResult } from '../../../core/models/placement.models';
+import { SessionService } from '../../../core/services/session.service';
+import { TodaysSessionResponse } from '../../../core/models/session.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,6 +24,8 @@ export class DashboardComponent implements OnInit {
   notice = signal('');
   memory = signal<StudentLearningMemory | null>(null);
   placementResult = signal<PlacementResult | null>(null);
+  todaysSession = signal<TodaysSessionResponse | null>(null);
+  sessionLoading = signal(false);
 
   readonly howItWorks = [
     { n: 1, text: 'AI generates a realistic workplace scenario for your career and level.' },
@@ -45,6 +49,7 @@ export class DashboardComponent implements OnInit {
     private dashboardService: DashboardService,
     private learningPathService: LearningPathService,
     private placementService: PlacementService,
+    private sessionService: SessionService,
     private authNotice: AuthNoticeService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');
@@ -65,6 +70,9 @@ export class DashboardComponent implements OnInit {
             error: () => this.placementResult.set(null),
           });
         }
+        if (this.hasLessonAccess(d.lifecycleStage)) {
+          this.loadTodaysSession();
+        }
       },
       error: err => {
         this.loading.set(false);
@@ -75,6 +83,29 @@ export class DashboardComponent implements OnInit {
       next: memory => this.memory.set(memory),
       error: () => this.memory.set(null),
     });
+  }
+
+  private loadTodaysSession(): void {
+    this.sessionLoading.set(true);
+    this.sessionService.getToday().subscribe({
+      next: session => {
+        this.todaysSession.set(session);
+        this.sessionLoading.set(false);
+      },
+      error: () => this.sessionLoading.set(false),
+    });
+  }
+
+  lessonButtonLabel(): string {
+    const s = this.todaysSession();
+    if (!s) return 'Start today\'s lesson';
+    if (s.status === 'completed') return 'Review today\'s lesson';
+    if (s.status === 'inProgress') return 'Resume lesson';
+    return 'Start today\'s lesson';
+  }
+
+  private hasLessonAccess(stage: string): boolean {
+    return stage === 'CourseReady' || stage === 'InLesson' || stage === 'ActiveLearning';
   }
 
   primaryMemoryFocus(): string | null {
@@ -96,6 +127,10 @@ export class DashboardComponent implements OnInit {
   isCourseReady(): boolean {
     const stage = this.data()?.lifecycleStage;
     return stage === 'CourseReady' || stage === 'PlacementCompleted';
+  }
+
+  showTodaysLesson(): boolean {
+    return this.hasLessonAccess(this.data()?.lifecycleStage ?? '');
   }
 
   private hasPlacementResultState(stage: string): boolean {

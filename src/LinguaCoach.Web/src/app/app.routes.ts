@@ -142,6 +142,11 @@ export const routes: Routes = [
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
       },
+      {
+        path: 'lesson/:sessionId',
+        canActivate: [placementRequiredRedirectGuard],
+        loadComponent: () => import('./features/lesson/lesson.component').then(m => m.LessonComponent),
+      },
     ],
   },
 

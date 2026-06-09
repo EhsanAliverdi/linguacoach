@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-10
 owner: architecture
 supersedes:
 supersededBy:
@@ -136,8 +136,13 @@ Archived
 | SpeakingRolePlay activity (MVP, fake STT) | ✅ Done |
 | Student learning memory + adaptive path | ✅ Done |
 | Course session & placement architecture | ✅ Designed, not yet implemented |
-| Placement Assessment MVP | ⬜ Next sprint |
-| LearningSession / Today page | ⬜ Phase 2 |
+| Placement Assessment MVP | ✅ Done |
+| LearningSession / Today page — Phase 1 (data layer) | ✅ Done — entities, EF config, migration T32 |
+| LearningSession / Today page — Phase 2 (session generator) | ✅ Done — `SessionGeneratorService`, templates, weak-skill substitution |
+| LearningSession / Today page — Phase 3 (backend endpoints) | ✅ Done — `SessionsController`, lifecycle handlers, 27 integration tests |
+| LearningSession / Today page — Phase 4 (frontend) | ✅ Done — Today's Lesson card, LessonPage, SessionService, 14 e2e tests |
+| LearningSession / Phase 5A (exercise activity wiring — backend) | ✅ Done — `/prepare` endpoint, ExercisePrepareHandler, 16 tests |
+| LearningSession / Phase 5B (frontend wiring + reflection) | ⬜ Next |
 | Exercise Pattern Engine | ⬜ Phase 3 |
 | Practice Gym separation | ⬜ Phase 4 |
 | IFileStorageService / MinIO | ⬜ Phase 5 |

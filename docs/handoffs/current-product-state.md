@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 14:30
+lastUpdated: 2026-06-10
 owner: product
 supersedes:
 supersededBy:
@@ -72,11 +72,61 @@ Placement Assessment MVP is implemented:
 - Frontend shows native `<audio controls>` when server audio is available; graceful fallback if not
 - Transcript hidden by default behind "Show transcript"
 
+## LearningSession data layer (Phase 1 complete — 2026-06-10)
+
+- `LearningSession` and `SessionExercise` domain entities implemented
+- `SessionStatus` and `ExerciseStatus` enums added
+- EF configurations and migration T32 applied (`learning_sessions`, `session_exercises` tables)
+- `LinguaCoachDbContext` updated with `LearningSessions` and `SessionExercises` DbSets
+- 52 new tests added (284 unit, 247 integration — 531 total)
+
+## LearningSession generator (Phase 2 complete — 2026-06-10)
+
+- `ExerciseKind` enum added (`VocabularyWarmup`, `ContextInput`, `ListeningInput`, `ReadingInput`, `WritingTask`, `SpeakingTask`, `Review`)
+- `ISessionGeneratorService` / `SessionGeneratorService` implemented
+- Duration templates: 10 min (3 steps), 15 min (4 steps), 20 min (4 steps), 30 min (5 steps)
+- Weak-skill substitution: Speaking weak → SpeakingTask promoted; Listening weak → ListeningInput enforced
+- Idempotent: calling twice on the same day returns the same session
+- Module progression: advances to next module after 5 completed sessions
+- 65 new tests added in Phase 2 (609 total: 328 unit, 281 integration)
+
+## LearningSession backend endpoints (Phase 3 complete — 2026-06-10)
+
+- `SessionsController` at `src/LinguaCoach.Api/Controllers/SessionsController.cs`
+- Endpoints: `GET /today`, `GET /{id}`, `POST /{id}/start`, `POST /{id}/complete`, `POST /{id}/exercises/{eid}/complete`, `GET /{id}/reflection` (501 stub)
+- `SessionQueryHandler` and `SessionLifecycleHandler` in `LinguaCoach.Infrastructure/Sessions/`
+- Lifecycle transitions: `CourseReady` → `InLesson` (start), `InLesson` → `ActiveLearning` (complete)
+- All operations idempotent; ownership verified on every request
+- 27 new integration tests added in Phase 3 (629 total: 328 unit, 301 integration)
+
+## LearningSession frontend (Phase 4 complete — 2026-06-10)
+
+- Today's Lesson card on dashboard — visible for `CourseReady`, `InLesson`, `ActiveLearning` lifecycle stages
+  - Shows title, duration, skill focus, step count, status badge
+  - Button label adapts: "Start today's lesson" / "Resume lesson" / "Review today's lesson"
+  - Practice Gym remains secondary but visible
+- `LessonComponent` at `/lesson/:sessionId` — Angular standalone component
+  - Session detail loaded from `GET /api/sessions/{id}`
+  - Ordered exercise steps, progress bar, per-step panel with instructions
+  - Placeholder state for steps without activity (next phase wires generation)
+  - Start, complete exercise, complete lesson flows fully wired
+  - Completion summary shown on lesson complete
+- `SessionService` + TypeScript models added to frontend core
+- 14 new Playwright e2e tests — 81/81 pass total (no regressions)
+
+## Exercise activity wiring (Phase 5A complete — 2026-06-10)
+
+- `POST /api/sessions/{sessionId}/exercises/{exerciseId}/prepare` endpoint added
+- Idempotent: calling twice returns the same `LearningActivity`
+- ExerciseKind → ActivityType deterministic mapping: VocabularyWarmup→VocabularyPractice, ContextInput→WritingScenario, ListeningInput→ListeningComprehension, ReadingInput→ReadingTask, WritingTask→WritingScenario, SpeakingTask→SpeakingRolePlay
+- Review step returns a lightweight reflection placeholder (`isReview: true`), no AI generation
+- VocabularyPractice and `ReadingTask` (not yet in `IAiActivityGenerator`) use `SystemFallback` placeholders
+- 16 new integration + unit tests; 645 total (328 unit + 317 integration)
+
 ## Known gaps / not yet built
 
-- No session-based lesson structure (`LearningSession` / `SessionExercise`) — placement is complete, course not yet built
-- No session-based lesson structure (`LearningSession` / `SessionExercise`)
-- No Today page / guided course flow
+- Exercise steps in `LessonComponent` not yet wired to call `/prepare` and launch `ActivityShellComponent` (frontend Phase 5B)
+- Session reflection (`GET /api/sessions/{id}/reflection` returns 501; needs AI prompt key `session_reflection`)
 - No real STT provider (SpeakingRolePlay uses `FakeSpeechToTextService`)
 - No email delivery for temp passwords (admin copies manually)
 - No admin CRUD for career profiles / learning tracks (seed data only)
@@ -86,7 +136,7 @@ See `docs/backlog/deferred-work.md` for the full deferred work list.
 
 ## Next recommended work
 
-1. **Placement Assessment MVP** — 6-section structured assessment, `PlacementAssessment` entity, `PlacementResult` as CEFR source of truth
-2. **Guided Course / LearningSession** — `LearningSession` → `SessionExercise` layer, Today page, ordered session exercises, session reflection
+1. **Wire `LessonComponent` to activities** — call `POST /api/sessions/{id}/exercises/{eid}/prepare` when student opens an exercise step; launch `ActivityShellComponent` with the returned `activityId`; requires `ActivityShellComponent` refactor to accept `sessionId`/`exerciseId` context
+2. **Session reflection AI prompt** — `GET /api/sessions/{id}/reflection` currently returns 501; requires AI prompt key `session_reflection` + service implementation
 
 See `docs/sprints/current-sprint.md` for the active sprint scope.

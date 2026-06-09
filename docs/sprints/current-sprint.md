@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:56
+lastUpdated: 2026-06-10
 owner: product
 supersedes:
 supersededBy:
@@ -14,7 +14,9 @@ Last updated: 2026-06-09
 
 ## Current priority
 
-**Admin UX, Student Management & AI Config Cleanup is complete** (see `docs/sprints/admin-ux-student-management-ai-config-cleanup-sprint.md`). Next priority: **Guided Course (LearningSession / Today page)**.
+**Today's Lesson / Learning Session sprint is active** (see `docs/sprints/2026-06-10-today-lesson-learning-session-sprint.md`).
+
+Admin UX / Student Management / AI Config Cleanup is complete (see `docs/sprints/admin-ux-student-management-ai-config-cleanup-sprint.md`).
 
 ---
 

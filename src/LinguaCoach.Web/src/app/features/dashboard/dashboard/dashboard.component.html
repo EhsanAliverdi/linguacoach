@@ -88,6 +88,47 @@
       </section>
     }
 
+    @if (showTodaysLesson()) {
+      <section class="sp-card" data-testid="dashboard-todays-lesson" style="padding:0;margin-bottom:22px;overflow:hidden;border-color:var(--sp-border2)">
+        <div style="background:var(--sp-grad-cool);padding:20px 22px">
+          <p class="sp-eyebrow" style="color:rgba(255,255,255,.85);margin-bottom:6px">Today's lesson</p>
+          @if (sessionLoading()) {
+            <div style="height:22px;background:rgba(255,255,255,.18);border-radius:8px;width:200px;margin-bottom:8px"></div>
+          } @else if (todaysSession()) {
+            <h2 style="font-size:20px;font-weight:800;color:#fff;line-height:1.2;margin:0 0 4px;max-width:520px">
+              {{ todaysSession()!.title }}
+            </h2>
+            <p style="font-size:13px;color:rgba(255,255,255,.82);margin:0">
+              {{ todaysSession()!.durationMinutes }} min · {{ todaysSession()!.focusSkill }} focus · {{ todaysSession()!.exercises.length }} steps
+            </p>
+          } @else {
+            <h2 style="font-size:20px;font-weight:800;color:#fff;line-height:1.2;margin:0 0 4px">
+              Your lesson is ready
+            </h2>
+          }
+        </div>
+        <div style="padding:14px 22px;background:var(--sp-surface);border-top:1px solid var(--sp-border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          @if (todaysSession()) {
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              @if (todaysSession()!.status === 'completed') {
+                <span data-testid="session-status-badge" style="font-size:11px;font-weight:800;color:var(--sp-success);background:var(--sp-success-soft);border-radius:999px;padding:3px 10px">Completed</span>
+              } @else if (todaysSession()!.status === 'inProgress') {
+                <span data-testid="session-status-badge" style="font-size:11px;font-weight:800;color:var(--sp-vocabulary-ink);background:var(--sp-vocabulary-soft);border-radius:999px;padding:3px 10px">In progress</span>
+              } @else {
+                <span data-testid="session-status-badge" style="font-size:11px;font-weight:800;color:var(--sp-muted);background:var(--sp-canvas2);border-radius:999px;padding:3px 10px">Not started</span>
+              }
+              <span style="font-size:12px;color:var(--sp-muted)">{{ todaysSession()!.topic }}</span>
+            </div>
+          }
+          <a [routerLink]="todaysSession() ? ['/lesson', todaysSession()!.sessionId] : null"
+             data-testid="todays-lesson-cta"
+             style="display:inline-flex;align-items:center;gap:8px;background:var(--sp-writing);color:#fff;border-radius:14px;padding:10px 20px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:var(--sp-sh-sm);white-space:nowrap">
+            {{ lessonButtonLabel() }}
+          </a>
+        </div>
+      </section>
+    }
+
     <section style="overflow:hidden;border-radius:var(--sp-r-xl);box-shadow:var(--sp-sh-lg);margin-bottom:22px" data-testid="dashboard-recommended-next">
       <div style="background:var(--sp-grad-brand);padding:22px 22px 24px">
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px">

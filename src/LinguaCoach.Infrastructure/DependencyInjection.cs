@@ -28,7 +28,9 @@ using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Vocabulary;
 using LinguaCoach.Application.Placement;
+using LinguaCoach.Application.Sessions;
 using LinguaCoach.Infrastructure.Placement;
+using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -119,6 +121,18 @@ public static class DependencyInjection
         // Speaking sessions
         services.AddScoped<ICreateSpeakingSessionHandler, SpeakingSessionHandler>();
         services.AddScoped<ISubmitSpeakingTurnHandler, SpeakingSessionHandler>();
+
+        // Session generator + session handlers
+        services.AddScoped<ISessionGeneratorService, SessionGeneratorService>();
+        services.AddScoped<SessionQueryHandler>();
+        services.AddScoped<IGetTodaysSessionHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
+        services.AddScoped<IGetSessionHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
+        services.AddScoped<SessionLifecycleHandler>();
+        services.AddScoped<IStartSessionHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
+        services.AddScoped<ICompleteSessionHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
+        services.AddScoped<ICompleteExerciseHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
+        services.AddScoped<ExercisePrepareHandler>();
+        services.AddScoped<IPrepareExerciseHandler>(sp => sp.GetRequiredService<ExercisePrepareHandler>());
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();
