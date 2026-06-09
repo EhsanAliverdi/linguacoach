@@ -30,12 +30,13 @@ export class Step4SkillComponent {
   select(value: number): void { this.selected.set(value); }
 
   finish(): void {
-    if (this.selected() === null) return;
     this.submitting.set(true);
     const goal = this.learningGoalText().trim() || undefined;
+    // Default to Writing (0) if no skill tag was explicitly chosen.
+    const skillFocus = this.selected() ?? 0;
     this.onboarding.submitStep({
       step: 'skill',
-      skillFocus: this.selected()!,
+      skillFocus,
       learningGoalDescription: goal,
     }).subscribe({
       next: () => this.router.navigate(['/placement']),

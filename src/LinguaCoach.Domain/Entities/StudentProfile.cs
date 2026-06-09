@@ -7,10 +7,10 @@ namespace LinguaCoach.Domain.Entities;
 /*
  * Onboarding state machine:
  *
- *   NotStarted ──step: Language──► InProgress (LastCompletedStep = None → Language)
- *   InProgress ──step: Track────► InProgress (LastCompletedStep = Language → Track)
- *   InProgress ──step: Career───► InProgress (LastCompletedStep = Track → Career)
- *   InProgress ──step: Skill────► Complete   (LastCompletedStep = Career → Skill)
+ *   NotStarted ──step: Language────► InProgress (LastCompletedStep = None → Language)
+ *   InProgress ──step: Preference──► InProgress (LastCompletedStep = Language → Preference)
+ *   InProgress ──step: Career──────► InProgress (LastCompletedStep = Preference → Career)
+ *   InProgress ──step: Skill───────► Complete   (LastCompletedStep = Career → Skill)
  *   Complete   ──any step───────► DomainException (profile is immutable once complete)
  *
  *   Steps must be completed in order. Attempting step N+2 before step N+1 raises
@@ -84,17 +84,26 @@ public sealed class StudentProfile : BaseEntity
         AdvanceTo(OnboardingStep.Language);
     }
 
+    // Session preference step: student picks their preferred lesson duration.
+    public void SetSessionPreference(int preferredDurationMinutes)
+    {
+        if (preferredDurationMinutes <= 0)
+            throw new ArgumentException("Preferred session duration must be positive.", nameof(preferredDurationMinutes));
+        EnsureStepIsNext(OnboardingStep.Preference);
+
+        PreferredSessionDurationMinutes = preferredDurationMinutes;
+        AdvanceTo(OnboardingStep.Preference);
+    }
+
+    [Obsolete("Use SetSessionPreference. Kept for migration compatibility only.")]
     public void SetLearningTrack(LearningTrack track)
     {
         ArgumentNullException.ThrowIfNull(track);
-        EnsureStepIsNext(OnboardingStep.Track);
-
-        if (LanguagePairId is null || track.LanguagePairId != LanguagePairId)
-            throw new DomainException("Learning track must belong to the student's selected language pair.");
+        EnsureStepIsNext(OnboardingStep.Preference);
 
         LearningTrackId = track.Id;
         LearningTrack = track;
-        AdvanceTo(OnboardingStep.Track);
+        AdvanceTo(OnboardingStep.Preference);
     }
 
     public void SetCareerProfile(CareerProfile profile)

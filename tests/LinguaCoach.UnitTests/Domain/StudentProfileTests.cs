@@ -64,27 +64,25 @@ public sealed class StudentProfileTests
     }
 
     [Fact]
-    public void SetLearningTrack_AfterLanguage_AdvancesToTrackStep()
+    public void SetSessionPreference_AfterLanguage_AdvancesToPreferenceStep()
     {
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
 
-        var track = WorkplaceEnglish(pair);
-        student.SetLearningTrack(track);
+        student.SetSessionPreference(15);
 
-        student.LastCompletedStep.Should().Be(OnboardingStep.Track);
-        student.LearningTrackId.Should().Be(track.Id);
-        student.LearningTrack.Should().BeSameAs(track);
+        student.LastCompletedStep.Should().Be(OnboardingStep.Preference);
+        student.PreferredSessionDurationMinutes.Should().Be(15);
     }
 
     [Fact]
-    public void SetCareerProfile_AfterTrack_AdvancesToCareerStep()
+    public void SetCareerProfile_AfterPreference_AdvancesToCareerStep()
     {
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetSessionPreference(20);
 
         var profile = DocumentController(pair);
         student.SetCareerProfile(profile);
@@ -100,7 +98,7 @@ public sealed class StudentProfileTests
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetSessionPreference(15);
         student.SetCareerProfile(DocumentController(pair));
 
         student.SetSkillFocus(SkillFocus.Writing);
@@ -121,12 +119,12 @@ public sealed class StudentProfileTests
     }
 
     [Fact]
-    public void SetLearningTrack_WithNull_Throws()
+    public void SetSessionPreference_WithZero_Throws()
     {
         var student = new StudentProfile(Guid.NewGuid());
         student.SetLanguagePair(FaEnPair());
-        var act = () => student.SetLearningTrack(null!);
-        act.Should().Throw<ArgumentNullException>();
+        var act = () => student.SetSessionPreference(0);
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -135,7 +133,7 @@ public sealed class StudentProfileTests
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetSessionPreference(15);
         var act = () => student.SetCareerProfile(null!);
         act.Should().Throw<ArgumentNullException>();
     }
@@ -148,7 +146,7 @@ public sealed class StudentProfileTests
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetSessionPreference(15);
         student.SetCareerProfile(DocumentController(pair));
         student.SetSkillFocus(SkillFocus.Writing);
 
@@ -161,19 +159,18 @@ public sealed class StudentProfileTests
     // ── Out-of-order step enforcement ────────────────────────────────────────
 
     [Fact]
-    public void SetTrack_BeforeLanguage_ThrowsOutOfOrder()
+    public void SetPreference_BeforeLanguage_ThrowsOutOfOrder()
     {
         var student = new StudentProfile(Guid.NewGuid());
-        var pair = FaEnPair();
 
         var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
-            () => student.SetLearningTrack(WorkplaceEnglish(pair)));
-        ex.RequestedStep.Should().Be(OnboardingStep.Track);
+            () => student.SetSessionPreference(15));
+        ex.RequestedStep.Should().Be(OnboardingStep.Preference);
         ex.ExpectedStep.Should().Be(OnboardingStep.Language);
     }
 
     [Fact]
-    public void SetCareer_BeforeTrack_ThrowsOutOfOrder()
+    public void SetCareer_BeforePreference_ThrowsOutOfOrder()
     {
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
@@ -182,7 +179,7 @@ public sealed class StudentProfileTests
         var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
             () => student.SetCareerProfile(DocumentController(pair)));
         ex.RequestedStep.Should().Be(OnboardingStep.Career);
-        ex.ExpectedStep.Should().Be(OnboardingStep.Track);
+        ex.ExpectedStep.Should().Be(OnboardingStep.Preference);
     }
 
     [Fact]
@@ -191,7 +188,7 @@ public sealed class StudentProfileTests
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetSessionPreference(15);
 
         var ex = Assert.Throws<OnboardingStepOutOfOrderException>(
             () => student.SetSkillFocus(SkillFocus.Vocabulary));
@@ -223,27 +220,12 @@ public sealed class StudentProfileTests
     // ── Cross-language-pair guard ────────────────────────────────────────────
 
     [Fact]
-    public void SetTrack_FromDifferentLanguagePair_ThrowsDomainException()
-    {
-        var student = new StudentProfile(Guid.NewGuid());
-        var pair = FaEnPair();
-        student.SetLanguagePair(pair);
-
-        // Create a second, different language pair.
-        var otherPair = new LanguagePair(new Language("de", "German", LanguageDirection.Ltr), English());
-        var germanTrack = new LearningTrack("Workplace German", "German for work.", otherPair);
-
-        var act = () => student.SetLearningTrack(germanTrack);
-        act.Should().Throw<DomainException>();
-    }
-
-    [Fact]
     public void SetCareerProfile_FromDifferentLanguagePair_ThrowsDomainException()
     {
         var student = new StudentProfile(Guid.NewGuid());
         var pair = FaEnPair();
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(WorkplaceEnglish(pair));
+        student.SetSessionPreference(15);
 
         var otherPair = new LanguagePair(new Language("de", "German", LanguageDirection.Ltr), English());
         var germanProfile = new CareerProfile("Engineer", "German engineering context.", otherPair);

@@ -213,3 +213,41 @@ Results:
 - `DifficultSituationsText` is persisted but intentionally unused by AI prompts in this sprint.
 - Dashboard result summary depends on `/api/placement/result`; if that endpoint is unavailable, the dashboard falls back to the dashboard CEFR level and hides optional result details.
 - Practice Gym remains a secondary dashboard section until the Today page / `LearningSession` experience replaces the dashboard primary learning entry.
+
+---
+
+## QA Alignment Pass — 2026-06-09
+
+Manual QA via screenshots revealed the following gaps after the above completion record:
+
+### Step 2 — old "Choose your learning track" UI still deployed
+
+The sprint previously left Step 2 as the old track-picker (showing only "Workplace English"). This was replaced with a **lesson duration preference step** (10 / 15 / 20 / 30 minutes) in this pass.
+
+Changes made:
+- `OnboardingStep.Track` renamed to `OnboardingStep.Preference` (integer value unchanged = 2, DB-safe).
+- `StudentProfile.SetSessionPreference(int durationMinutes)` domain method added.
+- `SetSessionPreferenceRequest` application command added.
+- `OnboardingController` handles `"preference"` step; `"track"` step retained as backward-compat only.
+- `OnboardingStepDto.PreferredDurationMinutes` field added.
+- `step2-track` frontend component fully replaced with duration picker UI.
+- `SetPreferenceRequest` TypeScript model replaces `SetTrackRequest`.
+- Onboarding resume component updated: `Track` → `Preference` in step map.
+
+### Step 4 — headline still said "Choose your first skill focus"
+
+Updated to "Why do you want to improve your English?" with helper text and skill tags now clearly secondary (labelled "optional"). Skill tags no longer required to complete step — defaults to Writing if none selected.
+
+### Tests updated
+
+- Unit tests: replaced `SetLearningTrack` with `SetSessionPreference` in domain tests; updated enum pinning test.
+- Integration tests: updated to use `preference` step throughout; added `Post_PreferenceStep_SavesSessionDuration` test.
+- Playwright smoke: updated step 2 interaction and step 4 heading assertions.
+
+### Test results (QA pass)
+
+```
+dotnet test LinguaCoach.slnx   → 242 unit, 234 integration — all passed
+npm run build                   → passed (warnings only)
+npx playwright test             → 62 passed, 1 pre-existing flaky (progress-page strict-mode, unrelated to this change)
+```

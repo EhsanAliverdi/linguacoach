@@ -1,9 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { ReferenceService } from '../../../core/services/reference.service';
 import { OnboardingService } from '../../../core/services/onboarding.service';
-import { LearningTrackDto } from '../../../core/models/reference.models';
+
+interface DurationOption { label: string; minutes: number; hint: string; }
 
 @Component({
   selector: 'app-step2-track',
@@ -11,41 +11,26 @@ import { LearningTrackDto } from '../../../core/models/reference.models';
   imports: [CommonModule, RouterLink],
   templateUrl: './step2-track.component.html',
 })
-export class Step2TrackComponent implements OnInit {
-  tracks = signal<LearningTrackDto[]>([]);
-  selected = signal<string | null>(null);
-  loading = signal(true);
+export class Step2TrackComponent {
+  readonly durations: DurationOption[] = [
+    { label: '10 minutes', minutes: 10, hint: 'Quick daily check-in' },
+    { label: '15 minutes', minutes: 15, hint: 'Focused short practice' },
+    { label: '20 minutes', minutes: 20, hint: 'Balanced daily session' },
+    { label: '30 minutes', minutes: 30, hint: 'Deep practice session' },
+  ];
+
+  selected = signal<number | null>(null);
   submitting = signal(false);
   error = signal('');
-  needsLanguageStep = signal(false);
 
-  constructor(private ref: ReferenceService, private onboarding: OnboardingService, private router: Router) {}
+  constructor(private onboarding: OnboardingService, private router: Router) {}
 
-  ngOnInit(): void {
-    this.onboarding.getStatus().subscribe({
-      next: status => {
-        const languagePairId = status.languagePairId;
-        if (!languagePairId) {
-          this.needsLanguageStep.set(true);
-          this.error.set('Choose your language path before selecting a learning track.');
-          this.loading.set(false);
-          return;
-        }
-        this.ref.getTracks(languagePairId).subscribe({
-          next: tracks => { this.tracks.set(tracks); this.loading.set(false); },
-          error: () => { this.error.set('Could not load tracks.'); this.loading.set(false); },
-        });
-      },
-      error: () => { this.error.set('Could not load your profile.'); this.loading.set(false); },
-    });
-  }
-
-  select(id: string): void { this.selected.set(id); }
+  select(minutes: number): void { this.selected.set(minutes); }
 
   next(): void {
-    if (!this.selected()) return;
+    if (this.selected() === null) return;
     this.submitting.set(true);
-    this.onboarding.submitStep({ step: 'track', learningTrackId: this.selected()! }).subscribe({
+    this.onboarding.submitStep({ step: 'preference', preferredDurationMinutes: this.selected()! }).subscribe({
       next: () => this.router.navigate(['/onboarding/step-3']),
       error: err => { this.submitting.set(false); this.error.set(err.error?.error ?? 'Failed to save.'); },
     });

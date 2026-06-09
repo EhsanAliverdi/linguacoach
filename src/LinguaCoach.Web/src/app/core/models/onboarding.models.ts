@@ -16,9 +16,9 @@ export interface SetLanguageRequest {
   languagePairId: string;
 }
 
-export interface SetTrackRequest {
-  step: 'track';
-  learningTrackId: string;
+export interface SetPreferenceRequest {
+  step: 'preference';
+  preferredDurationMinutes: number;
 }
 
 /** Legacy path: select from a predefined career profile by ID. */
@@ -43,7 +43,7 @@ export interface SetSkillRequest {
 
 export type OnboardingStepRequest =
   | SetLanguageRequest
-  | SetTrackRequest
+  | SetPreferenceRequest
   | SetCareerRequest
   | SetCareerContextRequest
   | SetSkillRequest;

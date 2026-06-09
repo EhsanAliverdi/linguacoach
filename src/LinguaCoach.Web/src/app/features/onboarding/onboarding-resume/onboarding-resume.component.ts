@@ -24,7 +24,7 @@ export class OnboardingResumeComponent implements OnInit {
         const stepMap: Record<string, string> = {
           None: '/onboarding/step-1',
           Language: '/onboarding/step-2',
-          Track: '/onboarding/step-3',
+          Preference: '/onboarding/step-3',
           Career: '/onboarding/step-4',
         };
         const route = stepMap[status.currentStep] ?? '/onboarding/step-1';

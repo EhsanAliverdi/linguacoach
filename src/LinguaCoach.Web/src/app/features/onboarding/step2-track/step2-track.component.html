@@ -1,50 +1,32 @@
 <div class="sp-card">
   <div class="mb-5">
     <p class="sp-eyebrow mb-2">Step 2 of 4</p>
-    <h1 class="text-xl font-bold text-slate-950">Choose your learning track</h1>
-    <p class="mt-2 text-sm leading-6 text-slate-600">Start with the communication setting that matters most for your work.</p>
+    <h1 class="text-xl font-bold text-slate-950">How much time do you want to spend in each lesson?</h1>
+    <p class="mt-2 text-sm leading-6 text-slate-600">We'll use this to build lessons that fit your schedule.</p>
   </div>
 
   @if (error()) {
-    <div class="sp-alert-error mb-5">
-      {{ error() }}
-      @if (needsLanguageStep()) {
-        <a routerLink="/onboarding/step-1" class="mt-2 block font-semibold underline">Go back to language selection</a>
-      }
-    </div>
+    <div class="sp-alert-error mb-5">{{ error() }}</div>
   }
 
-  @if (loading()) {
-    <div class="py-8 text-center">
-      <div class="mx-auto mb-3 h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-      <p class="text-sm text-slate-500">Loading tracks for your language path...</p>
-    </div>
-  } @else if (!needsLanguageStep() && tracks().length === 0) {
-    <div class="sp-alert-warning mb-6">
-      No learning tracks are available for this language path yet. Go back and choose another path, or ask an admin to add a track.
-    </div>
-  } @else {
-    <div class="mb-6 space-y-3">
-      @for (track of tracks(); track track.id) {
-        <button
-          (click)="select(track.id)"
-          [class.ring-2]="selected() === track.id"
-          [class.ring-indigo-500]="selected() === track.id"
-          [class.border-indigo-300]="selected() === track.id"
-          class="sp-option">
-          <span class="block font-semibold text-slate-900">{{ track.name }}</span>
-          <span class="mt-1 block text-sm leading-5 text-slate-600">{{ track.description }}</span>
-        </button>
-      }
-    </div>
-  }
-
-  @if (!loading()) {
-    <div class="flex flex-col gap-3 sm:flex-row">
-      <a routerLink="/onboarding/step-1" class="sp-button-secondary flex-1">Back</a>
-      <button (click)="next()" [disabled]="!selected() || submitting() || tracks().length === 0" class="sp-button-primary flex-1">
-        @if (submitting()) { Saving... } @else { Continue }
+  <div class="mb-6 space-y-3">
+    @for (d of durations; track d.minutes) {
+      <button
+        (click)="select(d.minutes)"
+        [class.ring-2]="selected() === d.minutes"
+        [class.ring-indigo-500]="selected() === d.minutes"
+        [class.border-indigo-300]="selected() === d.minutes"
+        class="sp-option">
+        <span class="block font-semibold text-slate-900">{{ d.label }}</span>
+        <span class="mt-1 block text-sm leading-5 text-slate-600">{{ d.hint }}</span>
       </button>
-    </div>
-  }
+    }
+  </div>
+
+  <div class="flex flex-col gap-3 sm:flex-row">
+    <a routerLink="/onboarding/step-1" class="sp-button-secondary flex-1">Back</a>
+    <button (click)="next()" [disabled]="selected() === null || submitting()" class="sp-button-primary flex-1">
+      @if (submitting()) { Saving... } @else { Continue }
+    </button>
+  </div>
 </div>

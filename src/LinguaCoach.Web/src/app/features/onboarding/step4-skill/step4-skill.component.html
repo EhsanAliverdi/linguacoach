@@ -1,15 +1,17 @@
 <div class="sp-card">
   <div class="mb-5">
     <p class="sp-eyebrow mb-2">Step 4 of 4</p>
-    <h1 class="text-xl font-bold text-slate-950">Choose your first skill focus</h1>
-    <p class="mt-2 text-sm leading-6 text-slate-600">Pick the area where better workplace communication would help most right now.</p>
+    <h1 class="text-xl font-bold text-slate-950">Why do you want to improve your English?</h1>
+    <p class="mt-2 text-sm leading-6 text-slate-600">Tell us about real situations you find difficult. You can write in your own language too.</p>
   </div>
 
   @if (error()) {
     <div class="sp-alert-error mb-5">{{ error() }}</div>
   }
 
-  <div class="mb-6 space-y-3">
+  <div class="mb-6">
+    <p class="mb-3 text-sm font-semibold text-slate-700">Which area matters most to you? <span class="font-normal text-slate-500">(optional)</span></p>
+    <div class="space-y-3">
     @for (skill of skills; track skill.value) {
       <button
         (click)="select(skill.value)"
@@ -21,6 +23,7 @@
         <span class="mt-1 block text-sm leading-5 text-slate-600">{{ skill.description }}</span>
       </button>
     }
+    </div>
   </div>
 
   <!-- Learning goal textarea — any language accepted -->
@@ -43,7 +46,7 @@
 
   <div class="flex flex-col gap-3 sm:flex-row">
     <a routerLink="/onboarding/step-3" class="sp-button-secondary flex-1">Back</a>
-    <button (click)="finish()" [disabled]="selected() === null || submitting()" class="sp-button-primary flex-1">
+    <button (click)="finish()" [disabled]="submitting()" class="sp-button-primary flex-1">
       @if (submitting()) { Finishing... } @else { Complete setup }
     </button>
   </div>

@@ -9,6 +9,11 @@ public abstract record OnboardingStepRequest(Guid UserId);
 public sealed record SetLanguageRequest(Guid UserId, Guid LanguagePairId)
     : OnboardingStepRequest(UserId);
 
+// Session preference step: student sets their preferred lesson duration.
+public sealed record SetSessionPreferenceRequest(Guid UserId, int PreferredDurationMinutes)
+    : OnboardingStepRequest(UserId);
+
+[Obsolete("Use SetSessionPreferenceRequest. Kept for test backward compatibility.")]
 public sealed record SetTrackRequest(Guid UserId, Guid LearningTrackId)
     : OnboardingStepRequest(UserId);
 

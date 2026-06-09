@@ -8,7 +8,7 @@ public enum OnboardingStep
 {
     None = 0,
     Language = 1,
-    Track = 2,
+    Preference = 2,  // lesson duration preference (replaces old Track step)
     Career = 3,
     Skill = 4
 }

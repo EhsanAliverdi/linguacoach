@@ -32,12 +32,19 @@ public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQue
                 profile.SetLanguagePair(pair);
                 break;
             }
+            case SetSessionPreferenceRequest r:
+                profile.SetSessionPreference(r.PreferredDurationMinutes);
+                break;
+#pragma warning disable CS0612
             case SetTrackRequest r:
             {
                 var track = await _db.LearningTracks
                     .FirstOrDefaultAsync(t => t.Id == r.LearningTrackId, ct)
                     ?? throw new InvalidOperationException("Learning track not found.");
+#pragma warning disable CS0618
                 profile.SetLearningTrack(track);
+#pragma warning restore CS0618
+#pragma warning restore CS0612
                 break;
             }
             case SetCareerRequest r:

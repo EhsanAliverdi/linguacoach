@@ -97,7 +97,7 @@ async function mockApi(page: Page) {
     const body = route.request().postDataJSON() as { step: string };
     onboardingStep =
       body.step === 'language' ? 'Language' :
-      body.step === 'track' ? 'Track' :
+      body.step === 'preference' ? 'Preference' :
       body.step === 'career' ? 'Career' :
       'Skill';
 
@@ -523,15 +523,15 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.getByRole('button', { name: /Persian to English/i }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Choose your learning track' })).toBeVisible();
-  await page.getByRole('button', { name: /Workplace English/i }).click();
+  await expect(page.getByRole('heading', { name: /How much time/i })).toBeVisible();
+  await page.getByRole('button', { name: /15 minutes/i }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page.getByRole('heading', { name: /job, field, or target workplace context/i })).toBeVisible();
   await page.getByLabel('Your job, field, or workplace context').fill('Junior Software Engineer');
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Choose your first skill focus' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Why do you want to improve your English/i })).toBeVisible();
   await page.getByRole('button', { name: /Listening/i }).click();
   await page.getByRole('textbox').fill('میخوام بتونم ایمیل رسمی بنویسم');
   await page.getByRole('button', { name: 'Complete setup' }).click();

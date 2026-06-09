@@ -66,12 +66,13 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
     {
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"full_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-        var (langPairId, trackId, careerId) = await GetSeedIdsAsync();
+        var langPairId = await GetFaEnPairIdAsync();
+        var careerId = await GetCareerIdAsync();
 
         await client.PatchAsJsonAsync("/api/onboarding",
             new { step = "language", languagePairId = langPairId });
         await client.PatchAsJsonAsync("/api/onboarding",
-            new { step = "track", learningTrackId = trackId });
+            new { step = "preference", preferredDurationMinutes = 15 });
         await client.PatchAsJsonAsync("/api/onboarding",
             new { step = "career", careerProfileId = careerId });
         var last = await client.PatchAsJsonAsync("/api/onboarding",
@@ -84,14 +85,36 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
+    public async Task Post_PreferenceStep_SavesSessionDuration()
+    {
+        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync($"pref_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+        var langPairId = await GetFaEnPairIdAsync();
+
+        await client.PostAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
+
+        var response = await client.PostAsJsonAsync("/api/onboarding",
+            new { step = "preference", preferredDurationMinutes = 20 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Preference", body.GetProperty("lastCompletedStep").GetString());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        Assert.Equal(20, profile.PreferredSessionDurationMinutes);
+    }
+
+    [Fact]
     public async Task Post_CareerStep_WithFreeText_AdvancesAndPersistsCareerContext()
     {
         var (token, userId) = await _factory.CreateStudentAndGetTokenAsync($"career_text_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-        var (langPairId, trackId, _) = await GetSeedIdsAsync();
+        var langPairId = await GetFaEnPairIdAsync();
 
         await client.PostAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
-        await client.PostAsJsonAsync("/api/onboarding", new { step = "track", learningTrackId = trackId });
+        await client.PostAsJsonAsync("/api/onboarding", new { step = "preference", preferredDurationMinutes = 15 });
 
         var response = await client.PostAsJsonAsync("/api/onboarding",
             new { step = "career", careerContext = "Nurse" });
@@ -113,10 +136,11 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
     {
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"career_profile_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-        var (langPairId, trackId, careerId) = await GetSeedIdsAsync();
+        var langPairId = await GetFaEnPairIdAsync();
+        var careerId = await GetCareerIdAsync();
 
         await client.PostAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
-        await client.PostAsJsonAsync("/api/onboarding", new { step = "track", learningTrackId = trackId });
+        await client.PostAsJsonAsync("/api/onboarding", new { step = "preference", preferredDurationMinutes = 15 });
 
         var response = await client.PostAsJsonAsync("/api/onboarding",
             new { step = "career", careerProfileId = careerId });
@@ -131,10 +155,11 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
     {
         var (token, userId) = await _factory.CreateStudentAndGetTokenAsync($"skill_listening_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-        var (langPairId, trackId, careerId) = await GetSeedIdsAsync();
+        var langPairId = await GetFaEnPairIdAsync();
+        var careerId = await GetCareerIdAsync();
 
         await client.PostAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
-        await client.PostAsJsonAsync("/api/onboarding", new { step = "track", learningTrackId = trackId });
+        await client.PostAsJsonAsync("/api/onboarding", new { step = "preference", preferredDurationMinutes = 15 });
         await client.PostAsJsonAsync("/api/onboarding", new { step = "career", careerProfileId = careerId });
 
         var response = await client.PostAsJsonAsync("/api/onboarding",
@@ -156,10 +181,11 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
         const string farsiGoal = "میخوام بتونم ایمیل رسمی بنویسم";
         var (token, userId) = await _factory.CreateStudentAndGetTokenAsync($"skill_farsi_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-        var (langPairId, trackId, careerId) = await GetSeedIdsAsync();
+        var langPairId = await GetFaEnPairIdAsync();
+        var careerId = await GetCareerIdAsync();
 
         await client.PostAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
-        await client.PostAsJsonAsync("/api/onboarding", new { step = "track", learningTrackId = trackId });
+        await client.PostAsJsonAsync("/api/onboarding", new { step = "preference", preferredDurationMinutes = 15 });
         await client.PostAsJsonAsync("/api/onboarding", new { step = "career", careerProfileId = careerId });
 
         var response = await client.PostAsJsonAsync("/api/onboarding",
@@ -176,14 +202,13 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
     // ── PATCH /api/onboarding — out-of-order ─────────────────────────────────
 
     [Fact]
-    public async Task Patch_TrackBeforeLanguage_Returns400()
+    public async Task Patch_PreferenceBeforeLanguage_Returns400()
     {
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"ooo_{Guid.NewGuid():N}@test.com");
-        var (_, trackId, _) = await GetSeedIdsAsync();
         var client = ClientWithToken(token);
 
         var response = await client.PatchAsJsonAsync("/api/onboarding",
-            new { step = "track", learningTrackId = trackId });
+            new { step = "preference", preferredDurationMinutes = 15 });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -205,10 +230,11 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
     {
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"dash_done_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-        var (langPairId, trackId, careerId) = await GetSeedIdsAsync();
+        var langPairId = await GetFaEnPairIdAsync();
+        var careerId = await GetCareerIdAsync();
 
         await client.PatchAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
-        await client.PatchAsJsonAsync("/api/onboarding", new { step = "track", learningTrackId = trackId });
+        await client.PatchAsJsonAsync("/api/onboarding", new { step = "preference", preferredDurationMinutes = 15 });
         await client.PatchAsJsonAsync("/api/onboarding", new { step = "career", careerProfileId = careerId });
         await client.PatchAsJsonAsync("/api/onboarding", new { step = "skill", skillFocus = 0 });
 
@@ -239,6 +265,14 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
         return db.LanguagePairs.First().Id;
     }
 
+    private async Task<Guid> GetCareerIdAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        return db.CareerProfiles.First().Id;
+    }
+
+    // Kept for any remaining backward-compat test helpers.
     private async Task<(Guid LangPairId, Guid TrackId, Guid CareerId)> GetSeedIdsAsync()
     {
         using var scope = _factory.Services.CreateScope();

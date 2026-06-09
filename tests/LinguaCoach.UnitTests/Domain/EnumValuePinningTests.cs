@@ -23,7 +23,7 @@ public sealed class EnumValuePinningTests
 
     [Fact] public void OnboardingStep_None_IsZero()     => Assert.Equal(0, (int)OnboardingStep.None);
     [Fact] public void OnboardingStep_Language_IsOne()  => Assert.Equal(1, (int)OnboardingStep.Language);
-    [Fact] public void OnboardingStep_Track_IsTwo()     => Assert.Equal(2, (int)OnboardingStep.Track);
+    [Fact] public void OnboardingStep_Preference_IsTwo() => Assert.Equal(2, (int)OnboardingStep.Preference);
     [Fact] public void OnboardingStep_Career_IsThree()  => Assert.Equal(3, (int)OnboardingStep.Career);
     [Fact] public void OnboardingStep_Skill_IsFour()    => Assert.Equal(4, (int)OnboardingStep.Skill);
     [Fact] public void OnboardingStep_HasExactlyFiveValues() => Assert.Equal(5, Enum.GetValues<OnboardingStep>().Length);
