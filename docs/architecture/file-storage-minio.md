@@ -1,3 +1,11 @@
+---
+status: current
+lastUpdated: 2026-06-09 13:11
+owner: architecture
+supersedes:
+supersededBy:
+---
+
 # File Storage / MinIO Architecture
 
 ## Problem

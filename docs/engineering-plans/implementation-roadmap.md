@@ -1,3 +1,11 @@
+---
+status: historical
+lastUpdated: 2026-06-09 13:11
+owner: engineering
+supersedes:
+supersededBy: docs/architecture/README.md
+---
+
 # LinguaCoach — Implementation Roadmap
 
 > **HISTORICAL DOCUMENT — Not the current source of truth.**

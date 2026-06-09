@@ -1,6 +1,41 @@
+---
+status: current
+lastUpdated: 2026-06-09 13:11
+owner: architecture
+supersedes:
+supersededBy:
+---
+
 # Architecture Documentation — Source of Truth Map
 
 This file explains which documentation is authoritative and how to resolve conflicts.
+
+---
+
+## Source-of-truth metadata
+
+Major docs should include:
+
+```yaml
+---
+status: current | draft | historical | superseded
+lastUpdated: YYYY-MM-DD HH:mm
+owner: product | architecture | engineering | qa | deployment
+supersedes:
+supersededBy:
+---
+```
+
+Agents should use this metadata to decide which docs are current.
+
+Conflict resolution order:
+
+1. `AGENTS.md`
+2. `docs/architecture/README.md`
+3. docs marked `current`
+4. newer `lastUpdated`
+5. latest sprint docs
+6. historical/superseded docs as context only
 
 ---
 
@@ -9,11 +44,11 @@ This file explains which documentation is authoritative and how to resolve confl
 When any two docs disagree, prefer the source higher in this list:
 
 1. **AGENTS.md** — standing rules for all coding agents
-2. **Current architecture docs** (this folder, listed below)
-3. **docs/backlog/product-backlog.md** — current implementation state
-4. **Latest sprint docs** — what was decided and built most recently
-5. **Older sprint docs** — historical context only
-6. **docs/engineering-plans/implementation-roadmap.md** — original MVP task breakdown, now historical
+2. **docs/architecture/README.md** — source-of-truth map and metadata rules
+3. **Docs marked `current`** in source-of-truth metadata
+4. **Newer `lastUpdated` values** when docs have the same status
+5. **Latest sprint docs** — what was decided and built most recently
+6. **Historical or superseded docs** — context only
 
 ---
 

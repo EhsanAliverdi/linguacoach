@@ -1,3 +1,11 @@
+---
+status: current
+lastUpdated: 2026-06-09 13:11
+owner: product
+supersedes:
+supersededBy:
+---
+
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-09

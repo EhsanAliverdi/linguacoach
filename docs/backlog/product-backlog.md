@@ -1,8 +1,24 @@
-﻿# SpeakPath Product Backlog
+---
+status: current
+lastUpdated: 2026-06-09 13:11
+owner: product
+supersedes:
+supersededBy:
+---
+
+# SpeakPath Product Backlog
 
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Documentation Governance `Done`
+
+- [x] Documentation impact review rule for all code changes. `Done`
+  - AGENTS.md now requires a documentation impact review in every code-change final report.
+  - Major source-of-truth docs now carry freshness metadata.
 
 ---
 

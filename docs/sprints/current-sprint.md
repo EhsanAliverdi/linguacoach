@@ -1,4 +1,12 @@
-﻿# Current Sprint â€” SpeakPath
+---
+status: current
+lastUpdated: 2026-06-09 13:11
+owner: product
+supersedes:
+supersededBy:
+---
+
+# Current Sprint â€” SpeakPath
 
 Last updated: 2026-06-09
 
@@ -7,6 +15,10 @@ Last updated: 2026-06-09
 ## Current priority
 
 **Onboarding & Post-Placement UX Alignment is complete** (see `docs/sprints/onboarding-post-placement-ux-alignment-sprint.md`). Next priority: **Guided Course (LearningSession / Today page)**.
+
+---
+
+Documentation governance cleanup completed on 2026-06-09: every code change now requires a documentation impact review, final reports must include documentation impact details, and selected source-of-truth docs carry freshness metadata.
 
 ---
 

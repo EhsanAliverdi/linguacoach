@@ -329,6 +329,88 @@ Root-level markdown files are limited to:
 
 All other documentation must live under `/docs`. See `docs/README.md` for the folder map.
 
+## Mandatory Documentation Impact Review
+
+Every code change requires a documentation impact review.
+
+Before reporting completion, agents must answer:
+
+1. Did this change alter product behaviour, user flow, API contract, database model, lifecycle, architecture, tests, deployment, security, AI prompts, or agent workflow?
+2. Which source-of-truth docs are affected?
+3. Were the affected docs updated in this change?
+4. If no docs were updated, why was no documentation update needed?
+
+This must be included in the final report.
+
+A code task is not complete until the documentation impact review is done.
+
+Agents must not update every document blindly.
+Agents must update the relevant documents only.
+
+If implementation changes the system and docs still describe the old behaviour, the task is incomplete.
+
+Examples:
+
+| Code change | Required documentation action |
+|---|---|
+| New/changed student flow | Update current sprint doc and current product state/handoff |
+| New/changed API endpoint | Update sprint doc and relevant architecture/API doc |
+| New/changed DB entity/migration | Update sprint doc and relevant architecture doc |
+| New lifecycle stage or transition | Update lifecycle/placement/session architecture docs |
+| New AI prompt or provider behaviour | Update AI/prompt architecture or sprint doc |
+| New frontend route/page/guard | Update sprint doc and relevant UI/flow doc |
+| New test strategy or QA finding | Update `docs/testing/` or `docs/qa/` |
+| Completed/deferred work | Update backlog |
+| New review/engineering decision | Save review under `docs/reviews/` |
+
+## Documentation Freshness and Timestamp Rule
+
+Major project docs must include metadata near the top so agents can judge freshness.
+
+Use this metadata block:
+
+```yaml
+---
+status: current | draft | historical | superseded
+lastUpdated: YYYY-MM-DD HH:mm
+owner: product | architecture | engineering | qa | deployment
+supersedes:
+supersededBy:
+---
+```
+
+Rules:
+
+* `lastUpdated` must use Sydney local time unless the doc already uses UTC.
+* When a doc is substantially updated, update its `lastUpdated` value.
+* When a doc is no longer the source of truth, mark it `historical` or `superseded`.
+* Do not delete old docs just because they are stale.
+* Do not mass-edit every doc during normal feature work.
+* For this cleanup task only, add metadata to the main existing source-of-truth docs.
+
+Agents must prefer:
+
+1. `AGENTS.md`
+2. `docs/architecture/README.md`
+3. docs marked `current`
+4. newer `lastUpdated`
+5. latest sprint docs
+6. docs marked `historical` or `superseded` only as context
+
+## Required Final Report Documentation Section
+
+Every agent completion report must include:
+
+```text
+Documentation impact:
+- Docs reviewed:
+- Docs updated:
+- Docs intentionally not updated:
+- Reason:
+```
+
+If code changed and this section is missing, the work is incomplete.
+
 ## Reading Order
 
 Before planning or implementing work, agents must read:

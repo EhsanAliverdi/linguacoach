@@ -91,6 +91,26 @@ A review or plan is not complete until it is saved in the repo and linked or ref
 
 ---
 
+## Documentation impact
+
+Claude Code must perform a documentation impact review for every code change.
+
+Before reporting completion, include:
+
+```text
+Documentation impact:
+- Docs reviewed:
+- Docs updated:
+- Docs intentionally not updated:
+- Reason:
+```
+
+If code changes product behaviour, user flow, API contract, database model, lifecycle, architecture, tests, deployment, security, AI prompts, or agent workflow, update the relevant docs in the same change.
+
+For full rules, see `AGENTS.md`.
+
+---
+
 ## Important
 
 Chat output is not a durable project record.
