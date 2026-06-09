@@ -7,6 +7,7 @@ public sealed record DashboardResult(
     string CareerProfileName,
     string? CefrLevel,
     string Message,
+    string LifecycleStage = "CourseReady",
     DashboardLearningPathSummary? LearningPath = null,
     DashboardActivityStats? ActivityStats = null,
     DashboardFocusArea? CurrentFocus = null,

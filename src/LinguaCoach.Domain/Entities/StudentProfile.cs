@@ -56,6 +56,10 @@ public sealed class StudentProfile : BaseEntity
     public string? CareerContext { get; private set; }
     public string? LearningGoal { get; private set; }
 
+    // ── Student-set onboarding goal fields (T31) ────────────────────────────
+    public string? LearningGoalDescription { get; private set; }
+    public string? DifficultSituationsText { get; private set; }
+
     private StudentProfile() { }
 
     public StudentProfile(Guid userId)
@@ -111,6 +115,29 @@ public sealed class StudentProfile : BaseEntity
         EnsureStepIsNext(OnboardingStep.Skill);
 
         SkillFocus = skillFocus;
+        AdvanceTo(OnboardingStep.Skill);
+        OnboardingStatus = OnboardingStatus.Complete;
+    }
+
+    // Free-text career path: does not require a CareerProfile FK.
+    public void SetCareerContextText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) throw new ArgumentException("Career context text is required.", nameof(text));
+        EnsureStepIsNext(OnboardingStep.Career);
+
+        CareerContext = text.Trim();
+        // CareerProfileId intentionally left null for free-text path.
+        AdvanceTo(OnboardingStep.Career);
+    }
+
+    // Skill step that also captures student-authored learning goals (any language).
+    public void SetSkillAndGoal(SkillFocus skillFocus, string? learningGoalDescription, string? difficultSituationsText)
+    {
+        EnsureStepIsNext(OnboardingStep.Skill);
+
+        SkillFocus = skillFocus;
+        LearningGoalDescription = string.IsNullOrWhiteSpace(learningGoalDescription) ? null : learningGoalDescription.Trim();
+        DifficultSituationsText = string.IsNullOrWhiteSpace(difficultSituationsText) ? null : difficultSituationsText.Trim();
         AdvanceTo(OnboardingStep.Skill);
         OnboardingStatus = OnboardingStatus.Complete;
     }

@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { OnboardingService } from '../../../core/services/onboarding.service';
 
@@ -8,7 +9,7 @@ interface SkillOption { label: string; description: string; value: number; }
 @Component({
   selector: 'app-step4-skill',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './step4-skill.component.html',
 })
 export class Step4SkillComponent {
@@ -16,9 +17,11 @@ export class Step4SkillComponent {
     { label: 'Writing', description: 'Emails, reports, and professional documents.', value: 0 },
     { label: 'Speaking', description: 'Meetings, presentations, and conversations.', value: 1 },
     { label: 'Vocabulary', description: 'Role-specific terms and phrases.', value: 2 },
+    { label: 'Listening', description: 'Comprehension, podcasts, and meeting audio.', value: 3 },
   ];
 
   selected = signal<number | null>(null);
+  learningGoalText = signal('');
   submitting = signal(false);
   error = signal('');
 
@@ -29,8 +32,13 @@ export class Step4SkillComponent {
   finish(): void {
     if (this.selected() === null) return;
     this.submitting.set(true);
-    this.onboarding.submitStep({ step: 'skill', skillFocus: this.selected()! }).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+    const goal = this.learningGoalText().trim() || undefined;
+    this.onboarding.submitStep({
+      step: 'skill',
+      skillFocus: this.selected()!,
+      learningGoalDescription: goal,
+    }).subscribe({
+      next: () => this.router.navigate(['/placement']),
       error: err => { this.submitting.set(false); this.error.set(err.error?.error ?? 'Failed to save.'); },
     });
   }

@@ -1,4 +1,4 @@
-# Current Sprint — SpeakPath
+﻿# Current Sprint â€” SpeakPath
 
 Last updated: 2026-06-09
 
@@ -6,7 +6,7 @@ Last updated: 2026-06-09
 
 ## Current priority
 
-**Placement Assessment MVP**, then **Guided Course (LearningSession / Today page)**.
+**Onboarding & Post-Placement UX Alignment is complete** (see `docs/sprints/onboarding-post-placement-ux-alignment-sprint.md`). Next priority: **Guided Course (LearningSession / Today page)**.
 
 ---
 
@@ -14,9 +14,11 @@ Last updated: 2026-06-09
 
 All four activity types (WritingScenario, ListeningComprehension, VocabularyPractice, SpeakingRolePlay) are implemented and verified end-to-end.
 
-The architecture redesign sprint (course-session-placement-redesign-sprint) defined the new learning model and placement assessment model. No large code changes were made in that sprint — it was a planning/architecture sprint.
+Onboarding now hands students to placement directly. The dashboard is lifecycle-aware: placement-required students see a placement CTA, course-ready students can see their starting-level summary, and Practice Gym is secondary on-demand practice.
 
-The next phase is structural: placement → guided sessions → exercise pattern engine.
+The architecture redesign sprint (course-session-placement-redesign-sprint) defined the new learning model and placement assessment model. No large code changes were made in that sprint â€” it was a planning/architecture sprint.
+
+The next phase is structural: placement â†’ guided sessions â†’ exercise pattern engine.
 
 ---
 
@@ -24,7 +26,7 @@ The next phase is structural: placement → guided sessions → exercise pattern
 
 - `PlacementAssessment` entity and 6-section structured assessment flow
 - `PlacementResult` as the source of truth for CEFR level and per-skill levels
-- Self-reported level from onboarding is temporary only — `PlacementResult` supersedes it
+- Self-reported level from onboarding is temporary only â€” `PlacementResult` supersedes it
 - First `LearningPath` and `LearningSession` generated after placement completes
 - Today page showing the student's current session
 - Ordered `SessionExercise` steps within a session

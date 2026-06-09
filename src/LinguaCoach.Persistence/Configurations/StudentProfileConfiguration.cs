@@ -38,6 +38,10 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         builder.Property(sp => sp.CareerContext).HasColumnName("career_context").HasMaxLength(500);
         builder.Property(sp => sp.LearningGoal).HasColumnName("learning_goal").HasMaxLength(500);
 
+        // T31 — student-set onboarding goal fields
+        builder.Property(sp => sp.LearningGoalDescription).HasColumnName("learning_goal_description").HasMaxLength(1000);
+        builder.Property(sp => sp.DifficultSituationsText).HasColumnName("difficult_situations_text").HasMaxLength(1000);
+
         builder.HasOne(sp => sp.LanguagePair)
             .WithMany()
             .HasForeignKey(sp => sp.LanguagePairId)

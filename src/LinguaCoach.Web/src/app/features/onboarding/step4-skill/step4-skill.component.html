@@ -23,6 +23,24 @@
     }
   </div>
 
+  <!-- Learning goal textarea — any language accepted -->
+  <div class="mb-6">
+    <label class="block text-sm font-semibold text-slate-800 mb-1">
+      Why do you want to improve your English?
+      <span class="font-normal text-slate-500">(optional)</span>
+    </label>
+    <p class="text-xs text-slate-500 mb-2">
+      Tell us about real situations you find difficult. You can write in your own language too.
+    </p>
+    <textarea
+      rows="3"
+      [ngModel]="learningGoalText()"
+      (ngModelChange)="learningGoalText.set($event)"
+      placeholder="e.g. I struggle when presenting in meetings. / میخوام بتونم ایمیل رسمی بنویسم."
+      class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
+    ></textarea>
+  </div>
+
   <div class="flex flex-col gap-3 sm:flex-row">
     <a routerLink="/onboarding/step-3" class="sp-button-secondary flex-1">Back</a>
     <button (click)="finish()" [disabled]="selected() === null || submitting()" class="sp-button-primary flex-1">

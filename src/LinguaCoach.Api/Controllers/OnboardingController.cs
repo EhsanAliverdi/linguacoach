@@ -22,6 +22,7 @@ public sealed class OnboardingController : ControllerBase
     }
 
     [HttpPatch]
+    [HttpPost]
     public async Task<IActionResult> Step([FromBody] OnboardingStepDto dto, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
@@ -35,10 +36,14 @@ public sealed class OnboardingController : ControllerBase
                     new SetLanguageRequest(userId, dto.LanguagePairId.Value),
                 "track" when dto.LearningTrackId.HasValue =>
                     new SetTrackRequest(userId, dto.LearningTrackId.Value),
+                // Free-text career path takes priority when CareerContext is provided.
+                "career" when dto.CareerContext is { Length: > 0 } =>
+                    new SetCareerContextTextRequest(userId, dto.CareerContext),
                 "career" when dto.CareerProfileId.HasValue =>
                     new SetCareerRequest(userId, dto.CareerProfileId.Value),
+                // Skill step with optional learning goal fields.
                 "skill" when dto.SkillFocus.HasValue =>
-                    new SetSkillRequest(userId, dto.SkillFocus.Value),
+                    new SetSkillGoalRequest(userId, dto.SkillFocus.Value, dto.LearningGoalDescription, dto.DifficultSituationsText),
                 _ => null!
             };
 
@@ -83,5 +88,8 @@ public sealed class OnboardingStepDto
     public Guid? LanguagePairId { get; set; }
     public Guid? LearningTrackId { get; set; }
     public Guid? CareerProfileId { get; set; }
+    public string? CareerContext { get; set; }
     public SkillFocus? SkillFocus { get; set; }
+    public string? LearningGoalDescription { get; set; }
+    public string? DifficultSituationsText { get; set; }
 }

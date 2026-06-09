@@ -1,51 +1,41 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { OnboardingService } from '../../../core/services/onboarding.service';
-import { ReferenceService } from '../../../core/services/reference.service';
-import { CareerProfileDto } from '../../../core/models/reference.models';
+
+const SUGGESTIONS = [
+  'Junior software engineer',
+  'Project planner',
+  'Nurse',
+  'Customer support officer',
+  'Document controller',
+];
 
 @Component({
   selector: 'app-step3-career',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './step3-career.component.html',
 })
-export class Step3CareerComponent implements OnInit {
-  careers = signal<CareerProfileDto[]>([]);
-  selected = signal<string | null>(null);
-  loading = signal(true);
+export class Step3CareerComponent {
+  careerText = signal('');
   submitting = signal(false);
   error = signal('');
-  needsLanguageStep = signal(false);
 
-  constructor(private ref: ReferenceService, private onboarding: OnboardingService, private router: Router) {}
+  readonly suggestions = SUGGESTIONS;
 
-  ngOnInit(): void {
-    this.onboarding.getStatus().subscribe({
-      next: status => {
-        const languagePairId = status.languagePairId;
-        if (!languagePairId) {
-          this.needsLanguageStep.set(true);
-          this.error.set('Choose your language path before selecting a career context.');
-          this.loading.set(false);
-          return;
-        }
-        this.ref.getCareerProfiles(languagePairId).subscribe({
-          next: careers => { this.careers.set(careers); this.loading.set(false); },
-          error: () => { this.error.set('Could not load career profiles.'); this.loading.set(false); },
-        });
-      },
-      error: () => { this.error.set('Could not load your profile.'); this.loading.set(false); },
-    });
+  constructor(private onboarding: OnboardingService, private router: Router) {}
+
+  applySuggestion(text: string): void {
+    this.careerText.set(text);
   }
 
-  select(id: string): void { this.selected.set(id); }
-
   next(): void {
-    if (!this.selected()) return;
+    const text = this.careerText().trim();
+    if (!text) return;
     this.submitting.set(true);
-    this.onboarding.submitStep({ step: 'career', careerProfileId: this.selected()! }).subscribe({
+    this.onboarding.submitStep({ step: 'career', careerContext: text }).subscribe({
       next: () => this.router.navigate(['/onboarding/step-4']),
       error: err => { this.submitting.set(false); this.error.set(err.error?.error ?? 'Failed to save.'); },
     });

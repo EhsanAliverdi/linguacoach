@@ -31,5 +31,6 @@ public sealed class EnumValuePinningTests
     [Fact] public void SkillFocus_Writing_IsZero()    => Assert.Equal(0, (int)SkillFocus.Writing);
     [Fact] public void SkillFocus_Speaking_IsOne()    => Assert.Equal(1, (int)SkillFocus.Speaking);
     [Fact] public void SkillFocus_Vocabulary_IsTwo()  => Assert.Equal(2, (int)SkillFocus.Vocabulary);
-    [Fact] public void SkillFocus_HasExactlyThreeValues() => Assert.Equal(3, Enum.GetValues<SkillFocus>().Length);
+    [Fact] public void SkillFocus_Listening_IsThree() => Assert.Equal(3, (int)SkillFocus.Listening);
+    [Fact] public void SkillFocus_HasExactlyFourValues() => Assert.Equal(4, Enum.GetValues<SkillFocus>().Length);
 }

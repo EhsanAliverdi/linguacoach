@@ -32,6 +32,7 @@ public sealed class DashboardController : ControllerBase
                 careerProfile = result.CareerProfileName,
                 cefrLevel = result.CefrLevel,
                 message = result.Message,
+                lifecycleStage = result.LifecycleStage,
                 activityStats = result.ActivityStats is null ? null : new
                 {
                     activitiesCompleted = result.ActivityStats.ActivitiesCompleted,

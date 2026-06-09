@@ -6,6 +6,8 @@ import { AuthNoticeService } from '../../../core/services/auth-notice.service';
 import { DashboardResponse } from '../../../core/models/dashboard.models';
 import { LearningPathService } from '../../../core/services/learning-path.service';
 import { StudentLearningMemory } from '../../../core/models/learning-path.models';
+import { PlacementService } from '../../../core/services/placement.service';
+import { PlacementResult } from '../../../core/models/placement.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,6 +21,7 @@ export class DashboardComponent implements OnInit {
   error = signal('');
   notice = signal('');
   memory = signal<StudentLearningMemory | null>(null);
+  placementResult = signal<PlacementResult | null>(null);
 
   readonly howItWorks = [
     { n: 1, text: 'AI generates a realistic workplace scenario for your career and level.' },
@@ -41,6 +44,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     private dashboardService: DashboardService,
     private learningPathService: LearningPathService,
+    private placementService: PlacementService,
     private authNotice: AuthNoticeService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');
@@ -52,7 +56,16 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.dashboardService.getDashboard().subscribe({
-      next: d => { this.data.set(d); this.loading.set(false); },
+      next: d => {
+        this.data.set(d);
+        this.loading.set(false);
+        if (this.hasPlacementResultState(d.lifecycleStage)) {
+          this.placementService.getResult().subscribe({
+            next: result => this.placementResult.set(result),
+            error: () => this.placementResult.set(null),
+          });
+        }
+      },
       error: err => {
         this.loading.set(false);
         this.error.set(err.error?.error ?? 'Could not load your dashboard.');
@@ -70,5 +83,22 @@ export class DashboardComponent implements OnInit {
       ?? memory?.weakSkills?.[0]
       ?? memory?.skillProfile?.find(s => s.isWeak)?.skillLabel
       ?? null;
+  }
+
+  isPlacementRequired(): boolean {
+    return this.data()?.lifecycleStage === 'PlacementRequired';
+  }
+
+  isPlacementInProgress(): boolean {
+    return this.data()?.lifecycleStage === 'PlacementInProgress';
+  }
+
+  isCourseReady(): boolean {
+    const stage = this.data()?.lifecycleStage;
+    return stage === 'CourseReady' || stage === 'PlacementCompleted';
+  }
+
+  private hasPlacementResultState(stage: string): boolean {
+    return stage === 'CourseReady' || stage === 'PlacementCompleted';
   }
 }

@@ -375,6 +375,35 @@ If the sprint doc conflicts with this file, the sprint doc wins.
 
 ---
 
+## Documentation Persistence Rule
+
+Important project decisions must be durable.
+
+Agents must not leave engineering reviews, architecture decisions, sprint plans, implementation plans, debugging findings, or AskUserQuestion decisions only in chat output.
+
+If the information is needed by a future agent, it must be saved in the repository.
+
+Use:
+
+* `docs/reviews/` for engineering/code/test/adversarial/outside-voice reviews
+* `docs/sprints/` for sprint plans and sprint completion records
+* `docs/architecture/` for architecture decisions and long-term design
+* `docs/testing/` for QA reports and validation evidence
+* `docs/backlog/product-backlog.md` for future work and deferred tasks
+
+Recommended review filename format:
+
+```text
+yyyy-mm-dd-<topic>-<review-type>.md
+```
+
+A review, plan, or major decision is not considered complete until:
+
+1. it is written to the appropriate docs location, and
+2. the related sprint/backlog/architecture doc is updated if needed.
+
+---
+
 # 14. Final Principle
 
 Do not optimise for tasks completed.

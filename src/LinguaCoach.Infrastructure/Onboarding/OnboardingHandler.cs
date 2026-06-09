@@ -1,26 +1,17 @@
-using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Onboarding;
 
 public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQuery
 {
     private readonly LinguaCoachDbContext _db;
-    private readonly ILearningPathGenerator _pathGenerator;
-    private readonly ILogger<OnboardingHandler> _logger;
 
-    public OnboardingHandler(
-        LinguaCoachDbContext db,
-        ILearningPathGenerator pathGenerator,
-        ILogger<OnboardingHandler> logger)
+    public OnboardingHandler(LinguaCoachDbContext db)
     {
         _db = db;
-        _pathGenerator = pathGenerator;
-        _logger = logger;
     }
 
     public async Task<OnboardingStepResult> HandleAsync(OnboardingStepRequest request, CancellationToken ct = default)
@@ -57,6 +48,12 @@ public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQue
                 profile.SetCareerProfile(career);
                 break;
             }
+            case SetCareerContextTextRequest r:
+                profile.SetCareerContextText(r.CareerContext);
+                break;
+            case SetSkillGoalRequest r:
+                profile.SetSkillAndGoal(r.SkillFocus, r.LearningGoalDescription, r.DifficultSituationsText);
+                break;
             case SetSkillRequest r:
                 profile.SetSkillFocus(r.SkillFocus);
                 break;
@@ -68,25 +65,6 @@ public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQue
             profile.SetLifecycleStage(LinguaCoach.Domain.Enums.StudentLifecycleStage.PlacementRequired);
 
         await _db.SaveChangesAsync(ct);
-
-        // When onboarding completes (after step 4 / SetSkill), kick off path generation.
-        // Fire-and-forget: student proceeds to dashboard immediately; path is ready on first activity request.
-        if (profile.OnboardingStatus == OnboardingStatus.Complete)
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _pathGenerator.GenerateAsync(new GenerateLearningPathCommand(request.UserId));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex,
-                        "Background path generation failed for user {UserId}. Will retry lazily on first activity request.",
-                        request.UserId);
-                }
-            }, CancellationToken.None);
-        }
 
         return new OnboardingStepResult(profile.LastCompletedStep.ToString(), profile.OnboardingStatus == OnboardingStatus.Complete);
     }

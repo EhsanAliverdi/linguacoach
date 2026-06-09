@@ -130,17 +130,36 @@ test('placement result page shows level and skill breakdown', async ({ page }) =
   await expect(page.getByTestId('placement-continue-course')).toBeVisible();
 });
 
-test('dashboard redirects to placement when placement is required', async ({ page }) => {
+test('dashboard shows placement CTA when placement is required', async ({ page }) => {
   await withAuth(page);
-  await page.route('**/api/placement/status', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status({ status: 'NotStarted', lifecycleStage: 'PlacementRequired' })) });
+  await page.route('**/api/dashboard', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        studentName: 'student@test.com',
+        careerProfile: 'Junior Software Engineer',
+        cefrLevel: null,
+        message: 'Complete your placement assessment to unlock your personalised course.',
+        lifecycleStage: 'PlacementRequired',
+        learningPath: null,
+        activityStats: null,
+        currentFocus: null,
+        nextRecommendedPractice: null,
+        latestImprovement: null,
+      }),
+    });
+  });
+  await page.route('**/api/learning-path/memory', async route => {
+    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
   });
 
   await page.goto('/dashboard');
 
-  // The placement-required guard should redirect to /placement (intro shown).
-  await expect(page).toHaveURL(/\/placement/);
-  await expect(page.getByTestId('placement-intro')).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page.getByTestId('dashboard-placement-required')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Start placement' })).toHaveAttribute('href', '/placement');
+  await expect(page.getByTestId('dashboard-recommended-next')).toHaveCount(0);
 });
 
 test('placement does not expose correct answers in the DOM', async ({ page }) => {

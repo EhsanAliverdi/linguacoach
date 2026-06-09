@@ -44,6 +44,7 @@ async function mockDashboard(page: Page) {
             totalActivities: 3,
           },
         },
+        lifecycleStage: 'CourseReady',
         activityStats: { activitiesCompleted: 3, averageScore: 82, latestScore: 88 },
         nextRecommendedPractice: 'Practise a workplace update next.',
       }),
@@ -80,15 +81,15 @@ test('dashboard enables implemented practice cards and only marks future skills 
   await page.goto('/dashboard');
 
   await expect(page.getByRole('link', { name: /Writing Workplace messages/i })).toHaveAttribute('href', /type=WritingScenario/);
-  await expect(page.getByRole('link', { name: /Listening Audio workplace updates/i })).toHaveAttribute('href', /type=ListeningComprehension/);
-  await expect(page.getByRole('link', { name: /Vocabulary Practice saved phrases/i })).toHaveAttribute('href', /type=VocabularyPractice/);
+  await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).toHaveAttribute('href', /type=ListeningComprehension/);
+  await expect(page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i })).toHaveAttribute('href', /type=VocabularyPractice/);
 
   // Speaking is now active (SpeakingRolePlay MVP)
   await expect(page.getByTestId('speaking-card')).not.toContainText('Coming soon');
   await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', /type=SpeakingRolePlay/);
   await expect(page.getByText('Pronunciation').locator('..')).toContainText('Coming soon');
-  await expect(page.getByRole('link', { name: /Listening Audio workplace updates/i })).not.toContainText('Coming soon');
-  await expect(page.getByRole('link', { name: /Vocabulary Practice saved phrases/i })).not.toContainText('Coming soon');
+  await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).not.toContainText('Coming soon');
+  await expect(page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i })).not.toContainText('Coming soon');
 });
 
 test('dashboard listening card requests a listening activity type', async ({ page }) => {
@@ -131,7 +132,7 @@ test('dashboard listening card requests a listening activity type', async ({ pag
   });
 
   await page.goto('/dashboard');
-  await page.getByRole('link', { name: /Listening Audio workplace updates/i }).click();
+  await page.getByRole('link', { name: /Listening Meeting and update audio/i }).click();
 
   await expect(page).toHaveURL(/\/activity\?type=ListeningComprehension/);
   await expect(page.getByText('Understand a schedule update')).toBeVisible();
@@ -167,7 +168,7 @@ test('dashboard vocabulary card requests VocabularyPractice activity type', asyn
   });
 
   await page.goto('/dashboard');
-  await page.getByRole('link', { name: /Vocabulary Practice saved phrases/i }).click();
+  await page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i }).click();
 
   await expect(page).toHaveURL(/\/activity\?type=VocabularyPractice/);
   // Vocabulary UI renders — not writing textarea

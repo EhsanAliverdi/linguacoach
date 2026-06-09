@@ -39,7 +39,9 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
         var user = await _userManager.FindByIdAsync(query.UserId.ToString())
             ?? throw new InvalidOperationException("User not found.");
 
-        var careerName = profile.CareerProfile?.Name ?? "your selected role";
+        var lifecycleStage = profile.LifecycleStage.ToString();
+
+        var careerName = profile.CareerContext ?? profile.CareerProfile?.Name ?? "your selected role";
         var pathSummary = await BuildPathSummaryAsync(profile.Id, ct);
         var activityStats = await BuildActivityStatsAsync(profile.Id, ct);
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
@@ -50,15 +52,24 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
         string? nextRecommended = BuildNextRecommendedPractice(pathSummary, focusArea);
         string? latestImprovement = BuildLatestImprovement(activityStats, profile.Id);
 
-        string message = pathSummary is null
-            ? "Your personalised learning path is being prepared."
-            : $"You are on module {pathSummary.CurrentModule?.Order ?? 1} of {pathSummary.TotalModules}.";
+        string message = profile.LifecycleStage switch
+        {
+            StudentLifecycleStage.PlacementRequired =>
+                "Complete your placement assessment to unlock your personalised course.",
+            StudentLifecycleStage.PlacementInProgress =>
+                "Continue your placement assessment to unlock your personalised course.",
+            _ when pathSummary is null =>
+                "Your personalised learning path is being prepared.",
+            _ =>
+                $"You are on module {pathSummary.CurrentModule?.Order ?? 1} of {pathSummary.TotalModules}."
+        };
 
         return new DashboardResult(
             StudentName: user.Email!,
             CareerProfileName: careerName,
             CefrLevel: profile.CefrLevel,
             Message: message,
+            LifecycleStage: lifecycleStage,
             LearningPath: pathSummary,
             ActivityStats: activityStats,
             CurrentFocus: dashFocus,

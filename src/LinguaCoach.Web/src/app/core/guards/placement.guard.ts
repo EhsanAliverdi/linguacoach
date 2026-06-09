@@ -36,10 +36,11 @@ export const placementAccessGuard: CanActivateFn = () => {
 
   return placement.getStatus().pipe(
     map(status => {
-      // Block unauthenticated / pre-onboarding stages from hitting /placement
+      // Redirect pre-onboarding stages to the onboarding resume page, not /dashboard.
+      // Sending them to /dashboard causes a redirect loop when placementRequiredRedirectGuard fires.
       const blockedStages = ['Created', 'PasswordChangeRequired', 'OnboardingRequired', 'OnboardingInProgress'];
       if (blockedStages.includes(status.lifecycleStage)) {
-        return router.createUrlTree(['/dashboard']);
+        return router.createUrlTree(['/onboarding/resume']);
       }
       return true;
     }),

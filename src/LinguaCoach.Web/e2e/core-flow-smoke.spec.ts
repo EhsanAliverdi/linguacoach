@@ -150,6 +150,7 @@ async function mockApi(page: Page) {
         careerProfile: 'Document Controller',
         cefrLevel: null,
         message: 'You are on module 1 of 5.',
+        lifecycleStage: 'CourseReady',
         learningPath: {
           pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
           title: 'Workplace English for Document Controller — B1',
@@ -164,6 +165,38 @@ async function mockApi(page: Page) {
             totalActivities: 3,
           },
         },
+      }),
+    });
+  });
+
+  await page.route('**/api/placement/status', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'Completed',
+        currentSectionKey: 'self_check',
+        currentSectionOrder: 1,
+        totalSections: 6,
+        lifecycleStage: 'CourseReady',
+        isCompleted: true,
+      }),
+    });
+  });
+
+  await page.route('**/api/placement/result', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        estimatedOverallLevel: 'B1',
+        skillLevels: [{ skill: 'Writing', level: 'B1' }],
+        strengths: ['clear workplace context'],
+        weaknesses: ['formal tone'],
+        recommendedStartingCourse: 'Workplace English B1',
+        recommendedSessionDuration: 15,
+        placementNotes: 'Ready for guided workplace English.',
+        isCompleted: true,
       }),
     });
   });
@@ -471,7 +504,8 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Share these credentials' })).toBeVisible();
 
   // ── Student first login + password change ─────────────────────────────────────
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.evaluate(() => sessionStorage.removeItem('speakpath.auth'));
+  await page.goto('/login');
   await page.getByLabel('Email').fill('student@example.com');
   await page.getByLabel('Password').fill('Student123');
   await page.getByRole('button', { name: 'Sign in' }).click();
@@ -491,16 +525,18 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.getByRole('button', { name: /Workplace English/i }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Choose your career context' })).toBeVisible();
-  await page.getByRole('button', { name: /Document Controller/i }).click();
+  await expect(page.getByRole('heading', { name: /job, field, or target workplace context/i })).toBeVisible();
+  await page.getByLabel('Your job, field, or workplace context').fill('Junior Software Engineer');
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page.getByRole('heading', { name: 'Choose your first skill focus' })).toBeVisible();
-  await page.getByRole('button', { name: /Writing/i }).click();
+  await page.getByRole('button', { name: /Listening/i }).click();
+  await page.getByRole('textbox').fill('میخوام بتونم ایمیل رسمی بنویسم');
   await page.getByRole('button', { name: 'Complete setup' }).click();
 
   // ── Dashboard — verify learning path card ─────────────────────────────────────
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/placement/);
+  await page.goto('/dashboard');
 
   // Learning path section: title visible
   await expect(page.getByText('Workplace English for Document Controller — B1')).toBeVisible();

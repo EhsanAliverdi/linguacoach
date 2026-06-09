@@ -15,7 +15,19 @@ public sealed record SetTrackRequest(Guid UserId, Guid LearningTrackId)
 public sealed record SetCareerRequest(Guid UserId, Guid CareerProfileId)
     : OnboardingStepRequest(UserId);
 
+// Free-text career path — no CareerProfileId required.
+public sealed record SetCareerContextTextRequest(Guid UserId, string CareerContext)
+    : OnboardingStepRequest(UserId);
+
 public sealed record SetSkillRequest(Guid UserId, SkillFocus SkillFocus)
+    : OnboardingStepRequest(UserId);
+
+// Skill step with optional student-authored learning goal (any language accepted).
+public sealed record SetSkillGoalRequest(
+    Guid UserId,
+    SkillFocus SkillFocus,
+    string? LearningGoalDescription,
+    string? DifficultSituationsText)
     : OnboardingStepRequest(UserId);
 
 // ── Handler interface ─────────────────────────────────────────────────────────

@@ -106,7 +106,6 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
-        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {

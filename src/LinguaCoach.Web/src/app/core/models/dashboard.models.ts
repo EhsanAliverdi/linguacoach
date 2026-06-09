@@ -16,6 +16,7 @@ export interface DashboardResponse {
   careerProfile: string;
   cefrLevel: string | null;
   message: string;
+  lifecycleStage: string;
   learningPath: LearningPathSummary | null;
   activityStats: DashboardActivityStats | null;
   currentFocus: DashboardFocusArea | null;

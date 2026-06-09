@@ -1,16 +1,54 @@
-# SpeakPath Product Backlog
+﻿# SpeakPath Product Backlog
 
-Status labels: `Not started` · `Planned` · `Blocked` · `Done`
+Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
 
 ---
 
-## Course Session & Placement Redesign — Implementation Phases
+## Onboarding & Post-Placement UX Alignment `Done`
+
+Engineering review complete (2026-06-09). See: [2026-06-09-onboarding-post-placement-ux-engineering-review.md](../reviews/2026-06-09-onboarding-post-placement-ux-engineering-review.md)
+Sprint doc: [onboarding-post-placement-ux-alignment-sprint.md](../sprints/onboarding-post-placement-ux-alignment-sprint.md)
+
+- [x] T1: Domain - `LearningGoalDescription`, `DifficultSituationsText` fields; `SetCareerContextText()` and extended skill method. `Done`
+- [x] T2: Migration T31 - add two new varchar columns. `Done`
+- [x] T3: Application - new `SetCareerContextTextRequest`, extend skill command with goal fields. `Done`
+- [x] T4: API - extend `OnboardingStepDto` + controller dispatch for text career and skill+goal. `Done`
+- [x] T5: API - add `lifecycleStage` to `DashboardResponse` and handler. `Done`
+- [x] T6: Frontend step 3 - replace career list with free-text input. `Done`
+- [x] T7: Frontend step 4 - add Listening, learning goal textarea, navigate to `/placement`. `Done`
+- [x] T8: Frontend guard - redirect pre-onboarding to `/onboarding/resume` not `/dashboard`. `Done`
+- [x] T9: Frontend dashboard - lifecycle-aware states (PlacementRequired CTA, CourseReady summary, Practice Gym section). `Done`
+- [x] T10: Backend integration tests. `Done`
+- [x] T11: Playwright E2E tests. `Done`
+
+Completion notes:
+
+- Onboarding supports free-text career context and native-language learning goals.
+- After onboarding, students go to `/placement`; onboarding no longer starts background learning-path generation.
+- Dashboard is lifecycle-aware and keeps Practice Gym secondary until Today / `LearningSession` is implemented.
+- Verification passed: `dotnet test LinguaCoach.slnx`, `npm run build`, `npx playwright test`.
+
+---
+
+## Course Session & Placement Redesign â€” Implementation Phases
 
 Architecture sprint complete (2026-06-09). See sprint doc: [course-session-placement-redesign-sprint.md](../sprints/course-session-placement-redesign-sprint.md)
 
-### Phase 1 — Placement Assessment MVP `Not started`
+### Phase 1 â€” Placement Assessment MVP `Partially done`
+
+- [x] Add `StudentLifecycleStage` enum and column to `StudentProfile` + migration. `Done` (T29)
+- [x] Add `PreferredSessionDurationMinutes` to `StudentProfile` + migration. `Done` (T29)
+- [x] Add `ProfessionalExperienceLevel` enum and column to `StudentProfile` + migration. `Done` (T29)
+- [x] Add `RoleFamiliarity` enum and column to `StudentProfile` + migration. `Done` (T29)
+- [x] Add `PlacementAssessment` entity, EF config, migration. `Done` (T29)
+- [x] Implement placement section handlers and `PlacementService`. `Done`
+- [x] Add placement flow to Angular (6 sections, progress, result screen). `Done`
+- [x] Add lifecycle-aware routing guard. `Done` (placement.guard.ts â€” guard fix pending in UX alignment sprint)
+- [x] Add backend integration tests for placement flow. `Done`
+
+### Phase 1 â€” Placement Assessment MVP `Not started` (remaining)
 
 - [ ] Add `StudentLifecycleStage` enum and column to `StudentProfile` + migration. `Not started`
 - [ ] Add `PreferredSessionDurationMinutes` to `StudentProfile` + migration. `Not started`
@@ -18,7 +56,7 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Add `RoleFamiliarity` enum and column to `StudentProfile` + migration. `Not started`
 - [ ] Add `WorkplaceSeniority` (DomainComplexity) computed column or property to `StudentProfile`. `Not started`
 - [ ] Update onboarding to collect session duration preference, professional experience level, and role familiarity. `Not started`
-- ~~Add `ModuleType` column to `LearningModule` (Standard, Placement)~~ `Superseded` — Placement is a standalone `PlacementAssessment` entity, not a LearningModule. No ModuleType column needed.
+- ~~Add `ModuleType` column to `LearningModule` (Standard, Placement)~~ `Superseded` â€” Placement is a standalone `PlacementAssessment` entity, not a LearningModule. No ModuleType column needed.
 - [ ] Add `PlacementAssessment` entity, EF config, migration. `Not started`
 - [ ] Add `PlacementSection` entity, EF config, migration. `Not started`
 - [ ] Add `placement_assessment_evaluate` AI prompt seed. `Not started`
@@ -30,7 +68,7 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Add backend integration tests for placement flow. `Not started`
 - [ ] Add Playwright tests for placement flow. `Not started`
 
-### Phase 2 — Course Session MVP `Not started`
+### Phase 2 â€” Course Session MVP `Not started`
 
 - [ ] Add `LearningSession` entity, EF config, migration. `Not started`
 - [ ] Add `SessionExercise` entity, EF config, migration. `Not started`
@@ -42,16 +80,16 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Add backend integration tests for session generation. `Not started`
 - [ ] Add Playwright tests for Today page and session flow. `Not started`
 
-### Phase 3 — Exercise Pattern Engine `Not started`
+### Phase 3 â€” Exercise Pattern Engine `Not started`
 
-- [ ] Define exercise pattern library in code (pattern key → pattern config). `Not started`
+- [ ] Define exercise pattern library in code (pattern key â†’ pattern config). `Not started`
 - [ ] Implement session generator pattern selection logic. `Not started`
 - [ ] Implement `teams_chat_simulation` pattern (content model, UI, evaluation). `Not started`
 - [ ] Implement `read_and_answer`, `gap_fill_with_workplace_phrase`, `phrase_match`, `collocation_match`. `Not started`
 - [ ] Link `SessionExercise` to `LearningActivity` via pattern-to-activity mapping. `Not started`
 - [ ] Add pattern-level integration tests. `Not started`
 
-### Phase 4 — Practice Gym `Not started`
+### Phase 4 â€” Practice Gym `Not started`
 
 - [ ] Add Practice tab to student navigation. `Not started`
 - [ ] Move dashboard activity cards under Practice tab. `Not started`
@@ -59,7 +97,7 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Keep existing `/activity?type=...` routing unchanged. `Not started`
 - [ ] Add Playwright tests for Practice tab navigation. `Not started`
 
-### Phase 5 — MinIO File Storage `Not started`
+### Phase 5 â€” MinIO File Storage `Not started`
 
 - [ ] Define `IFileStorageService` interface in Application. `Not started`
 - [ ] Implement `LocalFileStorageService` in Infrastructure. `Not started`
@@ -71,7 +109,7 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Add unit tests for both file storage implementations. `Not started`
 - [ ] Verify audio playback end-to-end in staging with MinIO. `Not started`
 
-### Phase 6 — Admin Reset Tools `Not started`
+### Phase 6 â€” Admin Reset Tools `Not started`
 
 - [ ] Add `StudentResetLog` entity, EF config, migration. `Not started`
 - [ ] Implement `POST /api/admin/students/{id}/reset` endpoint. `Not started`
@@ -88,12 +126,12 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 
 Architecture doc: [professional-experience-domain-complexity.md](../architecture/professional-experience-domain-complexity.md)
 
-Priority: P0/P1 — affects onboarding, placement, and session generation quality. Without this, SpeakPath may give students linguistically appropriate tasks that are professionally inappropriate.
+Priority: P0/P1 â€” affects onboarding, placement, and session generation quality. Without this, SpeakPath may give students linguistically appropriate tasks that are professionally inappropriate.
 
 - [ ] Define `ProfessionalExperienceLevel` and `RoleFamiliarity` enums in domain. `Not started`
 - [ ] Define `DomainComplexity` enum (`BasicWorkplace`, `JuniorRole`, `IndependentContributor`, `SeniorSpecialist`, `LeadOrManager`). `Not started`
 - [ ] Add experience level and role familiarity steps to Angular onboarding flow. `Not started`
-- [ ] Implement `WorkplaceSeniority` computation (experience level × role familiarity → DomainComplexity). `Not started`
+- [ ] Implement `WorkplaceSeniority` computation (experience level Ã— role familiarity â†’ DomainComplexity). `Not started`
 - [ ] Add `WorkplaceSeniority` field to `StudentProfile` (stored, updated after onboarding). `Not started`
 - [ ] Add `{{DomainComplexity}}` and `{{ProfessionalExperienceLevel}}` prompt variables to all AI content generation prompts. `Not started`
   - `activity_generate_writing`
@@ -112,7 +150,7 @@ Priority: P0/P1 — affects onboarding, placement, and session generation qualit
 
 ---
 
-## Competitive Gap — P1 Features `Not started`
+## Competitive Gap â€” P1 Features `Not started`
 
 From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
@@ -136,7 +174,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
 ### Micro Lessons (P1)
 
-- [ ] Implement `micro_lesson_phrases` pattern: AI generates 3–5 target phrases with usage examples before a lesson session. `Not started`
+- [ ] Implement `micro_lesson_phrases` pattern: AI generates 3â€“5 target phrases with usage examples before a lesson session. `Not started`
 - [ ] Implement `micro_lesson_dialogue` pattern: AI generates a short workplace dialogue to model before speaking/writing tasks. `Not started`
 - [ ] Implement `micro_lesson_mistake` pattern: pulls a recurring mistake from student memory and explains it before a correction exercise. `Not started`
 - [ ] Add micro lesson step to Angular session exercise flow (read-only, no submission, auto-advance). `Not started`
@@ -151,13 +189,13 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
 ---
 
-## Competitive Gap — P2 Features `Not started`
+## Competitive Gap â€” P2 Features `Not started`
 
 ### Call Mode / Open AI Speaking (P2)
 
 - [ ] Design Call Mode product spec: multi-turn AI-first voice conversation. `Not started`
 - [ ] Implement `call_mode_single_turn` pattern (AI speaks, student responds). `Not started`
-- [ ] Implement `call_mode_multi_turn` pattern (3–5 AI/student turns, post-call transcript + feedback). `Not started`
+- [ ] Implement `call_mode_multi_turn` pattern (3â€“5 AI/student turns, post-call transcript + feedback). `Not started`
 - [ ] Add Call Mode UI to Practice Gym (phone-style interface, AI speaks first). `Not started`
 - [ ] Add post-call feedback screen (transcript, per-turn coaching, vocabulary, tone summary). `Not started`
 - [ ] Wire real STT provider (OpenAI Whisper or Azure Speech) for Call Mode transcription. `Not started`
@@ -191,24 +229,24 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
 ### AI Tutor Persona (P2)
 
-- [ ] Define AI teacher name and voice persona (e.g. "Alex" — encouraging, professional tone). `Not started`
+- [ ] Define AI teacher name and voice persona (e.g. "Alex" â€” encouraging, professional tone). `Not started`
 - [ ] Add AI teacher voice to session-opening micro lessons (text first, TTS audio when provider available). `Not started`
 - [ ] Add tutor persona to lesson_reflection step output. `Not started`
-- [ ] Avatar is P3 — do not design now. `Not started`
+- [ ] Avatar is P3 â€” do not design now. `Not started`
 
 ---
 
-## Competitive Gap — P3 Features `Not started`
+## Competitive Gap â€” P3 Features `Not started`
 
 - [ ] AI avatar / visual tutor interface. `Not started`
 - [ ] Video micro lessons. `Not started`
-- [ ] Multimodal workplace uploads (email/doc/screenshot → AI converts to exercise). `Not started`
+- [ ] Multimodal workplace uploads (email/doc/screenshot â†’ AI converts to exercise). `Not started`
 - [ ] Advanced enterprise analytics (employer dashboard, cohort progress). `Not started`
 - [ ] Organisations / teams / employer accounts. `Not started`
 
 ---
 
-## SpeakingRolePlay activity MVP (in sprint: speaking-role-play-mvp-sprint) — **COMPLETE**
+## SpeakingRolePlay activity MVP (in sprint: speaking-role-play-mvp-sprint) â€” **COMPLETE**
 
 > SpeakingRolePlay MVP was delivered in the speaking-role-play-mvp-sprint (2026-06-08).
 > All items below are Done. The Speaking dashboard card is active.
@@ -221,7 +259,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [x] Add `activity_evaluate_speaking_roleplay` prompt seed. `Done`
 - [x] Add SpeakingRolePlay to `AiActivityGeneratorHandler` (generation + evaluation guards). `Done`
 - [x] Add SpeakingRolePlay branch to `ActivityGetHandler` (AI + inline fallback + typed routing guard). `Done`
-- [x] Add SpeakingRolePlay branch to `ActivitySubmitHandler` (STT → evaluator dispatch). `Done`
+- [x] Add SpeakingRolePlay branch to `ActivitySubmitHandler` (STT â†’ evaluator dispatch). `Done`
 - [x] Extend `ActivityDto` with 8 speaking fields. `Done`
 - [x] Extend `ActivityFeedbackDto` with 4 speaking feedback fields. `Done`
 - [x] Add `POST /api/activity/{id}/speaking-attempt` (multipart) to `ActivityController`. `Done`
@@ -404,8 +442,8 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [ ] Add staleness flag / alert when memory update fails repeatedly. `Not started`
   - If `UserLearningSummary.UpdatedAt` is > 7 days old and student has recent attempts,
     surface an admin alert or background refresh attempt
-- [ ] Add numeric skill score tracking (0–100) to `StudentSkillProfile`. `Not started`
-  - Deferred from current sprint — add after validating the is_weak approach
+- [ ] Add numeric skill score tracking (0â€“100) to `StudentSkillProfile`. `Not started`
+  - Deferred from current sprint â€” add after validating the is_weak approach
 - [ ] Admin curriculum map editor. `Not started`
   - Currently curriculum is seeded/static for Workplace Writing B1/B1+/B2
   - Future: admin can add career-specific curriculum maps
@@ -423,19 +461,19 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - Reset if a calendar day is skipped
 - [ ] Track minutes practised this week. `Not started`
   - Derive from ActivityAttempt.CreatedAt timestamps
-  - Approximate based on activity type (e.g. WritingScenario ≈ 8 min)
+  - Approximate based on activity type (e.g. WritingScenario â‰ˆ 8 min)
 - [ ] Track total activities completed per student. `Not started`
   - Count of `ActivityAttempt` rows per `StudentProfileId`
 - [ ] Replace dashboard stat tile placeholders with real backend data. `Not started`
   - Dashboard API (`GET /api/dashboard`) must return: `streakDays`, `minutesThisWeek`, `activitiesDone`
-  - Remove `—` placeholders once endpoint delivers values
+  - Remove `â€”` placeholders once endpoint delivers values
 - [ ] Add progress history data for the Progress page. `Not started`
   - `GET /api/progress` or extend dashboard endpoint
   - Return recent ActivityAttempts with score, date, activity type
 - [ ] Add per-skill progress values. `Not started`
   - Return progress percentage for: Writing, Speaking, Listening, Vocabulary, Pronunciation
   - Implemented activity types: WritingScenario, ListeningComprehension, VocabularyPractice, SpeakingRolePlay
-  - Pronunciation is not yet implemented; return `null` — UI shows "Not started"
+  - Pronunciation is not yet implemented; return `null` â€” UI shows "Not started"
   - UI must never fake data
 
 ---
@@ -480,7 +518,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [x] Implement SpeakingRolePlay activity type. `Done`
   - Backend: ActivityType value, prompt templates, AI handler, audio upload endpoint, fake STT
   - Frontend: recording UI, transcript, feedback view, history support
-  - Dashboard Speaking card active — routes to `/activity?type=SpeakingRolePlay`
+  - Dashboard Speaking card active â€” routes to `/activity?type=SpeakingRolePlay`
   - See sprint: speaking-role-play-mvp-sprint.md
 - [x] Implement ListeningComprehension text MVP activity type. `Done`
   - Backend: hidden transcript generation, comprehension questions, deterministic scoring
@@ -513,9 +551,9 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - Practising: read from `LanguagePair.TargetName` + skill focus
   - Career context: read from `CareerProfile.Name`
 - [ ] Add editable learning preferences if needed. `Not started`
-  - Deferred — read-only display is sufficient for pilot phase
+  - Deferred â€” read-only display is sufficient for pilot phase
 - [ ] Add language pair and career context display. `Not started`
-  - Show "Persian → English · Document Controller" or equivalent
+  - Show "Persian â†’ English Â· Document Controller" or equivalent
   - Read from `StudentProfile` joined to `LanguagePair` and `CareerProfile`
 - [ ] Add account/security links if needed. `Not started`
   - Change password link at minimum
@@ -536,7 +574,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - Show completed modules with completion date
   - Show in-progress module with current activity count
 - [ ] Add recent scores list with improvement trend. `Not started`
-  - Show last 5–10 ActivityAttempts: title, score, skill badge, date
+  - Show last 5â€“10 ActivityAttempts: title, score, skill badge, date
   - Optionally show trend arrow (improving / stable / needs work) if 3+ results available
 
 ---
@@ -551,7 +589,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - Future: `/my-path/modules/:moduleId` showing the activity list for that module
 - [ ] Add path regeneration or adjustment capability. `Not started`
   - Admin or AI trigger to regenerate path based on progress
-  - Not needed for pilot phase — defer
+  - Not needed for pilot phase â€” defer
 
 ---
 
@@ -562,9 +600,9 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - `StudentAppLayoutComponent` owns sidebar, header, bottom nav
   - `AdminAppLayoutComponent` owns left sidebar, header
   - `PublicLayoutComponent` owns centered background wrapper
-  - Pages render content only — no shell duplication remains
+  - Pages render content only â€” no shell duplication remains
 - [ ] Extract `StatCard` component. `Planned`
-  - Repeated 3× on dashboard and progress page
+  - Repeated 3Ã— on dashboard and progress page
   - Input: `icon`, `value`, `label`, `color`, `bg`
 - [ ] Extract `SkillCard` component. `Planned`
   - Repeated on dashboard and progress page
@@ -584,13 +622,13 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
 ---
 
-## Admin dashboard — real data
+## Admin dashboard â€” real data
 
 - [ ] Replace KPI card placeholders with real counts. `Not started`
   - "Total students" already live from `GET /api/admin/students` count
   - "Onboarded" already live from same endpoint (filter by `onboardingStatus === 'Complete'`)
   - "Activities tracked": requires `GET /api/admin/stats` endpoint returning `totalActivityAttempts`
-  - "AI provider": hardcoded "Configured" — wire to check if at least one provider has a non-null API key
+  - "AI provider": hardcoded "Configured" â€” wire to check if at least one provider has a non-null API key
 - [ ] Implement real usage analytics. `Not started`
   - AI token usage per provider per day: log `promptTokens` + `completionTokens` from AI responses
   - Cost estimate per student: requires provider pricing table in DB
@@ -605,7 +643,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [ ] Add system health / API health card to admin dashboard. `Not started`
   - Real-time ping to each configured AI provider (or display last test result from ai-config)
   - Show green/amber/red per provider
-  - Do not fake — only show if a recent test result is stored
+  - Do not fake â€” only show if a recent test result is stored
 - [ ] Build admin settings page. `Not started`
   - Route: `/admin/settings`
   - Planned content: platform name/branding config, pilot programme dates, allowed email domains
@@ -621,7 +659,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - Show compact memory only: journey summary, strengths, weaknesses, recurring mistakes, next focus, covered scenario count, skill profile
 - [ ] Design system: use `sp-admin-*` classes consistently across all admin components. `Planned`
   - `admin-prompts` and `admin-careers` still use raw Tailwind for their form/table bodies
-  - Migrate incrementally — do not break functionality
+  - Migrate incrementally â€” do not break functionality
   - Document final admin class list in `frontend-layout-system.md`
 - [ ] Improve admin mobile drawer. `Planned`
   - Current drawer works but has no swipe-to-close gesture
@@ -655,7 +693,7 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [ ] Side-by-side diff viewer for attempts. `Not started`
   - Compare attempt N with attempt N-1 visually
   - Highlight what changed between submissions
-  - Deferred — requires richer attempt history page first
+  - Deferred â€” requires richer attempt history page first
 - [ ] Inline sentence-level comment annotations. `Not started`
   - AI returns comments anchored to specific sentence positions
   - UI renders inline margin annotations (like Google Docs)
@@ -677,13 +715,13 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [ ] Client-side LCS-based visual diff for richer comparison. `Not started`
   - Compute diff between student's draft and improved version in the browser
   - Highlight word-level insertions and deletions
-  - Lower priority — server-side `changes` list already covers this
+  - Lower priority â€” server-side `changes` list already covers this
 
 ---
 
 ## Legacy database cleanup
 
-> ⚠️ These items require explicit confirmation before execution. Do not run without a backup.
+> âš ï¸ These items require explicit confirmation before execution. Do not run without a backup.
 
 - [ ] T19: Confirm no active FK dependency on `SourceWritingScenarioId` in `LearningActivity`. `Planned`
   - Verify all current activities use `aiGeneratedContentJson` not `SourceWritingScenarioId`

@@ -254,6 +254,19 @@ public sealed class PlacementEndpointTests : IClassFixture<PlacementTestFactory>
         Assert.True(profile.LifecycleStage is StudentLifecycleStage.PlacementRequired);
     }
 
+    [Fact]
+    public async Task Status_AfterOnboardingCompletion_ReturnsLifecyclePlacementRequired()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"pl_status_after_onboard_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/placement/status");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("PlacementRequired", body.GetProperty("lifecycleStage").GetString());
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private static async Task<JsonElement> SaveSelfCheckAsync(HttpClient client)
