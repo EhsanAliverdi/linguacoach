@@ -303,3 +303,48 @@ npx playwright test             → 64 passed, 0 failed, 0 flaky
 - Docs updated: this file (final verification section appended)
 - Docs intentionally not updated: `docs/testing/` — no known issues remain
 - Reason: all QA requirements verified as already implemented; no code changes made; sprint is complete
+
+---
+
+## Production Bug Fix — Placement Status 400 — 2026-06-09
+
+**Bug:** `GET /api/placement/status` returned 400 Bad Request for students who completed
+onboarding (`LifecycleStage = PlacementRequired`) but had not yet started placement.
+
+**Root cause:** `PlacementService.GetProfileAsync` threw `InvalidOperationException` when
+no `StudentProfile` row was found. `PlacementController` caught `InvalidOperationException`
+and returned 400. Normal post-onboarding students with no placement assessment yet hit this
+path, making the placement page completely unloadable.
+
+**Fix:** `PlacementService.HandleAsync(GetPlacementStatusQuery)` now queries `StudentProfiles`
+directly via EF Core and returns `PlacementStatus.NotStarted` gracefully when the profile or
+assessment row is missing, instead of throwing.
+
+**Files changed:**
+- `src/LinguaCoach.Infrastructure/Placement/PlacementService.cs` — status handler rewritten to handle null profile and null assessment without throwing
+- `tests/LinguaCoach.IntegrationTests/Api/PlacementEndpointTests.cs` — 3 regression tests added
+- `src/LinguaCoach.Web/e2e/placement-assessment.spec.ts` — 3 Playwright tests added
+
+**Test results after fix:**
+
+```
+dotnet test LinguaCoach.slnx   → 242 unit, 237 integration — all passed
+npm run build                   → passed (warnings only)
+npx playwright test             → 65 passed (8/8 placement tests), 2 pre-existing flaky unrelated tests
+```
+
+**New integration tests:**
+1. `Status_PlacementRequired_NoAssessment_Returns200NotStarted` — regression for the 400 bug
+2. `Status_MissingStudentProfile_Returns200NotStarted` — edge case: identity user with no StudentProfile row
+3. `Start_FromNotStarted_CreatesAssessmentAndSetsInProgress` — POST /api/placement/start from not-started state
+
+**New Playwright tests:**
+1. `placement shows intro, not error, for PlacementRequired NotStarted student` — regression: confirms no error state for 200 NotStarted
+2. `Start placement button calls /api/placement/start and transitions to section` — verifies start button wiring
+3. `PlacementRequired dashboard CTA routes to /placement and page loads intro` — end-to-end CTA → placement navigation
+
+**Documentation impact:**
+- Docs reviewed: `docs/sprints/onboarding-post-placement-ux-alignment-sprint.md`
+- Docs updated: this file (production bug fix section appended)
+- Docs intentionally not updated: `docs/sprints/placement-assessment-mvp-sprint.md` — status behaviour is unchanged from the spec; only the missing-profile edge case was unhandled
+- Reason: code changes are contained to service logic and tests; no API contract or product behaviour changes

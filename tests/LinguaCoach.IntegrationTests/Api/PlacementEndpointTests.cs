@@ -267,6 +267,85 @@ public sealed class PlacementEndpointTests : IClassFixture<PlacementTestFactory>
         Assert.Equal("PlacementRequired", body.GetProperty("lifecycleStage").GetString());
     }
 
+    // ── Bug regression: status must not return 400 for PlacementRequired students ──
+
+    [Fact]
+    public async Task Status_PlacementRequired_NoAssessment_Returns200NotStarted()
+    {
+        // Regression: GET /api/placement/status returned 400 in production for students
+        // who completed onboarding (PlacementRequired lifecycle) but had not yet started
+        // placement. The handler was throwing InvalidOperationException which the controller
+        // mapped to 400. Now it must return 200 NotStarted.
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"pl_regression_noassess_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/placement/status");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("NotStarted", body.GetProperty("status").GetString());
+        Assert.Equal("PlacementRequired", body.GetProperty("lifecycleStage").GetString());
+        Assert.False(body.GetProperty("isCompleted").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Status_MissingStudentProfile_Returns200NotStarted()
+    {
+        // Edge case: user exists in Identity but StudentProfile row is missing (provisioning failure,
+        // legacy user created outside normal flow). Status must not throw or return 400.
+        await _factory.EnsureCreatedAsync();
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<LinguaCoach.Persistence.Identity.ApplicationUser>>();
+        var tokenSvc = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Auth.ITokenService>();
+
+        var email = $"pl_noprofile_{Guid.NewGuid():N}@test.com";
+        var user = new LinguaCoach.Persistence.Identity.ApplicationUser
+        {
+            UserName = email, Email = email,
+            Role = LinguaCoach.Domain.Enums.UserRole.Student,
+            EmailConfirmed = true, MustChangePassword = false
+        };
+        await userManager.CreateAsync(user, "Student@1234");
+        // Deliberately do NOT create a StudentProfile row.
+
+        var token = tokenSvc.GenerateToken(user.Id, email, LinguaCoach.Domain.Enums.UserRole.Student);
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/placement/status");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("NotStarted", body.GetProperty("status").GetString());
+        Assert.False(body.GetProperty("isCompleted").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Start_FromNotStarted_CreatesAssessmentAndSetsInProgress()
+    {
+        // POST /api/placement/start must work from NotStarted state (no pre-existing assessment).
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"pl_start_notstarted_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        // Confirm no assessment exists yet.
+        var statusResp = await client.GetAsync("/api/placement/status");
+        Assert.Equal(HttpStatusCode.OK, statusResp.StatusCode);
+        var statusBody = await statusResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("NotStarted", statusBody.GetProperty("status").GetString());
+
+        // Start placement.
+        var startResp = await client.PostAsync("/api/placement/start", null);
+        Assert.Equal(HttpStatusCode.OK, startResp.StatusCode);
+        var startBody = await startResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("InProgress", startBody.GetProperty("status").GetString());
+        Assert.Equal("PlacementInProgress", startBody.GetProperty("lifecycleStage").GetString());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        Assert.True(db.PlacementAssessments.Any(a => a.StudentProfileId == profile.Id));
+        Assert.Equal(StudentLifecycleStage.PlacementInProgress, profile.LifecycleStage);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private static async Task<JsonElement> SaveSelfCheckAsync(HttpClient client)

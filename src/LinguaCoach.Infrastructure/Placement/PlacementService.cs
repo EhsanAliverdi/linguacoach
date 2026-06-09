@@ -170,7 +170,23 @@ public sealed class PlacementService :
 
     public async Task<PlacementStatusDto> HandleAsync(GetPlacementStatusQuery query, CancellationToken ct = default)
     {
-        var profile = await GetProfileAsync(query.UserId, ct);
+        var profile = await _db.StudentProfiles
+            .FirstOrDefaultAsync(p => p.UserId == query.UserId, ct);
+
+        // No profile: student exists in identity but StudentProfile row is missing
+        // (edge case — provisioning failure or legacy user). Return NotStarted so the
+        // placement page shows its intro/start state rather than a 400 error.
+        if (profile is null)
+        {
+            return new PlacementStatusDto(
+                Status: PlacementStatus.NotStarted.ToString(),
+                CurrentSectionKey: PlacementContent.FirstSectionKey,
+                CurrentSectionOrder: 1,
+                TotalSections: PlacementContent.SectionOrder.Count,
+                LifecycleStage: StudentLifecycleStage.PlacementRequired.ToString(),
+                IsCompleted: false);
+        }
+
         var assessment = await _db.PlacementAssessments
             .FirstOrDefaultAsync(a => a.StudentProfileId == profile.Id, ct);
 
