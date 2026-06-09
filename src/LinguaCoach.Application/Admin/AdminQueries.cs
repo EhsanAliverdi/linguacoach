@@ -1,17 +1,48 @@
+using LinguaCoach.Domain.Enums;
+
 namespace LinguaCoach.Application.Admin;
 
 // ── Student list ──────────────────────────────────────────────────────────────
 
 public sealed record StudentListItem(
+    Guid StudentProfileId,
     Guid UserId,
     string Email,
+    string? FirstName,
+    string? LastName,
+    string? DisplayName,
     string OnboardingStatus,
+    string LifecycleStage,
     string? CefrLevel,
+    string? CareerContext,
+    string? LearningGoal,
+    string? LearningGoalDescription,
+    string? DifficultSituationsText,
+    int? PreferredSessionDurationMinutes,
+    ProfessionalExperienceLevel? ProfessionalExperienceLevel,
+    RoleFamiliarity? RoleFamiliarity,
     DateTime CreatedAt);
+
+public sealed record UpdateStudentProfileCommand(
+    Guid StudentProfileId,
+    string? FirstName,
+    string? LastName,
+    string? DisplayName,
+    string? CareerContext,
+    string? LearningGoal,
+    string? LearningGoalDescription,
+    string? DifficultSituationsText,
+    int? PreferredSessionDurationMinutes,
+    ProfessionalExperienceLevel? ProfessionalExperienceLevel,
+    RoleFamiliarity? RoleFamiliarity);
+
+public sealed record ArchiveStudentCommand(Guid StudentProfileId);
 
 public interface IAdminStudentQuery
 {
-    Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
+    Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
+    Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);
 }
 
 // ── Prompt templates ──────────────────────────────────────────────────────────
@@ -93,7 +124,10 @@ public sealed record AiProviderConfigItem(
     Guid Id,
     string FeatureKey,
     string ProviderName,
-    string ModelName);
+    string ModelName,
+    string? FallbackProviderName,
+    string? FallbackModelName,
+    bool FallbackEnabled);
 
 public sealed record ModelTestStatus(string ModelName, bool Ok, int LatencyMs, string? Error, DateTime TestedAt);
 
@@ -106,8 +140,11 @@ public sealed record AiProviderCatalogItem(
 
 public sealed record UpdateAiProviderConfigCommand(
     Guid ConfigId,
-    string ProviderName,
-    string ModelName);
+    string? ProviderName,
+    string? ModelName,
+    string? FallbackProviderName,
+    string? FallbackModelName,
+    bool? FallbackEnabled);
 
 public sealed record SetProviderApiKeyCommand(
     string ProviderName,

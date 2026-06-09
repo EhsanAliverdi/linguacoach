@@ -113,15 +113,6 @@ import { StudentListItem } from '../../../core/models/admin.models';
             </div>
           </a>
 
-          <a routerLink="/admin/careers" class="sp-admin-action-card">
-            <div class="sp-admin-action-icon sp-admin-action-icon-amber">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            </div>
-            <div>
-              <div class="sp-admin-action-title">Curriculum</div>
-              <div class="sp-admin-action-desc">Careers &amp; vocab</div>
-            </div>
-          </a>
         </div>
       </div>
 
@@ -199,11 +190,11 @@ import { StudentListItem } from '../../../core/models/admin.models';
           </div>
           <div class="sp-admin-status-row">
             <span>Speaking</span>
-            <span class="sp-admin-badge sp-admin-badge-slate">Planned</span>
+            <span class="sp-admin-badge sp-admin-badge-green">Active</span>
           </div>
           <div class="sp-admin-status-row">
             <span>Listening</span>
-            <span class="sp-admin-badge sp-admin-badge-slate">Planned</span>
+            <span class="sp-admin-badge sp-admin-badge-green">Active</span>
           </div>
         </div>
         <a routerLink="/admin/ai-config" class="sp-admin-link" style="font-size:13px;margin-top:12px;display:inline-block">Manage AI config →</a>

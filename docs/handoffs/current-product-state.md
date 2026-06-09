@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-09 13:56
 owner: product
 supersedes:
 supersededBy:
@@ -56,6 +56,11 @@ Playwright:      56 passed
 - Configure AI providers, model assignments, and prompt templates via Admin UI
 - AI provider credentials stored securely in DB (never returned to client)
 - AI usage logs accessible
+- Student list is the admin entry point for create/edit/archive student management
+- Create student returns to Students with a toast after success
+- Archive uses `StudentLifecycleStage.Archived`, hides archived students by default, and disables sign-in
+- AI Config shows primary and fallback provider/model routing for active runtime AI feature keys
+- Curriculum is hidden from admin navigation while its future purpose is redefined
 
 ## Known gaps / not yet built
 

@@ -1,13 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
-
-interface CreatedStudentCredentials {
-  email: string;
-  temporaryPassword: string;
-}
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-create-student',
@@ -37,7 +34,6 @@ export class CreateStudentComponent {
   success = signal('');
   emailError = signal('');
   passwordError = signal('');
-  createdCredentials = signal<CreatedStudentCredentials | null>(null);
 
   readonly experienceLevels = [
     { value: 0, label: 'Entry level' },
@@ -54,7 +50,11 @@ export class CreateStudentComponent {
 
   readonly sessionDurations = [15, 20, 30, 45, 60];
 
-  constructor(private adminService: AdminService, public auth: AuthService) {}
+  constructor(
+    private adminService: AdminService,
+    public auth: AuthService,
+    private router: Router,
+    private toast: ToastService) {}
 
   onSubmit(): void {
     if (!this.validate()) return;
@@ -62,7 +62,6 @@ export class CreateStudentComponent {
     this.loading.set(true);
     this.error.set('');
     this.success.set('');
-    this.createdCredentials.set(null);
 
     const request: Parameters<AdminService['createStudent']>[0] = {
       email: this.email.trim(),
@@ -84,11 +83,8 @@ export class CreateStudentComponent {
     this.adminService.createStudent(request).subscribe({
       next: () => {
         this.loading.set(false);
-        this.createdCredentials.set({
-          email: this.email.trim(),
-          temporaryPassword: this.temporaryPassword,
-        });
-        this.success.set('Student account created. Share these credentials privately with the student.');
+        this.toast.success('Student created successfully');
+        this.router.navigate(['/admin/students']);
       },
       error: err => {
         this.loading.set(false);
@@ -118,7 +114,6 @@ export class CreateStudentComponent {
     this.error.set('');
     this.emailError.set('');
     this.passwordError.set('');
-    this.createdCredentials.set(null);
   }
 
   private validate(): boolean {

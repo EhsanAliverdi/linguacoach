@@ -513,6 +513,30 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 .sp-admin-form-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
 .sp-admin-form-desc{font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:20px;}
 
+/* Toast notifications */
+.sp-toast-host{
+  position:fixed;right:18px;bottom:18px;z-index:1000;
+  display:flex;flex-direction:column;gap:10px;
+  width:min(360px,calc(100vw - 36px));
+}
+.sp-toast{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  border-radius:12px;border:1px solid #E2E8F0;background:#fff;
+  box-shadow:0 12px 32px rgba(15,23,42,.14);
+  padding:12px 14px;font-size:13.5px;font-weight:700;color:#334155;
+}
+.sp-toast button{
+  width:28px;height:28px;border-radius:8px;border:none;background:transparent;
+  color:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+}
+.sp-toast button:hover{background:rgba(15,23,42,.06);}
+.sp-toast-success{border-color:#BBF7D0;background:#F0FDF4;color:#166534;}
+.sp-toast-error{border-color:#FECACA;background:#FEF2F2;color:#991B1B;}
+.sp-toast-info{border-color:#C7D2FE;background:#EEF2FF;color:#3730A3;}
+@media(max-width:640px){
+  .sp-toast-host{left:18px;right:18px;bottom:18px;width:auto;}
+}
+
 /* == Layout utilities ====================================================== */
 .sp-page{min-height:100vh;}
 .sp-page-header{margin-bottom:20px;}

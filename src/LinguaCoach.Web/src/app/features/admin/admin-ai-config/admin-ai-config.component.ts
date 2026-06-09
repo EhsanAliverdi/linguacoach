@@ -37,33 +37,79 @@ interface ProviderState {
 
         <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           @for (c of configs(); track c.id) {
-            <div class="flex items-center gap-3 px-5 py-3.5">
-              <div class="w-44 shrink-0 text-xs font-semibold text-indigo-600 uppercase tracking-wide">
-                {{ c.featureKey }}
+            <div class="sp-ai-route-row">
+              <div class="sp-ai-route-feature">
+                <div>{{ featureLabel(c.featureKey) }}</div>
+                <small>{{ c.featureKey }}</small>
               </div>
 
-              <select [value]="c.providerName"
-                (change)="onFeatureProviderChange(c, $any($event.target).value)"
-                class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                @for (p of providers(); track p.catalog.providerName) {
-                  <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
-                }
-              </select>
+              <div class="sp-ai-route-controls">
+                <label>
+                  <span>Primary provider</span>
+                  <select [value]="c.providerName"
+                    (change)="onFeatureProviderChange(c, $any($event.target).value)"
+                    class="sp-ai-select">
+                    @for (p of providers(); track p.catalog.providerName) {
+                      <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
+                    }
+                  </select>
+                </label>
 
-              <select [value]="c.modelName"
-                (change)="onFeatureModelChange(c, $any($event.target).value)"
-                class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-mono w-60 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                @for (m of modelsFor(c.providerName); track m) {
-                  <option [value]="m">{{ m }}</option>
-                }
-              </select>
+                <label>
+                  <span>Primary model</span>
+                  <select [value]="c.modelName"
+                    (change)="onFeatureModelChange(c, $any($event.target).value)"
+                    class="sp-ai-select sp-ai-model-select">
+                    @for (m of modelsFor(c.providerName); track m) {
+                      <option [value]="m">{{ m }}</option>
+                    }
+                  </select>
+                </label>
 
-              @if (savedFeatureId() === c.id) {
-                <span class="text-xs text-green-600">Saved</span>
-              }
-              @if (featureError()[c.id]) {
-                <span class="text-xs text-red-500">{{ featureError()[c.id] }}</span>
-              }
+                <label class="sp-ai-fallback-toggle">
+                  <input type="checkbox" [checked]="c.fallbackEnabled" (change)="onFallbackEnabledChange(c, $any($event.target).checked)" />
+                  <span>Fallback enabled</span>
+                </label>
+
+                <label>
+                  <span>Fallback provider</span>
+                  <select [value]="c.fallbackProviderName ?? ''"
+                    (change)="onFallbackProviderChange(c, $any($event.target).value)"
+                    class="sp-ai-select">
+                    <option value="">None</option>
+                    @for (p of providers(); track p.catalog.providerName) {
+                      <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label>
+                  <span>Fallback model</span>
+                  <select [value]="c.fallbackModelName ?? ''"
+                    (change)="onFallbackModelChange(c, $any($event.target).value)"
+                    [disabled]="!c.fallbackProviderName"
+                    class="sp-ai-select sp-ai-model-select">
+                    <option value="">None</option>
+                    @for (m of modelsFor(c.fallbackProviderName ?? ''); track m) {
+                      <option [value]="m">{{ m }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+
+              <div class="sp-ai-route-state">
+                @if (savedFeatureId() === c.id) {
+                  <span class="text-xs text-green-600">Saved</span>
+                }
+                @if (featureError()[c.id]) {
+                  <span class="text-xs text-red-500">{{ featureError()[c.id] }}</span>
+                }
+                @if (!c.fallbackEnabled) {
+                  <span class="sp-ai-empty-state">Fallback disabled</span>
+                } @else if (!c.fallbackProviderName || !c.fallbackModelName) {
+                  <span class="sp-ai-empty-state">No fallback configured</span>
+                }
+              </div>
             </div>
           }
         </div>
@@ -165,6 +211,30 @@ interface ProviderState {
 
     }
   `,
+  styles: [`
+    .sp-ai-route-row{display:grid;grid-template-columns:minmax(190px,260px) 1fr;gap:18px;padding:18px 20px;align-items:start;}
+    .sp-ai-route-feature{min-width:0;}
+    .sp-ai-route-feature div{font-size:13px;font-weight:800;color:#0F172A;}
+    .sp-ai-route-feature small{display:block;margin-top:3px;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#64748B;overflow-wrap:anywhere;}
+    .sp-ai-route-controls{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;align-items:end;}
+    .sp-ai-route-controls label span{display:block;margin-bottom:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;}
+    .sp-ai-select{width:100%;border:1px solid #CBD5E1;border-radius:9px;padding:7px 9px;font-size:13px;background:#fff;color:#0F172A;}
+    .sp-ai-select:disabled{background:#F8FAFC;color:#94A3B8;}
+    .sp-ai-model-select{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+    .sp-ai-fallback-toggle{display:flex;align-items:center;gap:8px;min-height:38px;}
+    .sp-ai-fallback-toggle span{margin:0;text-transform:none;letter-spacing:0;font-size:12px;color:#475569;}
+    .sp-ai-fallback-toggle input{accent-color:#4338CA;}
+    .sp-ai-route-state{grid-column:2;display:flex;align-items:center;gap:10px;min-height:18px;}
+    .sp-ai-empty-state{font-size:11.5px;color:#94A3B8;}
+    @media(max-width:1180px){
+      .sp-ai-route-controls{grid-template-columns:repeat(2,minmax(160px,1fr));}
+    }
+    @media(max-width:720px){
+      .sp-ai-route-row{grid-template-columns:1fr;}
+      .sp-ai-route-state{grid-column:1;}
+      .sp-ai-route-controls{grid-template-columns:1fr;}
+    }
+  `],
 })
 export class AdminAiConfigComponent implements OnInit {
   configs = signal<AiProviderConfigItem[]>([]);
@@ -226,17 +296,65 @@ export class AdminAiConfigComponent implements OnInit {
     return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
   }
 
+  featureLabel(featureKey: string): string {
+    return ({
+      'writing.exercise': 'Legacy writing feedback',
+      'learning_path_generate': 'Initial learning path',
+      'learning_path_generate_adaptive': 'Adaptive learning path',
+      'activity_generate_writing': 'Generate writing activity',
+      'activity_evaluate_writing': 'Evaluate writing activity',
+      'activity_generate_listening': 'Generate listening activity',
+      'activity_generate_speaking_roleplay': 'Generate speaking role-play',
+      'activity_evaluate_speaking_roleplay': 'Evaluate speaking role-play',
+      'vocabulary_extract_from_attempt': 'Extract vocabulary from attempt',
+      'student_memory_update': 'Update student learning memory',
+      'placement_assessment_evaluate': 'Evaluate placement assessment',
+    } as Record<string, string>)[featureKey] ?? featureKey.replace(/_/g, ' ');
+  }
+
   onFeatureProviderChange(c: AiProviderConfigItem, newProvider: string): void {
     const newModel = this.modelsFor(newProvider)[0] ?? c.modelName;
-    this.saveFeature(c, newProvider, newModel);
+    this.saveFeature(c, { providerName: newProvider, modelName: newModel });
   }
 
   onFeatureModelChange(c: AiProviderConfigItem, newModel: string): void {
-    this.saveFeature(c, c.providerName, newModel);
+    this.saveFeature(c, { providerName: c.providerName, modelName: newModel });
   }
 
-  private saveFeature(c: AiProviderConfigItem, providerName: string, modelName: string): void {
-    this.adminApi.updateAiConfig(c.id, providerName, modelName).subscribe({
+  onFallbackEnabledChange(c: AiProviderConfigItem, enabled: boolean): void {
+    this.saveFeature(c, {
+      fallbackProviderName: c.fallbackProviderName,
+      fallbackModelName: c.fallbackModelName,
+      fallbackEnabled: enabled,
+    });
+  }
+
+  onFallbackProviderChange(c: AiProviderConfigItem, providerName: string): void {
+    const fallbackProviderName = providerName || null;
+    const fallbackModelName = fallbackProviderName ? (this.modelsFor(fallbackProviderName)[0] ?? null) : null;
+    this.saveFeature(c, {
+      fallbackProviderName,
+      fallbackModelName,
+      fallbackEnabled: Boolean(fallbackProviderName && fallbackModelName && c.fallbackEnabled),
+    });
+  }
+
+  onFallbackModelChange(c: AiProviderConfigItem, modelName: string): void {
+    this.saveFeature(c, {
+      fallbackProviderName: c.fallbackProviderName,
+      fallbackModelName: modelName || null,
+      fallbackEnabled: Boolean(c.fallbackProviderName && modelName && c.fallbackEnabled),
+    });
+  }
+
+  private saveFeature(c: AiProviderConfigItem, data: {
+    providerName?: string | null;
+    modelName?: string | null;
+    fallbackProviderName?: string | null;
+    fallbackModelName?: string | null;
+    fallbackEnabled?: boolean | null;
+  }): void {
+    this.adminApi.updateAiConfig(c.id, data).subscribe({
       next: updated => {
         this.configs.update(cs => cs.map(x => x.id === c.id ? updated : x));
         this.savedFeatureId.set(c.id);

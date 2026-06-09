@@ -53,6 +53,88 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task UpdateStudent_AsAdmin_UpdatesProfileFields()
+    {
+        var (_, userId) = await _factory.CreateStudentAndGetTokenAsync($"edit_{Guid.NewGuid():N}@t.com");
+        var studentProfileId = await GetStudentProfileIdAsync(userId);
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.PutAsJsonAsync($"/api/admin/students/{studentProfileId}", new
+        {
+            firstName = "Mina",
+            lastName = "Rahimi",
+            displayName = "Mina R.",
+            careerContext = "Project coordination",
+            learningGoal = "Speak clearly in standups",
+            learningGoalDescription = "Improve meeting updates",
+            difficultSituationsText = "Interrupting politely",
+            preferredSessionDurationMinutes = 30,
+            professionalExperienceLevel = 3,
+            roleFamiliarity = 2
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Mina", body.GetProperty("firstName").GetString());
+        Assert.Equal("Project coordination", body.GetProperty("careerContext").GetString());
+        Assert.Equal(30, body.GetProperty("preferredSessionDurationMinutes").GetInt32());
+    }
+
+    [Fact]
+    public async Task UpdateStudent_AsStudent_Returns403()
+    {
+        var (studentToken, userId) = await _factory.CreateStudentAndGetTokenAsync($"edit403_{Guid.NewGuid():N}@t.com");
+        var studentProfileId = await GetStudentProfileIdAsync(userId);
+
+        var response = await ClientWithToken(studentToken).PutAsJsonAsync($"/api/admin/students/{studentProfileId}", new
+        {
+            firstName = "Not allowed"
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ArchiveStudent_AsAdmin_HidesFromDefaultList_AndRejectsLogin()
+    {
+        var email = $"archive_{Guid.NewGuid():N}@t.com";
+        var (_, userId) = await _factory.CreateStudentAndGetTokenAsync(email);
+        var studentProfileId = await GetStudentProfileIdAsync(userId);
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var archive = await client.PostAsync($"/api/admin/students/{studentProfileId}/archive", null);
+        Assert.Equal(HttpStatusCode.OK, archive.StatusCode);
+        var archivedBody = await archive.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Archived", archivedBody.GetProperty("lifecycleStage").GetString());
+
+        var activeList = await client.GetFromJsonAsync<JsonElement>("/api/admin/students");
+        Assert.DoesNotContain(activeList.EnumerateArray(), s => s.GetProperty("studentProfileId").GetString() == studentProfileId.ToString());
+
+        var archivedList = await client.GetFromJsonAsync<JsonElement>("/api/admin/students?includeArchived=true");
+        Assert.Contains(archivedList.EnumerateArray(), s => s.GetProperty("studentProfileId").GetString() == studentProfileId.ToString());
+
+        var loginResponse = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login", new
+        {
+            email,
+            password = "Student@1234"
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, loginResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ArchiveStudent_AsStudent_Returns403()
+    {
+        var (studentToken, userId) = await _factory.CreateStudentAndGetTokenAsync($"archive403_{Guid.NewGuid():N}@t.com");
+        var studentProfileId = await GetStudentProfileIdAsync(userId);
+
+        var response = await ClientWithToken(studentToken).PostAsync($"/api/admin/students/{studentProfileId}/archive", null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // ── GET /api/admin/prompts ────────────────────────────────────────────────
 
     [Fact]
@@ -358,5 +440,16 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
+    }
+
+    private async Task<Guid> GetStudentProfileIdAsync(Guid userId)
+    {
+        await _factory.EnsureCreatedAsync();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        return await db.StudentProfiles
+            .Where(p => p.UserId == userId)
+            .Select(p => p.Id)
+            .FirstAsync();
     }
 }

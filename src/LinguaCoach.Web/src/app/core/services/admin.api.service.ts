@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
   CareerProfileItem, CurriculumWordItem, AiProviderConfigItem,
-  AiProviderCatalogItem, AdminStudentLearningMemory
+  AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -15,8 +15,15 @@ export class AdminApiService {
   constructor(private http: HttpClient) {}
 
   // Students
-  listStudents(): Observable<StudentListItem[]> {
-    return this.http.get<StudentListItem[]>(`${this.api}/students`);
+  listStudents(includeArchived = false): Observable<StudentListItem[]> {
+    const suffix = includeArchived ? '?includeArchived=true' : '';
+    return this.http.get<StudentListItem[]>(`${this.api}/students${suffix}`);
+  }
+  updateStudent(studentProfileId: string, data: UpdateStudentProfileRequest): Observable<StudentListItem> {
+    return this.http.put<StudentListItem>(`${this.api}/students/${studentProfileId}`, data);
+  }
+  archiveStudent(studentProfileId: string): Observable<StudentListItem> {
+    return this.http.post<StudentListItem>(`${this.api}/students/${studentProfileId}/archive`, null);
   }
   getStudentLearningMemory(studentProfileId: string): Observable<AdminStudentLearningMemory> {
     return this.http.get<AdminStudentLearningMemory>(`${this.api}/students/${studentProfileId}/learning-memory`);
@@ -57,8 +64,14 @@ export class AdminApiService {
   listAiConfigs(): Observable<AiProviderConfigItem[]> {
     return this.http.get<AiProviderConfigItem[]>(`${this.api}/ai-config`);
   }
-  updateAiConfig(id: string, providerName: string, modelName: string): Observable<AiProviderConfigItem> {
-    return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}`, { providerName, modelName });
+  updateAiConfig(id: string, data: {
+    providerName?: string | null;
+    modelName?: string | null;
+    fallbackProviderName?: string | null;
+    fallbackModelName?: string | null;
+    fallbackEnabled?: boolean | null;
+  }): Observable<AiProviderConfigItem> {
+    return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}`, data);
   }
 
   // AI provider credentials

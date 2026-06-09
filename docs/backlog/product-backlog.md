@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-09 13:56
 owner: product
 supersedes:
 supersededBy:
@@ -19,6 +19,27 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 - [x] Documentation impact review rule for all code changes. `Done`
   - AGENTS.md now requires a documentation impact review in every code-change final report.
   - Major source-of-truth docs now carry freshness metadata.
+
+---
+
+## Admin UX, Student Management & AI Config Cleanup `Done`
+
+Sprint doc: [admin-ux-student-management-ai-config-cleanup-sprint.md](../sprints/admin-ux-student-management-ai-config-cleanup-sprint.md)
+
+- [x] Fix admin content width and dashboard responsiveness. `Done`
+- [x] Remove permanent Create student sidebar item; Students page owns create action. `Done`
+- [x] Add reusable toast service/component and create-student success toast. `Done`
+- [x] Add admin student profile edit flow. `Done`
+- [x] Add soft archive using `StudentLifecycleStage.Archived`; archived students are hidden by default and cannot sign in. `Done`
+- [x] Hide Curriculum from admin navigation/dashboard while keeping route/API/data intact. `Done`
+- [x] Complete AI feature routing rows for active runtime keys. `Done`
+- [x] Add fallback provider/model/enabled controls to AI Config. `Done`
+
+Deferred follow-ups:
+
+- [ ] Redefine or remove Curriculum when LearningSession / ExercisePattern implementation decides whether curated seed/fallback content is needed. `Planned`
+- [ ] Add secure admin password reset flow for students. `Not started`
+- [ ] Add student detail page with learning memory, activity history, and future reset tools. `Not started`
 
 ---
 

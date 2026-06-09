@@ -3,7 +3,7 @@
   <p class="sp-admin-page-sub">Add a new pilot account</p>
 </div>
 
-<div style="max-width:520px">
+<div style="max-width:860px">
   <div class="sp-admin-form-card">
     <p class="sp-admin-form-desc">Create a private pilot account. The student will use the temporary password once, then set their own password before onboarding.</p>
 
@@ -12,26 +12,6 @@
     }
     @if (success()) {
       <div class="sp-alert-success mt-5">{{ success() }}</div>
-    }
-
-    @if (createdCredentials(); as credentials) {
-      <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <h2 class="text-sm font-semibold text-slate-800">Share these credentials</h2>
-        <p class="mt-1 text-sm leading-6 text-slate-600">Send the email and temporary password to the student through a private channel. They will be asked to create their own password on first login.</p>
-        <dl class="mt-3 space-y-3 text-sm">
-          <div>
-            <dt class="text-xs font-medium uppercase text-slate-500">Email</dt>
-            <dd class="break-all font-medium text-slate-900">{{ credentials.email }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-slate-500">Temporary password</dt>
-            <dd class="break-all font-mono text-slate-900">{{ credentials.temporaryPassword }}</dd>
-          </div>
-        </dl>
-        <button type="button" (click)="startAnother()" class="sp-button-secondary mt-4">
-          Create another student
-        </button>
-      </div>
     }
 
     <form (ngSubmit)="onSubmit()" novalidate class="mt-6 space-y-4">

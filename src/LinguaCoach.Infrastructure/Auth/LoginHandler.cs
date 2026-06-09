@@ -1,7 +1,9 @@
 using LinguaCoach.Application.Auth;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Auth;
@@ -10,15 +12,18 @@ public sealed class LoginHandler : ILoginHandler
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly LinguaCoachDbContext _db;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
+        LinguaCoachDbContext db,
         ILogger<LoginHandler> logger)
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _db = db;
         _logger = logger;
     }
 
@@ -45,6 +50,20 @@ public sealed class LoginHandler : ILoginHandler
         {
             _logger.LogWarning("Login rejected — account not active UserId={UserId}", user.Id);
             throw new UnauthorizedAccessException("Account is not active.");
+        }
+
+        if (user.Role == UserRole.Student)
+        {
+            var lifecycleStage = await _db.StudentProfiles
+                .Where(p => p.UserId == user.Id)
+                .Select(p => (StudentLifecycleStage?)p.LifecycleStage)
+                .FirstOrDefaultAsync(ct);
+
+            if (lifecycleStage == StudentLifecycleStage.Archived)
+            {
+                _logger.LogWarning("Login rejected - archived student UserId={UserId}", user.Id);
+                throw new UnauthorizedAccessException("Account is not active.");
+            }
         }
 
         var token = _tokenService.GenerateToken(user.Id, user.Email!, user.Role);

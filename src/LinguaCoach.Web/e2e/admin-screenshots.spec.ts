@@ -18,7 +18,7 @@ async function mockAdmin(page: Page) {
     });
   });
   // Specific students route must be registered before any catch-all
-  await page.route('**/api/admin/students', async route => {
+  await page.route('**/api/admin/students*', async route => {
     if (route.request().method() !== 'GET') {
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ studentProfileId: 'x', userId: 'y' }) });
       return;
@@ -26,27 +26,57 @@ async function mockAdmin(page: Page) {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify([
-        { userId: '1', email: 'alice@corp.com', onboardingStatus: 'Complete', cefrLevel: 'B1', createdAt: '2026-01-15T00:00:00Z' },
-        { userId: '2', email: 'bob@corp.com',   onboardingStatus: 'Pending',  cefrLevel: null, createdAt: '2026-05-20T00:00:00Z' },
-        { userId: '3', email: 'carol@corp.com', onboardingStatus: 'Complete', cefrLevel: 'A2', createdAt: '2026-04-10T00:00:00Z' },
+        { studentProfileId: 'sp1', userId: '1', email: 'alice@corp.com', firstName: 'Alice', lastName: 'Nguyen', displayName: null, onboardingStatus: 'Complete', lifecycleStage: 'CourseReady', cefrLevel: 'B1', careerContext: 'Project coordination', learningGoal: 'Clear meeting updates', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 30, professionalExperienceLevel: 3, roleFamiliarity: 2, createdAt: '2026-01-15T00:00:00Z' },
+        { studentProfileId: 'sp2', userId: '2', email: 'bob@corp.com', firstName: 'Bob', lastName: null, displayName: null, onboardingStatus: 'Pending', lifecycleStage: 'OnboardingRequired', cefrLevel: null, careerContext: null, learningGoal: null, learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null, createdAt: '2026-05-20T00:00:00Z' },
+        { studentProfileId: 'sp3', userId: '3', email: 'carol@corp.com', firstName: 'Carol', lastName: 'Smith', displayName: 'Carol S.', onboardingStatus: 'Complete', lifecycleStage: 'PlacementRequired', cefrLevel: 'A2', careerContext: 'Healthcare admin', learningGoal: 'Handle patient calls', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 20, professionalExperienceLevel: 2, roleFamiliarity: 1, createdAt: '2026-04-10T00:00:00Z' },
       ]),
     });
   });
   // AI Config routes
-  await page.route('**/api/admin/ai-config/catalog', async route => {
+  await page.route('**/api/admin/ai-providers', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
-      { providerName: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini'], isConfigured: true },
-      { providerName: 'Anthropic', models: ['claude-sonnet-4-6', 'claude-haiku-4-5'], isConfigured: false },
+      { providerName: 'openai', models: ['gpt-4o', 'gpt-4o-mini'], hasApiKey: true, modelTests: [
+        { modelName: 'gpt-4o', ok: true, latencyMs: 42, error: null, testedAt: new Date().toISOString() },
+        { modelName: 'gpt-4o-mini', ok: false, latencyMs: 0, error: null, testedAt: '0001-01-01T00:00:00' },
+      ] },
+      { providerName: 'gemini', models: ['gemini-2.5-flash', 'gemini-2.5-pro'], hasApiKey: false, modelTests: [
+        { modelName: 'gemini-2.5-flash', ok: false, latencyMs: 0, error: null, testedAt: '0001-01-01T00:00:00' },
+        { modelName: 'gemini-2.5-pro', ok: false, latencyMs: 0, error: null, testedAt: '0001-01-01T00:00:00' },
+      ] },
     ]) });
   });
-  await page.route('**/api/admin/ai-config/features', async route => {
+  await page.route('**/api/admin/ai-config*', async route => {
+    if (route.request().url().match(/\/api\/admin\/ai-config\/[^/?]+/)) {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
-      { id: '1', featureKey: 'writing.activity', providerName: 'OpenAI', modelName: 'gpt-4o' },
-      { id: '2', featureKey: 'writing.feedback', providerName: 'OpenAI', modelName: 'gpt-4o' },
+      { id: '1', featureKey: 'activity_generate_writing', providerName: 'openai', modelName: 'gpt-4o', fallbackProviderName: 'gemini', fallbackModelName: 'gemini-2.5-flash', fallbackEnabled: true },
+      { id: '2', featureKey: 'placement_assessment_evaluate', providerName: 'openai', modelName: 'gpt-4o-mini', fallbackProviderName: null, fallbackModelName: null, fallbackEnabled: false },
+      { id: '3', featureKey: 'activity_evaluate_speaking_roleplay', providerName: 'openai', modelName: 'gpt-4o-mini', fallbackProviderName: null, fallbackModelName: null, fallbackEnabled: false },
     ]) });
+  });
+  await page.route('**/api/admin/ai-config/**', async route => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      id: route.request().url().split('/').pop(),
+      featureKey: 'placement_assessment_evaluate',
+      providerName: body.providerName ?? 'openai',
+      modelName: body.modelName ?? 'gpt-4o-mini',
+      fallbackProviderName: body.fallbackProviderName ?? null,
+      fallbackModelName: body.fallbackModelName ?? null,
+      fallbackEnabled: body.fallbackEnabled ?? false,
+    }) });
   });
   // Generic fallback for other admin routes
   await page.route('**/api/admin/**', async route => {
+    const url = route.request().url();
+    if (url.includes('/api/admin/students')
+      || url.includes('/api/admin/ai-config')
+      || url.includes('/api/admin/ai-providers')) {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
   });
 }
@@ -197,6 +227,10 @@ test('admin: students', async ({ page }) => {
   await adminLogin(page);
   await page.getByRole('link', { name: 'Students', exact: true }).click();
   await page.waitForURL(/\/admin\/students/, { timeout: 5000 });
+  await expect(page.getByRole('main')).toContainText('Create student');
+  await expect(page.getByRole('main')).toContainText('Archive');
+  await expect(page.getByRole('main')).toContainText('Edit');
+  await expect(page.locator('aside').getByRole('link', { name: /Create student/i })).toHaveCount(0);
   await page.waitForTimeout(500);
   await page.screenshot({ path: 'e2e/screenshots/admin-02-students.png' });
 });
@@ -204,10 +238,23 @@ test('admin: students', async ({ page }) => {
 test('admin: create-student', async ({ page }) => {
   await mockAdmin(page);
   await adminLogin(page);
-  await page.getByRole('link', { name: /Create student/i }).click();
+  await page.getByRole('link', { name: 'Students', exact: true }).click();
+  await page.getByRole('main').getByRole('link', { name: /Create student/i }).click();
   await page.waitForURL(/create-student/, { timeout: 5000 });
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'e2e/screenshots/admin-03-create-student.png' });
+});
+
+test('admin: create student success returns to students with toast', async ({ page }) => {
+  await mockAdmin(page);
+  await adminLogin(page);
+  await page.goto('/admin/students');
+  await page.getByRole('main').getByRole('link', { name: /Create student/i }).click();
+  await page.getByLabel('Student email').fill('new-student@corp.com');
+  await page.getByLabel('Temporary password').fill('Student123');
+  await page.getByRole('button', { name: /^Create student$/ }).click();
+  await page.waitForURL(/\/admin\/students/, { timeout: 5000 });
+  await expect(page.getByText('Student created successfully')).toBeVisible();
 });
 
 test('admin: ai-config', async ({ page }) => {
@@ -215,6 +262,10 @@ test('admin: ai-config', async ({ page }) => {
   await adminLogin(page);
   await page.getByRole('link', { name: 'AI Config', exact: true }).click();
   await page.waitForURL(/ai-config/, { timeout: 5000 });
+  await expect(page.getByText('Evaluate placement assessment')).toBeVisible();
+  await expect(page.getByText('placement_assessment_evaluate')).toBeVisible();
+  await expect(page.getByText('Evaluate speaking role-play')).toBeVisible();
+  await expect(page.getByText('Fallback enabled').first()).toBeVisible();
   await page.waitForTimeout(600);
   await page.screenshot({ path: 'e2e/screenshots/admin-04-ai-config.png' });
 });

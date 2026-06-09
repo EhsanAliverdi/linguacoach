@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-09 13:56
 owner: product
 supersedes:
 supersededBy:
@@ -14,7 +14,7 @@ Last updated: 2026-06-09
 
 ## Current priority
 
-**Onboarding & Post-Placement UX Alignment is complete** (see `docs/sprints/onboarding-post-placement-ux-alignment-sprint.md`). Next priority: **Guided Course (LearningSession / Today page)**.
+**Admin UX, Student Management & AI Config Cleanup is complete** (see `docs/sprints/admin-ux-student-management-ai-config-cleanup-sprint.md`). Next priority: **Guided Course (LearningSession / Today page)**.
 
 ---
 
@@ -27,6 +27,8 @@ Documentation governance cleanup completed on 2026-06-09: every code change now 
 All four activity types (WritingScenario, ListeningComprehension, VocabularyPractice, SpeakingRolePlay) are implemented and verified end-to-end.
 
 Onboarding now hands students to placement directly. The dashboard is lifecycle-aware: placement-required students see a placement CTA, course-ready students can see their starting-level summary, and Practice Gym is secondary on-demand practice.
+
+Admin cleanup is implemented: admin pages use the available width, Create student lives under Students, admins can edit/archive students, Curriculum is hidden from admin navigation pending redefinition, and AI Config includes primary/fallback routing for all active runtime AI feature keys.
 
 The architecture redesign sprint (course-session-placement-redesign-sprint) defined the new learning model and placement assessment model. No large code changes were made in that sprint â€” it was a planning/architecture sprint.
 

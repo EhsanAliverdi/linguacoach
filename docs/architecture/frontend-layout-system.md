@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-09 13:56
 owner: architecture
 supersedes:
 supersededBy:
@@ -68,7 +68,7 @@ AppComponent (router-outlet)
     │   └── footer                   sign out button
     └── .sp-admin-main               flex:1, margin-left:240px on desktop
         ├── .sp-admin-header         sticky top bar with user chip + role badge
-        └── .sp-admin-content        router-outlet, max-width 1200px
+        └── .sp-admin-content        router-outlet, full available width
 ```
 
 ### Rule: pages render content only
@@ -94,10 +94,10 @@ Every component rendered inside a layout outputs **only page content**. No `<asi
 | `/onboarding/**` | StudentAppLayout | Onboarding step components |
 | `/admin` | AdminAppLayout | AdminDashboardComponent |
 | `/admin/students` | AdminAppLayout | AdminStudentsComponent |
-| `/admin/create-student` | AdminAppLayout | CreateStudentComponent |
+| `/admin/create-student` | AdminAppLayout | CreateStudentComponent (reachable from Students page, not sidebar) |
 | `/admin/ai-config` | AdminAppLayout | AdminAiConfigComponent |
 | `/admin/prompts` | AdminAppLayout | AdminPromptsComponent |
-| `/admin/careers` | AdminAppLayout | AdminCareersComponent |
+| `/admin/careers` | AdminAppLayout | AdminCareersComponent (route retained, hidden from nav pending Curriculum redefinition) |
 | `/admin/usage` | AdminAppLayout | AdminUsageComponent (placeholder) |
 
 ---
@@ -127,9 +127,11 @@ Every component rendered inside a layout outputs **only page content**. No `<asi
 - No top navigation — sidebar is the only nav
 - Professional clean aesthetic: slate/indigo palette, no gradients, no gamification
 - Nav grouped: Overview / Students / AI System / Analytics
+- Create student is not a permanent sidebar item; Students page owns the action
+- Curriculum is hidden from admin navigation pending redefinition
 - "Usage & Analytics" is a "Soon" disabled link
 - Header: sticky 56px bar showing user email + "Admin" badge
-- Content: max-width 1200px
+- Content: full available width with responsive page-level grids/cards
 - Guard: `adminGuard` (handles auth + role check in one guard)
 
 ---
@@ -152,7 +154,7 @@ Inspired by TailAdmin. Key characteristics:
 `/admin` loads `AdminDashboardComponent` which shows:
 
 1. **KPI cards row** — Total students (real), Onboarded (real), AI provider (static "Configured"), Activities tracked ("Coming soon")
-2. **Quick actions grid** — 5 action cards: Add student, Manage students, AI Config, Prompts, Curriculum
+2. **Quick actions grid** — 4 action cards: Add student, Manage students, AI Config, Prompts
 3. **Recent students table** — last 5 from `listStudents()` API
 4. **AI System status card** — Writing/Feedback (Active), Speaking/Listening (Planned)
 5. **Analytics placeholders** — 3 placeholder cards: Usage analytics, Learning progress, Feedback quality

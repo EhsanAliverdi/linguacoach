@@ -1,9 +1,34 @@
 export interface StudentListItem {
+  studentProfileId: string;
   userId: string;
   email: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
   onboardingStatus: string;
+  lifecycleStage: string;
   cefrLevel: string | null;
+  careerContext: string | null;
+  learningGoal: string | null;
+  learningGoalDescription: string | null;
+  difficultSituationsText: string | null;
+  preferredSessionDurationMinutes: number | null;
+  professionalExperienceLevel: number | null;
+  roleFamiliarity: number | null;
   createdAt: string;
+}
+
+export interface UpdateStudentProfileRequest {
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
+  careerContext?: string | null;
+  learningGoal?: string | null;
+  learningGoalDescription?: string | null;
+  difficultSituationsText?: string | null;
+  preferredSessionDurationMinutes?: number | null;
+  professionalExperienceLevel?: number | null;
+  roleFamiliarity?: number | null;
 }
 
 export interface PromptTemplateItem {
@@ -38,6 +63,9 @@ export interface AiProviderConfigItem {
   featureKey: string;
   providerName: string;
   modelName: string;
+  fallbackProviderName: string | null;
+  fallbackModelName: string | null;
+  fallbackEnabled: boolean;
 }
 
 export interface ModelTestStatus {

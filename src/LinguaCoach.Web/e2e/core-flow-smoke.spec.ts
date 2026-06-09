@@ -59,7 +59,7 @@ async function mockApi(page: Page) {
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/api/admin/students', async route => {
+  await page.route('**/api/admin/students*', async route => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -497,11 +497,13 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page).toHaveURL(/\/admin/);
 
   // ── Admin creates student ─────────────────────────────────────────────────────
-  await page.getByRole('link', { name: /Create student/i }).click();
+  await page.getByRole('link', { name: 'Students', exact: true }).click();
+  await page.getByRole('main').getByRole('link', { name: /Create student/i }).click();
   await page.getByLabel('Student email').fill('student@example.com');
   await page.getByLabel('Temporary password').fill('Student123');
   await page.getByRole('button', { name: 'Create student' }).click();
-  await expect(page.getByRole('heading', { name: 'Share these credentials' })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/students/);
+  await expect(page.getByText('Student created successfully')).toBeVisible();
 
   // ── Student first login + password change ─────────────────────────────────────
   await page.evaluate(() => sessionStorage.removeItem('speakpath.auth'));

@@ -188,6 +188,38 @@ public sealed class StudentProfile : BaseEntity
         }
     }
 
+    public void UpdateAdminProfile(
+        string? firstName,
+        string? lastName,
+        string? displayName,
+        string? careerContext,
+        string? learningGoal,
+        string? learningGoalDescription,
+        string? difficultSituationsText,
+        int? preferredSessionDurationMinutes,
+        ProfessionalExperienceLevel? experienceLevel,
+        RoleFamiliarity? roleFamiliarity)
+    {
+        FirstName = string.IsNullOrWhiteSpace(firstName) ? null : firstName.Trim();
+        LastName = string.IsNullOrWhiteSpace(lastName) ? null : lastName.Trim();
+        DisplayName = string.IsNullOrWhiteSpace(displayName) ? null : displayName.Trim();
+        CareerContext = string.IsNullOrWhiteSpace(careerContext) ? null : careerContext.Trim();
+        LearningGoal = string.IsNullOrWhiteSpace(learningGoal) ? null : learningGoal.Trim();
+        LearningGoalDescription = string.IsNullOrWhiteSpace(learningGoalDescription) ? null : learningGoalDescription.Trim();
+        DifficultSituationsText = string.IsNullOrWhiteSpace(difficultSituationsText) ? null : difficultSituationsText.Trim();
+
+        PreferredSessionDurationMinutes =
+            preferredSessionDurationMinutes.HasValue && preferredSessionDurationMinutes.Value > 0
+                ? preferredSessionDurationMinutes
+                : null;
+
+        ProfessionalExperienceLevel = experienceLevel;
+        RoleFamiliarity = roleFamiliarity;
+        WorkplaceSeniority = experienceLevel.HasValue && roleFamiliarity.HasValue
+            ? WorkplaceSeniorityCalculator.Compute(experienceLevel.Value, roleFamiliarity.Value)
+            : null;
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────────
 
     private void EnsureStepIsNext(OnboardingStep requestedStep)

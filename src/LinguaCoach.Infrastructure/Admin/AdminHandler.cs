@@ -1,6 +1,7 @@
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -27,9 +28,13 @@ public sealed class AdminHandler :
 
     // ── Students ──────────────────────────────────────────────────────────────
 
-    public async Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default)
     {
-        var profiles = await _db.StudentProfiles
+        var query = _db.StudentProfiles.AsQueryable();
+        if (!includeArchived)
+            query = query.Where(p => p.LifecycleStage != StudentLifecycleStage.Archived);
+
+        var profiles = await query
             .OrderBy(p => p.CreatedAt)
             .ToListAsync(ct);
 
@@ -41,14 +46,68 @@ public sealed class AdminHandler :
 
         return profiles
             .Where(p => users.ContainsKey(p.UserId))
-            .Select(p => new StudentListItem(
-                p.UserId,
-                users[p.UserId].Email ?? string.Empty,
-                p.OnboardingStatus.ToString(),
-                p.CefrLevel,
-                p.CreatedAt))
+            .Select(p => ToStudentListItem(p, users[p.UserId].Email ?? string.Empty))
             .ToList();
     }
+
+    public async Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == profile.UserId, ct)
+            ?? throw new InvalidOperationException("Student user not found.");
+
+        profile.UpdateAdminProfile(
+            command.FirstName,
+            command.LastName,
+            command.DisplayName,
+            command.CareerContext,
+            command.LearningGoal,
+            command.LearningGoalDescription,
+            command.DifficultSituationsText,
+            command.PreferredSessionDurationMinutes,
+            command.ProfessionalExperienceLevel,
+            command.RoleFamiliarity);
+
+        await _db.SaveChangesAsync(ct);
+        return ToStudentListItem(profile, user.Email ?? string.Empty);
+    }
+
+    public async Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == profile.UserId, ct)
+            ?? throw new InvalidOperationException("Student user not found.");
+
+        profile.SetLifecycleStage(StudentLifecycleStage.Archived);
+        user.EmailConfirmed = false;
+
+        await _db.SaveChangesAsync(ct);
+        return ToStudentListItem(profile, user.Email ?? string.Empty);
+    }
+
+    private static StudentListItem ToStudentListItem(StudentProfile p, string email)
+        => new(
+            p.Id,
+            p.UserId,
+            email,
+            p.FirstName,
+            p.LastName,
+            p.DisplayName,
+            p.OnboardingStatus.ToString(),
+            p.LifecycleStage.ToString(),
+            p.CefrLevel,
+            p.CareerContext,
+            p.LearningGoal,
+            p.LearningGoalDescription,
+            p.DifficultSituationsText,
+            p.PreferredSessionDurationMinutes,
+            p.ProfessionalExperienceLevel,
+            p.RoleFamiliarity,
+            p.CreatedAt);
 
     // ── Prompt templates ──────────────────────────────────────────────────────
 
@@ -163,8 +222,9 @@ public sealed class AdminHandler :
 
     public async Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default)
     {
+        await EnsureActiveFeatureConfigsAsync(ct);
         var configs = await _db.AiProviderConfigs.OrderBy(c => c.FeatureKey).ToListAsync(ct);
-        return configs.Select(c => new AiProviderConfigItem(c.Id, c.FeatureKey, c.ProviderName, c.ModelName)).ToList();
+        return configs.Select(ToAiProviderConfigItem).ToList();
     }
 
     public async Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default)
@@ -187,11 +247,89 @@ public sealed class AdminHandler :
         var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Id == command.ConfigId, ct)
             ?? throw new InvalidOperationException("AI provider config not found.");
 
-        config.Update(command.ProviderName, command.ModelName);
+        if (!string.IsNullOrWhiteSpace(command.ProviderName) || !string.IsNullOrWhiteSpace(command.ModelName))
+        {
+            config.Update(
+                command.ProviderName ?? config.ProviderName,
+                command.ModelName ?? config.ModelName);
+        }
+
+        if (command.FallbackEnabled.HasValue
+            || command.FallbackProviderName is not null
+            || command.FallbackModelName is not null)
+        {
+            config.SetFallback(
+                command.FallbackProviderName ?? config.FallbackProviderName,
+                command.FallbackModelName ?? config.FallbackModelName,
+                command.FallbackEnabled ?? config.FallbackEnabled);
+        }
+
         await _db.SaveChangesAsync(ct);
 
-        return new AiProviderConfigItem(config.Id, config.FeatureKey, config.ProviderName, config.ModelName);
+        return ToAiProviderConfigItem(config);
     }
+
+    private async Task EnsureActiveFeatureConfigsAsync(CancellationToken ct)
+    {
+        var activePromptKeys = await _db.AiPrompts
+            .Where(p => p.IsActive)
+            .Select(p => p.Key)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var featureKeys = activePromptKeys
+            .Select(DeriveFeatureKey)
+            .Append("writing.exercise")
+            .Concat(KnownRuntimeFeatureKeys)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(k => k.ToLowerInvariant())
+            .ToList();
+
+        var existing = await _db.AiProviderConfigs
+            .Select(c => c.FeatureKey)
+            .ToListAsync(ct);
+
+        var existingSet = existing.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var key in featureKeys.Where(k => !existingSet.Contains(k)))
+        {
+            _db.AiProviderConfigs.Add(new AiProviderConfig(key, "openai", "gpt-4o-mini"));
+        }
+
+        if (_db.ChangeTracker.HasChanges())
+            await _db.SaveChangesAsync(ct);
+    }
+
+    private static string DeriveFeatureKey(string promptKey)
+    {
+        var parts = promptKey.Split('.');
+        return parts.Length >= 3 && parts[^1].StartsWith('v') && int.TryParse(parts[^1][1..], out _)
+            ? string.Join('.', parts[..^1])
+            : promptKey;
+    }
+
+    private static readonly string[] KnownRuntimeFeatureKeys =
+    [
+        "learning_path_generate",
+        "learning_path_generate_adaptive",
+        "activity_generate_writing",
+        "activity_evaluate_writing",
+        "activity_generate_listening",
+        "activity_generate_speaking_roleplay",
+        "activity_evaluate_speaking_roleplay",
+        "vocabulary_extract_from_attempt",
+        "student_memory_update",
+        "placement_assessment_evaluate"
+    ];
+
+    private static AiProviderConfigItem ToAiProviderConfigItem(AiProviderConfig c)
+        => new(
+            c.Id,
+            c.FeatureKey,
+            c.ProviderName,
+            c.ModelName,
+            c.FallbackProviderName,
+            c.FallbackModelName,
+            c.FallbackEnabled);
 
     public async Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default)
     {

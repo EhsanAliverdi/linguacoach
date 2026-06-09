@@ -1,3 +1,11 @@
+---
+status: current
+lastUpdated: 2026-06-09 13:56
+owner: deployment
+supersedes:
+supersededBy:
+---
+
 # Production AI feedback configuration
 
 SpeakPath writing feedback uses the existing AI provider abstraction and can run through OpenAI or Gemini.
@@ -30,6 +38,32 @@ The API also accepts configuration keys `OpenAI:ApiKey` and `Gemini:ApiKey`, but
 Development can fall back to `OpenAI` / `gpt-4o-mini` if provider/model are missing. Production does not use provider/model defaults.
 
 The startup seed ensures there is one active default writing feedback prompt when it is missing. This avoids requiring admin prompt setup before the first demo.
+
+## Admin AI feature routing
+
+Admin AI Config exposes one row for each active runtime feature key. Each row supports:
+
+- primary provider
+- primary model
+- fallback provider
+- fallback model
+- fallback enabled toggle
+
+Fallback routing is stored in `AiProviderConfig` and used by `AiExecutionService` / `AiProviderResolver` when the primary provider fails. API keys are never returned to the frontend; the provider catalog only returns whether a key is stored.
+
+Current runtime feature keys include:
+
+- `writing.exercise`
+- `learning_path_generate`
+- `learning_path_generate_adaptive`
+- `activity_generate_writing`
+- `activity_evaluate_writing`
+- `activity_generate_listening`
+- `activity_generate_speaking_roleplay`
+- `activity_evaluate_speaking_roleplay`
+- `vocabulary_extract_from_attempt`
+- `student_memory_update`
+- `placement_assessment_evaluate`
 
 ## VPS setup
 

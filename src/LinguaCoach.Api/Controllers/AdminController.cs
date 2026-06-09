@@ -64,8 +64,42 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpGet("students")]
-    public async Task<IActionResult> ListStudents(CancellationToken ct)
-        => Ok(await _studentQuery.ListStudentsAsync(ct));
+    public async Task<IActionResult> ListStudents([FromQuery] bool includeArchived, CancellationToken ct)
+        => Ok(await _studentQuery.ListStudentsAsync(includeArchived, ct));
+
+    [HttpPut("students/{studentId:guid}")]
+    public async Task<IActionResult> UpdateStudent(Guid studentId, [FromBody] UpdateStudentProfileRequest request, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _studentQuery.UpdateStudentAsync(
+                new UpdateStudentProfileCommand(
+                    studentId,
+                    request.FirstName,
+                    request.LastName,
+                    request.DisplayName,
+                    request.CareerContext,
+                    request.LearningGoal,
+                    request.LearningGoalDescription,
+                    request.DifficultSituationsText,
+                    request.PreferredSessionDurationMinutes,
+                    request.ProfessionalExperienceLevel,
+                    request.RoleFamiliarity),
+                ct));
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("students/{studentId:guid}/archive")]
+    public async Task<IActionResult> ArchiveStudent(Guid studentId, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _studentQuery.ArchiveStudentAsync(new ArchiveStudentCommand(studentId), ct));
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+    }
 
     [HttpGet("students/{studentId:guid}/learning-memory")]
     public async Task<IActionResult> GetStudentMemory(Guid studentId, CancellationToken ct)
@@ -173,7 +207,14 @@ public sealed class AdminController : ControllerBase
         try
         {
             var result = await _aiConfigHandler.UpdateConfigAsync(
-                new UpdateAiProviderConfigCommand(configId, request.ProviderName, request.ModelName), ct);
+                new UpdateAiProviderConfigCommand(
+                    configId,
+                    request.ProviderName,
+                    request.ModelName,
+                    request.FallbackProviderName,
+                    request.FallbackModelName,
+                    request.FallbackEnabled),
+                ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
@@ -223,8 +264,24 @@ public sealed record CreateStudentRequest(
     int? PreferredSessionDurationMinutes = null,
     LinguaCoach.Domain.Enums.ProfessionalExperienceLevel? ProfessionalExperienceLevel = null,
     LinguaCoach.Domain.Enums.RoleFamiliarity? RoleFamiliarity = null);
+public sealed record UpdateStudentProfileRequest(
+    string? FirstName = null,
+    string? LastName = null,
+    string? DisplayName = null,
+    string? CareerContext = null,
+    string? LearningGoal = null,
+    string? LearningGoalDescription = null,
+    string? DifficultSituationsText = null,
+    int? PreferredSessionDurationMinutes = null,
+    LinguaCoach.Domain.Enums.ProfessionalExperienceLevel? ProfessionalExperienceLevel = null,
+    LinguaCoach.Domain.Enums.RoleFamiliarity? RoleFamiliarity = null);
 public sealed record CreatePromptVersionRequest(string Key, string Content, int? MaxInputTokens, int? MaxOutputTokens);
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);
-public sealed record UpdateAiConfigRequest(string ProviderName, string ModelName);
+public sealed record UpdateAiConfigRequest(
+    string? ProviderName,
+    string? ModelName,
+    string? FallbackProviderName = null,
+    string? FallbackModelName = null,
+    bool? FallbackEnabled = null);
 public sealed record SetProviderApiKeyRequest(string? ApiKey);

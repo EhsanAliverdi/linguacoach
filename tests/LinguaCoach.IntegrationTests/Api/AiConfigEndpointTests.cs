@@ -227,6 +227,30 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
         Assert.True(body.GetArrayLength() > 0);
     }
 
+    [Fact]
+    public async Task ListConfigs_AsAdmin_IncludesActiveRuntimeFeatureKeysAndFallbackFields()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai-config");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var items = body.EnumerateArray().ToList();
+        var keys = items.Select(i => i.GetProperty("featureKey").GetString()).ToList();
+
+        Assert.Contains("placement_assessment_evaluate", keys);
+        Assert.Contains("activity_generate_speaking_roleplay", keys);
+        Assert.Contains("activity_evaluate_speaking_roleplay", keys);
+        Assert.Contains("activity_generate_listening", keys);
+        Assert.Contains("vocabulary_extract_from_attempt", keys);
+        Assert.Contains("student_memory_update", keys);
+
+        var first = items.First();
+        Assert.True(first.TryGetProperty("fallbackProviderName", out _));
+        Assert.True(first.TryGetProperty("fallbackModelName", out _));
+        Assert.True(first.TryGetProperty("fallbackEnabled", out _));
+    }
+
     // ── PUT /api/admin/ai-config/{id} (feature routing) ──────────────────────
 
     [Fact]
@@ -256,6 +280,48 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
             new { providerName = "anthropic", modelName = "claude-sonnet-4-6" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateFeatureConfig_FallbackProviderModelAndToggle_Succeeds()
+    {
+        var id = await SeedFeatureConfigAsync($"feat.fallback.{Guid.NewGuid():N}");
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        var response = await ClientWithToken(token).PutAsJsonAsync(
+            $"/api/admin/ai-config/{id}",
+            new
+            {
+                providerName = "openai",
+                modelName = "gpt-4o-mini",
+                fallbackProviderName = "gemini",
+                fallbackModelName = "gemini-2.5-flash",
+                fallbackEnabled = true
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("gemini", body.GetProperty("fallbackProviderName").GetString());
+        Assert.Equal("gemini-2.5-flash", body.GetProperty("fallbackModelName").GetString());
+        Assert.True(body.GetProperty("fallbackEnabled").GetBoolean());
+    }
+
+    [Fact]
+    public async Task UpdateFeatureConfig_InvalidFallbackModel_Returns400()
+    {
+        var id = await SeedFeatureConfigAsync($"feat.badfallback.{Guid.NewGuid():N}");
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        var response = await ClientWithToken(token).PutAsJsonAsync(
+            $"/api/admin/ai-config/{id}",
+            new
+            {
+                fallbackProviderName = "gemini",
+                fallbackModelName = "gpt-4o",
+                fallbackEnabled = true
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
