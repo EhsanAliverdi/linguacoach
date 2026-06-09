@@ -251,3 +251,55 @@ dotnet test LinguaCoach.slnx   → 242 unit, 234 integration — all passed
 npm run build                   → passed (warnings only)
 npx playwright test             → 62 passed, 1 pre-existing flaky (progress-page strict-mode, unrelated to this change)
 ```
+
+---
+
+## Final Verification Pass — 2026-06-09
+
+Code review and test run to confirm all QA requirements from the brief are met. No source changes were required — all items were already correctly implemented.
+
+### Step 3 — free-text career (verified)
+
+- Component: `step3-career.component.ts` / `.html`
+- Free-text `<input>` bound to `careerText` signal ✓
+- "Document controller" is one of 5 suggestion chips — not hardcoded ✓
+- `next()` posts `{ step: 'career', careerContext: text }` — no `CareerProfileId` ✓
+- Test coverage: `core-flow-smoke.spec.ts` line 531 — fills "Junior Software Engineer" ✓
+
+### Step 4 — learning goal + Listening + placement navigation (verified)
+
+- Component: `step4-skill.component.ts` / `.html`
+- `<textarea>` for free-text learning goal (any language, Farsi placeholder) ✓
+- Listening skill tag included (value: 3) ✓
+- `finish()` navigates to `/placement` ✓
+- Test coverage: `core-flow-smoke.spec.ts` lines 535–540 — clicks Listening, fills Farsi text, asserts `/placement` ✓
+
+### Dashboard — lifecycle-aware (verified)
+
+- Component: `dashboard.component.ts` / `.html`
+- `PlacementRequired` → placement CTA with `data-testid="dashboard-placement-required"` ✓
+- No "Start your first activity" hero or "Complete onboarding to unlock" copy ✓
+- `CourseReady`/`PlacementCompleted` → placement result summary ✓
+- Practice Gym under secondary section labelled "Practice Gym — On-demand practice" ✓
+- Test coverage: `placement-assessment.spec.ts` line 133 (PlacementRequired CTA); `onboarding-post-placement-dashboard.spec.ts` line 99 (CourseReady) ✓
+
+### Playwright strict-mode issue (resolved)
+
+The "progress-page strict-mode failure" reported in the previous QA pass was a transient flaky failure. All 6 progress-page tests pass cleanly. The previous run had 62 passed (1 flaky); this run has **64 passed (0 flaky)** — the count increased because new tests were added in the QA alignment pass and are now stable.
+
+No `docs/testing/` known-issue entry required.
+
+### Test results (final verification)
+
+```
+dotnet test LinguaCoach.slnx   → 242 unit, 234 integration — all passed
+npm run build                   → passed (warnings only, no errors)
+npx playwright test             → 64 passed, 0 failed, 0 flaky
+```
+
+### Documentation impact
+
+- Docs reviewed: `docs/sprints/onboarding-post-placement-ux-alignment-sprint.md`
+- Docs updated: this file (final verification section appended)
+- Docs intentionally not updated: `docs/testing/` — no known issues remain
+- Reason: all QA requirements verified as already implemented; no code changes made; sprint is complete
