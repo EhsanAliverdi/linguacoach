@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:56
+lastUpdated: 2026-06-09 14:30
 owner: product
 supersedes:
 supersededBy:
@@ -62,9 +62,19 @@ Playwright:      56 passed
 - AI Config shows primary and fallback provider/model routing for active runtime AI feature keys
 - Curriculum is hidden from admin navigation while its future purpose is redefined
 
+## Placement Assessment — current state
+
+Placement Assessment MVP is implemented:
+- 6-section structured assessment (`PlacementAssessment`, `PlacementSection` entities)
+- AI evaluation → `PlacementResult` as CEFR source of truth
+- Listening section uses **server-side TTS audio** (`PlacementAudioService`), not browser SpeechSynthesis
+- `GET /api/placement/audio/{assessmentId}/listening` streams authenticated audio
+- Frontend shows native `<audio controls>` when server audio is available; graceful fallback if not
+- Transcript hidden by default behind "Show transcript"
+
 ## Known gaps / not yet built
 
-- No placement assessment (the main next priority)
+- No session-based lesson structure (`LearningSession` / `SessionExercise`) — placement is complete, course not yet built
 - No session-based lesson structure (`LearningSession` / `SessionExercise`)
 - No Today page / guided course flow
 - No real STT provider (SpeakingRolePlay uses `FakeSpeechToTextService`)

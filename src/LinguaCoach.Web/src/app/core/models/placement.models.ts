@@ -36,6 +36,10 @@ export interface PlacementCurrentSection {
   currentSectionOrder: number;
   totalSections: number;
   isCompleted: boolean;
+  /** Relative API URL for server-side listening audio. Only set for the listening section. */
+  audioUrl?: string | null;
+  /** True when server-side TTS audio is available and ready to play. */
+  audioAvailable?: boolean;
 }
 
 export interface PlacementAnswerInput {

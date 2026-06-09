@@ -42,17 +42,20 @@ public sealed class PlacementService :
     private readonly LinguaCoachDbContext _db;
     private readonly IPlacementEvaluator _evaluator;
     private readonly IStudentMemoryService _memory;
+    private readonly PlacementAudioService _audio;
     private readonly ILogger<PlacementService> _logger;
 
     public PlacementService(
         LinguaCoachDbContext db,
         IPlacementEvaluator evaluator,
         IStudentMemoryService memory,
+        PlacementAudioService audio,
         ILogger<PlacementService> logger)
     {
         _db = db;
         _evaluator = evaluator;
         _memory = memory;
+        _audio = audio;
         _logger = logger;
     }
 
@@ -219,12 +222,28 @@ public sealed class PlacementService :
 
         var section = isCompleted ? null : SanitiseSection(PlacementContent.GetSection(currentKey));
 
+        string? audioUrl = null;
+        var audioAvailable = false;
+
+        if (!isCompleted && assessment is not null
+            && string.Equals(currentKey, PlacementContent.ListeningKey, StringComparison.OrdinalIgnoreCase))
+        {
+            var listeningSection = PlacementContent.GetSection(PlacementContent.ListeningKey);
+            if (!string.IsNullOrWhiteSpace(listeningSection?.AudioScript))
+            {
+                (audioAvailable, audioUrl) = await _audio.EnsureListeningAudioAsync(
+                    assessment.Id, listeningSection.AudioScript, ct);
+            }
+        }
+
         return new PlacementCurrentSectionDto(
             Status: status.ToString(),
             Section: section,
             CurrentSectionOrder: order < 1 ? 1 : order,
             TotalSections: PlacementContent.SectionOrder.Count,
-            IsCompleted: isCompleted);
+            IsCompleted: isCompleted,
+            AudioUrl: audioUrl,
+            AudioAvailable: audioAvailable);
     }
 
     // â”€â”€ Result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

@@ -121,6 +121,7 @@ public static class DependencyInjection
         services.AddScoped<ISubmitSpeakingTurnHandler, SpeakingSessionHandler>();
 
         // Placement assessment
+        services.AddScoped<PlacementAudioService>();
         services.AddScoped<FakePlacementEvaluator>();
         services.AddScoped<IPlacementEvaluator, AiPlacementEvaluator>();
         services.AddScoped<PlacementService>();

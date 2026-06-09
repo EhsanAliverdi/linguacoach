@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:56
+lastUpdated: 2026-06-09 14:45
 owner: product
 supersedes:
 supersededBy:
@@ -66,6 +66,40 @@ Completion notes:
 - After onboarding, students go to `/placement`; onboarding no longer starts background learning-path generation.
 - Dashboard is lifecycle-aware and keeps Practice Gym secondary until Today / `LearningSession` is implemented.
 - Verification passed: `dotnet test LinguaCoach.slnx`, `npm run build`, `npx playwright test`.
+
+---
+
+## Configurable Onboarding and Placement Assessment `Not started`
+
+**Priority:** P1 — after Placement MVP stabilisation, before serious pilot expansion
+
+**Reason:** We are still learning what onboarding and placement should ask. Hardcoded questions slow iteration and make the product hard to improve without code changes.
+
+**Description:**
+
+Onboarding and placement questions should be configurable from admin/product configuration rather than hardcoded in Angular/backend. Admins should be able to modify and improve onboarding steps, onboarding questions, placement sections, placement questions, answer options, helper text, examples, and scoring/evaluation prompts without code changes.
+
+**Scope:**
+
+- [ ] Configurable onboarding steps (order, labels, instructions). `Not started`
+- [ ] Configurable onboarding questions (per step: type, prompt, options, helper text). `Not started`
+- [ ] Configurable placement sections (order, title, instructions, section type). `Not started`
+- [ ] Configurable placement questions (per section: type, prompt, answer options, correct answer, scoring weight). `Not started`
+- [ ] Configurable answer options (add/remove/reorder without code changes). `Not started`
+- [ ] Configurable examples and helper text for each question. `Not started`
+- [ ] Configurable skill tags per section (which skills a section scores). `Not started`
+- [ ] Configurable listening scripts or script templates (replace hardcoded placement audio script). `Not started`
+- [ ] Configurable placement evaluation prompt/template via DB prompt system (extends existing AI prompt infrastructure). `Not started`
+- [ ] Versioning of assessment/question sets (track which version a student started). `Not started`
+- [ ] Safe migration path for students who started an older version (resume on same version or notify admin of mismatch). `Not started`
+- [ ] Admin preview/test mode (preview placement as a student without committing results). `Not started`
+
+**Notes:**
+
+- Current hardcoded location: `PlacementContent.cs` (backend) and `PlacementContent` static class
+- Placement audio script is currently hardcoded in the `listening` section definition
+- The existing AI prompt DB infrastructure (`AiPromptTemplate`, `DefaultAiSeeder`) is the natural extension point for configurable evaluation prompts
+- Do not implement as part of Placement MVP stabilisation — backlog only until pilot feedback confirms which questions need to change
 
 ---
 

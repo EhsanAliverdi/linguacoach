@@ -31,7 +31,11 @@ export class PlacementComponent implements OnInit, OnDestroy {
 
   readonly ratingScale = [1, 2, 3, 4, 5];
 
-  // TTS playback state (listening section)
+  // Server-side audio for the listening section
+  listeningAudioUrl = signal<string | null>(null);
+  listeningAudioAvailable = signal(false);
+
+  // Fallback SpeechSynthesis state (used only when server audio is unavailable)
   isSpeaking = signal(false);
 
   // Recording state (speaking section)
@@ -90,6 +94,7 @@ export class PlacementComponent implements OnInit, OnDestroy {
 
   private loadCurrentSection(): void {
     this.cleanupRecording();
+    this.isSpeaking.set(false);
     this.state.set('loading');
     this.placement.getCurrent().subscribe({
       next: cur => {
@@ -98,6 +103,9 @@ export class PlacementComponent implements OnInit, OnDestroy {
         this.currentOrder.set(cur.currentSectionOrder);
         this.totalSections.set(cur.totalSections);
         this.answers.set({});
+        // Populate server-side audio fields for the listening section
+        this.listeningAudioUrl.set(cur.audioUrl ?? null);
+        this.listeningAudioAvailable.set(cur.audioAvailable ?? false);
         this.state.set('section');
       },
       error: () => { this.error.set('Could not load the current section.'); this.state.set('error'); },

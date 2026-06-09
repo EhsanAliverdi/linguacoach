@@ -1,7 +1,10 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Placement;
+using LinguaCoach.Infrastructure.Placement;
+using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Api.Controllers;
 
@@ -21,6 +24,8 @@ public sealed class PlacementController : ControllerBase
     private readonly IGetPlacementStatusHandler _status;
     private readonly IGetPlacementCurrentSectionHandler _current;
     private readonly IGetPlacementResultHandler _result;
+    private readonly PlacementAudioService _audio;
+    private readonly LinguaCoachDbContext _db;
 
     public PlacementController(
         IStartPlacementHandler start,
@@ -28,7 +33,9 @@ public sealed class PlacementController : ControllerBase
         ICompletePlacementHandler complete,
         IGetPlacementStatusHandler status,
         IGetPlacementCurrentSectionHandler current,
-        IGetPlacementResultHandler result)
+        IGetPlacementResultHandler result,
+        PlacementAudioService audio,
+        LinguaCoachDbContext db)
     {
         _start = start;
         _save = save;
@@ -36,6 +43,8 @@ public sealed class PlacementController : ControllerBase
         _status = status;
         _current = current;
         _result = result;
+        _audio = audio;
+        _db = db;
     }
 
     [HttpGet("status")]
@@ -146,6 +155,30 @@ public sealed class PlacementController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Streams the server-generated TTS audio for the placement listening section.
+    /// Authenticated student only; student can only access their own placement audio.
+    /// </summary>
+    [HttpGet("audio/{assessmentId:guid}/listening")]
+    public async Task<IActionResult> ListeningAudio(Guid assessmentId, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        // Ownership check: assessmentId must belong to this student.
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return NotFound();
+
+        var assessment = await _db.PlacementAssessments
+            .FirstOrDefaultAsync(a => a.Id == assessmentId && a.StudentProfileId == profile.Id, ct);
+        if (assessment is null) return NotFound();
+
+        var file = await _audio.GetListeningAudioAsync(assessmentId, ct);
+        if (file is null) return NotFound();
+
+        return File(file.Bytes, file.ContentType);
     }
 
     private Guid GetCurrentUserId()

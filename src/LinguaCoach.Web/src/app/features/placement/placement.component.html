@@ -54,31 +54,51 @@
           <div class="mt-4 whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-800" data-testid="placement-passage">{{ sec.passage }}</div>
         }
 
-        <!-- Listening: Web Speech API player + transcript fallback -->
-        @if (sec.sectionType === 'listening' && sec.audioScript) {
+        <!-- Listening: server-side audio player (primary), graceful fallback -->
+        @if (sec.sectionType === 'listening') {
           <div class="mt-4 rounded-xl bg-slate-50 p-4" data-testid="placement-audio">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Voice message</p>
-            <div class="mb-3 flex items-center gap-3">
-              <button type="button" (click)="speakAudio(sec.audioScript)"
-                [disabled]="isSpeaking()"
-                class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-                data-testid="placement-audio-play">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Voice message</p>
+
+            @if (listeningAudioAvailable() && listeningAudioUrl()) {
+              <!-- Primary: server-generated human-like audio -->
+              <audio
+                controls
+                [src]="listeningAudioUrl()!"
+                class="w-full rounded-lg"
+                data-testid="placement-audio-player"
+                preload="auto">
+                Your browser does not support audio playback.
+              </audio>
+            } @else if (sec.audioScript) {
+              <!-- Fallback: SpeechSynthesis or unavailability message -->
+              <div class="mb-3 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800" data-testid="placement-audio-unavailable">
+                Audio is temporarily unavailable. You can read the transcript below and answer from there.
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" (click)="speakAudio(sec.audioScript)"
+                  [disabled]="isSpeaking()"
+                  class="flex items-center gap-2 rounded-lg bg-slate-600 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+                  data-testid="placement-audio-play-fallback">
+                  @if (isSpeaking()) {
+                    <svg class="h-4 w-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12"/><rect x="12" y="4" width="4" height="12"/></svg>
+                    Playing…
+                  } @else {
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.8A1 1 0 005 3.7v12.6a1 1 0 001.3.9l11-6.3a1 1 0 000-1.8l-11-6.3z"/></svg>
+                    Play (browser voice)
+                  }
+                </button>
                 @if (isSpeaking()) {
-                  <svg class="h-4 w-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12"/><rect x="12" y="4" width="4" height="12"/></svg>
-                  Playing…
-                } @else {
-                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.8A1 1 0 005 3.7v12.6a1 1 0 001.3.9l11-6.3a1 1 0 000-1.8l-11-6.3z"/></svg>
-                  Play message
+                  <button type="button" (click)="stopAudio()" class="text-xs text-slate-500 underline">Stop</button>
                 }
-              </button>
-              @if (isSpeaking()) {
-                <button type="button" (click)="stopAudio()" class="text-xs text-slate-500 underline">Stop</button>
-              }
-            </div>
-            <details class="text-sm">
-              <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-700">Show transcript</summary>
-              <p class="mt-2 whitespace-pre-line leading-6 text-slate-700">{{ sec.audioScript }}</p>
-            </details>
+              </div>
+            }
+
+            @if (sec.audioScript) {
+              <details class="mt-3 text-sm">
+                <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-700" data-testid="placement-show-transcript">Show transcript</summary>
+                <p class="mt-2 whitespace-pre-line leading-6 text-slate-700" data-testid="placement-transcript">{{ sec.audioScript }}</p>
+              </details>
+            }
           </div>
         }
 

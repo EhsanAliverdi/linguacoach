@@ -53,7 +53,11 @@ public sealed record PlacementCurrentSectionDto(
     PlacementSectionDto? Section,
     int CurrentSectionOrder,
     int TotalSections,
-    bool IsCompleted);
+    bool IsCompleted,
+    /// <summary>Set only for the listening section. Relative API URL: /api/placement/audio/{id}/listening</summary>
+    string? AudioUrl = null,
+    /// <summary>True when server-side TTS audio is available for the listening section.</summary>
+    bool AudioAvailable = false);
 
 /// <summary>Per-skill CEFR level pair for the result view.</summary>
 public sealed record PlacementSkillLevelDto(string Skill, string Level);
