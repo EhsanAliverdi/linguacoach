@@ -38,6 +38,9 @@ services:
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       # Suppress non-fatal Kerberos library warning from Npgsql on Debian runtime image
       GSSAPI_KRB5_NO_CONFIGURE: "1"
+      TTS_AUDIO_STORAGE_PATH: "/app/audio-data"
+    volumes:
+      - audio_data:/app/audio-data
     depends_on:
       db:
         condition: service_healthy
@@ -54,3 +57,4 @@ services:
 
 volumes:
   postgres_data:
+  audio_data:

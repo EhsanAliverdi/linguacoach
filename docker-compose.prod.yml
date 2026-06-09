@@ -4,6 +4,9 @@ networks:
   linguacoach_internal:
     driver: bridge
 
+volumes:
+  audio_data:
+
 services:
   api:
     image: ${API_IMAGE}
@@ -22,6 +25,9 @@ services:
       Seed__AdminEmail: "${SEED_ADMIN_EMAIL}"
       Seed__AdminPassword: "${SEED_ADMIN_PASSWORD}"
       GSSAPI_KRB5_NO_CONFIGURE: "1"
+      TTS_AUDIO_STORAGE_PATH: "/app/audio-data"
+    volumes:
+      - audio_data:/app/audio-data
     networks:
       - proxy
       - linguacoach_internal
