@@ -27,6 +27,8 @@ using LinguaCoach.Application.Progress;
 using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Vocabulary;
+using LinguaCoach.Application.Placement;
+using LinguaCoach.Infrastructure.Placement;
 using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -117,6 +119,16 @@ public static class DependencyInjection
         // Speaking sessions
         services.AddScoped<ICreateSpeakingSessionHandler, SpeakingSessionHandler>();
         services.AddScoped<ISubmitSpeakingTurnHandler, SpeakingSessionHandler>();
+
+        // Placement assessment
+        services.AddScoped<IPlacementEvaluator, AiPlacementEvaluator>();
+        services.AddScoped<PlacementService>();
+        services.AddScoped<IStartPlacementHandler>(sp => sp.GetRequiredService<PlacementService>());
+        services.AddScoped<ISavePlacementAnswersHandler>(sp => sp.GetRequiredService<PlacementService>());
+        services.AddScoped<ICompletePlacementHandler>(sp => sp.GetRequiredService<PlacementService>());
+        services.AddScoped<IGetPlacementStatusHandler>(sp => sp.GetRequiredService<PlacementService>());
+        services.AddScoped<IGetPlacementCurrentSectionHandler>(sp => sp.GetRequiredService<PlacementService>());
+        services.AddScoped<IGetPlacementResultHandler>(sp => sp.GetRequiredService<PlacementService>());
 
         return services;
     }
