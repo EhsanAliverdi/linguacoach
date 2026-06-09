@@ -295,8 +295,9 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 ### Real TTS Provider (P2)
 
 - [ ] Evaluate OpenAI TTS vs Azure TTS vs Google TTS for quality and cost. `Not started`
-- [ ] Add real TTS provider implementation behind `ITextToSpeechService`. `Not started`
-- [ ] Wire into listening activity generation. `Not started`
+- [ ] **Implement `OpenAiTextToSpeechService` behind `ITextToSpeechService`.** `Not started` OpenAI TTS (`tts-1` model, `onyx` or `echo` voice) is the preferred first provider. `OPENAI_API_KEY` is already wired in production compose. Add `TTS_PROVIDER=OpenAI` env var and register via `DependencyInjection.cs` based on config. This will make placement listening audio audible in production — currently `FakeTextToSpeechService` generates silent WAV (correct for tests, silent in prod).
+- [ ] Wire into listening activity generation (`ListeningAudioService`). `Not started`
+- [ ] Wire into placement listening audio (`PlacementAudioService`). `Not started`
 - [ ] Add TTS usage cost tracking. `Not started`
 - [ ] Add TTS audio cache cleanup job to `LinguaCoach.Worker`. `Not started`
 
