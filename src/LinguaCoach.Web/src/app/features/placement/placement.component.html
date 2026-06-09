@@ -123,7 +123,68 @@
                 </div>
               }
 
-              @if (q.type === 'text') {
+              @if (q.type === 'text' && sec.sectionType === 'speaking') {
+                <!-- Speaking section: record + live transcript -->
+                @if (recordState() === 'unsupported' || recordState() === 'denied') {
+                  @if (recordState() === 'denied') {
+                    <p class="mb-2 text-xs text-amber-600">Microphone access was denied. Type your response instead.</p>
+                  } @else {
+                    <p class="mb-2 text-xs text-slate-500">Recording not supported in this browser. Type your response instead.</p>
+                  }
+                  <textarea rows="6" class="sp-input" [value]="answerValue(q.key)"
+                    (input)="setAnswer(q.key, $any($event.target).value)"
+                    placeholder="Type what you would say…"></textarea>
+                } @else if (recordState() === 'idle' || recordState() === 'requesting') {
+                  <button type="button" (click)="startRecording(q.key)"
+                    [disabled]="recordState() === 'requesting'"
+                    class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 py-6 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-60"
+                    data-testid="placement-record-start">
+                    @if (recordState() === 'requesting') {
+                      <svg class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                      Requesting microphone…
+                    } @else {
+                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm-1 18.93V22h2v-2.07A8.001 8.001 0 0020 12h-2a6 6 0 01-12 0H4a8.001 8.001 0 007 7.93z"/></svg>
+                      Tap to record your response
+                    }
+                  </button>
+                } @else if (recordState() === 'recording') {
+                  <div class="rounded-xl border border-red-200 bg-red-50 p-4" data-testid="placement-recording">
+                    <div class="mb-3 flex items-center justify-between">
+                      <div class="flex items-center gap-2 text-sm font-semibold text-red-700">
+                        <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500"></span>
+                        Recording — {{ recordingSeconds() }}s
+                      </div>
+                      <button type="button" (click)="stopRecording()"
+                        class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                        data-testid="placement-record-stop">
+                        Stop
+                      </button>
+                    </div>
+                    @if (liveTranscript()) {
+                      <p class="text-sm italic leading-6 text-slate-600">{{ liveTranscript() }}</p>
+                    } @else {
+                      <p class="text-xs text-slate-400">Speak now — transcript will appear here…</p>
+                    }
+                  </div>
+                } @else if (recordState() === 'recorded') {
+                  <div class="rounded-xl border border-green-200 bg-green-50 p-4" data-testid="placement-recorded">
+                    <div class="mb-2 flex items-center justify-between">
+                      <span class="text-xs font-semibold text-green-700">Recording complete</span>
+                      <button type="button" (click)="reRecord(q.key)" class="text-xs text-slate-500 underline">Re-record</button>
+                    </div>
+                    @if (answerValue(q.key)) {
+                      <p class="text-sm leading-6 text-slate-700">{{ answerValue(q.key) }}</p>
+                    } @else {
+                      <p class="mb-1 text-xs text-slate-500">No transcript captured. Add a written summary if you like.</p>
+                      <textarea rows="4" class="sp-input" [value]="answerValue(q.key)"
+                        (input)="setAnswer(q.key, $any($event.target).value)"
+                        placeholder="Optional: summarise what you said…"></textarea>
+                    }
+                  </div>
+                }
+              }
+
+              @if (q.type === 'text' && sec.sectionType !== 'speaking') {
                 <textarea
                   rows="6"
                   class="sp-input"
