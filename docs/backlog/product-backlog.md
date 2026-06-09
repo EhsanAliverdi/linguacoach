@@ -301,6 +301,32 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [ ] Add TTS usage cost tracking. `Not started`
 - [ ] Add TTS audio cache cleanup job to `LinguaCoach.Worker`. `Not started`
 
+### Advanced TTS Voice Configuration (P2)
+
+**Priority:** P2 — after Real TTS Provider is wired and audible in production
+
+**Reason:** Once a real TTS provider is live, product quality depends on voice selection matching the professional tone and learning context. Hardcoded voice choices are a short-term expedient; configurable per-feature voice settings are needed before scaling to multiple activity types and student cohorts.
+
+**Scope:**
+
+- [ ] Define voice configuration model: accent, gender, voice style (e.g. neutral, warm, authoritative), speech rate. `Not started`
+- [ ] Add per-feature TTS voice assignment: each AI feature key (`activity_generate_listening`, `placement_assessment_evaluate`) can have its own default voice. `Not started`
+- [ ] Add fallback voice/provider: if the primary TTS voice is unavailable, fall back to a configured secondary voice or provider. `Not started`
+- [ ] Expose voice configuration in Admin AI Config UI: admin can select voice, accent, style, and speed per feature. `Not started`
+- [ ] Add admin preview: play a sample sentence using the configured voice without triggering real activity generation. `Not started`
+- [ ] Add regeneration rule: when voice settings change for a feature, mark cached audio for that feature as stale and regenerate on next use. `Not started`
+- [ ] Add backend support for `voiceId`, `accent`, `style`, `speedFactor` fields in `AiProviderConfig` or a new `TtsVoiceConfig` entity. `Not started`
+- [ ] Evaluate provider-specific voice IDs for OpenAI TTS (`alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`) and Azure Neural Voices. `Not started`
+- [ ] Document voice/accent choices and their intended use case (e.g. `onyx` for listening exercises — neutral professional male). `Not started`
+
+**Notes:**
+
+- Do not implement before `OpenAiTextToSpeechService` is wired and audible (see Real TTS Provider above).
+- Voice config is separate from AI model config — TTS provider selection is environment-configured; voice selection is content/UX policy.
+- Current hardcoded voice: `onyx` / `echo` in `PlacementAudioService` and `ListeningAudioService`.
+
+---
+
 ### AI Tutor Persona (P2)
 
 - [ ] Define AI teacher name and voice persona (e.g. "Alex" â€” encouraging, professional tone). `Not started`

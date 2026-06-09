@@ -112,8 +112,8 @@ test('progress page shows real data — summary cards, scores, skills, modules',
 
   await page.goto('/progress');
 
-  // Header
-  await expect(page.getByText('Your progress')).toBeVisible();
+  // Header (use first() — loading skeleton and data section both contain this heading)
+  await expect(page.getByText('Your progress').first()).toBeVisible();
   await expect(page.getByText('Track your writing practice, skill growth, and next focus.')).toBeVisible();
 
   // Summary cards — activities completed label
