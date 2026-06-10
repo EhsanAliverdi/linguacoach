@@ -83,6 +83,7 @@ public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await db.Database.EnsureCreatedAsync();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApiTestFactory>>();
         await DefaultAiSeeder.SeedAsync(db, logger);
+        await LinguaCoach.Persistence.Seed.ExercisePatternSeeder.SeedAsync(db, logger);
     }
 
     public async Task<string> CreateAdminAndGetTokenAsync()

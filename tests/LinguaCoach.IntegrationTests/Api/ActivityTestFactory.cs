@@ -47,11 +47,28 @@ public class ActivityTestFactory : ApiTestFactory
             "learning_path_generate",
             "learning_path_generate_adaptive",
             "vocabulary_extract_from_attempt",
-            // Pattern-keyed generation prompts (Practice Gym activation)
+            // Pattern-keyed generation prompts
             "activity_generate_phrase_match",
             "activity_generate_gap_fill_workplace_phrase",
             "activity_generate_email_reply",
             "activity_generate_teams_chat_simulation",
+            "activity_generate_spoken_response_from_prompt",
+            "activity_generate_listen_and_answer",
+            "activity_generate_listen_and_gap_fill",
+            "activity_generate_lesson_reflection",
+            "activity_generate_speaking_roleplay",
+            "activity_generate_listening",
+            // Pattern-keyed evaluation prompts
+            "activity_evaluate_phrase_match",
+            "activity_evaluate_gap_fill_workplace_phrase",
+            "activity_evaluate_email_reply",
+            "activity_evaluate_teams_chat_simulation",
+            "activity_evaluate_spoken_response_from_prompt",
+            "activity_evaluate_listen_and_answer",
+            "activity_evaluate_listen_and_gap_fill",
+            "activity_evaluate_lesson_reflection",
+            "activity_evaluate_speaking_roleplay",
+            "student_memory_update",
         })
         {
             if (!db.AiPrompts.Any(p => p.Key == key))

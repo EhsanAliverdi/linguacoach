@@ -12,7 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace LinguaCoach.IntegrationTests.Api;
 
 /// <summary>
-/// T14: AI unavailable → ActivityHandler returns a SystemFallback activity (200), does not throw 500.
+/// T14 (updated): AI unavailable → ActivityHandler returns 503 ServiceUnavailable (no fallback path).
+/// Sprint removed SystemFallback; AI failure now surfaces as 503.
 /// </summary>
 public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFactory>
 {
@@ -24,25 +25,15 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
     }
 
     [Fact]
-    public async Task GetNextActivity_WhenAiUnavailable_Returns200WithSystemFallback()
+    public async Task GetNextActivity_WhenAiUnavailable_Returns503()
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"activity_fallback_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
         var response = await client.GetAsync("/api/activity/next");
 
-        // Must not be 500 even though AI is unavailable
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = body.GetProperty("activityId").GetString();
-        Assert.False(string.IsNullOrEmpty(activityId));
-        Assert.False(string.IsNullOrEmpty(body.GetProperty("title").GetString()));
-
-        // Source must serialize as camelCase string "systemFallback"
-        var sourceEl = body.GetProperty("source");
-        Assert.Equal(JsonValueKind.String, sourceEl.ValueKind);
-        Assert.Equal("systemFallback", sourceEl.GetString());
+        // No fallback: AI unavailable → 503 ServiceUnavailable
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
     [Fact]
@@ -54,49 +45,56 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
     }
 
     [Fact]
-    public async Task SubmitAttempt_WhenAiEvaluationFails_Returns200WithEmptyFeedback()
+    public async Task SubmitAttempt_WhenAiEvaluationFails_Returns503()
     {
+        // Use a working factory to get a valid activity ID, then submit via fallback factory
         var (token, userId) = await _factory.CreateOnboardedStudentAsync($"activity_submit_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
 
-        // Get next activity to get a valid activity ID
-        var nextResponse = await client.GetAsync("/api/activity/next");
-        Assert.Equal(HttpStatusCode.OK, nextResponse.StatusCode);
-        var nextBody = await nextResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
-
-        // Submit attempt — AI evaluation will fail (fake provider throws), but attempt should be saved
-        var submitResponse = await client.PostAsJsonAsync(
-            $"/api/activity/{activityId}/attempt",
-            new { submittedContent = "Dear Manager, I am writing to follow up on the pending approval." });
-
-        // Must return 200 even if AI evaluation fails (attempt saved with empty feedback)
-        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
-
-        var submitBody = await submitResponse.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.False(string.IsNullOrEmpty(submitBody.GetProperty("attemptId").GetString()));
-
-        // Verify attempt was persisted in DB
+        // Seed a LearningActivity directly so we have a valid ID to submit against
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var profile = db.StudentProfiles.First(p => p.UserId == userId);
-        var attempt = db.ActivityAttempts.FirstOrDefault(a => a.StudentProfileId == profile.Id);
-        Assert.NotNull(attempt);
-        Assert.Contains("pending approval", attempt.SubmittedContent);
+        var scenario = db.WritingScenarios.First();
+        var activity = new LinguaCoach.Domain.Entities.LearningActivity(
+            activityType: ActivityType.WritingScenario,
+            source: ActivitySource.SystemFallback,
+            title: "Test activity",
+            difficulty: "B1",
+            aiGeneratedContentJson: """{"situation":"test","learningGoal":"test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}""",
+            sourceWritingScenarioId: scenario.Id);
+        db.LearningActivities.Add(activity);
+        await db.SaveChangesAsync();
+
+        var client = ClientWithToken(token);
+        var submitResponse = await client.PostAsJsonAsync(
+            $"/api/activity/{activity.Id}/attempt",
+            new { submittedContent = "Dear Manager, I am writing to follow up on the pending approval." });
+
+        // AI evaluation fails → 503 (no empty-feedback fallback)
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, submitResponse.StatusCode);
     }
 
     [Fact]
     public async Task SubmitAttempt_WithBlankContent_Returns400()
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"activity_blank_{Guid.NewGuid():N}@test.com");
+
+        // Seed a LearningActivity directly so we have a valid ID
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var scenario = db.WritingScenarios.First();
+        var activity = new LinguaCoach.Domain.Entities.LearningActivity(
+            activityType: ActivityType.WritingScenario,
+            source: ActivitySource.SystemFallback,
+            title: "Blank content test",
+            difficulty: "B1",
+            aiGeneratedContentJson: """{"situation":"test","learningGoal":"test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}""",
+            sourceWritingScenarioId: scenario.Id);
+        db.LearningActivities.Add(activity);
+        await db.SaveChangesAsync();
+
         var client = ClientWithToken(token);
-
-        var nextResponse = await client.GetAsync("/api/activity/next");
-        var nextBody = await nextResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
-
         var response = await client.PostAsJsonAsync(
-            $"/api/activity/{activityId}/attempt",
+            $"/api/activity/{activity.Id}/attempt",
             new { submittedContent = "  " });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
