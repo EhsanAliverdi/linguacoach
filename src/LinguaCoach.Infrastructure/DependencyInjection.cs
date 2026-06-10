@@ -1,4 +1,6 @@
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Activity.Evaluators;
+using LinguaCoach.Infrastructure.Activity.Evaluators;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Assessment;
 using LinguaCoach.Application.Ai;
@@ -115,6 +117,15 @@ public static class DependencyInjection
         services.AddScoped<IGetNextActivityHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
         services.AddScoped<IGetActivityByIdHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
+
+        // Pattern Evaluation Engine — skill update (Phase 5), evaluators (Phases 2 & 4) + router (Phase 3)
+        services.AddScoped<PatternSkillUpdateService>();
+        services.AddScoped<IPatternEvaluator, ExactMatchEvaluator>();
+        services.AddScoped<IPatternEvaluator, KeyedSelectionEvaluator>();
+        services.AddScoped<IPatternEvaluator, NoMarkingEvaluator>();
+        services.AddScoped<IPatternEvaluator, AiStructuredEvaluator>();
+        services.AddScoped<IPatternEvaluator, AiOpenEndedEvaluator>();
+        services.AddScoped<IPatternEvaluationRouter, PatternEvaluationRouter>();
 
         // STT: use FakeSpeechToTextService for MVP; swap in a real provider later
         services.AddScoped<ISpeechToTextService, FakeSpeechToTextService>();

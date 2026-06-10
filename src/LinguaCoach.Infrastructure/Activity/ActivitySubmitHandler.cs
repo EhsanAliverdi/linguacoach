@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Memory;
+using LinguaCoach.Application.Sessions;
 using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -19,6 +20,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IVocabularyExtractionService _vocabExtraction;
     private readonly VocabularyPracticeEvaluator _vocabEvaluator;
     private readonly ListeningComprehensionEvaluator _listeningEvaluator;
+    private readonly IPatternEvaluationRouter _patternRouter;
+    private readonly IExercisePatternRepository _patternRepo;
+    private readonly PatternSkillUpdateService _patternSkillUpdate;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -28,6 +32,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IVocabularyExtractionService vocabExtraction,
         VocabularyPracticeEvaluator vocabEvaluator,
         ListeningComprehensionEvaluator listeningEvaluator,
+        IPatternEvaluationRouter patternRouter,
+        IExercisePatternRepository patternRepo,
+        PatternSkillUpdateService patternSkillUpdate,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -36,6 +43,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _vocabExtraction = vocabExtraction;
         _vocabEvaluator = vocabEvaluator;
         _listeningEvaluator = listeningEvaluator;
+        _patternRouter = patternRouter;
+        _patternRepo = patternRepo;
+        _patternSkillUpdate = patternSkillUpdate;
         _logger = logger;
     }
 
@@ -81,8 +91,16 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         }
 
         _logger.LogInformation(
-            "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ActivityType={ActivityType}",
-            command.ActivityId, command.UserId, activity.ActivityType);
+            "Activity attempt submission received ActivityId={ActivityId} UserId={UserId} ActivityType={ActivityType} ExercisePatternKey={PatternKey}",
+            command.ActivityId, command.UserId, activity.ActivityType, activity.ExercisePatternKey);
+
+        // ── Pattern Evaluation Engine path ─────────────────────────────────────
+        // When the activity has an ExercisePatternKey, route through the evaluator and
+        // persist canonical evaluation fields. Legacy activities fall through to below.
+        if (!string.IsNullOrWhiteSpace(activity.ExercisePatternKey))
+        {
+            return await HandlePatternEvaluationAsync(command, profile, activity, module, ct);
+        }
 
         // VocabularyPractice: deterministic evaluation — no AI call.
         if (activity.ActivityType == Domain.Enums.ActivityType.VocabularyPractice)
@@ -213,6 +231,184 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             CorrelationId: null), ct);
 
         return ParseFeedback(attempt.Id, feedbackJson, score);
+    }
+
+    private async Task<ActivityFeedbackDto> HandlePatternEvaluationAsync(
+        SubmitActivityAttemptCommand command,
+        Domain.Entities.StudentProfile profile,
+        Domain.Entities.LearningActivity activity,
+        Domain.Entities.LearningModule? module,
+        CancellationToken ct)
+    {
+        var pattern = await _patternRepo.GetByKeyAsync(activity.ExercisePatternKey!, ct)
+            ?? throw new InvalidOperationException(
+                $"ExercisePatternDefinition not found for key '{activity.ExercisePatternKey}'.");
+
+        var submittedAnswerJson = command.SubmittedContent;
+
+        var evalRequest = new PatternEvaluationRequest(
+            ActivityId: activity.Id,
+            StudentProfileId: profile.Id,
+            ExercisePatternKey: activity.ExercisePatternKey,
+            MarkingMode: pattern.MarkingMode,
+            InteractionMode: pattern.InteractionMode,
+            ActivityType: activity.ActivityType,
+            ContentJson: activity.AiGeneratedContentJson,
+            SubmittedAnswerJson: submittedAnswerJson,
+            CefrLevel: profile.CefrLevel,
+            DomainComplexity: profile.CareerProfile?.Name);
+
+        var evalResult = await _patternRouter.EvaluateAsync(evalRequest, ct);
+
+        var evalResultJson = JsonSerializer.Serialize(evalResult, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        // score field on ActivityAttempt is 0–100; map percentage for legacy compat
+        double? legacyScore = evalResult.MaxScore > 0 ? evalResult.Percentage : null;
+
+        var attempt = new ActivityAttempt(
+            studentProfileId: profile.Id,
+            learningActivityId: activity.Id,
+            submittedContent: submittedAnswerJson,
+            feedbackJson: evalResultJson,
+            promptKey: $"pattern_evaluate_{pattern.Key}",
+            score: legacyScore,
+            submittedAnswerJson: submittedAnswerJson,
+            evaluationResultJson: evalResultJson,
+            maxScore: evalResult.MaxScore,
+            percentage: evalResult.Percentage,
+            passed: evalResult.Passed,
+            completed: evalResult.Completed,
+            markingMode: pattern.MarkingMode);
+
+        _db.ActivityAttempts.Add(attempt);
+
+        // Mark linked SessionExercise complete when evaluation says completed
+        if (evalResult.Completed)
+        {
+            var exercise = await _db.SessionExercises
+                .FirstOrDefaultAsync(e => e.LearningActivityId == activity.Id, ct);
+
+            if (exercise is not null && exercise.Status != Domain.Enums.ExerciseStatus.Completed)
+            {
+                exercise.Complete();
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Pattern attempt saved AttemptId={AttemptId} PatternKey={PatternKey} MarkingMode={MarkingMode} Score={Score}/{MaxScore} Passed={Passed}",
+            attempt.Id, pattern.Key, pattern.MarkingMode, evalResult.Score, evalResult.MaxScore, evalResult.Passed);
+
+        // Best-effort post-submission updates — must not fail activity submission.
+        await _patternSkillUpdate.ApplyAsync(profile.Id, evalResult, activity.ExercisePatternKey, ct);
+
+        var memoryRequest = BuildPatternMemoryUpdateRequest(profile, activity, module, attempt, evalResult);
+        await _memoryService.UpdateMemoryAsync(memoryRequest, ct);
+
+        var patternDto = BuildPatternEvaluationDto(activity.ExercisePatternKey, pattern.MarkingMode, evalResult);
+
+        return new ActivityFeedbackDto(
+            AttemptId: attempt.Id,
+            Score: legacyScore,
+            CoachSummary: evalResult.CoachSummary,
+            FocusFirst: false,
+            Changes: [],
+            CorrectedText: null,
+            WhatYouDidWell: [],
+            MainMistakes: [],
+            GrammarIssues: [],
+            VocabularyIssues: [],
+            ToneIssues: [],
+            ClarityIssues: [],
+            GrammarExplanation: null,
+            ToneExplanation: null,
+            VocabularyToRemember: [],
+            MiniLesson: null,
+            NextImprovementStep: null,
+            RewriteChallenge: null,
+            NextPracticeSuggestion: null,
+            FeedbackInSourceLanguage: null,
+            PatternEvaluation: patternDto);
+    }
+
+    private static PatternEvaluationDto BuildPatternEvaluationDto(
+        string? patternKey,
+        Domain.Enums.MarkingMode markingMode,
+        PatternEvaluationResult result)
+    {
+        var itemResults = result.ItemResults.Select(i => new PatternEvaluationItemResultDto(
+            ItemKey: i.ItemKey,
+            StudentAnswer: i.StudentAnswer,
+            CorrectAnswer: i.CorrectAnswer,
+            AcceptedAnswers: i.AcceptedAnswers,
+            IsCorrect: i.IsCorrect,
+            Score: i.Score,
+            MaxScore: i.MaxScore,
+            Feedback: i.Feedback)).ToList();
+
+        var corrections = result.Corrections.Select(c => new PatternEvaluationCorrectionDto(
+            Category: c.Category,
+            Original: c.Original,
+            Suggestion: c.Suggestion,
+            Explanation: c.Explanation)).ToList();
+
+        var skillImpacts = result.SkillImpacts.Select(s => new PatternEvaluationSkillImpactDto(
+            SkillKey: s.SkillKey,
+            Label: s.Label,
+            Delta: s.Delta,
+            Evidence: s.Evidence)).ToList();
+
+        var memorySignals = result.MemorySignals.Select(m => new PatternEvaluationMemorySignalDto(
+            Type: m.Type,
+            Key: m.Key,
+            Summary: m.Summary,
+            Confidence: m.Confidence)).ToList();
+
+        return new PatternEvaluationDto(
+            ExercisePatternKey: patternKey,
+            MarkingMode: markingMode,
+            Score: result.Score,
+            MaxScore: result.MaxScore,
+            Percentage: result.Percentage,
+            Passed: result.Passed,
+            Completed: result.Completed,
+            ItemResults: itemResults,
+            CoachSummary: result.CoachSummary,
+            Corrections: corrections,
+            SuggestedImprovedAnswer: result.SuggestedImprovedAnswer,
+            SkillImpacts: skillImpacts,
+            MemorySignals: memorySignals);
+    }
+
+    private static ActivityMemoryUpdateRequest BuildPatternMemoryUpdateRequest(
+        Domain.Entities.StudentProfile profile,
+        Domain.Entities.LearningActivity activity,
+        Domain.Entities.LearningModule? module,
+        ActivityAttempt attempt,
+        PatternEvaluationResult evalResult)
+    {
+        // Build a compact feedback JSON from evaluation fields — never include raw submitted text.
+        var compactFeedback = JsonSerializer.Serialize(new
+        {
+            exercisePatternKey = activity.ExercisePatternKey,
+            activityType = activity.ActivityType.ToString(),
+            score = evalResult.Percentage,
+            passed = evalResult.Passed,
+            coachSummary = evalResult.CoachSummary,
+            topCorrections = evalResult.Corrections.Take(3).Select(c => new { c.Category, c.Suggestion }),
+            skillImpacts = evalResult.SkillImpacts.Take(5).Select(s => new { s.SkillKey, s.Delta }),
+            memorySignals = evalResult.MemorySignals.Take(3).Select(m => new { m.Type, m.Key, m.Summary }),
+        }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        return new ActivityMemoryUpdateRequest(
+            StudentProfile: profile,
+            Activity: activity,
+            Module: module,
+            Attempt: attempt,
+            FeedbackJson: compactFeedback,
+            Score: evalResult.MaxScore > 0 ? evalResult.Percentage : null,
+            CorrelationId: attempt.Id.ToString());
     }
 
     private static ActivityFeedbackDto ParseVocabularyFeedback(Guid attemptId, string feedbackJson, double score)

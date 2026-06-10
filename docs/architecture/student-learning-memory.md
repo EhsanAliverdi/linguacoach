@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-10 18:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -30,9 +30,22 @@ WRITE PATH (after each activity attempt)
 ═══════════════════════════════════════════════════════════
 ActivitySubmitHandler
   │
-  ├── evaluate + save ActivityAttempt   ← unchanged
+  ├── evaluate + save ActivityAttempt
   │
-  └── StudentMemoryService.UpdateMemoryAsync()   ← NEW (best-effort, 8s timeout)
+  ├── PatternSkillUpdateService.ApplyAsync()   ← Pattern Evaluation Engine (best-effort, swallowed)
+  │     │
+  │     ├── apply skillImpacts from PatternEvaluationResult
+  │     ├── validate key allowlist, clamp delta to [-1,1]
+  │     └── upsert StudentSkillProfile rows
+  │
+  └── StudentMemoryService.UpdateMemoryAsync()   ← best-effort, 8s timeout
+        │
+        ├── (Pattern path) receives compact ActivityMemoryUpdateRequest:
+        │     exercisePatternKey, activityType, score, passed, coachSummary,
+        │     top 3 corrections, top 5 skillImpacts, top 3 memorySignals
+        │     — NEVER includes raw submitted text
+        │
+        ├── (Legacy path) receives FeedbackJson directly
         │
         ├── load UserLearningSummary (get or create)
         ├── load StudentSkillProfile rows

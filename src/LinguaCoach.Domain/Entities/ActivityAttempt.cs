@@ -1,4 +1,5 @@
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Domain.Entities;
 
@@ -26,6 +27,15 @@ public sealed class ActivityAttempt : BaseEntity
     // Numeric score 0–100. Null if AI returned no score or generation failed.
     public double? Score { get; private set; }
 
+    // Pattern Evaluation Engine fields. Null for legacy attempts created before pattern evaluation.
+    public string? SubmittedAnswerJson { get; private set; }
+    public string? EvaluationResultJson { get; private set; }
+    public double? MaxScore { get; private set; }
+    public double? Percentage { get; private set; }
+    public bool? Passed { get; private set; }
+    public bool? Completed { get; private set; }
+    public MarkingMode? MarkingMode { get; private set; }
+
     // Which prompt key was used, for auditability and cost tracking.
     public string PromptKey { get; private set; }
 
@@ -44,12 +54,21 @@ public sealed class ActivityAttempt : BaseEntity
         string promptKey,
         double? score = null,
         string? audioUrl = null,
-        string? audioStorageKey = null)
+        string? audioStorageKey = null,
+        string? submittedAnswerJson = null,
+        string? evaluationResultJson = null,
+        double? maxScore = null,
+        double? percentage = null,
+        bool? passed = null,
+        bool? completed = null,
+        MarkingMode? markingMode = null)
     {
         if (studentProfileId == Guid.Empty) throw new ArgumentException("StudentProfileId must not be empty.", nameof(studentProfileId));
         if (learningActivityId == Guid.Empty) throw new ArgumentException("LearningActivityId must not be empty.", nameof(learningActivityId));
         if (string.IsNullOrWhiteSpace(submittedContent)) throw new ArgumentException("SubmittedContent is required.", nameof(submittedContent));
         if (score is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(score), "Score must be between 0 and 100.");
+        if (maxScore is < 0) throw new ArgumentOutOfRangeException(nameof(maxScore), "MaxScore must not be negative.");
+        if (percentage is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(percentage), "Percentage must be between 0 and 100.");
 
         StudentProfileId = studentProfileId;
         LearningActivityId = learningActivityId;
@@ -59,6 +78,13 @@ public sealed class ActivityAttempt : BaseEntity
         Score = score;
         AudioUrl = audioUrl?.Trim();
         AudioStorageKey = audioStorageKey?.Trim();
+        SubmittedAnswerJson = string.IsNullOrWhiteSpace(submittedAnswerJson) ? null : submittedAnswerJson.Trim();
+        EvaluationResultJson = string.IsNullOrWhiteSpace(evaluationResultJson) ? null : evaluationResultJson.Trim();
+        MaxScore = maxScore;
+        Percentage = percentage;
+        Passed = passed;
+        Completed = completed;
+        MarkingMode = markingMode;
     }
 
     /// <summary>Updates the audio storage key once the temp file has been committed to the final path.</summary>

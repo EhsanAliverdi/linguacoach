@@ -23,6 +23,15 @@ internal sealed class ActivityAttemptConfiguration : IEntityTypeConfiguration<Ac
         builder.Property(e => e.FeedbackJson).HasColumnName("feedback_json")
             .HasColumnType("jsonb").IsRequired();
         builder.Property(e => e.Score).HasColumnName("score");
+        builder.Property(e => e.SubmittedAnswerJson).HasColumnName("submitted_answer_json")
+            .HasColumnType("jsonb");
+        builder.Property(e => e.EvaluationResultJson).HasColumnName("evaluation_result_json")
+            .HasColumnType("jsonb");
+        builder.Property(e => e.MaxScore).HasColumnName("max_score");
+        builder.Property(e => e.Percentage).HasColumnName("percentage");
+        builder.Property(e => e.Passed).HasColumnName("passed");
+        builder.Property(e => e.Completed).HasColumnName("completed");
+        builder.Property(e => e.MarkingMode).HasColumnName("marking_mode");
         builder.Property(e => e.PromptKey).HasColumnName("prompt_key").HasMaxLength(200).IsRequired();
 
         builder.HasIndex(e => e.StudentProfileId)

@@ -1,0 +1,239 @@
+using System.Text.Json;
+using FluentAssertions;
+using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Activity.Evaluators;
+using LinguaCoach.Domain.Enums;
+
+namespace LinguaCoach.UnitTests.Activity;
+
+public sealed class ExactMatchEvaluatorTests
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly ExactMatchEvaluator _sut = new();
+
+    private static PatternEvaluationRequest MakeRequest(
+        string contentJson,
+        string submittedJson,
+        string patternKey = "gap_fill_workplace_phrase") =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: patternKey,
+            MarkingMode: MarkingMode.ExactMatch,
+            InteractionMode: InteractionMode.GapFill,
+            ActivityType: ActivityType.WritingScenario,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string GapFillContent(params string[] answers)
+    {
+        var items = answers.Select((a, i) => new GapFillItemDto
+        {
+            Sentence = $"Sentence {i + 1}",
+            Answer = a
+        }).ToList();
+        return JsonSerializer.Serialize(new GapFillWorkplacePhraseContent { Items = items }, JsonOptions);
+    }
+
+    private static string Submitted(params (string key, string? val)[] pairs)
+    {
+        var d = pairs.ToDictionary(p => p.key, p => p.val);
+        return JsonSerializer.Serialize(new GapFillSubmittedAnswer { Answers = d! }, JsonOptions);
+    }
+
+    // ── MarkingMode ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void MarkingMode_IsExactMatch()
+    {
+        _sut.MarkingMode.Should().Be(MarkingMode.ExactMatch);
+    }
+
+    // ── correct answers ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AllCorrect_ReturnsFullScore()
+    {
+        var content = GapFillContent("confirm", "check");
+        var submitted = Submitted(("gap_1", "confirm"), ("gap_2", "check"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(2);
+        result.MaxScore.Should().Be(2);
+        result.Percentage.Should().Be(100);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Should().AllSatisfy(i => i.IsCorrect.Should().BeTrue());
+    }
+
+    // ── case / whitespace / punctuation normalization ──────────────────────────
+
+    [Fact]
+    public async Task CaseInsensitive_MatchesCorrectly()
+    {
+        var content = GapFillContent("confirm");
+        var submitted = Submitted(("gap_1", "CONFIRM"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExtraWhitespace_NormalizesAndMatches()
+    {
+        var content = GapFillContent("send it");
+        var submitted = Submitted(("gap_1", "  send   it  "));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TrailingPunctuation_NormalizesAndMatches()
+    {
+        var content = GapFillContent("confirm");
+        var submitted = Submitted(("gap_1", "confirm."));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+    }
+
+    // ── accepted alternatives ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AlternativeAnswer_ViaSeparator_IsAccepted()
+    {
+        // Answer field encodes "confirm / check" — both should be accepted
+        var content = GapFillContent("confirm / check");
+        var submitted = Submitted(("gap_1", "check"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+        result.ItemResults[0].AcceptedAnswers.Should().Contain("check");
+    }
+
+    [Fact]
+    public async Task AlternativeAnswer_ViaPipe_IsAccepted()
+    {
+        var content = GapFillContent("confirm|verify");
+        var submitted = Submitted(("gap_1", "verify"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+    }
+
+    // ── partial credit ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task PartialCredit_SomeCorrect()
+    {
+        var content = GapFillContent("confirm", "send", "check");
+        var submitted = Submitted(("gap_1", "confirm"), ("gap_2", "wrong"), ("gap_3", "check"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(2);
+        result.MaxScore.Should().Be(3);
+        result.Percentage.Should().BeApproximately(66.67, 0.01);
+        result.Passed.Should().BeTrue();
+    }
+
+    // ── missing / extra answers ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task MissingAnswer_ScoredAsIncorrect()
+    {
+        var content = GapFillContent("confirm", "check");
+        var submitted = Submitted(("gap_1", "confirm")); // gap_2 missing
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.ItemResults[1].IsCorrect.Should().BeFalse();
+        result.ItemResults[1].StudentAnswer.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ExtraSubmittedAnswers_DoNotAffectScore()
+    {
+        var content = GapFillContent("confirm");
+        var submitted = Submitted(("gap_1", "confirm"), ("gap_99", "extra"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+    }
+
+    // ── listen_and_gap_fill path ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListenAndGapFill_UsesGapIdAsKey()
+    {
+        var gaps = new List<ListenAndGapFillItemDto>
+        {
+            new() { Id = "g1", SentenceWithBlank = "__ said yes", Answer = "She" },
+            new() { Id = "g2", SentenceWithBlank = "Go __ now", Answer = "home" }
+        };
+        var contentJson = JsonSerializer.Serialize(
+            new ListenAndGapFillContent { Gaps = gaps }, JsonOptions);
+        var submitted = Submitted(("g1", "She"), ("g2", "home"));
+
+        var result = await _sut.EvaluateAsync(
+            MakeRequest(contentJson, submitted, "listen_and_gap_fill"), default);
+
+        result.Score.Should().Be(2);
+        result.Completed.Should().BeTrue();
+    }
+
+    // ── completed flag ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AllWrong_IsStillCompleted()
+    {
+        var content = GapFillContent("confirm");
+        var submitted = Submitted(("gap_1", "wrong"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Completed.Should().BeTrue();
+        result.Score.Should().Be(0);
+    }
+
+    // ── no AI dependency ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DoesNotRequireAiDependency_CompletesWithoutInjection()
+    {
+        // Evaluator is instantiated with no dependencies — confirms no AI call path
+        var evaluator = new ExactMatchEvaluator();
+        var content = GapFillContent("confirm");
+        var submitted = Submitted(("gap_1", "confirm"));
+
+        var result = await evaluator.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Should().NotBeNull();
+    }
+
+    // ── normalization unit tests ───────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("Hello", "hello")]
+    [InlineData("  hello  ", "hello")]
+    [InlineData("hello.", "hello")]
+    [InlineData("hello,", "hello")]
+    [InlineData("hello!?", "hello")]
+    [InlineData("hello world", "hello world")]
+    [InlineData("hello  world", "hello world")]
+    public void Normalize_AppliesCorrectTransformations(string input, string expected)
+    {
+        ExactMatchEvaluator.Normalize(input).Should().Be(expected);
+    }
+}

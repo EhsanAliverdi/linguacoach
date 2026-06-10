@@ -142,7 +142,51 @@ public sealed record ActivityFeedbackDto(
     IReadOnlyList<string>? SpeakingStrengths = null,
     IReadOnlyList<string>? SpeakingImprovements = null,
     IReadOnlyList<string>? MissingExpectedPoints = null,
-    string? SuggestedImprovedResponse = null);
+    string? SuggestedImprovedResponse = null,
+    PatternEvaluationDto? PatternEvaluation = null);
+
+public sealed record PatternEvaluationDto(
+    string? ExercisePatternKey,
+    MarkingMode? MarkingMode,
+    double Score,
+    double MaxScore,
+    double Percentage,
+    bool Passed,
+    bool Completed,
+    IReadOnlyList<PatternEvaluationItemResultDto> ItemResults,
+    string? CoachSummary,
+    IReadOnlyList<PatternEvaluationCorrectionDto> Corrections,
+    string? SuggestedImprovedAnswer,
+    IReadOnlyList<PatternEvaluationSkillImpactDto> SkillImpacts,
+    IReadOnlyList<PatternEvaluationMemorySignalDto> MemorySignals);
+
+public sealed record PatternEvaluationItemResultDto(
+    string ItemKey,
+    string? StudentAnswer,
+    string? CorrectAnswer,
+    IReadOnlyList<string> AcceptedAnswers,
+    bool IsCorrect,
+    double Score,
+    double MaxScore,
+    string? Feedback);
+
+public sealed record PatternEvaluationCorrectionDto(
+    string Category,
+    string? Original,
+    string Suggestion,
+    string Explanation);
+
+public sealed record PatternEvaluationSkillImpactDto(
+    string SkillKey,
+    string Label,
+    double Delta,
+    string? Evidence);
+
+public sealed record PatternEvaluationMemorySignalDto(
+    string Type,
+    string Key,
+    string Summary,
+    double Confidence);
 
 public sealed record ListeningQuestionFeedbackDto(
     string QuestionId,

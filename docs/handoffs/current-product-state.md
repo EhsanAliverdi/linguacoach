@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 11:02
+lastUpdated: 2026-06-10 18:00
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-10 11:02
+Last updated: 2026-06-10 18:00
 
 ---
 
@@ -145,24 +145,34 @@ Placement Assessment MVP is implemented:
 - Backend baseline: 762 tests pass (380 unit + 382 integration).
 - `npm run build` passes; known non-blocking Angular warnings remain for admin CSS budgets and skipped selectors.
 
+## Pattern Evaluation Engine (complete — 2026-06-10)
+
+All 7 phases complete. `MarkingMode` is now first-class in the evaluation flow.
+
+- **Evaluators**: `ExactMatchEvaluator` (gap_fill, listen_and_gap_fill), `KeyedSelectionEvaluator` (phrase_match), `NoMarkingEvaluator` (lesson_reflection), `AiStructuredEvaluator` (listen_and_answer, email_reply, teams_chat_simulation), `AiOpenEndedEvaluator` (spoken_response_from_prompt)
+- **Router**: `IPatternEvaluationRouter` dispatches by `MarkingMode`; wired into `ActivitySubmitHandler`
+- **Persistence**: `ActivityAttempt` stores structured `SubmittedAnswerJson`, `EvaluationResultJson`, `MaxScore`, `Percentage`, `Passed`, `Completed`, `MarkingMode`; EF migration T34 adds nullable columns only
+- **Skill update**: `PatternSkillUpdateService` upserts `StudentSkillProfile` from `skillImpacts`; validates key allowlist, clamps delta, synthesises fallback from pattern key when impacts absent
+- **Memory update**: compact memory packet (exercisePatternKey, score, coachSummary, top 3 corrections, top 5 impacts, top 3 signals) sent to `StudentMemoryService.UpdateMemoryAsync` — never includes raw submitted text; swallowed on failure
+- **Frontend result UI**: `PatternEvaluationResultComponent` with 6 branches (MatchingPairs, GapFill, Chat/Email, ListenAndAnswer, SpokenResponse, ReadOnly); legacy non-pattern paths unchanged
+- **Test counts**: 865 dotnet (451 unit + 414 integration) + 111 Playwright — all pass
+
 ## Known gaps / not yet built
 
 - Session reflection (`GET /api/sessions/{id}/reflection` returns 501; needs AI prompt key `session_reflection`)
 - `ActivityShellComponent` not yet embedded inline in lesson page (navigates away instead)
-- Advanced per-pattern evaluation UI is not built; deterministic pattern renderers submit structured answers through the existing attempt flow for now.
 - No real STT provider (SpeakingRolePlay uses `FakeSpeechToTextService`)
 - No email delivery for temp passwords (admin copies manually)
 - No admin CRUD for career profiles / learning tracks (seed data only)
 - No audio cleanup job (50-file soft ceiling in place as mitigation)
+- Dynamic pattern selection (week skills → pattern choice) not yet implemented
 
 See `docs/backlog/deferred-work.md` for the full deferred work list.
 
 ## Next recommended work
 
-1. **Pattern Evaluation Engine** — implement deterministic `ExactMatch` / `KeyedSelection`, structured `AiStructured` evaluation, and pattern-specific result UI.
-2. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
-3. **Practice Gym Separation** — let students choose skill / pattern / focus outside Today's Lesson.
-
-Session reflection AI remains deferred until the session completion signal and evaluation outputs are stable.
+1. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
+2. **Practice Gym Separation** — let students choose skill / pattern / focus outside Today's Lesson.
+3. **Session Reflection AI** — evaluation outputs now stable; wire `session_reflection` prompt.
 
 See `docs/sprints/current-sprint.md` for the active sprint scope.

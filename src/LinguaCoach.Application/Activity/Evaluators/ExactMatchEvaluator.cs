@@ -1,0 +1,159 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using LinguaCoach.Domain.Enums;
+
+namespace LinguaCoach.Application.Activity.Evaluators;
+
+/// <summary>
+/// Evaluates gap-fill activities deterministically by comparing submitted answers
+/// against accepted answers from contentJson. No AI call is made.
+/// </summary>
+public sealed class ExactMatchEvaluator : IPatternEvaluator
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    public MarkingMode MarkingMode => MarkingMode.ExactMatch;
+
+    public Task<PatternEvaluationResult> EvaluateAsync(
+        PatternEvaluationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var expectedItems = ParseExpectedItems(request.ContentJson, request.ExercisePatternKey);
+        var submittedMap = ParseSubmittedAnswers(request.SubmittedAnswerJson);
+
+        var itemResults = new List<PatternEvaluationItemResult>();
+        double totalScore = 0;
+        double totalMax = expectedItems.Count;
+
+        foreach (var (key, accepted) in expectedItems)
+        {
+            submittedMap.TryGetValue(key, out var raw);
+            var normalized = Normalize(raw);
+            var isCorrect = accepted.Any(a => string.Equals(Normalize(a), normalized, StringComparison.Ordinal));
+            var score = isCorrect ? 1.0 : 0.0;
+            totalScore += score;
+
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: key,
+                StudentAnswer: raw,
+                CorrectAnswer: accepted.FirstOrDefault(),
+                AcceptedAnswers: accepted,
+                IsCorrect: isCorrect,
+                Score: score,
+                MaxScore: 1,
+                Feedback: isCorrect ? "Correct." : $"The expected answer is \"{accepted.FirstOrDefault()}\"."));
+        }
+
+        var percentage = PatternEvaluationResult.CalculatePercentage(totalScore, totalMax);
+        var passed = totalMax == 0 || percentage >= 60;
+
+        var coachSummary = BuildCoachSummary(itemResults);
+
+        var result = PatternEvaluationResult.Create(
+            score: totalScore,
+            maxScore: totalMax,
+            passed: passed,
+            completed: true,
+            itemResults: itemResults,
+            coachSummary: coachSummary);
+
+        return Task.FromResult(result);
+    }
+
+    // ── parsing ────────────────────────────────────────────────────────────────
+
+    private static List<(string Key, IReadOnlyList<string> Accepted)> ParseExpectedItems(
+        string contentJson, string? patternKey)
+    {
+        var result = new List<(string, IReadOnlyList<string>)>();
+
+        if (patternKey == "listen_and_gap_fill")
+        {
+            var content = JsonSerializer.Deserialize<ListenAndGapFillContent>(contentJson, JsonOptions);
+            if (content?.Gaps is null) return result;
+            foreach (var gap in content.Gaps)
+            {
+                var key = gap.Id ?? gap.SentenceWithBlank ?? Guid.NewGuid().ToString();
+                var accepted = BuildAcceptedList(gap.Answer);
+                result.Add((key, accepted));
+            }
+        }
+        else
+        {
+            // gap_fill_workplace_phrase (and fallback)
+            var content = JsonSerializer.Deserialize<GapFillWorkplacePhraseContent>(contentJson, JsonOptions);
+            if (content?.Items is null) return result;
+            for (var i = 0; i < content.Items.Count; i++)
+            {
+                var item = content.Items[i];
+                var key = $"gap_{i + 1}";
+                var accepted = BuildAcceptedList(item.Answer);
+                result.Add((key, accepted));
+            }
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyList<string> BuildAcceptedList(string? primary)
+    {
+        if (string.IsNullOrWhiteSpace(primary)) return Array.Empty<string>();
+        // Primary answer may encode alternatives separated by " / " or "|"
+        var parts = Regex.Split(primary, @"\s*[/|]\s*")
+            .Select(p => p.Trim())
+            .Where(p => p.Length > 0)
+            .ToList();
+        return parts.Count > 0 ? parts : [primary.Trim()];
+    }
+
+    private static Dictionary<string, string?> ParseSubmittedAnswers(string submittedAnswerJson)
+    {
+        if (string.IsNullOrWhiteSpace(submittedAnswerJson))
+            return new Dictionary<string, string?>(StringComparer.Ordinal);
+
+        try
+        {
+            var dto = JsonSerializer.Deserialize<GapFillSubmittedAnswer>(submittedAnswerJson, JsonOptions);
+            if (dto?.Answers is not null)
+                return dto.Answers;
+        }
+        catch (JsonException) { /* fall through */ }
+
+        return new Dictionary<string, string?>(StringComparer.Ordinal);
+    }
+
+    // ── normalization ──────────────────────────────────────────────────────────
+
+    public static string Normalize(string? input)
+    {
+        if (input is null) return string.Empty;
+        // Lowercase
+        var s = input.ToLowerInvariant();
+        // Collapse whitespace
+        s = Regex.Replace(s, @"\s+", " ").Trim();
+        // Strip trailing punctuation that doesn't affect meaning
+        s = Regex.Replace(s, @"[.,!?;:]+$", string.Empty).TrimEnd();
+        return s;
+    }
+
+    // ── coach summary ──────────────────────────────────────────────────────────
+
+    private static string BuildCoachSummary(List<PatternEvaluationItemResult> items)
+    {
+        var correct = items.Count(i => i.IsCorrect);
+        var total = items.Count;
+        if (total == 0) return "Activity completed.";
+        if (correct == total) return "Well done — all gaps filled correctly!";
+        if (correct == 0) return "Review the target phrases carefully and try again.";
+        return $"You got {correct} out of {total} correct. Review the highlighted gaps to improve your score.";
+    }
+}
+
+/// <summary>
+/// Submitted answer shape for gap-fill patterns.
+/// Keys are gap IDs (e.g. "gap_1", "gap_2") or gap item IDs from contentJson.
+/// </summary>
+public sealed class GapFillSubmittedAnswer
+{
+    public Dictionary<string, string?> Answers { get; set; } = new(StringComparer.Ordinal);
+}

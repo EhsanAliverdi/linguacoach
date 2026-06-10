@@ -140,6 +140,8 @@ export interface ActivityFeedbackDto {
   speakingImprovements: string[] | null;
   missingExpectedPoints: string[] | null;
   suggestedImprovedResponse: string | null;
+  // Pattern Evaluation Engine result (Phase 6) — null for legacy activities
+  patternEvaluation: PatternEvaluationDto | null;
 }
 
 export interface ListeningQuestionFeedback {
@@ -150,4 +152,54 @@ export interface ListeningQuestionFeedback {
   isCorrect: boolean;
   score: number;
   feedback: string;
+}
+
+// ── Pattern Evaluation result models (Phase 6) ────────────────────────────────
+
+export interface PatternEvaluationItemResult {
+  itemKey: string;
+  studentAnswer: string | null;
+  correctAnswer: string | null;
+  acceptedAnswers: string[];
+  isCorrect: boolean;
+  score: number;
+  maxScore: number;
+  feedback: string | null;
+}
+
+export interface PatternCorrection {
+  category: string;
+  original: string | null;
+  suggestion: string;
+  explanation: string;
+}
+
+export interface PatternSkillImpact {
+  skillKey: string;
+  label: string;
+  delta: number;
+  evidence: string | null;
+}
+
+export interface PatternMemorySignal {
+  type: string;
+  key: string;
+  summary: string;
+  confidence: number;
+}
+
+export interface PatternEvaluationDto {
+  exercisePatternKey: string | null;
+  markingMode: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  completed: boolean;
+  itemResults: PatternEvaluationItemResult[];
+  coachSummary: string | null;
+  corrections: PatternCorrection[];
+  suggestedImprovedAnswer: string | null;
+  skillImpacts: PatternSkillImpact[];
+  memorySignals: PatternMemorySignal[];
 }

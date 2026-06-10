@@ -582,7 +582,16 @@
 @if (state() === 'feedback' && feedback()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
-    <!-- Score card -->
+    <!-- Pattern-aware result renderer — shown when patternEvaluation is present -->
+    @if (feedback()!.patternEvaluation) {
+      <app-pattern-evaluation-result
+        data-testid="pattern-evaluation-result"
+        [result]="feedback()!.patternEvaluation!">
+      </app-pattern-evaluation-result>
+    }
+
+    <!-- Score card (legacy path — hidden when pattern evaluation renders its own score) -->
+    @if (!feedback()!.patternEvaluation) {
     <div class="sp-card-soft" style="padding:20px;display:flex;align-items:center;gap:18px;border-radius:var(--sp-r-lg)">
       <div style="position:relative;width:72px;height:72px;flex-shrink:0">
         <svg width="72" height="72" style="transform:rotate(-90deg)">
@@ -611,9 +620,10 @@
         </div>
       </div>
     </div>
+    } <!-- end @if (!patternEvaluation) score card -->
 
-    <!-- Coach summary -->
-    @if (feedback()!.coachSummary) {
+    <!-- Coach summary (legacy path only) -->
+    @if (!feedback()!.patternEvaluation && feedback()!.coachSummary) {
       <div style="display:flex;align-items:flex-start;gap:12px">
         <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);flex-shrink:0;display:flex;align-items:center;justify-content:center">
           <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -623,6 +633,9 @@
         </div>
       </div>
     }
+
+    <!-- Legacy feedback sections — hidden when pattern evaluation renders its own result -->
+    @if (!feedback()!.patternEvaluation) {
 
     <!-- What you did well -->
     @if (feedback()!.whatYouDidWell.length) {
@@ -837,6 +850,8 @@
         <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6">{{ feedback()!.rewriteChallenge }}</p>
       </div>
     }
+
+    } <!-- end @if (!patternEvaluation) legacy sections -->
 
     <!-- Action buttons -->
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 11:02
+lastUpdated: 2026-06-10 18:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -60,9 +60,14 @@ StudentProfile (1)
 ### `ActivityAttempt`
 
 - Records one student submission against one `LearningActivity`.
-- Stores `SubmittedContent` (text or audio URL), `FeedbackJson` (AI evaluation result, JSONB), and a `Score` (0.0–1.0).
+- Stores legacy `SubmittedContent`, `FeedbackJson` (type-specific feedback JSON), and nullable `Score`.
+- Pattern Evaluation Engine adds nullable structured evaluation fields so old attempts keep loading unchanged:
+  - `SubmittedAnswerJson` stores the renderer-submitted structured answer.
+  - `EvaluationResultJson` stores the canonical `PatternEvaluationResult`.
+  - `MaxScore`, `Percentage`, `Passed`, and `Completed` make evaluation queryable without parsing JSON.
+  - `MarkingMode` records the `ExercisePatternDefinition.MarkingMode` used for audit/debugging.
 - FK to both `StudentProfile` (who attempted) and `LearningActivity` (what was attempted).
-- All AI feedback is stored here — the frontend reads `FeedbackJson` and maps it to `ActivityFeedbackDto`.
+- Legacy AI feedback is stored in `FeedbackJson`; pattern-aware results are returned through additive DTO fields and stored in `EvaluationResultJson`.
 
 ---
 
@@ -243,14 +248,49 @@ The `ActivityType` enum gets a new value. No table changes. No migration. The JS
 
 ---
 
+## Pattern Evaluation Engine — evaluation flow
+
+`ActivitySubmitHandler` now routes pattern-keyed attempts through `IPatternEvaluationRouter`:
+
+```
+ActivitySubmitHandler.HandlePatternEvaluationAsync(command, profile, activity, module, ct)
+    │
+    ├── IPatternEvaluationRouter.RouteAsync(request)
+    │     │
+    │     ├── switch MarkingMode:
+    │     │     ExactMatch     → ExactMatchEvaluator
+    │     │     KeyedSelection → KeyedSelectionEvaluator
+    │     │     AiStructured   → AiStructuredEvaluator (AI call)
+    │     │     AiOpenEnded    → AiOpenEndedEvaluator  (AI call)
+    │     │     NoMarking      → NoMarkingEvaluator
+    │     │
+    │     └── PatternEvaluationResult { score, maxScore, percentage, passed,
+    │                                   completed, itemResults, corrections,
+    │                                   skillImpacts, memorySignals, ... }
+    │
+    ├── Persist ActivityAttempt.EvaluationResultJson / Passed / Completed / ...
+    │
+    ├── PatternSkillUpdateService.ApplyAsync()   ← best-effort, swallowed
+    │     Upserts StudentSkillProfile from skillImpacts
+    │     Synthesises from pattern key when impacts empty
+    │
+    └── StudentMemoryService.UpdateMemoryAsync() ← best-effort, 8s timeout
+          Sends compact memory packet (no raw submitted text)
+```
+
+`PatternEvaluationResult` is stored as canonical JSON in `ActivityAttempt.EvaluationResultJson`.
+Scalar fields (`MaxScore`, `Percentage`, `Passed`, `Completed`, `MarkingMode`) are also persisted for queryability.
+
+The `ActivityFeedbackDto` now includes `patternEvaluation: PatternEvaluationDto | null` as an additive field. Legacy attempts return `null` here; pattern-aware attempts return the full result. Frontend shows `PatternEvaluationResultComponent` when non-null; legacy sections gate on `!patternEvaluation`.
+
 ## Activity Type Roadmap
 
 | Type | Status | Notes |
 |------|--------|-------|
 | `WritingScenario` | Live | AI-generated + SystemFallback seeded from legacy data |
-| `SpeakingRolePlay` | Stub exists (`SpeakingSessionComponent`, `NoOpSpeechToTextService`) | Needs STT/TTS provider integration |
-| `ListeningComprehension` | Not started | Needs TTS narration + audio playback |
-| `VocabularyPractice` | Not started | Could leverage spaced repetition from `LearningPlannerService` |
+| `SpeakingRolePlay` | Live (MVP fake STT) | `FakeSpeechToTextService`; real STT deferred |
+| `ListeningComprehension` | Live | TTS audio via `PlacementAudioService`; server-streamed |
+| `VocabularyPractice` | Live | Gap-fill and matching patterns via Pattern Engine |
 | `PronunciationPractice` | Not started | Needs STT + phoneme comparison |
 | `ReadingTask` | Not started | Simplest after Writing — no audio |
 

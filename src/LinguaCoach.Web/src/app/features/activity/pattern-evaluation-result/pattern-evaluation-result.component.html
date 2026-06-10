@@ -1,0 +1,251 @@
+<!-- Pattern-aware result renderer — activated only when patternEvaluation is present -->
+
+<!-- Score card (shown for all scoreable patterns) -->
+@if (showScoreCard) {
+  <div data-testid="pattern-score-card" class="sp-card-soft"
+    style="padding:20px;display:flex;align-items:center;gap:18px;border-radius:var(--sp-r-lg)">
+    <div style="position:relative;width:72px;height:72px;flex-shrink:0">
+      <svg width="72" height="72" style="transform:rotate(-90deg)">
+        <circle cx="36" cy="36" r="30" stroke="var(--sp-border2)" stroke-width="7" fill="none"/>
+        <circle cx="36" cy="36" r="30" [attr.stroke]="scoreRingColour()" stroke-width="7" fill="none"
+          stroke-linecap="round"
+          stroke-dasharray="188.5"
+          [attr.stroke-dashoffset]="188.5 * (1 - result.percentage / 100)"/>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:18px;font-weight:800;color:var(--sp-ink)">{{ result.percentage | number:'1.0-0' }}%</span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:15px;font-weight:800;color:var(--sp-ink)">{{ scoreBandLabel() }}</div>
+      @if (result.maxScore > 0 && result.itemResults.length) {
+        <div style="font-size:12px;color:var(--sp-muted);margin-top:3px">
+          {{ correctCount() }} / {{ totalCount() }} correct
+        </div>
+      }
+      @if (!result.passed && result.completed) {
+        <div style="font-size:12px;color:var(--sp-speaking);margin-top:3px;font-weight:700">
+          Review the corrections below and try again.
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ReadOnly completed state -->
+@if (isReadOnly) {
+  <div data-testid="pattern-readonly-complete"
+    style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--sp-success-soft);border-radius:var(--sp-r-lg);border-left:4px solid var(--sp-success)">
+    <svg width="28" height="28" fill="none" stroke="var(--sp-success)" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <div>
+      <div style="font-size:14px;font-weight:800;color:var(--sp-ink)">Step complete</div>
+      <div style="font-size:12.5px;color:var(--sp-muted);margin-top:2px">You can continue to the next step.</div>
+    </div>
+  </div>
+}
+
+<!-- Coach summary (all patterns except read-only) -->
+@if (!isReadOnly && result.coachSummary) {
+  <div data-testid="pattern-coach-summary" style="display:flex;align-items:flex-start;gap:12px">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+      <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </div>
+    <div class="sp-coach-bubble" style="flex:1;font-size:13.5px;color:var(--sp-text);line-height:1.65">
+      {{ result.coachSummary }}
+    </div>
+  </div>
+}
+
+<!-- ── A. MatchingPairs result ──────────────────────────────────────────────── -->
+@if (isMatchingPairs && result.itemResults.length) {
+  <div data-testid="pattern-matching-pairs-result" class="sp-card" style="padding:18px">
+    <p style="font-size:12px;font-weight:800;color:var(--sp-vocabulary);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">
+      Matching pairs — your results
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      @for (item of result.itemResults; track item.itemKey) {
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:var(--sp-r);border:1px solid"
+          [style.border-color]="item.isCorrect ? 'var(--sp-success)' : 'var(--sp-warn)'"
+          [style.background]="item.isCorrect ? 'var(--sp-success-soft)' : 'var(--sp-warn-soft)'">
+          <div style="margin-top:2px;flex-shrink:0">
+            @if (item.isCorrect) {
+              <svg width="16" height="16" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            } @else {
+              <svg width="16" height="16" fill="none" stroke="var(--sp-warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            }
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;color:var(--sp-ink)">{{ item.studentAnswer }}</div>
+            @if (!item.isCorrect && item.correctAnswer) {
+              <div style="font-size:12px;color:var(--sp-muted);margin-top:3px">
+                Expected: <span style="font-weight:700;color:var(--sp-text)">{{ item.correctAnswer }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── B. GapFill result ──────────────────────────────────────────────────── -->
+@if (isGapFill && result.itemResults.length) {
+  <div data-testid="pattern-gap-fill-result" class="sp-card" style="padding:18px">
+    <p style="font-size:12px;font-weight:800;color:var(--sp-vocabulary);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">
+      Gap fill — your answers
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      @for (item of result.itemResults; track item.itemKey) {
+        <div style="padding:10px;border-radius:var(--sp-r);border:1px solid"
+          [style.border-color]="item.isCorrect ? 'var(--sp-success)' : 'var(--sp-warn)'"
+          [style.background]="item.isCorrect ? 'var(--sp-success-soft)' : 'var(--sp-warn-soft)'">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            @if (item.isCorrect) {
+              <svg width="14" height="14" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            } @else {
+              <svg width="14" height="14" fill="none" stroke="var(--sp-warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            }
+            <span style="font-size:13px;font-weight:600;color:var(--sp-ink)">
+              You wrote: <span [style.color]="item.isCorrect ? 'var(--sp-success)' : 'var(--sp-warn)'" style="font-weight:800">{{ item.studentAnswer || '(blank)' }}</span>
+            </span>
+          </div>
+          @if (!item.isCorrect) {
+            <div style="font-size:12px;color:var(--sp-muted);padding-left:22px">
+              Correct: <span style="font-weight:700;color:var(--sp-text)">{{ item.correctAnswer }}</span>
+              @if ((item.acceptedAnswers ?? []).length > 1) {
+                <span> (also accepted: {{ (item.acceptedAnswers ?? []).slice(1).join(', ') }})</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── C. Chat/Email AI result ───────────────────────────────────────────── -->
+@if (isChatOrEmail) {
+  <div data-testid="pattern-chat-email-result">
+
+    @if (result.corrections.length) {
+      <div class="sp-card" style="padding:18px;margin-bottom:0">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">
+          Suggested changes
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          @for (c of result.corrections; track $index) {
+            <div class="sp-diff-item">
+              @if (c.original) {
+                <div class="sp-diff-remove" style="margin-bottom:5px">
+                  <span style="font-size:11px;font-weight:700;color:var(--sp-warn);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">Before</span>
+                  <span style="font-size:13px;text-decoration:line-through">{{ c.original }}</span>
+                </div>
+              }
+              <div class="sp-diff-add" style="margin-bottom:7px">
+                <span style="font-size:11px;font-weight:700;color:var(--sp-success);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">After</span>
+                <span style="font-size:13px;font-weight:600">{{ c.suggestion }}</span>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:8px">
+                <span class="sp-pill" style="font-size:11px;font-weight:700;flex-shrink:0"
+                  style="background:var(--sp-muted);opacity:.15;color:var(--sp-ink)">{{ c.category }}</span>
+                @if (c.explanation) {
+                  <span style="font-size:12.5px;color:var(--sp-muted);line-height:1.55">{{ c.explanation }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (result.suggestedImprovedAnswer) {
+      <details data-testid="pattern-improved-answer" class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Suggested improved version
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">
+            This is a coaching example — there are many valid ways to write this.
+          </p>
+          <p style="font-size:14px;line-height:1.8;color:var(--sp-text);white-space:pre-wrap">{{ result.suggestedImprovedAnswer }}</p>
+        </div>
+      </details>
+    }
+  </div>
+}
+
+<!-- ── D. Audio short-answer (listen_and_answer) ─────────────────────────── -->
+@if (isListenAndAnswer && result.itemResults.length) {
+  <div data-testid="pattern-listen-answer-result" class="sp-card" style="padding:18px">
+    <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">
+      Question results
+    </p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      @for (item of result.itemResults; track item.itemKey) {
+        <div style="border-left:3px solid;padding-left:12px"
+          [style.border-color]="item.isCorrect ? 'var(--sp-success)' : 'var(--sp-warn)'">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            @if (item.isCorrect) {
+              <svg width="13" height="13" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            } @else {
+              <svg width="13" height="13" fill="none" stroke="var(--sp-warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            }
+            <span style="font-size:12px;font-weight:700;color:var(--sp-muted)">Your answer:</span>
+            <span style="font-size:12.5px;color:var(--sp-ink)">{{ item.studentAnswer || '(no answer)' }}</span>
+          </div>
+          @if (!item.isCorrect && item.correctAnswer) {
+            <p style="font-size:12px;color:var(--sp-muted);margin:3px 0">Expected: <span style="font-weight:700;color:var(--sp-text)">{{ item.correctAnswer }}</span></p>
+          }
+          @if (item.feedback) {
+            <p style="font-size:12px;color:var(--sp-muted);line-height:1.5;margin:3px 0 0">{{ item.feedback }}</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── E. Spoken response result ──────────────────────────────────────────── -->
+@if (isSpokenResponse) {
+  <div data-testid="pattern-spoken-result">
+
+    @if (result.corrections.length) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">
+          How to improve
+        </p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
+          @for (c of result.corrections; track $index) {
+            <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+              <span style="color:var(--sp-speaking);font-weight:800;flex-shrink:0">→</span>
+              {{ c.suggestion }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (result.suggestedImprovedAnswer) {
+      <details data-testid="pattern-spoken-improved" class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Suggested spoken response
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13px;color:var(--sp-muted);margin-bottom:8px;font-style:italic">
+            This is a coaching suggestion to help you think about language — not a pronunciation target.
+          </p>
+          <p style="font-size:14px;line-height:1.75;color:var(--sp-text)">{{ result.suggestedImprovedAnswer }}</p>
+        </div>
+      </details>
+    }
+  </div>
+}

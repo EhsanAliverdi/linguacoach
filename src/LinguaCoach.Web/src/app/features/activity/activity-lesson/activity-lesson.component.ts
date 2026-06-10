@@ -6,6 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
 import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
+import { PatternEvaluationResultComponent } from '../pattern-evaluation-result/pattern-evaluation-result.component';
 
 type PageState =
   | 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error'
@@ -15,7 +16,7 @@ type PageState =
 @Component({
   selector: 'app-activity-lesson',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExerciseRendererComponent],
+  imports: [CommonModule, FormsModule, ExerciseRendererComponent, PatternEvaluationResultComponent],
   templateUrl: './activity-lesson.component.html',
 })
 export class ActivityLessonComponent implements OnInit, OnDestroy {

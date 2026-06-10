@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 11:02
+lastUpdated: 2026-06-10 18:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -60,7 +60,7 @@ Not: a random exercise generator, a writing correction app, or a card-based prac
 
 Current implemented activity types: `WritingScenario`, `ListeningComprehension`, `VocabularyPractice`, `SpeakingRolePlay`.
 
-Current recommended next sprint: **Pattern Evaluation Engine**.
+Current recommended next sprint: **Dynamic Pattern Selection**.
 
 ---
 
@@ -138,8 +138,8 @@ Archived
 | Placement Assessment MVP | ✅ Done |
 | LearningSession / Today page — end-to-end (Phases 1–5B) | ✅ Done — data layer, session generator, backend endpoints, Today's Lesson card, LessonPage, `/prepare` wiring, activity nav; 90 e2e + 645 dotnet tests pass |
 | Exercise Pattern Engine | ✅ Done — seeded pattern definitions, pattern-aware prepare/generation, `InteractionMode` renderer dispatch, 8 MVP renderers, 97 e2e + 762 dotnet tests pass |
-| Pattern Evaluation Engine | ⬜ Recommended next — deterministic `ExactMatch` / `KeyedSelection`, structured `AiStructured`, pattern-specific result UI |
-| Session reflection | ⬜ After Exercise Pattern Engine — needs AI prompt `session_reflection` |
+| Pattern Evaluation Engine | ✅ Done — deterministic `ExactMatch` / `KeyedSelection` / `NoMarking` evaluators, structured `AiStructured` / `AiOpenEnded` evaluators, pattern router, `StudentSkillProfile` upserts, compact memory signals, pattern-aware result UI, 865 dotnet tests + 111 Playwright tests pass |
+| Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Practice Gym separation | ⬜ Deferred |
 | IFileStorageService / MinIO | ⬜ Deferred — not blocking deployment at current scale |
 | Admin lifecycle reset tools | ⬜ Deferred |
@@ -163,6 +163,7 @@ Archived
 | [course-session-placement-redesign-sprint.md](../sprints/course-session-placement-redesign-sprint.md) | Full redesign decisions, competitive gap review, 6 implementation phases |
 | [2026-06-10-today-lesson-learning-session-sprint.md](../sprints/2026-06-10-today-lesson-learning-session-sprint.md) | Today's Lesson / Learning Session end-to-end (complete) |
 | [2026-06-10-exercise-pattern-engine-sprint.md](../sprints/2026-06-10-exercise-pattern-engine-sprint.md) | Exercise Pattern Engine — InteractionMode, MarkingMode, 8 MVP patterns (complete) |
+| [2026-06-10-pattern-evaluation-engine-sprint.md](../sprints/2026-06-10-pattern-evaluation-engine-sprint.md) | Pattern Evaluation Engine — deterministic + AI evaluators, skill/memory updates, result UI (complete) |
 | [speaking-role-play-mvp-sprint.md](../sprints/speaking-role-play-mvp-sprint.md) | SpeakingRolePlay MVP (complete) |
 | [listening-audio-tts-sprint.md](../sprints/listening-audio-tts-sprint.md) | TTS audio for ListeningComprehension (complete) |
 | [vocabulary-practice-activity-sprint.md](../sprints/vocabulary-practice-activity-sprint.md) | VocabularyPractice (complete) |

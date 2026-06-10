@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 11:02
+lastUpdated: 2026-06-10 18:00
 owner: product
 supersedes:
 supersededBy:
@@ -8,17 +8,17 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-10 11:02
+Last updated: 2026-06-10 18:00
 
 ---
 
 ## Current priority
 
-**Exercise Pattern Engine sprint is complete.**
+**Pattern Evaluation Engine sprint is complete.**
 
-See full sprint plan: `docs/sprints/2026-06-10-exercise-pattern-engine-sprint.md`
+See full sprint plan: `docs/sprints/2026-06-10-pattern-evaluation-engine-sprint.md`
 
-Today’s Lesson / Learning Session sprint is complete (see `docs/sprints/2026-06-10-today-lesson-learning-session-sprint.md`).
+Recommended next: **Dynamic Pattern Selection** — choose Today’s Lesson patterns from weak skills, CEFR, duration, and recent repetition.
 
 ---
 
@@ -26,50 +26,42 @@ Today’s Lesson / Learning Session sprint is complete (see `docs/sprints/2026-0
 
 - Admin UX / Student Management / AI Config Cleanup — complete
 - Today’s Lesson / Learning Session (Phases 1–5B) — complete
+- Exercise Pattern Engine — complete
+- Pattern Evaluation Engine (Phases 1–7) — complete
 
 ---
 
 ## Current state
 
-All four activity types are implemented. Placement Assessment is complete. The full `LearningSession` → `SessionExercise` → `LearningActivity` → `ActivityAttempt` stack is live end-to-end:
+All four activity types are implemented. Placement Assessment is complete. The full evaluation stack is live end-to-end:
 
 - Dashboard shows Today’s Lesson card (start / resume / review states)
 - `/lesson/:sessionId` step-by-step lesson page with exercise list and progress bar
 - Backend `/prepare` endpoint generates activities on demand per exercise step
 - Activities open with `activityId` + `returnTo` nav back to lesson
-- 90 Playwright e2e tests pass; 645 dotnet tests pass
+- Pattern-aware evaluators route by `MarkingMode`: `ExactMatch`, `KeyedSelection`, `AiStructured`, `AiOpenEnded`, `NoMarking`
+- `StudentSkillProfile` updated from evaluation skill impacts after every pattern attempt
+- Compact memory signals from evaluation fed into `StudentLearningMemory` (best-effort, never blocks)
+- Pattern-aware result UI with 6 branches: MatchingPairs, GapFill, Chat/Email, ListenAndAnswer, SpokenResponse, ReadOnly
+- **865 dotnet tests pass** (451 unit + 414 integration); **111 Playwright tests pass**
 
-Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — deferred to after Exercise Pattern Engine.
-
----
-
-## Exercise Pattern Engine status
-
-The named `ExercisePattern` keys now drive backend prepare/generation and frontend rendering for the 8 MVP patterns:
-
-- `ActivityDto.interactionMode` selects the Angular renderer through `ExerciseRendererComponent`
-- `ActivityDto.exercisePatternKey` links generated activities back to their pattern
-- Pattern-keyed activities expose bounded `contentJson` for renderer dispatch; legacy listening activities do not expose raw answer-bearing JSON
-- MatchingPairs, GapFill, AudioAndFreeText, AudioAndGapFill, ChatReply, ReadOnly, and FreeText renderers are wired
-- Full frontend regression suite passes: 97/97 Playwright tests
-- Backend tests pass: 762 total (380 unit + 382 integration)
-
-Architecture reference: `docs/architecture/exercise-pattern-library.md`
+Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — deferred.
 
 ---
 
-## Recommended next sprint
+## Pattern Evaluation Engine — complete
 
-**Pattern Evaluation Engine** is the best next sprint.
+All 7 phases shipped on 2026-06-10:
 
-Reason: the product now has pattern definitions, pattern-aware generation, and interaction-mode renderers. The largest remaining gap is that `MarkingMode` is not yet fully expressed in the attempt/evaluation flow:
+- Phase 1: Contracts + persistence (`PatternEvaluationResult`, `ActivityAttempt` evaluation fields, migration T34)
+- Phase 2: Deterministic evaluators (`ExactMatchEvaluator`, `KeyedSelectionEvaluator`, `NoMarkingEvaluator`)
+- Phase 3: Pattern router + attempt integration (`IPatternEvaluationRouter`, `ActivitySubmitHandler` wired)
+- Phase 4: AI evaluators (`AiStructuredEvaluator`, `AiOpenEndedEvaluator`, `ParseAndNormalise` with markdown-fence fix)
+- Phase 5: Skill + memory updates (`PatternSkillUpdateService`, compact memory packet, best-effort wiring)
+- Phase 6: Frontend result UI (`PatternEvaluationResultComponent`, 6 result branches, legacy path preserved)
+- Phase 7: Documentation + QA (all docs updated, full suite verified)
 
-- deterministic marking for `ExactMatch` and `KeyedSelection`
-- structured AI marking for `AiStructured`
-- pattern-specific result summaries for MatchingPairs, GapFill, audio answers, and ChatReply
-- safer storage of structured answer JSON and evaluation metadata
-
-Dynamic Pattern Selection and Practice Gym Separation remain valuable, but they should build on reliable per-pattern marking.
+Architecture reference: `docs/architecture/exercise-pattern-library.md`, `docs/architecture/learning-activity-engine.md`
 
 ---
 
@@ -84,6 +76,14 @@ Dynamic Pattern Selection and Practice Gym Separation remain valuable, but they 
 - Real STT provider
 - OpenAI TTS (advanced voices)
 - Email delivery, payments, organisations
+
+---
+
+## Next recommended work
+
+1. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
+2. **Practice Gym Separation** — let students choose skill / pattern / focus outside Today's Lesson.
+3. **Session Reflection AI** — now that evaluation outputs are stable, wire `session_reflection` AI prompt.
 
 ---
 

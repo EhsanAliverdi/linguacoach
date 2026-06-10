@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 11:02
+lastUpdated: 2026-06-10 18:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -459,9 +459,22 @@ Pattern-generated activities are rendered by `ActivityDto.interactionMode`, not 
 | `AudioAndGapFill` | `AudioAndGapFillComponent` | `listen_and_gap_fill` |
 | `ChatReply` | `ChatReplyComponent` | `teams_chat_simulation` |
 
-Each renderer emits one structured answer payload to the parent. The parent uses the existing activity attempt endpoints for submission and feedback. Deterministic renderers currently submit structured JSON through the existing attempt flow; advanced per-pattern evaluation UI is intentionally deferred.
+Each renderer emits one structured answer payload to the parent. The parent submits via the existing activity attempt endpoints. The backend routes by `MarkingMode` through `IPatternEvaluationRouter`. The `ActivityFeedbackDto` returns `patternEvaluation: PatternEvaluationDto | null` — non-null for pattern-keyed activities. The frontend renders `PatternEvaluationResultComponent` when present; legacy feedback sections gate on `!patternEvaluation`.
 
 `contentJson` is returned to the frontend only for pattern-keyed activities. Legacy listening activities do not expose raw content JSON before submission because it can contain transcripts or expected answers.
+
+## Pattern Evaluation — MarkingMode × Pattern matrix
+
+| Pattern key | InteractionMode | MarkingMode | Evaluator | Result UI branch |
+|---|---|---|---|---|
+| `phrase_match` | `MatchingPairs` | `KeyedSelection` | `KeyedSelectionEvaluator` | MatchingPairs |
+| `gap_fill_workplace_phrase` | `GapFill` | `ExactMatch` | `ExactMatchEvaluator` | GapFill |
+| `listen_and_gap_fill` | `AudioAndGapFill` | `ExactMatch` | `ExactMatchEvaluator` | GapFill |
+| `listen_and_answer` | `AudioAndFreeText` | `AiStructured` | `AiStructuredEvaluator` | ListenAndAnswer |
+| `email_reply` | `FreeTextEntry` | `AiStructured` | `AiStructuredEvaluator` | Chat/Email |
+| `teams_chat_simulation` | `ChatReply` | `AiStructured` | `AiStructuredEvaluator` | Chat/Email |
+| `spoken_response_from_prompt` | `FreeTextEntry` | `AiOpenEnded` | `AiOpenEndedEvaluator` | SpokenResponse |
+| `lesson_reflection` | `ReadOnly` | `NoMarking` | `NoMarkingEvaluator` | ReadOnly (complete state) |
 
 ---
 
