@@ -45,7 +45,7 @@ public sealed class AiProviderResolver : IAiProviderResolver
             || string.Equals(providerName, "fake", StringComparison.OrdinalIgnoreCase))
         {
             var (catProvider, catModel) = ResolveCategoryFromDb(canonicalFeatureKey);
-            if (!string.IsNullOrWhiteSpace(catProvider) && !string.Equals(catProvider, "fake", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(catProvider))
             {
                 providerName = catProvider;
                 modelName = catModel;
@@ -148,14 +148,14 @@ public sealed class AiProviderResolver : IAiProviderResolver
             {
                 var cat = db.AiConfigCategories.AsNoTracking()
                     .FirstOrDefault(c => c.CategoryKey == categoryKey);
-                if (cat?.IsConfigured == true)
+                if (cat is not null && !string.IsNullOrWhiteSpace(cat.ProviderName))
                     return (cat.ProviderName, cat.ModelName);
             }
 
             // Fall through to llm.default (TTS keys never reach here — they use TtsProviderResolver)
             var def = db.AiConfigCategories.AsNoTracking()
                 .FirstOrDefault(c => c.CategoryKey == "llm.default");
-            if (def?.IsConfigured == true)
+            if (def is not null && !string.IsNullOrWhiteSpace(def.ProviderName))
                 return (def.ProviderName, def.ModelName);
 
             return (null, null);

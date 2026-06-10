@@ -209,6 +209,23 @@ internal sealed class FakeAiProvider : IAiProvider
               "commonMistakeToAvoid": "Avoid rude phrasing.",
               "instructionInSourceLanguage": "یک ایمیل حرفه‌ای بنویسید.",
               "title": "Follow up on pending approval",
+              "scenario": "You need to update your manager about a project delay.",
+              "speakingGoal": "Communicate the delay professionally and propose a solution.",
+              "speakingScenario": "You need to update your manager about a project delay.",
+              "studentRole": "Project Coordinator",
+              "listenerRole": "Manager",
+              "prompt": "Record a 30-second update explaining the delay.",
+              "speakingPrompt": "Record a 30-second update explaining the delay.",
+              "expectedPoints": ["Acknowledge the delay", "Explain the reason", "Propose a solution"],
+              "suggestedPhrases": ["I wanted to update you on", "Due to unforeseen circumstances"],
+              "maxDurationSeconds": 60,
+              "audioScript": "Hi, this is a test workplace voice message. Please note the meeting has been moved to Thursday.",
+              "transcriptAvailableAfterSubmit": true,
+              "speakerRole": "Manager",
+              "questions": [
+                { "id": "q1", "question": "When was the meeting moved to?", "expectedAnswer": "Thursday", "type": "short_answer" }
+              ],
+              "responseTask": { "prompt": "Reply to confirm you received the message.", "expectedFocus": "acknowledgement" },
               "pathTitle": "Workplace English for Document Controller — B1",
               "modules": [
                 {
