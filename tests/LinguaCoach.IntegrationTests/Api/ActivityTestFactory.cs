@@ -240,7 +240,8 @@ internal sealed class FakeAiProvider : IAiProvider
               "transcriptAvailableAfterSubmit": true,
               "speakerRole": "Manager",
               "questions": [
-                { "id": "q1", "question": "When was the meeting moved to?", "expectedAnswer": "Thursday", "type": "short_answer" }
+                { "id": "q1", "question": "When was the meeting moved to?", "expectedAnswer": "Thursday", "type": "short_answer" },
+                { "id": "q2", "question": "What should you do before the meeting?", "expectedAnswer": "Check the latest delivery schedule", "type": "short_answer" }
               ],
               "responseTask": { "prompt": "Reply to confirm you received the message.", "expectedFocus": "acknowledgement" },
               "pathTitle": "Workplace English for Document Controller — B1",

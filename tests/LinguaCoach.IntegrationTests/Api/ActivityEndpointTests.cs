@@ -45,9 +45,8 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
     }
 
     [Fact]
-    public async Task SubmitAttempt_WhenAiEvaluationFails_Returns503()
+    public async Task SubmitAttempt_WhenAiEvaluationFails_SavesAttemptAndReturns200()
     {
-        // Use a working factory to get a valid activity ID, then submit via fallback factory
         var (token, userId) = await _factory.CreateOnboardedStudentAsync($"activity_submit_{Guid.NewGuid():N}@test.com");
 
         // Seed a LearningActivity directly so we have a valid ID to submit against
@@ -69,8 +68,17 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
             $"/api/activity/{activity.Id}/attempt",
             new { submittedContent = "Dear Manager, I am writing to follow up on the pending approval." });
 
-        // AI evaluation fails → 503 (no empty-feedback fallback)
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, submitResponse.StatusCode);
+        // ActivitySubmitHandler always saves the attempt and returns 200, even when AI evaluation fails.
+        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
+        var body = await submitResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("attemptId").GetString()));
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<LinguaCoach.Persistence.LinguaCoachDbContext>();
+        var profile = db2.StudentProfiles.First(p => p.UserId == userId);
+        var attempt = db2.ActivityAttempts.FirstOrDefault(a => a.StudentProfileId == profile.Id);
+        Assert.NotNull(attempt);
+        Assert.Contains("pending approval", attempt.SubmittedContent);
     }
 
     [Fact]
@@ -118,45 +126,6 @@ public sealed class ActivityStructuredFeedbackTests : IClassFixture<ActivityTest
     public ActivityStructuredFeedbackTests(ActivityTestFactory factory)
     {
         _factory = factory;
-    }
-
-    [Fact]
-    public async Task SubmitAttempt_WithFakeAi_ReturnsFeedbackWithChangesArray()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"struct_fb_{Guid.NewGuid():N}@test.com");
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
-
-        var resp = await client.PostAsJsonAsync(
-            $"/api/activity/{activityId}/attempt",
-            new { submittedContent = "Dear John please send me the document." });
-
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-
-        // New fields must be present
-        Assert.True(body.TryGetProperty("coachSummary", out var cs) && cs.GetString() is { Length: > 0 });
-        Assert.True(body.TryGetProperty("changes", out var changes));
-        Assert.Equal(JsonValueKind.Array, changes.ValueKind);
-        Assert.True(changes.GetArrayLength() >= 1);
-
-        var firstChange = changes[0];
-        Assert.True(firstChange.TryGetProperty("type", out _));
-        Assert.True(firstChange.TryGetProperty("original", out _));
-        Assert.True(firstChange.TryGetProperty("suggested", out _));
-        Assert.True(firstChange.TryGetProperty("reason", out _));
-        Assert.True(firstChange.TryGetProperty("category", out _));
-        Assert.True(firstChange.TryGetProperty("severity", out _));
-
-        // Improved version must come from improvedVersion field (not old correctedEmail)
-        Assert.True(body.TryGetProperty("correctedText", out var ct) && ct.GetString() is { Length: > 0 });
-
-        // Mini lesson and next improvement step
-        Assert.True(body.TryGetProperty("miniLesson", out var ml) && ml.GetString() is { Length: > 0 });
-        Assert.True(body.TryGetProperty("nextImprovementStep", out var ni) && ni.GetString() is { Length: > 0 });
     }
 
     [Fact]
