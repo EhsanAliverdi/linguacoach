@@ -425,6 +425,105 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("curriculum_word_lists", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ExercisePatternDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ActivityType")
+                        .HasColumnType("integer")
+                        .HasColumnName("activity_type");
+
+                    b.Property<string>("AiEvaluatePromptKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("ai_evaluate_prompt_key");
+
+                    b.Property<string>("AiGeneratePromptKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("ai_generate_prompt_key");
+
+                    b.Property<string>("CompatibleKindsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("compatible_kinds_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int>("EstimatedMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_minutes");
+
+                    b.Property<int>("InteractionMode")
+                        .HasColumnType("integer")
+                        .HasColumnName("interaction_mode");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("key");
+
+                    b.Property<int>("MarkingMode")
+                        .HasColumnType("integer")
+                        .HasColumnName("marking_mode");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PrimarySkill")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("primary_skill");
+
+                    b.Property<bool>("RequiresAudio")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_audio");
+
+                    b.Property<string>("SecondarySkillsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("secondary_skills_json");
+
+                    b.Property<string>("TeachingPurpose")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("teaching_purpose");
+
+                    b.Property<bool>("WorkplaceContext")
+                        .HasColumnType("boolean")
+                        .HasColumnName("workplace_context");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("ix_exercise_patterns_active")
+                        .HasFilter("is_active = true");
+
+                    b.HasIndex("Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_exercise_patterns_key");
+
+                    b.ToTable("exercise_patterns", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.Language", b =>
                 {
                     b.Property<Guid>("Id")
@@ -555,6 +654,11 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)")
                         .HasColumnName("difficulty");
+
+                    b.Property<string>("ExercisePatternKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("exercise_pattern_key");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")

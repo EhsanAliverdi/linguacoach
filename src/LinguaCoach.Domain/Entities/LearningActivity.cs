@@ -36,6 +36,13 @@ public sealed class LearningActivity : BaseEntity
     // ActivityType = WritingScenario. Null for AI-generated activities.
     public Guid? SourceWritingScenarioId { get; private set; }
 
+    /// <summary>
+    /// The ExercisePatternKey this activity was generated from, when generated via a
+    /// session exercise step. Null for Practice Gym activities generated without a pattern.
+    /// Set by ExercisePrepareHandler. Used for renderer dispatch and evaluation routing.
+    /// </summary>
+    public string? ExercisePatternKey { get; private set; }
+
     public bool IsActive { get; private set; }
 
     public IReadOnlyList<ActivityAttempt> Attempts => _attempts.AsReadOnly();
@@ -55,7 +62,8 @@ public sealed class LearningActivity : BaseEntity
         string difficulty,
         string aiGeneratedContentJson,
         Guid? learningModuleId = null,
-        Guid? sourceWritingScenarioId = null)
+        Guid? sourceWritingScenarioId = null,
+        string? exercisePatternKey = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required.", nameof(title));
         if (string.IsNullOrWhiteSpace(difficulty)) throw new ArgumentException("Difficulty is required.", nameof(difficulty));
@@ -67,6 +75,7 @@ public sealed class LearningActivity : BaseEntity
         AiGeneratedContentJson = string.IsNullOrWhiteSpace(aiGeneratedContentJson) ? "{}" : aiGeneratedContentJson;
         LearningModuleId = learningModuleId;
         SourceWritingScenarioId = sourceWritingScenarioId;
+        ExercisePatternKey = string.IsNullOrWhiteSpace(exercisePatternKey) ? null : exercisePatternKey.Trim();
         IsActive = true;
     }
 

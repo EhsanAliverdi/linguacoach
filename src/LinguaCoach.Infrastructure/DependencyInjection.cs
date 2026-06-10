@@ -135,6 +135,7 @@ public static class DependencyInjection
         services.AddScoped<ICompleteExerciseHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
         services.AddScoped<ExercisePrepareHandler>();
         services.AddScoped<IPrepareExerciseHandler>(sp => sp.GetRequiredService<ExercisePrepareHandler>());
+        services.AddScoped<IExercisePatternRepository, ExercisePatternRepository>();
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();

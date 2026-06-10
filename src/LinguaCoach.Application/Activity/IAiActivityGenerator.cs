@@ -36,7 +36,16 @@ public sealed record ActivityGenerationContext(
     string SourceLanguageName,
     string TargetLanguageName,
     string? RecentMistakesSummary = null,
-    string? TopicHint = null);
+    string? TopicHint = null,
+    /// <summary>
+    /// When set, overrides the broad ActivityType-based prompt key with a pattern-specific one.
+    /// AiGeneratePromptKey from the ExercisePatternDefinition.
+    /// </summary>
+    string? OverridePromptKey = null,
+    /// <summary>
+    /// The canonical exercise pattern key (e.g. "email_reply"). Stored on LearningActivity.
+    /// </summary>
+    string? ExercisePatternKey = null);
 
 public sealed record ActivityEvaluationContext(
     ActivityType ActivityType,

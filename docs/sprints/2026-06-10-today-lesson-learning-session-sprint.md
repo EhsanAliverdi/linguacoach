@@ -1,5 +1,5 @@
 ---
-status: current
+status: complete
 lastUpdated: 2026-06-10
 owner: product
 supersedes:

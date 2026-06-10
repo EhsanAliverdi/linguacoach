@@ -8,6 +8,18 @@ export type ActivityType =
 
 export type ActivitySource = 'aiGenerated' | 'systemFallback';
 
+export type InteractionMode =
+  | 'readOnly'
+  | 'freeTextEntry'
+  | 'gapFill'
+  | 'multipleChoice'
+  | 'matchingPairs'
+  | 'sentenceBuilder'
+  | 'errorCorrection'
+  | 'chatReply'
+  | 'audioAndFreeText'
+  | 'audioAndGapFill';
+
 export interface VocabPracticeItem {
   vocabularyItemId: string;
   term: string;
@@ -55,6 +67,10 @@ export interface ActivityDto {
   expectedPoints: string[] | null;
   suggestedPhrases: string[] | null;
   maxDurationSeconds: number | null;
+  // Phase 2: pattern-aware fields
+  interactionMode: InteractionMode | null;
+  exercisePatternKey: string | null;
+  contentJson?: string | null;
 }
 
 export interface VocabAnswer {

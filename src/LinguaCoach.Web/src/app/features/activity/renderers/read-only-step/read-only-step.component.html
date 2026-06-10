@@ -1,0 +1,47 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="read-only-renderer">
+
+  @if (content.coachNote) {
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="sp-coach-bubble" style="flex:1;font-size:13.5px;color:var(--sp-text);line-height:1.65">
+        {{ content.coachNote }}
+      </div>
+    </div>
+  }
+
+  @if (content.body) {
+    <div class="sp-card" style="padding:16px">
+      <p style="font-size:14px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap">{{ content.body }}</p>
+    </div>
+  }
+
+  @if (content.phrasesToRemember?.length) {
+    <div class="sp-card" style="padding:16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">Phrases to remember</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        @for (phrase of content.phrasesToRemember!; track phrase) {
+          <span class="sp-phrase-chip">{{ phrase }}</span>
+        }
+      </div>
+    </div>
+  }
+
+  @if (content.reflectionPrompts?.length) {
+    <div class="sp-card" style="padding:16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">Reflect</p>
+      <ul style="display:flex;flex-direction:column;gap:10px;padding:0;margin:0;list-style:none">
+        @for (prompt of content.reflectionPrompts!; track prompt) {
+          <li style="font-size:13.5px;color:var(--sp-text);line-height:1.6;display:flex;gap:8px;align-items:flex-start">
+            <span style="color:var(--sp-writing);font-weight:800;flex-shrink:0;margin-top:1px">·</span>{{ prompt }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <button (click)="done.emit()" class="sp-button-primary" style="width:100%" data-testid="read-only-done-btn">
+    Continue
+  </button>
+</div>

@@ -200,7 +200,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
                     ? s with
                     {
                         Kind = ExerciseKind.SpeakingTask,
-                        PatternKey = "speaking_role_play",
+                        PatternKey = "spoken_response_from_prompt",
                         PrimarySkill = "Speaking",
                         Instructions = "Record a professional spoken response to the workplace situation."
                     }
@@ -313,14 +313,19 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
     // This is a best-effort reverse lookup for display purposes only.
     private static ExerciseKind ResolveKind(string patternKey) => patternKey switch
     {
-        "phrase_match" => ExerciseKind.VocabularyWarmup,
-        "listen_and_answer" or "listen_and_gap_fill" => ExerciseKind.ListeningInput,
-        "writing_response" => ExerciseKind.WritingTask,
-        "speaking_role_play" => ExerciseKind.SpeakingTask,
-        "lesson_reflection" => ExerciseKind.Review,
-        _ when patternKey.StartsWith("listen") => ExerciseKind.ListeningInput,
-        _ when patternKey.StartsWith("speaking") => ExerciseKind.SpeakingTask,
-        _ when patternKey.StartsWith("writing") => ExerciseKind.WritingTask,
+        "phrase_match"
+            or "gap_fill_workplace_phrase"                           => ExerciseKind.VocabularyWarmup,
+        "listen_and_answer"
+            or "listen_and_gap_fill"                                 => ExerciseKind.ListeningInput,
+        "email_reply"
+            or "teams_chat_simulation"
+            or "writing_response"                                    => ExerciseKind.WritingTask,
+        "spoken_response_from_prompt"
+            or "speaking_role_play"                                  => ExerciseKind.SpeakingTask,
+        "lesson_reflection"                                          => ExerciseKind.Review,
+        _ when patternKey.StartsWith("listen",   StringComparison.OrdinalIgnoreCase) => ExerciseKind.ListeningInput,
+        _ when patternKey.StartsWith("speaking", StringComparison.OrdinalIgnoreCase) => ExerciseKind.SpeakingTask,
+        _ when patternKey.StartsWith("writing",  StringComparison.OrdinalIgnoreCase) => ExerciseKind.WritingTask,
         _ => ExerciseKind.ContextInput
     };
 

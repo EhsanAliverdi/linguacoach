@@ -1,0 +1,69 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="audio-free-text-renderer">
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Workplace message</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  <!-- Audio player — shown first, above questions -->
+  @if (content.audioUrl) {
+    <div class="sp-card" style="padding:14px" data-testid="audio-player-section">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Audio message</p>
+      <audio controls [src]="content.audioUrl" style="width:100%;display:block" data-testid="audio-player"></audio>
+      <p style="font-size:12px;color:var(--sp-muted);margin-top:8px">Listen to the message, then answer the questions below.</p>
+    </div>
+  } @else {
+    <div class="sp-alert-info" style="font-size:13px" data-testid="audio-unavailable">
+      {{ content.audioUnavailableMessage || 'Audio is temporarily unavailable. Complete this as a transcript-based listening exercise.' }}
+    </div>
+  }
+
+  @if (content.instructions) {
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:12px 16px;font-size:13px;font-weight:700;color:var(--sp-text)">
+      {{ content.instructions }}
+    </div>
+  }
+
+  <div style="display:flex;flex-direction:column;gap:12px" data-testid="question-list">
+    @for (q of content.questions; track q.id) {
+      <div class="sp-card" style="padding:16px">
+        <label class="sp-label" [for]="'aft-q-' + q.id">{{ q.question }}</label>
+        <input
+          [id]="'aft-q-' + q.id"
+          type="text"
+          [(ngModel)]="answers[q.id]"
+          [disabled]="disabled"
+          class="sp-input"
+          placeholder="Type your answer"
+          [attr.data-testid]="'question-input-' + q.id"
+        />
+      </div>
+    }
+  </div>
+
+  @if (content.responseTask) {
+    <div class="sp-card" style="padding:16px">
+      <label class="sp-label" for="aft-response">{{ content.responseTask }}</label>
+      <textarea
+        id="aft-response"
+        [(ngModel)]="responseText"
+        [disabled]="disabled"
+        rows="4"
+        class="sp-input"
+        style="resize:vertical;line-height:1.7"
+        placeholder="Write a short professional reply"
+        data-testid="response-text-input"
+      ></textarea>
+    </div>
+  }
+
+  <button (click)="submit()"
+    [disabled]="disabled || !allAnswered"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="audio-free-text-submit-btn">
+    @if (disabled) { Checking understanding… } @else { Check understanding }
+  </button>
+</div>

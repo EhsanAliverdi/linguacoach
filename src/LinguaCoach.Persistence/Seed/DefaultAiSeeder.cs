@@ -23,6 +23,26 @@ public static class DefaultAiSeeder
     public const string LearningPathGenerateAdaptiveKey = "learning_path_generate_adaptive";
     public const string VocabularyExtractFromAttemptKey = "vocabulary_extract_from_attempt";
 
+    // ── Exercise Pattern Engine — pattern-specific generation prompt keys ─────
+    public const string ActivityGeneratePhraseMatchKey        = "activity_generate_phrase_match";
+    public const string ActivityGenerateGapFillKey            = "activity_generate_gap_fill_workplace_phrase";
+    public const string ActivityGenerateListenAndAnswerKey    = "activity_generate_listen_and_answer";
+    public const string ActivityGenerateListenAndGapFillKey   = "activity_generate_listen_and_gap_fill";
+    public const string ActivityGenerateEmailReplyKey         = "activity_generate_email_reply";
+    public const string ActivityGenerateTeamsChatKey          = "activity_generate_teams_chat_simulation";
+    public const string ActivityGenerateSpokenResponseKey     = "activity_generate_spoken_response_from_prompt";
+    public const string ActivityGenerateLessonReflectionKey   = "activity_generate_lesson_reflection";
+
+    // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
+    public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
+    public const string ActivityEvaluateGapFillKey            = "activity_evaluate_gap_fill_workplace_phrase";
+    public const string ActivityEvaluateListenAndAnswerKey    = "activity_evaluate_listen_and_answer";
+    public const string ActivityEvaluateListenAndGapFillKey   = "activity_evaluate_listen_and_gap_fill";
+    public const string ActivityEvaluateEmailReplyKey         = "activity_evaluate_email_reply";
+    public const string ActivityEvaluateTeamsChatKey          = "activity_evaluate_teams_chat_simulation";
+    public const string ActivityEvaluateSpokenResponseKey     = "activity_evaluate_spoken_response_from_prompt";
+    public const string ActivityEvaluateLessonReflectionKey   = "activity_evaluate_lesson_reflection";
+
     private const string ActivityGenerateWritingContent = """
 You are an expert English language teacher creating a writing practice activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -409,6 +429,541 @@ Rules:
 - Do not include any text outside JSON.
 """;
 
+    // ── Pattern-specific generation prompts ───────────────────────────────────
+
+    private const string ActivityGeneratePhraseMatchContent = """
+You are an expert English language teacher creating a phrase-matching vocabulary exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+
+Create 6-8 workplace phrase-meaning pairs for a matching exercise. Return ONLY valid JSON:
+
+{
+  "title": "<short title for this activity>",
+  "instructions": "Match each workplace phrase to its correct meaning.",
+  "pairs": [
+    { "phrase": "<workplace phrase>", "meaning": "<plain-English meaning>", "context": "<brief workplace usage example>" }
+  ],
+  "teachingNote": "<one sentence about the common thread in these phrases>"
+}
+
+Rules:
+- Phrases must be realistic {{careerContext}} workplace expressions.
+- Meanings must be clear and unambiguous.
+- Include a mix of single words and multi-word expressions.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateGapFillContent = """
+You are an expert English language teacher creating a gap-fill exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+
+Create 5-6 workplace sentences each with one blank to fill. Return ONLY valid JSON:
+
+{
+  "title": "<short title for this activity>",
+  "instructions": "Fill in each blank with the correct workplace word or phrase.",
+  "items": [
+    {
+      "sentence": "<sentence with ___ for the blank>",
+      "answer": "<correct answer>",
+      "distractors": ["<wrong option 1>", "<wrong option 2>"],
+      "hint": "<optional one-word hint>"
+    }
+  ],
+  "teachingNote": "<one sentence about the language pattern practised>"
+}
+
+Rules:
+- Sentences must be realistic {{careerContext}} workplace contexts.
+- Each blank tests a specific workplace phrase or vocabulary item.
+- Distractors should be plausible but clearly wrong.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateListenAndAnswerContent = """
+You are an expert English language teacher creating a workplace listening comprehension activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes: {{recentMistakes}}
+
+Create a realistic spoken workplace message (voicemail, meeting snippet, or team update) and comprehension questions. Return ONLY valid JSON:
+
+{
+  "title": "<short descriptive title>",
+  "scenario": "<1-2 sentences describing the workplace context>",
+  "instructions": "Listen to the message and answer the questions.",
+  "speakerRole": "<who is speaking, e.g. 'Project Manager'>",
+  "listenerRole": "<who the listener is, e.g. 'Team Member'>",
+  "audioScript": "<the spoken message text, 60-120 words, natural spoken English>",
+  "transcriptAvailableAfterSubmit": true,
+  "questions": [
+    { "id": "q1", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" },
+    { "id": "q2", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" }
+  ],
+  "responseTask": {
+    "prompt": "<short written follow-up task based on the message>",
+    "expectedFocus": "<key language focus for the written response>"
+  }
+}
+
+Rules:
+- audioScript must sound natural and spoken, not formal written text.
+- Include 2-3 comprehension questions.
+- Questions should test different aspects: main point, detail, implication.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateListenAndGapFillContent = """
+You are an expert English language teacher creating a listening gap-fill activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+
+Create a spoken workplace message with 4-5 key words/phrases to fill in. Return ONLY valid JSON:
+
+{
+  "title": "<short title>",
+  "scenario": "<1 sentence describing the context>",
+  "instructions": "Listen and fill in the missing words.",
+  "speakerRole": "<speaker role>",
+  "audioScript": "<the full spoken text, 60-90 words>",
+  "transcriptAvailableAfterSubmit": true,
+  "gaps": [
+    {
+      "id": "g1",
+      "sentenceWithBlank": "<sentence from the script with ___ for the blank>",
+      "answer": "<exact word/phrase from the script>",
+      "hint": "<optional category hint, e.g. 'verb'>"
+    }
+  ]
+}
+
+Rules:
+- The gaps must be key workplace vocabulary, not filler words.
+- sentenceWithBlank must be a verbatim excerpt from audioScript with the answer replaced by ___.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateEmailReplyContent = """
+You are an expert English language teacher creating a workplace email reply activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Create a realistic workplace email the student must reply to. Return ONLY valid JSON:
+
+{
+  "title": "<short descriptive title, 5-10 words>",
+  "taskType": "<one of: workplace-email | follow-up | request | update | apology | clarification | complaint-response | meeting-follow-up>",
+  "situation": "<2-3 sentences describing the email the student received and what they must reply to>",
+  "audience": "<who the student is writing to, e.g. 'your line manager'>",
+  "tone": "<formal | semi-formal | polite>",
+  "expectedLength": "<e.g. '3-5 sentences' or '1 short paragraph'>",
+  "learningGoal": "<one sentence: what communication skill this practises>",
+  "skillFocus": "<one key skill, e.g. 'polite requests' or 'professional apology'>",
+  "targetPhrases": ["<phrase 1>", "<phrase 2>", "<phrase 3>", "<phrase 4>"],
+  "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
+  "exampleText": "<a complete polished example reply the student can study>",
+  "commonMistakeToAvoid": "<one sentence on the most common mistake {{sourceLanguageName}} speakers make in this type of email>",
+  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} explaining what to write>"
+}
+
+Rules:
+- The situation must be specific and realistic for {{careerContext}} professionals.
+- exampleText must be a complete, professional email reply (not a fragment).
+- instructionInSourceLanguage must be written entirely in {{sourceLanguageName}}.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateTeamsChatContent = """
+You are an expert English language teacher creating a Teams/Slack chat simulation exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+
+Create a realistic chat exchange where the student must write a professional reply. Return ONLY valid JSON:
+
+{
+  "title": "<short title>",
+  "scenario": "<2-3 sentences describing the chat context and what the student must do>",
+  "colleagueName": "<first name of the colleague sending the message>",
+  "colleagueRole": "<colleague's role>",
+  "studentRole": "<student's role>",
+  "learningGoal": "<what this practises>",
+  "expectedLength": "<e.g. '2-3 sentences' or '1-2 chat messages'>",
+  "targetPhrases": ["<phrase 1>", "<phrase 2>", "<phrase 3>"],
+  "targetVocabulary": ["<word 1>", "<word 2>"],
+  "exampleReply": "<a polished example chat reply>",
+  "toneGuidance": "<brief note on register: e.g. 'friendly but professional, no emoji'>",
+  "instructionInSourceLanguage": "<1-2 sentences in {{sourceLanguageName}} explaining the task>"
+}
+
+Rules:
+- Chat messages should be concise, as real chat messages are.
+- targetPhrases must be natural chat expressions, not formal email language.
+- exampleReply must show correct length and tone.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateSpokenResponseContent = """
+You are an expert English language teacher creating a spoken response exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Create a workplace speaking prompt. Return ONLY valid JSON:
+
+{
+  "title": "<short title>",
+  "scenario": "<2-3 sentences describing the workplace situation>",
+  "studentRole": "<student's role>",
+  "listenerRole": "<who the student is speaking to>",
+  "speakingGoal": "<what the student must communicate>",
+  "prompt": "<the specific spoken task, e.g. 'Record a 30-second update for your team about the project delay'>",
+  "expectedPoints": ["<key point 1 the answer should cover>", "<key point 2>", "<key point 3>"],
+  "suggestedPhrases": ["<helpful phrase 1>", "<helpful phrase 2>", "<helpful phrase 3>"],
+  "maxDurationSeconds": 60
+}
+
+Rules:
+- The scenario must be realistic for {{careerContext}} professionals.
+- expectedPoints should be specific and verifiable from a spoken response.
+- suggestedPhrases should be professional and at the right level for {{cefrLevel}}.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateLessonReflectionContent = """
+You are an English language teacher creating a session-closing reflection activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Topic area: {{topicHint}}
+
+Create a brief, encouraging lesson reflection. Return ONLY valid JSON:
+
+{
+  "title": "Lesson reflection",
+  "instructions": "Take a moment to reflect on what you practised today.",
+  "reflectionPrompts": [
+    "<thoughtful reflection question 1 relevant to today's topic>",
+    "<reflection question 2>",
+    "<reflection question 3>"
+  ],
+  "keyPhrase": "<one key phrase from today's lesson worth remembering>",
+  "lessonSummary": "<1-2 sentences summarising what was practised today>"
+}
+
+Rules:
+- Reflection prompts must be specific to the topic studied, not generic.
+- Keep the tone warm and encouraging.
+- lessonSummary should mention the workplace skill practised.
+- Do not include any text outside the JSON object.
+""";
+
+    // ── Pattern-specific evaluation prompts ───────────────────────────────────
+
+    private const string ActivityEvaluatePhraseMatchContent = """
+You are an English language teacher evaluating a student's phrase-matching exercise.
+
+Student level: {{cefrLevel}}
+Activity content: {{activityContent}}
+Student submission: {{studentSubmission}}
+
+Evaluate whether the student matched the phrases correctly and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<1-2 sentence warm feedback summary>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<specific thing done well>"],
+  "mainMistakes": ["<key mistake if any>"],
+  "grammarIssues": [],
+  "vocabularyIssues": [],
+  "toneIssues": [],
+  "clarityIssues": [],
+  "grammarExplanation": null,
+  "toneExplanation": null,
+  "vocabularyToRemember": ["<phrase worth memorising>"],
+  "miniLesson": "<one sentence teaching moment>",
+  "nextImprovementStep": null,
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<what to practise next>",
+  "feedbackInSourceLanguage": "<1-2 sentences of encouragement in {{sourceLanguageName}}>"
+}
+""";
+
+    private const string ActivityEvaluateGapFillContent = """
+You are an English language teacher evaluating a student's gap-fill exercise.
+
+Student level: {{cefrLevel}}
+Activity content: {{activityContent}}
+Student answers: {{studentSubmission}}
+
+Evaluate accuracy and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<1-2 sentence warm feedback>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<specific correct answers or patterns>"],
+  "mainMistakes": ["<key errors if any>"],
+  "grammarIssues": [],
+  "vocabularyIssues": ["<any vocabulary errors>"],
+  "toneIssues": [],
+  "clarityIssues": [],
+  "grammarExplanation": null,
+  "toneExplanation": null,
+  "vocabularyToRemember": ["<word worth memorising>"],
+  "miniLesson": "<one sentence teaching moment about the target language>",
+  "nextImprovementStep": null,
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<recommendation for next practice>",
+  "feedbackInSourceLanguage": "<1-2 sentences in {{sourceLanguageName}}>"
+}
+""";
+
+    private const string ActivityEvaluateListenAndAnswerContent = """
+You are an English language teacher evaluating a student's listening comprehension answers.
+
+Student level: {{cefrLevel}}
+Activity content (questions and expected answers): {{activityContent}}
+Student answers: {{studentSubmission}}
+
+Evaluate each answer and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<1-2 sentence warm feedback>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<specific strengths>"],
+  "mainMistakes": ["<key errors>"],
+  "grammarIssues": [],
+  "vocabularyIssues": [],
+  "toneIssues": [],
+  "clarityIssues": [],
+  "grammarExplanation": null,
+  "toneExplanation": null,
+  "vocabularyToRemember": ["<useful phrase from the audio>"],
+  "miniLesson": "<one sentence about listening strategy>",
+  "nextImprovementStep": null,
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<recommendation>",
+  "feedbackInSourceLanguage": "<1-2 sentences in {{sourceLanguageName}}>",
+  "questionFeedback": [
+    {
+      "questionId": "<id>",
+      "question": "<the question>",
+      "studentAnswer": "<student's answer>",
+      "expectedAnswerSummary": "<expected answer>",
+      "isCorrect": <true|false>,
+      "score": <0.0-1.0>,
+      "feedback": "<specific feedback on this answer>"
+    }
+  ],
+  "transcript": "<the audio transcript>",
+  "responseFeedback": "<feedback on the written follow-up response if provided>"
+}
+""";
+
+    private const string ActivityEvaluateListenAndGapFillContent = """
+You are an English language teacher evaluating a listening gap-fill exercise.
+
+Student level: {{cefrLevel}}
+Activity content: {{activityContent}}
+Student answers: {{studentSubmission}}
+
+Check each gap answer and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<1-2 sentence warm feedback>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<specific correct answers>"],
+  "mainMistakes": ["<key errors>"],
+  "grammarIssues": [],
+  "vocabularyIssues": ["<vocabulary notes>"],
+  "toneIssues": [],
+  "clarityIssues": [],
+  "grammarExplanation": null,
+  "toneExplanation": null,
+  "vocabularyToRemember": ["<word/phrase from the gaps>"],
+  "miniLesson": "<one sentence about the target vocabulary>",
+  "nextImprovementStep": null,
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<recommendation>",
+  "feedbackInSourceLanguage": "<1-2 sentences in {{sourceLanguageName}}>",
+  "transcript": "<the full audio script>"
+}
+""";
+
+    private const string ActivityEvaluateEmailReplyContent = """
+You are a warm, professional English writing coach evaluating a workplace email reply written by a {{sourceLanguageName}}-speaking student learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content:
+{{activityContent}}
+
+Student's reply:
+{{studentSubmission}}
+
+Evaluate the reply and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "correctedText": "<a corrected, professional version of their reply>",
+  "coachSummary": "<2-3 sentence warm, specific feedback>",
+  "focusFirst": <true if many issues — limit to top 3-5>,
+  "changes": [
+    { "type": "replace|add|remove", "original": "<original text>", "suggested": "<improved text>", "reason": "<why>", "category": "grammar|vocabulary|tone|clarity|structure", "severity": "high|medium|low" }
+  ],
+  "whatYouDidWell": ["<specific strength>"],
+  "mainMistakes": ["<key mistake>"],
+  "grammarIssues": ["<grammar issue>"],
+  "vocabularyIssues": ["<vocabulary issue>"],
+  "toneIssues": ["<tone issue>"],
+  "clarityIssues": ["<clarity issue>"],
+  "grammarExplanation": "<1-2 sentence grammar explanation>",
+  "toneExplanation": "<1-2 sentence tone explanation>",
+  "vocabularyToRemember": ["<phrase worth memorising>"],
+  "miniLesson": "<concise teaching moment>",
+  "nextImprovementStep": "<actionable rewrite instruction>",
+  "rewriteChallenge": "<rewrite challenge for the student>",
+  "nextPracticeSuggestion": "<recommendation for next practice>",
+  "feedbackInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}}>"
+}
+""";
+
+    private const string ActivityEvaluateTeamsChatContent = """
+You are an English language coach evaluating a professional chat reply written by a {{sourceLanguageName}}-speaking student.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content:
+{{activityContent}}
+
+Student's reply:
+{{studentSubmission}}
+
+Evaluate the chat reply (tone, conciseness, professional register) and return ONLY valid JSON matching the same schema as email evaluation:
+
+{
+  "overallScore": <0-100>,
+  "correctedText": "<an improved version of their chat reply>",
+  "coachSummary": "<1-2 sentence feedback>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<strength>"],
+  "mainMistakes": ["<key mistake>"],
+  "grammarIssues": [],
+  "vocabularyIssues": [],
+  "toneIssues": ["<any tone issues — overly formal / too casual>"],
+  "clarityIssues": [],
+  "grammarExplanation": null,
+  "toneExplanation": "<1-2 sentences on professional chat register>",
+  "vocabularyToRemember": ["<phrase>"],
+  "miniLesson": "<one sentence teaching moment on chat communication>",
+  "nextImprovementStep": "<actionable suggestion>",
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<recommendation>",
+  "feedbackInSourceLanguage": "<1-2 sentences in {{sourceLanguageName}}>"
+}
+""";
+
+    private const string ActivityEvaluateSpokenResponseContent = """
+You are an English speaking coach evaluating a spoken workplace response from a {{sourceLanguageName}}-speaking student.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (prompt and expected points):
+{{activityContent}}
+
+Student's transcribed response:
+{{studentSubmission}}
+
+Evaluate clarity, content coverage, and professional register. Return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentence warm feedback on the spoken response>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<specific strength in the spoken response>"],
+  "mainMistakes": ["<key area to improve>"],
+  "grammarIssues": ["<grammar notes if applicable>"],
+  "vocabularyIssues": [],
+  "toneIssues": [],
+  "clarityIssues": ["<clarity issues if any>"],
+  "grammarExplanation": null,
+  "toneExplanation": null,
+  "vocabularyToRemember": ["<phrase from the expected points worth memorising>"],
+  "miniLesson": "<one sentence tip for spoken workplace communication>",
+  "nextImprovementStep": "<one sentence suggestion for next spoken practice>",
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<recommendation>",
+  "feedbackInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}}>",
+  "speakingStrengths": ["<strength 1>", "<strength 2>"],
+  "speakingImprovements": ["<improvement area 1>"],
+  "missingExpectedPoints": ["<any expected point not covered>"],
+  "suggestedImprovedResponse": "<a model spoken response in written form>"
+}
+""";
+
+    private const string ActivityEvaluateLessonReflectionContent = """
+You are an English language teacher acknowledging a student's lesson reflection.
+
+Student level: {{cefrLevel}}
+
+Activity content:
+{{activityContent}}
+
+Student's reflection:
+{{studentSubmission}}
+
+Respond warmly and return ONLY valid JSON:
+
+{
+  "overallScore": 100,
+  "coachSummary": "<2-3 sentence warm, encouraging acknowledgement of their reflection>",
+  "focusFirst": false,
+  "changes": [],
+  "whatYouDidWell": ["<something specific from their reflection worth noting>"],
+  "mainMistakes": [],
+  "grammarIssues": [],
+  "vocabularyIssues": [],
+  "toneIssues": [],
+  "clarityIssues": [],
+  "grammarExplanation": null,
+  "toneExplanation": null,
+  "vocabularyToRemember": [],
+  "miniLesson": null,
+  "nextImprovementStep": null,
+  "rewriteChallenge": null,
+  "nextPracticeSuggestion": "<one sentence encouragement for the next session>",
+  "feedbackInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} praising their reflection>"
+}
+""";
+
     private const string WritingPromptContent = """
 You are an expert English writing coach for {{sourceLanguageName}}-speaking professionals learning {{targetLanguageName}}.
 
@@ -537,6 +1092,72 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             VocabularyExtractFromAttemptKey, VocabularyExtractFromAttemptContent,
             maxInputTokens: 1500, maxOutputTokens: 600, ct);
+
+        // Exercise Pattern Engine — pattern-specific generation prompts
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGeneratePhraseMatchKey, ActivityGeneratePhraseMatchContent,
+            maxInputTokens: 600, maxOutputTokens: 700, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateGapFillKey, ActivityGenerateGapFillContent,
+            maxInputTokens: 600, maxOutputTokens: 700, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateListenAndAnswerKey, ActivityGenerateListenAndAnswerContent,
+            maxInputTokens: 800, maxOutputTokens: 900, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateListenAndGapFillKey, ActivityGenerateListenAndGapFillContent,
+            maxInputTokens: 700, maxOutputTokens: 800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateEmailReplyKey, ActivityGenerateEmailReplyContent,
+            maxInputTokens: 900, maxOutputTokens: 1100, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateTeamsChatKey, ActivityGenerateTeamsChatContent,
+            maxInputTokens: 700, maxOutputTokens: 800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSpokenResponseKey, ActivityGenerateSpokenResponseContent,
+            maxInputTokens: 700, maxOutputTokens: 700, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateLessonReflectionKey, ActivityGenerateLessonReflectionContent,
+            maxInputTokens: 500, maxOutputTokens: 400, ct);
+
+        // Exercise Pattern Engine — pattern-specific evaluation prompts
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluatePhraseMatchKey, ActivityEvaluatePhraseMatchContent,
+            maxInputTokens: 1000, maxOutputTokens: 800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateGapFillKey, ActivityEvaluateGapFillContent,
+            maxInputTokens: 1000, maxOutputTokens: 800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateListenAndAnswerKey, ActivityEvaluateListenAndAnswerContent,
+            maxInputTokens: 1200, maxOutputTokens: 1000, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateListenAndGapFillKey, ActivityEvaluateListenAndGapFillContent,
+            maxInputTokens: 1000, maxOutputTokens: 800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateEmailReplyKey, ActivityEvaluateEmailReplyContent,
+            maxInputTokens: 2000, maxOutputTokens: 2000, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateTeamsChatKey, ActivityEvaluateTeamsChatContent,
+            maxInputTokens: 1500, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateSpokenResponseKey, ActivityEvaluateSpokenResponseContent,
+            maxInputTokens: 1500, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateLessonReflectionKey, ActivityEvaluateLessonReflectionContent,
+            maxInputTokens: 800, maxOutputTokens: 600, ct);
 
         await db.SaveChangesAsync(ct);
     }

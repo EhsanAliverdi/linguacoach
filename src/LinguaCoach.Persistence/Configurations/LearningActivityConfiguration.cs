@@ -26,6 +26,7 @@ internal sealed class LearningActivityConfiguration : IEntityTypeConfiguration<L
         builder.Property(e => e.AiGeneratedContentJson).HasColumnName("ai_generated_content_json")
             .HasColumnType("jsonb").IsRequired();
         builder.Property(e => e.SourceWritingScenarioId).HasColumnName("source_writing_scenario_id");
+        builder.Property(e => e.ExercisePatternKey).HasColumnName("exercise_pattern_key").HasMaxLength(100);
         builder.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
 
         builder.HasIndex(e => new { e.ActivityType, e.IsActive })

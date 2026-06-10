@@ -78,7 +78,7 @@
 }
 
 <!-- SpeakingRolePlay: Learning state (scenario view before recording) -->
-@if (state() === 'learning' && activity() && isSpeakingRolePlay()) {
+@if (state() === 'learning' && activity() && isSpeakingRolePlay() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <span class="sp-skill-badge" style="background:#fef3c7;color:#92400e">
@@ -186,7 +186,7 @@
 }
 
 <!-- SpeakingRolePlay: Recorded — preview before submit -->
-@if (state() === 'recorded' && activity() && isSpeakingRolePlay()) {
+@if (state() === 'recorded' && activity() && isSpeakingRolePlay() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin:0">Preview your recording</h3>
     @if (audioBlobUrl) {
@@ -212,8 +212,43 @@
   </div>
 }
 
+<!-- Exercise Pattern Engine renderers -->
+@if ((state() === 'learning' || state() === 'writing' || state() === 'submitting') && activity() && usesExerciseRenderer()) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge sp-skill-badge-writing">
+        {{ rendererSkillLabel() }}
+      </span>
+      @if (isAiGenerated()) {
+        <span class="sp-ai-badge">AI-generated</span>
+      } @else {
+        <span class="sp-fallback-badge">Fallback activity</span>
+      }
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity()!.difficulty }}</span>
+    </div>
+
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity()!.title }}</h2>
+
+    @if (activity()!.instructionInSourceLanguage) {
+      <div class="sp-source-lang-block">{{ activity()!.instructionInSourceLanguage }}</div>
+    }
+
+    <app-exercise-renderer
+      [activity]="activity()!"
+      [disabled]="state() === 'submitting'"
+      [attemptCount]="attemptCount()"
+      (answerSubmitted)="onRendererSubmit($event)"
+      (readOnlyDone)="onReadOnlyDone()"
+    />
+
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">
+      Back to dashboard
+    </button>
+  </div>
+}
+
 <!-- VocabularyPractice: Learning state -->
-@if (state() === 'learning' && activity() && isVocabPractice()) {
+@if (state() === 'learning' && activity() && isVocabPractice() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <span class="sp-skill-badge" style="background:#ede9fe;color:#6d28d9">
@@ -246,7 +281,7 @@
 }
 
 <!-- ListeningComprehension: Learning state -->
-@if (state() === 'learning' && activity() && isListeningComprehension()) {
+@if (state() === 'learning' && activity() && isListeningComprehension() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <span class="sp-skill-badge" style="background:#e0f2fe;color:#0369a1">
@@ -288,7 +323,7 @@
 }
 
 <!-- WritingScenario: Learning state -->
-@if (state() === 'learning' && activity() && !isVocabPractice() && !isListeningComprehension()) {
+@if (state() === 'learning' && activity() && !isVocabPractice() && !isListeningComprehension() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -368,7 +403,7 @@
 }
 
 <!-- VocabularyPractice: Writing/Practice state -->
-@if ((state() === 'writing' || state() === 'submitting') && activity() && isVocabPractice()) {
+@if ((state() === 'writing' || state() === 'submitting') && activity() && isVocabPractice() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity()!.title }}</h2>
     <p style="font-size:13px;color:var(--sp-muted)">{{ activity()!.instructions }}</p>
@@ -415,7 +450,7 @@
 }
 
 <!-- ListeningComprehension: Practice state -->
-@if ((state() === 'writing' || state() === 'submitting') && activity() && isListeningComprehension()) {
+@if ((state() === 'writing' || state() === 'submitting') && activity() && isListeningComprehension() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity()!.title }}</h2>
     <div class="sp-card" style="padding:14px 18px">
@@ -470,7 +505,7 @@
 }
 
 <!-- WritingScenario: Writing state -->
-@if ((state() === 'writing' || state() === 'submitting') && activity() && !isVocabPractice() && !isListeningComprehension()) {
+@if ((state() === 'writing' || state() === 'submitting') && activity() && !isVocabPractice() && !isListeningComprehension() && !usesExerciseRenderer()) {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <!-- Attempt counter if retrying -->

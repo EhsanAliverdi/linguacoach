@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10
+lastUpdated: 2026-06-10 11:02
 owner: architecture
 supersedes:
 supersededBy:
@@ -60,7 +60,7 @@ Not: a random exercise generator, a writing correction app, or a card-based prac
 
 Current implemented activity types: `WritingScenario`, `ListeningComprehension`, `VocabularyPractice`, `SpeakingRolePlay`.
 
-Next sprint: **Placement Assessment MVP**.
+Current recommended next sprint: **Pattern Evaluation Engine**.
 
 ---
 
@@ -126,7 +126,7 @@ Archived
 
 ---
 
-## Implementation State (as of 2026-06-09)
+## Implementation State (as of 2026-06-10)
 
 | Feature | Status |
 |---|---|
@@ -135,19 +135,14 @@ Archived
 | VocabularyPractice activity | ✅ Done |
 | SpeakingRolePlay activity (MVP, fake STT) | ✅ Done |
 | Student learning memory + adaptive path | ✅ Done |
-| Course session & placement architecture | ✅ Designed, not yet implemented |
 | Placement Assessment MVP | ✅ Done |
-| LearningSession / Today page — Phase 1 (data layer) | ✅ Done — entities, EF config, migration T32 |
-| LearningSession / Today page — Phase 2 (session generator) | ✅ Done — `SessionGeneratorService`, templates, weak-skill substitution |
-| LearningSession / Today page — Phase 3 (backend endpoints) | ✅ Done — `SessionsController`, lifecycle handlers, 27 integration tests |
-| LearningSession / Today page — Phase 4 (frontend) | ✅ Done — Today's Lesson card, LessonPage, SessionService, 14 e2e tests |
-| LearningSession / Phase 5A (exercise activity wiring — backend) | ✅ Done — `/prepare` endpoint, ExercisePrepareHandler, 16 tests |
-| LearningSession / Phase 5B (frontend wiring) | ✅ Done — LessonComponent prepare flow, Open activity nav, 8 e2e tests |
-| Session reflection | ⬜ Next — needs AI prompt `session_reflection` |
-| Exercise Pattern Engine | ⬜ Phase 3 |
-| Practice Gym separation | ⬜ Phase 4 |
-| IFileStorageService / MinIO | ⬜ Phase 5 |
-| Admin lifecycle reset tools | ⬜ Phase 6 |
+| LearningSession / Today page — end-to-end (Phases 1–5B) | ✅ Done — data layer, session generator, backend endpoints, Today's Lesson card, LessonPage, `/prepare` wiring, activity nav; 90 e2e + 645 dotnet tests pass |
+| Exercise Pattern Engine | ✅ Done — seeded pattern definitions, pattern-aware prepare/generation, `InteractionMode` renderer dispatch, 8 MVP renderers, 97 e2e + 762 dotnet tests pass |
+| Pattern Evaluation Engine | ⬜ Recommended next — deterministic `ExactMatch` / `KeyedSelection`, structured `AiStructured`, pattern-specific result UI |
+| Session reflection | ⬜ After Exercise Pattern Engine — needs AI prompt `session_reflection` |
+| Practice Gym separation | ⬜ Deferred |
+| IFileStorageService / MinIO | ⬜ Deferred — not blocking deployment at current scale |
+| Admin lifecycle reset tools | ⬜ Deferred |
 
 ---
 
@@ -166,6 +161,8 @@ Archived
 | Sprint doc | What it covers |
 |---|---|
 | [course-session-placement-redesign-sprint.md](../sprints/course-session-placement-redesign-sprint.md) | Full redesign decisions, competitive gap review, 6 implementation phases |
+| [2026-06-10-today-lesson-learning-session-sprint.md](../sprints/2026-06-10-today-lesson-learning-session-sprint.md) | Today's Lesson / Learning Session end-to-end (complete) |
+| [2026-06-10-exercise-pattern-engine-sprint.md](../sprints/2026-06-10-exercise-pattern-engine-sprint.md) | Exercise Pattern Engine — InteractionMode, MarkingMode, 8 MVP patterns (complete) |
 | [speaking-role-play-mvp-sprint.md](../sprints/speaking-role-play-mvp-sprint.md) | SpeakingRolePlay MVP (complete) |
 | [listening-audio-tts-sprint.md](../sprints/listening-audio-tts-sprint.md) | TTS audio for ListeningComprehension (complete) |
 | [vocabulary-practice-activity-sprint.md](../sprints/vocabulary-practice-activity-sprint.md) | VocabularyPractice (complete) |

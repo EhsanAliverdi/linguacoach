@@ -13,32 +13,32 @@ namespace LinguaCoach.Infrastructure.Sessions;
 /// Generates and attaches a LearningActivity to a SessionExercise on demand.
 ///
 /// Idempotent: if the exercise already has a LearningActivityId, returns the existing activity.
-/// Review steps do not generate a full AI activity — a lightweight reflection placeholder is returned.
 ///
-/// ExerciseKind → ActivityType mapping:
-///   VocabularyWarmup  → VocabularyPractice
-///   ContextInput      → WritingScenario
-///   ListeningInput    → ListeningComprehension
-///   ReadingInput      → ReadingTask
-///   WritingTask       → WritingScenario
-///   SpeakingTask      → SpeakingRolePlay
-///   Review            → (no full activity; lightweight reflection placeholder)
+/// Pattern-aware (Phase 2): when the exercise has an ExercisePatternKey, the handler
+/// loads the ExercisePatternDefinition and uses its ActivityType and AiGeneratePromptKey
+/// instead of the legacy ExerciseKind → ActivityType fallback.
+///
+/// Review steps (lesson_reflection) do not generate a full AI activity — a lightweight
+/// reflection placeholder is created instead.
 /// </summary>
 public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
+    private readonly IExercisePatternRepository _patternRepo;
     private readonly StudentProgressService _progress;
     private readonly ILogger<ExercisePrepareHandler> _logger;
 
     public ExercisePrepareHandler(
         LinguaCoachDbContext db,
         IAiActivityGenerator aiGenerator,
+        IExercisePatternRepository patternRepo,
         StudentProgressService progress,
         ILogger<ExercisePrepareHandler> logger)
     {
         _db = db;
         _aiGenerator = aiGenerator;
+        _patternRepo = patternRepo;
         _progress = progress;
         _logger = logger;
     }
@@ -71,10 +71,8 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
                 IsReview: false);
         }
 
-        var kind = ResolveKind(exercise.ExercisePatternKey);
-
         // Review step — lightweight reflection placeholder, no AI generation.
-        if (kind == ExerciseKind.Review)
+        if (IsReviewPattern(exercise.ExercisePatternKey))
         {
             var placeholder = CreateReviewPlaceholder(session, exercise, profile.CefrLevel ?? "B1");
             _db.LearningActivities.Add(placeholder);
@@ -93,14 +91,54 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
                 IsReview: true);
         }
 
-        var activityType = MapKindToActivityType(kind);
+        // ── Pattern-aware path ──────────────────────────────────────────────────
+        // Try to load the ExercisePatternDefinition. If found and active, use it.
+        // If not found or inactive, fall back to legacy ExerciseKind mapping.
+        ExercisePatternDefinition? pattern = null;
+        if (!string.IsNullOrWhiteSpace(exercise.ExercisePatternKey))
+        {
+            pattern = await _patternRepo.GetByKeyAsync(exercise.ExercisePatternKey, ct);
+            if (pattern is not null && !pattern.IsActive)
+            {
+                _logger.LogWarning(
+                    "ExercisePattern {Key} is inactive for ExerciseId={ExerciseId}. Returning error.",
+                    exercise.ExercisePatternKey, exercise.Id);
+                throw new InvalidOperationException(
+                    $"Exercise pattern '{exercise.ExercisePatternKey}' is inactive and cannot be used.");
+            }
+        }
 
-        // VocabularyPractice generation is handled by the dedicated VocabularyPracticeGenerator,
-        // not by IAiActivityGenerator. For session exercise preparation we create a placeholder
-        // that the front-end resolves to the vocab practice flow.
+        ActivityType activityType;
+        string? overridePromptKey;
+        string? patternKey;
+
+        if (pattern is not null)
+        {
+            activityType = pattern.ActivityType;
+            overridePromptKey = pattern.AiGeneratePromptKey;
+            patternKey = pattern.Key;
+
+            _logger.LogInformation(
+                "Prepare exercise: pattern-aware path PatternKey={PatternKey} ActivityType={ActivityType}",
+                patternKey, activityType);
+        }
+        else
+        {
+            // Legacy fallback: derive ActivityType from ExerciseKind
+            var kind = ResolveKind(exercise.ExercisePatternKey);
+            activityType = MapKindToActivityType(kind);
+            overridePromptKey = null;
+            patternKey = null;
+
+            _logger.LogInformation(
+                "Prepare exercise: legacy fallback PatternKey={PatternKey} Kind={Kind} ActivityType={ActivityType}",
+                exercise.ExercisePatternKey, kind, activityType);
+        }
+
+        // VocabularyPractice: dedicated generator path — create a placeholder for the session flow.
         if (activityType == ActivityType.VocabularyPractice)
         {
-            var vocabPlaceholder = CreatePlaceholder(activityType, session, exercise, "B1");
+            var vocabPlaceholder = CreatePlaceholder(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
             _db.LearningActivities.Add(vocabPlaceholder);
             await _db.SaveChangesAsync(ct);
             exercise.AssignActivity(vocabPlaceholder.Id);
@@ -134,21 +172,24 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
             TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
             TopicHint: $"{session.Title}: {exercise.Instructions}",
-            RecentMistakesSummary: recentMistakes);
+            RecentMistakesSummary: recentMistakes,
+            OverridePromptKey: overridePromptKey,
+            ExercisePatternKey: patternKey);
 
         _logger.LogInformation(
-            "Prepare exercise: generating ActivityType={ActivityType} ExerciseId={ExerciseId}",
-            activityType, exercise.Id);
+            "Prepare exercise: generating ActivityType={ActivityType} ExerciseId={ExerciseId} PromptKey={PromptKey}",
+            activityType, exercise.Id, overridePromptKey ?? "(legacy)");
 
         string contentJson;
+        ActivitySource source;
         try
         {
             contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
+            source = ActivitySource.AiGenerated;
         }
         catch (NotSupportedException)
         {
-            // AI generation not yet implemented for this ActivityType — create a placeholder.
-            var notSupported = CreatePlaceholder(activityType, session, exercise, profile.CefrLevel ?? "B1");
+            var notSupported = CreatePlaceholder(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
             _db.LearningActivities.Add(notSupported);
             await _db.SaveChangesAsync(ct);
             exercise.AssignActivity(notSupported.Id);
@@ -158,15 +199,33 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
                 ActivityType: activityType,
                 IsReview: false);
         }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "AI generation failed for ExerciseId={ExerciseId} PatternKey={PatternKey} — using SystemFallback",
+                exercise.Id, patternKey ?? "(legacy)");
+
+            var fallback = CreatePatternFallback(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
+            _db.LearningActivities.Add(fallback);
+            await _db.SaveChangesAsync(ct);
+            exercise.AssignActivity(fallback.Id);
+            await _db.SaveChangesAsync(ct);
+            return new PrepareExerciseResult(
+                ActivityId: fallback.Id,
+                ActivityType: activityType,
+                IsReview: false);
+        }
+
         var title = ExtractTitle(contentJson, activityType);
 
         var activity = new LearningActivity(
             activityType: activityType,
-            source: ActivitySource.AiGenerated,
+            source: source,
             title: title,
             difficulty: profile.CefrLevel ?? "B1",
             aiGeneratedContentJson: contentJson,
-            learningModuleId: session.LearningModuleId);
+            learningModuleId: session.LearningModuleId,
+            exercisePatternKey: patternKey);
 
         _db.LearningActivities.Add(activity);
         await _db.SaveChangesAsync(ct);
@@ -175,8 +234,8 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation(
-            "Prepare exercise: activity created ActivityId={ActivityId} ExerciseId={ExerciseId}",
-            activity.Id, exercise.Id);
+            "Prepare exercise: activity created ActivityId={ActivityId} ExerciseId={ExerciseId} PatternKey={PatternKey}",
+            activity.Id, exercise.Id, patternKey ?? "(legacy)");
 
         return new PrepareExerciseResult(
             ActivityId: activity.Id,
@@ -219,16 +278,25 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "No ActivityType mapping for this ExerciseKind.")
     };
 
+    private static bool IsReviewPattern(string patternKey) =>
+        patternKey == Domain.ExercisePatternKey.LessonReflection
+        || patternKey == "lesson_reflection";
+
     private static ExerciseKind ResolveKind(string patternKey) => patternKey switch
     {
-        "phrase_match"                                         => ExerciseKind.VocabularyWarmup,
-        "listen_and_answer" or "listen_and_gap_fill"          => ExerciseKind.ListeningInput,
-        "writing_response"                                     => ExerciseKind.WritingTask,
-        "speaking_role_play"                                   => ExerciseKind.SpeakingTask,
-        "lesson_reflection"                                    => ExerciseKind.Review,
-        _ when patternKey.StartsWith("listen", StringComparison.OrdinalIgnoreCase)   => ExerciseKind.ListeningInput,
+        "phrase_match"
+            or "gap_fill_workplace_phrase"                                 => ExerciseKind.VocabularyWarmup,
+        "listen_and_answer"
+            or "listen_and_gap_fill"                                       => ExerciseKind.ListeningInput,
+        "email_reply"
+            or "teams_chat_simulation"
+            or "writing_response"                                          => ExerciseKind.WritingTask,
+        "spoken_response_from_prompt"
+            or "speaking_role_play"                                        => ExerciseKind.SpeakingTask,
+        "lesson_reflection"                                                => ExerciseKind.Review,
+        _ when patternKey.StartsWith("listen",   StringComparison.OrdinalIgnoreCase) => ExerciseKind.ListeningInput,
         _ when patternKey.StartsWith("speaking", StringComparison.OrdinalIgnoreCase) => ExerciseKind.SpeakingTask,
-        _ when patternKey.StartsWith("writing", StringComparison.OrdinalIgnoreCase)  => ExerciseKind.WritingTask,
+        _ when patternKey.StartsWith("writing",  StringComparison.OrdinalIgnoreCase) => ExerciseKind.WritingTask,
         _ => ExerciseKind.ContextInput
     };
 
@@ -236,7 +304,8 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         ActivityType activityType,
         Domain.Entities.LearningSession session,
         SessionExercise exercise,
-        string cefrLevel)
+        string cefrLevel,
+        string? patternKey = null)
     {
         var contentJson = System.Text.Json.JsonSerializer.Serialize(new
         {
@@ -251,7 +320,71 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             title: $"{activityType}: {session.Title}",
             difficulty: cefrLevel,
             aiGeneratedContentJson: contentJson,
-            learningModuleId: session.LearningModuleId);
+            learningModuleId: session.LearningModuleId,
+            exercisePatternKey: patternKey);
+    }
+
+    private static LearningActivity CreatePatternFallback(
+        ActivityType activityType,
+        Domain.Entities.LearningSession session,
+        SessionExercise exercise,
+        string cefrLevel,
+        string? patternKey)
+    {
+        // Build a minimal valid JSON shape matching the ActivityType so the frontend can render.
+        var contentJson = activityType switch
+        {
+            ActivityType.WritingScenario => System.Text.Json.JsonSerializer.Serialize(new
+            {
+                title = $"Writing task: {session.Title}",
+                situation = exercise.Instructions,
+                learningGoal = "Complete this professional writing task.",
+                targetPhrases = Array.Empty<string>(),
+                targetVocabulary = Array.Empty<string>(),
+                exampleText = "",
+                commonMistakeToAvoid = "Keep your response professional and concise.",
+                instructionInSourceLanguage = ""
+            }),
+            ActivityType.ListeningComprehension => System.Text.Json.JsonSerializer.Serialize(new
+            {
+                title = $"Listening task: {session.Title}",
+                scenario = exercise.Instructions,
+                instructions = exercise.Instructions,
+                speakerRole = "Colleague",
+                listenerRole = "Professional",
+                audioScript = "Please try again later — audio content is temporarily unavailable.",
+                transcriptAvailableAfterSubmit = true,
+                questions = new[] { new { id = "q1", question = "What is the main topic?", type = "short_answer" } },
+                responseTask = new { prompt = "Summarise what you understood.", expectedFocus = "" }
+            }),
+            ActivityType.SpeakingRolePlay => System.Text.Json.JsonSerializer.Serialize(new
+            {
+                title = $"Speaking task: {session.Title}",
+                scenario = exercise.Instructions,
+                studentRole = "Professional",
+                listenerRole = "Colleague",
+                speakingGoal = "Respond clearly and professionally.",
+                prompt = exercise.Instructions,
+                expectedPoints = Array.Empty<string>(),
+                suggestedPhrases = Array.Empty<string>(),
+                maxDurationSeconds = 60
+            }),
+            _ => System.Text.Json.JsonSerializer.Serialize(new
+            {
+                activityType = activityType.ToString(),
+                title = $"{activityType}: {session.Title}",
+                instructions = exercise.Instructions,
+            })
+        };
+
+        return new LearningActivity(
+            activityType: activityType,
+            source: ActivitySource.SystemFallback,
+            title: $"{activityType}: {session.Title}",
+            difficulty: cefrLevel,
+            aiGeneratedContentJson: contentJson,
+            learningModuleId: session.LearningModuleId,
+            exercisePatternKey: patternKey);
     }
 
     private static LearningActivity CreateReviewPlaceholder(
@@ -278,7 +411,8 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             title: $"Lesson reflection: {session.Title}",
             difficulty: cefrLevel,
             aiGeneratedContentJson: contentJson,
-            learningModuleId: session.LearningModuleId);
+            learningModuleId: session.LearningModuleId,
+            exercisePatternKey: Domain.ExercisePatternKey.LessonReflection);
     }
 
     private static string BuildPairCode(Domain.Entities.LanguagePair? pair)

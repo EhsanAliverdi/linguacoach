@@ -56,12 +56,16 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["topicHint"] = context.TopicHint ?? "workplace communication",
         };
 
-        var promptKey = context.ActivityType switch
-        {
-            ActivityType.ListeningComprehension => GenerateListeningPromptKey,
-            ActivityType.SpeakingRolePlay => GenerateSpeakingRolePlayPromptKey,
-            _ => GenerateWritingPromptKey,
-        };
+        // Pattern-aware: use the override prompt key from the ExercisePatternDefinition if provided.
+        // Fall back to legacy broad ActivityType routing otherwise.
+        var promptKey = !string.IsNullOrWhiteSpace(context.OverridePromptKey)
+            ? context.OverridePromptKey
+            : context.ActivityType switch
+            {
+                ActivityType.ListeningComprehension => GenerateListeningPromptKey,
+                ActivityType.SpeakingRolePlay       => GenerateSpeakingRolePlayPromptKey,
+                _                                   => GenerateWritingPromptKey,
+            };
 
         var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
 
