@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Student Learning Memory & Adaptive Curriculum Sprint
 
 **Date**: 2026-06-05

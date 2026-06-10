@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Course Session & Placement Redesign Sprint
 
 **Status:** Design complete — ready for phased implementation  

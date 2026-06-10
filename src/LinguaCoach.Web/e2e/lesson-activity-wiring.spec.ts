@@ -67,7 +67,7 @@ const SESSION_DETAIL = {
   sessionId: SESSION_ID,
   title: 'Wiring Test Session',
   topic: 'Professional communication',
-  sessionGoal: 'Practice email writing.',
+  sessionGoal: 'Practice professional workplace communication.',
   durationMinutes: 10,
   focusSkill: 'Writing',
   status: 'inProgress',

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 18:00
+lastUpdated: 2026-06-10 22:00
 owner: product
 supersedes:
 supersededBy:
@@ -8,71 +8,86 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-10 18:00
+Last updated: 2026-06-10 22:00
 
 ---
 
 ## Current priority
 
-**Pattern Evaluation Engine sprint is complete.**
-
-See full sprint plan: `docs/sprints/2026-06-10-pattern-evaluation-engine-sprint.md`
-
-Recommended next: **Dynamic Pattern Selection** — choose Today’s Lesson patterns from weak skills, CEFR, duration, and recent repetition.
+**No active sprint.** All planned sprints are complete. Next priority: Dynamic Pattern Selection.
 
 ---
 
-## Completed sprints (recent)
+## Most recently completed sprint
+
+**Student UX Alignment / Writing-Assumption Cleanup** — complete (2026-06-10)
+
+See full sprint plan: `docs/sprints/2026-06-10-student-ux-alignment-writing-assumption-cleanup-sprint.md`
+
+### What was done
+
+All 7 phases shipped on 2026-06-10:
+
+- **Phase 2** — Navigation labels/routes: sidebar and mobile nav now show **Today, Journey, Practice, Progress, Profile**. Dashboard label removed. Vocabulary removed from top-level nav. `/journey` route added. `/practice` route added.
+- **Phase 3** — Today page alignment: heading "Today's Lesson" added. "Recommended next" section removed. Practice Gym grid moved off Today. Secondary links to `/journey` and `/practice`.
+- **Phase 4** — Journey mixed-skill cleanup: page heading "Learning Journey" added. Memory fallback "workplace writing" → "workplace English". "Continue practising" CTA replaced with safe CTAs.
+- **Phase 5** — Practice Gym MVP at `/practice`: functional cards for Vocabulary, Listening, Writing, Speaking. Coming soon: Workplace Chat, Email, Gap Fill, Phrase Match, Pronunciation. No auto-start on load.
+- **Phase 6** — Playwright fixture copy cleanup: generic writing/email-only fixture language updated to mixed-skill workplace English across `core-flow-smoke.spec.ts`, `disabled-actions-cleanup.spec.ts`, `lesson-activity-wiring.spec.ts`, `admin-screenshots.spec.ts`. Valid WritingScenario and email_reply test coverage preserved.
+- **Phase 7** — Documentation cleanup: `current-product-state.md`, `current-sprint.md`, `docs/architecture/README.md` updated. Older sprint docs marked historical. Sprint doc closed.
+
+### Key constraints preserved
+
+- No real user data deleted
+- No seed rows deleted (`WritingScenarioSeeder`, `LearningActivitySeeder` unchanged)
+- Writing and Email remain valid activity types
+- `/my-path` still works (backwards compatible with `/journey`)
+- No backend files changed in this sprint
+
+### Final test results
+
+```
+dotnet test:     865 passed (451 unit + 414 integration) — unchanged
+npm run build:   passed
+Playwright:      165 passed (21 new Practice Gym tests + 9 new Journey tests)
+```
+
+---
+
+## Completed sprints
 
 - Admin UX / Student Management / AI Config Cleanup — complete
-- Today’s Lesson / Learning Session (Phases 1–5B) — complete
+- Today's Lesson / Learning Session (Phases 1–5B) — complete
 - Exercise Pattern Engine — complete
 - Pattern Evaluation Engine (Phases 1–7) — complete
+- **Student UX Alignment / Writing-Assumption Cleanup (Phases 1–7) — complete**
 
 ---
 
 ## Current state
 
-All four activity types are implemented. Placement Assessment is complete. The full evaluation stack is live end-to-end:
+All four activity types are implemented. Placement Assessment is complete. The full evaluation stack is live end-to-end. Student nav model is aligned:
 
-- Dashboard shows Today’s Lesson card (start / resume / review states)
-- `/lesson/:sessionId` step-by-step lesson page with exercise list and progress bar
-- Backend `/prepare` endpoint generates activities on demand per exercise step
-- Activities open with `activityId` + `returnTo` nav back to lesson
+- Today (`/dashboard`) is the student home page — Today's Lesson is the primary CTA
+- Journey (`/journey`, `/my-path`) shows the learning path with mixed-skill framing
+- Practice (`/practice`) is the Practice Gym MVP — free practice by skill or exercise type
+- Progress and Profile unchanged
 - Pattern-aware evaluators route by `MarkingMode`: `ExactMatch`, `KeyedSelection`, `AiStructured`, `AiOpenEnded`, `NoMarking`
 - `StudentSkillProfile` updated from evaluation skill impacts after every pattern attempt
-- Compact memory signals from evaluation fed into `StudentLearningMemory` (best-effort, never blocks)
-- Pattern-aware result UI with 6 branches: MatchingPairs, GapFill, Chat/Email, ListenAndAnswer, SpokenResponse, ReadOnly
-- **865 dotnet tests pass** (451 unit + 414 integration); **111 Playwright tests pass**
+- Compact memory signals from evaluation fed into `StudentLearningMemory`
+- Pattern-aware result UI with 6 branches
 
 Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — deferred.
 
 ---
 
-## Pattern Evaluation Engine — complete
-
-All 7 phases shipped on 2026-06-10:
-
-- Phase 1: Contracts + persistence (`PatternEvaluationResult`, `ActivityAttempt` evaluation fields, migration T34)
-- Phase 2: Deterministic evaluators (`ExactMatchEvaluator`, `KeyedSelectionEvaluator`, `NoMarkingEvaluator`)
-- Phase 3: Pattern router + attempt integration (`IPatternEvaluationRouter`, `ActivitySubmitHandler` wired)
-- Phase 4: AI evaluators (`AiStructuredEvaluator`, `AiOpenEndedEvaluator`, `ParseAndNormalise` with markdown-fence fix)
-- Phase 5: Skill + memory updates (`PatternSkillUpdateService`, compact memory packet, best-effort wiring)
-- Phase 6: Frontend result UI (`PatternEvaluationResultComponent`, 6 result branches, legacy path preserved)
-- Phase 7: Documentation + QA (all docs updated, full suite verified)
-
-Architecture reference: `docs/architecture/exercise-pattern-library.md`, `docs/architecture/learning-activity-engine.md`
-
----
-
 ## Deferred
 
+- **Dynamic pattern selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history
+- **Practice Gym expansion** — Workplace Chat, Email, Gap Fill, Phrase Match unlock; dynamic session templates within Practice Gym
 - Session reflection AI prompt (`session_reflection`) — requires stable session completion signal
-- Practice Gym separation
-- Dynamic pattern selection by weak skill / CEFR / recent repetition
 - IFileStorageService / MinIO — not blocking deployment at current scale
 - Admin lifecycle reset tools
-- Call Mode / Pronunciation
+- Call Mode / Pronunciation scoring
 - Real STT provider
 - OpenAI TTS (advanced voices)
 - Email delivery, payments, organisations
@@ -82,7 +97,7 @@ Architecture reference: `docs/architecture/exercise-pattern-library.md`, `docs/a
 ## Next recommended work
 
 1. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
-2. **Practice Gym Separation** — let students choose skill / pattern / focus outside Today's Lesson.
+2. **Practice Gym Expansion** — unlock Workplace Chat, Email, Gap Fill, Phrase Match with real pattern routes; dynamic session template selection.
 3. **Session Reflection AI** — now that evaluation outputs are stable, wire `session_reflection` AI prompt.
 
 ---

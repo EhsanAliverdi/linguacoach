@@ -37,7 +37,7 @@ async function mockDashboard(page: Page) {
           totalModules: 1,
           currentModule: {
             moduleId: 'module-1',
-            title: 'Professional email writing',
+            title: 'Professional workplace communication',
             description: 'Practice clear workplace communication.',
             order: 1,
             completedActivities: 1,
@@ -74,27 +74,20 @@ async function mockDashboard(page: Page) {
   });
 }
 
-test('dashboard enables implemented practice cards and only marks future skills as coming soon', async ({ page }) => {
+test('practice gym enables implemented practice cards and only marks future skills as coming soon', async ({ page }) => {
   await withAuth(page);
-  await mockDashboard(page);
 
-  await page.goto('/dashboard');
+  await page.goto('/practice');
 
   await expect(page.getByRole('link', { name: /Writing Workplace messages/i })).toHaveAttribute('href', /type=WritingScenario/);
   await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).toHaveAttribute('href', /type=ListeningComprehension/);
-  await expect(page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i })).toHaveAttribute('href', /type=VocabularyPractice/);
-
-  // Speaking is now active (SpeakingRolePlay MVP)
-  await expect(page.getByTestId('speaking-card')).not.toContainText('Coming soon');
-  await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', /type=SpeakingRolePlay/);
+  await expect(page.getByRole('link', { name: /Speaking Workplace role-play/i })).toHaveAttribute('href', /type=SpeakingRolePlay/);
   await expect(page.getByText('Pronunciation').locator('..')).toContainText('Coming soon');
   await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).not.toContainText('Coming soon');
-  await expect(page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i })).not.toContainText('Coming soon');
 });
 
-test('dashboard listening card requests a listening activity type', async ({ page }) => {
+test('practice gym listening card requests a listening activity type', async ({ page }) => {
   await withAuth(page);
-  await mockDashboard(page);
   await page.route('**/api/activity/next**', async route => {
     expect(route.request().url()).toContain('type=ListeningComprehension');
     await route.fulfill({
@@ -131,52 +124,27 @@ test('dashboard listening card requests a listening activity type', async ({ pag
     });
   });
 
-  await page.goto('/dashboard');
+  await page.goto('/practice');
   await page.getByRole('link', { name: /Listening Meeting and update audio/i }).click();
 
   await expect(page).toHaveURL(/\/activity\?type=ListeningComprehension/);
   await expect(page.getByText('Understand a schedule update')).toBeVisible();
 });
 
-test('dashboard vocabulary card requests VocabularyPractice activity type', async ({ page }) => {
+test('practice gym vocabulary card links to vocabulary page', async ({ page }) => {
   await withAuth(page);
-  await mockDashboard(page);
-  await page.route('**/api/activity/next**', async route => {
-    expect(route.request().url()).toContain('type=VocabularyPractice');
+  await page.route('**/api/vocabulary**', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        activityId: 'vocab-1',
-        activityType: 'vocabularyPractice',
-        source: 'aiGenerated',
-        title: 'Practice polite workplace requests',
-        difficulty: 'B1',
-        situation: null,
-        learningGoal: null,
-        targetPhrases: [],
-        targetVocabulary: [],
-        exampleText: null,
-        commonMistakeToAvoid: null,
-        instructionInSourceLanguage: null,
-        instructions: 'Fill in the blank.',
-        practiceMode: 'fill_blank',
-        vocabItems: [{ vocabularyItemId: 'item-1', term: 'could you please', prompt: '_____ send me the file?', hint: 'polite request', explanation: 'Use for professional requests.' }],
-        scenario: null,
-      }),
+      body: JSON.stringify({ items: [], summary: { total: 0, newCount: 0, practisingCount: 0, masteredCount: 0, archivedCount: 0 } }),
     });
   });
 
-  await page.goto('/dashboard');
+  await page.goto('/practice');
   await page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i }).click();
 
-  await expect(page).toHaveURL(/\/activity\?type=VocabularyPractice/);
-  // Vocabulary UI renders — not writing textarea
-  await expect(page.getByText('Practice polite workplace requests')).toBeVisible();
-  // Vocab skill badge visible (inside sp-skill-badge span)
-  await expect(page.locator('.sp-skill-badge', { hasText: 'Vocabulary' })).toBeVisible();
-  // Writing-specific textarea must NOT be shown
-  await expect(page.locator('textarea#draft')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/vocabulary/);
 });
 
 test('dashboard vocabulary card shows prerequisite message when vocab items insufficient', async ({ page }) => {

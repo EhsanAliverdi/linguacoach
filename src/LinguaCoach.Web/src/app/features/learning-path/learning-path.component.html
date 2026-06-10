@@ -13,10 +13,16 @@
     </div>
     <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink)">No path yet</h2>
     <p style="margin-top:8px;font-size:14px;font-weight:500;color:var(--sp-muted);max-width:340px;text-align:center;line-height:1.6">{{ error() }}</p>
-    <a routerLink="/activity" class="sp-button-primary" style="margin-top:20px">Start an activity</a>
+    <a routerLink="/dashboard" class="sp-button-primary" style="margin-top:20px">Go to Today</a>
   </div>
 
 } @else if (path()) {
+
+  <!-- Page heading -->
+  <div style="margin-bottom:20px">
+    <p class="sp-eyebrow" style="margin-bottom:4px">Your course</p>
+    <h1 data-testid="journey-page-heading" style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Learning Journey</h1>
+  </div>
 
   <!-- Success notice after module completion -->
   @if (completeSuccess()) {
@@ -66,7 +72,7 @@
           <div class="sp-loading-pulse" style="height:52px;max-width:520px"></div>
         } @else if (hasMemory()) {
           <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.6;max-width:680px;margin:0">
-            {{ memory()?.journeySummary || 'SpeakPath is building a clearer picture of your workplace writing.' }}
+            {{ memory()?.journeySummary || 'SpeakPath is building a clearer picture of your workplace English.' }}
           </p>
         } @else {
           <p style="font-size:14px;font-weight:600;color:var(--sp-muted);line-height:1.6;max-width:620px;margin:0">
@@ -243,8 +249,11 @@
               }
             </button>
           }
-          <a routerLink="/activity" class="sp-button-ghost" style="display:inline-flex;padding:8px 18px;font-size:12px;width:fit-content">
-            Continue practising →
+          <a routerLink="/dashboard" data-testid="journey-continue-today" class="sp-button-ghost" style="display:inline-flex;padding:8px 18px;font-size:12px;width:fit-content">
+            Continue today's lesson →
+          </a>
+          <a routerLink="/practice" data-testid="journey-open-practice-gym" class="sp-button-ghost" style="display:inline-flex;padding:8px 18px;font-size:12px;width:fit-content">
+            Open Practice Gym →
           </a>
           @if (mod.completedActivities > 0) {
             <button (click)="toggleModuleHistory(mod.moduleId)"

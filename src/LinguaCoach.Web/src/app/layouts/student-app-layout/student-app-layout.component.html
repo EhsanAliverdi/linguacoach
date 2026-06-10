@@ -3,7 +3,7 @@
   <!-- Desktop sidebar (no toggle button inside) -->
   <aside class="sp-student-sidebar" [class.sp-sidebar-collapsed]="collapsed()">
 
-    <a routerLink="/dashboard" class="sp-sidebrand">
+    <a routerLink="/dashboard" class="sp-sidebrand" aria-label="Go to Today">
       <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true" style="flex-shrink:0">
         <defs>
           <linearGradient id="lg-layout-side" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
@@ -20,27 +20,23 @@
     </a>
 
     <nav style="display:flex;flex-direction:column;gap:4px;flex:1;margin-top:16px">
-      <a routerLink="/dashboard" routerLinkActive="is-active" class="sp-sidelink">
+      <a routerLink="/dashboard" routerLinkActive="is-active" class="sp-sidelink" data-testid="nav-today">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span class="sp-sidebar-label">Dashboard</span>
+        <span class="sp-sidebar-label">Today</span>
       </a>
-      <a routerLink="/my-path" routerLinkActive="is-active" class="sp-sidelink">
+      <a routerLink="/journey" routerLinkActive="is-active" class="sp-sidelink" data-testid="nav-journey">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
-        <span class="sp-sidebar-label">My Path</span>
+        <span class="sp-sidebar-label">Journey</span>
       </a>
-      <a routerLink="/activity" routerLinkActive="is-active is-practice" class="sp-sidelink">
+      <a routerLink="/practice" routerLinkActive="is-active" class="sp-sidelink" data-testid="nav-practice">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         <span class="sp-sidebar-label">Practice</span>
       </a>
-      <a routerLink="/progress" routerLinkActive="is-active" class="sp-sidelink">
+      <a routerLink="/progress" routerLinkActive="is-active" class="sp-sidelink" data-testid="nav-progress">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span class="sp-sidebar-label">Progress</span>
       </a>
-      <a routerLink="/vocabulary" routerLinkActive="is-active" class="sp-sidelink">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <span class="sp-sidebar-label">Vocabulary</span>
-      </a>
-      <a routerLink="/profile" routerLinkActive="is-active" class="sp-sidelink">
+      <a routerLink="/profile" routerLinkActive="is-active" class="sp-sidelink" data-testid="nav-profile">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span class="sp-sidebar-label">Profile</span>
       </a>
@@ -64,8 +60,8 @@
       <!-- Left side -->
       <div class="sp-header-left">
 
-        <!-- Mobile-only: SpeakPath logo (taps to Dashboard) -->
-        <a routerLink="/dashboard" class="sp-header-logo" aria-label="Go to Dashboard">
+        <!-- Mobile-only: SpeakPath logo (taps to Today) -->
+        <a routerLink="/dashboard" class="sp-header-logo" aria-label="Go to Today">
           <svg width="30" height="30" viewBox="0 0 48 48" fill="none" aria-hidden="true">
             <defs>
               <linearGradient id="lg-header" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
@@ -156,26 +152,26 @@
 
   </div>
 
-  <!-- Mobile bottom nav (unchanged) -->
-  <nav class="sp-bottomnav">
-    <a routerLink="/dashboard" routerLinkActive="is-active" class="sp-navbtn">
+  <!-- Mobile bottom nav -->
+  <nav class="sp-bottomnav" data-testid="mobile-bottomnav">
+    <a routerLink="/dashboard" routerLinkActive="is-active" class="sp-navbtn" data-testid="mobile-nav-today">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      <span>Home</span>
+      <span>Today</span>
     </a>
-    <a routerLink="/my-path" routerLinkActive="is-active" class="sp-navbtn">
+    <a routerLink="/journey" routerLinkActive="is-active" class="sp-navbtn" data-testid="mobile-nav-journey">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-      <span>My Path</span>
+      <span>Journey</span>
     </a>
-    <a routerLink="/activity" routerLinkActive="is-active" class="sp-navbtn sp-navbtn-practice">
+    <a routerLink="/practice" routerLinkActive="is-active" class="sp-navbtn sp-navbtn-practice" data-testid="mobile-nav-practice">
       <div class="sp-practice-fab">
         <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       </div>
     </a>
-    <a routerLink="/progress" routerLinkActive="is-active" class="sp-navbtn">
+    <a routerLink="/progress" routerLinkActive="is-active" class="sp-navbtn" data-testid="mobile-nav-progress">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <span>Progress</span>
     </a>
-    <a routerLink="/profile" routerLinkActive="is-active" class="sp-navbtn">
+    <a routerLink="/profile" routerLinkActive="is-active" class="sp-navbtn" data-testid="mobile-nav-profile">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span>Profile</span>
     </a>

@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Learning Path Progression & Personalisation Sprint
 
 **Date**: 2026-06-05

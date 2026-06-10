@@ -158,8 +158,8 @@ async function mockApi(page: Page) {
           totalModules: generatedNextModules ? 2 : 1,
           currentModule: {
             moduleId: generatedNextModules ? 'nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn' : 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
-            title: generatedNextModules ? 'Concise progress updates' : 'Professional email writing',
-            description: generatedNextModules ? 'Practice short status updates with clear next steps.' : 'Practice writing clear, polite workplace emails.',
+            title: generatedNextModules ? 'Concise progress updates' : 'Professional workplace communication',
+            description: generatedNextModules ? 'Practice short status updates with clear next steps.' : 'Practice clear, polite workplace communication.',
             order: generatedNextModules ? 2 : 1,
             completedActivities: generatedNextModules ? 0 : Math.min(attemptCount, 3),
             totalActivities: 3,
@@ -238,8 +238,8 @@ async function mockApi(page: Page) {
         modules: [
           {
             moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
-            title: 'Professional email writing',
-            description: 'Practice writing clear, polite workplace emails.',
+            title: 'Professional workplace communication',
+            description: 'Practice clear, polite workplace communication.',
             order: 1,
             completedActivities: moduleCompleted ? 3 : attemptCount >= 2 ? 2 : attemptCount,
             totalActivities: 3,
@@ -281,8 +281,8 @@ async function mockApi(page: Page) {
       contentType: 'application/json',
       body: JSON.stringify({
         moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
-        title: 'Professional email writing',
-        description: 'Practice writing clear, polite workplace emails.',
+        title: 'Professional workplace communication',
+        description: 'Practice clear, polite workplace communication.',
         completedActivities: attemptCount >= 2 ? 3 : attemptCount,
         totalRequired: 3,
         averageScore: attemptCount >= 2 ? 82 : attemptCount === 1 ? 78 : null,
@@ -333,8 +333,8 @@ async function mockApi(page: Page) {
         modules: [
           {
             moduleId: 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
-            title: 'Professional email writing',
-            description: 'Practice writing clear, polite workplace emails.',
+            title: 'Professional workplace communication',
+            description: 'Practice clear, polite workplace communication.',
             order: 1,
             completedActivities: 3,
             totalActivities: 3,
@@ -432,7 +432,7 @@ async function mockApi(page: Page) {
         miniLesson: 'Use modal verbs like could and would to make requests polite.',
         nextImprovementStep: "Try rewriting your request sentence using 'Could you please...'",
         rewriteChallenge: "Rewrite the opening using 'I hope this email finds you well'.",
-        nextPracticeSuggestion: 'Try writing an email to explain a delay.',
+        nextPracticeSuggestion: 'Practise explaining a delay clearly and professionally.',
         feedbackInSourceLanguage: 'ایمیل شما خوب بود اما می‌توانید رسمی‌تر بنویسید.',
       }),
     });
@@ -536,15 +536,15 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.getByRole('textbox').fill('میخوام بتونم ایمیل رسمی بنویسم');
   await page.getByRole('button', { name: 'Complete setup' }).click();
 
-  // ── Dashboard — verify learning path card ─────────────────────────────────────
+  // ── Dashboard — verify Today page loaded ─────────────────────────────────────
   await expect(page).toHaveURL(/\/placement/);
   await page.goto('/dashboard');
 
-  // Learning path section: title visible
-  await expect(page.getByText('Workplace English for Document Controller — B1')).toBeVisible();
+  // Today page heading visible
+  await expect(page.getByTestId('today-page')).toBeVisible();
 
   // ── Navigate to activity ──────────────────────────────────────────────────────
-  await page.getByRole('link', { name: /Continue learning/i }).click();
+  await page.goto('/activity');
   await expect(page).toHaveURL(/\/activity/);
 
   // Activity lesson — learning phase

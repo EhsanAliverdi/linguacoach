@@ -14,12 +14,18 @@
 
 } @else if (data()) {
 
+  <!-- Page heading -->
+  <div data-testid="today-page" style="margin-bottom:20px">
+    <p class="sp-eyebrow" style="margin-bottom:4px">Your day</p>
+    <h1 data-testid="today-page-heading" style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Today's Lesson</h1>
+  </div>
+
   @if (isPlacementRequired()) {
     <section class="sp-card" data-testid="dashboard-placement-required" style="padding:24px;margin-bottom:18px;border-color:var(--sp-writing)">
       <p class="sp-eyebrow mb-2">Placement assessment</p>
-      <h1 style="font-size:24px;font-weight:850;color:var(--sp-ink);line-height:1.18;margin:0 0 8px">
+      <h2 style="font-size:22px;font-weight:850;color:var(--sp-ink);line-height:1.18;margin:0 0 8px">
         Complete your placement assessment
-      </h1>
+      </h2>
       <p style="font-size:14px;color:var(--sp-muted);line-height:1.65;max-width:620px;margin:0 0 18px">
         We'll use it to build the right workplace English course for you.
       </p>
@@ -31,9 +37,9 @@
   } @else if (isPlacementInProgress()) {
     <section class="sp-card" data-testid="dashboard-placement-in-progress" style="padding:24px;margin-bottom:18px;border-color:var(--sp-writing)">
       <p class="sp-eyebrow mb-2">Placement assessment</p>
-      <h1 style="font-size:24px;font-weight:850;color:var(--sp-ink);line-height:1.18;margin:0 0 8px">
+      <h2 style="font-size:22px;font-weight:850;color:var(--sp-ink);line-height:1.18;margin:0 0 8px">
         Continue your placement assessment
-      </h1>
+      </h2>
       <p style="font-size:14px;color:var(--sp-muted);line-height:1.65;max-width:620px;margin:0 0 18px">
         Finish the assessment so SpeakPath can place you in the right workplace English course.
       </p>
@@ -48,9 +54,9 @@
         <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
           <div style="min-width:0;flex:1">
             <p class="sp-eyebrow mb-2">Placement result</p>
-            <h1 style="font-size:22px;font-weight:850;color:var(--sp-ink);line-height:1.2;margin:0 0 8px">
+            <h2 style="font-size:22px;font-weight:850;color:var(--sp-ink);line-height:1.2;margin:0 0 8px">
               Your starting level is ready
-            </h1>
+            </h2>
             <p style="font-size:13.5px;color:var(--sp-muted);line-height:1.6;margin:0">
               Guided lessons are coming next. For now, you can use Practice Gym for extra practice.
             </p>
@@ -88,6 +94,7 @@
       </section>
     }
 
+    <!-- Today's Lesson — primary CTA -->
     @if (showTodaysLesson()) {
       <section class="sp-card" data-testid="dashboard-todays-lesson" style="padding:0;margin-bottom:22px;overflow:hidden;border-color:var(--sp-border2)">
         <div style="background:var(--sp-grad-cool);padding:20px 22px">
@@ -129,54 +136,8 @@
       </section>
     }
 
-    <section style="overflow:hidden;border-radius:var(--sp-r-xl);box-shadow:var(--sp-sh-lg);margin-bottom:22px" data-testid="dashboard-recommended-next">
-      <div style="background:var(--sp-grad-brand);padding:22px 22px 24px">
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:4px 12px">
-            Recommended next
-          </span>
-          @if (data()!.learningPath?.currentModule) {
-            <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">
-              {{ data()!.learningPath!.title }} - Module {{ data()!.learningPath!.currentModule!.order }}
-            </span>
-          }
-        </div>
-        <h2 style="font-size:22px;font-weight:800;color:#fff;max-width:520px;line-height:1.2;margin:0">
-          @if (data()!.learningPath?.currentModule) {
-            {{ data()!.learningPath!.currentModule!.title }}
-          } @else {
-            Your guided course is being prepared
-          }
-        </h2>
-        @if (data()!.learningPath?.currentModule?.description) {
-          <p style="margin-top:6px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.85)">
-            {{ data()!.learningPath!.currentModule!.description }}
-          </p>
-        }
-        <div style="margin-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:14px">
-          <a routerLink="/activity" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--sp-writing);border-radius:14px;padding:10px 20px;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,.15)">
-            Continue learning
-          </a>
-          <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.85)">Structured workplace English practice</span>
-        </div>
-      </div>
-      @if (data()!.learningPath?.currentModule; as mod) {
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--sp-surface);border-top:1px solid var(--sp-border)">
-          <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--sp-text);margin-bottom:6px">
-              <span>Module progress</span>
-              <span style="color:var(--sp-writing)">{{ mod.completedActivities }}/{{ mod.totalActivities }} done</span>
-            </div>
-            <div class="sp-progress-track">
-              <div class="sp-progress-fill" [style.width.%]="moduleProgress()"></div>
-            </div>
-          </div>
-          <a routerLink="/my-path" style="font-size:12px;font-weight:700;color:var(--sp-muted);text-decoration:none;flex-shrink:0">Full path</a>
-        </div>
-      }
-    </section>
-
-    <div class="sp-stat-grid" style="margin-bottom:6px">
+    <!-- Quick progress snapshot -->
+    <div class="sp-stat-grid" style="margin-bottom:18px">
       <div class="sp-card" style="padding:14px;text-align:center">
         <div style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase">Streak</div>
         <div style="font-size:20px;font-weight:800;color:var(--sp-ink);margin-top:4px">--</div>
@@ -198,8 +159,9 @@
       </div>
     </div>
 
+    <!-- Learning focus -->
     @if (memory()?.journeySummary || primaryMemoryFocus()) {
-      <section class="sp-card" style="margin:16px 0 6px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-color:var(--sp-border2)">
+      <section class="sp-card" data-testid="today-learning-focus" style="margin-bottom:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-color:var(--sp-border2)">
         <div style="min-width:0;flex:1">
           <p style="font-size:12px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;margin-bottom:5px">Your learning focus</p>
           <p style="font-size:14px;font-weight:700;color:var(--sp-ink);line-height:1.45;margin:0">
@@ -215,38 +177,60 @@
             </p>
           }
         </div>
-        <a routerLink="/my-path" class="sp-button-ghost" style="min-height:44px;display:inline-flex;align-items:center">
-          View focus
+        <a routerLink="/journey" class="sp-button-ghost" style="min-height:44px;display:inline-flex;align-items:center" data-testid="today-view-journey">
+          View Journey
         </a>
       </section>
     }
 
-    <section style="margin-top:22px" data-testid="practice-gym">
-      <div class="sp-section-h">
-        <h3>Practice Gym &mdash; On-demand practice</h3>
-      </div>
-      <div class="sp-skill-grid">
-        <a routerLink="/activity" [queryParams]="{type:'WritingScenario'}" class="sp-card sp-card-hover" style="display:flex;flex-direction:column;gap:10px;padding:14px;text-decoration:none">
-          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Writing</div>
-          <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace messages</div>
-        </a>
-        <a routerLink="/activity" [queryParams]="{type:'ListeningComprehension'}" class="sp-card sp-card-hover" style="display:flex;flex-direction:column;gap:10px;padding:14px;text-decoration:none">
-          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Listening</div>
-          <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Meeting and update audio</div>
-        </a>
-        <a routerLink="/activity" [queryParams]="{type:'VocabularyPractice'}" class="sp-card sp-card-hover" style="display:flex;flex-direction:column;gap:10px;padding:14px;text-decoration:none">
-          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Vocabulary</div>
-          <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Saved workplace phrases</div>
-        </a>
-        <a routerLink="/activity" [queryParams]="{type:'SpeakingRolePlay'}" class="sp-card sp-card-hover" style="display:flex;flex-direction:column;gap:10px;padding:14px;text-decoration:none" data-testid="speaking-card">
-          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Speaking</div>
-          <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace role-play</div>
-        </a>
-        <div class="sp-card" aria-disabled="true" data-testid="pronunciation-card" style="display:flex;flex-direction:column;gap:10px;padding:14px;opacity:.62">
-          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Pronunciation</div>
-          <div style="font-size:11px;font-weight:700;color:var(--sp-muted)">Coming soon</div>
+    <!-- Your learning path — compact secondary card -->
+    @if (data()!.learningPath) {
+      <section class="sp-card" data-testid="today-learning-path" style="margin-bottom:18px;padding:16px;border-color:var(--sp-border2)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="min-width:0;flex:1">
+            <p style="font-size:12px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;margin-bottom:4px">Your course</p>
+            <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0;line-height:1.3">
+              @if (data()!.learningPath?.currentModule) {
+                {{ data()!.learningPath!.currentModule!.title }}
+              } @else {
+                {{ data()!.learningPath!.title }}
+              }
+            </p>
+            @if (data()!.learningPath?.currentModule; as mod) {
+              <div style="margin-top:10px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--sp-text);margin-bottom:5px">
+                  <span>Module progress</span>
+                  <span style="color:var(--sp-writing)">{{ mod.completedActivities }}/{{ mod.totalActivities }} done</span>
+                </div>
+                <div class="sp-progress-track">
+                  <div class="sp-progress-fill" [style.width.%]="moduleProgress()"></div>
+                </div>
+              </div>
+            }
+          </div>
+          <a routerLink="/journey" data-testid="today-view-full-journey" style="font-size:12px;font-weight:700;color:var(--sp-muted);text-decoration:none;flex-shrink:0;white-space:nowrap">
+            View Journey →
+          </a>
         </div>
-      </div>
-    </section>
+      </section>
+    }
+
+    <!-- Secondary links: Practice Gym and Progress -->
+    <div data-testid="today-secondary-links" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <a routerLink="/practice" data-testid="today-practice-link" class="sp-card sp-card-hover" style="flex:1;min-width:140px;padding:14px;text-decoration:none;display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Practice Gym</div>
+          <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Free practice by skill</div>
+        </div>
+      </a>
+      <a routerLink="/progress" class="sp-card sp-card-hover" style="flex:1;min-width:140px;padding:14px;text-decoration:none;display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Your Progress</div>
+          <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Scores and improvement</div>
+        </div>
+      </a>
+    </div>
   }
 }

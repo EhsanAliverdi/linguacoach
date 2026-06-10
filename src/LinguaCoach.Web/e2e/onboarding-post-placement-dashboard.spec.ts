@@ -96,7 +96,7 @@ async function mockCourseReadyDashboard(page: Page) {
   });
 }
 
-test('course-ready dashboard shows placement summary and secondary Practice Gym', async ({ page }) => {
+test('course-ready Today page shows placement summary and a secondary Practice link', async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on('console', msg => {
     if (msg.type() === 'error') consoleErrors.push(msg.text());
@@ -112,19 +112,25 @@ test('course-ready dashboard shows placement summary and secondary Practice Gym'
   await expect(page.getByTestId('dashboard-course-ready').getByText('Listening')).toBeVisible();
   await expect(page.getByText('Workplace English B1')).toBeVisible();
   await expect(page.getByText('Guided lessons are coming next')).toBeVisible();
-  await expect(page.getByTestId('practice-gym')).toBeVisible();
+  // Today page has a secondary Practice Gym link, not the full card grid
+  await expect(page.getByTestId('today-practice-link')).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 
-test('Practice Gym cards route to implemented activities and pronunciation is disabled', async ({ page }) => {
+test('Practice Gym page has skill cards that route to implemented activities and pronunciation is disabled', async ({ page }) => {
   await withAuth(page);
-  await mockCourseReadyDashboard(page);
+  await page.route('**/api/placement/status', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'Completed', lifecycleStage: 'ActiveLearning', currentSectionKey: null, currentSectionOrder: 0, totalSections: 6 }),
+    });
+  });
 
-  await page.goto('/dashboard');
+  await page.goto('/practice');
 
   await expect(page.getByRole('link', { name: /Writing Workplace messages/i })).toHaveAttribute('href', /type=WritingScenario/);
   await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).toHaveAttribute('href', /type=ListeningComprehension/);
-  await expect(page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i })).toHaveAttribute('href', /type=VocabularyPractice/);
   await expect(page.getByRole('link', { name: /Speaking Workplace role-play/i })).toHaveAttribute('href', /type=SpeakingRolePlay/);
 
   const pronunciation = page.getByTestId('pronunciation-card');

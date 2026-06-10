@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Live AI Quality Review & Prompt Calibration Sprint
 
 ## Current State

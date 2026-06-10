@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # AI Learning Path Sprint
 
 ## Sprint Name

@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Layout Stabilisation Sprint
 
 **Date**: 2026-06-04

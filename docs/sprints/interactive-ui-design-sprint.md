@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Interactive UI + Branding Design Sprint
 
 ## Sprint goal

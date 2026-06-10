@@ -65,13 +65,11 @@ const sampleVocab = [
   },
 ];
 
-test('vocabulary nav item is visible in sidebar', async ({ page }) => {
+test('vocabulary is not a top-level sidebar nav item', async ({ page }) => {
   await withAuth(page);
   await page.route('**/api/vocabulary', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(emptyVocab) });
   });
-
-  await page.goto('/dashboard');
   await page.route('**/api/dashboard', async route => {
     await route.fulfill({
       status: 200,
@@ -85,8 +83,9 @@ test('vocabulary nav item is visible in sidebar', async ({ page }) => {
   });
 
   await page.goto('/dashboard');
-  // Sidebar vocabulary link should be visible on desktop
-  await expect(page.getByRole('link', { name: /Vocabulary/i }).first()).toBeVisible();
+  // Vocabulary is no longer a top-level sidebar item — only accessible from Practice/Progress
+  await expect(page.getByTestId('nav-today')).toBeVisible();
+  await expect(page.locator('.sp-student-sidebar').getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
 });
 
 test('vocabulary page loads and shows empty state', async ({ page }) => {

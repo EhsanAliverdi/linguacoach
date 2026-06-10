@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Sprint — Onboarding & Post-Placement UX Alignment
 
 **Created:** 2026-06-09

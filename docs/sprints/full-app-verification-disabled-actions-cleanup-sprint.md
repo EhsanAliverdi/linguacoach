@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Full App Verification and Disabled Actions Cleanup Sprint
 
 ## Current State

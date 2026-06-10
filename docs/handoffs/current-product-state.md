@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 18:00
+lastUpdated: 2026-06-10 22:00
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-10 18:00
+Last updated: 2026-06-10 22:00
 
 ---
 
@@ -22,13 +22,32 @@ Admin logs in
 → Student logs in
 → Student changes temporary password (enforced server-side)
 → Student completes onboarding (language pair, career profile, experience level)
-→ Student reaches dashboard
+→ Student reaches Today page (the student home/dashboard)
+→ Student starts Today's Lesson or navigates to Journey, Practice, Progress, or Profile
 → Student starts an activity (Writing / Listening / Vocabulary / Speaking)
 → Student submits draft or recording
 → Student sees structured AI feedback
 → Student retries or continues to next activity
 → Student can revisit learning history
 ```
+
+## Student navigation model
+
+The student app has five top-level sections:
+
+| Section | Route | Question answered |
+|---|---|---|
+| **Today** | `/dashboard` | What should I do now? |
+| **Journey** | `/journey` (also `/my-path`) | Where am I in my course? |
+| **Practice** | `/practice` | What can I practise freely? |
+| **Progress** | `/progress` | How am I improving? |
+| **Profile** | `/profile` | What are my settings? |
+
+- The student-facing label for the home page is **Today**, not Dashboard. The route `/dashboard` is preserved.
+- `/journey` and `/my-path` both load the Learning Journey page. `/my-path` is kept for backwards compatibility.
+- **Practice Gym** (`/practice`) is the student-facing landing for free practice by skill or exercise type. It does not auto-start an activity on load.
+- Vocabulary is accessible from Practice Gym and Progress — it is not a top-level nav item.
+- Writing and Email are valid activity types within Practice Gym and lessons. The student product is not writing/email-first.
 
 ## Implemented activity types
 
@@ -42,12 +61,12 @@ Admin logs in
 All four activity types use the unified `/activity` path.
 `/api/writing/*` endpoints have been removed. See `docs/decisions/activity-flow-migration.md`.
 
-## Test suite baseline (as of course-session-placement-redesign-sprint)
+## Test suite baseline (as of student-ux-alignment-writing-assumption-cleanup-sprint — 2026-06-10)
 
 ```
-dotnet test:     437 passed
+dotnet test:     865 passed (451 unit + 414 integration)
 npm run build:   passed
-Playwright:      56 passed
+Playwright:      165 passed
 ```
 
 ## Admin capabilities
@@ -157,6 +176,17 @@ All 7 phases complete. `MarkingMode` is now first-class in the evaluation flow.
 - **Frontend result UI**: `PatternEvaluationResultComponent` with 6 branches (MatchingPairs, GapFill, Chat/Email, ListenAndAnswer, SpokenResponse, ReadOnly); legacy non-pattern paths unchanged
 - **Test counts**: 865 dotnet (451 unit + 414 integration) + 111 Playwright — all pass
 
+## Student UX Alignment / Writing-Assumption Cleanup (complete — 2026-06-10)
+
+All 7 phases complete. The student UI no longer implies SpeakPath is a writing/email-only app.
+
+- **Nav**: student sidebar and mobile nav show Today, Journey, Practice, Progress, Profile. Dashboard label removed. Vocabulary removed from top-level nav.
+- **Today** (`/dashboard`): motivational home page. Heading: "Today's Lesson". "Recommended next" section removed. Practice Gym grid moved off Today. Secondary links to `/journey` and `/practice`.
+- **Journey** (`/journey`, `/my-path`): page heading "Learning Journey". Memory fallback copy updated from "workplace writing" to "workplace English". "Continue practising" CTA replaced with safe CTAs to `/dashboard` and `/practice`.
+- **Practice Gym** (`/practice`): MVP landing page. Functional cards: Vocabulary (→`/vocabulary`), Listening, Writing, Speaking (→`/activity?type=X`). Coming soon: Workplace Chat, Email, Gap Fill, Phrase Match, Pronunciation. Does not auto-start on load.
+- **Fixture cleanup**: generic writing/email-only fixture copy in Playwright tests updated to mixed-skill workplace English. Valid WritingScenario and email_reply test coverage preserved. No seed data deleted.
+- **Test counts**: 865 dotnet (unchanged) + 165 Playwright — all pass
+
 ## Known gaps / not yet built
 
 - Session reflection (`GET /api/sessions/{id}/reflection` returns 501; needs AI prompt key `session_reflection`)
@@ -172,7 +202,7 @@ See `docs/backlog/deferred-work.md` for the full deferred work list.
 ## Next recommended work
 
 1. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
-2. **Practice Gym Separation** — let students choose skill / pattern / focus outside Today's Lesson.
+2. **Practice Gym Expansion** — deep pattern/skill selection within Practice Gym (Workplace Chat, Email, Gap Fill, Phrase Match unlock; dynamic session template).
 3. **Session Reflection AI** — evaluation outputs now stable; wire `session_reflection` prompt.
 
 See `docs/sprints/current-sprint.md` for the active sprint scope.

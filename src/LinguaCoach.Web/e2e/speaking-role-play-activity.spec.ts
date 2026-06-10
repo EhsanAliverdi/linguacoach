@@ -92,15 +92,10 @@ const speakingFeedback = {
 };
 
 test.describe('SpeakingRolePlay activity', () => {
-  test('dashboard Speaking card is active and links to SpeakingRolePlay', async ({ page }) => {
+  test('Practice Gym Speaking card is active and links to SpeakingRolePlay', async ({ page }) => {
     await withAuth(page);
-    await page.route('**/api/dashboard', (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ studentName: 'Test', greetingMessage: '', weeklyStreak: 0, recentActivities: [] }),
-    }));
 
-    await page.goto('/dashboard');
+    await page.goto('/practice');
     const speakingCard = page.getByTestId('speaking-card');
     await expect(speakingCard).toBeVisible();
     await expect(speakingCard).not.toHaveAttribute('aria-disabled');
@@ -109,19 +104,13 @@ test.describe('SpeakingRolePlay activity', () => {
     await expect(speakingCard).toContainText('Speaking');
   });
 
-  test('Pronunciation card remains Coming soon', async ({ page }) => {
+  test('Practice Gym Pronunciation card remains Coming soon', async ({ page }) => {
     await withAuth(page);
-    await page.route('**/api/dashboard', (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ studentName: 'Test', greetingMessage: '', weeklyStreak: 0, recentActivities: [] }),
-    }));
 
-    await page.goto('/dashboard');
-    const pronouncCard = page.locator('[data-testid="pronunciation-card"], .sp-card:has-text("Pronunciation")');
-    if (await pronouncCard.count() > 0) {
-      await expect(pronouncCard.first()).toContainText('Coming soon');
-    }
+    await page.goto('/practice');
+    const pronouncCard = page.getByTestId('pronunciation-card');
+    await expect(pronouncCard).toBeVisible();
+    await expect(pronouncCard).toContainText('Coming soon');
   });
 
   test('/activity?type=SpeakingRolePlay renders speaking scenario', async ({ page }) => {

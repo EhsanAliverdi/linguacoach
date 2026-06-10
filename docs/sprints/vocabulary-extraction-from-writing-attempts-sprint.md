@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Vocabulary Extraction from Writing Attempts Sprint
 
 **Status:** In progress  

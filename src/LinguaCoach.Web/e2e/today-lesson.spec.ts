@@ -303,13 +303,15 @@ test('dashboard shows Completed badge and Review button when session is complete
   await expect(page.getByTestId('todays-lesson-cta')).toContainText("Review today's lesson");
 });
 
-test('dashboard still shows Practice Gym section alongside Today\'s Lesson', async ({ page }) => {
+test('Today page shows Today\'s Lesson as primary and Practice Gym as a secondary link', async ({ page }) => {
   await withAuth(page);
   await mockActiveLearningDashboard(page);
   await page.goto('/dashboard');
 
   await expect(page.getByTestId('dashboard-todays-lesson')).toBeVisible();
-  await expect(page.getByTestId('practice-gym')).toBeVisible();
+  // Practice Gym is secondary — a link to /practice, not the full card grid
+  await expect(page.getByTestId('today-practice-link')).toBeVisible();
+  await expect(page.getByTestId('today-practice-link')).toHaveAttribute('href', '/practice');
 });
 
 test('clicking Today\'s Lesson CTA navigates to lesson page', async ({ page }) => {

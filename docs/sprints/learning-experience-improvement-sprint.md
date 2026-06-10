@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Learning Experience Improvement Sprint
 
 **Date**: 2026-06-05

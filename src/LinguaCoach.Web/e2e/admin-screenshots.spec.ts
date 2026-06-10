@@ -124,7 +124,7 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
         coveredScenarioCount: 0,
         skillProfile: [],
       } : {
-        journeySummary: 'You are improving at workplace writing and your next focus is polite follow-up messages.',
+        journeySummary: 'You are improving your workplace English and your next focus is professional communication.',
         strongSkills: ['Clear main message', 'Useful workplace vocabulary'],
         weakSkills: ['Too direct tone'],
         recurringMistakes: ['Missing softening phrase'],

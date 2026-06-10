@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # VocabularyPractice Activity Sprint
 
 **Status:** In progress  

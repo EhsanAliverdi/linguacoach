@@ -114,6 +114,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/learning-path/learning-path.component').then(m => m.LearningPathComponent),
       },
       {
+        path: 'journey',
+        canActivate: [placementRequiredRedirectGuard],
+        loadComponent: () => import('./features/learning-path/learning-path.component').then(m => m.LearningPathComponent),
+      },
+      {
+        path: 'practice',
+        canActivate: [placementRequiredRedirectGuard],
+        loadComponent: () => import('./features/practice/practice-gym.component').then(m => m.PracticeGymComponent),
+      },
+      {
         path: 'activity',
         canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/activity/activity-lesson/activity-lesson.component').then(m => m.ActivityLessonComponent),

@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Speaking Role-Play MVP Sprint
 
 **Status:** Planned

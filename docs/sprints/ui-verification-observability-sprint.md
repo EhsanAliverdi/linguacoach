@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # UI Verification & Observability Sprint
 
 **Date**: 2026-06-05

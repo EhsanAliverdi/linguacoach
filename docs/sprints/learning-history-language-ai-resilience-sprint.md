@@ -1,3 +1,6 @@
+---
+status: historical
+---
 # Learning History, Language Assistance & AI Resilience Sprint
 
 **Date**: 2026-06-05
