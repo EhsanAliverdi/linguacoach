@@ -38,6 +38,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<PlacementAnswer> PlacementAnswers => Set<PlacementAnswer>();
     public DbSet<LearningSession> LearningSessions => Set<LearningSession>();
     public DbSet<SessionExercise> SessionExercises => Set<SessionExercise>();
+    public DbSet<ExercisePatternDefinition> ExercisePatterns => Set<ExercisePatternDefinition>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

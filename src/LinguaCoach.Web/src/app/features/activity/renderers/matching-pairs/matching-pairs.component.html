@@ -1,0 +1,53 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="matching-pairs-renderer">
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin:0">
+    @if (pendingPhraseId) { Select a meaning to match. } @else { Tap a phrase to start matching. }
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <!-- Phrases column -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <p style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin:0">Phrase</p>
+      @for (pair of content.pairs; track pair.id) {
+        <button
+          (click)="selectPhrase(pair.id)"
+          [disabled]="disabled || isMatchedPhrase(pair.id)"
+          [attr.data-testid]="'phrase-' + pair.id"
+          style="text-align:left;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:2px solid"
+          [style.border-color]="pendingPhraseId === pair.id ? 'var(--sp-writing)' : isMatchedPhrase(pair.id) ? 'var(--sp-success)' : 'var(--sp-border)'"
+          [style.background]="pendingPhraseId === pair.id ? 'var(--sp-writing-soft)' : isMatchedPhrase(pair.id) ? 'var(--sp-success-soft)' : 'var(--sp-canvas)'"
+          [style.color]="isMatchedPhrase(pair.id) ? 'var(--sp-success)' : 'var(--sp-ink)'">
+          {{ pair.phrase }}
+        </button>
+      }
+    </div>
+    <!-- Meanings column -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <p style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin:0">Meaning</p>
+      @for (pair of displayMeanings; track pair.id) {
+        <button
+          (click)="selectMeaning(pair.id)"
+          [disabled]="disabled || isMatchedMeaning(pair.id)"
+          [attr.data-testid]="'meaning-' + pair.id"
+          style="text-align:left;padding:10px 12px;border-radius:10px;font-size:13px;cursor:pointer;transition:all .15s;border:2px solid"
+          [style.border-color]="isMatchedMeaning(pair.id) ? 'var(--sp-success)' : pendingPhraseId ? 'var(--sp-border2)' : 'var(--sp-border)'"
+          [style.background]="isMatchedMeaning(pair.id) ? 'var(--sp-success-soft)' : pendingPhraseId ? 'var(--sp-canvas2)' : 'var(--sp-canvas)'"
+          [style.color]="isMatchedMeaning(pair.id) ? 'var(--sp-success)' : 'var(--sp-text)'">
+          {{ pair.meaning }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <button (click)="submit()"
+    [disabled]="disabled || !allMatched"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="matching-pairs-submit-btn">
+    Check matches
+  </button>
+</div>

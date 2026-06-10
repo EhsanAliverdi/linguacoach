@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10
+lastUpdated: 2026-06-10 11:02
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-09
+Last updated: 2026-06-10 11:02
 
 ---
 
@@ -133,10 +133,23 @@ Placement Assessment MVP is implemented:
 - `GET /api/activity/{id}` backend endpoint added
 - 8 new Playwright tests; 90/90 pass
 
+## Exercise Pattern Engine (complete — 2026-06-10)
+
+- `exercise_patterns` table is seeded with the 8 MVP patterns.
+- `LearningActivity.ExercisePatternKey` stores the durable pattern link.
+- Pattern-aware prepare/generation sets `exercisePatternKey` and returns `interactionMode` on `ActivityDto`.
+- Pattern-keyed activity responses include bounded `contentJson` for frontend renderers; legacy listening activities do not expose raw answer-bearing JSON before submission.
+- `ActivityLessonComponent` now routes pattern-keyed activities through `ExerciseRendererComponent`.
+- MVP renderers are wired: ReadOnly, FreeTextEntry, MatchingPairs, GapFill, AudioAndFreeText, AudioAndGapFill, ChatReply.
+- Frontend renderer coverage added; full Playwright suite passes 97/97.
+- Backend baseline: 762 tests pass (380 unit + 382 integration).
+- `npm run build` passes; known non-blocking Angular warnings remain for admin CSS budgets and skipped selectors.
+
 ## Known gaps / not yet built
 
 - Session reflection (`GET /api/sessions/{id}/reflection` returns 501; needs AI prompt key `session_reflection`)
 - `ActivityShellComponent` not yet embedded inline in lesson page (navigates away instead)
+- Advanced per-pattern evaluation UI is not built; deterministic pattern renderers submit structured answers through the existing attempt flow for now.
 - No real STT provider (SpeakingRolePlay uses `FakeSpeechToTextService`)
 - No email delivery for temp passwords (admin copies manually)
 - No admin CRUD for career profiles / learning tracks (seed data only)
@@ -146,7 +159,10 @@ See `docs/backlog/deferred-work.md` for the full deferred work list.
 
 ## Next recommended work
 
-1. **Session reflection AI prompt** — `GET /api/sessions/{id}/reflection` currently returns 501; requires AI prompt key `session_reflection` + service implementation
-2. **Inline activity embed** — optionally embed `ActivityShellComponent` directly inside `LessonComponent` rather than navigating away; requires component refactor to accept `activityId` as `@Input()`
+1. **Pattern Evaluation Engine** — implement deterministic `ExactMatch` / `KeyedSelection`, structured `AiStructured` evaluation, and pattern-specific result UI.
+2. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
+3. **Practice Gym Separation** — let students choose skill / pattern / focus outside Today's Lesson.
+
+Session reflection AI remains deferred until the session completion signal and evaluation outputs are stable.
 
 See `docs/sprints/current-sprint.md` for the active sprint scope.

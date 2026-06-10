@@ -1,0 +1,52 @@
+@switch (mode) {
+  @case ('readOnly') {
+    <app-read-only-step
+      [content]="readOnlyContent"
+      [title]="activity.title"
+      (done)="readOnlyDone.emit()"
+    />
+  }
+  @case ('matchingPairs') {
+    <app-matching-pairs
+      [content]="matchingPairsContent"
+      [disabled]="disabled"
+      (submitted)="onMatchingSubmitted($event)"
+    />
+  }
+  @case ('gapFill') {
+    <app-gap-fill
+      [content]="gapFillContent"
+      [disabled]="disabled"
+      (submitted)="onGapFillSubmitted($event)"
+    />
+  }
+  @case ('audioAndFreeText') {
+    <app-audio-and-free-text
+      [content]="audioFreeTextContent"
+      [disabled]="disabled"
+      (submitted)="onAudioFreeTextSubmitted($event)"
+    />
+  }
+  @case ('audioAndGapFill') {
+    <app-audio-and-gap-fill
+      [content]="audioGapFillContent"
+      [disabled]="disabled"
+      (submitted)="onAudioGapFillSubmitted($event)"
+    />
+  }
+  @case ('chatReply') {
+    <app-chat-reply
+      [content]="chatReplyContent"
+      [disabled]="disabled"
+      (submitted)="onChatReplySubmitted($event)"
+    />
+  }
+  @default {
+    <app-free-text-entry
+      [content]="freeTextContent"
+      [disabled]="disabled"
+      [attemptCount]="attemptCount"
+      (submitted)="onFreeTextSubmitted($event)"
+    />
+  }
+}

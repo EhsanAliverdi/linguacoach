@@ -53,9 +53,9 @@ public static class SessionDurationTemplates
             EstimatedMinutes: 3),
 
         new(Order: 1, Kind: ExerciseKind.WritingTask,
-            PatternKey: "writing_response",
+            PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a short professional response to the workplace situation.",
+            Instructions: "Write a short professional email reply to the workplace situation.",
             EstimatedMinutes: 5),
 
         new(Order: 2, Kind: ExerciseKind.Review,
@@ -82,9 +82,9 @@ public static class SessionDurationTemplates
             EstimatedMinutes: 4),
 
         new(Order: 2, Kind: ExerciseKind.WritingTask,
-            PatternKey: "writing_response",
+            PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a professional reply to the workplace situation.",
+            Instructions: "Write a professional email reply to the workplace situation.",
             EstimatedMinutes: 7),
 
         new(Order: 3, Kind: ExerciseKind.Review,
@@ -111,9 +111,9 @@ public static class SessionDurationTemplates
             EstimatedMinutes: 5),
 
         new(Order: 2, Kind: ExerciseKind.WritingTask,
-            PatternKey: "writing_response",
+            PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a complete professional response to the workplace situation.",
+            Instructions: "Write a complete professional email reply to the workplace situation.",
             EstimatedMinutes: 9),
 
         new(Order: 3, Kind: ExerciseKind.Review,
@@ -140,13 +140,13 @@ public static class SessionDurationTemplates
             EstimatedMinutes: 6),
 
         new(Order: 2, Kind: ExerciseKind.WritingTask,
-            PatternKey: "writing_response",
+            PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a full professional response to the workplace situation.",
+            Instructions: "Write a full professional email reply to the workplace situation.",
             EstimatedMinutes: 10),
 
         new(Order: 3, Kind: ExerciseKind.SpeakingTask,
-            PatternKey: "speaking_role_play",
+            PatternKey: "spoken_response_from_prompt",
             PrimarySkill: "Speaking",
             Instructions: "Record a short spoken response to the same workplace situation.",
             EstimatedMinutes: 7),

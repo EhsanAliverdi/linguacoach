@@ -1,0 +1,28 @@
+namespace LinguaCoach.Domain;
+
+/// <summary>
+/// Canonical string keys for all defined ExercisePatterns.
+/// These constants are the authoritative source — ExercisePatternSeeder and
+/// SessionDurationTemplates must use them. Never remove or rename a key that
+/// exists in the database; add new keys at the bottom only.
+/// </summary>
+public static class ExercisePatternKey
+{
+    // ── Vocabulary / Warmup ──────────────────────────────────────────────────
+    public const string PhraseMatch               = "phrase_match";
+    public const string GapFillWorkplacePhrase    = "gap_fill_workplace_phrase";
+
+    // ── Listening ────────────────────────────────────────────────────────────
+    public const string ListenAndAnswer           = "listen_and_answer";
+    public const string ListenAndGapFill          = "listen_and_gap_fill";
+
+    // ── Writing / Workplace Communication ────────────────────────────────────
+    public const string EmailReply                = "email_reply";
+    public const string TeamsChatSimulation       = "teams_chat_simulation";
+
+    // ── Speaking ─────────────────────────────────────────────────────────────
+    public const string SpokenResponseFromPrompt  = "spoken_response_from_prompt";
+
+    // ── Review / Reflection ──────────────────────────────────────────────────
+    public const string LessonReflection          = "lesson_reflection";
+}

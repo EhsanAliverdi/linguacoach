@@ -1,0 +1,82 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="chat-reply-renderer">
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Scenario</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  <!-- Teams-style chat bubbles -->
+  <div style="display:flex;flex-direction:column;gap:10px;background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px" data-testid="chat-thread">
+    <!-- MS Teams app header line -->
+    <div style="display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--sp-border)">
+      <div style="width:28px;height:28px;border-radius:6px;background:#5468FF;display:flex;align-items:center;justify-content:center">
+        <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><path d="M17 12a5 5 0 1 0-10 0 5 5 0 0 0 10 0zm-5-7a7 7 0 1 1 0 14A7 7 0 0 1 12 5zm1 3h-2v5h2V8zm0 6h-2v2h2v-2z"/></svg>
+      </div>
+      <span style="font-size:13px;font-weight:700;color:var(--sp-ink)">Teams Chat</span>
+    </div>
+    @for (msg of content.messages; track msg.id) {
+      <div [attr.data-testid]="'chat-message-' + msg.id"
+        [style.align-self]="msg.isStudent ? 'flex-end' : 'flex-start'"
+        style="max-width:80%">
+        @if (!msg.isStudent) {
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);margin-bottom:3px">{{ msg.sender }}</p>
+        }
+        <div style="padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6"
+          [style.background]="msg.isStudent ? 'var(--sp-writing)' : 'var(--sp-canvas)'"
+          [style.color]="msg.isStudent ? '#fff' : 'var(--sp-text)'"
+          [style.border-radius]="msg.isStudent ? '12px 12px 4px 12px' : '4px 12px 12px 12px'">
+          {{ msg.text }}
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (content.targetPhrases?.length) {
+    <div>
+      <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">Try to use these phrases</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        @for (phrase of content.targetPhrases!; track phrase) {
+          <span class="sp-phrase-chip" style="cursor:pointer"
+            (click)="replyText = replyText + (replyText.endsWith(' ') || !replyText ? '' : ' ') + phrase">{{ phrase }}</span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Reply box -->
+  <div>
+    <label class="sp-label" for="chat-reply-input">
+      {{ content.replyPrompt || 'Write your reply' }}
+    </label>
+    <textarea
+      id="chat-reply-input"
+      [(ngModel)]="replyText"
+      [disabled]="disabled"
+      rows="4"
+      class="sp-input"
+      style="resize:vertical;line-height:1.7"
+      placeholder="Type your reply here…"
+      data-testid="chat-reply-input"
+    ></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <span style="font-size:12px;color:var(--sp-faint)">{{ wordCount }} words</span>
+      @if (content.wordCountTarget) {
+        <span style="font-size:12px;color:var(--sp-muted)">Target: ~{{ content.wordCountTarget }} words</span>
+      }
+    </div>
+  </div>
+
+  <button (click)="submit()"
+    [disabled]="disabled || !replyText.trim()"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="chat-reply-submit-btn">
+    @if (disabled) { Getting feedback… } @else { Send reply }
+  </button>
+</div>

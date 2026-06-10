@@ -198,6 +198,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     await DefaultAiSeeder.SeedAsync(db, seederLogger);
     await WritingScenarioSeeder.SeedAsync(db, seederLogger);
     await LearningActivitySeeder.SeedAsync(db, seederLogger);
+    await ExercisePatternSeeder.SeedAsync(db, seederLogger);
 }
 
 if (app.Environment.IsDevelopment())

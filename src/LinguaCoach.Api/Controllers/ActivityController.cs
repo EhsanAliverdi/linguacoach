@@ -411,6 +411,9 @@ public sealed class ActivityController : ControllerBase
         expectedPoints = dto.ExpectedPoints,
         suggestedPhrases = dto.SuggestedPhrases,
         maxDurationSeconds = dto.MaxDurationSeconds,
+        interactionMode = dto.InteractionMode is null ? null : ToCamelCase(dto.InteractionMode.Value.ToString()),
+        exercisePatternKey = dto.ExercisePatternKey,
+        contentJson = dto.ContentJson,
     };
 
     private static string ToCamelCase(string s) =>

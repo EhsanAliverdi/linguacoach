@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
+import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
 
 type PageState =
   | 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error'
@@ -14,7 +15,7 @@ type PageState =
 @Component({
   selector: 'app-activity-lesson',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExerciseRendererComponent],
   templateUrl: './activity-lesson.component.html',
 })
 export class ActivityLessonComponent implements OnInit, OnDestroy {
@@ -226,6 +227,29 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     return this.activity()?.activityType === 'speakingRolePlay';
   }
 
+  usesExerciseRenderer(): boolean {
+    const activity = this.activity();
+    return activity?.interactionMode != null
+      || (activity?.activityType === 'writingScenario' && !!activity.contentJson);
+  }
+
+  rendererSkillLabel(): string {
+    switch (this.activity()?.interactionMode) {
+      case 'matchingPairs':
+      case 'gapFill':
+        return 'Vocabulary';
+      case 'audioAndFreeText':
+      case 'audioAndGapFill':
+        return 'Listening';
+      case 'readOnly':
+        return 'Reflection';
+      case 'chatReply':
+      case 'freeTextEntry':
+      default:
+        return this.activity()?.activityType === 'speakingRolePlay' ? 'Speaking' : 'Writing';
+    }
+  }
+
   vocabItemsFilled(): boolean {
     const items = this.activity()?.vocabItems ?? [];
     return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
@@ -394,6 +418,54 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
         this.state.set('writing');
       },
     });
+  }
+
+  onRendererSubmit(payload: ExerciseAnswerPayload): void {
+    const a = this.activity();
+    if (!a) return;
+
+    this.state.set('submitting');
+    const handleError = (err: HttpErrorResponse) => {
+      this.errorMessage.set(this.extractError(err, 'Failed to submit answers. Please try again.'));
+      this.state.set('writing');
+    };
+    const handleFeedback = (fb: ActivityFeedbackDto) => {
+      this.previousScore.set(this.feedback()?.score ?? null);
+      this.feedback.set(fb);
+      this.attemptCount.update(n => n + 1);
+      this.state.set('feedback');
+    };
+
+    if (payload.kind === 'audioFreeText') {
+      this.activityService.submitListeningAttempt(a.activityId, payload.answers, payload.responseText).subscribe({
+        next: handleFeedback,
+        error: handleError,
+      });
+      return;
+    }
+
+    if (payload.kind === 'audioGapFill') {
+      this.activityService.submitListeningAttempt(a.activityId, payload.answers, '').subscribe({
+        next: handleFeedback,
+        error: handleError,
+      });
+      return;
+    }
+
+    const submittedContent = payload.kind === 'freeText'
+      ? payload.text
+      : payload.kind === 'chatReply'
+        ? payload.replyText
+        : JSON.stringify(payload);
+
+    this.activityService.submitAttempt(a.activityId, submittedContent).subscribe({
+      next: handleFeedback,
+      error: handleError,
+    });
+  }
+
+  onReadOnlyDone(): void {
+    this.nextActivity();
   }
 
   improveAnswer(): void {

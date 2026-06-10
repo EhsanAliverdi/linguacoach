@@ -44,7 +44,12 @@ public sealed record ActivityDto(
     string? SpeakingPrompt = null,
     IReadOnlyList<string>? ExpectedPoints = null,
     IReadOnlyList<string>? SuggestedPhrases = null,
-    int? MaxDurationSeconds = null);
+    int? MaxDurationSeconds = null,
+    // Exercise Pattern Engine fields (Phase 2)
+    InteractionMode? InteractionMode = null,
+    string? ExercisePatternKey = null,
+    // Raw content JSON for pattern-specific renderers (Phase 3)
+    string? ContentJson = null);
 
 /// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
 public sealed record VocabPracticeItemDto(

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-10 11:02
 owner: architecture
 supersedes:
 supersededBy:
@@ -440,6 +440,28 @@ Post-call evaluation dimensions:
 - Word limit enforced (60–100 words)
 - Tone specifically evaluated for digital workplace chat norms
 - Can be embedded inside a lesson session or used in Practice Gym
+
+---
+
+## Frontend Renderer Contract
+
+Pattern-generated activities are rendered by `ActivityDto.interactionMode`, not by `ActivityType`.
+
+`ActivityLessonComponent` passes the full activity DTO into `ExerciseRendererComponent`. The renderer shell parses the pattern `contentJson`, normalises minor schema differences between legacy DTO fields and pattern payloads, and dispatches to one small interaction component:
+
+| InteractionMode | Renderer | MVP pattern support |
+|---|---|---|
+| `ReadOnly` | `ReadOnlyStepComponent` | `lesson_reflection` |
+| `FreeTextEntry` | `FreeTextEntryComponent` | `email_reply`, `spoken_response_from_prompt`, free-text fallback |
+| `MatchingPairs` | `MatchingPairsComponent` | `phrase_match` |
+| `GapFill` | `GapFillComponent` | `gap_fill_workplace_phrase` |
+| `AudioAndFreeText` | `AudioAndFreeTextComponent` | `listen_and_answer` |
+| `AudioAndGapFill` | `AudioAndGapFillComponent` | `listen_and_gap_fill` |
+| `ChatReply` | `ChatReplyComponent` | `teams_chat_simulation` |
+
+Each renderer emits one structured answer payload to the parent. The parent uses the existing activity attempt endpoints for submission and feedback. Deterministic renderers currently submit structured JSON through the existing attempt flow; advanced per-pattern evaluation UI is intentionally deferred.
+
+`contentJson` is returned to the frontend only for pattern-keyed activities. Legacy listening activities do not expose raw content JSON before submission because it can contain transcripts or expected answers.
 
 ---
 

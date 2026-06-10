@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.LearningPath;
+using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
@@ -27,6 +28,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private readonly StudentProgressService _progress;
     private readonly VocabularyPracticeGenerator _vocabGenerator;
     private readonly ListeningAudioService _listeningAudio;
+    private readonly IExercisePatternRepository _patternRepo;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
@@ -36,6 +38,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         StudentProgressService progress,
         VocabularyPracticeGenerator vocabGenerator,
         ListeningAudioService listeningAudio,
+        IExercisePatternRepository patternRepo,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
@@ -44,6 +47,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         _progress = progress;
         _vocabGenerator = vocabGenerator;
         _listeningAudio = listeningAudio;
+        _patternRepo = patternRepo;
         _logger = logger;
     }
 
@@ -110,7 +114,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                     "VocabularyPractice activity created ActivityId={ActivityId} StudentProfileId={ProfileId}",
                     vocabActivity.Id, profile.Id);
 
-                return MapToDto(vocabActivity);
+                return MapToDto(vocabActivity, null);
             }
             catch (InvalidOperationException)
             {
@@ -164,7 +168,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 await _db.SaveChangesAsync(ct);
             }
 
-            return MapToDto(activity);
+            return MapToDto(activity, null);
         }
         catch (Exception ex)
         {
@@ -188,7 +192,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             await _db.SaveChangesAsync(ct);
             await _listeningAudio.EnsureAudioAsync(fallbackActivity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
             await _db.SaveChangesAsync(ct);
-            return MapToDto(fallbackActivity);
+            return MapToDto(fallbackActivity, null);
         }
 
         if (activityType == ActivityType.SpeakingRolePlay)
@@ -204,7 +208,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
             _db.LearningActivities.Add(fallbackActivity);
             await _db.SaveChangesAsync(ct);
-            return MapToDto(fallbackActivity);
+            return MapToDto(fallbackActivity, null);
         }
 
         // Fallback path — return a seeded SystemFallback activity.
@@ -222,7 +226,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             throw new InvalidOperationException(
                 $"No SystemFallback activity found for type {activityType}. Ensure seed data has run.");
 
-        return MapToDto(fallback);
+        return MapToDto(fallback, null);
     }
 
     // ── IGetActivityByIdHandler ────────────────────────────────────────────────
@@ -240,7 +244,15 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             await _db.SaveChangesAsync(ct);
         }
 
-        return MapToDto(activity);
+        // Resolve pattern InteractionMode for the DTO if the activity has a pattern key.
+        InteractionMode? interactionMode = null;
+        if (!string.IsNullOrWhiteSpace(activity.ExercisePatternKey))
+        {
+            var pattern = await _patternRepo.GetByKeyAsync(activity.ExercisePatternKey, ct);
+            interactionMode = pattern?.InteractionMode;
+        }
+
+        return MapToDto(activity, interactionMode);
     }
 
     private async Task<ActivityType> ResolveActivityTypeAsync(
@@ -335,8 +347,12 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         return $"{src}-{tgt}";
     }
 
-    private static ActivityDto MapToDto(Domain.Entities.LearningActivity activity)
+    private static ActivityDto MapToDto(Domain.Entities.LearningActivity activity, InteractionMode? interactionMode)
     {
+        var patternKey = string.IsNullOrWhiteSpace(activity.ExercisePatternKey) ? null : activity.ExercisePatternKey;
+        var contentJson = string.IsNullOrWhiteSpace(activity.AiGeneratedContentJson) ? null : activity.AiGeneratedContentJson;
+        var rendererContentJson = patternKey is null ? null : contentJson;
+
         if (activity.ActivityType == ActivityType.VocabularyPractice)
         {
             VocabPracticeContent? vpc = null;
@@ -371,7 +387,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 InstructionInSourceLanguage: null,
                 Instructions: vpc?.Instructions,
                 PracticeMode: vpc?.PracticeMode,
-                VocabItems: vocabItems);
+                VocabItems: vocabItems,
+                InteractionMode: interactionMode,
+                ExercisePatternKey: patternKey,
+                ContentJson: rendererContentJson);
         }
 
         if (activity.ActivityType == ActivityType.ListeningComprehension)
@@ -420,7 +439,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 AudioUrl: audio?.AudioAvailable == true ? $"/api/activity/{activity.Id}/audio" : null,
                 AudioContentType: audio?.ContentType,
                 AudioDurationSeconds: audio?.DurationMs is > 0 ? Math.Round(audio.DurationMs.Value / 1000.0, 1) : null,
-                AudioUnavailableMessage: audio?.AudioAvailable == false ? audio.UnavailableMessage : null);
+                AudioUnavailableMessage: audio?.AudioAvailable == false ? audio.UnavailableMessage : null,
+                InteractionMode: interactionMode,
+                ExercisePatternKey: patternKey,
+                ContentJson: rendererContentJson);
         }
 
         if (activity.ActivityType == ActivityType.SpeakingRolePlay)
@@ -454,7 +476,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 SpeakingPrompt: sc?.Prompt,
                 ExpectedPoints: sc?.ExpectedPoints?.AsReadOnly(),
                 SuggestedPhrases: sc?.SuggestedPhrases?.AsReadOnly(),
-                MaxDurationSeconds: sc?.MaxDurationSeconds);
+                MaxDurationSeconds: sc?.MaxDurationSeconds,
+                InteractionMode: interactionMode,
+                ExercisePatternKey: patternKey,
+                ContentJson: rendererContentJson);
         }
 
         WritingContent? wc = null;
@@ -481,7 +506,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             TargetVocabulary: wc?.TargetVocabulary ?? [],
             ExampleText: wc?.ExampleText,
             CommonMistakeToAvoid: wc?.CommonMistakeToAvoid,
-            InstructionInSourceLanguage: wc?.InstructionInSourceLanguage);
+            InstructionInSourceLanguage: wc?.InstructionInSourceLanguage,
+            InteractionMode: interactionMode,
+            ExercisePatternKey: patternKey,
+            ContentJson: rendererContentJson);
     }
 
     private static string ExtractTitle(string contentJson, ActivityType type)
