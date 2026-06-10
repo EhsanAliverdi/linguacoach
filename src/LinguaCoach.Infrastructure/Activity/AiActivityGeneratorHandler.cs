@@ -40,9 +40,13 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         ActivityGenerationContext context,
         CancellationToken ct = default)
     {
+        // VocabularyPractice is supported when driven by a pattern's OverridePromptKey.
+        // Bare VocabularyPractice (no override) is handled by VocabularyPracticeGenerator, not here.
+        var isPatternDriven = !string.IsNullOrWhiteSpace(context.OverridePromptKey);
         if (context.ActivityType is not ActivityType.WritingScenario
             and not ActivityType.ListeningComprehension
-            and not ActivityType.SpeakingRolePlay)
+            and not ActivityType.SpeakingRolePlay
+            && !(context.ActivityType == ActivityType.VocabularyPractice && isPatternDriven))
             throw new NotSupportedException(
                 $"AI generation for {context.ActivityType} is not yet implemented.");
 
@@ -77,6 +81,10 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         {
             case ActivityType.ListeningComprehension:
                 ValidateListeningActivityJson(cleaned);
+                break;
+            case ActivityType.VocabularyPractice when isPatternDriven:
+                // Pattern-specific shapes vary — only validate parseable JSON.
+                ValidateIsJson(cleaned);
                 break;
             case ActivityType.SpeakingRolePlay:
                 ValidateSpeakingRolePlayJson(cleaned);
@@ -117,6 +125,15 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             evalPromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         return CleanJson(response);
+    }
+
+    private static void ValidateIsJson(string json)
+    {
+        try { JsonDocument.Parse(json); }
+        catch (JsonException ex)
+        {
+            throw new AiResponseValidationException($"AI response is not valid JSON: {ex.Message}");
+        }
     }
 
     private static string CleanJson(string raw)

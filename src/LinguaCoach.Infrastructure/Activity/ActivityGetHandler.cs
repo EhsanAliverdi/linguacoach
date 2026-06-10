@@ -65,6 +65,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         if (profile.OnboardingStatus != Domain.Enums.OnboardingStatus.Complete)
             throw new InvalidOperationException("Activity requires completed onboarding.");
 
+        // Pattern-keyed path: bypass legacy type routing and VocabPracticeGenerator.
+        if (!string.IsNullOrWhiteSpace(query.PreferredPatternKey))
+            return await HandlePatternKeyedAsync(query.PreferredPatternKey, profile, ct);
+
         var activityType = await ResolveActivityTypeAsync(query, profile.Id, ct);
         _logger.LogInformation("Next activity requested UserId={UserId} ActivityType={ActivityType}",
             query.UserId, activityType);
@@ -253,6 +257,89 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         }
 
         return MapToDto(activity, interactionMode);
+    }
+
+    /// <summary>
+    /// Generates an activity for a specific exercise pattern key, bypassing legacy type routing.
+    /// Validates the key, loads the pattern definition, and uses its aiGeneratePromptKey.
+    /// Falls back to a SystemFallback WritingScenario activity if AI generation fails.
+    /// </summary>
+    private async Task<ActivityDto> HandlePatternKeyedAsync(
+        string patternKey,
+        Domain.Entities.StudentProfile profile,
+        CancellationToken ct)
+    {
+        var pattern = await _patternRepo.GetByKeyAsync(patternKey, ct)
+            ?? throw new InvalidOperationException(
+                $"Exercise pattern '{patternKey}' is not recognised. Check the pattern key and try again.");
+
+        _logger.LogInformation(
+            "Pattern-keyed activity requested UserId={UserId} PatternKey={PatternKey} ActivityType={ActivityType}",
+            profile.UserId, patternKey, pattern.ActivityType);
+
+        var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
+        var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
+        var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
+
+        var generationContext = new ActivityGenerationContext(
+            ActivityType: pattern.ActivityType,
+            CefrLevel: profile.CefrLevel ?? "B1",
+            CareerContext: profile.CareerProfile?.Name ?? "General",
+            LanguagePairCode: BuildPairCode(profile.LanguagePair),
+            SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+            TopicHint: topicHint,
+            RecentMistakesSummary: recentMistakes,
+            OverridePromptKey: pattern.AiGeneratePromptKey,
+            ExercisePatternKey: patternKey);
+
+        try
+        {
+            var contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
+            var title = ExtractTitle(contentJson, pattern.ActivityType);
+
+            var activity = new Domain.Entities.LearningActivity(
+                activityType: pattern.ActivityType,
+                source: Domain.Enums.ActivitySource.AiGenerated,
+                title: title,
+                difficulty: profile.CefrLevel ?? "B1",
+                aiGeneratedContentJson: contentJson,
+                learningModuleId: currentModuleId,
+                exercisePatternKey: patternKey);
+
+            _db.LearningActivities.Add(activity);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "Pattern-keyed activity created ActivityId={ActivityId} PatternKey={PatternKey}",
+                activity.Id, patternKey);
+
+            var patternDef = await _patternRepo.GetByKeyAsync(patternKey, ct);
+            return MapToDto(activity, patternDef?.InteractionMode);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Pattern-keyed AI generation failed PatternKey={PatternKey} — using SystemFallback",
+                patternKey);
+        }
+
+        // Fallback: find an existing SystemFallback activity for this pattern or activity type.
+        var fallbacks = await _db.LearningActivities
+            .Where(a => a.ActivityType == pattern.ActivityType
+                     && a.Source == Domain.Enums.ActivitySource.SystemFallback
+                     && a.IsActive)
+            .ToListAsync(ct);
+
+        var fallback = fallbacks.Count > 0
+            ? fallbacks[Random.Shared.Next(fallbacks.Count)]
+            : null;
+
+        if (fallback is null)
+            throw new InvalidOperationException(
+                $"No activity available for pattern '{patternKey}'. Please try again shortly.");
+
+        return MapToDto(fallback, pattern.InteractionMode);
     }
 
     private async Task<ActivityType> ResolveActivityTypeAsync(

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 22:00
+lastUpdated: 2026-06-10
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-10 22:00
+Last updated: 2026-06-10
 
 ---
 
@@ -19,6 +19,40 @@ Last updated: 2026-06-10 22:00
 ---
 
 ## Most recently completed sprint
+
+**Practice Gym Activation / Pattern-Based Free Practice** — complete (2026-06-10)
+
+See full sprint plan: `docs/sprints/2026-06-10-practice-gym-activation-sprint.md`
+
+### What was done
+
+All phases shipped on 2026-06-10:
+
+- **Phase 2 (backend)** — `GET /api/activity/next` extended with `?pattern=<key>`. `GetNextActivityQuery` has `PreferredPatternKey`. `ActivityGetHandler.HandlePatternKeyedAsync` validates pattern key, loads definition, calls AI with `OverridePromptKey`, sets `ExercisePatternKey` on the created `LearningActivity`. `AiActivityGeneratorHandler` now supports `VocabularyPractice` when pattern-driven. Invalid pattern key returns 400.
+- **Phase 3 & 4 (frontend)** — `ActivityService.getNext` accepts `patternKey`. `ActivityLessonComponent` reads `?pattern=` and passes it to the service. Practice Gym activates Phrase Match, Gap Fill, Email, and Workplace Chat as `<a routerLink>` with `pattern=` and `returnTo=/practice`.
+- **Phase 5 (return flow)** — `returnTo=/practice` embedded in all four new card links. Existing `nextActivity()` / `backToDashboard()` logic handles it unchanged.
+- **Phase 6 (progress verification)** — confirmed: `ActivitySubmitHandler` records `ActivityAttempt` for all pattern types; `PatternSkillUpdateService` runs after each submission; no progress on card open.
+- **Phase 7 (tests + docs)** — 8 new backend integration tests; 6 new Playwright tests (4 card activation, Pronunciation still coming soon, Speaking no pronunciation claim). All existing tests still pass.
+
+### Key constraints preserved
+
+- Pronunciation card remains Coming soon
+- No fake pronunciation claims
+- PatternEvaluationRouter not bypassed
+- No new endpoints or routes added
+- No seed data deleted, no real user data deleted
+
+### Final test results
+
+```
+dotnet test:     873 passed (451 unit + 422 integration)
+npm run build:   passed
+Playwright:      167 passed
+```
+
+---
+
+## Previously completed sprint
 
 **Student UX Alignment / Writing-Assumption Cleanup** — complete (2026-06-10)
 
@@ -83,7 +117,7 @@ Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — defer
 ## Deferred
 
 - **Dynamic pattern selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history
-- **Practice Gym expansion** — Workplace Chat, Email, Gap Fill, Phrase Match unlock; dynamic session templates within Practice Gym
+- **Dynamic Practice Gym session templates** — configurable session templates within Practice Gym (e.g. "30-min vocab session")
 - Session reflection AI prompt (`session_reflection`) — requires stable session completion signal
 - IFileStorageService / MinIO — not blocking deployment at current scale
 - Admin lifecycle reset tools
@@ -97,7 +131,7 @@ Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — defer
 ## Next recommended work
 
 1. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
-2. **Practice Gym Expansion** — unlock Workplace Chat, Email, Gap Fill, Phrase Match with real pattern routes; dynamic session template selection.
+2. **Dynamic Practice Gym session templates** — configurable multi-exercise sessions within Practice Gym.
 3. **Session Reflection AI** — now that evaluation outputs are stable, wire `session_reflection` AI prompt.
 
 ---

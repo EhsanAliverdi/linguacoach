@@ -58,45 +58,45 @@
     <p class="sp-eyebrow" style="margin-bottom:12px">By exercise type</p>
     <div class="sp-skill-grid" data-testid="practice-exercises-grid">
 
-      <!-- Workplace Chat — Coming soon -->
-      <div data-testid="practice-card-workplace-chat"
-           class="sp-card"
-           aria-disabled="true"
-           style="display:flex;flex-direction:column;gap:8px;padding:16px;opacity:.62">
+      <!-- Workplace Chat — pattern: teams_chat_simulation -->
+      <a routerLink="/activity" [queryParams]="{pattern:'teams_chat_simulation',returnTo:'/practice'}"
+         data-testid="practice-card-workplace-chat"
+         class="sp-card sp-card-hover"
+         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
         <div style="font-size:20px">💬</div>
         <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Workplace Chat</div>
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted)">Coming soon</div>
-      </div>
+        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Teams-style messages</div>
+      </a>
 
-      <!-- Email — Coming soon -->
-      <div data-testid="practice-card-email"
-           class="sp-card"
-           aria-disabled="true"
-           style="display:flex;flex-direction:column;gap:8px;padding:16px;opacity:.62">
+      <!-- Email — pattern: email_reply -->
+      <a routerLink="/activity" [queryParams]="{pattern:'email_reply',returnTo:'/practice'}"
+         data-testid="practice-card-email"
+         class="sp-card sp-card-hover"
+         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
         <div style="font-size:20px">📧</div>
         <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Email</div>
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted)">Coming soon</div>
-      </div>
+        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace email replies</div>
+      </a>
 
-      <!-- Gap Fill — Coming soon -->
-      <div data-testid="practice-card-gap-fill"
-           class="sp-card"
-           aria-disabled="true"
-           style="display:flex;flex-direction:column;gap:8px;padding:16px;opacity:.62">
+      <!-- Gap Fill — pattern: gap_fill_workplace_phrase -->
+      <a routerLink="/activity" [queryParams]="{pattern:'gap_fill_workplace_phrase',returnTo:'/practice'}"
+         data-testid="practice-card-gap-fill"
+         class="sp-card sp-card-hover"
+         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
         <div style="font-size:20px">📝</div>
         <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Gap Fill</div>
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted)">Coming soon</div>
-      </div>
+        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace phrase practice</div>
+      </a>
 
-      <!-- Phrase Match — Coming soon -->
-      <div data-testid="practice-card-phrase-match"
-           class="sp-card"
-           aria-disabled="true"
-           style="display:flex;flex-direction:column;gap:8px;padding:16px;opacity:.62">
+      <!-- Phrase Match — pattern: phrase_match -->
+      <a routerLink="/activity" [queryParams]="{pattern:'phrase_match',returnTo:'/practice'}"
+         data-testid="practice-card-phrase-match"
+         class="sp-card sp-card-hover"
+         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
         <div style="font-size:20px">🔗</div>
         <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Phrase Match</div>
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted)">Coming soon</div>
-      </div>
+        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Match phrases to meaning</div>
+      </a>
 
       <!-- Pronunciation — Coming soon -->
       <div data-testid="pronunciation-card"

@@ -107,9 +107,10 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
   private loadActivity(): void {
     this.state.set('loading');
     const specificId = this.route.snapshot.queryParamMap.get('activityId');
+    const patternKey = this.route.snapshot.queryParamMap.get('pattern') ?? undefined;
     const obs = specificId
       ? this.activityService.getById(specificId)
-      : this.activityService.getNext(this.preferredActivityType());
+      : this.activityService.getNext(patternKey ? undefined : this.preferredActivityType(), patternKey);
     obs.subscribe({
       next: a => {
         this.activity.set(a);

@@ -54,14 +54,20 @@ public sealed class ActivityController : ControllerBase
     [EnableRateLimiting("WritingAi")]
     public async Task<IActionResult> GetNext(
         [FromQuery] ActivityType? type = null,
+        [FromQuery] string? pattern = null,
         CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
+        // pattern takes precedence over type when both are supplied.
+        var query = !string.IsNullOrWhiteSpace(pattern)
+            ? new GetNextActivityQuery(userId, PreferredPatternKey: pattern.Trim())
+            : new GetNextActivityQuery(userId, PreferredType: type);
+
         try
         {
-            var result = await _getNextActivity.HandleAsync(new GetNextActivityQuery(userId, type), ct);
+            var result = await _getNextActivity.HandleAsync(query, ct);
             return Ok(ToActivityResponse(result));
         }
         catch (InvalidOperationException ex)

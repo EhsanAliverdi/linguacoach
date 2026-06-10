@@ -61,12 +61,30 @@ The student app has five top-level sections:
 All four activity types use the unified `/activity` path.
 `/api/writing/*` endpoints have been removed. See `docs/decisions/activity-flow-migration.md`.
 
-## Test suite baseline (as of student-ux-alignment-writing-assumption-cleanup-sprint — 2026-06-10)
+## Practice Gym — activated pattern cards (as of practice-gym-activation-sprint — 2026-06-10)
+
+`GET /api/activity/next` now accepts an optional `?pattern=<key>` query parameter in addition to `?type=`.
+
+| Practice Gym card | Route | Status |
+|---|---|---|
+| Vocabulary | `/vocabulary` | ✅ functional |
+| Listening | `/activity?type=ListeningComprehension` | ✅ functional |
+| Writing | `/activity?type=WritingScenario` | ✅ functional |
+| Speaking | `/activity?type=SpeakingRolePlay` | ✅ functional (no pronunciation claim) |
+| Phrase Match | `/activity?pattern=phrase_match&returnTo=/practice` | ✅ functional |
+| Gap Fill | `/activity?pattern=gap_fill_workplace_phrase&returnTo=/practice` | ✅ functional |
+| Email | `/activity?pattern=email_reply&returnTo=/practice` | ✅ functional |
+| Workplace Chat | `/activity?pattern=teams_chat_simulation&returnTo=/practice` | ✅ functional |
+| Pronunciation | — | ⏳ Coming soon (no STT/scoring support) |
+
+All pattern-keyed activities go through `PatternEvaluationRouter`. Progress updates only after a submitted attempt. Returning from any pattern card goes back to `/practice` via `returnTo`.
+
+## Test suite baseline (as of practice-gym-activation-sprint — 2026-06-10)
 
 ```
-dotnet test:     865 passed (451 unit + 414 integration)
+dotnet test:     873 passed (451 unit + 422 integration)
 npm run build:   passed
-Playwright:      165 passed
+Playwright:      167 passed
 ```
 
 ## Admin capabilities

@@ -4,7 +4,14 @@ namespace LinguaCoach.Application.Activity;
 
 // ── Get next activity ──────────────────────────────────────────────────────────
 
-public sealed record GetNextActivityQuery(Guid UserId, ActivityType? PreferredType = null);
+public sealed record GetNextActivityQuery(
+    Guid UserId,
+    ActivityType? PreferredType = null,
+    /// <summary>
+    /// When set, bypasses the broad ActivityType routing and generates an activity using the
+    /// specified exercise pattern definition. PreferredType is ignored when this is supplied.
+    /// </summary>
+    string? PreferredPatternKey = null);
 
 public sealed record ActivityDto(
     Guid ActivityId,
