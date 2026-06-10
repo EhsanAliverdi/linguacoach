@@ -92,7 +92,7 @@ public sealed class TtsConfigEndpointTests : IClassFixture<ApiTestFactory>
 
         var response = await ClientWithToken(token).PutAsJsonAsync(
             $"/api/admin/ai-config/{id}",
-            new { voiceName = (string?)null });
+            new { clearVoiceName = true });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

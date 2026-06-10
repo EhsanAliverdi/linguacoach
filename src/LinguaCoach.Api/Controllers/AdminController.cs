@@ -212,6 +212,7 @@ public sealed class AdminController : ControllerBase
                     request.ProviderName,
                     request.ModelName,
                     request.VoiceName,
+                    ClearVoiceName: request.ClearVoiceName,
                     request.FallbackProviderName,
                     request.FallbackModelName,
                     request.FallbackEnabled),
@@ -283,6 +284,7 @@ public sealed record UpdateAiConfigRequest(
     string? ProviderName,
     string? ModelName,
     string? VoiceName = null,
+    bool ClearVoiceName = false,
     string? FallbackProviderName = null,
     string? FallbackModelName = null,
     bool? FallbackEnabled = null);

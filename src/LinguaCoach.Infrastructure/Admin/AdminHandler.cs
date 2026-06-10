@@ -254,8 +254,8 @@ public sealed class AdminHandler :
                 command.ModelName ?? config.ModelName);
         }
 
-        if (command.VoiceName is not null)
-            config.UpdateVoice(command.VoiceName);
+        if (command.VoiceName is not null || command.ClearVoiceName)
+            config.UpdateVoice(command.ClearVoiceName ? null : command.VoiceName);
 
         if (command.FallbackEnabled.HasValue
             || command.FallbackProviderName is not null

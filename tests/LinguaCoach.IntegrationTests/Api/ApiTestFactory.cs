@@ -1,12 +1,14 @@
 using System.Data.Common;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
+using LinguaCoach.Persistence.Seed;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -73,12 +75,14 @@ public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("ConnectionStrings:DefaultConnection", "DataSource=:memory:");
     }
 
-    /// <summary>Ensures DB schema exists. Call once after factory initialises.</summary>
+    /// <summary>Ensures DB schema exists and default seed data is present.</summary>
     public async Task EnsureCreatedAsync()
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
         await db.Database.EnsureCreatedAsync();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApiTestFactory>>();
+        await DefaultAiSeeder.SeedAsync(db, logger);
     }
 
     public async Task<string> CreateAdminAndGetTokenAsync()

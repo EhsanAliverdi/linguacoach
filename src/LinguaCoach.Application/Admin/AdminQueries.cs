@@ -144,6 +144,7 @@ public sealed record UpdateAiProviderConfigCommand(
     string? ProviderName,
     string? ModelName,
     string? VoiceName,
+    bool ClearVoiceName,
     string? FallbackProviderName,
     string? FallbackModelName,
     bool? FallbackEnabled);
