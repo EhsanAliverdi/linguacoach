@@ -223,7 +223,7 @@ export class LessonComponent implements OnInit {
   kindLabel(kind: ExerciseKind): string {
     switch (kind) {
       case 'vocabularyWarmup': return 'Vocabulary warm-up';
-      case 'contextInput': return 'Context reading';
+      case 'contextInput': return 'Context';
       case 'listeningInput': return 'Listening';
       case 'readingInput': return 'Reading';
       case 'writingTask': return 'Writing task';

@@ -40,7 +40,7 @@
     <div style="font-size:32px;margin-bottom:12px">⚠️</div>
     <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Could not load activity</h3>
     <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">{{ errorMessage() }}</p>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to Today</button>
   </div>
 }
 
@@ -52,7 +52,7 @@
     <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">
       Speaking practice requires microphone access. Please use Chrome, Firefox, or Safari on a device with a microphone.
     </p>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to Today</button>
   </div>
 }
 
@@ -65,7 +65,7 @@
       SpeakPath needs microphone access to record your response. Please allow microphone access in your browser settings and try again.
     </p>
     <button (click)="requestMicPermission()" class="sp-button-primary" style="margin-top:16px">Try again</button>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:8px">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:8px">Back to Today</button>
   </div>
 }
 
@@ -242,7 +242,7 @@
     />
 
     <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">
-      Back to dashboard
+      Back to Today
     </button>
   </div>
 }
@@ -276,7 +276,7 @@
     <button (click)="startPractice()" class="sp-button-primary" style="width:100%">
       Start practice
     </button>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to Today</button>
   </div>
 }
 
@@ -318,7 +318,7 @@
       Transcript unlocks after you answer.
     </div>
     <button (click)="startPractice()" class="sp-button-primary" style="width:100%">Answer questions</button>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to Today</button>
   </div>
 }
 
@@ -445,7 +445,7 @@
             style="width:100%">
       @if (state() === 'submitting') { Checking answers… } @else { Check answers }
     </button>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to Today</button>
   </div>
 }
 
@@ -500,7 +500,7 @@
       style="width:100%">
       @if (state() === 'submitting') { Checking understanding... } @else { Check understanding }
     </button>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to dashboard</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">Back to Today</button>
   </div>
 }
 
@@ -573,7 +573,7 @@
     </button>
 
     <button (click)="backToDashboard()" class="sp-button-ghost" style="width:100%">
-      Back to dashboard
+      Back to Today
     </button>
   </div>
 }
@@ -865,7 +865,7 @@
         Next activity
       </button>
       <button (click)="backToDashboard()" class="sp-button-secondary" style="width:100%;margin-top:2px">
-        Back to dashboard
+        Back to Today
       </button>
     </div>
   </div>

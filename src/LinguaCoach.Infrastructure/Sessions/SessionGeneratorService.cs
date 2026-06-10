@@ -236,7 +236,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
             .GroupBy(s => s.PrimarySkill)
             .OrderByDescending(g => g.Count())
             .Select(g => g.Key)
-            .FirstOrDefault() ?? "Writing";
+            .FirstOrDefault() ?? "workplace communication";
 
         var moduleTopic = module?.Title ?? "Professional workplace communication";
         var careerContext = profile.CareerProfile?.Name ?? profile.CareerContext ?? "workplace professional";

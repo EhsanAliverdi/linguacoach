@@ -2,6 +2,7 @@ using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,7 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
     private readonly IAiActivityGenerator _aiGenerator;
     private readonly IExercisePatternRepository _patternRepo;
     private readonly StudentProgressService _progress;
+    private readonly ListeningAudioService _listeningAudio;
     private readonly ILogger<ExercisePrepareHandler> _logger;
 
     public ExercisePrepareHandler(
@@ -34,12 +36,14 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         IAiActivityGenerator aiGenerator,
         IExercisePatternRepository patternRepo,
         StudentProgressService progress,
+        ListeningAudioService listeningAudio,
         ILogger<ExercisePrepareHandler> logger)
     {
         _db = db;
         _aiGenerator = aiGenerator;
         _patternRepo = patternRepo;
         _progress = progress;
+        _listeningAudio = listeningAudio;
         _logger = logger;
     }
 
@@ -135,8 +139,9 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
                 exercise.ExercisePatternKey, kind, activityType);
         }
 
-        // VocabularyPractice: dedicated generator path — create a placeholder for the session flow.
-        if (activityType == ActivityType.VocabularyPractice)
+        // Legacy VocabularyPractice (no pattern key): dedicated vocab-queue generator — placeholder only.
+        // Pattern-keyed VocabularyPractice (phrase_match, gap_fill) must go through AI generation below.
+        if (activityType == ActivityType.VocabularyPractice && patternKey is null)
         {
             var vocabPlaceholder = CreatePlaceholder(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
             _db.LearningActivities.Add(vocabPlaceholder);
@@ -229,6 +234,13 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
 
         _db.LearningActivities.Add(activity);
         await _db.SaveChangesAsync(ct);
+
+        if (activityType == ActivityType.ListeningComprehension)
+        {
+            var langCode = profile.LanguagePair?.TargetLanguage?.Code ?? "en";
+            await _listeningAudio.EnsureAudioAsync(activity, langCode, ct);
+            await _db.SaveChangesAsync(ct);
+        }
 
         exercise.AssignActivity(activity.Id);
         await _db.SaveChangesAsync(ct);
@@ -369,6 +381,24 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
                 suggestedPhrases = Array.Empty<string>(),
                 maxDurationSeconds = 60
             }),
+            // Pattern-keyed VocabularyPractice (phrase_match, gap_fill): return a minimal pairs/gaps fallback.
+            ActivityType.VocabularyPractice when patternKey is "phrase_match" or "collocation_match" =>
+                System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    instructions = "Match the workplace phrases with their meanings.",
+                    pairs = new[]
+                    {
+                        new { id = "0", phrase = "I would like to follow up", meaning = "check on progress" },
+                        new { id = "1", phrase = "Please let me know", meaning = "ask for information" },
+                    }
+                }),
+            ActivityType.VocabularyPractice =>
+                System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    instructions = "Fill in the gaps with the correct workplace phrase.",
+                    sentence = exercise.Instructions,
+                    gaps = new[] { new { id = "g1", answer = "professional", displayIndex = 1 } }
+                }),
             _ => System.Text.Json.JsonSerializer.Serialize(new
             {
                 activityType = activityType.ToString(),
