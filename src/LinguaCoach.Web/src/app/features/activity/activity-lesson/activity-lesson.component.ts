@@ -104,7 +104,7 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     this.recordingDurationSeconds = null;
   }
 
-  private loadActivity(): void {
+  loadActivity(): void {
     this.state.set('loading');
     const specificId = this.route.snapshot.queryParamMap.get('activityId');
     const patternKey = this.route.snapshot.queryParamMap.get('pattern') ?? undefined;
@@ -121,7 +121,10 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
         }
       },
       error: (err: HttpErrorResponse) => {
-        this.errorMessage.set(this.extractError(err, 'Could not load activity. Please try again.'));
+        const msg = err.status === 503
+          ? 'The AI service is not available. Please try again shortly.'
+          : this.extractError(err, 'Could not load activity. Please try again.');
+        this.errorMessage.set(msg);
         this.state.set('error');
       },
     });
@@ -454,11 +457,21 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const submittedContent = payload.kind === 'freeText'
-      ? payload.text
-      : payload.kind === 'chatReply'
-        ? payload.replyText
-        : JSON.stringify(payload);
+    let submittedContent: string;
+    if (payload.kind === 'freeText') {
+      submittedContent = payload.text;
+    } else if (payload.kind === 'chatReply') {
+      submittedContent = payload.replyText;
+    } else if (payload.kind === 'matchingPairs') {
+      // Convert to backend's expected { pairs: { phraseKey: meaningKey } } format
+      const pairs: Record<string, string> = {};
+      for (const p of payload.submittedPairs) {
+        pairs[p.leftId] = p.rightId;
+      }
+      submittedContent = JSON.stringify({ pairs });
+    } else {
+      submittedContent = JSON.stringify(payload);
+    }
 
     this.activityService.submitAttempt(a.activityId, submittedContent).subscribe({
       next: handleFeedback,

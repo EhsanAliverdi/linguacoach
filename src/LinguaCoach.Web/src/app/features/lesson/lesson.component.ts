@@ -27,6 +27,8 @@ export class LessonComponent implements OnInit {
 
   /** Tracks which exercise is currently being prepared (calling /prepare endpoint). */
   preparingExerciseId = signal<string | null>(null);
+  /** Per-exercise prepare errors (exerciseId → message). 503 from /prepare is shown inline. */
+  prepareErrors = signal<Record<string, string>>({});
 
   /**
    * Local activityId overrides per exercise — populated when /prepare returns in this
@@ -114,6 +116,7 @@ export class LessonComponent implements OnInit {
     if (this.preparingExerciseId() === exercise.exerciseId) return;
 
     this.preparingExerciseId.set(exercise.exerciseId);
+    this.prepareErrors.update(e => { const n = { ...e }; delete n[exercise.exerciseId]; return n; });
     this.sessionService.prepareExercise(this.sessionId, exercise.exerciseId).subscribe({
       next: result => {
         this.preparingExerciseId.set(null);
@@ -122,8 +125,12 @@ export class LessonComponent implements OnInit {
           [exercise.exerciseId]: result.activityId,
         }));
       },
-      error: () => {
+      error: (err) => {
         this.preparingExerciseId.set(null);
+        const msg = err.status === 503
+          ? 'AI service is not available. Please try again shortly.'
+          : (err.error?.error ?? 'Could not prepare this activity. Please try again.');
+        this.prepareErrors.update(e => ({ ...e, [exercise.exerciseId]: msg }));
       },
     });
   }

@@ -147,6 +147,7 @@ public static class DependencyInjection
         services.AddScoped<SessionQueryHandler>();
         services.AddScoped<IGetTodaysSessionHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
         services.AddScoped<IGetSessionHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
+        services.AddScoped<IGetSessionHistoryHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
         services.AddScoped<SessionLifecycleHandler>();
         services.AddScoped<IStartSessionHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
         services.AddScoped<ICompleteSessionHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());

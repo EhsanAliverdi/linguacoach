@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -40,7 +41,18 @@ public sealed class ListeningAudioService
             return;
         }
 
-        var (tts, voice) = await _ttsResolver.ResolveAsync("tts.listening", ct);
+        ITextToSpeechService tts;
+        string? voice;
+        try
+        {
+            (tts, voice) = await _ttsResolver.ResolveAsync("tts.listening", ct);
+        }
+        catch (AiServiceUnavailableException)
+        {
+            content.Audio = ListeningAudioMetadata.Unavailable("Audio service is not configured.");
+            activity.UpdateContent(JsonSerializer.Serialize(content, JsonOptions()));
+            return;
+        }
 
         var result = await tts.GenerateSpeechAsync(
             content.AudioScript,
@@ -164,8 +176,6 @@ public sealed class ListeningAudioMetadata
     public static ListeningAudioMetadata Unavailable(string reason) => new()
     {
         AudioAvailable = false,
-        UnavailableMessage = "Audio is temporarily unavailable. You can still complete this text-based listening practice.",
-        Provider = "Fake",
-        ContentType = "audio/wav"
+        UnavailableMessage = "Audio is not available. You can still complete this text-based listening practice.",
     };
 }

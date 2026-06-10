@@ -252,6 +252,25 @@ public sealed class AdminController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
         catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
     }
+
+    // ── AI config categories (category-level provider config) ─────────────────
+
+    [HttpGet("ai/categories")]
+    public async Task<IActionResult> ListAiCategories(CancellationToken ct)
+        => Ok(await _aiConfigHandler.ListCategoriesAsync(ct));
+
+    [HttpPatch("ai/categories/{categoryKey}")]
+    public async Task<IActionResult> UpdateAiCategory(string categoryKey, [FromBody] UpdateAiCategoryRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.UpdateCategoryAsync(
+                new UpdateAiConfigCategoryCommand(categoryKey, request.ProviderName, request.ModelName, request.VoiceName), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
 }
 
 public sealed record CreateStudentRequest(
@@ -289,3 +308,4 @@ public sealed record UpdateAiConfigRequest(
     string? FallbackModelName = null,
     bool? FallbackEnabled = null);
 public sealed record SetProviderApiKeyRequest(string? ApiKey);
+public sealed record UpdateAiCategoryRequest(string? ProviderName, string? ModelName, string? VoiceName = null);

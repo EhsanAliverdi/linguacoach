@@ -198,19 +198,26 @@
                   <span style="font-size:12.5px;color:var(--sp-muted);font-weight:600">Preparing activity…</span>
                 </div>
 
-              <!-- Fallback: activity prepare failed or not yet triggered -->
+              <!-- Prepare error (incl. 503 Service Unavailable) -->
+              } @else if (prepareErrors()[exercise.exerciseId]) {
+                <div style="background:var(--sp-warn-soft);border:1px solid #FDE68A;border-radius:var(--sp-r-sm);padding:10px 14px;max-width:480px">
+                  <p style="font-size:12.5px;font-weight:700;color:#92400E;margin:0 0 8px">{{ prepareErrors()[exercise.exerciseId] }}</p>
+                  <button
+                    (click)="$event.stopPropagation(); prepareIfNeeded(exercise)"
+                    class="sp-button-ghost"
+                    style="font-size:12px;min-height:34px;padding:6px 14px">
+                    Try again
+                  </button>
+                </div>
+
+              <!-- Fallback: activity not yet triggered (retry button) -->
               } @else {
                 <button
-                  data-testid="complete-exercise-btn"
-                  (click)="$event.stopPropagation(); completeExercise(exercise)"
-                  [disabled]="completingExerciseId() === exercise.exerciseId"
-                  class="sp-button-primary"
+                  data-testid="retry-prepare-btn"
+                  (click)="$event.stopPropagation(); prepareIfNeeded(exercise)"
+                  class="sp-button-ghost"
                   style="min-height:42px;font-size:13.5px">
-                  @if (completingExerciseId() === exercise.exerciseId) {
-                    Saving…
-                  } @else {
-                    Mark step complete
-                  }
+                  Load activity
                 </button>
               }
 

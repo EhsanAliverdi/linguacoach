@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
   CareerProfileItem, CurriculumWordItem, AiProviderConfigItem,
-  AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest
+  AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
+  AiConfigCategoryItem, UpdateAiCategoryRequest
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -84,5 +85,13 @@ export class AdminApiService {
   }
   testProvider(provider: string): Observable<AiProviderCatalogItem> {
     return this.http.post<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/test`, null);
+  }
+
+  // AI config categories
+  listAiCategories(): Observable<AiConfigCategoryItem[]> {
+    return this.http.get<AiConfigCategoryItem[]>(`${this.api}/ai/categories`);
+  }
+  updateAiCategory(categoryKey: string, data: UpdateAiCategoryRequest): Observable<AiConfigCategoryItem> {
+    return this.http.patch<AiConfigCategoryItem>(`${this.api}/ai/categories/${categoryKey}`, data);
   }
 }

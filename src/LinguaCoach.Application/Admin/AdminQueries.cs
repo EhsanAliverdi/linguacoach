@@ -160,4 +160,22 @@ public interface IAdminAiConfigHandler
     Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default);
+    Task<IReadOnlyList<AiConfigCategoryItem>> ListCategoriesAsync(CancellationToken ct = default);
+    Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default);
 }
+
+// ── AI config categories ──────────────────────────────────────────────────────
+
+public sealed record AiConfigCategoryItem(
+    Guid Id,
+    string CategoryKey,
+    string DisplayName,
+    string? ProviderName,
+    string? ModelName,
+    string? VoiceName);
+
+public sealed record UpdateAiConfigCategoryCommand(
+    string CategoryKey,
+    string? ProviderName,
+    string? ModelName,
+    string? VoiceName);

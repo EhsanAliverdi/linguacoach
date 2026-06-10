@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -69,6 +70,10 @@ public sealed class ActivityController : ControllerBase
         {
             var result = await _getNextActivity.HandleAsync(query, ct);
             return Ok(ToActivityResponse(result));
+        }
+        catch (AiServiceUnavailableException ex)
+        {
+            return StatusCode(503, new { error = "The AI service is not available. Please try again shortly.", retryable = true, featureKey = ex.FeatureKey });
         }
         catch (InvalidOperationException ex)
         {

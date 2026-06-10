@@ -272,6 +272,30 @@ public sealed class AdminHandler :
         return ToAiProviderConfigItem(config);
     }
 
+    // ── AI config categories ──────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<AiConfigCategoryItem>> ListCategoriesAsync(CancellationToken ct = default)
+    {
+        var categories = await _db.AiConfigCategories.OrderBy(c => c.CategoryKey).ToListAsync(ct);
+        return categories.Select(ToCategoryItem).ToList();
+    }
+
+    public async Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default)
+    {
+        var category = await _db.AiConfigCategories
+            .FirstOrDefaultAsync(c => c.CategoryKey == command.CategoryKey, ct)
+            ?? throw new InvalidOperationException($"AI config category '{command.CategoryKey}' not found.");
+
+        category.Update(command.ProviderName, command.ModelName);
+        category.UpdateVoice(command.VoiceName);
+
+        await _db.SaveChangesAsync(ct);
+        return ToCategoryItem(category);
+    }
+
+    private static AiConfigCategoryItem ToCategoryItem(AiConfigCategory c)
+        => new(c.Id, c.CategoryKey, c.DisplayName, c.ProviderName, c.ModelName, c.VoiceName);
+
     private async Task EnsureActiveFeatureConfigsAsync(CancellationToken ct)
     {
         var activePromptKeys = await _db.AiPrompts

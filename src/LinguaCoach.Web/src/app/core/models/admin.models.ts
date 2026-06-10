@@ -84,6 +84,21 @@ export interface AiProviderCatalogItem {
   modelTests: ModelTestStatus[];
 }
 
+export interface AiConfigCategoryItem {
+  id: string;
+  categoryKey: string;
+  displayName: string;
+  providerName: string | null;
+  modelName: string | null;
+  voiceName: string | null;
+}
+
+export interface UpdateAiCategoryRequest {
+  providerName?: string | null;
+  modelName?: string | null;
+  voiceName?: string | null;
+}
+
 export interface AdminStudentLearningMemory {
   journeySummary: string | null;
   strongSkills: string[];

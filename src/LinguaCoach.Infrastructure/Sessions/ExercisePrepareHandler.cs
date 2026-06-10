@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -139,21 +140,6 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
                 exercise.ExercisePatternKey, kind, activityType);
         }
 
-        // Legacy VocabularyPractice (no pattern key): dedicated vocab-queue generator — placeholder only.
-        // Pattern-keyed VocabularyPractice (phrase_match, gap_fill) must go through AI generation below.
-        if (activityType == ActivityType.VocabularyPractice && patternKey is null)
-        {
-            var vocabPlaceholder = CreatePlaceholder(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
-            _db.LearningActivities.Add(vocabPlaceholder);
-            await _db.SaveChangesAsync(ct);
-            exercise.AssignActivity(vocabPlaceholder.Id);
-            await _db.SaveChangesAsync(ct);
-            return new PrepareExerciseResult(
-                ActivityId: vocabPlaceholder.Id,
-                ActivityType: activityType,
-                IsReview: false);
-        }
-
         // Eager-load profile relations needed for generation context.
         await _db.Entry(profile)
             .Reference(p => p.LanguagePair!)
@@ -186,46 +172,34 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             activityType, exercise.Id, overridePromptKey ?? "(legacy)");
 
         string contentJson;
-        ActivitySource source;
         try
         {
             contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
-            source = ActivitySource.AiGenerated;
         }
-        catch (NotSupportedException)
+        catch (NotSupportedException ex)
         {
-            var notSupported = CreatePlaceholder(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
-            _db.LearningActivities.Add(notSupported);
-            await _db.SaveChangesAsync(ct);
-            exercise.AssignActivity(notSupported.Id);
-            await _db.SaveChangesAsync(ct);
-            return new PrepareExerciseResult(
-                ActivityId: notSupported.Id,
-                ActivityType: activityType,
-                IsReview: false);
+            _logger.LogWarning(ex,
+                "AI generation not supported for ActivityType={ActivityType} PatternKey={PatternKey}",
+                activityType, patternKey ?? "(none)");
+            throw new AiServiceUnavailableException(patternKey ?? activityType.ToString(), ex);
+        }
+        catch (AiServiceUnavailableException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "AI generation failed for ExerciseId={ExerciseId} PatternKey={PatternKey} — using SystemFallback",
-                exercise.Id, patternKey ?? "(legacy)");
-
-            var fallback = CreatePatternFallback(activityType, session, exercise, profile.CefrLevel ?? "B1", patternKey);
-            _db.LearningActivities.Add(fallback);
-            await _db.SaveChangesAsync(ct);
-            exercise.AssignActivity(fallback.Id);
-            await _db.SaveChangesAsync(ct);
-            return new PrepareExerciseResult(
-                ActivityId: fallback.Id,
-                ActivityType: activityType,
-                IsReview: false);
+                "AI generation failed for ExerciseId={ExerciseId} PatternKey={PatternKey}",
+                exercise.Id, patternKey ?? "(none)");
+            throw new AiServiceUnavailableException(patternKey ?? activityType.ToString(), ex);
         }
 
         var title = ExtractTitle(contentJson, activityType);
 
         var activity = new LearningActivity(
             activityType: activityType,
-            source: source,
+            source: ActivitySource.AiGenerated,
             title: title,
             difficulty: profile.CefrLevel ?? "B1",
             aiGeneratedContentJson: contentJson,
@@ -312,111 +286,6 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         _ => ExerciseKind.ContextInput
     };
 
-    private static LearningActivity CreatePlaceholder(
-        ActivityType activityType,
-        Domain.Entities.LearningSession session,
-        SessionExercise exercise,
-        string cefrLevel,
-        string? patternKey = null)
-    {
-        var contentJson = System.Text.Json.JsonSerializer.Serialize(new
-        {
-            activityType = activityType.ToString(),
-            title = $"{activityType}: {session.Title}",
-            instructions = exercise.Instructions,
-        });
-
-        return new LearningActivity(
-            activityType: activityType,
-            source: ActivitySource.SystemFallback,
-            title: $"{activityType}: {session.Title}",
-            difficulty: cefrLevel,
-            aiGeneratedContentJson: contentJson,
-            learningModuleId: session.LearningModuleId,
-            exercisePatternKey: patternKey);
-    }
-
-    private static LearningActivity CreatePatternFallback(
-        ActivityType activityType,
-        Domain.Entities.LearningSession session,
-        SessionExercise exercise,
-        string cefrLevel,
-        string? patternKey)
-    {
-        // Build a minimal valid JSON shape matching the ActivityType so the frontend can render.
-        var contentJson = activityType switch
-        {
-            ActivityType.WritingScenario => System.Text.Json.JsonSerializer.Serialize(new
-            {
-                title = $"Writing task: {session.Title}",
-                situation = exercise.Instructions,
-                learningGoal = "Complete this professional writing task.",
-                targetPhrases = Array.Empty<string>(),
-                targetVocabulary = Array.Empty<string>(),
-                exampleText = "",
-                commonMistakeToAvoid = "Keep your response professional and concise.",
-                instructionInSourceLanguage = ""
-            }),
-            ActivityType.ListeningComprehension => System.Text.Json.JsonSerializer.Serialize(new
-            {
-                title = $"Listening task: {session.Title}",
-                scenario = exercise.Instructions,
-                instructions = exercise.Instructions,
-                speakerRole = "Colleague",
-                listenerRole = "Professional",
-                audioScript = "Please try again later — audio content is temporarily unavailable.",
-                transcriptAvailableAfterSubmit = true,
-                questions = new[] { new { id = "q1", question = "What is the main topic?", type = "short_answer" } },
-                responseTask = new { prompt = "Summarise what you understood.", expectedFocus = "" }
-            }),
-            ActivityType.SpeakingRolePlay => System.Text.Json.JsonSerializer.Serialize(new
-            {
-                title = $"Speaking task: {session.Title}",
-                scenario = exercise.Instructions,
-                studentRole = "Professional",
-                listenerRole = "Colleague",
-                speakingGoal = "Respond clearly and professionally.",
-                prompt = exercise.Instructions,
-                expectedPoints = Array.Empty<string>(),
-                suggestedPhrases = Array.Empty<string>(),
-                maxDurationSeconds = 60
-            }),
-            // Pattern-keyed VocabularyPractice (phrase_match, gap_fill): return a minimal pairs/gaps fallback.
-            ActivityType.VocabularyPractice when patternKey is "phrase_match" or "collocation_match" =>
-                System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    instructions = "Match the workplace phrases with their meanings.",
-                    pairs = new[]
-                    {
-                        new { id = "0", phrase = "I would like to follow up", meaning = "check on progress" },
-                        new { id = "1", phrase = "Please let me know", meaning = "ask for information" },
-                    }
-                }),
-            ActivityType.VocabularyPractice =>
-                System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    instructions = "Fill in the gaps with the correct workplace phrase.",
-                    sentence = exercise.Instructions,
-                    gaps = new[] { new { id = "g1", answer = "professional", displayIndex = 1 } }
-                }),
-            _ => System.Text.Json.JsonSerializer.Serialize(new
-            {
-                activityType = activityType.ToString(),
-                title = $"{activityType}: {session.Title}",
-                instructions = exercise.Instructions,
-            })
-        };
-
-        return new LearningActivity(
-            activityType: activityType,
-            source: ActivitySource.SystemFallback,
-            title: $"{activityType}: {session.Title}",
-            difficulty: cefrLevel,
-            aiGeneratedContentJson: contentJson,
-            learningModuleId: session.LearningModuleId,
-            exercisePatternKey: patternKey);
-    }
-
     private static LearningActivity CreateReviewPlaceholder(
         Domain.Entities.LearningSession session,
         SessionExercise exercise,
@@ -437,7 +306,7 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
 
         return new LearningActivity(
             activityType: ActivityType.WritingScenario,
-            source: ActivitySource.SystemFallback,
+            source: ActivitySource.SystemGenerated,
             title: $"Lesson reflection: {session.Title}",
             difficulty: cefrLevel,
             aiGeneratedContentJson: contentJson,

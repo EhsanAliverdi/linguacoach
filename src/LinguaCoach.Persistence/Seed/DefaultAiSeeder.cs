@@ -1164,6 +1164,16 @@ Rules:
             ActivityEvaluateLessonReflectionKey, ActivityEvaluateLessonReflectionContent,
             maxInputTokens: 800, maxOutputTokens: 600, ct);
 
+        // AI Config Categories — category-level provider routing.
+        // llm.default acts as the catch-all for all LLM features.
+        // TTS categories are independent — must be explicitly configured by admin.
+        await SeedAiConfigCategoryAsync(db, logger, "llm.default",        "Default LLM",              "fake", "fake",  null, ct);
+        await SeedAiConfigCategoryAsync(db, logger, "llm.generation",     "Content Generation",       null,   null,    null, ct);
+        await SeedAiConfigCategoryAsync(db, logger, "llm.evaluation",     "Evaluation & Feedback",    null,   null,    null, ct);
+        await SeedAiConfigCategoryAsync(db, logger, "llm.memory",         "Memory & Learning Path",   null,   null,    null, ct);
+        await SeedAiConfigCategoryAsync(db, logger, "tts.listening",      "Listening TTS",            "fake", "fake",  null, ct);
+        await SeedAiConfigCategoryAsync(db, logger, "tts.placement",      "Placement TTS",            "fake", "fake",  null, ct);
+
         await db.SaveChangesAsync(ct);
     }
 
@@ -1225,5 +1235,24 @@ Rules:
 
         db.AiProviderConfigs.Add(new AiProviderConfig(featureKey, "fake", "fake", "fake"));
         logger.LogInformation("Seeded TTS provider config for {FeatureKey}: fake/fake/fake.", featureKey);
+    }
+
+    private static async Task SeedAiConfigCategoryAsync(
+        LinguaCoachDbContext db,
+        ILogger logger,
+        string categoryKey,
+        string displayName,
+        string? providerName,
+        string? modelName,
+        string? voiceName,
+        CancellationToken ct)
+    {
+        var exists = await db.AiConfigCategories.AnyAsync(c => c.CategoryKey == categoryKey, ct);
+        if (exists) return;
+
+        db.AiConfigCategories.Add(new AiConfigCategory(categoryKey, displayName, providerName, modelName, voiceName));
+        logger.LogInformation(
+            "Seeded AI config category {CategoryKey} ({DisplayName}): provider={Provider} model={Model}.",
+            categoryKey, displayName, providerName ?? "(inherit)", modelName ?? "(inherit)");
     }
 }

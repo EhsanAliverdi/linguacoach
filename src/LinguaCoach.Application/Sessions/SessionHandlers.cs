@@ -69,6 +69,40 @@ public interface ICompleteExerciseHandler
     Task<CompleteExerciseResult> HandleAsync(CompleteExerciseCommand command, CancellationToken ct = default);
 }
 
+// ── Session history ────────────────────────────────────────────────────────────
+
+public sealed record GetSessionHistoryQuery(Guid UserId, int Page = 1, int PageSize = 20);
+
+public sealed record SessionHistoryExerciseResult(
+    Guid ExerciseId,
+    int Order,
+    string ExercisePatternKey,
+    string PrimarySkill,
+    ExerciseStatus Status,
+    double? Score,
+    DateTime? CompletedAtUtc);
+
+public sealed record SessionHistoryItem(
+    Guid SessionId,
+    string Title,
+    string Topic,
+    string FocusSkill,
+    SessionStatus Status,
+    DateTime? StartedAtUtc,
+    DateTime? CompletedAtUtc,
+    IReadOnlyList<SessionHistoryExerciseResult> Exercises);
+
+public sealed record SessionHistoryResult(
+    IReadOnlyList<SessionHistoryItem> Sessions,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public interface IGetSessionHistoryHandler
+{
+    Task<SessionHistoryResult> HandleAsync(GetSessionHistoryQuery query, CancellationToken ct = default);
+}
+
 // ── Prepare exercise (generate / attach LearningActivity) ─────────────────────
 
 public sealed record PrepareExerciseCommand(Guid UserId, Guid SessionId, Guid ExerciseId);

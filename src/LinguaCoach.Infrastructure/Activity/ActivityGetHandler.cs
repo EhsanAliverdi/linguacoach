@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Enums;
@@ -12,9 +13,7 @@ namespace LinguaCoach.Infrastructure.Activity;
 
 /// <summary>
 /// Returns the next activity for a student.
-/// Primary path: AI generates a fresh activity.
-/// Fallback path: returns a SystemFallback activity from DB if AI fails or is unavailable.
-/// Never throws a 500 — fallback is always available if seed data is present.
+/// If AI generation fails or is not configured, throws AiServiceUnavailableException (→ 503).
 /// </summary>
 public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityByIdHandler
 {
@@ -101,14 +100,14 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             try
             {
                 var (currentModuleIdVp, _) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
-                var (contentJson, title) = await _vocabGenerator.GenerateContentAsync(profile.Id, ct);
+                var (vocabContentJson, vocabTitle) = await _vocabGenerator.GenerateContentAsync(profile.Id, ct);
 
                 var vocabActivity = new Domain.Entities.LearningActivity(
                     activityType: ActivityType.VocabularyPractice,
                     source: ActivitySource.AiGenerated,
-                    title: title,
+                    title: vocabTitle,
                     difficulty: profile.CefrLevel ?? "B1",
-                    aiGeneratedContentJson: contentJson,
+                    aiGeneratedContentJson: vocabContentJson,
                     learningModuleId: currentModuleIdVp);
 
                 _db.LearningActivities.Add(vocabActivity);
@@ -135,102 +134,59 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         }
 
         // Primary path — AI generation.
+        var context = new ActivityGenerationContext(
+            ActivityType: activityType,
+            CefrLevel: profile.CefrLevel ?? "B1",
+            CareerContext: profile.CareerProfile?.Name ?? "General",
+            LanguagePairCode: BuildPairCode(profile.LanguagePair),
+            SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+            TopicHint: topicHint,
+            RecentMistakesSummary: recentMistakes);
+
+        _logger.LogInformation("AI activity generation started ActivityType={ActivityType} CefrLevel={CefrLevel}",
+            activityType, context.CefrLevel);
+
+        string contentJson;
         try
         {
-            var context = new ActivityGenerationContext(
-                ActivityType: activityType,
-                CefrLevel: profile.CefrLevel ?? "B1",
-                CareerContext: profile.CareerProfile?.Name ?? "General",
-                LanguagePairCode: BuildPairCode(profile.LanguagePair),
-                SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
-                TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
-                TopicHint: topicHint,
-                RecentMistakesSummary: recentMistakes);
-
-            _logger.LogInformation("AI activity generation started ActivityType={ActivityType} CefrLevel={CefrLevel}",
-                activityType, context.CefrLevel);
-            var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
-            _logger.LogInformation("AI activity generation succeeded ActivityType={ActivityType}", activityType);
-
-            var cefrLevel = profile.CefrLevel ?? "B1";
-            var title = ExtractTitle(contentJson, activityType);
-
-            var activity = new Domain.Entities.LearningActivity(
-                activityType: activityType,
-                source: ActivitySource.AiGenerated,
-                title: title,
-                difficulty: cefrLevel,
-                aiGeneratedContentJson: contentJson,
-                learningModuleId: currentModuleId);
-
-            _db.LearningActivities.Add(activity);
-            await _db.SaveChangesAsync(ct);
-
-            if (activityType == ActivityType.ListeningComprehension)
-            {
-                await _listeningAudio.EnsureAudioAsync(activity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
-                await _db.SaveChangesAsync(ct);
-            }
-
-            return MapToDto(activity, null);
+            contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
+        }
+        catch (AiServiceUnavailableException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "AI activity generation failed UserId={UserId} ActivityType={ActivityType} ExceptionType={ExType} — using SystemFallback",
-                query.UserId, activityType, ex.GetType().Name);
+                "AI activity generation failed UserId={UserId} ActivityType={ActivityType}",
+                query.UserId, activityType);
+            throw new AiServiceUnavailableException(activityType.ToString(), ex);
         }
+
+        _logger.LogInformation("AI activity generation succeeded ActivityType={ActivityType}", activityType);
+
+        var cefrLevel = profile.CefrLevel ?? "B1";
+        var title = ExtractTitle(contentJson, activityType);
+
+        var activity = new Domain.Entities.LearningActivity(
+            activityType: activityType,
+            source: ActivitySource.AiGenerated,
+            title: title,
+            difficulty: cefrLevel,
+            aiGeneratedContentJson: contentJson,
+            learningModuleId: currentModuleId);
+
+        _db.LearningActivities.Add(activity);
+        await _db.SaveChangesAsync(ct);
 
         if (activityType == ActivityType.ListeningComprehension)
         {
-            var fallbackJson = BuildListeningFallbackJson(profile.CefrLevel ?? "B1", profile.CareerProfile?.Name ?? "General");
-            var fallbackActivity = new Domain.Entities.LearningActivity(
-                activityType: ActivityType.ListeningComprehension,
-                source: ActivitySource.SystemFallback,
-                title: ExtractTitle(fallbackJson, activityType),
-                difficulty: profile.CefrLevel ?? "B1",
-                aiGeneratedContentJson: fallbackJson,
-                learningModuleId: currentModuleId);
-
-            _db.LearningActivities.Add(fallbackActivity);
+            await _listeningAudio.EnsureAudioAsync(activity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
             await _db.SaveChangesAsync(ct);
-            await _listeningAudio.EnsureAudioAsync(fallbackActivity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
-            await _db.SaveChangesAsync(ct);
-            return MapToDto(fallbackActivity, null);
         }
 
-        if (activityType == ActivityType.SpeakingRolePlay)
-        {
-            var fallbackJson = BuildSpeakingFallbackJson(profile.CefrLevel ?? "B1", profile.CareerProfile?.Name ?? "General");
-            var fallbackActivity = new Domain.Entities.LearningActivity(
-                activityType: ActivityType.SpeakingRolePlay,
-                source: ActivitySource.SystemFallback,
-                title: ExtractTitle(fallbackJson, activityType),
-                difficulty: profile.CefrLevel ?? "B1",
-                aiGeneratedContentJson: fallbackJson,
-                learningModuleId: currentModuleId);
-
-            _db.LearningActivities.Add(fallbackActivity);
-            await _db.SaveChangesAsync(ct);
-            return MapToDto(fallbackActivity, null);
-        }
-
-        // Fallback path — return a seeded SystemFallback activity.
-        var fallbacks = await _db.LearningActivities
-            .Where(a => a.ActivityType == activityType
-                     && a.Source == ActivitySource.SystemFallback
-                     && a.IsActive)
-            .ToListAsync(ct);
-
-        var fallback = fallbacks.Count > 0
-            ? fallbacks[Random.Shared.Next(fallbacks.Count)]
-            : null;
-
-        if (fallback is null)
-            throw new InvalidOperationException(
-                $"No SystemFallback activity found for type {activityType}. Ensure seed data has run.");
-
-        return MapToDto(fallback, null);
+        return MapToDto(activity, null);
     }
 
     // ── IGetActivityByIdHandler ────────────────────────────────────────────────
@@ -261,8 +217,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
     /// <summary>
     /// Generates an activity for a specific exercise pattern key, bypassing legacy type routing.
-    /// Validates the key, loads the pattern definition, and uses its aiGeneratePromptKey.
-    /// Falls back to a SystemFallback WritingScenario activity if AI generation fails.
+    /// Throws AiServiceUnavailableException if AI generation fails or is not configured.
     /// </summary>
     private async Task<ActivityDto> HandlePatternKeyedAsync(
         string patternKey,
@@ -293,53 +248,43 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             OverridePromptKey: pattern.AiGeneratePromptKey,
             ExercisePatternKey: patternKey);
 
+        string contentJson;
         try
         {
-            var contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
-            var title = ExtractTitle(contentJson, pattern.ActivityType);
-
-            var activity = new Domain.Entities.LearningActivity(
-                activityType: pattern.ActivityType,
-                source: Domain.Enums.ActivitySource.AiGenerated,
-                title: title,
-                difficulty: profile.CefrLevel ?? "B1",
-                aiGeneratedContentJson: contentJson,
-                learningModuleId: currentModuleId,
-                exercisePatternKey: patternKey);
-
-            _db.LearningActivities.Add(activity);
-            await _db.SaveChangesAsync(ct);
-
-            _logger.LogInformation(
-                "Pattern-keyed activity created ActivityId={ActivityId} PatternKey={PatternKey}",
-                activity.Id, patternKey);
-
-            var patternDef = await _patternRepo.GetByKeyAsync(patternKey, ct);
-            return MapToDto(activity, patternDef?.InteractionMode);
+            contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
+        }
+        catch (AiServiceUnavailableException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Pattern-keyed AI generation failed PatternKey={PatternKey} — using SystemFallback",
+                "Pattern-keyed AI generation failed PatternKey={PatternKey}",
                 patternKey);
+            throw new AiServiceUnavailableException(patternKey, ex);
         }
 
-        // Fallback: find an existing SystemFallback activity for this pattern or activity type.
-        var fallbacks = await _db.LearningActivities
-            .Where(a => a.ActivityType == pattern.ActivityType
-                     && a.Source == Domain.Enums.ActivitySource.SystemFallback
-                     && a.IsActive)
-            .ToListAsync(ct);
+        var title = ExtractTitle(contentJson, pattern.ActivityType);
 
-        var fallback = fallbacks.Count > 0
-            ? fallbacks[Random.Shared.Next(fallbacks.Count)]
-            : null;
+        var activity = new Domain.Entities.LearningActivity(
+            activityType: pattern.ActivityType,
+            source: Domain.Enums.ActivitySource.AiGenerated,
+            title: title,
+            difficulty: profile.CefrLevel ?? "B1",
+            aiGeneratedContentJson: contentJson,
+            learningModuleId: currentModuleId,
+            exercisePatternKey: patternKey);
 
-        if (fallback is null)
-            throw new InvalidOperationException(
-                $"No activity available for pattern '{patternKey}'. Please try again shortly.");
+        _db.LearningActivities.Add(activity);
+        await _db.SaveChangesAsync(ct);
 
-        return MapToDto(fallback, pattern.InteractionMode);
+        _logger.LogInformation(
+            "Pattern-keyed activity created ActivityId={ActivityId} PatternKey={PatternKey}",
+            activity.Id, patternKey);
+
+        var patternDef = await _patternRepo.GetByKeyAsync(patternKey, ct);
+        return MapToDto(activity, patternDef?.InteractionMode);
     }
 
     private async Task<ActivityType> ResolveActivityTypeAsync(
@@ -616,31 +561,6 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         return $"AI {type} activity";
     }
 
-    private static string BuildListeningFallbackJson(string cefrLevel, string careerContext)
-    {
-        return JsonSerializer.Serialize(new
-        {
-            activityType = "ListeningComprehension",
-            title = "Understand a project update",
-            scenario = $"Imagine you listened to a short workplace message for a {careerContext} task.",
-            instructions = "Read the situation first. Answer the questions as if you listened to the message. Transcript unlocks after you answer.",
-            speakerRole = "Manager",
-            listenerRole = careerContext,
-            difficulty = cefrLevel,
-            audioScript = "Hi, could you please check the latest delivery schedule? The supplier has confirmed a two-day delay, and I need an updated timeline before our 3 pm meeting.",
-            transcriptAvailableAfterSubmit = true,
-            questions = new[]
-            {
-                new { id = "q1", question = "What does the manager ask the listener to check?", expectedAnswer = "the latest delivery schedule", type = "short_answer" },
-                new { id = "q2", question = "How long is the supplier delay?", expectedAnswer = "two days", type = "short_answer" }
-            },
-            responseTask = new
-            {
-                prompt = "Write a short reply confirming what you will do.",
-                expectedFocus = "confirm task, updated timeline, before 3 pm, professional tone"
-            }
-        });
-    }
 
     private sealed class WritingContent
     {
@@ -708,32 +628,4 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         public int? MaxDurationSeconds { get; set; }
     }
 
-    private static string BuildSpeakingFallbackJson(string cefrLevel, string careerContext)
-    {
-        return JsonSerializer.Serialize(new
-        {
-            activityType = "SpeakingRolePlay",
-            title = "Explain a delay to your manager",
-            scenario = $"Your manager asks why a project task has been delayed. Record a short professional response as a {careerContext}.",
-            studentRole = careerContext,
-            listenerRole = "Manager",
-            difficulty = cefrLevel,
-            speakingGoal = "Explain the delay clearly and politely.",
-            prompt = "Record a 30–60 second response explaining the delay, the reason, and your next action.",
-            expectedPoints = new[]
-            {
-                "mention the delay",
-                "give a brief reason",
-                "explain the next action",
-                "use polite professional tone"
-            },
-            suggestedPhrases = new[]
-            {
-                "I wanted to update you on...",
-                "The delay is due to...",
-                "I will follow up with..."
-            },
-            maxDurationSeconds = 60
-        });
-    }
 }

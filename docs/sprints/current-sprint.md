@@ -14,7 +14,21 @@ Last updated: 2026-06-11
 
 ## Current priority
 
-**No active sprint.** All planned sprints are complete. Next priority: Dynamic Pattern Selection.
+**Sprint planned — not yet started.**
+
+**AI Config Overhaul / No-Fallback Rule / Journey Fix** — see full sprint plan:
+`docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`
+
+Triggered by: post-QA audit corrections from product owner (2026-06-11).
+Audit report: `docs/testing/deployed-student-e2e-audit-2026-06-11.md`
+
+### What this sprint addresses
+
+1. **No-fallback rule** — All AI failures return 503 + "Service not available" UI. No SystemFallback content ever shown to students.
+2. **Admin AI Config overhaul** — Replace 12+ individual feature-key rows with 4 LLM category cards (Default LLM, Content Generation, Evaluation & Feedback, Memory & Learning Path) + 2 independent TTS cards (Listening TTS, Placement TTS).
+3. **Journey page fix** — Replace old LearningPath module cards with LearningSession history (date-grouped, per-step scores).
+4. **Audio / TTS 503 handling** — Audio endpoint returns clear 404 when TTS not configured; frontend shows graceful failure.
+5. **Lower-severity QA bugs** — Mobile activity blank page, phrase-match 400, streak "--" display, sidebar layout clipping.
 
 ---
 

@@ -3,7 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AiProviderConfigItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
+import { AiConfigCategoryItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
+
+interface CategoryState {
+  item: AiConfigCategoryItem;
+  saving: boolean;
+  saved: boolean;
+  error: string;
+  editingProvider: string | null;
+  editingModel: string | null;
+  editingVoice: string | null;
+}
 
 interface ProviderState {
   catalog: AiProviderCatalogItem;
@@ -14,6 +24,15 @@ interface ProviderState {
   testBusy: boolean;
 }
 
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  'llm.default': 'Fallback for all LLM features that do not have a category-specific override.',
+  'llm.generation': 'Generates activity content: writing, listening, speaking, role-play, email reply.',
+  'llm.evaluation': 'Evaluates student attempts: scoring, feedback, placement assessment.',
+  'llm.memory': 'Builds and updates the student learning path and memory profile.',
+  'tts.listening': 'Text-to-speech for listening activities. Requires OpenAI voice name.',
+  'tts.placement': 'Text-to-speech for placement assessment. Requires OpenAI voice name.',
+};
+
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
@@ -21,37 +40,43 @@ interface ProviderState {
   template: `
     <div class="sp-admin-page-header">
       <h1 class="sp-admin-page-title">AI Configuration</h1>
-      <p class="sp-admin-page-sub">Provider credentials, model routing, and connection tests</p>
+      <p class="sp-admin-page-sub">Category-level AI provider config, TTS voices, and provider credentials</p>
     </div>
 
     @if (loading()) {
       <div class="sp-admin-table-loading">Loading…</div>
     } @else {
 
-      <!-- ── Section 1: Feature routing ──────────────────────────────── -->
+      <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
       <div class="mb-8">
-        <h2 class="text-base font-semibold text-slate-900 mb-1">Feature routing</h2>
+        <h2 class="text-base font-semibold text-slate-900 mb-1">LLM Categories</h2>
         <p class="text-sm text-slate-500 mb-4">
-          Which provider and model handles each feature. Auto-saves on change.
+          Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
         </p>
 
-        <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          @for (c of configs(); track c.id) {
-            <div class="sp-ai-route-row">
-              <div class="sp-ai-route-feature">
-                <div>{{ featureLabel(c.featureKey) }}</div>
-                <small>{{ c.featureKey }}</small>
+        <div class="grid gap-4 sm:grid-cols-2">
+          @for (cs of llmCategories(); track cs.item.categoryKey) {
+            <div [class]="'rounded-xl border bg-white shadow-sm p-5 ' + (cs.item.providerName && cs.item.providerName !== 'fake' ? 'border-slate-200' : 'border-amber-200')">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">{{ cs.item.displayName }}</div>
+                  <div class="text-xs font-mono text-slate-400 mt-0.5">{{ cs.item.categoryKey }}</div>
+                </div>
+                @if (cs.item.providerName && cs.item.providerName !== 'fake') {
+                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Configured</span>
+                } @else {
+                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Not set</span>
+                }
               </div>
 
-              <div [class]="'sp-ai-route-controls' + (isTtsFeature(c.featureKey) ? ' has-voice' : '')">
+              <p class="text-xs text-slate-500 mb-4">{{ categoryDesc(cs.item.categoryKey) }}</p>
+
+              <div class="grid grid-cols-2 gap-3">
                 <label>
-                  <span>Primary provider</span>
-                  <select [value]="c.providerName"
-                    (change)="onFeatureProviderChange(c, $any($event.target).value)"
-                    class="sp-ai-select">
-                    @if (isFakeProvider(c.providerName)) {
-                      <option value="fake">fake (default)</option>
-                    }
+                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Provider</span>
+                  <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onCategoryProviderChange(cs, $event)" class="sp-ai-select">
+                    <option [ngValue]="null">— inherit —</option>
+                    <option value="fake">fake (disable)</option>
                     @for (p of providers(); track p.catalog.providerName) {
                       <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
                     }
@@ -59,80 +84,94 @@ interface ProviderState {
                 </label>
 
                 <label>
-                  <span>Primary model</span>
-                  <select [value]="c.modelName"
-                    (change)="onFeatureModelChange(c, $any($event.target).value)"
-                    class="sp-ai-select sp-ai-model-select">
-                    @if (isFakeProvider(c.providerName)) {
-                      <option value="fake">fake (silent)</option>
-                    }
-                    @for (m of modelsFor(c.providerName); track m) {
-                      <option [value]="m">{{ m }}</option>
-                    }
-                  </select>
-                </label>
-
-                @if (isTtsFeature(c.featureKey)) {
-                  <label>
-                    <span>Voice</span>
-                    <input type="text"
-                      [value]="c.voiceName ?? ''"
-                      (change)="onVoiceNameChange(c, $any($event.target).value)"
-                      placeholder="e.g. onyx"
-                      class="sp-ai-select sp-ai-model-select" />
-                  </label>
-                }
-
-                <label class="sp-ai-fallback-toggle">
-                  <input type="checkbox" [checked]="c.fallbackEnabled" (change)="onFallbackEnabledChange(c, $any($event.target).checked)" />
-                  <span>Fallback enabled</span>
-                </label>
-
-                <label>
-                  <span>Fallback provider</span>
-                  <select [value]="c.fallbackProviderName ?? ''"
-                    (change)="onFallbackProviderChange(c, $any($event.target).value)"
-                    class="sp-ai-select">
-                    <option value="">None</option>
-                    @for (p of providers(); track p.catalog.providerName) {
-                      <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
-                    }
-                  </select>
-                </label>
-
-                <label>
-                  <span>Fallback model</span>
-                  <select [value]="c.fallbackModelName ?? ''"
-                    (change)="onFallbackModelChange(c, $any($event.target).value)"
-                    [disabled]="!c.fallbackProviderName"
-                    class="sp-ai-select sp-ai-model-select">
-                    <option value="">None</option>
-                    @for (m of modelsFor(c.fallbackProviderName ?? ''); track m) {
+                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Model</span>
+                  <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-ai-select sp-ai-model-select">
+                    <option [ngValue]="null">— inherit —</option>
+                    @for (m of modelsFor(cs.editingProvider ?? ''); track m) {
                       <option [value]="m">{{ m }}</option>
                     }
                   </select>
                 </label>
               </div>
 
-              <div class="sp-ai-route-state">
-                @if (savedFeatureId() === c.id) {
-                  <span class="text-xs text-green-600">Saved</span>
-                }
-                @if (featureError()[c.id]) {
-                  <span class="text-xs text-red-500">{{ featureError()[c.id] }}</span>
-                }
-                @if (!c.fallbackEnabled) {
-                  <span class="sp-ai-empty-state">Fallback disabled</span>
-                } @else if (!c.fallbackProviderName || !c.fallbackModelName) {
-                  <span class="sp-ai-empty-state">No fallback configured</span>
-                }
+              <div class="mt-3 flex items-center gap-3">
+                <button (click)="saveCategory(cs)" [disabled]="cs.saving"
+                  class="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                  {{ cs.saving ? 'Saving…' : 'Save' }}
+                </button>
+                @if (cs.saved) { <span class="text-xs text-emerald-600">Saved</span> }
+                @if (cs.error) { <span class="text-xs text-red-500">{{ cs.error }}</span> }
               </div>
             </div>
           }
         </div>
       </div>
 
-      <!-- ── Section 2: Provider credentials ────────────────────────── -->
+      <!-- ── Section 2: TTS Categories ─────────────────────────────────── -->
+      <div class="mb-8">
+        <h2 class="text-base font-semibold text-slate-900 mb-1">Text-to-Speech</h2>
+        <p class="text-sm text-slate-500 mb-4">
+          TTS is independent of LLM config. Currently only OpenAI TTS is supported. Leave blank to disable TTS (returns 503).
+        </p>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          @for (cs of ttsCategories(); track cs.item.categoryKey) {
+            <div [class]="'rounded-xl border bg-white shadow-sm p-5 ' + (cs.item.providerName && cs.item.providerName !== 'fake' ? 'border-slate-200' : 'border-amber-200')">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">{{ cs.item.displayName }}</div>
+                  <div class="text-xs font-mono text-slate-400 mt-0.5">{{ cs.item.categoryKey }}</div>
+                </div>
+                @if (cs.item.providerName && cs.item.providerName !== 'fake') {
+                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Configured</span>
+                } @else {
+                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">TTS disabled</span>
+                }
+              </div>
+
+              <p class="text-xs text-slate-500 mb-4">{{ categoryDesc(cs.item.categoryKey) }}</p>
+
+              <div class="grid grid-cols-3 gap-3">
+                <label>
+                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Provider</span>
+                  <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onTtsProviderChange(cs, $event)" class="sp-ai-select">
+                    <option [ngValue]="null">— disable —</option>
+                    <option value="openai">openai</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Model</span>
+                  <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-ai-select sp-ai-model-select">
+                    <option [ngValue]="null">tts-1 (default)</option>
+                    <option value="tts-1">tts-1</option>
+                    <option value="tts-1-hd">tts-1-hd</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Voice</span>
+                  <input type="text" [(ngModel)]="cs.editingVoice"
+                    [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'"
+                    placeholder="e.g. onyx"
+                    class="sp-ai-select sp-ai-model-select" />
+                </label>
+              </div>
+
+              <div class="mt-3 flex items-center gap-3">
+                <button (click)="saveCategory(cs)" [disabled]="cs.saving"
+                  class="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                  {{ cs.saving ? 'Saving…' : 'Save' }}
+                </button>
+                @if (cs.saved) { <span class="text-xs text-emerald-600">Saved</span> }
+                @if (cs.error) { <span class="text-xs text-red-500">{{ cs.error }}</span> }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Section 3: Provider credentials ────────────────────────────── -->
       <div>
         <h2 class="text-base font-semibold text-slate-900 mb-1">Provider credentials</h2>
         <p class="text-sm text-slate-500 mb-4">
@@ -144,22 +183,17 @@ interface ProviderState {
           @for (ps of providers(); track ps.catalog.providerName) {
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
 
-              <!-- Header -->
               <div class="flex items-center justify-between gap-4 mb-4">
                 <div class="flex items-center gap-3">
-                  <span class="text-sm font-bold text-slate-800 capitalize w-24">
-                    {{ ps.catalog.providerName }}
-                  </span>
+                  <span class="text-sm font-bold text-slate-800 capitalize w-24">{{ ps.catalog.providerName }}</span>
                   @if (ps.catalog.hasApiKey) {
                     <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">Key stored</span>
                   } @else {
                     <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Using env var</span>
                   }
                 </div>
-
                 <div class="flex items-center gap-2">
-                  <button (click)="toggleKeyEdit(ps)"
-                    class="text-xs font-medium text-indigo-600 hover:underline">
+                  <button (click)="toggleKeyEdit(ps)" class="text-xs font-medium text-indigo-600 hover:underline">
                     {{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}
                   </button>
                   <button (click)="runTest(ps)" [disabled]="ps.testBusy"
@@ -174,31 +208,24 @@ interface ProviderState {
                 </div>
               </div>
 
-              <!-- Per-model status chips -->
               <div class="flex flex-wrap gap-2">
                 @for (m of ps.catalog.modelTests; track m.modelName) {
-                  <div [class]="modelChipClass(m)"
-                       [title]="modelChipTitle(m)">
+                  <div [class]="modelChipClass(m)" [title]="modelChipTitle(m)">
                     <span [class]="modelDotClass(m)"></span>
                     <span class="font-mono">{{ m.modelName }}</span>
                     @if (hasBeenTested(m)) {
-                      @if (m.ok) {
-                        <span class="opacity-60">{{ m.latencyMs }}ms</span>
-                      } @else {
-                        <span>✗</span>
-                      }
+                      @if (m.ok) { <span class="opacity-60">{{ m.latencyMs }}ms</span> }
+                      @else { <span>✗</span> }
                     }
                   </div>
                 }
               </div>
 
-              <!-- API key edit panel -->
               @if (ps.editingKey) {
                 <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-3 items-end">
                   <div class="flex-1 min-w-64">
                     <label class="block text-xs text-slate-500 mb-1">
-                      API Key
-                      <span class="text-slate-400 ml-1">— blank clears and falls back to env var; clears test results</span>
+                      API Key <span class="text-slate-400 ml-1">— blank clears and falls back to env var</span>
                     </label>
                     <input type="password" [(ngModel)]="ps.editKeyValue"
                       [placeholder]="keyPlaceholder(ps.catalog.providerName)"
@@ -215,9 +242,7 @@ interface ProviderState {
                     </button>
                   }
                   <button (click)="ps.editingKey = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
-                  @if (ps.saveKeyError) {
-                    <p class="w-full text-xs text-red-600">{{ ps.saveKeyError }}</p>
-                  }
+                  @if (ps.saveKeyError) { <p class="w-full text-xs text-red-600">{{ ps.saveKeyError }}</p> }
                 </div>
               }
 
@@ -229,58 +254,93 @@ interface ProviderState {
     }
   `,
   styles: [`
-    .sp-ai-route-row{display:grid;grid-template-columns:minmax(190px,260px) 1fr;gap:18px;padding:18px 20px;align-items:start;}
-    .sp-ai-route-feature{min-width:0;}
-    .sp-ai-route-feature div{font-size:13px;font-weight:800;color:#0F172A;}
-    .sp-ai-route-feature small{display:block;margin-top:3px;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#64748B;overflow-wrap:anywhere;}
-    .sp-ai-route-controls{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;align-items:end;}
-    .sp-ai-route-controls.has-voice{grid-template-columns:repeat(6,minmax(120px,1fr));}
-    .sp-ai-route-controls label span{display:block;margin-bottom:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;}
     .sp-ai-select{width:100%;border:1px solid #CBD5E1;border-radius:9px;padding:7px 9px;font-size:13px;background:#fff;color:#0F172A;}
     .sp-ai-select:disabled{background:#F8FAFC;color:#94A3B8;}
     .sp-ai-model-select{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
-    .sp-ai-fallback-toggle{display:flex;align-items:center;gap:8px;min-height:38px;}
-    .sp-ai-fallback-toggle span{margin:0;text-transform:none;letter-spacing:0;font-size:12px;color:#475569;}
-    .sp-ai-fallback-toggle input{accent-color:#4338CA;}
-    .sp-ai-route-state{grid-column:2;display:flex;align-items:center;gap:10px;min-height:18px;}
-    .sp-ai-empty-state{font-size:11.5px;color:#94A3B8;}
-    @media(max-width:1180px){
-      .sp-ai-route-controls{grid-template-columns:repeat(2,minmax(160px,1fr));}
-    }
-    @media(max-width:720px){
-      .sp-ai-route-row{grid-template-columns:1fr;}
-      .sp-ai-route-state{grid-column:1;}
-      .sp-ai-route-controls{grid-template-columns:1fr;}
-    }
   `],
 })
 export class AdminAiConfigComponent implements OnInit {
-  configs = signal<AiProviderConfigItem[]>([]);
+  categories = signal<CategoryState[]>([]);
   providers = signal<ProviderState[]>([]);
   loading = signal(true);
-  savedFeatureId = signal<string | null>(null);
-  featureError = signal<Record<string, string>>({});
 
   constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
-    forkJoin({ configs: this.adminApi.listAiConfigs(), catalog: this.adminApi.listAiProviders() }).subscribe({
-      next: ({ configs, catalog }) => {
-        this.configs.set(configs);
-        this.providers.set(this.toStates(catalog));
+    forkJoin({ categories: this.adminApi.listAiCategories(), catalog: this.adminApi.listAiProviders() }).subscribe({
+      next: ({ categories, catalog }) => {
+        this.categories.set(categories.map(item => ({
+          item,
+          saving: false, saved: false, error: '',
+          editingProvider: item.providerName,
+          editingModel: item.modelName,
+          editingVoice: item.voiceName,
+        })));
+        this.providers.set(catalog.map(c => ({
+          catalog: c,
+          editingKey: false, editKeyValue: '',
+          saveKeyBusy: false, saveKeyError: '',
+          testBusy: false,
+        })));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  private toStates(catalog: AiProviderCatalogItem[]): ProviderState[] {
-    return catalog.map(c => ({
-      catalog: c,
-      editingKey: false, editKeyValue: '',
-      saveKeyBusy: false, saveKeyError: '',
-      testBusy: false,
-    }));
+  llmCategories(): CategoryState[] {
+    return this.categories().filter(cs => cs.item.categoryKey.startsWith('llm.'));
+  }
+
+  ttsCategories(): CategoryState[] {
+    return this.categories().filter(cs => cs.item.categoryKey.startsWith('tts.'));
+  }
+
+  categoryDesc(key: string): string {
+    return CATEGORY_DESCRIPTIONS[key] ?? '';
+  }
+
+  modelsFor(providerName: string): string[] {
+    return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
+  }
+
+  onCategoryProviderChange(cs: CategoryState, provider: string | null): void {
+    cs.editingProvider = provider;
+    if (!provider || provider === 'fake') {
+      cs.editingModel = null;
+    } else if (!cs.editingModel || !this.modelsFor(provider).includes(cs.editingModel)) {
+      cs.editingModel = this.modelsFor(provider)[0] ?? null;
+    }
+  }
+
+  onTtsProviderChange(cs: CategoryState, provider: string | null): void {
+    cs.editingProvider = provider;
+    if (!provider || provider === 'fake') {
+      cs.editingModel = null;
+      cs.editingVoice = null;
+    }
+  }
+
+  saveCategory(cs: CategoryState): void {
+    cs.saving = true; cs.error = '';
+    const provider = cs.editingProvider || null;
+    const model = cs.editingModel || null;
+    const voice = cs.editingVoice || null;
+    this.adminApi.updateAiCategory(cs.item.categoryKey, {
+      providerName: provider,
+      modelName: model,
+      voiceName: voice,
+    }).subscribe({
+      next: updated => {
+        cs.item = updated;
+        cs.editingProvider = updated.providerName;
+        cs.editingModel = updated.modelName;
+        cs.editingVoice = updated.voiceName;
+        cs.saving = false; cs.saved = true;
+        setTimeout(() => cs.saved = false, 2000);
+      },
+      error: err => { cs.error = err.error?.error ?? 'Failed.'; cs.saving = false; },
+    });
   }
 
   // ── Model chip helpers ─────────────────────────────────────────────────────
@@ -306,96 +366,6 @@ export class AdminAiConfigComponent implements OnInit {
     if (!this.hasBeenTested(m)) return 'Not tested yet';
     if (m.ok) return `OK — ${m.latencyMs}ms`;
     return m.error ?? 'Failed';
-  }
-
-  // ── Feature routing ────────────────────────────────────────────────────────
-
-  modelsFor(providerName: string): string[] {
-    return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
-  }
-
-  isTtsFeature(featureKey: string): boolean {
-    return featureKey.startsWith('tts.');
-  }
-
-  isFakeProvider(providerName: string): boolean {
-    return providerName === 'fake';
-  }
-
-  featureLabel(featureKey: string): string {
-    return ({
-      'writing.exercise': 'Legacy writing feedback',
-      'tts.listening': 'Listening activity TTS audio',
-      'tts.placement': 'Placement assessment TTS audio',
-      'learning_path_generate': 'Initial learning path',
-      'learning_path_generate_adaptive': 'Adaptive learning path',
-      'activity_generate_writing': 'Generate writing activity',
-      'activity_evaluate_writing': 'Evaluate writing activity',
-      'activity_generate_listening': 'Generate listening activity',
-      'activity_generate_speaking_roleplay': 'Generate speaking role-play',
-      'activity_evaluate_speaking_roleplay': 'Evaluate speaking role-play',
-      'vocabulary_extract_from_attempt': 'Extract vocabulary from attempt',
-      'student_memory_update': 'Update student learning memory',
-      'placement_assessment_evaluate': 'Evaluate placement assessment',
-    } as Record<string, string>)[featureKey] ?? featureKey.replace(/_/g, ' ');
-  }
-
-  onFeatureProviderChange(c: AiProviderConfigItem, newProvider: string): void {
-    const newModel = newProvider === 'fake' ? 'fake' : (this.modelsFor(newProvider)[0] ?? c.modelName);
-    this.saveFeature(c, { providerName: newProvider, modelName: newModel });
-  }
-
-  onFeatureModelChange(c: AiProviderConfigItem, newModel: string): void {
-    this.saveFeature(c, { providerName: c.providerName, modelName: newModel });
-  }
-
-  onFallbackEnabledChange(c: AiProviderConfigItem, enabled: boolean): void {
-    this.saveFeature(c, {
-      fallbackProviderName: c.fallbackProviderName,
-      fallbackModelName: c.fallbackModelName,
-      fallbackEnabled: enabled,
-    });
-  }
-
-  onFallbackProviderChange(c: AiProviderConfigItem, providerName: string): void {
-    const fallbackProviderName = providerName || null;
-    const fallbackModelName = fallbackProviderName ? (this.modelsFor(fallbackProviderName)[0] ?? null) : null;
-    this.saveFeature(c, {
-      fallbackProviderName,
-      fallbackModelName,
-      fallbackEnabled: Boolean(fallbackProviderName && fallbackModelName && c.fallbackEnabled),
-    });
-  }
-
-  onFallbackModelChange(c: AiProviderConfigItem, modelName: string): void {
-    this.saveFeature(c, {
-      fallbackProviderName: c.fallbackProviderName,
-      fallbackModelName: modelName || null,
-      fallbackEnabled: Boolean(c.fallbackProviderName && modelName && c.fallbackEnabled),
-    });
-  }
-
-  onVoiceNameChange(c: AiProviderConfigItem, voiceName: string): void {
-    this.saveFeature(c, { voiceName: voiceName || null });
-  }
-
-  private saveFeature(c: AiProviderConfigItem, data: {
-    providerName?: string | null;
-    modelName?: string | null;
-    voiceName?: string | null;
-    fallbackProviderName?: string | null;
-    fallbackModelName?: string | null;
-    fallbackEnabled?: boolean | null;
-  }): void {
-    this.adminApi.updateAiConfig(c.id, data).subscribe({
-      next: updated => {
-        this.configs.update(cs => cs.map(x => x.id === c.id ? updated : x));
-        this.savedFeatureId.set(c.id);
-        this.featureError.update(e => ({ ...e, [c.id]: '' }));
-        setTimeout(() => this.savedFeatureId.set(null), 2000);
-      },
-      error: err => this.featureError.update(e => ({ ...e, [c.id]: err.error?.error ?? 'Failed.' })),
-    });
   }
 
   // ── Provider credentials ───────────────────────────────────────────────────
@@ -431,7 +401,6 @@ export class AdminAiConfigComponent implements OnInit {
     this.adminApi.testProvider(ps.catalog.providerName).subscribe({
       next: updated => { ps.catalog = updated; ps.testBusy = false; },
       error: err => {
-        // On error show all models as failed with the error message
         ps.catalog = {
           ...ps.catalog,
           modelTests: ps.catalog.modelTests.map(m => ({

@@ -1,70 +1,20 @@
-<!-- Loading -->
+<!-- Loading skeleton -->
 @if (loading()) {
   <div style="display:flex;flex-direction:column;gap:16px">
-    <div class="sp-loading-pulse" style="height:192px"></div>
-    <div class="sp-loading-pulse" style="height:96px"></div>
-    <div class="sp-loading-pulse" style="height:96px"></div>
+    <div class="sp-loading-pulse" style="height:120px"></div>
+    <div class="sp-loading-pulse" style="height:80px"></div>
+    <div class="sp-loading-pulse" style="height:80px"></div>
   </div>
-
-} @else if (error()) {
-  <div class="sp-empty-state">
-    <div style="width:56px;height:56px;border-radius:18px;background:var(--sp-writing-soft);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-      <svg width="28" height="28" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    </div>
-    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink)">No path yet</h2>
-    <p style="margin-top:8px;font-size:14px;font-weight:500;color:var(--sp-muted);max-width:340px;text-align:center;line-height:1.6">{{ error() }}</p>
-    <a routerLink="/dashboard" class="sp-button-primary" style="margin-top:20px">Go to Today</a>
-  </div>
-
-} @else if (path()) {
+} @else {
 
   <!-- Page heading -->
   <div style="margin-bottom:20px">
-    <p class="sp-eyebrow" style="margin-bottom:4px">Your course</p>
-    <h1 data-testid="journey-page-heading" style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Learning Journey</h1>
+    <p class="sp-eyebrow" style="margin-bottom:4px">Your progress</p>
+    <h1 style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Learning Journey</h1>
   </div>
 
-  <!-- Success notice after module completion -->
-  @if (completeSuccess()) {
-    <div class="sp-alert-success" style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
-      <svg width="16" height="16" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-      <span style="font-size:13px;font-weight:700">Module completed. You've moved to the next module!</span>
-    </div>
-  }
-
-  <!-- Path hero — cool gradient -->
-  <div style="overflow:hidden;border-radius:var(--sp-r-xl);box-shadow:var(--sp-sh-md);margin-bottom:20px">
-    <div style="background:var(--sp-grad-cool);padding:22px 22px 24px;color:#fff">
-      <div style="margin-bottom:12px">
-        <span class="sp-ai-badge">✦ AI-personalised path</span>
-      </div>
-      <h1 style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em;max-width:460px;line-height:1.2;margin:0">
-        {{ path()!.title }}
-      </h1>
-      <div style="margin-top:16px;display:flex;align-items:center;gap:16px">
-        <!-- Ring -->
-        <div style="position:relative;width:56px;height:56px;flex-shrink:0">
-          <svg width="56" height="56" style="transform:rotate(-90deg)">
-            <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,.25)" stroke-width="6" fill="none"/>
-            <circle cx="28" cy="28" r="22" stroke="#fff" stroke-width="6" fill="none"
-              stroke-linecap="round"
-              [attr.stroke-dasharray]="138.23"
-              [attr.stroke-dashoffset]="138.23 * (1 - overallProgress() / 100)"/>
-          </svg>
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-            <span style="font-size:13px;font-weight:800;color:#fff">{{ overallProgress() }}%</span>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:15px;font-weight:800;color:#fff">{{ path()!.modulesCompleted }} of {{ path()!.totalModules }} modules</div>
-          <div style="font-size:12px;font-weight:500;opacity:.8">on your way to confident workplace English</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Learning memory summary -->
-  <div class="sp-card" style="padding:18px;margin-bottom:16px;border-color:var(--sp-border2)">
+  <!-- Skills snapshot -->
+  <div class="sp-card" style="padding:18px;margin-bottom:20px;border-color:var(--sp-border2)">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
       <div style="min-width:0;flex:1">
         <p class="sp-eyebrow" style="margin-bottom:6px">Your learning focus</p>
@@ -100,8 +50,7 @@
             </div>
           </div>
         }
-
-        @if (memory()?.weakSkills?.length || weakSkills().length) {
+        @if ((memory()?.weakSkills?.length ?? 0) > 0 || weakSkills().length > 0) {
           <div style="border:1px solid var(--sp-border);border-radius:var(--sp-r-sm);padding:12px;background:var(--sp-surface2)">
             <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Areas to improve</p>
             <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -114,8 +63,7 @@
             </div>
           </div>
         }
-
-        @if (memory()?.nextRecommendedFocus?.length) {
+        @if ((memory()?.nextRecommendedFocus?.length ?? 0) > 0) {
           <div style="border:1px solid var(--sp-border);border-radius:var(--sp-r-sm);padding:12px;background:var(--sp-surface2)">
             <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Practise next</p>
             <ul style="margin:0;padding-left:16px;color:var(--sp-text);font-size:12px;font-weight:600;line-height:1.6">
@@ -126,232 +74,104 @@
           </div>
         }
       </div>
-
-      @if (weakSkills().length || strongSkillProfiles().length) {
-        <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.05em">Skill profile</span>
-          @for (skill of weakSkills().slice(0, 3); track skill.skillKey) {
-            <span class="sp-pill" style="font-size:11px;padding:4px 8px;background:var(--sp-warn-soft);color:var(--sp-warn)">{{ skill.skillLabel }}</span>
-          }
-          @for (skill of strongSkillProfiles().slice(0, 2); track skill.skillKey) {
-            <span class="sp-pill" style="font-size:11px;padding:4px 8px;background:var(--sp-success-soft);color:var(--sp-success)">{{ skill.skillLabel }}</span>
-          }
-        </div>
-      }
     }
   </div>
 
-  <!-- Current focus area -->
-  @if (path()!.currentFocus) {
-    <div style="display:flex;align-items:flex-start;gap:12px;background:var(--sp-warn-soft);border-radius:var(--sp-r);padding:14px 16px;margin-bottom:16px">
-      <svg width="18" height="18" fill="none" stroke="var(--sp-warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <div>
-        <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:2px">Current focus area</p>
-        <p style="font-size:13px;font-weight:600;color:var(--sp-text);line-height:1.5">
-          {{ path()!.currentFocus!.friendlyLabel }} — your recent activities show this needs the most attention.
-        </p>
-      </div>
+  <!-- Session history -->
+  <p class="sp-eyebrow" style="margin-bottom:12px">Session history</p>
+
+  @if (sessionsLoading() && sessions().length === 0) {
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="sp-loading-pulse" style="height:64px"></div>
+      <div class="sp-loading-pulse" style="height:64px"></div>
+      <div class="sp-loading-pulse" style="height:64px"></div>
+    </div>
+  } @else if (sessionsError() && sessions().length === 0) {
+    <div class="sp-empty-state">
+      <p style="font-size:14px;color:var(--sp-muted)">{{ sessionsError() }}</p>
+    </div>
+  } @else if (sessions().length === 0) {
+    <div class="sp-empty-state">
+      <p style="font-size:14px;color:var(--sp-muted)">No sessions yet. Start your first lesson to see your history here.</p>
+      <a routerLink="/dashboard" class="sp-button-primary" style="margin-top:16px">Go to Today</a>
+    </div>
+  } @else {
+    <div style="display:flex;flex-direction:column;gap:10px">
+      @for (session of sessions(); track session.sessionId) {
+        <!-- Session card -->
+        <div style="border-radius:var(--sp-r-lg);border:1px solid var(--sp-border);background:var(--sp-surface);overflow:hidden">
+          <button
+            type="button"
+            (click)="toggleSession(session.sessionId)"
+            style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left">
+
+            <!-- Status dot -->
+            <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0"
+              [style.background]="session.status === 'completed' ? 'var(--sp-success)' : session.status === 'inProgress' ? 'var(--sp-vocabulary)' : 'var(--sp-faint)'">
+            </div>
+
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:2px">
+                <span style="font-size:13px;font-weight:800;color:var(--sp-ink)">{{ session.title }}</span>
+                @if (session.status === 'completed') {
+                  <span class="sp-pill" style="background:var(--sp-success-soft);color:var(--sp-success);font-size:10px;padding:2px 7px">Done</span>
+                } @else if (session.status === 'inProgress') {
+                  <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:10px;padding:2px 7px">In progress</span>
+                }
+                @if (sessionAvgScore(session) !== null) {
+                  <span style="font-size:11px;font-weight:700" [style.color]="scoreColour(sessionAvgScore(session))">avg {{ sessionAvgScore(session) }}</span>
+                }
+              </div>
+              <div style="font-size:11px;color:var(--sp-muted);display:flex;gap:10px;flex-wrap:wrap">
+                <span>{{ sessionDate(session) }}</span>
+                <span>{{ session.focusSkill | titlecase }}</span>
+                <span>{{ session.exercises.length }} steps</span>
+              </div>
+            </div>
+
+            <!-- Chevron -->
+            <svg width="16" height="16" fill="none" stroke="var(--sp-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"
+              [style.transform]="expandedSessionId() === session.sessionId ? 'rotate(90deg)' : 'none'"
+              style="flex-shrink:0;transition:transform .15s">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+
+          <!-- Expanded exercises -->
+          @if (expandedSessionId() === session.sessionId) {
+            <div style="border-top:1px solid var(--sp-border);padding:12px 16px;background:var(--sp-canvas2);display:flex;flex-direction:column;gap:8px">
+              @for (ex of session.exercises; track ex.exerciseId) {
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--sp-surface);border-radius:var(--sp-r-sm);border:1px solid var(--sp-border)">
+                  <div style="font-size:12px;font-weight:700;color:var(--sp-muted);min-width:20px;text-align:right">{{ ex.order + 1 }}</div>
+                  <div style="flex:1;min-width:0">
+                    <span style="font-size:12px;font-weight:700;color:var(--sp-ink)">{{ exerciseLabel(ex.exercisePatternKey) }}</span>
+                    <span style="font-size:11px;color:var(--sp-muted);margin-left:6px">{{ ex.primarySkill }}</span>
+                  </div>
+                  @if (ex.score !== null) {
+                    <span style="font-size:12px;font-weight:800" [style.color]="scoreColour(ex.score)">{{ ex.score }}</span>
+                  }
+                  @if (ex.status === 'completed') {
+                    <svg width="13" height="13" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  } @else if (ex.status === 'skipped') {
+                    <span style="font-size:10px;color:var(--sp-muted)">skipped</span>
+                  } @else {
+                    <span style="font-size:10px;color:var(--sp-faint)">—</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Load more -->
+      @if (hasMorePages()) {
+        <button type="button" (click)="loadMore()" [disabled]="sessionsLoading()"
+          class="sp-button-ghost" style="margin-top:4px;width:100%;justify-content:center">
+          @if (sessionsLoading()) { Loading… } @else { Load more sessions }
+        </button>
+      }
     </div>
   }
-
-  <!-- Module journey -->
-  <p class="sp-eyebrow" style="margin-bottom:12px">Your journey</p>
-  <div style="position:relative;display:flex;flex-direction:column;gap:12px">
-    <!-- Connecting spine -->
-    <div aria-hidden="true" style="position:absolute;left:31px;top:32px;bottom:32px;width:2px;background:repeating-linear-gradient(var(--sp-border2) 0 6px, transparent 6px 12px);z-index:0"></div>
-
-    @for (mod of path()!.modules; track mod.moduleId) {
-      <div class="sp-module-card" style="position:relative;z-index:1;display:flex;align-items:center;gap:16px"
-        [class.sp-module-card-current]="moduleStatus(mod) === 'current'"
-        [class.sp-module-card-complete]="moduleStatus(mod) === 'complete'"
-        [class.sp-module-card-locked]="moduleStatus(mod) === 'locked'">
-
-        <div style="width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0"
-          [style.background]="moduleStatus(mod) === 'complete' ? 'var(--sp-success-soft)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing-soft)' : 'var(--sp-canvas2)'"
-          [style.color]="moduleStatus(mod) === 'complete' ? 'var(--sp-success)' : moduleStatus(mod) === 'current' ? 'var(--sp-writing)' : 'var(--sp-faint)'">
-          @if (moduleStatus(mod) === 'complete') {
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          } @else if (moduleStatus(mod) === 'locked') {
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          } @else {
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          }
-        </div>
-
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:2px">
-            <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--sp-muted)">MODULE {{ mod.order }}</span>
-            @if (moduleStatus(mod) === 'current') {
-              <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink);padding:2px 8px;font-size:10px">IN PROGRESS</span>
-            } @else if (moduleStatus(mod) === 'complete') {
-              <span class="sp-pill" style="background:var(--sp-success-soft);color:var(--sp-success);padding:2px 8px;font-size:10px">✓ COMPLETE</span>
-            } @else {
-              <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);padding:2px 8px;font-size:10px">SOON</span>
-            }
-            @if (mod.averageScore !== null && moduleStatus(mod) !== 'locked') {
-              <span style="font-size:10px;font-weight:700;color:var(--sp-muted)">avg {{ mod.averageScore }}</span>
-            }
-          </div>
-          <h3 style="font-size:14px;font-weight:800;color:var(--sp-ink);margin:0">{{ mod.title }}</h3>
-          <p style="margin-top:2px;font-size:12px;font-weight:500;color:var(--sp-muted);line-height:1.5">{{ mod.description }}</p>
-          @if (mod.focusSkill || mod.reason || mod.difficulty) {
-            <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
-              <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-                @if (mod.focusSkill) {
-                  <span class="sp-pill" style="background:var(--sp-writing-soft);color:var(--sp-writing-ink);padding:3px 8px;font-size:10px">Focus: {{ skillLabel(mod.focusSkill) }}</span>
-                }
-                @if (mod.difficulty) {
-                  <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);padding:3px 8px;font-size:10px">Level: {{ mod.difficulty }}</span>
-                }
-              </div>
-              @if (mod.reason) {
-                <p style="font-size:11.5px;font-weight:600;color:var(--sp-text);line-height:1.45;margin:0">{{ mod.reason }}</p>
-              }
-            </div>
-          }
-          @if (moduleStatus(mod) === 'current' || moduleStatus(mod) === 'complete') {
-            <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
-              <div class="sp-progress-track" style="flex:1;height:7px">
-                <div class="sp-progress-fill" [style.width.%]="progressPercent(mod)"></div>
-              </div>
-              <span style="font-size:11px;font-weight:700;color:var(--sp-muted);flex-shrink:0">{{ mod.completedActivities }}/{{ mod.totalActivities }}</span>
-            </div>
-          }
-        </div>
-
-        <div style="flex-shrink:0">
-          @if (moduleStatus(mod) === 'locked') {
-            <svg width="18" height="18" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-          } @else {
-            <svg width="20" height="20" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-          }
-        </div>
-      </div>
-
-      <!-- Current module actions -->
-      @if (moduleStatus(mod) === 'current') {
-        <div style="position:relative;z-index:1;margin-top:-4px;margin-left:64px;display:flex;flex-direction:column;gap:8px">
-          <!-- Ready to complete notice -->
-          @if (mod.isReadyToComplete) {
-            <div style="background:var(--sp-success-soft);border:1px solid #86EFCF;border-radius:var(--sp-r-sm);padding:10px 14px;display:flex;align-items:center;gap:8px">
-              <svg width="14" height="14" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <span style="font-size:12.5px;font-weight:700;color:#065F46">This module is ready to complete!</span>
-            </div>
-            <button
-              (click)="completeModule(mod.moduleId)"
-              [disabled]="completingModuleId() === mod.moduleId"
-              class="sp-button-primary"
-              style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;font-size:12px;width:fit-content">
-              @if (completingModuleId() === mod.moduleId) {
-                Completing…
-              } @else {
-                Complete this module →
-              }
-            </button>
-          }
-          <a routerLink="/dashboard" data-testid="journey-continue-today" class="sp-button-ghost" style="display:inline-flex;padding:8px 18px;font-size:12px;width:fit-content">
-            Continue today's lesson →
-          </a>
-          <a routerLink="/practice" data-testid="journey-open-practice-gym" class="sp-button-ghost" style="display:inline-flex;padding:8px 18px;font-size:12px;width:fit-content">
-            Open Practice Gym →
-          </a>
-          @if (mod.completedActivities > 0) {
-            <button (click)="toggleModuleHistory(mod.moduleId)"
-              class="sp-button-ghost"
-              style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;font-size:12px;width:fit-content">
-              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              {{ expandedModuleId() === mod.moduleId ? 'Hide activities' : 'View activities' }}
-            </button>
-          }
-        </div>
-      }
-
-      <!-- Completed module actions -->
-      @if (moduleStatus(mod) === 'complete' && mod.completedActivities > 0) {
-        <div style="position:relative;z-index:1;margin-top:-4px;margin-left:64px">
-          <button (click)="toggleModuleHistory(mod.moduleId)"
-            class="sp-button-ghost"
-            style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;font-size:12px">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {{ expandedModuleId() === mod.moduleId ? 'Hide activities' : 'Review activities' }}
-          </button>
-        </div>
-      }
-
-      <!-- Module history drill-down -->
-      @if (expandedModuleId() === mod.moduleId) {
-        <div style="position:relative;z-index:1;margin-left:64px;margin-top:8px;background:var(--sp-surface2);border:1px solid var(--sp-border);border-radius:var(--sp-r-lg);padding:14px">
-          @if (loadingHistory()) {
-            <div class="sp-loading-pulse" style="height:60px"></div>
-          } @else if (historyError()) {
-            <p style="font-size:12px;color:var(--sp-speaking)">{{ historyError() }}</p>
-          } @else if (moduleHistory()) {
-            @if (moduleHistory()!.activities.length === 0) {
-              <p style="font-size:13px;color:var(--sp-muted)">No activities attempted in this module yet.</p>
-            } @else {
-              <div style="display:flex;flex-direction:column;gap:10px">
-                @for (act of moduleHistory()!.activities; track act.activityId) {
-                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--sp-surface);border-radius:var(--sp-r-sm);border:1px solid var(--sp-border)">
-                    <div style="flex:1;min-width:0">
-                      <p style="font-size:13px;font-weight:700;color:var(--sp-ink);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ act.title }}</p>
-                      <p style="font-size:11px;color:var(--sp-muted)">
-                        {{ act.attemptCount }} {{ act.attemptCount === 1 ? 'attempt' : 'attempts' }}
-                        @if (act.bestScore !== null) { · Best: <span [style.color]="scoreColour(act.bestScore)">{{ act.bestScore }}</span> }
-                        @if (act.latestScore !== null && act.attemptCount > 1) { · Latest: <span [style.color]="scoreColour(act.latestScore)">{{ act.latestScore }}</span> }
-                      </p>
-                    </div>
-                    @if (act.hasFeedback) {
-                      <a [routerLink]="['/activity', act.activityId, 'history']"
-                        style="font-size:12px;font-weight:700;color:var(--sp-writing);text-decoration:none;white-space:nowrap;flex-shrink:0">
-                        Review →
-                      </a>
-                    }
-                  </div>
-                }
-              </div>
-            }
-          }
-        </div>
-      }
-    }
-  </div>
-
-  <!-- Adapts banner -->
-  <div class="sp-card-soft" style="margin-top:20px;display:flex;align-items:center;gap:12px;border-radius:var(--sp-r-lg)">
-    <div style="width:44px;height:44px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;color:#B45CF0;flex-shrink:0">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-    </div>
-    <div>
-      <p style="font-size:13px;font-weight:800;color:var(--sp-ink)">Your path adapts as you learn</p>
-      <p style="font-size:12px;font-weight:500;color:var(--sp-text);line-height:1.5">Activities are chosen based on your focus area and recent progress.</p>
-    </div>
-  </div>
-
-  <div class="sp-card" style="margin-top:14px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
-    <div style="min-width:0;flex:1">
-      <p style="font-size:13px;font-weight:800;color:var(--sp-ink);margin:0">Ready for the next step?</p>
-      <p style="font-size:12px;font-weight:500;color:var(--sp-muted);line-height:1.5;margin-top:3px">
-        Add a small set of recommended modules based on your learning memory and recent progress.
-      </p>
-      @if (continueSuccess()) {
-        <p style="font-size:12px;font-weight:700;color:var(--sp-success);margin-top:8px">{{ continueSuccess() }}</p>
-      }
-      @if (continueError()) {
-        <p style="font-size:12px;font-weight:700;color:var(--sp-speaking);margin-top:8px">{{ continueError() }}</p>
-      }
-    </div>
-    <button
-      type="button"
-      class="sp-button-primary"
-      [disabled]="!canGenerateNext()"
-      (click)="generateNextModules()"
-      style="min-height:44px;white-space:nowrap">
-      @if (continueLoading()) {
-        Adding modules...
-      } @else {
-        Continue my learning path
-      }
-    </button>
-  </div>
 
 }

@@ -9,6 +9,7 @@ import {
   CompleteSessionResponse,
   CompleteExerciseResponse,
   PrepareExerciseResponse,
+  SessionHistoryResponse,
 } from '../models/session.models';
 
 @Injectable({ providedIn: 'root' })
@@ -41,5 +42,9 @@ export class SessionService {
   prepareExercise(sessionId: string, exerciseId: string): Observable<PrepareExerciseResponse> {
     return this.http.post<PrepareExerciseResponse>(
       `${this.base}/${sessionId}/exercises/${exerciseId}/prepare`, null);
+  }
+
+  getHistory(page = 1, pageSize = 20): Observable<SessionHistoryResponse> {
+    return this.http.get<SessionHistoryResponse>(`${this.base}/history?page=${page}&pageSize=${pageSize}`);
   }
 }

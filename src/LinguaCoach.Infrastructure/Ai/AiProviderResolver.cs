@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,7 +40,22 @@ public sealed class AiProviderResolver : IAiProviderResolver
         var (providerName, modelName, fallbackProvider, fallbackModel, fallbackEnabled)
             = ResolveFeatureFromDb(canonicalFeatureKey);
 
-        // Fall back to config-based primary if DB returns nothing
+        // If the feature-specific row is absent or fake, try category → llm.default
+        if (string.IsNullOrWhiteSpace(providerName)
+            || string.Equals(providerName, "fake", StringComparison.OrdinalIgnoreCase))
+        {
+            var (catProvider, catModel) = ResolveCategoryFromDb(canonicalFeatureKey);
+            if (!string.IsNullOrWhiteSpace(catProvider) && !string.Equals(catProvider, "fake", StringComparison.OrdinalIgnoreCase))
+            {
+                providerName = catProvider;
+                modelName = catModel;
+                fallbackProvider = null;
+                fallbackModel = null;
+                fallbackEnabled = false;
+            }
+        }
+
+        // Fall back to legacy appsettings-based config
         if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
         {
             providerName = _configuration[WritingProviderKey];
@@ -56,7 +72,8 @@ public sealed class AiProviderResolver : IAiProviderResolver
             else
             {
                 throw new AiConfigurationUnavailableException(
-                    "AI writing feedback provider and model must be configured.");
+                    $"AI provider is not configured for feature '{canonicalFeatureKey}'. " +
+                    "Set a default provider in Admin → AI Configuration.");
             }
         }
 
@@ -85,6 +102,70 @@ public sealed class AiProviderResolver : IAiProviderResolver
 
     public AiProviderSelection ResolveWritingFeedbackProvider()
         => ResolveWithFallback(WritingFeatureKey).Primary;
+
+    // Maps feature keys to their AI config category for category-level resolution.
+    private static readonly Dictionary<string, string> FeatureToCategory =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["activity_generate_writing"]                     = "llm.generation",
+            ["activity_generate_listening"]                   = "llm.generation",
+            ["activity_generate_speaking_roleplay"]           = "llm.generation",
+            ["activity_generate_phrase_match"]                = "llm.generation",
+            ["activity_generate_gap_fill_workplace_phrase"]   = "llm.generation",
+            ["activity_generate_listen_and_answer"]           = "llm.generation",
+            ["activity_generate_listen_and_gap_fill"]         = "llm.generation",
+            ["activity_generate_email_reply"]                 = "llm.generation",
+            ["activity_generate_teams_chat_simulation"]       = "llm.generation",
+            ["activity_generate_spoken_response_from_prompt"] = "llm.generation",
+            ["activity_generate_lesson_reflection"]           = "llm.generation",
+            ["activity_evaluate_writing"]                     = "llm.evaluation",
+            ["activity_evaluate_speaking_roleplay"]           = "llm.evaluation",
+            ["activity_evaluate_phrase_match"]                = "llm.evaluation",
+            ["activity_evaluate_gap_fill_workplace_phrase"]   = "llm.evaluation",
+            ["activity_evaluate_listen_and_answer"]           = "llm.evaluation",
+            ["activity_evaluate_listen_and_gap_fill"]         = "llm.evaluation",
+            ["activity_evaluate_email_reply"]                 = "llm.evaluation",
+            ["activity_evaluate_teams_chat_simulation"]       = "llm.evaluation",
+            ["activity_evaluate_spoken_response_from_prompt"] = "llm.evaluation",
+            ["activity_evaluate_lesson_reflection"]           = "llm.evaluation",
+            ["writing.exercise"]                              = "llm.evaluation",
+            ["placement_assessment_evaluate"]                 = "llm.evaluation",
+            ["learning_path_generate"]                        = "llm.memory",
+            ["learning_path_generate_adaptive"]               = "llm.memory",
+            ["student_memory_update"]                         = "llm.memory",
+            ["vocabulary_extract_from_attempt"]               = "llm.memory",
+        };
+
+    private (string? Provider, string? Model) ResolveCategoryFromDb(string featureKey)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+            // Try category-specific row first
+            if (FeatureToCategory.TryGetValue(featureKey, out var categoryKey))
+            {
+                var cat = db.AiConfigCategories.AsNoTracking()
+                    .FirstOrDefault(c => c.CategoryKey == categoryKey);
+                if (cat?.IsConfigured == true)
+                    return (cat.ProviderName, cat.ModelName);
+            }
+
+            // Fall through to llm.default (TTS keys never reach here — they use TtsProviderResolver)
+            var def = db.AiConfigCategories.AsNoTracking()
+                .FirstOrDefault(c => c.CategoryKey == "llm.default");
+            if (def?.IsConfigured == true)
+                return (def.ProviderName, def.ModelName);
+
+            return (null, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read AI category config from DB for {Feature}.", featureKey);
+            return (null, null);
+        }
+    }
 
     private (string? Provider, string? Model, string? FallbackProvider, string? FallbackModel, bool FallbackEnabled)
         ResolveFeatureFromDb(string featureKey)

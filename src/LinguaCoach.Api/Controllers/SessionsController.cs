@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Sessions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ public sealed class SessionsController : ControllerBase
 {
     private readonly IGetTodaysSessionHandler _today;
     private readonly IGetSessionHandler _get;
+    private readonly IGetSessionHistoryHandler _history;
     private readonly IStartSessionHandler _start;
     private readonly ICompleteSessionHandler _complete;
     private readonly ICompleteExerciseHandler _completeExercise;
@@ -25,6 +27,7 @@ public sealed class SessionsController : ControllerBase
     public SessionsController(
         IGetTodaysSessionHandler today,
         IGetSessionHandler get,
+        IGetSessionHistoryHandler history,
         IStartSessionHandler start,
         ICompleteSessionHandler complete,
         ICompleteExerciseHandler completeExercise,
@@ -32,6 +35,7 @@ public sealed class SessionsController : ControllerBase
     {
         _today = today;
         _get = get;
+        _history = history;
         _start = start;
         _complete = complete;
         _completeExercise = completeExercise;
@@ -168,6 +172,10 @@ public sealed class SessionsController : ControllerBase
                 new PrepareExerciseCommand(userId, sessionId, exerciseId), ct);
             return Ok(result);
         }
+        catch (AiServiceUnavailableException ex)
+        {
+            return StatusCode(503, new { error = "The AI service is not available. Please try again shortly.", retryable = true, featureKey = ex.FeatureKey });
+        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
@@ -175,6 +183,24 @@ public sealed class SessionsController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+    }
+
+    /// <summary>Returns paginated session history for the current student, newest first.</summary>
+    [HttpGet("history")]
+    public async Task<IActionResult> History([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _history.HandleAsync(new GetSessionHistoryQuery(userId, page, pageSize), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
     }
 

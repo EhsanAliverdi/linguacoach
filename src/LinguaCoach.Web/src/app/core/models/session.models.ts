@@ -72,3 +72,31 @@ export interface PrepareExerciseResponse {
   activityType: string | null;
   isReview: boolean;
 }
+
+export interface SessionHistoryExercise {
+  exerciseId: string;
+  order: number;
+  exercisePatternKey: string;
+  primarySkill: string;
+  status: ExerciseStatus;
+  score: number | null;
+  completedAtUtc: string | null;
+}
+
+export interface SessionHistoryItem {
+  sessionId: string;
+  title: string;
+  topic: string;
+  focusSkill: string;
+  status: SessionStatus;
+  startedAtUtc: string | null;
+  completedAtUtc: string | null;
+  exercises: SessionHistoryExercise[];
+}
+
+export interface SessionHistoryResponse {
+  sessions: SessionHistoryItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
