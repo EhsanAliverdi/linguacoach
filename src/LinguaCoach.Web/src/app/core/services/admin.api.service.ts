@@ -67,6 +67,7 @@ export class AdminApiService {
   updateAiConfig(id: string, data: {
     providerName?: string | null;
     modelName?: string | null;
+    voiceName?: string | null;
     fallbackProviderName?: string | null;
     fallbackModelName?: string | null;
     fallbackEnabled?: boolean | null;

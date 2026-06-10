@@ -212,6 +212,11 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<string>("VoiceName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("voice_name");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FeatureKey")

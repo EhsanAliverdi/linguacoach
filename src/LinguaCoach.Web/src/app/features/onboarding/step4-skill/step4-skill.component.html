@@ -1,6 +1,6 @@
 <div class="sp-card">
   <div class="mb-5">
-    <p class="sp-eyebrow mb-2">Step 4 of 4</p>
+    <p class="sp-eyebrow mb-2">Step 4 of 5</p>
     <h1 class="text-xl font-bold text-slate-950">Why do you want to improve your English?</h1>
     <p class="mt-2 text-sm leading-6 text-slate-600">Tell us about real situations you find difficult. You can write in your own language too.</p>
   </div>
@@ -47,7 +47,7 @@
   <div class="flex flex-col gap-3 sm:flex-row">
     <a routerLink="/onboarding/step-3" class="sp-button-secondary flex-1">Back</a>
     <button (click)="finish()" [disabled]="submitting()" class="sp-button-primary flex-1">
-      @if (submitting()) { Finishing... } @else { Complete setup }
+      @if (submitting()) { Saving... } @else { Next }
     </button>
   </div>
 </div>

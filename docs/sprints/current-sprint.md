@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10
+lastUpdated: 2026-06-11
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-10
+Last updated: 2026-06-11
 
 ---
 
@@ -19,6 +19,37 @@ Last updated: 2026-06-10
 ---
 
 ## Most recently completed sprint
+
+**Real TTS / Placement Onboarding Gap / Today Session Card** — complete (2026-06-11)
+
+See full sprint plan: `docs/sprints/2026-06-10-tts-placement-today-sprint.md`
+
+### What was done
+
+All tracks shipped on 2026-06-11:
+
+- **Track 1 (Real TTS)** — `VoiceName` added to `AiProviderConfig` (T35 migration). `OpenAiTextToSpeechService` calls `POST /v1/audio/speech`; never throws. `TtsProviderResolver` reads `tts.listening` / `tts.placement` feature keys from DB, returns `FakeTextToSpeechService` (provider=`fake`) or `OpenAiTextToSpeechService` (provider=`openai`). `ListeningAudioService` and `PlacementAudioService` now resolve TTS at runtime. `DefaultAiSeeder` seeds both keys as `fake/fake/fake` (idempotent). Admin UI updated with voice name field and fake provider support.
+- **Track 2 (Onboarding experience step)** — `PATCH /api/onboarding/experience` endpoint added. `StudentProfile.SetExperienceContext()` bypasses state machine. New `step5-experience` Angular component inserted between step-4 and placement. Step-4 now shows "Step 4 of 5" and navigates to step-5. Existing completed students can call the endpoint without error. Non-blocking — API failure still navigates to placement.
+- **Track 3 (Today session card)** — previously completed in Practice Gym Activation sprint; confirmed and skipped.
+
+### Key constraints preserved
+
+- `FakeTextToSpeechService` remains default; `dotnet test` does not require `OPENAI_API_KEY`
+- OpenAI TTS only activates when admin sets `tts.*` feature key provider to `openai`
+- Existing completed students not broken by new experience step
+- Practice Gym behaviour unchanged; Pronunciation remains Coming soon
+
+### Final test results
+
+```
+dotnet test:     873 passed (451 unit + 422 integration)
+npm run build:   passed (0 errors)
+Playwright:      175 passed (167 existing + 8 new onboarding step-5 tests)
+```
+
+---
+
+## Previously completed sprint
 
 **Practice Gym Activation / Pattern-Based Free Practice** — complete (2026-06-10)
 

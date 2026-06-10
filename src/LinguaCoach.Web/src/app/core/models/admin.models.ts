@@ -63,6 +63,7 @@ export interface AiProviderConfigItem {
   featureKey: string;
   providerName: string;
   modelName: string;
+  voiceName: string | null;
   fallbackProviderName: string | null;
   fallbackModelName: string | null;
   fallbackEnabled: boolean;

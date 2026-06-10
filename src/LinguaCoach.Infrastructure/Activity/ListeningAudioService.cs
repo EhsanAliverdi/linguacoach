@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Speaking;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -9,16 +10,16 @@ namespace LinguaCoach.Infrastructure.Activity;
 
 public sealed class ListeningAudioService
 {
-    private readonly ITextToSpeechService _tts;
+    private readonly TtsProviderResolver _ttsResolver;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ListeningAudioService> _logger;
 
     public ListeningAudioService(
-        ITextToSpeechService tts,
+        TtsProviderResolver ttsResolver,
         IConfiguration configuration,
         ILogger<ListeningAudioService> logger)
     {
-        _tts = tts;
+        _ttsResolver = ttsResolver;
         _configuration = configuration;
         _logger = logger;
     }
@@ -39,9 +40,11 @@ public sealed class ListeningAudioService
             return;
         }
 
-        var result = await _tts.GenerateSpeechAsync(
+        var (tts, voice) = await _ttsResolver.ResolveAsync("tts.listening", ct);
+
+        var result = await tts.GenerateSpeechAsync(
             content.AudioScript,
-            new TextToSpeechOptions(targetLanguageCode),
+            new TextToSpeechOptions(targetLanguageCode, voice),
             ct);
 
         if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)
@@ -54,7 +57,8 @@ public sealed class ListeningAudioService
             return;
         }
 
-        var storageKey = $"{activity.Id:N}.wav";
+        var extension = ContentTypeToExtension(result.AudioContentType);
+        var storageKey = $"{activity.Id:N}{extension}";
         var fullPath = GetAudioPath(storageKey);
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         await File.WriteAllBytesAsync(fullPath, result.AudioBytes, ct);
@@ -93,6 +97,12 @@ public sealed class ListeningAudioService
         var safeName = Path.GetFileName(storageKey);
         return Path.GetFullPath(Path.Combine(root, safeName));
     }
+
+    private static string ContentTypeToExtension(string contentType) => contentType switch
+    {
+        "audio/mpeg" or "audio/mp3" => ".mp3",
+        _ => ".wav"
+    };
 
     internal static ListeningContent Parse(string json)
     {

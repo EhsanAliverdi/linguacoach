@@ -35,6 +35,20 @@ public sealed record SetSkillGoalRequest(
     string? DifficultSituationsText)
     : OnboardingStepRequest(UserId);
 
+// ── Experience enrichment (step 5 — bypasses state machine ordering) ─────────
+
+public sealed record SetExperienceRequest(
+    Guid UserId,
+    ProfessionalExperienceLevel ProfessionalExperienceLevel,
+    RoleFamiliarity RoleFamiliarity);
+
+public sealed record SetExperienceResult(bool Success);
+
+public interface IOnboardingExperienceHandler
+{
+    Task<SetExperienceResult> HandleAsync(SetExperienceRequest request, CancellationToken ct = default);
+}
+
 // ── Handler interface ─────────────────────────────────────────────────────────
 
 public sealed record OnboardingStepResult(string LastCompletedStep, bool IsComplete);

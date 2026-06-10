@@ -19,6 +19,7 @@ internal sealed class AiProviderConfigConfiguration : IEntityTypeConfiguration<A
         builder.Property(e => e.ProviderName).HasColumnName("provider_name").HasMaxLength(50).IsRequired();
         builder.Property(e => e.ModelName).HasColumnName("model_name").HasMaxLength(100).IsRequired();
         builder.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        builder.Property(e => e.VoiceName).HasColumnName("voice_name").HasMaxLength(100).IsRequired(false);
         builder.Property(e => e.FallbackProviderName).HasColumnName("fallback_provider_name").HasMaxLength(50).IsRequired(false);
         builder.Property(e => e.FallbackModelName).HasColumnName("fallback_model_name").HasMaxLength(100).IsRequired(false);
         builder.Property(e => e.FallbackEnabled).HasColumnName("fallback_enabled").IsRequired().HasDefaultValue(false);

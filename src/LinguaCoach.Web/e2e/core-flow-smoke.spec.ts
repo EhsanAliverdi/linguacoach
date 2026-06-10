@@ -93,6 +93,14 @@ async function mockApi(page: Page) {
     });
   });
 
+  await page.route('**/api/onboarding/experience', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true }),
+    });
+  });
+
   await page.route('**/api/onboarding', async route => {
     const body = route.request().postDataJSON() as { step: string };
     onboardingStep =
@@ -518,7 +526,7 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await page.locator('input[name="confirm"]').fill('Student1234');
   await page.getByRole('button', { name: 'Set password and continue' }).click();
 
-  // ── Onboarding — 4 steps ──────────────────────────────────────────────────────
+  // ── Onboarding — 5 steps ──────────────────────────────────────────────────────
   await expect(page.getByRole('heading', { name: 'Choose your language path' })).toBeVisible();
   await page.getByRole('button', { name: /Persian to English/i }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -534,7 +542,11 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Why do you want to improve your English/i })).toBeVisible();
   await page.getByRole('button', { name: /Listening/i }).click();
   await page.getByRole('textbox').fill('میخوام بتونم ایمیل رسمی بنویسم');
-  await page.getByRole('button', { name: 'Complete setup' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+
+  // ── Step 5 — experience (new) ────────────────────────────────────────────────
+  await expect(page.getByRole('heading', { name: /Tell us about your work experience/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue to assessment' }).click();
 
   // ── Dashboard — verify Today page loaded ─────────────────────────────────────
   await expect(page).toHaveURL(/\/placement/);

@@ -249,6 +249,90 @@ public sealed class OnboardingEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(JsonValueKind.Null, cefrLevel.ValueKind);
     }
 
+    // ── PATCH /api/onboarding/experience ─────────────────────────────────────
+
+    [Fact]
+    public async Task Experience_WithoutToken_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PatchAsJsonAsync("/api/onboarding/experience",
+            new { professionalExperienceLevel = 2, roleFamiliarity = 2 });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Experience_NewStudent_Returns200AndPersistsFields()
+    {
+        var email = $"exp_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync(email);
+        var client = ClientWithToken(token);
+
+        var response = await client.PatchAsJsonAsync("/api/onboarding/experience",
+            new { professionalExperienceLevel = 3, roleFamiliarity = 2 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("success").GetBoolean());
+
+        // Verify fields persisted to DB.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        Assert.Equal(LinguaCoach.Domain.Enums.ProfessionalExperienceLevel.MidLevel_2_5Years, profile.ProfessionalExperienceLevel);
+        Assert.Equal(LinguaCoach.Domain.Enums.RoleFamiliarity.CurrentlyWorkingInRole, profile.RoleFamiliarity);
+        Assert.NotNull(profile.WorkplaceSeniority);
+    }
+
+    [Fact]
+    public async Task Experience_CanBeCalledAfterOnboardingComplete()
+    {
+        var email = $"exp_complete_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync(email);
+        var client = ClientWithToken(token);
+        var langPairId = await GetFaEnPairIdAsync();
+        var careerId = await GetCareerIdAsync();
+
+        // Complete all 4 onboarding steps.
+        await client.PatchAsJsonAsync("/api/onboarding", new { step = "language", languagePairId = langPairId });
+        await client.PatchAsJsonAsync("/api/onboarding", new { step = "preference", preferredDurationMinutes = 15 });
+        await client.PatchAsJsonAsync("/api/onboarding", new { step = "career", careerProfileId = careerId });
+        await client.PatchAsJsonAsync("/api/onboarding", new { step = "skill", skillFocus = 0 });
+
+        // Experience step must still work after completion — not blocked by state machine.
+        var response = await client.PatchAsJsonAsync("/api/onboarding/experience",
+            new { professionalExperienceLevel = 4, roleFamiliarity = 3 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        Assert.Equal(LinguaCoach.Domain.Enums.ProfessionalExperienceLevel.Senior_5_10Years, profile.ProfessionalExperienceLevel);
+        Assert.Equal(LinguaCoach.Domain.Enums.RoleFamiliarity.ExperiencedInRole, profile.RoleFamiliarity);
+    }
+
+    [Fact]
+    public async Task Experience_IsIdempotent_CanCallTwice()
+    {
+        var email = $"exp_idem_{Guid.NewGuid():N}@test.com";
+        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync(email);
+        var client = ClientWithToken(token);
+
+        await client.PatchAsJsonAsync("/api/onboarding/experience",
+            new { professionalExperienceLevel = 2, roleFamiliarity = 1 });
+
+        // Second call with different values should update.
+        var response = await client.PatchAsJsonAsync("/api/onboarding/experience",
+            new { professionalExperienceLevel = 3, roleFamiliarity = 2 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = db.StudentProfiles.First(p => p.UserId == userId);
+        Assert.Equal(LinguaCoach.Domain.Enums.ProfessionalExperienceLevel.MidLevel_2_5Years, profile.ProfessionalExperienceLevel);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private HttpClient ClientWithToken(string token)

@@ -1054,6 +1054,11 @@ Rules:
                 DefaultModel);
         }
 
+        // TTS provider configs — default to fake so CI never calls OpenAI.
+        // Admin switches to openai/tts-1/onyx via the AI Config UI.
+        await SeedTtsProviderConfigAsync(db, logger, "tts.listening", ct);
+        await SeedTtsProviderConfigAsync(db, logger, "tts.placement", ct);
+
         // Activity generation prompt
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWritingKey, ActivityGenerateWritingContent,
@@ -1207,5 +1212,18 @@ Rules:
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(content));
         return Convert.ToHexString(bytes)[..16];
+    }
+
+    private static async Task SeedTtsProviderConfigAsync(
+        LinguaCoachDbContext db,
+        ILogger logger,
+        string featureKey,
+        CancellationToken ct)
+    {
+        var exists = await db.AiProviderConfigs.AnyAsync(c => c.FeatureKey == featureKey, ct);
+        if (exists) return;
+
+        db.AiProviderConfigs.Add(new AiProviderConfig(featureKey, "fake", "fake", "fake"));
+        logger.LogInformation("Seeded TTS provider config for {FeatureKey}: fake/fake/fake.", featureKey);
     }
 }

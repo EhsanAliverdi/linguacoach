@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 22:00
+lastUpdated: 2026-06-11
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-10 22:00
+Last updated: 2026-06-11
 
 ---
 
@@ -79,12 +79,34 @@ All four activity types use the unified `/activity` path.
 
 All pattern-keyed activities go through `PatternEvaluationRouter`. Progress updates only after a submitted attempt. Returning from any pattern card goes back to `/practice` via `returnTo`.
 
-## Test suite baseline (as of practice-gym-activation-sprint — 2026-06-10)
+## Real TTS via Admin AI Config (complete — 2026-06-11)
+
+`ListeningAudioService` and `PlacementAudioService` now resolve TTS provider at request time via `TtsProviderResolver`:
+
+- `AiProviderConfig` rows `tts.listening` and `tts.placement` control which TTS service runs
+- Default seed: `provider=fake, model=fake, voice=fake` → silent WAV (tests never need `OPENAI_API_KEY`)
+- Admin can switch to `provider=openai, model=tts-1, voice=onyx` in Admin AI Config UI
+- `OpenAiTextToSpeechService` calls `POST /v1/audio/speech`; returns `audio/mpeg`; never throws
+- `PlacementAudioService` checks both `.wav` and `.mp3` on disk (backward compat with pre-existing files)
+- T35 migration adds nullable `voice_name varchar(100)` to `ai_provider_configs`
+
+## Onboarding experience step (complete — 2026-06-11)
+
+A new step-5 collects professional context before placement:
+
+- `PATCH /api/onboarding/experience` — sets `ProfessionalExperienceLevel`, `RoleFamiliarity`, computes `WorkplaceSeniority`
+- Uses `StudentProfile.SetExperienceContext()` — bypasses onboarding state machine; can be called at any stage
+- Angular: `step5-experience` component inserted between step-4 and `/placement`
+- Step-4 now shows "Step 4 of 5"; navigates to `/onboarding/step-5` on finish
+- Non-blocking: API failure still navigates to `/placement`; "Skip for now" skips without calling API
+- Existing completed students not broken — endpoint accepts any auth token regardless of onboarding state
+
+## Test suite baseline (as of tts-placement-today-sprint — 2026-06-11)
 
 ```
 dotnet test:     873 passed (451 unit + 422 integration)
 npm run build:   passed
-Playwright:      167 passed
+Playwright:      175 passed (167 existing + 8 new onboarding step-5 tests)
 ```
 
 ## Admin capabilities

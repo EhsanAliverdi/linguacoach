@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Infrastructure.Onboarding;
 
-public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQuery
+public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQuery, IOnboardingExperienceHandler
 {
     private readonly LinguaCoachDbContext _db;
 
@@ -74,6 +74,18 @@ public sealed class OnboardingHandler : IOnboardingHandler, IOnboardingStatusQue
         await _db.SaveChangesAsync(ct);
 
         return new OnboardingStepResult(profile.LastCompletedStep.ToString(), profile.OnboardingStatus == OnboardingStatus.Complete);
+    }
+
+    public async Task<SetExperienceResult> HandleAsync(SetExperienceRequest request, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles
+            .FirstOrDefaultAsync(p => p.UserId == request.UserId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        profile.SetExperienceContext(request.ProfessionalExperienceLevel, request.RoleFamiliarity);
+        await _db.SaveChangesAsync(ct);
+
+        return new SetExperienceResult(Success: true);
     }
 
     public async Task<OnboardingStatusResult> HandleAsync(OnboardingStatusQuery query, CancellationToken ct = default)

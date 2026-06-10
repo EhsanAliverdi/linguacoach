@@ -211,6 +211,7 @@ public sealed class AdminController : ControllerBase
                     configId,
                     request.ProviderName,
                     request.ModelName,
+                    request.VoiceName,
                     request.FallbackProviderName,
                     request.FallbackModelName,
                     request.FallbackEnabled),
@@ -281,6 +282,7 @@ public sealed record UpdateWordRequest(string Definition, string ExampleSentence
 public sealed record UpdateAiConfigRequest(
     string? ProviderName,
     string? ModelName,
+    string? VoiceName = null,
     string? FallbackProviderName = null,
     string? FallbackModelName = null,
     bool? FallbackEnabled = null);

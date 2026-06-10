@@ -229,6 +229,20 @@ public sealed class StudentProfile : BaseEntity
             : null;
     }
 
+    /// <summary>
+    /// Sets professional experience and role familiarity without touching any other profile fields.
+    /// Intentionally bypasses the onboarding state machine — safe to call after onboarding is complete.
+    /// Computes and persists WorkplaceSeniority immediately.
+    /// </summary>
+    public void SetExperienceContext(
+        ProfessionalExperienceLevel experienceLevel,
+        RoleFamiliarity roleFamiliarity)
+    {
+        ProfessionalExperienceLevel = experienceLevel;
+        RoleFamiliarity = roleFamiliarity;
+        WorkplaceSeniority = WorkplaceSeniorityCalculator.Compute(experienceLevel, roleFamiliarity);
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────────
 
     private void EnsureStepIsNext(OnboardingStep requestedStep)

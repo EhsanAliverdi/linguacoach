@@ -39,7 +39,7 @@ export class Step4SkillComponent {
       skillFocus,
       learningGoalDescription: goal,
     }).subscribe({
-      next: () => this.router.navigate(['/placement']),
+      next: () => this.router.navigate(['/onboarding/step-5']),
       error: err => { this.submitting.set(false); this.error.set(err.error?.error ?? 'Failed to save.'); },
     });
   }

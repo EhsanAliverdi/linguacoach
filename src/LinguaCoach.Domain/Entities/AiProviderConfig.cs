@@ -12,11 +12,12 @@ public sealed class AiProviderConfig : BaseEntity
     public string FeatureKey { get; private set; }
     public string ProviderName { get; private set; }
     public string ModelName { get; private set; }
+    public string? VoiceName { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
     private AiProviderConfig() { FeatureKey = string.Empty; ProviderName = string.Empty; ModelName = string.Empty; }
 
-    public AiProviderConfig(string featureKey, string providerName, string modelName)
+    public AiProviderConfig(string featureKey, string providerName, string modelName, string? voiceName = null)
     {
         if (string.IsNullOrWhiteSpace(featureKey)) throw new ArgumentException("FeatureKey is required.", nameof(featureKey));
         if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentException("ProviderName is required.", nameof(providerName));
@@ -25,6 +26,7 @@ public sealed class AiProviderConfig : BaseEntity
         FeatureKey = featureKey.Trim().ToLowerInvariant();
         ProviderName = providerName.Trim().ToLowerInvariant();
         ModelName = modelName.Trim();
+        VoiceName = string.IsNullOrWhiteSpace(voiceName) ? null : voiceName.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -66,7 +68,10 @@ public sealed class AiProviderConfig : BaseEntity
         {
             "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4",
             "gpt-3.5-turbo", "o1", "o1-mini", "o3-mini",
+            // TTS models
+            "tts-1", "tts-1-hd",
         },
+        ["fake"] = new(StringComparer.OrdinalIgnoreCase) { "fake" },
         ["gemini"] = new(StringComparer.OrdinalIgnoreCase)
         {
             "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite",
@@ -87,6 +92,12 @@ public sealed class AiProviderConfig : BaseEntity
         KnownModelsByProvider.ToDictionary(
             kvp => kvp.Key,
             kvp => (IReadOnlySet<string>)kvp.Value);
+
+    public void UpdateVoice(string? voiceName)
+    {
+        VoiceName = string.IsNullOrWhiteSpace(voiceName) ? null : voiceName.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     public void Update(string providerName, string modelName)
     {

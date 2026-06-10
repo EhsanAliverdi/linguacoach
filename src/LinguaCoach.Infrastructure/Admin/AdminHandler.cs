@@ -254,6 +254,9 @@ public sealed class AdminHandler :
                 command.ModelName ?? config.ModelName);
         }
 
+        if (command.VoiceName is not null)
+            config.UpdateVoice(command.VoiceName);
+
         if (command.FallbackEnabled.HasValue
             || command.FallbackProviderName is not null
             || command.FallbackModelName is not null)
@@ -327,6 +330,7 @@ public sealed class AdminHandler :
             c.FeatureKey,
             c.ProviderName,
             c.ModelName,
+            c.VoiceName,
             c.FallbackProviderName,
             c.FallbackModelName,
             c.FallbackEnabled);

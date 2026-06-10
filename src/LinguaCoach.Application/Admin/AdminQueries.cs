@@ -125,6 +125,7 @@ public sealed record AiProviderConfigItem(
     string FeatureKey,
     string ProviderName,
     string ModelName,
+    string? VoiceName,
     string? FallbackProviderName,
     string? FallbackModelName,
     bool FallbackEnabled);
@@ -142,6 +143,7 @@ public sealed record UpdateAiProviderConfigCommand(
     Guid ConfigId,
     string? ProviderName,
     string? ModelName,
+    string? VoiceName,
     string? FallbackProviderName,
     string? FallbackModelName,
     bool? FallbackEnabled);

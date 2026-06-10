@@ -17,4 +17,11 @@ export class OnboardingService {
   submitStep(request: OnboardingStepRequest): Observable<OnboardingStepResult> {
     return this.http.patch<OnboardingStepResult>(`${this.api}/onboarding`, request);
   }
+
+  submitExperience(professionalExperienceLevel: number, roleFamiliarity: number): Observable<{ success: boolean }> {
+    return this.http.patch<{ success: boolean }>(`${this.api}/onboarding/experience`, {
+      professionalExperienceLevel,
+      roleFamiliarity,
+    });
+  }
 }

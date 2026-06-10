@@ -43,12 +43,15 @@ interface ProviderState {
                 <small>{{ c.featureKey }}</small>
               </div>
 
-              <div class="sp-ai-route-controls">
+              <div [class]="'sp-ai-route-controls' + (isTtsFeature(c.featureKey) ? ' has-voice' : '')">
                 <label>
                   <span>Primary provider</span>
                   <select [value]="c.providerName"
                     (change)="onFeatureProviderChange(c, $any($event.target).value)"
                     class="sp-ai-select">
+                    @if (isFakeProvider(c.providerName)) {
+                      <option value="fake">fake (default)</option>
+                    }
                     @for (p of providers(); track p.catalog.providerName) {
                       <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
                     }
@@ -60,11 +63,25 @@ interface ProviderState {
                   <select [value]="c.modelName"
                     (change)="onFeatureModelChange(c, $any($event.target).value)"
                     class="sp-ai-select sp-ai-model-select">
+                    @if (isFakeProvider(c.providerName)) {
+                      <option value="fake">fake (silent)</option>
+                    }
                     @for (m of modelsFor(c.providerName); track m) {
                       <option [value]="m">{{ m }}</option>
                     }
                   </select>
                 </label>
+
+                @if (isTtsFeature(c.featureKey)) {
+                  <label>
+                    <span>Voice</span>
+                    <input type="text"
+                      [value]="c.voiceName ?? ''"
+                      (change)="onVoiceNameChange(c, $any($event.target).value)"
+                      placeholder="e.g. onyx"
+                      class="sp-ai-select sp-ai-model-select" />
+                  </label>
+                }
 
                 <label class="sp-ai-fallback-toggle">
                   <input type="checkbox" [checked]="c.fallbackEnabled" (change)="onFallbackEnabledChange(c, $any($event.target).checked)" />
@@ -217,6 +234,7 @@ interface ProviderState {
     .sp-ai-route-feature div{font-size:13px;font-weight:800;color:#0F172A;}
     .sp-ai-route-feature small{display:block;margin-top:3px;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#64748B;overflow-wrap:anywhere;}
     .sp-ai-route-controls{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;align-items:end;}
+    .sp-ai-route-controls.has-voice{grid-template-columns:repeat(6,minmax(120px,1fr));}
     .sp-ai-route-controls label span{display:block;margin-bottom:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;}
     .sp-ai-select{width:100%;border:1px solid #CBD5E1;border-radius:9px;padding:7px 9px;font-size:13px;background:#fff;color:#0F172A;}
     .sp-ai-select:disabled{background:#F8FAFC;color:#94A3B8;}
@@ -296,9 +314,19 @@ export class AdminAiConfigComponent implements OnInit {
     return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
   }
 
+  isTtsFeature(featureKey: string): boolean {
+    return featureKey.startsWith('tts.');
+  }
+
+  isFakeProvider(providerName: string): boolean {
+    return providerName === 'fake';
+  }
+
   featureLabel(featureKey: string): string {
     return ({
       'writing.exercise': 'Legacy writing feedback',
+      'tts.listening': 'Listening activity TTS audio',
+      'tts.placement': 'Placement assessment TTS audio',
       'learning_path_generate': 'Initial learning path',
       'learning_path_generate_adaptive': 'Adaptive learning path',
       'activity_generate_writing': 'Generate writing activity',
@@ -313,7 +341,7 @@ export class AdminAiConfigComponent implements OnInit {
   }
 
   onFeatureProviderChange(c: AiProviderConfigItem, newProvider: string): void {
-    const newModel = this.modelsFor(newProvider)[0] ?? c.modelName;
+    const newModel = newProvider === 'fake' ? 'fake' : (this.modelsFor(newProvider)[0] ?? c.modelName);
     this.saveFeature(c, { providerName: newProvider, modelName: newModel });
   }
 
@@ -347,9 +375,14 @@ export class AdminAiConfigComponent implements OnInit {
     });
   }
 
+  onVoiceNameChange(c: AiProviderConfigItem, voiceName: string): void {
+    this.saveFeature(c, { voiceName: voiceName || null });
+  }
+
   private saveFeature(c: AiProviderConfigItem, data: {
     providerName?: string | null;
     modelName?: string | null;
+    voiceName?: string | null;
     fallbackProviderName?: string | null;
     fallbackModelName?: string | null;
     fallbackEnabled?: boolean | null;

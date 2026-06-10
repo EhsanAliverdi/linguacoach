@@ -57,6 +57,7 @@ public static class DependencyInjection
         // Onboarding
         services.AddScoped<IOnboardingHandler, OnboardingHandler>();
         services.AddScoped<IOnboardingStatusQuery, OnboardingHandler>();
+        services.AddScoped<IOnboardingExperienceHandler, OnboardingHandler>();
 
         // Dashboard
         services.AddScoped<StudentProgressService>();
@@ -129,7 +130,13 @@ public static class DependencyInjection
 
         // STT: use FakeSpeechToTextService for MVP; swap in a real provider later
         services.AddScoped<ISpeechToTextService, FakeSpeechToTextService>();
+        // TTS: FakeTextToSpeechService is the default (no API key needed).
+        // OpenAiTextToSpeechService activates when AiProviderConfig selects "openai" for tts.* feature keys.
+        // TtsProviderResolver reads the DB config and returns the correct implementation.
         services.AddScoped<ITextToSpeechService, FakeTextToSpeechService>();
+        services.AddScoped<FakeTextToSpeechService>();
+        services.AddScoped<OpenAiTextToSpeechService>();
+        services.AddScoped<TtsProviderResolver>();
 
         // Speaking sessions
         services.AddScoped<ICreateSpeakingSessionHandler, SpeakingSessionHandler>();

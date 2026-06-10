@@ -14,11 +14,16 @@ public sealed class OnboardingController : ControllerBase
 {
     private readonly IOnboardingHandler _handler;
     private readonly IOnboardingStatusQuery _statusQuery;
+    private readonly IOnboardingExperienceHandler _experienceHandler;
 
-    public OnboardingController(IOnboardingHandler handler, IOnboardingStatusQuery statusQuery)
+    public OnboardingController(
+        IOnboardingHandler handler,
+        IOnboardingStatusQuery statusQuery,
+        IOnboardingExperienceHandler experienceHandler)
     {
         _handler = handler;
         _statusQuery = statusQuery;
+        _experienceHandler = experienceHandler;
     }
 
     [HttpPatch]
@@ -72,6 +77,28 @@ public sealed class OnboardingController : ControllerBase
         }
     }
 
+    [HttpPatch("experience")]
+    public async Task<IActionResult> Experience([FromBody] ExperienceStepDto dto, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _experienceHandler.HandleAsync(
+                new SetExperienceRequest(
+                    userId,
+                    dto.ProfessionalExperienceLevel,
+                    dto.RoleFamiliarity),
+                ct);
+            return Ok(new { success = result.Success });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpGet("status")]
     public async Task<IActionResult> Status(CancellationToken ct)
     {
@@ -85,6 +112,12 @@ public sealed class OnboardingController : ControllerBase
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
+}
+
+public sealed class ExperienceStepDto
+{
+    public ProfessionalExperienceLevel ProfessionalExperienceLevel { get; set; }
+    public RoleFamiliarity RoleFamiliarity { get; set; }
 }
 
 public sealed class OnboardingStepDto

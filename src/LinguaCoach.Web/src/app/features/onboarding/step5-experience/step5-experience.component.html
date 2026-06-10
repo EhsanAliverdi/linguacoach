@@ -1,0 +1,52 @@
+<div class="sp-card">
+  <div class="mb-5">
+    <p class="sp-eyebrow mb-2">Step 5 of 5</p>
+    <h1 class="text-xl font-bold text-slate-950">Tell us about your work experience</h1>
+    <p class="mt-2 text-sm leading-6 text-slate-600">
+      This helps us tailor your lessons to the right level of workplace complexity. You can skip if you prefer.
+    </p>
+  </div>
+
+  <!-- Experience level -->
+  <div class="mb-6">
+    <p class="mb-3 text-sm font-semibold text-slate-700">How many years of professional experience do you have?</p>
+    <div class="space-y-2">
+      @for (level of experienceLevels; track level.value) {
+        <button
+          (click)="selectExperience(level.value)"
+          [class.ring-2]="selectedExperience() === level.value"
+          [class.ring-indigo-500]="selectedExperience() === level.value"
+          [class.border-indigo-300]="selectedExperience() === level.value"
+          class="sp-option">
+          <span class="block font-semibold text-slate-900">{{ level.label }}</span>
+          <span class="mt-0.5 block text-sm leading-5 text-slate-600">{{ level.description }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Role familiarity -->
+  <div class="mb-6">
+    <p class="mb-3 text-sm font-semibold text-slate-700">How familiar are you with your current type of role?</p>
+    <div class="space-y-2">
+      @for (level of familiarityLevels; track level.value) {
+        <button
+          (click)="selectFamiliarity(level.value)"
+          [class.ring-2]="selectedFamiliarity() === level.value"
+          [class.ring-indigo-500]="selectedFamiliarity() === level.value"
+          [class.border-indigo-300]="selectedFamiliarity() === level.value"
+          class="sp-option">
+          <span class="block font-semibold text-slate-900">{{ level.label }}</span>
+          <span class="mt-0.5 block text-sm leading-5 text-slate-600">{{ level.description }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-3 sm:flex-row">
+    <button (click)="skip()" class="sp-button-secondary flex-1">Skip for now</button>
+    <button (click)="finish()" [disabled]="submitting()" class="sp-button-primary flex-1">
+      @if (submitting()) { Saving... } @else { Continue to assessment }
+    </button>
+  </div>
+</div>
