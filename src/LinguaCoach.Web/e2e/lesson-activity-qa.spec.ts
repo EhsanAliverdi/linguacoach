@@ -109,7 +109,18 @@ async function mockMixedSession(page: Page) {
   });
 }
 
-function mockActivity(page: Page, activityBody: object) {
+async function mockActivity(page: Page, activityBody: Record<string, unknown>) {
+  if (typeof activityBody['audioUrl'] === 'string' && activityBody['audioAvailable'] === true) {
+    await page.route(`**${activityBody['audioUrl']}`, route => {
+      expect(route.request().headers()['authorization']).toContain('Bearer ');
+      return route.fulfill({
+        status: 200,
+        contentType: String(activityBody['audioContentType'] ?? 'audio/wav'),
+        body: 'RIFF____WAVEfmt ',
+      });
+    });
+  }
+
   return page.route('**/api/activity/next**', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(activityBody),
   }));
@@ -224,6 +235,7 @@ test('listen_and_answer with audio renders audio player with src', async ({ page
   await expect(page.getByTestId('audio-free-text-renderer')).toBeVisible({ timeout: 5000 });
   const src = await page.locator('[data-testid="audio-player"]').getAttribute('src');
   expect(src, 'audio player must have a src — 0:00/0:00 with no src is a bug').toBeTruthy();
+  expect(src, 'protected API audio should be converted to a browser-playable blob URL').toContain('blob:');
 });
 
 test('listen_and_answer with no audio shows unavailable message not a blank player', async ({ page }) => {

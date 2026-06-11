@@ -24,6 +24,17 @@ async function withAuth(page: Page) {
   await page.addInitScript((s) => sessionStorage.setItem('speakpath.auth', s), JSON.stringify({ token, mustChangePassword: false }));
 }
 
+async function mockAudio(page: Page, path: string) {
+  await page.route(`**${path}`, async route => {
+    expect(route.request().headers()['authorization']).toContain('Bearer ');
+    await route.fulfill({
+      status: 200,
+      contentType: 'audio/wav',
+      body: 'RIFF____WAVEfmt ',
+    });
+  });
+}
+
 const listeningActivity = {
   activityId: 'listening-act-1',
   activityType: 'listeningComprehension',
@@ -106,6 +117,7 @@ const listeningFeedback = {
 
 test('listening comprehension activity hides transcript before submit and reveals it after feedback', async ({ page }) => {
   await withAuth(page);
+  await mockAudio(page, listeningActivity.audioUrl);
   await page.route('**/api/activity/next', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(listeningActivity) });
   });

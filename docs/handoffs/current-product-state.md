@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-11 13:01
+lastUpdated: 2026-06-11 13:25
 owner: product
 supersedes:
 supersededBy:
@@ -92,6 +92,7 @@ All pattern-keyed activities go through `PatternEvaluationRouter`. Progress upda
 - TTS category saves reject non-TTS models. Existing Gemini TTS configs with a normal text model are defensively routed to the default Gemini TTS model by `GeminiTextToSpeechService`.
 - `OpenAiTextToSpeechService` calls `POST /v1/audio/speech`; returns `audio/mpeg`; never throws
 - `GeminiTextToSpeechService` calls the Gemini `generateContent` TTS path with `responseModalities=["AUDIO"]`, `speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName`, and returns `audio/wav`; never throws
+- Activity audio endpoints remain JWT-protected. Angular fetches listening audio through `HttpClient` and converts it to a temporary `blob:` URL before rendering `<audio>`, so browser media requests do not hit `/api/activity/{id}/audio` anonymously.
 - `PlacementAudioService` checks both `.wav` and `.mp3` on disk (backward compat with pre-existing files)
 - T35 migration adds nullable `voice_name varchar(100)` to `ai_provider_configs`
 

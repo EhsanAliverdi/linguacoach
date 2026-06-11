@@ -1,7 +1,7 @@
 ---
 status: planned
 createdAt: 2026-06-11
-lastUpdated: 2026-06-11 13:01
+lastUpdated: 2026-06-11 13:25
 owner: product
 related:
   - docs/testing/deployed-student-e2e-audit-2026-06-11.md
@@ -526,6 +526,8 @@ Add: the endpoint should also handle the case where `provider=fake` produced an 
 ### Phase 4B — Frontend audio player graceful failure
 
 **Files:** listening activity component, placement audio component.
+
+Activity audio URLs returned by the backend are protected API paths. Do not bind them directly to `<audio src>`, because browser media element requests do not pass through the Angular auth interceptor. Fetch the audio through `HttpClient` first, then render a temporary `blob:` URL.
 
 When the audio request returns 404 or 503:
 - Show a banner: "Audio is not available for this activity. Check AI configuration."

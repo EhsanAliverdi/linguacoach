@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ActivityDto, ActivityFeedbackDto, ActivityType, ListeningAnswer, VocabAnswer } from '../models/activity.models';
 import { environment } from '../../../environments/environment';
 
@@ -20,6 +21,21 @@ export class ActivityService {
 
   getById(activityId: string): Observable<ActivityDto> {
     return this.http.get<ActivityDto>(`${this.base}/${activityId}`);
+  }
+
+  /** Fetches protected activity audio as a blob URL. HttpClient attaches the JWT. */
+  getAudioBlobUrl(audioApiPath: string): Observable<string> {
+    return this.http.get(this.toAbsoluteApiUrl(audioApiPath), { responseType: 'blob' }).pipe(
+      map(blob => URL.createObjectURL(blob))
+    );
+  }
+
+  private toAbsoluteApiUrl(apiPath: string): string {
+    if (apiPath.startsWith('blob:') || apiPath.startsWith('http://') || apiPath.startsWith('https://')) {
+      return apiPath;
+    }
+
+    return `${environment.apiUrl.replace(/\/api$/, '')}${apiPath}`;
   }
 
   private toApiActivityType(type: ActivityType): string {

@@ -47,6 +47,7 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
   audioBlobUrl: string | null = null;
   recordingStartTime: number | null = null;
   recordingDurationSeconds: number | null = null;
+  private activityAudioBlobUrl: string | null = null;
 
   readonly stepDots = [
     { n: 1, key: 'learning', label: 'Lesson' },
@@ -69,6 +70,7 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.cleanupRecording();
+    this.cleanupActivityAudio();
     if (this.audioBlobUrl) {
       URL.revokeObjectURL(this.audioBlobUrl);
     }
@@ -81,6 +83,7 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     this.listeningAnswers = {};
     this.listeningResponseText = '';
     this.cleanupRecording();
+    this.cleanupActivityAudio();
     this.activity.set(null);
     this.feedback.set(null);
     this.attemptCount.set(0);
@@ -104,6 +107,13 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     this.recordingDurationSeconds = null;
   }
 
+  private cleanupActivityAudio(): void {
+    if (this.activityAudioBlobUrl) {
+      URL.revokeObjectURL(this.activityAudioBlobUrl);
+      this.activityAudioBlobUrl = null;
+    }
+  }
+
   loadActivity(): void {
     this.state.set('loading');
     const specificId = this.route.snapshot.queryParamMap.get('activityId');
@@ -113,12 +123,7 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
       : this.activityService.getNext(patternKey ? undefined : this.preferredActivityType(), patternKey);
     obs.subscribe({
       next: a => {
-        this.activity.set(a);
-        if (a.activityType === 'speakingRolePlay') {
-          this.initSpeakingState();
-        } else {
-          this.state.set('learning');
-        }
+        this.setActivityWithAudio(a);
       },
       error: (err: HttpErrorResponse) => {
         const msg = err.status === 503
@@ -128,6 +133,39 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
         this.state.set('error');
       },
     });
+  }
+
+  private setActivityWithAudio(activity: ActivityDto): void {
+    if (!activity.audioAvailable || !activity.audioUrl) {
+      this.setReadyActivity(activity);
+      return;
+    }
+
+    this.activityService.getAudioBlobUrl(activity.audioUrl).subscribe({
+      next: blobUrl => {
+        this.cleanupActivityAudio();
+        this.activityAudioBlobUrl = blobUrl;
+        this.setReadyActivity({ ...activity, audioUrl: blobUrl });
+      },
+      error: () => {
+        this.setReadyActivity({
+          ...activity,
+          audioAvailable: false,
+          audioUrl: null,
+          audioUnavailableMessage: activity.audioUnavailableMessage
+            || 'Audio is temporarily unavailable. Complete this as a transcript-based listening practice.',
+        });
+      },
+    });
+  }
+
+  private setReadyActivity(activity: ActivityDto): void {
+    this.activity.set(activity);
+    if (activity.activityType === 'speakingRolePlay') {
+      this.initSpeakingState();
+    } else {
+      this.state.set('learning');
+    }
   }
 
   private initSpeakingState(): void {
