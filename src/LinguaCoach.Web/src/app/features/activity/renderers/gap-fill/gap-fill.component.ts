@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
 
 export interface GapFillItem {
   id: string;
@@ -10,6 +11,7 @@ export interface GapFillItem {
 }
 
 export interface GapFillContent {
+  learningGoal?: string | null;
   instructions?: string | null;
   items: GapFillItem[];
   wordBank?: string[];
@@ -22,7 +24,7 @@ export interface GapFillAnswer {
 @Component({
   selector: 'app-gap-fill',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent],
   templateUrl: './gap-fill.component.html',
 })
 export class GapFillComponent {

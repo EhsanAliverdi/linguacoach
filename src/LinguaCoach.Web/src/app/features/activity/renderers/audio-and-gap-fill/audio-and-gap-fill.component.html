@@ -1,5 +1,7 @@
 <div style="display:flex;flex-direction:column;gap:16px" data-testid="audio-gap-fill-renderer">
 
+  <app-exercise-lesson-intro [goal]="content.learningGoal" />
+
   @if (content.scenario) {
     <div class="sp-card" style="padding:14px 18px">
       <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>

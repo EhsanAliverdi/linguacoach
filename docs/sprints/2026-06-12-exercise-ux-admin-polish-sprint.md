@@ -117,13 +117,24 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - Updated two existing integration test assertions (`ExercisePatternPhase1Tests`, `ExercisePatternPhase2Tests`) and the `InteractionMode` enum-pinning unit test (`InteractionModeMarkingModeTests`) for the new enum value (10 → 11 total values).
 - New Playwright test: "EmailReply renders subject and body fields and submits structured content".
 
+## Phase 4 findings
+
+- New shared presentational component `ExerciseLessonIntroComponent` (`renderers/exercise-lesson-intro/`) — renders a small "Goal" label/text strip via `@if (goal)`, `data-testid="exercise-lesson-goal"`. This is the "Lesson" framing element for the Lesson → Practice → Evaluate structure.
+- Applied to the 4 renderers that previously had no goal-framing element at all: `GapFillComponent`, `MatchingPairsComponent`, `AudioAndFreeTextComponent`, `AudioAndGapFillComponent`. Each gained a `learningGoal?: string | null` content field and `<app-exercise-lesson-intro [goal]="content.learningGoal" />` near the top of the template.
+- `exercise-renderer.component.ts` content getters for these 4 kinds now map `learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal`.
+- Not changed (already satisfy the "Lesson" framing via existing elements, avoiding duplicate goal displays):
+  - `ChatReplyComponent` — already has `chat-reply-goal` from Phase 2.
+  - `EmailReplyComponent` and `FreeTextEntryComponent` — already surface `learningGoal` via `coachNote` in an `.sp-alert-info` block.
+- No backend changes required — `learningGoal` was already exposed end-to-end (`ActivityController.cs` → `ActivityDto.learningGoal`). Purely additive frontend interface fields, getter mappings, and template insertions.
+- `npx ng build`: succeeds (pre-existing unrelated `PatternEvaluationResultComponent` template warnings confirmed present on `main` before this change too, via `git stash` comparison). `dotnet test tests/LinguaCoach.UnitTests`: 477 passed, 0 failed (no backend changes in this phase).
+
 ## Tasks
 
 - [x] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
 - [x] Phase 1: Verify attempt/retry integrity — found and fixed gap-fill submission shape bug
 - [x] Phase 2: Workplace Chat — goal/tone framing + rubric update
 - [x] Phase 3: Email — Subject/Body structured renderer + rubric update
-- [ ] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
+- [x] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
 - [ ] Phase 5: Admin nav — AI Usage under AI System
 - [ ] Phase 6: Design-token consistency pass (scoped)
 - [ ] Phase 7: Docs close-out

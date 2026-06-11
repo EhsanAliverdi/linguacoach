@@ -113,6 +113,7 @@ export class ExerciseRendererComponent {
     }).filter(pair => pair.phrase || pair.meaning);
 
     return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
       instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
       pairs,
     };
@@ -122,6 +123,7 @@ export class ExerciseRendererComponent {
     const raw = this.raw;
     const wordBank = this.stringArray(raw['wordBank']) ?? this.collectWordBankFromItems(raw['items']);
     return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
       instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
       items: this.mapGapItems(raw['items'], raw['passage']),
       wordBank,
@@ -143,6 +145,7 @@ export class ExerciseRendererComponent {
       audioDurationSeconds: this.activity.audioDurationSeconds,
       audioUnavailableMessage: this.activity.audioUnavailableMessage,
       scenario: this.stringValue(raw['scenario']) ?? this.activity.scenario,
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
       instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
       questions: questions.length ? questions : (this.activity.listeningQuestions ?? []),
       responseTask: this.stringValue(this.objectValue(raw['responseTask'])?.['prompt'])
@@ -157,6 +160,7 @@ export class ExerciseRendererComponent {
       audioUrl: this.activity.audioUrl,
       audioUnavailableMessage: this.activity.audioUnavailableMessage,
       scenario: this.stringValue(raw['scenario']) ?? this.activity.scenario,
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
       instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
       gaps: this.mapAudioGaps(raw['gaps'], raw['gappedTranscript']),
       wordBank: this.stringArray(raw['wordBank']),

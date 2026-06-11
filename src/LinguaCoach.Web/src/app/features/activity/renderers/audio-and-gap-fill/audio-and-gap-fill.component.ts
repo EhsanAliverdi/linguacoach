@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
 
 export interface AudioGapItem {
   id: string;
@@ -12,6 +13,7 @@ export interface AudioAndGapFillContent {
   audioUrl?: string | null;
   audioUnavailableMessage?: string | null;
   scenario?: string | null;
+  learningGoal?: string | null;
   instructions?: string | null;
   gaps: AudioGapItem[];
   wordBank?: string[];
@@ -24,7 +26,7 @@ export interface AudioAndGapFillAnswer {
 @Component({
   selector: 'app-audio-and-gap-fill',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent],
   templateUrl: './audio-and-gap-fill.component.html',
 })
 export class AudioAndGapFillComponent {

@@ -1,5 +1,7 @@
 <div style="display:flex;flex-direction:column;gap:16px" data-testid="gap-fill-renderer">
 
+  <app-exercise-lesson-intro [goal]="content.learningGoal" />
+
   @if (content.instructions) {
     <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
   }

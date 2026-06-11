@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
 
 export interface MatchingPair {
   id: string;
@@ -8,6 +9,7 @@ export interface MatchingPair {
 }
 
 export interface MatchingPairsContent {
+  learningGoal?: string | null;
   instructions?: string | null;
   pairs: MatchingPair[];
 }
@@ -19,7 +21,7 @@ export interface MatchingPairsAnswer {
 @Component({
   selector: 'app-matching-pairs',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ExerciseLessonIntroComponent],
   templateUrl: './matching-pairs.component.html',
 })
 export class MatchingPairsComponent {
