@@ -182,7 +182,17 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal("openai", body.GetProperty("providerName").GetString());
         var modelTests = body.GetProperty("modelTests").EnumerateArray().ToList();
         Assert.NotEmpty(modelTests);
-        Assert.All(modelTests, m => Assert.True(m.GetProperty("ok").GetBoolean()));
+        // TTS-only models (tts-*, *-tts, cosyvoice-v2) are skipped during connection test
+        // and remain at ok=false — only assert on chat-capable models.
+        var chatModels = modelTests.Where(m =>
+        {
+            var name = m.GetProperty("modelName").GetString() ?? "";
+            return !name.StartsWith("tts-", StringComparison.OrdinalIgnoreCase)
+                && !name.Contains("-tts", StringComparison.OrdinalIgnoreCase)
+                && !name.Equals("cosyvoice-v2", StringComparison.OrdinalIgnoreCase);
+        }).ToList();
+        Assert.NotEmpty(chatModels);
+        Assert.All(chatModels, m => Assert.True(m.GetProperty("ok").GetBoolean()));
 
         await factory.DisposeAsync();
     }
