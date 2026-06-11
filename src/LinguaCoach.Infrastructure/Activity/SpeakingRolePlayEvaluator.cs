@@ -51,7 +51,7 @@ public sealed class SpeakingRolePlayEvaluator
 
         var aiRequest = await _contextBuilder.BuildAsync(EvaluatePromptKey, variables, ct);
 
-        var response = await _aiExecution.ExecuteWithFallbackAsync(
+        var response = await _aiExecution.ExecuteAsync(
             EvaluatePromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         var cleaned = CleanJson(response);

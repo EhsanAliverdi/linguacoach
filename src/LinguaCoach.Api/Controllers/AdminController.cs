@@ -197,32 +197,6 @@ public sealed class AdminController : ControllerBase
 
     // ── AI feature routing (which provider+model handles each feature) ──────────
 
-    [HttpGet("ai-config")]
-    public async Task<IActionResult> ListAiConfigs(CancellationToken ct)
-        => Ok(await _aiConfigHandler.ListConfigsAsync(ct));
-
-    [HttpPut("ai-config/{configId:guid}")]
-    public async Task<IActionResult> UpdateAiConfig(Guid configId, [FromBody] UpdateAiConfigRequest request, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _aiConfigHandler.UpdateConfigAsync(
-                new UpdateAiProviderConfigCommand(
-                    configId,
-                    request.ProviderName,
-                    request.ModelName,
-                    request.VoiceName,
-                    ClearVoiceName: request.ClearVoiceName,
-                    request.FallbackProviderName,
-                    request.FallbackModelName,
-                    request.FallbackEnabled),
-                ct);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-    }
-
     // ── AI provider credentials (one key per provider, shared across features) ──
 
     [HttpGet("ai-providers")]
@@ -253,12 +227,36 @@ public sealed class AdminController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpPost("ai-providers/{provider}/models")]
+    public async Task<IActionResult> AddProviderModel(string provider, [FromBody] AddProviderModelRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.AddProviderModelAsync(
+                new AddProviderModelCommand(provider, request.ModelName), ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpPost("ai-providers/{provider}/test")]
     public async Task<IActionResult> TestProvider(string provider, CancellationToken ct)
     {
         try
         {
             var result = await _aiConfigHandler.TestProviderAsync(provider, ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
+    }
+
+    [HttpPost("ai-providers/{provider}/models/test")]
+    public async Task<IActionResult> TestProviderModel(string provider, [FromBody] TestProviderModelRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.TestProviderModelAsync(provider, request.ModelName, ct);
             return Ok(result);
         }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
@@ -278,6 +276,18 @@ public sealed class AdminController : ControllerBase
         {
             var result = await _aiConfigHandler.UpdateCategoryAsync(
                 new UpdateAiConfigCategoryCommand(categoryKey, request.ProviderName, request.ModelName, request.VoiceName), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("ai/categories/{categoryKey}/test")]
+    public async Task<IActionResult> TestAiCategory(string categoryKey, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.TestCategoryAsync(categoryKey, ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
@@ -311,14 +321,8 @@ public sealed record UpdateStudentProfileRequest(
 public sealed record CreatePromptVersionRequest(string Key, string Content, int? MaxInputTokens, int? MaxOutputTokens);
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);
-public sealed record UpdateAiConfigRequest(
-    string? ProviderName,
-    string? ModelName,
-    string? VoiceName = null,
-    bool ClearVoiceName = false,
-    string? FallbackProviderName = null,
-    string? FallbackModelName = null,
-    bool? FallbackEnabled = null);
 public sealed record SetProviderApiKeyRequest(string? ApiKey);
 public sealed record SetProviderEndpointRequest(string? ApiEndpoint);
+public sealed record AddProviderModelRequest(string ModelName);
+public sealed record TestProviderModelRequest(string ModelName);
 public sealed record UpdateAiCategoryRequest(string? ProviderName, string? ModelName, string? VoiceName = null);

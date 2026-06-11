@@ -13,6 +13,8 @@ interface CategoryState {
   editingProvider: string | null;
   editingModel: string | null;
   editingVoice: string | null;
+  testBusy: boolean;
+  testResult: string;
 }
 
 interface ProviderState {
@@ -26,6 +28,9 @@ interface ProviderState {
   saveEndpointBusy: boolean;
   saveEndpointError: string;
   testBusy: boolean;
+  newModelName: string;
+  addModelBusy: boolean;
+  addModelError: string;
 }
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
@@ -103,8 +108,13 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   class="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
                   {{ cs.saving ? 'Saving…' : 'Save' }}
                 </button>
+                <button (click)="testCategory(cs)" [disabled]="cs.testBusy"
+                  class="rounded-lg border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                  {{ cs.testBusy ? 'Testing...' : 'Test' }}
+                </button>
                 @if (cs.saved) { <span class="text-xs text-emerald-600">Saved</span> }
                 @if (cs.error) { <span class="text-xs text-red-500">{{ cs.error }}</span> }
+                @if (cs.testResult) { <span class="text-xs text-slate-600">{{ cs.testResult }}</span> }
               </div>
             </div>
           }
@@ -170,8 +180,13 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   class="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
                   {{ cs.saving ? 'Saving…' : 'Save' }}
                 </button>
+                <button (click)="testCategory(cs)" [disabled]="cs.testBusy"
+                  class="rounded-lg border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                  {{ cs.testBusy ? 'Testing...' : 'Test audio' }}
+                </button>
                 @if (cs.saved) { <span class="text-xs text-emerald-600">Saved</span> }
                 @if (cs.error) { <span class="text-xs text-red-500">{{ cs.error }}</span> }
+                @if (cs.testResult) { <span class="text-xs text-slate-600">{{ cs.testResult }}</span> }
               </div>
             </div>
           }
@@ -238,6 +253,24 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                     }
                   </div>
                 }
+              </div>
+
+              <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-3 items-end">
+                <div class="flex-1 min-w-56">
+                  <label class="block text-xs text-slate-500 mb-1">Add model</label>
+                  <input type="text" [(ngModel)]="ps.newModelName"
+                    placeholder="provider model name"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+                <button (click)="addModel(ps)" [disabled]="ps.addModelBusy || !ps.newModelName.trim()"
+                  class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                  {{ ps.addModelBusy ? 'Adding...' : 'Add' }}
+                </button>
+                <button (click)="testOneModel(ps)" [disabled]="ps.testBusy || !ps.newModelName.trim()"
+                  class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                  Test model
+                </button>
+                @if (ps.addModelError) { <p class="w-full text-xs text-red-600">{{ ps.addModelError }}</p> }
               </div>
 
               <!-- Standard key edit form (non-Qwen providers) -->
@@ -344,6 +377,8 @@ export class AdminAiConfigComponent implements OnInit {
           editingProvider: item.providerName,
           editingModel: item.modelName,
           editingVoice: item.voiceName,
+          testBusy: false,
+          testResult: '',
         })));
         this.providers.set(catalog.map(c => ({
           catalog: c,
@@ -352,6 +387,9 @@ export class AdminAiConfigComponent implements OnInit {
           editingEndpoint: false, editEndpointValue: '',
           saveEndpointBusy: false, saveEndpointError: '',
           testBusy: false,
+          newModelName: '',
+          addModelBusy: false,
+          addModelError: '',
         })));
         this.loading.set(false);
       },
@@ -382,7 +420,9 @@ export class AdminAiConfigComponent implements OnInit {
   };
 
   ttsModelsFor(providerName: string): string[] {
-    return AdminAiConfigComponent.TTS_MODELS[providerName] ?? [];
+    const staticModels = AdminAiConfigComponent.TTS_MODELS[providerName] ?? [];
+    const providerModels = this.modelsFor(providerName);
+    return Array.from(new Set([...staticModels, ...providerModels]));
   }
 
   onCategoryProviderChange(cs: CategoryState, provider: string | null): void {
@@ -421,6 +461,21 @@ export class AdminAiConfigComponent implements OnInit {
         setTimeout(() => cs.saved = false, 2000);
       },
       error: err => { cs.error = err.error?.error ?? 'Failed.'; cs.saving = false; },
+    });
+  }
+
+  testCategory(cs: CategoryState): void {
+    cs.testBusy = true;
+    cs.testResult = '';
+    this.adminApi.testAiCategory(cs.item.categoryKey).subscribe({
+      next: result => {
+        cs.testBusy = false;
+        cs.testResult = result.ok ? `OK (${result.latencyMs}ms)` : (result.error ?? 'Test failed.');
+      },
+      error: err => {
+        cs.testBusy = false;
+        cs.testResult = err.error?.error ?? 'Test failed.';
+      },
     });
   }
 
@@ -548,6 +603,41 @@ export class AdminAiConfigComponent implements OnInit {
             testedAt: new Date().toISOString(),
           }))
         };
+        ps.testBusy = false;
+      },
+    });
+  }
+
+  addModel(ps: ProviderState): void {
+    const modelName = ps.newModelName.trim();
+    if (!modelName) return;
+    ps.addModelBusy = true;
+    ps.addModelError = '';
+    this.adminApi.addProviderModel(ps.catalog.providerName, modelName).subscribe({
+      next: updated => {
+        ps.catalog = updated;
+        ps.newModelName = '';
+        ps.addModelBusy = false;
+      },
+      error: err => {
+        ps.addModelError = err.error?.error ?? 'Failed to add model.';
+        ps.addModelBusy = false;
+      },
+    });
+  }
+
+  testOneModel(ps: ProviderState): void {
+    const modelName = ps.newModelName.trim();
+    if (!modelName) return;
+    ps.testBusy = true;
+    ps.addModelError = '';
+    this.adminApi.testProviderModel(ps.catalog.providerName, modelName).subscribe({
+      next: updated => {
+        ps.catalog = updated;
+        ps.testBusy = false;
+      },
+      error: err => {
+        ps.addModelError = err.error?.error ?? 'Model test failed.';
         ps.testBusy = false;
       },
     });

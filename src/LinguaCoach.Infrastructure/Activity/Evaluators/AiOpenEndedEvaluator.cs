@@ -58,7 +58,7 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
         try
         {
             var aiRequest = await _contextBuilder.BuildAsync(SpokenResponsePromptKey, variables, cancellationToken);
-            responseJson = await _aiExecution.ExecuteWithFallbackAsync(
+            responseJson = await _aiExecution.ExecuteAsync(
                 SpokenResponsePromptKey, aiRequest, request.StudentProfileId, correlationId: null, cancellationToken);
         }
         catch (AiUnavailableException ex)

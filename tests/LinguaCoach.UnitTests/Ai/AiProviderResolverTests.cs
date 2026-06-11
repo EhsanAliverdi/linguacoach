@@ -1,10 +1,12 @@
 using FluentAssertions;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Infrastructure.Ai;
+using LinguaCoach.Persistence;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LinguaCoach.UnitTests.Ai;
@@ -12,16 +14,17 @@ namespace LinguaCoach.UnitTests.Ai;
 public sealed class AiProviderResolverTests
 {
     [Fact]
-    public void ResolveWritingFeedbackProvider_WhenOpenAiSelected_ReturnsOpenAiProvider()
+    public void ResolveLlm_WhenCategoryConfigured_ReturnsCategoryProvider()
     {
-        var resolver = BuildResolver(new Dictionary<string, string?>
-        {
-            ["AI:WritingFeedback:Provider"] = "OpenAI",
-            ["AI:WritingFeedback:Model"] = "gpt-4o-mini",
-            ["OpenAI:ApiKey"] = "test-openai-key"
-        });
+        using var setup = BuildResolver();
+        setup.Db.AiConfigCategories.Add(new AiConfigCategory("llm.default", "Default LLM", "gemini", "gemini-2.5-flash"));
+        setup.Db.AiConfigCategories.Add(new AiConfigCategory("llm.generation", "Content Generation", "openai", "gpt-4o-mini"));
+        var openAi = new AiProviderCredential("openai");
+        openAi.SetApiKey("sk-test");
+        setup.Db.AiProviderCredentials.Add(openAi);
+        setup.Db.SaveChanges();
 
-        var selection = resolver.ResolveWritingFeedbackProvider();
+        var selection = setup.Resolver.ResolveLlm("activity_generate_listen_and_answer", "llm.generation").Primary;
 
         selection.ProviderName.Should().Be("openai");
         selection.ModelName.Should().Be("gpt-4o-mini");
@@ -29,85 +32,87 @@ public sealed class AiProviderResolverTests
     }
 
     [Fact]
-    public void ResolveWritingFeedbackProvider_WhenGeminiSelected_ReturnsGeminiProvider()
+    public void ResolveLlm_WhenCategoryEmpty_FallsBackToDefaultLlm()
     {
-        var resolver = BuildResolver(new Dictionary<string, string?>
-        {
-            ["AI:WritingFeedback:Provider"] = "Gemini",
-            ["AI:WritingFeedback:Model"] = "gemini-2.5-flash",
-            ["Gemini:ApiKey"] = "test-gemini-key"
-        });
+        using var setup = BuildResolver();
+        setup.Db.AiConfigCategories.Add(new AiConfigCategory("llm.default", "Default LLM", "gemini", "gemini-2.5-flash"));
+        setup.Db.AiConfigCategories.Add(new AiConfigCategory("llm.evaluation", "Evaluation", null, null));
+        var gemini = new AiProviderCredential("gemini");
+        gemini.SetApiKey("gemini-test");
+        setup.Db.AiProviderCredentials.Add(gemini);
+        setup.Db.SaveChanges();
 
-        var selection = resolver.ResolveWritingFeedbackProvider();
+        var selection = setup.Resolver.ResolveLlm("activity_evaluate_email_reply", "llm.evaluation").Primary;
 
         selection.ProviderName.Should().Be("gemini");
         selection.ModelName.Should().Be("gemini-2.5-flash");
-        selection.Provider.Should().BeOfType<GeminiProvider>();
     }
 
     [Fact]
-    public void ResolveWritingFeedbackProvider_WhenProviderConfigMissingInProduction_ThrowsUnavailable()
+    public void ResolveLlm_WhenNoCategoryOrDefault_ThrowsUnavailable()
     {
-        var resolver = BuildResolver(new Dictionary<string, string?>(), environmentName: Environments.Production);
+        using var setup = BuildResolver();
 
-        var act = () => resolver.ResolveWritingFeedbackProvider();
+        var act = () => setup.Resolver.ResolveLlm("activity_generate_listen_and_answer", "llm.generation");
 
         act.Should().Throw<AiConfigurationUnavailableException>()
             .WithMessage("*not configured*");
     }
 
     [Fact]
-    public void ResolveWritingFeedbackProvider_WhenSelectedApiKeyMissing_ThrowsUnavailable()
+    public void ResolveLlm_WhenSelectedApiKeyMissing_ThrowsUnavailable()
     {
-        var resolver = BuildResolver(new Dictionary<string, string?>
-        {
-            ["AI:WritingFeedback:Provider"] = "Gemini",
-            ["AI:WritingFeedback:Model"] = "gemini-2.5-flash"
-        });
+        using var setup = BuildResolver();
+        setup.Db.AiConfigCategories.Add(new AiConfigCategory("llm.default", "Default LLM", "gemini", "gemini-2.5-flash"));
+        setup.Db.SaveChanges();
 
-        var act = () => resolver.ResolveWritingFeedbackProvider();
+        var act = () => setup.Resolver.ResolveLlm("activity_evaluate_email_reply", "llm.evaluation");
 
         act.Should().Throw<AiConfigurationUnavailableException>()
             .WithMessage("*API key is not configured*");
     }
 
-    private static AiProviderResolver BuildResolver(
-        Dictionary<string, string?> settings,
-        string environmentName = "Production")
+    private static ResolverSetup BuildResolver()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
-        var environment = new FakeHostEnvironment(environmentName);
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+        var options = new DbContextOptionsBuilder<LinguaCoachDbContext>()
+            .UseSqlite(connection)
+            .Options;
+        var db = new LinguaCoachDbContext(options);
+        db.Database.EnsureCreated();
 
+        var configuration = new ConfigurationBuilder().Build();
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(configuration);
-        services.AddSingleton<IHostEnvironment>(environment);
+        services.AddSingleton(db);
         services.AddSingleton(NullLogger<OpenAiProvider>.Instance);
         services.AddSingleton(NullLogger<GeminiProvider>.Instance);
         services.AddSingleton(NullLogger<AnthropicProvider>.Instance);
+        services.AddSingleton(NullLogger<QwenProvider>.Instance);
         services.AddSingleton<OpenAiProvider>();
         services.AddHttpClient<GeminiProvider>();
         services.AddSingleton<AnthropicProvider>();
+        services.AddSingleton<QwenProvider>();
         var provider = services.BuildServiceProvider();
 
-        return new AiProviderResolver(
+        var resolver = new AiProviderResolver(
             configuration,
-            environment,
             provider,
             NullLogger<AiProviderResolver>.Instance);
+
+        return new ResolverSetup(connection, db, resolver);
     }
 
-    private sealed class FakeHostEnvironment : IHostEnvironment
+    private sealed record ResolverSetup(
+        SqliteConnection Connection,
+        LinguaCoachDbContext Db,
+        AiProviderResolver Resolver) : IDisposable
     {
-        public FakeHostEnvironment(string environmentName)
+        public void Dispose()
         {
-            EnvironmentName = environmentName;
+            Db.Dispose();
+            Connection.Dispose();
         }
-
-        public string EnvironmentName { get; set; }
-        public string ApplicationName { get; set; } = "Tests";
-        public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

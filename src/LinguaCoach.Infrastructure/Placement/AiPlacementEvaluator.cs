@@ -62,7 +62,7 @@ public sealed class AiPlacementEvaluator : IPlacementEvaluator
             };
 
             var aiRequest = await _contextBuilder.BuildAsync(PromptKey, variables, ct);
-            var response = await _aiExecution.ExecuteWithFallbackAsync(
+            var response = await _aiExecution.ExecuteAsync(
                 PromptKey, aiRequest, input.StudentProfileId, correlationId: null, ct);
 
             var parsed = Parse(response);

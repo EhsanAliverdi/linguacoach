@@ -118,7 +118,7 @@ Playwright:      175 passed (167 existing + 8 new onboarding step-5 tests)
 - Student list is the admin entry point for create/edit/archive student management
 - Create student returns to Students with a toast after success
 - Archive uses `StudentLifecycleStage.Archived`, hides archived students by default, and disables sign-in
-- AI Config shows primary and fallback provider/model routing for active runtime AI feature keys
+- AI Config shows category-level provider/model routing: Default LLM, Content Generation, Evaluation & Feedback, Memory & Learning Path, Listening TTS, and Placement TTS
 - Curriculum is hidden from admin navigation while its future purpose is redefined
 
 ## Placement Assessment — current state

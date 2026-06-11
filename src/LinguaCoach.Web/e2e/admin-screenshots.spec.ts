@@ -45,34 +45,45 @@ async function mockAdmin(page: Page) {
       ] },
     ]) });
   });
-  await page.route('**/api/admin/ai-config*', async route => {
-    if (route.request().url().match(/\/api\/admin\/ai-config\/[^/?]+/)) {
-      await route.fallback();
-      return;
-    }
+  await page.route('**/api/admin/ai-providers/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(
+      { providerName: 'openai', models: ['gpt-4o', 'gpt-4o-mini', 'tts-1'], hasApiKey: true, apiEndpoint: null, modelTests: [
+        { modelName: 'gpt-4o', ok: true, latencyMs: 42, error: null, testedAt: new Date().toISOString() },
+        { modelName: 'gpt-4o-mini', ok: true, latencyMs: 39, error: null, testedAt: new Date().toISOString() },
+        { modelName: 'tts-1', ok: false, latencyMs: 0, error: null, testedAt: '0001-01-01T00:00:00' },
+      ] }
+    ) });
+  });
+  await page.route('**/api/admin/ai/categories', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
-      { id: '1', featureKey: 'activity_generate_writing', providerName: 'openai', modelName: 'gpt-4o', fallbackProviderName: 'gemini', fallbackModelName: 'gemini-2.5-flash', fallbackEnabled: true },
-      { id: '2', featureKey: 'placement_assessment_evaluate', providerName: 'openai', modelName: 'gpt-4o-mini', fallbackProviderName: null, fallbackModelName: null, fallbackEnabled: false },
-      { id: '3', featureKey: 'activity_evaluate_speaking_roleplay', providerName: 'openai', modelName: 'gpt-4o-mini', fallbackProviderName: null, fallbackModelName: null, fallbackEnabled: false },
+      { id: '1', categoryKey: 'llm.default', displayName: 'Default LLM', providerName: 'openai', modelName: 'gpt-4o-mini', voiceName: null },
+      { id: '2', categoryKey: 'llm.generation', displayName: 'Content Generation', providerName: null, modelName: null, voiceName: null },
+      { id: '3', categoryKey: 'llm.evaluation', displayName: 'Evaluation & Feedback', providerName: null, modelName: null, voiceName: null },
+      { id: '4', categoryKey: 'llm.memory', displayName: 'Memory & Learning Path', providerName: null, modelName: null, voiceName: null },
+      { id: '5', categoryKey: 'tts.listening', displayName: 'Listening TTS', providerName: 'openai', modelName: 'tts-1', voiceName: 'onyx' },
+      { id: '6', categoryKey: 'tts.placement', displayName: 'Placement TTS', providerName: 'openai', modelName: 'tts-1', voiceName: 'nova' },
     ]) });
   });
-  await page.route('**/api/admin/ai-config/**', async route => {
+  await page.route('**/api/admin/ai/categories/**', async route => {
     const body = route.request().postDataJSON();
+    if (route.request().url().endsWith('/test')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, latencyMs: 42, error: null }) });
+      return;
+    }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
       id: route.request().url().split('/').pop(),
-      featureKey: 'placement_assessment_evaluate',
+      categoryKey: route.request().url().split('/').pop(),
+      displayName: 'AI Category',
       providerName: body.providerName ?? 'openai',
       modelName: body.modelName ?? 'gpt-4o-mini',
-      fallbackProviderName: body.fallbackProviderName ?? null,
-      fallbackModelName: body.fallbackModelName ?? null,
-      fallbackEnabled: body.fallbackEnabled ?? false,
+      voiceName: body.voiceName ?? null,
     }) });
   });
   // Generic fallback for other admin routes
   await page.route('**/api/admin/**', async route => {
     const url = route.request().url();
     if (url.includes('/api/admin/students')
-      || url.includes('/api/admin/ai-config')
+      || url.includes('/api/admin/ai/categories')
       || url.includes('/api/admin/ai-providers')) {
       await route.fallback();
       return;
@@ -262,10 +273,13 @@ test('admin: ai-config', async ({ page }) => {
   await adminLogin(page);
   await page.getByRole('link', { name: 'AI Config', exact: true }).click();
   await page.waitForURL(/ai-config/, { timeout: 5000 });
-  await expect(page.getByText('Evaluate placement assessment')).toBeVisible();
-  await expect(page.getByText('placement_assessment_evaluate')).toBeVisible();
-  await expect(page.getByText('Evaluate speaking role-play')).toBeVisible();
-  await expect(page.getByText('Fallback enabled').first()).toBeVisible();
+  await expect(page.getByText('Default LLM', { exact: true })).toBeVisible();
+  await expect(page.getByText('Content Generation', { exact: true })).toBeVisible();
+  await expect(page.getByText('Evaluation & Feedback', { exact: true })).toBeVisible();
+  await expect(page.getByText('Listening TTS', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Test$/ }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Test audio/i }).first()).toBeVisible();
+  await expect(page.getByPlaceholder('provider model name').first()).toBeVisible();
   await page.waitForTimeout(600);
   await page.screenshot({ path: 'e2e/screenshots/admin-04-ai-config.png' });
 });

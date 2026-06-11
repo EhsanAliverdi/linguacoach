@@ -1,199 +1,94 @@
 using LinguaCoach.Application.Ai;
-using LinguaCoach.Domain.Entities;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Ai;
 
 public sealed class AiProviderResolver : IAiProviderResolver
 {
-    private const string WritingFeatureKey = "writing.exercise";
-    private const string WritingProviderKey = "AI:WritingFeedback:Provider";
-    private const string WritingModelKey = "AI:WritingFeedback:Model";
-    private const string DefaultDevelopmentProvider = "OpenAI";
-    private const string DefaultDevelopmentModel = "gpt-4o-mini";
+    public const string DefaultLlmCategory = "llm.default";
 
     private readonly IConfiguration _configuration;
-    private readonly IHostEnvironment _environment;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AiProviderResolver> _logger;
 
     public AiProviderResolver(
         IConfiguration configuration,
-        IHostEnvironment environment,
         IServiceProvider serviceProvider,
         ILogger<AiProviderResolver> logger)
     {
         _configuration = configuration;
-        _environment = environment;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
-    public AiProviderPair ResolveWithFallback(string featureKey)
+    public AiProviderPair ResolveLlm(string featureKey, string categoryKey)
     {
-        var canonicalFeatureKey = CanonicalFeatureKey(featureKey);
-        var (providerName, modelName, fallbackProvider, fallbackModel, fallbackEnabled)
-            = ResolveFeatureFromDb(canonicalFeatureKey);
-
-        // If the feature-specific row is absent or fake, try category → llm.default
-        if (string.IsNullOrWhiteSpace(providerName)
-            || string.Equals(providerName, "fake", StringComparison.OrdinalIgnoreCase))
+        var config = ResolveCategoryConfig(categoryKey, allowDefaultLlm: true);
+        if (!IsUsable(config.ProviderName, config.ModelName))
         {
-            var (catProvider, catModel) = ResolveCategoryFromDb(canonicalFeatureKey);
-            if (!string.IsNullOrWhiteSpace(catProvider))
-            {
-                providerName = catProvider;
-                modelName = catModel;
-                fallbackProvider = null;
-                fallbackModel = null;
-                fallbackEnabled = false;
-            }
+            throw new AiConfigurationUnavailableException(
+                $"AI provider is not configured for feature '{featureKey}' in category '{categoryKey}'.");
         }
 
-        // Fall back to legacy appsettings-based config
-        if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
-        {
-            providerName = _configuration[WritingProviderKey];
-            modelName = _configuration[WritingModelKey];
-        }
-
-        if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(modelName))
-        {
-            if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
-            {
-                providerName ??= DefaultDevelopmentProvider;
-                modelName ??= DefaultDevelopmentModel;
-            }
-            else
-            {
-                throw new AiConfigurationUnavailableException(
-                    $"AI provider is not configured for feature '{canonicalFeatureKey}'. " +
-                    "Set a default provider in Admin → AI Configuration.");
-            }
-        }
-
-        var primaryKey = GetStoredApiKey(providerName) ?? GetEnvApiKey(providerName);
-        var primary = Resolve(providerName.Trim(), modelName.Trim(), primaryKey);
-
-        AiProviderSelection? fallback = null;
-        if (fallbackEnabled && !string.IsNullOrWhiteSpace(fallbackProvider) && !string.IsNullOrWhiteSpace(fallbackModel))
-        {
-            try
-            {
-                var fallbackKey = GetStoredApiKey(fallbackProvider!) ?? GetEnvApiKey(fallbackProvider!);
-                fallback = Resolve(fallbackProvider!.Trim(), fallbackModel!.Trim(), fallbackKey);
-                _logger.LogDebug("Fallback provider configured Feature={Feature} Fallback={Provider}/{Model}",
-                    canonicalFeatureKey, fallbackProvider, fallbackModel);
-            }
-            catch (AiConfigurationUnavailableException ex)
-            {
-                _logger.LogWarning("Fallback provider configured but not usable Feature={Feature}: {Message}",
-                    canonicalFeatureKey, ex.Message);
-            }
-        }
-
-        return new AiProviderPair(primary, fallback);
+        var apiKey = GetStoredApiKey(config.ProviderName!) ?? GetEnvApiKey(config.ProviderName!);
+        var primary = ResolveLlmProvider(config.ProviderName!, config.ModelName!, apiKey);
+        return new AiProviderPair(primary, null);
     }
 
-    public AiProviderSelection ResolveWritingFeedbackProvider()
-        => ResolveWithFallback(WritingFeatureKey).Primary;
-
-    // Maps feature keys to their AI config category for category-level resolution.
-    private static readonly Dictionary<string, string> FeatureToCategory =
-        new(StringComparer.OrdinalIgnoreCase)
+    public AiTtsProviderSelection ResolveTts(string featureKey, string categoryKey)
+    {
+        var config = ResolveCategoryConfig(categoryKey, allowDefaultLlm: false);
+        if (!IsUsable(config.ProviderName, config.ModelName))
         {
-            ["activity_generate_writing"]                     = "llm.generation",
-            ["activity_generate_listening"]                   = "llm.generation",
-            ["activity_generate_speaking_roleplay"]           = "llm.generation",
-            ["activity_generate_phrase_match"]                = "llm.generation",
-            ["activity_generate_gap_fill_workplace_phrase"]   = "llm.generation",
-            ["activity_generate_listen_and_answer"]           = "llm.generation",
-            ["activity_generate_listen_and_gap_fill"]         = "llm.generation",
-            ["activity_generate_email_reply"]                 = "llm.generation",
-            ["activity_generate_teams_chat_simulation"]       = "llm.generation",
-            ["activity_generate_spoken_response_from_prompt"] = "llm.generation",
-            ["activity_generate_lesson_reflection"]           = "llm.generation",
-            ["activity_evaluate_writing"]                     = "llm.evaluation",
-            ["activity_evaluate_speaking_roleplay"]           = "llm.evaluation",
-            ["activity_evaluate_phrase_match"]                = "llm.evaluation",
-            ["activity_evaluate_gap_fill_workplace_phrase"]   = "llm.evaluation",
-            ["activity_evaluate_listen_and_answer"]           = "llm.evaluation",
-            ["activity_evaluate_listen_and_gap_fill"]         = "llm.evaluation",
-            ["activity_evaluate_email_reply"]                 = "llm.evaluation",
-            ["activity_evaluate_teams_chat_simulation"]       = "llm.evaluation",
-            ["activity_evaluate_spoken_response_from_prompt"] = "llm.evaluation",
-            ["activity_evaluate_lesson_reflection"]           = "llm.evaluation",
-            ["writing.exercise"]                              = "llm.evaluation",
-            ["placement_assessment_evaluate"]                 = "llm.evaluation",
-            ["learning_path_generate"]                        = "llm.memory",
-            ["learning_path_generate_adaptive"]               = "llm.memory",
-            ["student_memory_update"]                         = "llm.memory",
-            ["vocabulary_extract_from_attempt"]               = "llm.memory",
-        };
+            throw new AiConfigurationUnavailableException(
+                $"TTS provider is not configured for feature '{featureKey}' in category '{categoryKey}'.");
+        }
 
-    private (string? Provider, string? Model) ResolveCategoryFromDb(string featureKey)
+        if (string.Equals(config.ProviderName, "anthropic", StringComparison.OrdinalIgnoreCase))
+            throw new AiConfigurationUnavailableException("Anthropic does not provide TTS.");
+
+        return new AiTtsProviderSelection(
+            config.ProviderName!,
+            config.ModelName,
+            config.VoiceName,
+            GetStoredApiKey(config.ProviderName!) ?? GetEnvApiKey(config.ProviderName!),
+            GetStoredEndpoint(config.ProviderName!));
+    }
+
+    private (string? ProviderName, string? ModelName, string? VoiceName) ResolveCategoryConfig(
+        string categoryKey,
+        bool allowDefaultLlm)
     {
         try
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-            // Try category-specific row first
-            if (FeatureToCategory.TryGetValue(featureKey, out var categoryKey))
+            var category = db.AiConfigCategories.AsNoTracking()
+                .FirstOrDefault(c => c.CategoryKey == categoryKey);
+            if (IsUsable(category?.ProviderName, category?.ModelName))
+                return (category!.ProviderName, category.ModelName, category.VoiceName);
+
+            if (allowDefaultLlm && !string.Equals(categoryKey, DefaultLlmCategory, StringComparison.OrdinalIgnoreCase))
             {
-                var cat = db.AiConfigCategories.AsNoTracking()
-                    .FirstOrDefault(c => c.CategoryKey == categoryKey);
-                if (cat is not null && !string.IsNullOrWhiteSpace(cat.ProviderName))
-                    return (cat.ProviderName, cat.ModelName);
+                var defaultCategory = db.AiConfigCategories.AsNoTracking()
+                    .FirstOrDefault(c => c.CategoryKey == DefaultLlmCategory);
+                if (IsUsable(defaultCategory?.ProviderName, defaultCategory?.ModelName))
+                    return (defaultCategory!.ProviderName, defaultCategory.ModelName, defaultCategory.VoiceName);
             }
 
-            // Fall through to llm.default (TTS keys never reach here — they use TtsProviderResolver)
-            var def = db.AiConfigCategories.AsNoTracking()
-                .FirstOrDefault(c => c.CategoryKey == "llm.default");
-            if (def is not null && !string.IsNullOrWhiteSpace(def.ProviderName))
-                return (def.ProviderName, def.ModelName);
-
-            return (null, null);
+            return (null, null, null);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not read AI category config from DB for {Feature}.", featureKey);
-            return (null, null);
+            _logger.LogWarning(ex, "Could not read AI category config for {CategoryKey}.", categoryKey);
+            return (null, null, null);
         }
     }
-
-    private (string? Provider, string? Model, string? FallbackProvider, string? FallbackModel, bool FallbackEnabled)
-        ResolveFeatureFromDb(string featureKey)
-    {
-        try
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            var config = db.AiProviderConfigs.AsNoTracking()
-                .FirstOrDefault(c => c.FeatureKey == featureKey);
-            if (config is null) return (null, null, null, null, false);
-            return (config.ProviderName, config.ModelName,
-                    config.FallbackProviderName, config.FallbackModelName, config.FallbackEnabled);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not read AI feature config from DB for {Feature}.", featureKey);
-            return (null, null, null, null, false);
-        }
-    }
-
-    private static string CanonicalFeatureKey(string featureKey) => featureKey switch
-    {
-        "activity_generate_writing" => WritingFeatureKey,
-        "activity_evaluate_writing" => WritingFeatureKey,
-        "writing.exercise.v2" => WritingFeatureKey,
-        _ => featureKey
-    };
 
     private string? GetStoredApiKey(string providerName)
     {
@@ -239,12 +134,12 @@ public sealed class AiProviderResolver : IAiProviderResolver
             _ => null
         };
 
-    private AiProviderSelection Resolve(string provider, string model, string? apiKeyOverride)
+    private AiProviderSelection ResolveLlmProvider(string provider, string model, string? apiKeyOverride)
     {
         if (string.IsNullOrWhiteSpace(apiKeyOverride))
         {
             throw new AiConfigurationUnavailableException(
-                $"{provider} API key is not configured. Set it via the admin UI or the environment variable.");
+                $"{provider} API key is not configured. Set it via the admin UI or an environment variable.");
         }
 
         var norm = provider.ToLowerInvariant();
@@ -263,4 +158,10 @@ public sealed class AiProviderResolver : IAiProviderResolver
                 $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic, Qwen.")
         };
     }
+
+    private static bool IsUsable(string? providerName, string? modelName) =>
+        !string.IsNullOrWhiteSpace(providerName)
+        && !string.Equals(providerName, "fake", StringComparison.OrdinalIgnoreCase)
+        && !string.IsNullOrWhiteSpace(modelName)
+        && !string.Equals(modelName, "fake", StringComparison.OrdinalIgnoreCase);
 }

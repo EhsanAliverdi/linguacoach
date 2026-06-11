@@ -120,16 +120,6 @@ public interface IAdminCurriculumHandler
 
 // ── AI provider config ────────────────────────────────────────────────────────
 
-public sealed record AiProviderConfigItem(
-    Guid Id,
-    string FeatureKey,
-    string ProviderName,
-    string ModelName,
-    string? VoiceName,
-    string? FallbackProviderName,
-    string? FallbackModelName,
-    bool FallbackEnabled);
-
 public sealed record ModelTestStatus(string ModelName, bool Ok, int LatencyMs, string? Error, DateTime TestedAt);
 
 /// <summary>One entry per provider in the catalog — includes credential and per-model test status.</summary>
@@ -140,16 +130,6 @@ public sealed record AiProviderCatalogItem(
     IReadOnlyList<ModelTestStatus> ModelTests,
     string? ApiEndpoint = null);
 
-public sealed record UpdateAiProviderConfigCommand(
-    Guid ConfigId,
-    string? ProviderName,
-    string? ModelName,
-    string? VoiceName,
-    bool ClearVoiceName,
-    string? FallbackProviderName,
-    string? FallbackModelName,
-    bool? FallbackEnabled);
-
 public sealed record SetProviderApiKeyCommand(
     string ProviderName,
     string? ApiKey);
@@ -158,16 +138,21 @@ public sealed record SetProviderEndpointCommand(
     string ProviderName,
     string? ApiEndpoint);
 
+public sealed record AddProviderModelCommand(
+    string ProviderName,
+    string ModelName);
+
 public interface IAdminAiConfigHandler
 {
-    Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default);
-    Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> SetProviderEndpointAsync(SetProviderEndpointCommand command, CancellationToken ct = default);
+    Task<AiProviderCatalogItem> AddProviderModelAsync(AddProviderModelCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default);
+    Task<AiProviderCatalogItem> TestProviderModelAsync(string providerName, string modelName, CancellationToken ct = default);
     Task<IReadOnlyList<AiConfigCategoryItem>> ListCategoriesAsync(CancellationToken ct = default);
     Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default);
+    Task<CategoryTestResult> TestCategoryAsync(string categoryKey, CancellationToken ct = default);
 }
 
 // ── AI config categories ──────────────────────────────────────────────────────
@@ -185,3 +170,12 @@ public sealed record UpdateAiConfigCategoryCommand(
     string? ProviderName,
     string? ModelName,
     string? VoiceName);
+
+public sealed record CategoryTestResult(
+    string CategoryKey,
+    string ProviderName,
+    string? ModelName,
+    string? VoiceName,
+    bool Ok,
+    int LatencyMs,
+    string? Error);

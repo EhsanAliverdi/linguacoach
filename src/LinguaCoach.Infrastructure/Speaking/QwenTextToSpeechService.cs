@@ -42,7 +42,8 @@ internal sealed class QwenTextToSpeechService : ITextToSpeechService
         CancellationToken ct = default)
     {
         var sw = Stopwatch.StartNew();
-        var apiKey = _configuration["Qwen:ApiKey"]
+        var apiKey = options.ApiKeyOverride
+            ?? _configuration["Qwen:ApiKey"]
             ?? Environment.GetEnvironmentVariable("QWEN_API_KEY");
 
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -52,7 +53,7 @@ internal sealed class QwenTextToSpeechService : ITextToSpeechService
         }
 
         // Endpoint priority: DB credential ApiEndpoint (workspace-specific) → config → global default
-        var storedEndpoint = GetStoredEndpoint();
+        var storedEndpoint = options.EndpointOverride ?? GetStoredEndpoint();
         var dashScopeBase = storedEndpoint
             ?? _configuration["Qwen:DashScope"]
             ?? DefaultDashScopeBase;

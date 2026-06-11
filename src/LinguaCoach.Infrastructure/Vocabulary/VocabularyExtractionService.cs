@@ -82,7 +82,7 @@ public sealed class VocabularyExtractionService : IVocabularyExtractionService
                 new Dictionary<string, string> { ["extractionContext"] = contextJson },
                 timeout.Token);
 
-            var response = await _aiExecution.ExecuteWithFallbackAsync(
+            var response = await _aiExecution.ExecuteAsync(
                 DefaultAiSeeder.VocabularyExtractFromAttemptKey,
                 aiRequest,
                 profile.Id,

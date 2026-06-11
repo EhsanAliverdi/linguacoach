@@ -389,7 +389,7 @@ GET  /api/admin/ai/categories        → list all AiConfigCategory rows
 PATCH /api/admin/ai/categories/{key} → update provider/model/voice for a category
 ```
 
-Replace or supplement existing `GET/PATCH /api/admin/ai-config` endpoints. The existing feature-key endpoints can remain for backward compatibility but are no longer called by the new admin UI.
+Replace the existing `GET/PATCH /api/admin/ai-config` feature-key endpoints. The feature-key endpoints are removed; Admin AI Config uses category endpoints only.
 
 ---
 

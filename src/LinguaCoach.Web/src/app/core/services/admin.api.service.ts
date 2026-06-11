@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
-  CareerProfileItem, CurriculumWordItem, AiProviderConfigItem,
+  CareerProfileItem, CurriculumWordItem,
   AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
-  AiConfigCategoryItem, UpdateAiCategoryRequest
+  AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -61,21 +61,6 @@ export class AdminApiService {
     return this.http.put<CurriculumWordItem>(`${this.api}/careers/words/${wordId}`, data);
   }
 
-  // AI feature routing
-  listAiConfigs(): Observable<AiProviderConfigItem[]> {
-    return this.http.get<AiProviderConfigItem[]>(`${this.api}/ai-config`);
-  }
-  updateAiConfig(id: string, data: {
-    providerName?: string | null;
-    modelName?: string | null;
-    voiceName?: string | null;
-    fallbackProviderName?: string | null;
-    fallbackModelName?: string | null;
-    fallbackEnabled?: boolean | null;
-  }): Observable<AiProviderConfigItem> {
-    return this.http.put<AiProviderConfigItem>(`${this.api}/ai-config/${id}`, data);
-  }
-
   // AI provider credentials
   listAiProviders(): Observable<AiProviderCatalogItem[]> {
     return this.http.get<AiProviderCatalogItem[]>(`${this.api}/ai-providers`);
@@ -89,6 +74,12 @@ export class AdminApiService {
   testProvider(provider: string): Observable<AiProviderCatalogItem> {
     return this.http.post<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/test`, null);
   }
+  addProviderModel(provider: string, modelName: string): Observable<AiProviderCatalogItem> {
+    return this.http.post<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/models`, { modelName });
+  }
+  testProviderModel(provider: string, modelName: string): Observable<AiProviderCatalogItem> {
+    return this.http.post<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/models/test`, { modelName });
+  }
 
   // AI config categories
   listAiCategories(): Observable<AiConfigCategoryItem[]> {
@@ -96,5 +87,8 @@ export class AdminApiService {
   }
   updateAiCategory(categoryKey: string, data: UpdateAiCategoryRequest): Observable<AiConfigCategoryItem> {
     return this.http.patch<AiConfigCategoryItem>(`${this.api}/ai/categories/${categoryKey}`, data);
+  }
+  testAiCategory(categoryKey: string): Observable<CategoryTestResult> {
+    return this.http.post<CategoryTestResult>(`${this.api}/ai/categories/${categoryKey}/test`, null);
   }
 }

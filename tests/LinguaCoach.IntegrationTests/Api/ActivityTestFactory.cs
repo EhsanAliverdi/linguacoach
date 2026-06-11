@@ -322,9 +322,9 @@ internal sealed class FakeAiProviderResolver : IAiProviderResolver
         _provider = provider;
     }
 
-    public AiProviderSelection ResolveWritingFeedbackProvider()
-        => new(_provider, _provider.ProviderName, "fake-model");
-
-    public AiProviderPair ResolveWithFallback(string featureKey)
+    public AiProviderPair ResolveLlm(string featureKey, string categoryKey)
         => new(new AiProviderSelection(_provider, _provider.ProviderName, "fake-model"), Fallback: null);
+
+    public AiTtsProviderSelection ResolveTts(string featureKey, string categoryKey)
+        => new("fake", "fake", "fake");
 }

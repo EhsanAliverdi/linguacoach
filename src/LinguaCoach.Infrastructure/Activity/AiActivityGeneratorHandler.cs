@@ -73,7 +73,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 
         var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
 
-        var response = await _aiExecution.ExecuteWithFallbackAsync(
+        var response = await _aiExecution.ExecuteAsync(
             promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         var cleaned = CleanJson(response);
@@ -121,7 +121,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 
         var aiRequest = await _contextBuilder.BuildAsync(evalPromptKey, variables, ct);
 
-        var response = await _aiExecution.ExecuteWithFallbackAsync(
+        var response = await _aiExecution.ExecuteAsync(
             evalPromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         return CleanJson(response);

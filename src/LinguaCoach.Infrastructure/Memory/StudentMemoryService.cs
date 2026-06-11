@@ -91,7 +91,7 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
                 ["memoryUpdateContext"] = contextJson
             }, timeout.Token);
 
-            var response = await _aiExecution.ExecuteWithFallbackAsync(
+            var response = await _aiExecution.ExecuteAsync(
                 PromptKey, aiRequest, request.StudentProfile.Id, request.CorrelationId, timeout.Token);
 
             var delta = ParseDelta(response);

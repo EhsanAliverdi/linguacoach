@@ -35,7 +35,8 @@ internal sealed class OpenAiTextToSpeechService : ITextToSpeechService
         CancellationToken ct = default)
     {
         var sw = Stopwatch.StartNew();
-        var apiKey = _configuration["OpenAi:ApiKey"]
+        var apiKey = options.ApiKeyOverride
+            ?? _configuration["OpenAi:ApiKey"]
             ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -52,6 +53,7 @@ internal sealed class OpenAiTextToSpeechService : ITextToSpeechService
         }
 
         var voice = options.Voice ?? DefaultVoice;
+        var model = options.Model ?? DefaultModel;
 
         try
         {
@@ -60,7 +62,7 @@ internal sealed class OpenAiTextToSpeechService : ITextToSpeechService
 
             var body = JsonSerializer.Serialize(new
             {
-                model = DefaultModel,
+                model,
                 input = text,
                 voice = voice,
                 response_format = "mp3"

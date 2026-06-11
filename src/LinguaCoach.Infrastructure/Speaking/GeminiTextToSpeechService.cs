@@ -35,7 +35,8 @@ internal sealed class GeminiTextToSpeechService : ITextToSpeechService
         CancellationToken ct = default)
     {
         var sw = Stopwatch.StartNew();
-        var apiKey = _configuration["Gemini:ApiKey"]
+        var apiKey = options.ApiKeyOverride
+            ?? _configuration["Gemini:ApiKey"]
             ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
         if (string.IsNullOrWhiteSpace(apiKey))

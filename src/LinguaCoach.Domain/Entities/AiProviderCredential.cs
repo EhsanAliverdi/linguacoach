@@ -57,4 +57,16 @@ public sealed class AiProviderCredential : BaseEntity
         ModelTests[modelName] = new ModelTestResult(ok, latencyMs, error, DateTime.UtcNow);
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void AddModel(string modelName)
+    {
+        if (string.IsNullOrWhiteSpace(modelName))
+            throw new ArgumentException("Model name is required.", nameof(modelName));
+
+        var normalised = modelName.Trim();
+        if (!ModelTests.ContainsKey(normalised))
+            ModelTests[normalised] = new ModelTestResult(false, 0, null, default);
+
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

@@ -42,22 +42,21 @@ public sealed class ListeningAudioService
         }
 
         ITextToSpeechService tts;
-        string? voice;
-        string? model;
+        TextToSpeechOptions ttsOptions;
         try
         {
-            (tts, voice, model) = await _ttsResolver.ResolveAsync("tts.listening", ct);
+            (tts, ttsOptions) = _ttsResolver.Resolve("tts.listening", "tts.listening", targetLanguageCode);
         }
-        catch (AiServiceUnavailableException)
+        catch (AiConfigurationUnavailableException ex)
         {
-            content.Audio = ListeningAudioMetadata.Unavailable("Audio service is not configured.");
+            content.Audio = ListeningAudioMetadata.Unavailable(ex.Message);
             activity.UpdateContent(JsonSerializer.Serialize(content, JsonOptions()));
             return;
         }
 
         var result = await tts.GenerateSpeechAsync(
             content.AudioScript,
-            new TextToSpeechOptions(targetLanguageCode, voice, model),
+            ttsOptions,
             ct);
 
         if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)

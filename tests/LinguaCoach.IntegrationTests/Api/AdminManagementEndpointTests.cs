@@ -324,29 +324,27 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal("Updated definition", updated.GetProperty("definition").GetString());
     }
 
-    // ── GET/PUT /api/admin/ai-config ─────────────────────────────────────────
+    // AI category configuration
 
     [Fact]
-    public async Task ListAiConfigs_Returns200()
+    public async Task ListAiCategories_Returns200()
     {
-        await SeedAiConfigAsync();
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
 
-        var response = await client.GetAsync("/api/admin/ai-config");
+        var response = await client.GetAsync("/api/admin/ai/categories");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var items = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(items.GetArrayLength() > 0);
+        Assert.True(items.GetArrayLength() >= 6);
     }
 
     [Fact]
-    public async Task UpdateAiConfig_ChangesModelName()
+    public async Task UpdateAiCategory_ChangesModelName()
     {
-        var configId = await SeedAiConfigAsync();
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
 
-        var response = await client.PutAsJsonAsync($"/api/admin/ai-config/{configId}", new
+        var response = await client.PatchAsJsonAsync("/api/admin/ai/categories/llm.default", new
         {
             providerName = "openai",
             modelName = "gpt-4o-mini"
@@ -355,40 +353,18 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("gpt-4o-mini", body.GetProperty("modelName").GetString());
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var config = db.AiProviderConfigs.First(c => c.Id == configId);
-        Assert.Equal("gpt-4o-mini", config.ModelName);
     }
 
     [Fact]
-    public async Task UpdateAiConfig_WithUnknownProvider_Returns400()
+    public async Task UpdateAiCategory_WithUnknownProvider_Returns400()
     {
-        var configId = await SeedAiConfigAsync();
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
 
-        var response = await client.PutAsJsonAsync($"/api/admin/ai-config/{configId}", new
+        var response = await client.PatchAsJsonAsync("/api/admin/ai/categories/llm.default", new
         {
             providerName = "unknown-provider",
             modelName = "gpt-4o-mini"
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateAiConfig_WithWrongModelForProvider_Returns400()
-    {
-        var configId = await SeedAiConfigAsync();
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var client = ClientWithToken(token);
-
-        var response = await client.PutAsJsonAsync($"/api/admin/ai-config/{configId}", new
-        {
-            providerName = "anthropic",
-            modelName = "gpt-4o-mini"   // OpenAI model, wrong provider
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -419,20 +395,6 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
                 "test.prompt.v1", "Test content", maxInputTokens: 500, maxOutputTokens: 200));
             await db.SaveChangesAsync();
         }
-    }
-
-    private async Task<Guid> SeedAiConfigAsync()
-    {
-        await _factory.EnsureCreatedAsync();
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var existing = db.AiProviderConfigs.FirstOrDefault(c => c.FeatureKey == "writing.exercise");
-        if (existing is not null) return existing.Id;
-
-        var config = new LinguaCoach.Domain.Entities.AiProviderConfig("writing.exercise", "openai", "gpt-4o");
-        db.AiProviderConfigs.Add(config);
-        await db.SaveChangesAsync();
-        return config.Id;
     }
 
     private HttpClient ClientWithToken(string token)

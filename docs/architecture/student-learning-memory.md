@@ -108,23 +108,18 @@ learning_paths (extended)
 
 ### AiExecutionService
 
-Extracted from `AiActivityGeneratorHandler`. Owns the primary→fallback→log pattern.
+Extracted from `AiActivityGeneratorHandler`. Owns category-based provider resolution, usage logging, and controlled AI unavailable failures.
 
 ```
-AiExecutionService.ExecuteWithFallbackAsync(featureKey, variables, profileId, ct)
+AiExecutionService.ExecuteAsync(featureKey, variables, profileId, ct)
   │
-  ├── ResolveWithFallback(featureKey)
-  ├── try primary:
+  ├── ResolveLlm(featureKey, categoryKey)
+  │     category row → llm.default → fail closed if no usable provider
+  ├── try configured provider:
   │     CompleteAsync() → LogUsage(isFallback=false, success=true)
   │     return response
   └── catch:
         LogUsage(isFallback=false, success=false)
-        if fallback exists:
-          try fallback:
-            CompleteAsync() → LogUsage(isFallback=true, success=true)
-            return response
-          catch:
-            LogUsage(isFallback=true, success=false)
         throw AiUnavailableException
 ```
 

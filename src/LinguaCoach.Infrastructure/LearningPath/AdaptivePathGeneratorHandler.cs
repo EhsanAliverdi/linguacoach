@@ -58,7 +58,7 @@ public sealed class AdaptivePathGeneratorHandler : IAdaptivePathGenerator
             ["adaptiveGenerationContext"] = contextJson
         }, ct);
 
-        var response = await _aiExecution.ExecuteWithFallbackAsync(PromptKey, aiRequest, profile.Id, null, ct);
+        var response = await _aiExecution.ExecuteAsync(PromptKey, aiRequest, profile.Id, null, ct);
         var parsed = ParseResponse(response);
         var existingTitles = path.Modules.Select(m => m.Title).ToList();
         var existingFingerprints = path.Modules.Select(m => ModuleFingerprint.TryParse(m.FingerprintJson)).Where(f => f is not null).ToList()!;

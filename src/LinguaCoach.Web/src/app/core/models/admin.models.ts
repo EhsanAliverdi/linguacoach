@@ -58,17 +58,6 @@ export interface CurriculumWordItem {
   tags: string;
 }
 
-export interface AiProviderConfigItem {
-  id: string;
-  featureKey: string;
-  providerName: string;
-  modelName: string;
-  voiceName: string | null;
-  fallbackProviderName: string | null;
-  fallbackModelName: string | null;
-  fallbackEnabled: boolean;
-}
-
 export interface ModelTestStatus {
   modelName: string;
   ok: boolean;
@@ -98,6 +87,16 @@ export interface UpdateAiCategoryRequest {
   providerName?: string | null;
   modelName?: string | null;
   voiceName?: string | null;
+}
+
+export interface CategoryTestResult {
+  categoryKey: string;
+  providerName: string;
+  modelName: string | null;
+  voiceName: string | null;
+  ok: boolean;
+  latencyMs: number;
+  error: string | null;
 }
 
 export interface AdminStudentLearningMemory {

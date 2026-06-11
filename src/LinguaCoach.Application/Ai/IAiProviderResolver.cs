@@ -11,11 +11,18 @@ public sealed record AiProviderPair(
     AiProviderSelection Primary,
     AiProviderSelection? Fallback);
 
+public sealed record AiTtsProviderSelection(
+    string ProviderName,
+    string? ModelName,
+    string? VoiceName,
+    string? ApiKeyOverride = null,
+    string? EndpointOverride = null);
+
 public interface IAiProviderResolver
 {
-    /// <summary>Resolves primary (and optional fallback) providers for a feature key.</summary>
-    AiProviderPair ResolveWithFallback(string featureKey);
+    /// <summary>Resolves the configured LLM provider for a feature key and category.</summary>
+    AiProviderPair ResolveLlm(string featureKey, string categoryKey);
 
-    /// <summary>Backward-compatible single-provider resolution.</summary>
-    AiProviderSelection ResolveWritingFeedbackProvider();
+    /// <summary>Resolves the configured TTS provider for a feature key and category.</summary>
+    AiTtsProviderSelection ResolveTts(string featureKey, string categoryKey);
 }

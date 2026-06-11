@@ -11,7 +11,9 @@ public interface ITextToSpeechService
 public sealed record TextToSpeechOptions(
     string TargetLanguageCode,
     string? Voice = null,
-    string? Model = null);
+    string? Model = null,
+    string? ApiKeyOverride = null,
+    string? EndpointOverride = null);
 
 public sealed record TtsResult(
     bool Success,

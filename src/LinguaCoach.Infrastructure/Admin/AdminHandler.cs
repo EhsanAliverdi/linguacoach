@@ -1,11 +1,13 @@
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Speaking;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.Infrastructure.Admin;
 
@@ -18,12 +20,21 @@ public sealed class AdminHandler :
     private readonly LinguaCoachDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAiProviderTester _tester;
+    private readonly IServiceProvider _services;
+    private readonly IAiProviderResolver _providerResolver;
 
-    public AdminHandler(LinguaCoachDbContext db, UserManager<ApplicationUser> userManager, IAiProviderTester tester)
+    public AdminHandler(
+        LinguaCoachDbContext db,
+        UserManager<ApplicationUser> userManager,
+        IAiProviderTester tester,
+        IAiProviderResolver providerResolver,
+        IServiceProvider services)
     {
         _db = db;
         _userManager = userManager;
         _tester = tester;
+        _providerResolver = providerResolver;
+        _services = services;
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -220,13 +231,6 @@ public sealed class AdminHandler :
 
     // ── AI provider config ────────────────────────────────────────────────────
 
-    public async Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default)
-    {
-        await EnsureActiveFeatureConfigsAsync(ct);
-        var configs = await _db.AiProviderConfigs.OrderBy(c => c.FeatureKey).ToListAsync(ct);
-        return configs.Select(ToAiProviderConfigItem).ToList();
-    }
-
     public async Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default)
     {
         var credentials = await _db.AiProviderCredentials.ToListAsync(ct);
@@ -236,40 +240,10 @@ public sealed class AdminHandler :
             .Select(kvp =>
             {
                 credByProvider.TryGetValue(kvp.Key, out var cred);
-                return ToCatalogItem(kvp.Key, kvp.Value.Order().ToList(), cred);
+                return ToCatalogItem(kvp.Key, MergeModels(kvp.Value, cred).Order().ToList(), cred);
             })
             .OrderBy(p => p.ProviderName)
             .ToList();
-    }
-
-    public async Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default)
-    {
-        var config = await _db.AiProviderConfigs.FirstOrDefaultAsync(c => c.Id == command.ConfigId, ct)
-            ?? throw new InvalidOperationException("AI provider config not found.");
-
-        if (!string.IsNullOrWhiteSpace(command.ProviderName) || !string.IsNullOrWhiteSpace(command.ModelName))
-        {
-            config.Update(
-                command.ProviderName ?? config.ProviderName,
-                command.ModelName ?? config.ModelName);
-        }
-
-        if (command.VoiceName is not null || command.ClearVoiceName)
-            config.UpdateVoice(command.ClearVoiceName ? null : command.VoiceName);
-
-        if (command.FallbackEnabled.HasValue
-            || command.FallbackProviderName is not null
-            || command.FallbackModelName is not null)
-        {
-            config.SetFallback(
-                command.FallbackProviderName ?? config.FallbackProviderName,
-                command.FallbackModelName ?? config.FallbackModelName,
-                command.FallbackEnabled ?? config.FallbackEnabled);
-        }
-
-        await _db.SaveChangesAsync(ct);
-
-        return ToAiProviderConfigItem(config);
     }
 
     // ── AI config categories ──────────────────────────────────────────────────
@@ -286,6 +260,8 @@ public sealed class AdminHandler :
             .FirstOrDefaultAsync(c => c.CategoryKey == command.CategoryKey, ct)
             ?? throw new InvalidOperationException($"AI config category '{command.CategoryKey}' not found.");
 
+        ValidateCategoryConfig(command.CategoryKey, command.ProviderName, command.ModelName);
+
         category.Update(command.ProviderName, command.ModelName);
         category.UpdateVoice(command.VoiceName);
 
@@ -295,69 +271,6 @@ public sealed class AdminHandler :
 
     private static AiConfigCategoryItem ToCategoryItem(AiConfigCategory c)
         => new(c.Id, c.CategoryKey, c.DisplayName, c.ProviderName, c.ModelName, c.VoiceName);
-
-    private async Task EnsureActiveFeatureConfigsAsync(CancellationToken ct)
-    {
-        var activePromptKeys = await _db.AiPrompts
-            .Where(p => p.IsActive)
-            .Select(p => p.Key)
-            .Distinct()
-            .ToListAsync(ct);
-
-        var featureKeys = activePromptKeys
-            .Select(DeriveFeatureKey)
-            .Append("writing.exercise")
-            .Concat(KnownRuntimeFeatureKeys)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(k => k.ToLowerInvariant())
-            .ToList();
-
-        var existing = await _db.AiProviderConfigs
-            .Select(c => c.FeatureKey)
-            .ToListAsync(ct);
-
-        var existingSet = existing.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var key in featureKeys.Where(k => !existingSet.Contains(k)))
-        {
-            _db.AiProviderConfigs.Add(new AiProviderConfig(key, "openai", "gpt-4o-mini"));
-        }
-
-        if (_db.ChangeTracker.HasChanges())
-            await _db.SaveChangesAsync(ct);
-    }
-
-    private static string DeriveFeatureKey(string promptKey)
-    {
-        var parts = promptKey.Split('.');
-        return parts.Length >= 3 && parts[^1].StartsWith('v') && int.TryParse(parts[^1][1..], out _)
-            ? string.Join('.', parts[..^1])
-            : promptKey;
-    }
-
-    private static readonly string[] KnownRuntimeFeatureKeys =
-    [
-        "learning_path_generate",
-        "learning_path_generate_adaptive",
-        "activity_generate_writing",
-        "activity_evaluate_writing",
-        "activity_generate_listening",
-        "activity_generate_speaking_roleplay",
-        "activity_evaluate_speaking_roleplay",
-        "vocabulary_extract_from_attempt",
-        "student_memory_update",
-        "placement_assessment_evaluate"
-    ];
-
-    private static AiProviderConfigItem ToAiProviderConfigItem(AiProviderConfig c)
-        => new(
-            c.Id,
-            c.FeatureKey,
-            c.ProviderName,
-            c.ModelName,
-            c.VoiceName,
-            c.FallbackProviderName,
-            c.FallbackModelName,
-            c.FallbackEnabled);
 
     public async Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default)
     {
@@ -372,7 +285,7 @@ public sealed class AdminHandler :
         await _db.SaveChangesAsync(ct);
 
         AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedModels);
-        return ToCatalogItem(normalised, allowedModels?.Order().ToList() ?? [], cred);
+        return ToCatalogItem(normalised, MergeModels(allowedModels, cred).Order().ToList(), cred);
     }
 
     public async Task<AiProviderCatalogItem> SetProviderEndpointAsync(SetProviderEndpointCommand command, CancellationToken ct = default)
@@ -388,7 +301,27 @@ public sealed class AdminHandler :
         await _db.SaveChangesAsync(ct);
 
         AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedModels);
-        return ToCatalogItem(normalised, allowedModels?.Order().ToList() ?? [], cred);
+        return ToCatalogItem(normalised, MergeModels(allowedModels, cred).Order().ToList(), cred);
+    }
+
+    public async Task<AiProviderCatalogItem> AddProviderModelAsync(AddProviderModelCommand command, CancellationToken ct = default)
+    {
+        var normalised = command.ProviderName.Trim().ToLowerInvariant();
+        if (!AiProviderConfig.AllowedModels.ContainsKey(normalised))
+            throw new ArgumentException($"Unsupported provider '{normalised}'.", nameof(command.ProviderName));
+
+        var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
+        if (cred is null)
+        {
+            cred = new AiProviderCredential(normalised);
+            _db.AiProviderCredentials.Add(cred);
+        }
+
+        cred.AddModel(command.ModelName);
+        await _db.SaveChangesAsync(ct);
+
+        AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedModels);
+        return ToCatalogItem(normalised, MergeModels(allowedModels, cred).Order().ToList(), cred);
     }
 
     public async Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default)
@@ -397,7 +330,7 @@ public sealed class AdminHandler :
         var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
 
         AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedSet);
-        var models = allowedSet?.Order().ToList() ?? [];
+        var models = MergeModels(allowedSet, cred).Order().ToList();
 
         // TTS-only models cannot be tested via chat completion — skip them.
         var testableModels = models.Where(m => !IsTtsOnlyModel(m)).ToList();
@@ -415,10 +348,173 @@ public sealed class AdminHandler :
         return ToCatalogItem(normalised, models, cred);
     }
 
+    public async Task<AiProviderCatalogItem> TestProviderModelAsync(string providerName, string modelName, CancellationToken ct = default)
+    {
+        var normalised = providerName.Trim().ToLowerInvariant();
+        if (!AiProviderConfig.AllowedModels.ContainsKey(normalised))
+            throw new ArgumentException($"Unsupported provider '{normalised}'.", nameof(providerName));
+
+        var model = modelName.Trim();
+        var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
+
+        var outcomes = await _tester.TestAllModelsAsync(normalised, [model], cred?.ApiKey, ct);
+        if (cred is null)
+        {
+            cred = new AiProviderCredential(normalised);
+            _db.AiProviderCredentials.Add(cred);
+        }
+
+        foreach (var outcome in outcomes)
+            cred.RecordModelTest(outcome.ModelName, outcome.Ok, outcome.LatencyMs, outcome.Error);
+
+        await _db.SaveChangesAsync(ct);
+        AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedModels);
+        return ToCatalogItem(normalised, MergeModels(allowedModels, cred).Order().ToList(), cred);
+    }
+
+    public async Task<CategoryTestResult> TestCategoryAsync(string categoryKey, CancellationToken ct = default)
+    {
+        var category = await _db.AiConfigCategories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.CategoryKey == categoryKey, ct)
+            ?? throw new InvalidOperationException($"AI config category '{categoryKey}' not found.");
+
+        var resolved = await ResolveCategoryForTestAsync(category, ct);
+        if (resolved.ProviderName is null)
+        {
+            return new CategoryTestResult(categoryKey, "", resolved.ModelName, resolved.VoiceName, false, 0,
+                "No provider/model is configured for this category.");
+        }
+
+        if (categoryKey.StartsWith("tts.", StringComparison.OrdinalIgnoreCase))
+            return await TestTtsCategoryAsync(categoryKey, ct);
+
+        return await TestLlmCategoryAsync(categoryKey, resolved.ProviderName, resolved.ModelName, resolved.VoiceName, ct);
+    }
+
     private static bool IsTtsOnlyModel(string modelName)
     {
         var lower = modelName.ToLowerInvariant();
         return lower.Contains("-tts") || lower == "cosyvoice-v2" || lower.StartsWith("tts-");
+    }
+
+    private async Task<CategoryTestResult> TestLlmCategoryAsync(
+        string categoryKey,
+        string providerName,
+        string? modelName,
+        string? voiceName,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(modelName))
+            return new CategoryTestResult(categoryKey, providerName, modelName, voiceName, false, 0, "Model is not configured.");
+
+        if (IsTtsOnlyModel(modelName))
+            return new CategoryTestResult(categoryKey, providerName, modelName, voiceName, false, 0, "This is a TTS-only model.");
+
+        var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == providerName, ct);
+        var outcome = (await _tester.TestAllModelsAsync(providerName, [modelName], cred?.ApiKey, ct)).Single();
+        if (cred is null)
+        {
+            cred = new AiProviderCredential(providerName);
+            _db.AiProviderCredentials.Add(cred);
+        }
+
+        cred.RecordModelTest(outcome.ModelName, outcome.Ok, outcome.LatencyMs, outcome.Error);
+        await _db.SaveChangesAsync(ct);
+
+        return new CategoryTestResult(categoryKey, providerName, modelName, voiceName,
+            outcome.Ok, outcome.LatencyMs, outcome.Error);
+    }
+
+    private async Task<CategoryTestResult> TestTtsCategoryAsync(string categoryKey, CancellationToken ct)
+    {
+        var selection = _providerResolver.ResolveTts(categoryKey, categoryKey);
+        ITextToSpeechService service = selection.ProviderName.ToLowerInvariant() switch
+        {
+            "openai" => _services.GetRequiredService<LinguaCoach.Infrastructure.Speaking.OpenAiTextToSpeechService>(),
+            "gemini" => _services.GetRequiredService<LinguaCoach.Infrastructure.Speaking.GeminiTextToSpeechService>(),
+            "qwen" => _services.GetRequiredService<LinguaCoach.Infrastructure.Speaking.QwenTextToSpeechService>(),
+            _ => throw new ArgumentException($"Unsupported TTS provider '{selection.ProviderName}'.")
+        };
+
+        var started = DateTime.UtcNow;
+        var result = await service.GenerateSpeechAsync(
+            "This is a SpeakPath audio configuration test.",
+            new TextToSpeechOptions(
+                "en",
+                selection.VoiceName,
+                selection.ModelName,
+                selection.ApiKeyOverride,
+                selection.EndpointOverride),
+            ct);
+
+        return new CategoryTestResult(
+            categoryKey,
+            selection.ProviderName,
+            selection.ModelName,
+            selection.VoiceName,
+            result.Success,
+            (int)Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds, 0, int.MaxValue),
+            result.FailureReason);
+    }
+
+    private async Task<(string? ProviderName, string? ModelName, string? VoiceName)> ResolveCategoryForTestAsync(
+        AiConfigCategory category,
+        CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(category.ProviderName)
+            && !string.Equals(category.ProviderName, "fake", StringComparison.OrdinalIgnoreCase))
+        {
+            return (category.ProviderName, category.ModelName, category.VoiceName);
+        }
+
+        if (category.CategoryKey.StartsWith("tts.", StringComparison.OrdinalIgnoreCase))
+            return (category.ProviderName, category.ModelName, category.VoiceName);
+
+        if (!string.Equals(category.CategoryKey, "llm.default", StringComparison.OrdinalIgnoreCase))
+        {
+            var defaultCategory = await _db.AiConfigCategories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CategoryKey == "llm.default", ct);
+            if (defaultCategory is not null)
+                return (defaultCategory.ProviderName, defaultCategory.ModelName, defaultCategory.VoiceName);
+        }
+
+        return (category.ProviderName, category.ModelName, category.VoiceName);
+    }
+
+    private static void ValidateCategoryConfig(string categoryKey, string? providerName, string? modelName)
+    {
+        if (string.IsNullOrWhiteSpace(providerName))
+            return;
+
+        var provider = providerName.Trim().ToLowerInvariant();
+        if (provider == "fake")
+            return;
+
+        if (!AiProviderConfig.AllowedModels.ContainsKey(provider))
+            throw new ArgumentException($"Unsupported provider '{provider}'.", nameof(providerName));
+
+        if (categoryKey.StartsWith("llm.", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(modelName))
+            throw new ArgumentException("ModelName is required when an LLM provider is configured.", nameof(modelName));
+    }
+
+    private static IEnumerable<string> MergeModels(IReadOnlySet<string>? allowedModels, AiProviderCredential? cred)
+    {
+        var models = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (allowedModels is not null)
+        {
+            foreach (var model in allowedModels)
+                models.Add(model);
+        }
+
+        if (cred is not null)
+        {
+            foreach (var model in cred.ModelTests.Keys)
+                models.Add(model);
+        }
+
+        return models;
     }
 
     private static AiProviderCatalogItem ToCatalogItem(

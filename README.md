@@ -140,10 +140,11 @@ docs/
 | GET | `/api/reference/language-pairs` | JWT | Active language pairs |
 | GET | `/api/reference/tracks?languagePairId=` | JWT | Learning tracks for a language pair |
 | GET | `/api/reference/career-profiles?languagePairId=` | JWT | Career profiles for a language pair |
-| GET | `/api/admin/ai-config` | Admin JWT | List AI feature routing config |
-| PUT | `/api/admin/ai-config/{id}` | Admin JWT | Update provider + model for a feature |
+| GET | `/api/admin/ai/categories` | Admin JWT | List category-level AI routing config |
+| PATCH | `/api/admin/ai/categories/{key}` | Admin JWT | Update provider, model, and voice for a category |
 | GET | `/api/admin/ai-providers` | Admin JWT | List provider catalog with credential/test status |
 | PUT | `/api/admin/ai-providers/{p}/api-key` | Admin JWT | Store or clear API key for a provider |
+| POST | `/api/admin/ai-providers/{p}/models` | Admin JWT | Add a provider model to the catalog |
 | POST | `/api/admin/ai-providers/{p}/test` | Admin JWT | Test all models for a provider |
 | GET | `/api/writing/exercise` | JWT | Get current writing exercise scenario |
 | POST | `/api/writing/exercise/submit` | JWT (rate-limited) | Submit draft for AI feedback |

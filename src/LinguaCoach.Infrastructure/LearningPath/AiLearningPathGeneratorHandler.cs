@@ -116,7 +116,7 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
         };
 
         var aiRequest = await _contextBuilder.BuildAsync(PromptKey, variables, ct);
-        var response = await _aiExecution.ExecuteWithFallbackAsync(
+        var response = await _aiExecution.ExecuteAsync(
             PromptKey, aiRequest, studentProfileId, correlationId: null, ct);
         var parsed = ParseAiResponse(response);
 

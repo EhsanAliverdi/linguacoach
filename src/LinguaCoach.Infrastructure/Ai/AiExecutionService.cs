@@ -21,14 +21,14 @@ public sealed class AiExecutionService
         _logger = logger;
     }
 
-    public async Task<string> ExecuteWithFallbackAsync(
+    public async Task<string> ExecuteAsync(
         string featureKey,
         AiRequest baseRequest,
         Guid? studentProfileId,
         string? correlationId,
         CancellationToken ct)
     {
-        var pair = _resolver.ResolveWithFallback(featureKey);
+        var pair = _resolver.ResolveLlm(featureKey, ResolveLlmCategory(featureKey));
         var started = DateTime.UtcNow;
         try
         {
@@ -65,6 +65,42 @@ public sealed class AiExecutionService
 
             throw new AiUnavailableException($"All AI providers failed for feature '{featureKey}'.", fallbackEx);
         }
+    }
+
+    private static string ResolveLlmCategory(string featureKey)
+    {
+        return featureKey switch
+        {
+            "activity_generate_writing" => "llm.generation",
+            "activity_generate_listening" => "llm.generation",
+            "activity_generate_speaking_roleplay" => "llm.generation",
+            "activity_generate_phrase_match" => "llm.generation",
+            "activity_generate_gap_fill_workplace_phrase" => "llm.generation",
+            "activity_generate_listen_and_answer" => "llm.generation",
+            "activity_generate_listen_and_gap_fill" => "llm.generation",
+            "activity_generate_email_reply" => "llm.generation",
+            "activity_generate_teams_chat_simulation" => "llm.generation",
+            "activity_generate_spoken_response_from_prompt" => "llm.generation",
+            "activity_generate_lesson_reflection" => "llm.generation",
+            "activity_evaluate_writing" => "llm.evaluation",
+            "activity_evaluate_speaking_roleplay" => "llm.evaluation",
+            "activity_evaluate_phrase_match" => "llm.evaluation",
+            "activity_evaluate_gap_fill_workplace_phrase" => "llm.evaluation",
+            "activity_evaluate_listen_and_answer" => "llm.evaluation",
+            "activity_evaluate_listen_and_gap_fill" => "llm.evaluation",
+            "activity_evaluate_email_reply" => "llm.evaluation",
+            "activity_evaluate_teams_chat_simulation" => "llm.evaluation",
+            "activity_evaluate_spoken_response_from_prompt" => "llm.evaluation",
+            "activity_evaluate_lesson_reflection" => "llm.evaluation",
+            "writing.exercise" => "llm.evaluation",
+            "writing.exercise.v2" => "llm.evaluation",
+            "placement_assessment_evaluate" => "llm.evaluation",
+            "learning_path_generate" => "llm.memory",
+            "learning_path_generate_adaptive" => "llm.memory",
+            "student_memory_update" => "llm.memory",
+            "vocabulary_extract_from_attempt" => "llm.memory",
+            _ => AiProviderResolver.DefaultLlmCategory
+        };
     }
 
     private async Task<string> ExecuteOneAsync(
