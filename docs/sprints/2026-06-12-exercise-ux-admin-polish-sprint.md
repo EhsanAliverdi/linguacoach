@@ -135,6 +135,12 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - No Playwright tests reference the nav grouping/labels (only `disabled-actions-cleanup.spec.ts` checks the `/admin/usage` page heading, unaffected by nav placement) — no test updates needed.
 - `npx ng build`: succeeds.
 
+## Phase 6 findings
+
+- Audited all components touched in Phases 2-5: `ChatReplyComponent`, `EmailReplyComponent`, `ExerciseLessonIntroComponent`, the 4 renderers updated in Phase 4 (`GapFillComponent`, `MatchingPairsComponent`, `AudioAndFreeTextComponent`, `AudioAndGapFillComponent`), and the admin nav layout.
+- All already use the shared `.sp-*` design tokens consistently (`.sp-card`, `.sp-input`, `.sp-label`, `.sp-button-primary`, `.sp-eyebrow`, `.sp-alert-info`, `.sp-collapsible`, `.sp-phrase-chip`, `var(--sp-muted)`/`var(--sp-text)`/`var(--sp-r)` etc.). The new `ExerciseLessonIntroComponent` mirrors the existing `chat-reply-goal` pattern (`.sp-eyebrow` label + `var(--sp-muted)` text).
+- No ad-hoc styling deviations found — no changes needed this phase.
+
 ## Tasks
 
 - [x] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
@@ -143,7 +149,7 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - [x] Phase 3: Email — Subject/Body structured renderer + rubric update
 - [x] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
 - [x] Phase 5: Admin nav — AI Usage under AI System
-- [ ] Phase 6: Design-token consistency pass (scoped)
+- [x] Phase 6: Design-token consistency pass (scoped)
 - [ ] Phase 7: Docs close-out
 
 ## Risks / unresolved questions
