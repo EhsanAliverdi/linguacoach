@@ -69,6 +69,69 @@ Completion notes:
 
 ---
 
+## Adaptive Onboarding & Staged Assessment `Not started`
+
+From product owner brainstorm (2026-06-12). Architecture/planning notes only — not scoped for implementation.
+
+**Direction:**
+
+- Stage 1: Initial onboarding — quick entry, basic profile (language, goals, work/casual preference, confidence).
+- Stage 2: Initial placement — starts at A1/A2, adapts difficulty based on answers, stops when confidence threshold reached.
+- Stage 3: Ongoing diagnostic progress — grammar, vocabulary, listening, speaking, writing, reading, workplace communication, casual conversation each tracked as percentage completion via lessons over time.
+- Stage 4: Adaptive course generation — lessons become more accurate as diagnostics improve.
+
+**A1 support requirements:**
+
+- Simple English in onboarding/placement questions.
+- Optional native-language instruction support.
+- Early tasks favor matching/short-phrase/listening over open writing.
+
+**Relationship to [Configurable Onboarding and Placement Assessment](#configurable-onboarding-and-placement-assessment-not-started) below:** that item covers making *existing* onboarding/placement questions admin-configurable. This item is the larger product direction (staged assessment model) that configurable questions would eventually plug into. Do not implement either without further scoping — both require dedicated architecture review.
+
+---
+
+## Multi-Course / Enrolment Model `Not started`
+
+From product owner brainstorm (2026-06-12). Future architecture direction — not current sprint implementation.
+
+**Direction:**
+
+```
+Student
+  -> Enrolments
+      -> Course: Casual English
+      -> Course: Workplace English
+      -> Future: Academic English, Interview English, etc.
+```
+
+Today/Journey/Practice Gym and activity generation would be scoped to the student's active enrolment/course, allowing one student to study multiple English tracks with separate vocabulary, scenarios, tone, and progress tracking. AI prompts would receive course context.
+
+**Notes:**
+
+- Conflicts with current single-track `LearningPath`/`StudentProfile` model — would require an `Enrolment` entity and significant changes to session/path generation, AI context building, and progress tracking.
+- Do not begin without a dedicated architecture review (`/plan-eng-review`).
+
+---
+
+## Estimated Known Words `Not started`
+
+From product owner brainstorm (2026-06-12).
+
+**Direction:** Show an estimated vocabulary range (e.g. "Estimated vocabulary: about 400–600 words"), workplace phrases known, recently learned, and needs-review counts — framed as an estimate/range, not a fake-precise number.
+
+**Possible calculation basis:**
+
+- Count mastered `StudentVocabularyItem` rows (status/strength-based).
+- Add an estimated baseline range from CEFR level.
+- Adjust from successful vocabulary/listening/reading attempt history.
+
+**Notes:**
+
+- Depends on `StudentVocabularyItem` / vocabulary extraction work (see [Vocabulary extraction from writing attempts](#vocabulary-extraction-from-writing-attempts-in-sprint-vocabulary-extraction-from-writing-attempts-sprint)) being further along.
+- Display as a range, never a single precise count, per product direction.
+
+---
+
 ## Configurable Onboarding and Placement Assessment `Not started`
 
 **Priority:** P1 — after Placement MVP stabilisation, before serious pilot expansion

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-11 13:25
+lastUpdated: 2026-06-12 00:00
 owner: product
 supersedes:
 supersededBy:
@@ -8,13 +8,22 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 ---
 
 ## Current priority
 
-**Sprint planned — not yet started.**
+**Exercise UX / Admin Polish** — in progress. See full sprint plan:
+`docs/sprints/2026-06-12-exercise-ux-admin-polish-sprint.md`
+
+Triggered by: product owner 10-track brainstorm (2026-06-12), narrowed after investigation showed attempt storage/retry/evaluation was already complete (Pattern Evaluation Engine sprint, 2026-06-10).
+
+Covers: workplace chat goal/tone framing, structured email subject/body, shared Lesson → Practice → Evaluate structure across all active exercise renderers, admin nav AI Usage regrouping, scoped design-token alignment.
+
+---
+
+## Queued next
 
 **AI Config Overhaul / No-Fallback Rule / Journey Fix** — see full sprint plan:
 `docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`
