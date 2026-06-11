@@ -109,7 +109,7 @@ public sealed class VocabularyExtractionService : IVocabularyExtractionService
         }
     }
 
-    private static string BuildExtractionContext(
+    internal static string BuildExtractionContext(
         Domain.Entities.StudentProfile profile,
         LearningActivity? activity,
         LearningModule? module,
@@ -118,7 +118,9 @@ public sealed class VocabularyExtractionService : IVocabularyExtractionService
         string? improvedVersion,
         IReadOnlyList<string> knownTerms)
     {
-        // Parse feedback changes safely
+        // Parse feedback changes safely. Two shapes are supported:
+        // - legacy writing feedback: top-level "changes" array (type/original/suggested/category/severity)
+        // - pattern evaluation result: top-level "corrections" array (category/original/suggestion/explanation)
         List<object> changes = [];
         try
         {
@@ -135,6 +137,21 @@ public sealed class VocabularyExtractionService : IVocabularyExtractionService
                         suggested = c.TryGetProperty("suggested", out var s) ? s.GetString() : null,
                         category = c.TryGetProperty("category", out var cat) ? cat.GetString() : null,
                         severity = c.TryGetProperty("severity", out var sev) ? sev.GetString() : null,
+                    });
+                }
+            }
+            else if (doc.RootElement.TryGetProperty("corrections", out var correctionsEl)
+                && correctionsEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var c in correctionsEl.EnumerateArray())
+                {
+                    changes.Add(new
+                    {
+                        type = c.TryGetProperty("category", out var cat) ? cat.GetString() : null,
+                        original = c.TryGetProperty("original", out var o) ? o.GetString() : null,
+                        suggested = c.TryGetProperty("suggestion", out var s) ? s.GetString() : null,
+                        category = c.TryGetProperty("category", out var cat2) ? cat2.GetString() : null,
+                        severity = (string?)null,
                     });
                 }
             }

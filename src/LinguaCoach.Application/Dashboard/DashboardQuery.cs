@@ -12,7 +12,8 @@ public sealed record DashboardResult(
     DashboardActivityStats? ActivityStats = null,
     DashboardFocusArea? CurrentFocus = null,
     string? NextRecommendedPractice = null,
-    string? LatestImprovement = null);
+    string? LatestImprovement = null,
+    int StreakDays = 0);
 
 public sealed record DashboardActivityStats(
     int ActivitiesCompleted,

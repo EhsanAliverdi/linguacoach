@@ -306,6 +306,23 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         var memoryRequest = BuildPatternMemoryUpdateRequest(profile, activity, module, attempt, evalResult);
         await _memoryService.UpdateMemoryAsync(memoryRequest, ct);
 
+        // Best-effort vocabulary extraction — only when the evaluator produced AI corrections
+        // (AiStructured/AiOpenEnded patterns). Deterministic evaluators (ExactMatch,
+        // KeyedSelection, NoMarking) never populate Corrections, so this never triggers
+        // an AI call for gap fill / phrase match, preserving the no-AI guarantee for them.
+        if (evalResult.Corrections.Count > 0)
+        {
+            await _vocabExtraction.ExtractAsync(new ExtractVocabularyCommand(
+                UserId: command.UserId,
+                ActivityAttemptId: attempt.Id,
+                ActivityId: activity.Id,
+                ModuleId: activity.LearningModuleId,
+                SubmittedContent: submittedAnswerJson,
+                FeedbackJson: evalResultJson,
+                ImprovedVersion: evalResult.SuggestedImprovedAnswer,
+                CorrelationId: null), ct);
+        }
+
         var patternDto = BuildPatternEvaluationDto(activity.ExercisePatternKey, pattern.MarkingMode, evalResult);
 
         return new ActivityFeedbackDto(

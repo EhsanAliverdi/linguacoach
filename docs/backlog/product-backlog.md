@@ -510,12 +510,19 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
 ---
 
-## Vocabulary extraction from writing attempts (in sprint: vocabulary-extraction-from-writing-attempts-sprint)
+## Vocabulary extraction (cross-cutting engine, in sprint: vocabulary-extraction-from-writing-attempts-sprint)
 
-- [ ] Add `StudentVocabularyItem` entity, EF config, and migration. `Planned`
-- [ ] Add `vocabulary_extract_from_attempt` AI prompt to `DefaultAiSeeder`. `Planned`
-- [ ] Add `VocabularyExtractionService` (best-effort, post-submit). `Planned`
-- [ ] Wire extraction into `ActivitySubmitHandler` (does not block response). `Planned`
+> Note: despite the sprint name, extraction is not limited to writing attempts — it fires
+> from any activity that produces AI-generated `Corrections` (AiStructured/AiOpenEnded
+> patterns), not only legacy `WritingScenario`. See
+> `docs/sprints/2026-06-12-adaptive-learning-foundation-sprint.md`.
+
+- [x] Add `StudentVocabularyItem` entity, EF config, and migration. `Done`
+- [x] Add `vocabulary_extract_from_attempt` AI prompt to `DefaultAiSeeder`. `Done`
+- [x] Add `VocabularyExtractionService` (best-effort, post-submit). `Done`
+- [x] Wire extraction into `ActivitySubmitHandler` for legacy writing attempts and
+      pattern-evaluated activities (`HandlePatternEvaluationAsync`, gated on
+      `Corrections.Count > 0`). `Done` (2026-06-12)
 - [ ] Add `GET /api/vocabulary` and `PATCH /api/vocabulary/{id}/status` endpoints. `Planned`
 - [ ] Add Angular `/vocabulary` page with summary cards, filters, and status buttons. `Planned`
 - [ ] Add vocabulary preview section to progress page. `Planned`

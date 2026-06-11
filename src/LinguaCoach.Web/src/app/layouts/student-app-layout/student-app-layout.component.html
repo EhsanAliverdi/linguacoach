@@ -94,7 +94,7 @@
       <div class="sp-header-actions">
         <!-- Streak pill -->
         <div class="sp-streak-pill">
-          🔥 <span>0 days</span>
+          🔥 <span>{{ streakDays() }} {{ streakDays() === 1 ? 'day' : 'days' }}</span>
         </div>
         <!-- Notification bell -->
         <button class="sp-header-icon-btn" aria-label="Notifications">

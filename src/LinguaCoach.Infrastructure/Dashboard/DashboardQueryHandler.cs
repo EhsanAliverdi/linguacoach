@@ -44,6 +44,7 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
         var careerName = profile.CareerContext ?? profile.CareerProfile?.Name ?? "your selected role";
         var pathSummary = await BuildPathSummaryAsync(profile.Id, ct);
         var activityStats = await BuildActivityStatsAsync(profile.Id, ct);
+        var streakDays = await BuildStreakDaysAsync(profile.Id, ct);
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
 
         DashboardFocusArea? dashFocus = focusArea is null ? null
@@ -74,7 +75,8 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
             ActivityStats: activityStats,
             CurrentFocus: dashFocus,
             NextRecommendedPractice: nextRecommended,
-            LatestImprovement: latestImprovement);
+            LatestImprovement: latestImprovement,
+            StreakDays: streakDays);
     }
 
     private static string? BuildNextRecommendedPractice(
@@ -129,6 +131,33 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
             ActivitiesCompleted: attempts.Count,
             LatestScore: scored.Count > 0 ? Math.Round(scored.First(), 0) : null,
             AverageScore: scored.Count > 0 ? Math.Round(scored.Average(), 0) : null);
+    }
+
+    private async Task<int> BuildStreakDaysAsync(Guid studentProfileId, CancellationToken ct)
+    {
+        var activityDates = await _db.ActivityAttempts
+            .Where(a => a.StudentProfileId == studentProfileId)
+            .Select(a => a.CreatedAt.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToListAsync(ct);
+
+        if (activityDates.Count == 0) return 0;
+
+        var today = DateTime.UtcNow.Date;
+        if (activityDates[0] != today && activityDates[0] != today.AddDays(-1))
+            return 0;
+
+        var streak = 1;
+        var expected = activityDates[0];
+        for (int i = 1; i < activityDates.Count; i++)
+        {
+            expected = expected.AddDays(-1);
+            if (activityDates[i] != expected) break;
+            streak++;
+        }
+
+        return streak;
     }
 
     private async Task<DashboardLearningPathSummary?> BuildPathSummaryAsync(

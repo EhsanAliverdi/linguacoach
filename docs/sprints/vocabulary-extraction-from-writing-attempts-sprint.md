@@ -1,6 +1,19 @@
 ---
 status: historical
 ---
+
+> **Scope correction (2026-06-12):** Despite this sprint's title and framing, vocabulary
+> extraction is a cross-cutting engine, not a writing-only feature. As of 2026-06-12,
+> `VocabularyExtractionService.ExtractAsync` also fires from `HandlePatternEvaluationAsync`
+> for any pattern-evaluated activity that produces AI `Corrections` (AiStructured /
+> AiOpenEnded patterns: `email_reply`, `teams_chat_simulation`, `listen_and_answer`,
+> `spoken_response_from_prompt`, etc.), not only legacy `WritingScenario` attempts.
+> Deterministic patterns (`ExactMatch`, `KeyedSelection`, `NoMarking` — e.g. gap fill,
+> phrase match) never populate `Corrections` and so never trigger this, preserving the
+> no-AI-call guarantee for them. See
+> `docs/sprints/2026-06-12-adaptive-learning-foundation-sprint.md` for the implementation
+> note.
+
 # Vocabulary Extraction from Writing Attempts Sprint
 
 **Status:** In progress  

@@ -1,12 +1,62 @@
 ---
-status: planned
+status: mostly-complete
 createdAt: 2026-06-11
-lastUpdated: 2026-06-11 13:25
+lastUpdated: 2026-06-12 15:00
 owner: product
 related:
   - docs/testing/deployed-student-e2e-audit-2026-06-11.md
   - docs/handoffs/current-product-state.md
 ---
+
+## Status update (2026-06-12)
+
+An audit found that nearly all of this sprint was already delivered under other sprint
+names (T36 AiConfigCategories migration, the Exercise UX / Admin Polish sprint, and the
+Real TTS sprint):
+
+- **Track 1 (No-fallback rule)** — Done. `AiServiceUnavailableException` exists;
+  `ExercisePrepareHandler` throws it on AI failure (no `CreatePatternFallback`/generic
+  `SystemFallback`); `SessionsController.PrepareExercise` catches it and returns 503.
+- **Track 2 (Admin AI Config overhaul)** — Done. `AiConfigCategory` entity + T36 migration
+  exist; `AiProviderResolver` implements the feature-key → category → `llm.default` → 503
+  resolution order; `TtsProviderResolver` uses it; Admin AI Config UI shows the new
+  category cards (Default LLM / Content Generation / Evaluation & Feedback / Memory &
+  Learning Path / TTS).
+- **Track 3 (Journey page)** — Done. `learning-path.component.ts` loads session history
+  (via `HistoryController` / `GET /api/learning-path/modules/{moduleId}/activities`,
+  functionally equivalent to the `/api/sessions/history` spec but different naming), not
+  the old `LearningPathDetail` module list.
+- **Track 4 (Audio/TTS 503 handling)** — Done. `ActivityController.GetAudio` returns 404
+  for unavailable audio; `activity-lesson.component.ts.setActivityWithAudio` fetches
+  protected audio via `ActivityService.getAudioBlobUrl` (HttpClient, JWT-authenticated)
+  and rewrites `activity.audioUrl` to a `blob:` URL before it reaches the
+  `audio-and-free-text` / `audio-and-gap-fill` renderers — `<audio [src]>` never binds the
+  raw protected API path.
+- **Track 5 — BUG-004 (phrase-match 400)** — Done, fixed in the Exercise UX / Admin
+  Polish sprint (2026-06-12).
+- **Track 5 — BUG-006 (sidebar clipping)** — Done. `.sp-student-main`/`.sp-main-collapsed`
+  already implement the `margin-left` transition keyed to sidebar collapse state.
+- **Track 5 — BUG-005 (streak "--")** — Was genuinely outstanding; **fixed in this pass**
+  (2026-06-12). See "Streak implementation" below.
+
+## Streak implementation (2026-06-12)
+
+- `DashboardResult` gained `StreakDays` (`src/LinguaCoach.Application/Dashboard/DashboardQuery.cs`).
+- `DashboardQueryHandler.BuildStreakDaysAsync` (`src/LinguaCoach.Infrastructure/Dashboard/DashboardQueryHandler.cs`)
+  computes the current streak as the count of consecutive calendar days (UTC) with at
+  least one `ActivityAttempt`, counting back from today or yesterday (a streak isn't
+  broken until a full day passes with no activity).
+- Frontend: `DashboardResponse.streakDays` (`dashboard.models.ts`); dashboard stat-grid
+  streak card (`dashboard.component.html`) now shows `data().streakDays` instead of `--`;
+  the header streak pill (`student-app-layout.component.html`/`.ts`) now fetches the
+  dashboard and shows the real count instead of a hardcoded "0 days".
+
+## Final verdict
+
+Sprint is complete. All Definition of Done items satisfied (the no-fallback rule, AI
+config categories, Journey session history, audio 503/blob handling, phrase-match fix,
+and streak display were either already shipped or completed in this pass). No remaining
+work items from this sprint doc.
 
 # Sprint: AI Config Overhaul / No-Fallback Rule / Journey Fix
 

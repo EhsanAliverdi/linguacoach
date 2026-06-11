@@ -22,4 +22,5 @@ export interface DashboardResponse {
   currentFocus: DashboardFocusArea | null;
   nextRecommendedPractice: string | null;
   latestImprovement: string | null;
+  streakDays: number;
 }

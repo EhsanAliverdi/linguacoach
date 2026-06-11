@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 12:00
+lastUpdated: 2026-06-12 15:00
 owner: product
 supersedes:
 supersededBy:
@@ -12,21 +12,65 @@ Last updated: 2026-06-12
 
 ---
 
-## Current priority
+## Most recently completed sprint
 
-**AI Config Overhaul / No-Fallback Rule / Journey Fix** — see full sprint plan:
-`docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`
+**AI Config Overhaul / No-Fallback Rule / Journey Fix** — complete (2026-06-12)
+
+See full sprint plan: `docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`
 
 Triggered by: post-QA audit corrections from product owner (2026-06-11).
 Audit report: `docs/testing/deployed-student-e2e-audit-2026-06-11.md`
 
-### What this sprint addresses
+An audit on 2026-06-12 found that Tracks 1-4 and most of Track 5 had already been
+delivered under other sprint names (T36 AiConfigCategories migration, Exercise UX /
+Admin Polish, Real TTS). The one genuinely outstanding item — BUG-005 (dashboard streak
+showing "--") — was fixed in this pass: `DashboardResult.StreakDays` computed server-side
+from consecutive days with an `ActivityAttempt`, wired into the dashboard stat grid and
+the header streak pill. See the sprint doc's "Status update" and "Streak implementation"
+sections for full detail.
+
+### What this sprint addressed
 
 1. **No-fallback rule** — All AI failures return 503 + "Service not available" UI. No SystemFallback content ever shown to students.
 2. **Admin AI Config overhaul** — Replace 12+ individual feature-key rows with 4 LLM category cards (Default LLM, Content Generation, Evaluation & Feedback, Memory & Learning Path) + 2 independent TTS cards (Listening TTS, Placement TTS).
 3. **Journey page fix** — Replace old LearningPath module cards with LearningSession history (date-grouped, per-step scores).
-4. **Audio / TTS 503 handling** — Audio endpoint returns clear 404 when TTS not configured; frontend shows graceful failure. Gemini TTS must use Gemini TTS models (`*-tts`), not normal Gemini LLM models. Activity audio playback must fetch protected audio with Angular `HttpClient` and render a `blob:` URL, not bind the protected API URL directly to `<audio src>`.
+4. **Audio / TTS 503 handling** — Audio endpoint returns clear 404 when TTS not configured; frontend shows graceful failure. Activity audio playback fetches protected audio with Angular `HttpClient` and renders a `blob:` URL.
 5. **Lower-severity QA bugs** — Mobile activity blank page, phrase-match 400, streak "--" display, sidebar layout clipping.
+
+---
+
+## Current priority
+
+Resume the **Adaptive Learning Foundation** sequencing
+(`docs/sprints/2026-06-12-adaptive-learning-foundation-sprint.md`): item 2 — numeric
+`StudentSkillProfile` scores (small extension to existing memory model), which unlocks
+Track 10 Stage 3 (ongoing diagnostic percentages). Item 1 (vocabulary extraction,
+cross-cutting engine) is already done.
+
+---
+
+## Adaptive Learning Foundation — vocabulary extraction widened to all activity patterns
+
+**Adaptive Learning Foundation** — planning complete (2026-06-12); first implementation
+item (vocabulary extraction) done (2026-06-12)
+
+See `docs/sprints/2026-06-12-adaptive-learning-foundation-sprint.md`.
+
+Reviewed and sequenced the remaining tracks (10-14) from the 2026-06-12 product owner
+brainstorm: Adaptive Onboarding & Staged Assessment, Configurable Onboarding/Placement,
+Multi-Course/Enrolment Model, Estimated Known Words. All confirmed already recorded in
+`docs/backlog/product-backlog.md`. Recommended sequencing: vocabulary extraction first
+(already speced, independent), then numeric `StudentSkillProfile` scores, then staged
+assessment architecture review, then configurable onboarding, then multi-course
+(dedicated `/plan-eng-review` required). Three open product questions recorded — see
+sprint doc.
+
+Per product owner correction, vocabulary extraction was implemented as a cross-cutting
+engine: `VocabularyExtractionService` now extracts from any pattern-evaluated activity
+that produces AI `Corrections` (email reply, workplace chat, listen-and-answer, spoken
+response), not only legacy writing attempts. Deterministic patterns (gap fill, phrase
+match) are unaffected — see implementation note in the sprint doc above. Does not change
+current implementation priority below.
 
 ---
 
