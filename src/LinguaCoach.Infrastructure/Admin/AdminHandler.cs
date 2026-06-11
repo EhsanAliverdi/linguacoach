@@ -398,6 +398,19 @@ public sealed class AdminHandler :
         return lower.Contains("-tts") || lower == "cosyvoice-v2" || lower.StartsWith("tts-");
     }
 
+    private static bool IsProviderTtsModel(string providerName, string modelName)
+    {
+        var provider = providerName.Trim().ToLowerInvariant();
+        var lower = modelName.Trim().ToLowerInvariant();
+        return provider switch
+        {
+            "openai" => lower.StartsWith("tts-", StringComparison.OrdinalIgnoreCase),
+            "gemini" => lower.Contains("-tts", StringComparison.OrdinalIgnoreCase),
+            "qwen" => lower == "cosyvoice-v2",
+            _ => false
+        };
+    }
+
     private async Task<CategoryTestResult> TestLlmCategoryAsync(
         string categoryKey,
         string providerName,
@@ -497,6 +510,17 @@ public sealed class AdminHandler :
         if (categoryKey.StartsWith("llm.", StringComparison.OrdinalIgnoreCase)
             && string.IsNullOrWhiteSpace(modelName))
             throw new ArgumentException("ModelName is required when an LLM provider is configured.", nameof(modelName));
+
+        if (categoryKey.StartsWith("tts.", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(modelName))
+                throw new ArgumentException("ModelName is required when a TTS provider is configured.", nameof(modelName));
+
+            if (!IsProviderTtsModel(provider, modelName))
+                throw new ArgumentException(
+                    $"Model '{modelName}' is not a TTS model for provider '{provider}'.",
+                    nameof(modelName));
+        }
     }
 
     private static IEnumerable<string> MergeModels(IReadOnlySet<string>? allowedModels, AiProviderCredential? cred)

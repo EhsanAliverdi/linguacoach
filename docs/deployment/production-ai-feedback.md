@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:56
+lastUpdated: 2026-06-11 13:01
 owner: deployment
 supersedes:
 supersededBy:
@@ -53,6 +53,14 @@ Admin AI Config exposes category-level routing, not per-feature rows:
 Runtime calls pass their feature key and category to `AiProviderResolver`. LLM categories fall back to `llm.default`; TTS categories do not inherit from LLM config. If the selected category/default is missing, fake, lacks a model, lacks a usable API key, or the provider call fails, the API returns a controlled unavailable response. There is no provider fallback chain.
 
 API keys may be stored through Admin AI Config provider credentials or supplied through environment variables. API keys are never returned to the frontend.
+
+TTS category models must be provider-specific TTS models:
+
+- OpenAI: `tts-1`, `tts-1-hd`
+- Gemini: model names containing `-tts`, for example `gemini-2.5-flash-preview-tts`
+- Qwen: `cosyvoice-v2`
+
+Do not use normal Gemini LLM models such as `gemini-2.5-flash` for TTS. Gemini returns HTTP 400 when a text model is sent to the audio-only TTS generation path.
 
 ## VPS setup
 

@@ -76,6 +76,7 @@ public sealed class AiProviderConfig : BaseEntity
         {
             "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite",
             // TTS model
+            "gemini-3.1-flash-tts-preview",
             "gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts",
         },
         ["anthropic"] = new(StringComparer.OrdinalIgnoreCase)

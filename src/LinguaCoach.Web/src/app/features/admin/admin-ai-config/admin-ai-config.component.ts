@@ -415,13 +415,13 @@ export class AdminAiConfigComponent implements OnInit {
 
   private static readonly TTS_MODELS: Record<string, string[]> = {
     openai: ['tts-1', 'tts-1-hd'],
-    gemini: ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
+    gemini: ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts', 'gemini-3.1-flash-tts-preview'],
     qwen: ['cosyvoice-v2'],
   };
 
   ttsModelsFor(providerName: string): string[] {
     const staticModels = AdminAiConfigComponent.TTS_MODELS[providerName] ?? [];
-    const providerModels = this.modelsFor(providerName);
+    const providerModels = this.modelsFor(providerName).filter(m => this.isTtsModel(providerName, m));
     return Array.from(new Set([...staticModels, ...providerModels]));
   }
 
@@ -439,7 +439,18 @@ export class AdminAiConfigComponent implements OnInit {
     if (!provider || provider === 'fake') {
       cs.editingModel = null;
       cs.editingVoice = null;
+    } else if (!cs.editingModel || !this.ttsModelsFor(provider).includes(cs.editingModel)) {
+      cs.editingModel = this.ttsModelsFor(provider)[0] ?? null;
     }
+  }
+
+  private isTtsModel(providerName: string, modelName: string): boolean {
+    const provider = providerName.toLowerCase();
+    const model = modelName.toLowerCase();
+    if (provider === 'openai') return model.startsWith('tts-');
+    if (provider === 'gemini') return model.includes('-tts');
+    if (provider === 'qwen') return model === 'cosyvoice-v2';
+    return false;
   }
 
   saveCategory(cs: CategoryState): void {

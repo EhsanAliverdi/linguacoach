@@ -1,6 +1,7 @@
 ---
 status: planned
 createdAt: 2026-06-11
+lastUpdated: 2026-06-11 13:01
 owner: product
 related:
   - docs/testing/deployed-student-e2e-audit-2026-06-11.md
@@ -39,6 +40,7 @@ related:
 
 - No AI → no service. Replace every SystemFallback / hardcoded-fallback path with a proper 503 and a user-visible "Service not available" message.
 - TTS must be independently configurable (its own provider, model, and voice per TTS use case).
+- TTS category model choices must be TTS-capable for the selected provider. Normal LLM models such as `gemini-2.5-flash` must not be accepted for Gemini TTS.
 - Admin must be able to set one provider for an entire category (e.g. all content generation uses OpenAI) without touching 12 individual rows.
 - Journey must be grounded in what the student actually did — LearningSession and activity history — not the old LearningPath module structure.
 
@@ -371,6 +373,16 @@ Two cards, one per TTS use case:
 ```
 
 TTS cards always show the Voice field. No "use default" concept for TTS — each must be explicitly configured.
+
+TTS model dropdowns must show only provider-specific TTS models:
+
+| Provider | TTS models |
+|---|---|
+| OpenAI | `tts-1`, `tts-1-hd` |
+| Gemini | `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts`, `gemini-3.1-flash-tts-preview` |
+| Qwen | `cosyvoice-v2` |
+
+Saving a TTS category with a non-TTS model returns 400. Runtime Gemini TTS should defensively use the default Gemini TTS model if an old saved config still points to a normal Gemini text model.
 
 #### Section C — Provider credentials
 

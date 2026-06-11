@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-11
+lastUpdated: 2026-06-11 13:01
 owner: product
 supersedes:
 supersededBy:
@@ -85,8 +85,13 @@ All pattern-keyed activities go through `PatternEvaluationRouter`. Progress upda
 
 - `AiProviderConfig` rows `tts.listening` and `tts.placement` control which TTS service runs
 - Default seed: `provider=fake, model=fake, voice=fake` → silent WAV (tests never need `OPENAI_API_KEY`)
-- Admin can switch to `provider=openai, model=tts-1, voice=onyx` in Admin AI Config UI
+- Admin can switch to real TTS providers in Admin AI Config UI:
+  - OpenAI: `provider=openai`, model `tts-1` or `tts-1-hd`, voice such as `onyx`
+  - Gemini: `provider=gemini`, model must be a Gemini TTS model such as `gemini-2.5-flash-preview-tts`, voice such as `Kore`
+  - Qwen: `provider=qwen`, model `cosyvoice-v2`, voice such as `longxiaochun_v2`
+- TTS category saves reject non-TTS models. Existing Gemini TTS configs with a normal text model are defensively routed to the default Gemini TTS model by `GeminiTextToSpeechService`.
 - `OpenAiTextToSpeechService` calls `POST /v1/audio/speech`; returns `audio/mpeg`; never throws
+- `GeminiTextToSpeechService` calls the Gemini `generateContent` TTS path with `responseModalities=["AUDIO"]`, `speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName`, and returns `audio/wav`; never throws
 - `PlacementAudioService` checks both `.wav` and `.mp3` on disk (backward compat with pre-existing files)
 - T35 migration adds nullable `voice_name varchar(100)` to `ai_provider_configs`
 

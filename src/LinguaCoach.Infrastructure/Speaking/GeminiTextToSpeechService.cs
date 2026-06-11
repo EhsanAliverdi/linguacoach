@@ -45,20 +45,32 @@ internal sealed class GeminiTextToSpeechService : ITextToSpeechService
             return Fail(options, sw, "Gemini API key not configured.");
         }
 
-        var model = string.IsNullOrWhiteSpace(options.Model) ? DefaultModel : options.Model;
+        var configuredModel = string.IsNullOrWhiteSpace(options.Model) ? DefaultModel : options.Model.Trim();
+        var model = IsGeminiTtsModel(configuredModel) ? configuredModel : DefaultModel;
+        if (!string.Equals(configuredModel, model, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                "Gemini TTS configured with non-TTS model {ConfiguredModel}; using {DefaultModel} instead.",
+                configuredModel,
+                DefaultModel);
+        }
+
         var voice = options.Voice ?? DefaultVoice;
 
         try
         {
             using var http = new HttpClient();
-            var url = $"{BaseUrl}/v1beta/models/{model}:generateContent?key={apiKey}";
+            http.DefaultRequestHeaders.Add("x-goog-api-key", apiKey);
+            var url = $"{BaseUrl}/v1beta/models/{model}:generateContent";
+            var ttsPrompt = $"Read the following transcript aloud exactly as natural workplace English audio. Do not add, remove, summarize, translate, or answer anything.\n\nTranscript:\n{text}";
 
             var requestBody = new
             {
                 contents = new[]
                 {
-                    new { parts = new[] { new { text } } }
+                    new { parts = new[] { new { text = ttsPrompt } } }
                 },
+                model,
                 generationConfig = new
                 {
                     responseModalities = new[] { "AUDIO" },
@@ -126,6 +138,9 @@ internal sealed class GeminiTextToSpeechService : ITextToSpeechService
         new(Success: false, AudioBytes: null, AudioContentType: "audio/wav",
             Provider: "gemini", Voice: options.Voice ?? DefaultVoice,
             DurationMs: sw.ElapsedMilliseconds, FailureReason: reason);
+
+    private static bool IsGeminiTtsModel(string modelName) =>
+        modelName.Contains("-tts", StringComparison.OrdinalIgnoreCase);
 
     private static byte[] PcmToWav(byte[] pcm, int sampleRate, int channels, int bitsPerSample)
     {

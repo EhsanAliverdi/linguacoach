@@ -93,6 +93,36 @@ public sealed class TtsConfigEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
+    public async Task UpdateTtsCategory_WithGeminiTextModel_Returns400()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        var response = await ClientWithToken(token).PatchAsJsonAsync(
+            "/api/admin/ai/categories/tts.listening",
+            new { providerName = "gemini", modelName = "gemini-2.5-flash", voiceName = "Kore" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("not a TTS model", body.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task UpdateTtsCategory_WithGeminiTtsModel_Succeeds()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+
+        var response = await ClientWithToken(token).PatchAsJsonAsync(
+            "/api/admin/ai/categories/tts.listening",
+            new { providerName = "gemini", modelName = "gemini-2.5-flash-preview-tts", voiceName = "Kore" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("gemini", body.GetProperty("providerName").GetString());
+        Assert.Equal("gemini-2.5-flash-preview-tts", body.GetProperty("modelName").GetString());
+        Assert.Equal("kore", body.GetProperty("voiceName").GetString());
+    }
+
+    [Fact]
     public async Task TtsCategorySeeder_IsIdempotent_NoDuplicateRows()
     {
         using var scope = _factory.Services.CreateScope();
