@@ -96,11 +96,21 @@ New/updated specs: chat reply goal display, email subject/body submission + feed
 
 **Attempt/retry storage:** every submission creates a new append-only `ActivityAttempt` row via `_db.ActivityAttempts.Add(attempt)` + `SaveChangesAsync` — confirmed for both legacy and pattern-evaluation paths. No `AttemptNumber` column exists; attempt count is computed client-side (`attemptCount` signal incremented per response) and at query time for history. No issue found — no new column needed.
 
+## Phase 2 findings
+
+Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI generation plumbing):
+
+- `ChatReplyContent` (frontend) gains a distinct `learningGoal` field, separate from `instructions` (now `toneGuidance`-only — previously these were conflated into one field).
+- `ChatReplyComponent` template renders a small, non-intrusive "Goal" label above the chat thread when `learningGoal` is present (`data-testid="chat-reply-goal"`).
+- `activity_evaluate_teams_chat_simulation` prompt (`DefaultAiSeeder.ActivityEvaluateTeamsChatContent`) updated to explicitly instruct the AI to evaluate: did the reply address `learningGoal`, was the tone appropriate (not over-apologising/too casual/too formal), was the message clear, and did the student ask a useful clarifying question if relevant. `coachSummary`/`mainMistakes` guidance updated to reference goal-reaching.
+- `docs/architecture/exercise-pattern-library.md` — added evaluation rubric description under `teams_chat_simulation`.
+- Multi-turn chat: deferred (per plan default) — out of scope this sprint.
+
 ## Tasks
 
 - [x] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
 - [x] Phase 1: Verify attempt/retry integrity — found and fixed gap-fill submission shape bug
-- [ ] Phase 2: Workplace Chat — goal/tone framing + rubric update
+- [x] Phase 2: Workplace Chat — goal/tone framing + rubric update
 - [ ] Phase 3: Email — Subject/Body structured renderer + rubric update
 - [ ] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
 - [ ] Phase 5: Admin nav — AI Usage under AI System

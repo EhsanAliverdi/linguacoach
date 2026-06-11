@@ -174,7 +174,8 @@ export class ExerciseRendererComponent {
     const fallbackText = this.stringValue(raw['scenario']) ?? this.activity.situation;
     return {
       scenario: this.stringValue(raw['scenario']) ?? this.activity.situation,
-      instructions: this.stringValue(raw['toneGuidance']) ?? this.stringValue(raw['learningGoal']),
+      learningGoal: this.stringValue(raw['learningGoal']),
+      instructions: this.stringValue(raw['toneGuidance']),
       messages: thread.length ? thread : [{
         id: '1',
         sender: this.stringValue(raw['colleagueRole']) ?? 'Colleague',

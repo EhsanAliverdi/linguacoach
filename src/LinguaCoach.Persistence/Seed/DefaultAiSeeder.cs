@@ -859,25 +859,31 @@ You are an English language coach evaluating a professional chat reply written b
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 
-Activity content:
+Activity content (includes "learningGoal" — the communication goal this exercise is testing):
 {{activityContent}}
 
 Student's reply:
 {{studentSubmission}}
 
-Evaluate the chat reply (tone, conciseness, professional register) and return ONLY valid JSON matching the same schema as email evaluation:
+Evaluate the chat reply against the activity's "learningGoal" as well as tone, conciseness, and professional register:
+- Did the reply address the goal stated in "learningGoal" (e.g. asking for clarification, giving a status update, responding politely)?
+- Was the tone appropriate (not over-apologising, not too casual or too formal)?
+- Was the message clear and easy to understand?
+- If clarification was relevant to the goal, did the student ask a useful clarifying question?
+
+Return ONLY valid JSON matching the same schema as email evaluation:
 
 {
   "overallScore": <0-100>,
   "correctedText": "<an improved version of their chat reply>",
-  "coachSummary": "<1-2 sentence feedback>",
+  "coachSummary": "<1-2 sentence feedback that references whether the goal was reached>",
   "focusFirst": false,
   "changes": [],
   "whatYouDidWell": ["<strength>"],
-  "mainMistakes": ["<key mistake>"],
+  "mainMistakes": ["<key mistake, including if the goal was not addressed>"],
   "grammarIssues": [],
   "vocabularyIssues": [],
-  "toneIssues": ["<any tone issues — overly formal / too casual>"],
+  "toneIssues": ["<any tone issues — overly formal / too casual / over-apologising>"],
   "clarityIssues": [],
   "grammarExplanation": null,
   "toneExplanation": "<1-2 sentences on professional chat register>",

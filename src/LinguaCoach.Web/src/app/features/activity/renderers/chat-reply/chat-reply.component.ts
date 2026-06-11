@@ -11,6 +11,7 @@ export interface ChatMessage {
 
 export interface ChatReplyContent {
   scenario?: string | null;
+  learningGoal?: string | null;
   instructions?: string | null;
   messages: ChatMessage[];
   replyPrompt?: string | null;
