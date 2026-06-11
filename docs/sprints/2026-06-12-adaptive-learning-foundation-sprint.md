@@ -169,6 +169,34 @@ activity type, not only writing.
 - [x] Confirm no implementation occurred (planning-only sprint)
 - [x] Update `current-sprint.md` to record this as a completed planning pass
 - [x] Implement cross-cutting vocabulary extraction (see implementation note above)
+- [ ] Phase 2: Numeric `StudentSkillProfile` scores (sequencing item 2)
+- [ ] Phase 3: Lesson/Practice structure redesign (see note below)
+
+---
+
+## Phase 3 (new, 2026-06-12) — Lesson/Practice structure redesign
+
+Per product owner: the "What we learn / Grammar / Vocab / Phrases → Practice → Feedback
+→ Redo→next" lesson structure complaint (raised alongside the
+gap_fill/phrase_match scoring bug, see
+`docs/reviews/2026-06-12-exercise-submission-scoring-bug-engineering-review.md`) is part
+of the Adaptive Learning Foundation, as its own phase — not a separate sprint.
+
+Scope (to be planned, not yet implemented):
+
+- Each Lesson (and each Practice session) should present, per exercise/topic:
+  1. **What we learn** — explicit framing of the grammar/vocab/phrases being taught
+     (extends the existing "Lesson → Practice → Evaluate" goal framing from Exercise UX
+     Phase 4, which currently shows only a single "Goal" line).
+  2. **Practice** — the exercise itself (existing renderers).
+  3. **Feedback** — not generic/random; grounded in the lesson content AND the student's
+     `StudentLearningMemory` / `StudentSkillProfile` characteristics.
+  4. **Redo / Next** — a redo loop that leads into the next step, for both Lessons and
+     Practice flows.
+
+This phase should be planned (architecture/UX review) before implementation — likely
+depends on Phase 2 (numeric skill scores) for the "based on Student characteristic"
+feedback requirement. Sequencing: Phase 2 before Phase 3.
 
 ## Risks / unresolved questions
 

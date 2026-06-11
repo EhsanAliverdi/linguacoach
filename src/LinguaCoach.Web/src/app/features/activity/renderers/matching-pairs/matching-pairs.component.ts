@@ -4,6 +4,7 @@ import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-
 
 export interface MatchingPair {
   id: string;
+  meaningId: string;
   phrase: string;
   meaning: string;
 }
@@ -64,8 +65,8 @@ export class MatchingPairsComponent {
     return id in this.selections;
   }
 
-  isMatchedMeaning(id: string): boolean {
-    return Object.values(this.selections).includes(id);
+  isMatchedMeaning(meaningId: string): boolean {
+    return Object.values(this.selections).includes(meaningId);
   }
 
   get allMatched(): boolean {

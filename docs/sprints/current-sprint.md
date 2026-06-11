@@ -39,6 +39,44 @@ sections for full detail.
 
 ---
 
+## Most recently completed sprint
+
+**Exercise Submission Scoring Bug (CRITICAL)** — complete (2026-06-12)
+
+See full review: `docs/reviews/2026-06-12-exercise-submission-scoring-bug-engineering-review.md`
+
+Triggered by a production report: `gap_fill_workplace_phrase` submissions scored 0 with
+every `itemResults[].studentAnswer: null`, despite correct `acceptedAnswers` being
+present. Escalated by product owner to "every exercise" (not just gap fill).
+
+Root cause: frontend item-id fallbacks (`String(index + 1)`, 1-indexed, unprefixed) did
+not match backend deterministic-evaluator key conventions (`gap_{i+1}`, `phrase_{i}`/
+`meaning_{i}` 0-indexed).
+
+Fixed:
+- `gap_fill_workplace_phrase` — `mapGapItems` fallback id now `gap_${index + 1}`.
+- `phrase_match` — two-id-scheme redesign (`phrase_${index}` / `meaning_${index}`) across
+  `exercise-renderer.component.ts`, `MatchingPair` interface, `MatchingPairsComponent`,
+  and `matching-pairs.component.html`.
+
+Not changed (verified lower risk / separate issue, see review):
+- `listen_and_gap_fill` — `ListenAndGapFillItemDto.Id` exists in contract, fallback only
+  exercised if AI omits `id`.
+- `listen_and_answer` — `QuestionId` mismatch affects per-question feedback labels only,
+  not overall AI-judged score.
+
+AI-evaluated patterns (email_reply, teams_chat, spoken_response) were unaffected —
+`SubmittedAnswerJson` is forwarded raw to the AI prompt.
+
+Tests: `dotnet test` 480 unit + 430 integration passed; `npm run build` passed.
+
+The separate "lesson structure" complaint (What we learn / Practice / Feedback / Redo →
+next, for both Lessons and Practice) raised alongside this bug report is a
+product/architecture item — not addressed here, needs its own planning pass with the
+product owner.
+
+---
+
 ## Current priority
 
 Resume the **Adaptive Learning Foundation** sequencing

@@ -30,15 +30,15 @@
     <!-- Meanings column -->
     <div style="display:flex;flex-direction:column;gap:8px">
       <p style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin:0">Meaning</p>
-      @for (pair of displayMeanings; track pair.id) {
+      @for (pair of displayMeanings; track pair.meaningId) {
         <button
-          (click)="selectMeaning(pair.id)"
-          [disabled]="disabled || isMatchedMeaning(pair.id)"
-          [attr.data-testid]="'meaning-' + pair.id"
+          (click)="selectMeaning(pair.meaningId)"
+          [disabled]="disabled || isMatchedMeaning(pair.meaningId)"
+          [attr.data-testid]="'meaning-' + pair.meaningId"
           style="text-align:left;padding:10px 12px;border-radius:10px;font-size:13px;cursor:pointer;transition:all .15s;border:2px solid"
-          [style.border-color]="isMatchedMeaning(pair.id) ? 'var(--sp-success)' : pendingPhraseId ? 'var(--sp-border2)' : 'var(--sp-border)'"
-          [style.background]="isMatchedMeaning(pair.id) ? 'var(--sp-success-soft)' : pendingPhraseId ? 'var(--sp-canvas2)' : 'var(--sp-canvas)'"
-          [style.color]="isMatchedMeaning(pair.id) ? 'var(--sp-success)' : 'var(--sp-text)'">
+          [style.border-color]="isMatchedMeaning(pair.meaningId) ? 'var(--sp-success)' : pendingPhraseId ? 'var(--sp-border2)' : 'var(--sp-border)'"
+          [style.background]="isMatchedMeaning(pair.meaningId) ? 'var(--sp-success-soft)' : pendingPhraseId ? 'var(--sp-canvas2)' : 'var(--sp-canvas)'"
+          [style.color]="isMatchedMeaning(pair.meaningId) ? 'var(--sp-success)' : 'var(--sp-text)'">
           {{ pair.meaning }}
         </button>
       }

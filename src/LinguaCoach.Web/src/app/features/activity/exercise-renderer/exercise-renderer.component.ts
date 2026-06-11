@@ -104,9 +104,9 @@ export class ExerciseRendererComponent {
     const raw = this.raw;
     const pairs = this.arrayValue(raw['pairs']).map((pair, index) => {
       const obj = this.objectValue(pair) ?? {};
-      const id = this.stringValue(obj['id']) ?? String(index + 1);
       return {
-        id,
+        id: `phrase_${index}`,
+        meaningId: `meaning_${index}`,
         phrase: this.stringValue(obj['phrase']) ?? this.stringValue(obj['left']) ?? '',
         meaning: this.stringValue(obj['meaning']) ?? this.stringValue(obj['right']) ?? '',
       };
@@ -253,7 +253,7 @@ export class ExerciseRendererComponent {
     if (items.length) {
       return items.map((item, index) => {
         const obj = this.objectValue(item) ?? {};
-        const id = this.stringValue(obj['id']) ?? String(index + 1);
+        const id = this.stringValue(obj['id']) ?? `gap_${index + 1}`;
         const sentence = this.stringValue(obj['sentence']) ?? '';
         const parts = this.splitBlank(sentence);
         return {
