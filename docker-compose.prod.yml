@@ -26,6 +26,17 @@ services:
       Seed__AdminPassword: "${SEED_ADMIN_PASSWORD}"
       GSSAPI_KRB5_NO_CONFIGURE: "1"
       Tts__AudioStoragePath: "/app/audio-data"
+      # File storage (IFileStorageService). Default Local; set FILE_STORAGE_PROVIDER=Minio to use MinIO.
+      FileStorage__Provider: "${FILE_STORAGE_PROVIDER:-Local}"
+      FileStorage__LocalBasePath: "${FILE_STORAGE_LOCAL_BASE_PATH:-/app/audio-data}"
+      FileStorage__Minio__Endpoint: "${MINIO_ENDPOINT:-}"
+      FileStorage__Minio__AccessKey: "${MINIO_ACCESS_KEY:-}"
+      FileStorage__Minio__SecretKey: "${MINIO_SECRET_KEY:-}"
+      FileStorage__Minio__BucketName: "${MINIO_BUCKET_NAME:-speakpath-audio}"
+      FileStorage__Minio__UseSSL: "${MINIO_USE_SSL:-false}"
+      FileStorage__Minio__SignedUrlExpiryMinutes: "${MINIO_SIGNED_URL_EXPIRY_MINUTES:-10}"
+      # Background jobs (Quartz)
+      BackgroundJobs__Enabled: "${BACKGROUND_JOBS_ENABLED:-true}"
     volumes:
       - audio_data:/app/audio-data
     networks:
