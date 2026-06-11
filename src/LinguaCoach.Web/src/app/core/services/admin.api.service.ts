@@ -83,6 +83,9 @@ export class AdminApiService {
   setProviderApiKey(provider: string, apiKey: string | null): Observable<AiProviderCatalogItem> {
     return this.http.put<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/api-key`, { apiKey });
   }
+  setProviderEndpoint(provider: string, apiEndpoint: string | null): Observable<AiProviderCatalogItem> {
+    return this.http.put<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/endpoint`, { apiEndpoint });
+  }
   testProvider(provider: string): Observable<AiProviderCatalogItem> {
     return this.http.post<AiProviderCatalogItem>(`${this.api}/ai-providers/${provider}/test`, null);
   }

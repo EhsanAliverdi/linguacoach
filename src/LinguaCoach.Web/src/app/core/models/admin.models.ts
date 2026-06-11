@@ -82,6 +82,7 @@ export interface AiProviderCatalogItem {
   models: string[];
   hasApiKey: boolean;
   modelTests: ModelTestStatus[];
+  apiEndpoint: string | null;
 }
 
 export interface AiConfigCategoryItem {

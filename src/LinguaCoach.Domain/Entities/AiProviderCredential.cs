@@ -12,6 +12,8 @@ public sealed class AiProviderCredential : BaseEntity
 {
     public string ProviderName { get; private set; }
     public string? ApiKey { get; private set; }
+    /// <summary>Optional custom API endpoint/base URL (used by Qwen workspace endpoints).</summary>
+    public string? ApiEndpoint { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
     // Per-model test results stored as JSON. Key = model name.
@@ -39,6 +41,13 @@ public sealed class AiProviderCredential : BaseEntity
     {
         ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
         // Clear stale test results when the key changes.
+        ModelTests = new();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetApiEndpoint(string? endpoint)
+    {
+        ApiEndpoint = string.IsNullOrWhiteSpace(endpoint) ? null : endpoint.Trim();
         ModelTests = new();
         UpdatedAt = DateTime.UtcNow;
     }

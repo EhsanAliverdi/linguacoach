@@ -2,15 +2,18 @@ using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using LinguaCoach.Application.Speaking;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Speaking;
 
 /// <summary>
 /// Calls the Qwen/DashScope CosyVoice TTS API.
-/// Endpoint: POST {Qwen:DashScope}/services/aigc/text2audiov2/generation
-/// Falls back to the global DashScope endpoint if Qwen:DashScope is not configured.
+/// Endpoint: POST {endpoint}/services/aigc/text2audiov2/generation
+/// Endpoint priority: DB credential ApiEndpoint → Qwen:DashScope config → global DashScope fallback.
 /// On any failure returns TtsResult with Success=false — never throws.
 /// </summary>
 internal sealed class QwenTextToSpeechService : ITextToSpeechService
@@ -20,13 +23,16 @@ internal sealed class QwenTextToSpeechService : ITextToSpeechService
     private const string DefaultVoice = "longxiaochun_v2";
 
     private readonly IConfiguration _configuration;
+    private readonly IServiceProvider _services;
     private readonly ILogger<QwenTextToSpeechService> _logger;
 
     public QwenTextToSpeechService(
         IConfiguration configuration,
+        IServiceProvider services,
         ILogger<QwenTextToSpeechService> logger)
     {
         _configuration = configuration;
+        _services = services;
         _logger = logger;
     }
 
@@ -45,7 +51,11 @@ internal sealed class QwenTextToSpeechService : ITextToSpeechService
             return Fail(options, sw, "Qwen API key not configured.");
         }
 
-        var dashScopeBase = _configuration["Qwen:DashScope"] ?? DefaultDashScopeBase;
+        // Endpoint priority: DB credential ApiEndpoint (workspace-specific) → config → global default
+        var storedEndpoint = GetStoredEndpoint();
+        var dashScopeBase = storedEndpoint
+            ?? _configuration["Qwen:DashScope"]
+            ?? DefaultDashScopeBase;
         var model = string.IsNullOrWhiteSpace(options.Model) ? DefaultModel : options.Model;
         var voice = options.Voice ?? DefaultVoice;
 
@@ -123,6 +133,22 @@ internal sealed class QwenTextToSpeechService : ITextToSpeechService
         {
             _logger.LogWarning(ex, "Qwen TTS threw an exception Voice={Voice}", voice);
             return Fail(options, sw, ex.Message);
+        }
+    }
+
+    private string? GetStoredEndpoint()
+    {
+        try
+        {
+            using var scope = _services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var cred = db.AiProviderCredentials.AsNoTracking()
+                .FirstOrDefault(c => c.ProviderName == "qwen");
+            return cred?.ApiEndpoint;
+        }
+        catch
+        {
+            return null;
         }
     }
 

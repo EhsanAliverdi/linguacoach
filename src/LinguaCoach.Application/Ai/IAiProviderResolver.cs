@@ -4,7 +4,8 @@ public sealed record AiProviderSelection(
     IAiProvider Provider,
     string ProviderName,
     string ModelName,
-    string? ApiKeyOverride = null);
+    string? ApiKeyOverride = null,
+    string? EndpointOverride = null);
 
 public sealed record AiProviderPair(
     AiProviderSelection Primary,

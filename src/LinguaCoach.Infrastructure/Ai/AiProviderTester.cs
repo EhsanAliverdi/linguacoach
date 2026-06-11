@@ -31,6 +31,7 @@ public sealed class AiProviderTester : IAiProviderTester
             "openai" => _serviceProvider.GetRequiredService<OpenAiProvider>(),
             "gemini" => _serviceProvider.GetRequiredService<GeminiProvider>(),
             "anthropic" => _serviceProvider.GetRequiredService<AnthropicProvider>(),
+            "qwen" => _serviceProvider.GetRequiredService<QwenProvider>(),
             _ => throw new ArgumentException($"Unknown provider '{providerName}'.")
         };
 

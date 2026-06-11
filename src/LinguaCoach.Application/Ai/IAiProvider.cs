@@ -22,7 +22,8 @@ public sealed record AiRequest(
     string RenderedPrompt,
     int MaxOutputTokens,
     string ModelHint = "",
-    string? ApiKeyOverride = null);
+    string? ApiKeyOverride = null,
+    string? EndpointOverride = null);
 
 /// <summary>Output from an AI provider call.</summary>
 public sealed record AiResponse(

@@ -212,6 +212,23 @@ public sealed class AiProviderResolver : IAiProviderResolver
         }
     }
 
+    private string? GetStoredEndpoint(string providerName)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var cred = db.AiProviderCredentials.AsNoTracking()
+                .FirstOrDefault(c => c.ProviderName == providerName.ToLowerInvariant());
+            return cred?.ApiEndpoint;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read endpoint from DB for provider {Provider}.", providerName);
+            return null;
+        }
+    }
+
     private string? GetEnvApiKey(string providerName) =>
         providerName.ToLowerInvariant() switch
         {
@@ -230,7 +247,8 @@ public sealed class AiProviderResolver : IAiProviderResolver
                 $"{provider} API key is not configured. Set it via the admin UI or the environment variable.");
         }
 
-        return provider.ToLowerInvariant() switch
+        var norm = provider.ToLowerInvariant();
+        return norm switch
         {
             "openai" => new AiProviderSelection(
                 _serviceProvider.GetRequiredService<OpenAiProvider>(), "openai", model, apiKeyOverride),
@@ -239,7 +257,8 @@ public sealed class AiProviderResolver : IAiProviderResolver
             "anthropic" => new AiProviderSelection(
                 _serviceProvider.GetRequiredService<AnthropicProvider>(), "anthropic", model, apiKeyOverride),
             "qwen" => new AiProviderSelection(
-                _serviceProvider.GetRequiredService<QwenProvider>(), "qwen", model, apiKeyOverride),
+                _serviceProvider.GetRequiredService<QwenProvider>(), "qwen", model, apiKeyOverride,
+                EndpointOverride: GetStoredEndpoint("qwen") ?? _configuration["Qwen:OpenAiCompatible"]),
             _ => throw new AiConfigurationUnavailableException(
                 $"Unsupported AI provider '{provider}'. Allowed: OpenAI, Gemini, Anthropic, Qwen.")
         };

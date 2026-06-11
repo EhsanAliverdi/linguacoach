@@ -137,7 +137,8 @@ public sealed record AiProviderCatalogItem(
     string ProviderName,
     IReadOnlyList<string> Models,
     bool HasApiKey,
-    IReadOnlyList<ModelTestStatus> ModelTests);
+    IReadOnlyList<ModelTestStatus> ModelTests,
+    string? ApiEndpoint = null);
 
 public sealed record UpdateAiProviderConfigCommand(
     Guid ConfigId,
@@ -153,12 +154,17 @@ public sealed record SetProviderApiKeyCommand(
     string ProviderName,
     string? ApiKey);
 
+public sealed record SetProviderEndpointCommand(
+    string ProviderName,
+    string? ApiEndpoint);
+
 public interface IAdminAiConfigHandler
 {
     Task<IReadOnlyList<AiProviderConfigItem>> ListConfigsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AiProviderCatalogItem>> ListProvidersAsync(CancellationToken ct = default);
     Task<AiProviderConfigItem> UpdateConfigAsync(UpdateAiProviderConfigCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> SetProviderApiKeyAsync(SetProviderApiKeyCommand command, CancellationToken ct = default);
+    Task<AiProviderCatalogItem> SetProviderEndpointAsync(SetProviderEndpointCommand command, CancellationToken ct = default);
     Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default);
     Task<IReadOnlyList<AiConfigCategoryItem>> ListCategoriesAsync(CancellationToken ct = default);
     Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default);

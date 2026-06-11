@@ -56,10 +56,13 @@ public sealed class QwenProvider : IAiProvider
         }
 
         var modelToUse = string.IsNullOrEmpty(request.ModelHint) ? _defaultModel : request.ModelHint;
+        var endpointToUse = !string.IsNullOrWhiteSpace(request.EndpointOverride)
+            ? request.EndpointOverride
+            : _baseUrl;
         _logger.LogDebug("Calling Qwen model {Model} for prompt key {Key}", modelToUse, request.PromptKey);
 
         var credential = new ApiKeyCredential(apiKey);
-        var clientOptions = new OpenAIClientOptions { Endpoint = new Uri(_baseUrl) };
+        var clientOptions = new OpenAIClientOptions { Endpoint = new Uri(endpointToUse) };
         var chatClient = new ChatClient(modelToUse, credential, clientOptions);
 
         var options = new ChatCompletionOptions

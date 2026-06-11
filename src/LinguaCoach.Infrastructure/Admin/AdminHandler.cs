@@ -375,6 +375,22 @@ public sealed class AdminHandler :
         return ToCatalogItem(normalised, allowedModels?.Order().ToList() ?? [], cred);
     }
 
+    public async Task<AiProviderCatalogItem> SetProviderEndpointAsync(SetProviderEndpointCommand command, CancellationToken ct = default)
+    {
+        var normalised = command.ProviderName.Trim().ToLowerInvariant();
+        var cred = await _db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == normalised, ct);
+        if (cred is null)
+        {
+            cred = new AiProviderCredential(normalised);
+            _db.AiProviderCredentials.Add(cred);
+        }
+        cred.SetApiEndpoint(command.ApiEndpoint);
+        await _db.SaveChangesAsync(ct);
+
+        AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedModels);
+        return ToCatalogItem(normalised, allowedModels?.Order().ToList() ?? [], cred);
+    }
+
     public async Task<AiProviderCatalogItem> TestProviderAsync(string providerName, CancellationToken ct = default)
     {
         var normalised = providerName.Trim().ToLowerInvariant();
@@ -383,7 +399,9 @@ public sealed class AdminHandler :
         AiProviderConfig.AllowedModels.TryGetValue(normalised, out var allowedSet);
         var models = allowedSet?.Order().ToList() ?? [];
 
-        var outcomes = await _tester.TestAllModelsAsync(normalised, models, cred?.ApiKey, ct);
+        // TTS-only models cannot be tested via chat completion — skip them.
+        var testableModels = models.Where(m => !IsTtsOnlyModel(m)).ToList();
+        var outcomes = await _tester.TestAllModelsAsync(normalised, testableModels, cred?.ApiKey, ct);
 
         if (cred is null)
         {
@@ -395,6 +413,12 @@ public sealed class AdminHandler :
 
         await _db.SaveChangesAsync(ct);
         return ToCatalogItem(normalised, models, cred);
+    }
+
+    private static bool IsTtsOnlyModel(string modelName)
+    {
+        var lower = modelName.ToLowerInvariant();
+        return lower.Contains("-tts") || lower == "cosyvoice-v2" || lower.StartsWith("tts-");
     }
 
     private static AiProviderCatalogItem ToCatalogItem(
@@ -413,6 +437,7 @@ public sealed class AdminHandler :
             providerName,
             models,
             HasApiKey: cred?.ApiKey is not null,
-            ModelTests: tests);
+            ModelTests: tests,
+            ApiEndpoint: cred?.ApiEndpoint);
     }
 }

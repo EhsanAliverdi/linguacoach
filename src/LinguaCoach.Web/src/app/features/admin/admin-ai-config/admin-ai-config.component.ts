@@ -21,6 +21,10 @@ interface ProviderState {
   editKeyValue: string;
   saveKeyBusy: boolean;
   saveKeyError: string;
+  editingEndpoint: boolean;
+  editEndpointValue: string;
+  saveEndpointBusy: boolean;
+  saveEndpointError: string;
   testBusy: boolean;
 }
 
@@ -249,6 +253,46 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 </div>
               }
 
+              @if (hasEndpointConfig(ps.catalog.providerName)) {
+                <div class="mt-3 pt-3 border-t border-slate-100">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-slate-500">API Endpoint</span>
+                    @if (ps.catalog.apiEndpoint) {
+                      <span class="text-xs font-mono text-slate-400 truncate max-w-xs">{{ ps.catalog.apiEndpoint }}</span>
+                    } @else {
+                      <span class="text-xs text-slate-400">Using config default</span>
+                    }
+                    <button (click)="toggleEndpointEdit(ps)" class="text-xs font-medium text-indigo-600 hover:underline ml-2">
+                      {{ ps.catalog.apiEndpoint ? 'Update' : 'Set' }}
+                    </button>
+                  </div>
+                  @if (ps.editingEndpoint) {
+                    <div class="flex flex-wrap gap-3 items-end">
+                      <div class="flex-1 min-w-64">
+                        <label class="block text-xs text-slate-500 mb-1">
+                          Workspace endpoint — e.g. https://ws-xxx.maas.aliyuncs.com/compatible-mode/v1
+                        </label>
+                        <input type="text" [(ngModel)]="ps.editEndpointValue"
+                          placeholder="https://…"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                      </div>
+                      <button (click)="saveEndpoint(ps)" [disabled]="ps.saveEndpointBusy"
+                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                        {{ ps.saveEndpointBusy ? 'Saving…' : 'Save' }}
+                      </button>
+                      @if (ps.catalog.apiEndpoint) {
+                        <button (click)="clearEndpoint(ps)"
+                          class="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                          Clear
+                        </button>
+                      }
+                      <button (click)="ps.editingEndpoint = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
+                      @if (ps.saveEndpointError) { <p class="w-full text-xs text-red-600">{{ ps.saveEndpointError }}</p> }
+                    </div>
+                  }
+                </div>
+              }
+
             </div>
           }
         </div>
@@ -283,6 +327,8 @@ export class AdminAiConfigComponent implements OnInit {
           catalog: c,
           editingKey: false, editKeyValue: '',
           saveKeyBusy: false, saveKeyError: '',
+          editingEndpoint: false, editEndpointValue: '',
+          saveEndpointBusy: false, saveEndpointError: '',
           testBusy: false,
         })));
         this.loading.set(false);
@@ -387,10 +433,36 @@ export class AdminAiConfigComponent implements OnInit {
     return ({ openai: 'sk-…', gemini: 'AIza…', anthropic: 'sk-ant-…', qwen: 'sk-…' } as Record<string, string>)[provider] ?? '…';
   }
 
+  hasEndpointConfig(provider: string): boolean {
+    return provider === 'qwen';
+  }
+
   toggleKeyEdit(ps: ProviderState): void {
     ps.editingKey = !ps.editingKey;
     ps.editKeyValue = '';
     ps.saveKeyError = '';
+  }
+
+  toggleEndpointEdit(ps: ProviderState): void {
+    ps.editingEndpoint = !ps.editingEndpoint;
+    ps.editEndpointValue = ps.catalog.apiEndpoint ?? '';
+    ps.saveEndpointError = '';
+  }
+
+  saveEndpoint(ps: ProviderState): void {
+    ps.saveEndpointBusy = true; ps.saveEndpointError = '';
+    this.adminApi.setProviderEndpoint(ps.catalog.providerName, ps.editEndpointValue || null).subscribe({
+      next: updated => { ps.catalog = updated; ps.editingEndpoint = false; ps.saveEndpointBusy = false; },
+      error: err => { ps.saveEndpointError = err.error?.error ?? 'Failed.'; ps.saveEndpointBusy = false; },
+    });
+  }
+
+  clearEndpoint(ps: ProviderState): void {
+    ps.saveEndpointBusy = true;
+    this.adminApi.setProviderEndpoint(ps.catalog.providerName, null).subscribe({
+      next: updated => { ps.catalog = updated; ps.editingEndpoint = false; ps.saveEndpointBusy = false; },
+      error: err => { ps.saveEndpointError = err.error?.error ?? 'Failed.'; ps.saveEndpointBusy = false; },
+    });
   }
 
   saveKey(ps: ProviderState): void {

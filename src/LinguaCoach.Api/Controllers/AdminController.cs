@@ -241,6 +241,18 @@ public sealed class AdminController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpPut("ai-providers/{provider}/endpoint")]
+    public async Task<IActionResult> SetProviderEndpoint(string provider, [FromBody] SetProviderEndpointRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.SetProviderEndpointAsync(
+                new SetProviderEndpointCommand(provider, request.ApiEndpoint), ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpPost("ai-providers/{provider}/test")]
     public async Task<IActionResult> TestProvider(string provider, CancellationToken ct)
     {
@@ -308,4 +320,5 @@ public sealed record UpdateAiConfigRequest(
     string? FallbackModelName = null,
     bool? FallbackEnabled = null);
 public sealed record SetProviderApiKeyRequest(string? ApiKey);
+public sealed record SetProviderEndpointRequest(string? ApiEndpoint);
 public sealed record UpdateAiCategoryRequest(string? ProviderName, string? ModelName, string? VoiceName = null);

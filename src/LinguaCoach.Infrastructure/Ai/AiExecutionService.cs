@@ -80,6 +80,7 @@ public sealed class AiExecutionService
         {
             ModelHint = selection.ModelName,
             ApiKeyOverride = selection.ApiKeyOverride,
+            EndpointOverride = selection.EndpointOverride,
         };
 
         var started = DateTime.UtcNow;
