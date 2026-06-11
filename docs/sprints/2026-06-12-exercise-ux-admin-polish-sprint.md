@@ -150,16 +150,20 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - [x] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
 - [x] Phase 5: Admin nav — AI Usage under AI System
 - [x] Phase 6: Design-token consistency pass (scoped)
-- [ ] Phase 7: Docs close-out
+- [x] Phase 7: Docs close-out
 
 ## Risks / unresolved questions
 
-- Multi-turn chat scope decision deferred to Phase 2 implementation (default: single-turn + explicit goal).
-- Phase 4 expanded per product-owner decision (2026-06-12): apply Lesson → Practice → Evaluate to all 6 currently active renderers, not just chat/email/gap-fill/phrase-match. Patterns not yet implemented (40+ in the library) are NOT retrofitted — only active renderers.
+- Multi-turn chat scope decision deferred to Phase 2 implementation (default: single-turn + explicit goal). Tracked as a future enhancement, not blocking.
+- Phase 4 expanded per product-owner decision (2026-06-12): apply Lesson → Practice → Evaluate to all 6 currently active renderers, not just chat/email/gap-fill/phrase-match. Patterns not yet implemented (40+ in the library) are NOT retrofitted — only active renderers. Future patterns should adopt `learningGoal` + `ExerciseLessonIntroComponent` (or an equivalent goal display) as part of their initial implementation.
 
 ## Final verdict
 
-Pending — sprint in progress.
+Sprint complete. All 7 phases delivered, committed, and pushed individually. `dotnet test tests/LinguaCoach.UnitTests` passes (477/477); `npx ng build` succeeds with no new errors/warnings introduced by this sprint.
+
+## Next recommended action
+
+Resume the queued **AI Config Overhaul / No-Fallback Rule / Journey Fix** sprint (`docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`), per `current-sprint.md`.
 
 ## Next recommended action
 

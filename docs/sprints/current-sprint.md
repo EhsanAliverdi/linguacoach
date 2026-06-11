@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 00:00
+lastUpdated: 2026-06-12 12:00
 owner: product
 supersedes:
 supersededBy:
@@ -13,17 +13,6 @@ Last updated: 2026-06-12
 ---
 
 ## Current priority
-
-**Exercise UX / Admin Polish** — in progress. See full sprint plan:
-`docs/sprints/2026-06-12-exercise-ux-admin-polish-sprint.md`
-
-Triggered by: product owner 10-track brainstorm (2026-06-12), narrowed after investigation showed attempt storage/retry/evaluation was already complete (Pattern Evaluation Engine sprint, 2026-06-10).
-
-Covers: workplace chat goal/tone framing, structured email subject/body, shared Lesson → Practice → Evaluate structure across all active exercise renderers, admin nav AI Usage regrouping, scoped design-token alignment.
-
----
-
-## Queued next
 
 **AI Config Overhaul / No-Fallback Rule / Journey Fix** — see full sprint plan:
 `docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`
@@ -42,6 +31,38 @@ Audit report: `docs/testing/deployed-student-e2e-audit-2026-06-11.md`
 ---
 
 ## Most recently completed sprint
+
+**Exercise UX / Admin Polish** — complete (2026-06-12)
+
+See full sprint plan: `docs/sprints/2026-06-12-exercise-ux-admin-polish-sprint.md`
+
+### What was done
+
+All 7 phases shipped on 2026-06-12:
+
+- **Phase 1** — Verified attempt/retry integrity; fixed a pre-existing gap-fill submission shape bug (frontend was sending the wrong JSON shape, causing all answers to score as incorrect).
+- **Phase 2** — Workplace Chat: `ChatReplyContent` gained a distinct `learningGoal` field (separate from tone guidance), shown via a `chat-reply-goal` UI element. `activity_evaluate_teams_chat_simulation` prompt updated to evaluate goal-reaching, tone, clarity, and clarification-seeking.
+- **Phase 3** — Email Reply: new `InteractionMode.EmailReply`, self-healing `ExercisePatternSeeder`, new `EmailReplyComponent` renderer with subject + body fields, `SubmittedAnswerJson` shape `{ subject, body }`, evaluator prompt updated.
+- **Phase 4** — Shared Lesson → Practice → Evaluate framing: new `ExerciseLessonIntroComponent` ("Goal" display) applied to `GapFillComponent`, `MatchingPairsComponent`, `AudioAndFreeTextComponent`, `AudioAndGapFillComponent`. Chat Reply, Email Reply, and Free Text Entry already had equivalent goal displays.
+- **Phase 5** — Admin nav: "AI Usage" moved from the (now-removed) "Analytics" group into "AI System", alongside AI Config and Prompts.
+- **Phase 6** — Design-token consistency audit of all sprint-touched components — already aligned with `.sp-*` tokens, no changes needed.
+- **Phase 7** — Docs close-out (this entry).
+
+### Key constraints preserved
+
+- Lesson → Practice → Evaluate framing applied only to the 6 currently-active exercise renderers, not retrofitted across the 40+ unimplemented patterns in the library.
+- No backend changes beyond the `EmailReply` interaction mode (additive, append-only enum).
+
+### Final test results
+
+```
+dotnet test tests/LinguaCoach.UnitTests:  477 passed
+npm run build:                            passed (0 new errors/warnings)
+```
+
+---
+
+## Previously completed sprint
 
 **Real TTS / Placement Onboarding Gap / Today Session Card** — complete (2026-06-11)
 
@@ -147,7 +168,9 @@ Playwright:      165 passed (21 new Practice Gym tests + 9 new Journey tests)
 - Today's Lesson / Learning Session (Phases 1–5B) — complete
 - Exercise Pattern Engine — complete
 - Pattern Evaluation Engine (Phases 1–7) — complete
-- **Student UX Alignment / Writing-Assumption Cleanup (Phases 1–7) — complete**
+- Student UX Alignment / Writing-Assumption Cleanup (Phases 1–7) — complete
+- Real TTS / Placement Onboarding Gap / Today Session Card — complete
+- **Exercise UX / Admin Polish (Phases 1–7) — complete**
 
 ---
 

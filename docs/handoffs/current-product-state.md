@@ -205,7 +205,8 @@ Placement Assessment MVP is implemented:
 - Pattern-aware prepare/generation sets `exercisePatternKey` and returns `interactionMode` on `ActivityDto`.
 - Pattern-keyed activity responses include bounded `contentJson` for frontend renderers; legacy listening activities do not expose raw answer-bearing JSON before submission.
 - `ActivityLessonComponent` now routes pattern-keyed activities through `ExerciseRendererComponent`.
-- MVP renderers are wired: ReadOnly, FreeTextEntry, MatchingPairs, GapFill, AudioAndFreeText, AudioAndGapFill, ChatReply.
+- MVP renderers are wired: ReadOnly, FreeTextEntry, MatchingPairs, GapFill, AudioAndFreeText, AudioAndGapFill, ChatReply, EmailReply.
+- All 7 active renderers (excluding ReadOnly) follow a Lesson → Practice → Evaluate structure: a "Goal" element (`learningGoal`) shown via `ChatReplyComponent`'s own goal display, `EmailReplyComponent`/`FreeTextEntryComponent`'s `coachNote`, or the shared `ExerciseLessonIntroComponent` (GapFill, MatchingPairs, AudioAndFreeText, AudioAndGapFill).
 - Frontend renderer coverage added; full Playwright suite passes 97/97.
 - Backend baseline: 762 tests pass (380 unit + 382 integration).
 - `npm run build` passes; known non-blocking Angular warnings remain for admin CSS budgets and skipped selectors.
