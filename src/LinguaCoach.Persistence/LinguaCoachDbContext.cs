@@ -40,6 +40,11 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<LearningSession> LearningSessions => Set<LearningSession>();
     public DbSet<SessionExercise> SessionExercises => Set<SessionExercise>();
     public DbSet<ExercisePatternDefinition> ExercisePatterns => Set<ExercisePatternDefinition>();
+    public DbSet<AudioAsset> AudioAssets => Set<AudioAsset>();
+    public DbSet<LessonGenerationSettings> LessonGenerationSettings => Set<LessonGenerationSettings>();
+    public DbSet<GenerationBatch> GenerationBatches => Set<GenerationBatch>();
+    public DbSet<GenerationJobItem> GenerationJobItems => Set<GenerationJobItem>();
+    public DbSet<PracticeActivityCache> PracticeActivityCache => Set<PracticeActivityCache>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

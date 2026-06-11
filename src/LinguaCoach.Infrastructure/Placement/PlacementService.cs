@@ -44,19 +44,22 @@ public sealed class PlacementService :
     private readonly IStudentMemoryService _memory;
     private readonly PlacementAudioService _audio;
     private readonly ILogger<PlacementService> _logger;
+    private readonly Quartz.ISchedulerFactory? _schedulerFactory;
 
     public PlacementService(
         LinguaCoachDbContext db,
         IPlacementEvaluator evaluator,
         IStudentMemoryService memory,
         PlacementAudioService audio,
-        ILogger<PlacementService> logger)
+        ILogger<PlacementService> logger,
+        Quartz.ISchedulerFactory? schedulerFactory = null)
     {
         _db = db;
         _evaluator = evaluator;
         _memory = memory;
         _audio = audio;
         _logger = logger;
+        _schedulerFactory = schedulerFactory;
     }
 
     // â”€â”€ Start / resume â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -166,7 +169,34 @@ public sealed class PlacementService :
             "Placement completed StudentProfileId={StudentProfileId} OverallLevel={Level}",
             profile.Id, result.EstimatedOverallLevel);
 
+        // Kick off background lesson buffer generation now that the course is ready.
+        await TriggerInitialBufferAsync(profile.Id, ct);
+
         return MapResult(result, isCompleted: true);
+    }
+
+    /// <summary>Best-effort: queues the first lesson batch after placement. Never blocks placement completion.</summary>
+    private async Task TriggerInitialBufferAsync(Guid studentProfileId, CancellationToken ct)
+    {
+        if (_schedulerFactory is null) return;
+        try
+        {
+            var settings = await _db.LessonGenerationSettings.AsNoTracking().FirstOrDefaultAsync(ct);
+            if (settings is null || !settings.EnableBackgroundGeneration) return;
+
+            var scheduler = await _schedulerFactory.GetScheduler(ct);
+            await Infrastructure.Jobs.LessonBatchGenerationJob.TriggerAsync(
+                scheduler, studentProfileId, Domain.Enums.GenerationTriggerReason.PlacementCompleted,
+                settings.ReadyLessonBufferSize, ct);
+
+            _logger.LogInformation(
+                "Queued initial lesson buffer ({Count}) for student {ProfileId} after placement.",
+                settings.ReadyLessonBufferSize, studentProfileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Initial buffer trigger failed for student {ProfileId} (non-fatal).", studentProfileId);
+        }
     }
 
     // â”€â”€ Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

@@ -67,6 +67,13 @@ public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 var conn = sp.GetRequiredService<DbConnection>();
                 options.UseSqlite(conn);
             });
+
+            // Replace the real IFileStorageService with the in-memory fake for all tests.
+            RemoveAll<LinguaCoach.Application.Storage.IFileStorageService>(services);
+            RemoveAll<LinguaCoach.Infrastructure.Storage.FakeFileStorageService>(services);
+            services.AddSingleton<LinguaCoach.Infrastructure.Storage.FakeFileStorageService>();
+            services.AddSingleton<LinguaCoach.Application.Storage.IFileStorageService>(
+                sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Storage.FakeFileStorageService>());
         });
 
         builder.UseSetting("Jwt:Key", TestJwtKey);

@@ -38,6 +38,26 @@ public sealed class LearningSession : BaseEntity
     /// </summary>
     public string? GeneratedFromMemorySnapshotJson { get; private set; }
 
+    // ── Background generation / lesson buffer (T10) ──────────────────────────────
+    // Nullable for sessions created before the lesson-buffer feature.
+
+    /// <summary>Owning student. Set for background-generated sessions; used for the buffer idempotency key.</summary>
+    public Guid? StudentProfileId { get; private set; }
+
+    /// <summary>
+    /// Monotonic course-wide order for this student. Forms the idempotency key
+    /// (StudentProfileId + CourseSequenceNumber) that prevents duplicate generated lessons.
+    /// </summary>
+    public int? CourseSequenceNumber { get; private set; }
+
+    /// <summary>Pending until all required exercises/activities are materialized, then Ready.</summary>
+    public GenerationStatus GenerationStatus { get; private set; } = GenerationStatus.Ready;
+
+    public DateTime? ReadyAtUtc { get; private set; }
+
+    /// <summary>The generation batch that produced this session, if background-generated.</summary>
+    public Guid? GenerationBatchId { get; private set; }
+
     public IReadOnlyList<SessionExercise> Exercises => _exercises.AsReadOnly();
     private readonly List<SessionExercise> _exercises = [];
 
@@ -104,4 +124,22 @@ public sealed class LearningSession : BaseEntity
         Status = SessionStatus.Completed;
         CompletedAtUtc = DateTime.UtcNow;
     }
+
+    /// <summary>Sets background-generation metadata (T10). Idempotency key = StudentProfileId + CourseSequenceNumber.</summary>
+    public void SetGenerationMetadata(Guid studentProfileId, int courseSequenceNumber, Guid? generationBatchId)
+    {
+        StudentProfileId = studentProfileId;
+        CourseSequenceNumber = courseSequenceNumber;
+        GenerationBatchId = generationBatchId;
+    }
+
+    public void MarkGenerationPending() => GenerationStatus = GenerationStatus.Pending;
+
+    public void MarkGenerationReady()
+    {
+        GenerationStatus = GenerationStatus.Ready;
+        ReadyAtUtc = DateTime.UtcNow;
+    }
+
+    public void MarkGenerationFailed() => GenerationStatus = GenerationStatus.Failed;
 }

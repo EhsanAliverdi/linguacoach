@@ -1,10 +1,10 @@
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
+using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Speaking;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Activity;
@@ -12,16 +12,16 @@ namespace LinguaCoach.Infrastructure.Activity;
 public sealed class ListeningAudioService
 {
     private readonly TtsProviderResolver _ttsResolver;
-    private readonly IConfiguration _configuration;
+    private readonly IFileStorageService _storage;
     private readonly ILogger<ListeningAudioService> _logger;
 
     public ListeningAudioService(
         TtsProviderResolver ttsResolver,
-        IConfiguration configuration,
+        IFileStorageService storage,
         ILogger<ListeningAudioService> logger)
     {
         _ttsResolver = ttsResolver;
-        _configuration = configuration;
+        _storage = storage;
         _logger = logger;
     }
 
@@ -70,10 +70,11 @@ public sealed class ListeningAudioService
         }
 
         var extension = ContentTypeToExtension(result.AudioContentType);
-        var storageKey = $"{activity.Id:N}{extension}";
-        var fullPath = GetAudioPath(storageKey);
-        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-        await File.WriteAllBytesAsync(fullPath, result.AudioBytes, ct);
+        var storageKey = _storage.GenerateKey(activity.Id.ToString("N"), "tts-audio", extension);
+        await using (var ms = new MemoryStream(result.AudioBytes))
+        {
+            await _storage.SaveAsync(storageKey, ms, result.AudioContentType, ct);
+        }
 
         content.Audio = new ListeningAudioMetadata
         {
@@ -93,21 +94,29 @@ public sealed class ListeningAudioService
         if (content.Audio is not { AudioAvailable: true } || string.IsNullOrWhiteSpace(content.Audio.StorageKey))
             return null;
 
-        var fullPath = GetAudioPath(content.Audio.StorageKey);
-        if (!File.Exists(fullPath))
-            return null;
+        try
+        {
+            if (!await _storage.ExistsAsync(content.Audio.StorageKey, ct))
+                return null;
 
-        var bytes = await File.ReadAllBytesAsync(fullPath, ct);
-        return new ListeningAudioFile(bytes, content.Audio.ContentType ?? "audio/wav");
+            await using var stream = await _storage.ReadAsync(content.Audio.StorageKey, ct);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, ct);
+            return new ListeningAudioFile(ms.ToArray(), content.Audio.ContentType ?? "audio/wav");
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
     }
 
-    private string GetAudioPath(string storageKey)
+    /// <summary>The storage key for this activity's listening audio, or null if no audio is available.</summary>
+    public string? GetStorageKey(LearningActivity activity)
     {
-        var root = _configuration["Tts:AudioStoragePath"]
-            ?? Environment.GetEnvironmentVariable("TTS_AUDIO_STORAGE_PATH")
-            ?? Path.Combine(AppContext.BaseDirectory, "app-data", "audio");
-        var safeName = Path.GetFileName(storageKey);
-        return Path.GetFullPath(Path.Combine(root, safeName));
+        var content = Parse(activity.AiGeneratedContentJson);
+        return content.Audio is { AudioAvailable: true } && !string.IsNullOrWhiteSpace(content.Audio.StorageKey)
+            ? content.Audio.StorageKey
+            : null;
     }
 
     private static string ContentTypeToExtension(string contentType) => contentType switch

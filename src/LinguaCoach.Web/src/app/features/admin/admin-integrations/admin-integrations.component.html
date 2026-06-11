@@ -1,0 +1,175 @@
+<div class="sp-admin-page">
+  <header class="sp-admin-page-header">
+    <h1 class="sp-admin-page-title">Integrations</h1>
+    <p class="sp-admin-page-subtitle">Object storage health and background lesson generation.</p>
+  </header>
+
+  <!-- ── MinIO / Object Storage ──────────────────────────────────────────── -->
+  <section class="sp-card" style="margin-bottom:1.5rem;padding:1.25rem">
+    <h2 style="font-size:1.05rem;font-weight:600;margin:0 0 .75rem">MinIO / Object Storage</h2>
+
+    @if (storageError()) {
+      <p style="color:#b91c1c">{{ storageError() }}</p>
+    }
+
+    @if (storage(); as s) {
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem">
+        <label>Provider
+          <input type="text" [value]="s.provider" disabled />
+        </label>
+        <label>Endpoint
+          <input type="text" [value]="s.endpoint || '—'" disabled />
+        </label>
+        <label>Bucket name
+          <input type="text" [value]="s.bucketName || '—'" disabled />
+        </label>
+        <label>Access key
+          <input type="text" [value]="s.accessKey ? 'configured' : 'not set'" disabled />
+        </label>
+        <label>Secret key
+          <input type="text" [value]="s.secretKey ? 'configured' : 'not set'" disabled />
+        </label>
+        <label>Use SSL
+          <input type="text" [value]="s.useSsl ? 'yes' : 'no'" disabled />
+        </label>
+        <label>Signed URL expiry (min)
+          <input type="text" [value]="s.signedUrlExpiryMinutes" disabled />
+        </label>
+      </div>
+      <p style="font-size:.8rem;color:#6b7280;margin-top:.5rem">
+        Secrets are sourced from environment variables / Docker secrets and never displayed.
+      </p>
+    }
+
+    <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center">
+      <button class="sp-btn sp-btn-primary" (click)="testConnection()" [disabled]="testing()">
+        {{ testing() ? 'Testing…' : 'Test connection' }}
+      </button>
+      @if (storageTest(); as t) {
+        <span [style.color]="t.ok ? '#15803d' : '#b91c1c'">
+          {{ t.ok ? 'Connected' : 'Failed' }} · checked {{ t.lastCheckedUtc | date:'short' }}
+          @if (t.error) { · {{ t.error }} }
+        </span>
+      }
+    </div>
+  </section>
+
+  <!-- ── Generation settings ─────────────────────────────────────────────── -->
+  <section class="sp-card" style="margin-bottom:1.5rem;padding:1.25rem">
+    <h2 style="font-size:1.05rem;font-weight:600;margin:0 0 .75rem">Lesson Buffer Settings</h2>
+
+    @if (settingsError()) { <p style="color:#b91c1c">{{ settingsError() }}</p> }
+    @if (settingsSaved()) { <p style="color:#15803d">Settings saved.</p> }
+
+    @if (settings(); as s) {
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem">
+        <label>Ready lesson buffer size
+          <input type="number" [(ngModel)]="s.readyLessonBufferSize" min="1" />
+        </label>
+        <label>Refill threshold
+          <input type="number" [(ngModel)]="s.refillThreshold" min="0" />
+        </label>
+        <label>Refill batch size
+          <input type="number" [(ngModel)]="s.refillBatchSize" min="1" />
+        </label>
+        <label>Max generation attempts
+          <input type="number" [(ngModel)]="s.maxGenerationAttempts" min="1" />
+        </label>
+        <label>Generation timeout (s)
+          <input type="number" [(ngModel)]="s.generationTimeoutSeconds" min="1" />
+        </label>
+        <label>TTS timeout (s)
+          <input type="number" [(ngModel)]="s.ttsTimeoutSeconds" min="1" />
+        </label>
+        <label>Max concurrent generation jobs
+          <input type="number" [(ngModel)]="s.maxConcurrentGenerationJobs" min="1" />
+        </label>
+        <label>Max concurrent TTS jobs
+          <input type="number" [(ngModel)]="s.maxConcurrentTtsJobs" min="1" />
+        </label>
+        <label>Practice ready per type
+          <input type="number" [(ngModel)]="s.practiceGymReadyExercisesPerType" min="1" />
+        </label>
+        <label>Practice refill threshold
+          <input type="number" [(ngModel)]="s.practiceGymRefillThresholdPerType" min="0" />
+        </label>
+        <label>Practice refill count
+          <input type="number" [(ngModel)]="s.practiceGymRefillCountPerType" min="1" />
+        </label>
+        <label style="display:flex;align-items:center;gap:.4rem">
+          <input type="checkbox" [(ngModel)]="s.enableBackgroundGeneration" /> Background generation
+        </label>
+        <label style="display:flex;align-items:center;gap:.4rem">
+          <input type="checkbox" [(ngModel)]="s.enableTtsGeneration" /> TTS generation
+        </label>
+      </div>
+      <div style="margin-top:1rem">
+        <button class="sp-btn sp-btn-primary" (click)="saveSettings()">Save</button>
+      </div>
+    }
+  </section>
+
+  <!-- ── Background Jobs ──────────────────────────────────────────────────── -->
+  <section class="sp-card" style="padding:1.25rem">
+    <h2 style="font-size:1.05rem;font-weight:600;margin:0 0 .75rem">Background Jobs</h2>
+
+    @if (batchesError()) { <p style="color:#b91c1c">{{ batchesError() }}</p> }
+
+    @if (batches(); as b) {
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        <div><strong>{{ b.summary.queued }}</strong><br /><span style="color:#6b7280">Queued</span></div>
+        <div><strong>{{ b.summary.running }}</strong><br /><span style="color:#6b7280">Running</span></div>
+        <div><strong>{{ b.summary.failed }}</strong><br /><span style="color:#6b7280">Failed</span></div>
+        <div>
+          <strong>{{ b.summary.lastSuccessfulGenerationUtc ? (b.summary.lastSuccessfulGenerationUtc | date:'short') : '—' }}</strong>
+          <br /><span style="color:#6b7280">Last success</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
+        <input type="text" placeholder="Student profile ID" [(ngModel)]="generateStudentId"
+               style="min-width:280px" />
+        <button class="sp-btn sp-btn-primary" (click)="generateLessons()" [disabled]="!generateStudentId">
+          Generate lessons now
+        </button>
+      </div>
+
+      <h3 style="font-size:.9rem;font-weight:600;margin:.5rem 0">Ready lesson buffer per student</h3>
+      <table class="sp-table" style="width:100%;margin-bottom:1rem">
+        <thead><tr><th>Student profile</th><th>Ready lessons</th></tr></thead>
+        <tbody>
+          @for (row of b.readyBufferPerStudent; track row.studentProfileId) {
+            <tr><td>{{ row.studentProfileId }}</td><td>{{ row.readyCount }}</td></tr>
+          }
+          @if (b.readyBufferPerStudent.length === 0) {
+            <tr><td colspan="2" style="color:#6b7280">No ready buffers yet.</td></tr>
+          }
+        </tbody>
+      </table>
+
+      <h3 style="font-size:.9rem;font-weight:600;margin:.5rem 0">Recent batches</h3>
+      <table class="sp-table" style="width:100%">
+        <thead><tr><th>Status</th><th>Trigger</th><th>Sessions</th><th>Provider</th><th>Failure</th><th></th></tr></thead>
+        <tbody>
+          @for (batch of b.batches; track batch.id) {
+            <tr>
+              <td>{{ batch.status }}</td>
+              <td>{{ batch.triggerReason }}</td>
+              <td>{{ batch.completedSessionCount }} / {{ batch.requestedSessionCount }}</td>
+              <td>{{ batch.providerName || '—' }}</td>
+              <td style="color:#b91c1c">{{ batch.failureReason || '' }}</td>
+              <td>
+                @if (batch.status === 'Failed' || batch.status === 'Partial') {
+                  <button class="sp-btn" (click)="retry(batch.id)">Retry</button>
+                }
+              </td>
+            </tr>
+          }
+          @if (b.batches.length === 0) {
+            <tr><td colspan="6" style="color:#6b7280">No generation batches yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</div>

@@ -1,3 +1,4 @@
+using LinguaCoach.Application.Storage;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -6,11 +7,11 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Infrastructure.Activity;
 
 /// <summary>
-/// Stores and serves student-uploaded speaking audio files.
+/// Stores and serves student-uploaded speaking audio files through IFileStorageService.
 ///
 /// Upload flow:
 ///   1. StoreTemporaryAsync  — save uploaded bytes under a temp UUID key
-///   2. CommitAsync          — rename temp key to final attemptId key after full success
+///   2. CommitAudioAsync     — MoveAsync temp key to final attemptId key after full success
 ///   3. DeleteTemporaryAsync — delete temp key on any STT/evaluation failure (no orphans)
 ///
 /// Per-student limit is enforced via DB count, not filesystem scan, to avoid race conditions.
@@ -18,6 +19,7 @@ namespace LinguaCoach.Infrastructure.Activity;
 public sealed class SpeakingAudioService
 {
     private const int MaxFilesPerStudent = 50;
+    private const string Category = "speaking-recordings";
 
     private static readonly HashSet<string> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -30,15 +32,18 @@ public sealed class SpeakingAudioService
     };
 
     private readonly LinguaCoachDbContext _db;
+    private readonly IFileStorageService _storage;
     private readonly IConfiguration _configuration;
     private readonly ILogger<SpeakingAudioService> _logger;
 
     public SpeakingAudioService(
         LinguaCoachDbContext db,
+        IFileStorageService storage,
         IConfiguration configuration,
         ILogger<SpeakingAudioService> logger)
     {
         _db = db;
+        _storage = storage;
         _configuration = configuration;
         _logger = logger;
     }
@@ -63,78 +68,64 @@ public sealed class SpeakingAudioService
         return count >= MaxFilesPerStudent;
     }
 
-    /// <summary>Writes uploaded audio to a temp file; returns the temp storage key.</summary>
+    /// <summary>Writes uploaded audio to a temp storage key; returns that key.</summary>
     public async Task<string> StoreTemporaryAsync(
         Stream audioStream,
         string mimeType,
         CancellationToken ct)
     {
         var ext = MimeTypeToExtension(mimeType);
-        var tempKey = $"tmp_{Guid.NewGuid():N}{ext}";
-        var fullPath = GetAudioPath(tempKey);
-        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-
-        await using var file = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
-        await audioStream.CopyToAsync(file, ct);
-
-        _logger.LogInformation("Speaking audio stored TempKey={TempKey} Bytes={Bytes}", tempKey, file.Length);
+        var tempKey = $"{Category}/tmp/{Guid.NewGuid():N}{ext}";
+        await _storage.SaveAsync(tempKey, audioStream, mimeType, ct);
+        _logger.LogInformation("Speaking audio stored TempKey={TempKey}", tempKey);
         return tempKey;
     }
 
-    /// <summary>Renames temp key to final attemptId-based key after successful attempt save.</summary>
-    public string CommitAudio(string tempKey, Guid attemptId, string mimeType)
+    /// <summary>Moves the temp key to the final attemptId-based key after successful attempt save.</summary>
+    public async Task<string> CommitAudioAsync(string tempKey, Guid attemptId, string mimeType, CancellationToken ct = default)
     {
         var ext = MimeTypeToExtension(mimeType);
-        var finalKey = $"{attemptId:N}{ext}";
-        var tempPath = GetAudioPath(tempKey);
-        var finalPath = GetAudioPath(finalKey);
+        var finalKey = $"{Category}/{attemptId:N}{ext}";
 
-        if (File.Exists(tempPath))
+        if (await _storage.ExistsAsync(tempKey, ct))
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(finalPath)!);
-            File.Move(tempPath, finalPath, overwrite: true);
+            await _storage.MoveAsync(tempKey, finalKey, ct);
             _logger.LogInformation("Speaking audio committed TempKey={TempKey} FinalKey={FinalKey}", tempKey, finalKey);
         }
 
         return finalKey;
     }
 
-    /// <summary>Deletes the temp file on STT or evaluation failure to prevent orphaned files.</summary>
-    public void DeleteTemporary(string tempKey)
+    /// <summary>Deletes the temp object on STT or evaluation failure to prevent orphans.</summary>
+    public async Task DeleteTemporaryAsync(string tempKey, CancellationToken ct = default)
     {
         try
         {
-            var path = GetAudioPath(tempKey);
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-                _logger.LogInformation("Speaking audio temp deleted TempKey={TempKey}", tempKey);
-            }
+            await _storage.DeleteAsync(tempKey, ct);
+            _logger.LogInformation("Speaking audio temp deleted TempKey={TempKey}", tempKey);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not delete speaking audio temp file TempKey={TempKey}", tempKey);
+            _logger.LogWarning(ex, "Could not delete speaking audio temp object TempKey={TempKey}", tempKey);
         }
     }
 
     /// <summary>Returns the audio bytes and content type for a committed attempt audio file.</summary>
     public async Task<SpeakingAudioFile?> GetAudioAsync(string storageKey, CancellationToken ct)
     {
-        var path = GetAudioPath(storageKey);
-        if (!File.Exists(path)) return null;
-
-        var bytes = await File.ReadAllBytesAsync(path, ct);
-        var contentType = ExtensionToMimeType(Path.GetExtension(storageKey));
-        return new SpeakingAudioFile(bytes, contentType);
-    }
-
-    private string GetAudioPath(string storageKey)
-    {
-        var root = Environment.GetEnvironmentVariable("SPEAKING_AUDIO_STORAGE_PATH")
-            ?? _configuration["Speaking:AudioStoragePath"]
-            ?? Path.Combine(AppContext.BaseDirectory, "app-data", "speaking-audio");
-        var safeName = Path.GetFileName(storageKey);
-        return Path.GetFullPath(Path.Combine(root, safeName));
+        try
+        {
+            if (!await _storage.ExistsAsync(storageKey, ct)) return null;
+            await using var stream = await _storage.ReadAsync(storageKey, ct);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, ct);
+            var contentType = ExtensionToMimeType(Path.GetExtension(storageKey));
+            return new SpeakingAudioFile(ms.ToArray(), contentType);
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
     }
 
     private static string MimeTypeToExtension(string mimeType) => mimeType.Split(';')[0].Trim() switch

@@ -34,6 +34,9 @@ using LinguaCoach.Application.Sessions;
 using LinguaCoach.Infrastructure.Placement;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
+using LinguaCoach.Application.Storage;
+using LinguaCoach.Infrastructure.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.Infrastructure;
@@ -42,6 +45,29 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
+        // File storage (IFileStorageService) — provider chosen at startup from config.
+        // Registered as a singleton; holds no per-request state.
+        services.AddSingleton<IFileStorageService>(sp =>
+        {
+            var config = sp.GetRequiredService<IConfiguration>();
+            var provider = config["FileStorage:Provider"]
+                ?? Environment.GetEnvironmentVariable("FILE_STORAGE_PROVIDER")
+                ?? "Local";
+            return provider.Equals("Minio", StringComparison.OrdinalIgnoreCase)
+                ? ActivatorUtilities.CreateInstance<MinioFileStorageService>(sp)
+                : ActivatorUtilities.CreateInstance<LocalFileStorageService>(sp);
+        });
+        // Always registered so the test WebApplicationFactory can swap it in.
+        services.AddSingleton<FakeFileStorageService>();
+
+        // Background generation jobs (Quartz registers these by type; also scoped for DI).
+        services.AddScoped<Jobs.LessonBufferRefillJob>();
+        services.AddScoped<Jobs.LessonBatchGenerationJob>();
+        services.AddScoped<Jobs.ActivityMaterializationJob>();
+        services.AddScoped<Jobs.TtsAudioGenerationJob>();
+        services.AddScoped<Jobs.AudioCleanupJob>();
+        services.AddScoped<Jobs.PracticeGymBufferRefillJob>();
+
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ILoginHandler, LoginHandler>();

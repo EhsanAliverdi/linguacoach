@@ -16,6 +16,25 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY:-speakpath}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY:-speakpath-dev-secret}"
+    ports:
+      # API port for the app; console (9001) should NOT be exposed publicly in production.
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -39,10 +58,23 @@ services:
       # Suppress non-fatal Kerberos library warning from Npgsql on Debian runtime image
       GSSAPI_KRB5_NO_CONFIGURE: "1"
       Tts__AudioStoragePath: "/app/audio-data"
+      # File storage (IFileStorageService). Default Local; set FILE_STORAGE_PROVIDER=Minio to use MinIO.
+      FileStorage__Provider: "${FILE_STORAGE_PROVIDER:-Local}"
+      FileStorage__LocalBasePath: "${FILE_STORAGE_LOCAL_BASE_PATH:-/app/audio-data}"
+      FileStorage__Minio__Endpoint: "${MINIO_ENDPOINT:-minio:9000}"
+      FileStorage__Minio__AccessKey: "${MINIO_ACCESS_KEY:-speakpath}"
+      FileStorage__Minio__SecretKey: "${MINIO_SECRET_KEY:-speakpath-dev-secret}"
+      FileStorage__Minio__BucketName: "${MINIO_BUCKET_NAME:-speakpath-audio}"
+      FileStorage__Minio__UseSSL: "${MINIO_USE_SSL:-false}"
+      FileStorage__Minio__SignedUrlExpiryMinutes: "${MINIO_SIGNED_URL_EXPIRY_MINUTES:-10}"
+      # Background jobs (Quartz)
+      BackgroundJobs__Enabled: "${BACKGROUND_JOBS_ENABLED:-true}"
     volumes:
       - audio_data:/app/audio-data
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
@@ -58,3 +90,4 @@ services:
 volumes:
   postgres_data:
   audio_data:
+  minio_data:

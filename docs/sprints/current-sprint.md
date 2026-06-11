@@ -181,6 +181,16 @@ Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — defer
 
 ---
 
+## Planned future sprint
+
+**Lesson Buffer / MinIO / Background Generation** - planned.
+
+See: `docs/sprints/2026-06-11-lesson-buffer-minio-background-generation-sprint.md`
+
+This sprint covers pre-generating the next 5-10 lessons, pre-generating a configurable 5-10 Practice Gym exercises per type/pattern, storing audio assets in MinIO, signed URL playback, Quartz.NET background generation jobs, Admin Integrations for MinIO health/configuration, and cached Practice Gym generation.
+
+---
+
 ## Key rule
 
 Do not add more isolated activity types. Build the course structure and pattern engine that organises existing ones.

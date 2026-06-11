@@ -22,6 +22,7 @@ public static class DefaultAiSeeder
     public const string StudentMemoryUpdateKey = "student_memory_update";
     public const string LearningPathGenerateAdaptiveKey = "learning_path_generate_adaptive";
     public const string VocabularyExtractFromAttemptKey = "vocabulary_extract_from_attempt";
+    public const string LessonBatchPlanKey = "lesson_batch_plan";
 
     // ── Exercise Pattern Engine — pattern-specific generation prompt keys ─────
     public const string ActivityGeneratePhraseMatchKey        = "activity_generate_phrase_match";
@@ -964,6 +965,41 @@ Respond warmly and return ONLY valid JSON:
 }
 """;
 
+    private const string LessonBatchPlanContent = """
+You are an English course planner for SpeakPath. Plan the next batch of guided lesson sessions for one professional learner.
+
+Compact learner summary:
+{{summary}}
+
+Generate exactly {{sessionCount}} progressive lesson session plans. Return ONLY valid JSON (no markdown) as a single array:
+
+[
+  {
+    "title": "<short session title, 4-8 words>",
+    "topic": "<the workplace topic for this session>",
+    "sessionGoal": "<one sentence describing what the learner will be able to do after this session>",
+    "focusSkill": "<one of: listening | speaking | writing | vocabulary>",
+    "durationMinutes": <10 | 15 | 20 | 30>,
+    "exercises": [
+      {
+        "exercisePatternKey": "<a valid exercise pattern key, e.g. listen_and_answer, phrase_match, email_reply, spoken_response_from_prompt>",
+        "primarySkill": "<listening | speaking | writing | vocabulary>",
+        "instructions": "<student-facing instructions for this step>",
+        "estimatedMinutes": <positive integer>
+      }
+    ]
+  }
+]
+
+Rules:
+- Return exactly {{sessionCount}} session plans in the array.
+- Each session must have 3-5 exercises.
+- Do not repeat scenarios listed in avoidRepeating.
+- Match difficulty to the learner's studentLevel and domainComplexity.
+- Address the recurringIssues and nextFocusRecommendation from the summary.
+- Do not include any text outside the JSON array.
+""";
+
     private const string WritingPromptContent = """
 You are an expert English writing coach for {{sourceLanguageName}}-speaking professionals learning {{targetLanguageName}}.
 
@@ -1098,6 +1134,11 @@ Rules:
             VocabularyExtractFromAttemptKey, VocabularyExtractFromAttemptContent,
             maxInputTokens: 1500, maxOutputTokens: 600, ct);
 
+        // Lesson buffer — batch lesson plan generation prompt (T13).
+        await SeedOrUpgradePromptAsync(db, logger,
+            LessonBatchPlanKey, LessonBatchPlanContent,
+            maxInputTokens: 1500, maxOutputTokens: 2500, ct);
+
         // Exercise Pattern Engine — pattern-specific generation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGeneratePhraseMatchKey, ActivityGeneratePhraseMatchContent,
@@ -1173,6 +1214,14 @@ Rules:
         await SeedAiConfigCategoryAsync(db, logger, "llm.memory",         "Memory & Learning Path",   null,   null,    null, ct);
         await SeedAiConfigCategoryAsync(db, logger, "tts.listening",      "Listening TTS",            "fake", "fake",  null, ct);
         await SeedAiConfigCategoryAsync(db, logger, "tts.placement",      "Placement TTS",            "fake", "fake",  null, ct);
+
+        // Lesson generation settings — single-row install-wide defaults (T9).
+        var hasSettings = await db.LessonGenerationSettings.AnyAsync(ct);
+        if (!hasSettings)
+        {
+            db.LessonGenerationSettings.Add(new LessonGenerationSettings());
+            logger.LogInformation("Seeded default LessonGenerationSettings (buffer=5, threshold=1, batch=4).");
+        }
 
         await db.SaveChangesAsync(ct);
     }

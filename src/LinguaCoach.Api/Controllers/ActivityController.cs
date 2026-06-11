@@ -26,6 +26,9 @@ public sealed class ActivityController : ControllerBase
     private readonly SpeakingAudioService _speakingAudio;
     private readonly ISpeechToTextService _stt;
     private readonly SpeakingRolePlayEvaluator _speakingEvaluator;
+    private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
+
+    private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
 
     public ActivityController(
         IGetNextActivityHandler getNextActivity,
@@ -35,7 +38,8 @@ public sealed class ActivityController : ControllerBase
         ListeningAudioService listeningAudio,
         SpeakingAudioService speakingAudio,
         ISpeechToTextService stt,
-        SpeakingRolePlayEvaluator speakingEvaluator)
+        SpeakingRolePlayEvaluator speakingEvaluator,
+        LinguaCoach.Application.Storage.IFileStorageService storage)
     {
         _getNextActivity = getNextActivity;
         _getActivityById = getActivityById;
@@ -45,6 +49,7 @@ public sealed class ActivityController : ControllerBase
         _speakingAudio = speakingAudio;
         _stt = stt;
         _speakingEvaluator = speakingEvaluator;
+        _storage = storage;
     }
 
     /// <summary>
@@ -128,6 +133,67 @@ public sealed class ActivityController : ControllerBase
         var audio = await _listeningAudio.GetAudioAsync(activity, ct);
         if (audio is null) return NotFound();
         return File(audio.Bytes, audio.ContentType);
+    }
+
+    /// <summary>
+    /// Returns a short-lived signed URL (or, for local storage, the authenticated streaming
+    /// endpoint) for an activity's listening audio. Response: { url, expiresAt }.
+    /// Checks the AudioAsset table first, then falls back to the legacy JSON StorageKey.
+    /// </summary>
+    [HttpGet("{activityId:guid}/audio-url")]
+    public async Task<IActionResult> GetAudioUrl(Guid activityId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.IsActive, ct);
+        if (activity is null || activity.ActivityType != ActivityType.ListeningComprehension)
+            return NotFound();
+
+        // Ownership check — same chain as the streaming endpoint.
+        if (activity.LearningModuleId.HasValue)
+        {
+            var ownsActivity = await _db.LearningModules
+                .Where(m => m.Id == activity.LearningModuleId.Value)
+                .Join(_db.LearningPaths.Where(p => p.StudentProfileId == profile.Id),
+                    m => m.LearningPathId, p => p.Id, (m, p) => m.Id)
+                .AnyAsync(ct);
+            if (!ownsActivity) return Forbid();
+        }
+
+        // 1. Prefer an AudioAsset row (new path).
+        var asset = await _db.AudioAssets
+            .Where(a => a.LearningActivityId == activityId
+                     && a.AssetType == AssetType.ListeningTts
+                     && a.GenerationStatus == GenerationStatus.Ready)
+            .OrderByDescending(a => a.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+
+        var storageKey = asset?.ObjectKey;
+
+        // 2. Fall back to the legacy JSON StorageKey for activities generated before AudioAsset.
+        storageKey ??= _listeningAudio.GetStorageKey(activity);
+
+        if (string.IsNullOrWhiteSpace(storageKey))
+            return NotFound();
+
+        var signed = await _storage.GenerateSignedUrlAsync(storageKey, SignedUrlExpiry, ct);
+
+        // Local storage returns "local://{key}" — clients must use the streaming endpoint instead.
+        var url = signed.Url.StartsWith("local://", StringComparison.OrdinalIgnoreCase)
+                  || signed.Url.StartsWith("fake://", StringComparison.OrdinalIgnoreCase)
+            ? $"/api/activity/{activityId}/audio"
+            : signed.Url;
+
+        return Ok(new
+        {
+            url,
+            expiresAt = signed.ExpiresAt.ToUniversalTime().ToString("o")
+        });
     }
 
     /// <summary>
@@ -262,7 +328,7 @@ public sealed class ActivityController : ControllerBase
 
             if (!sttResult.Success || string.IsNullOrWhiteSpace(sttResult.Transcript))
             {
-                _speakingAudio.DeleteTemporary(tempKey);
+                await _speakingAudio.DeleteTemporaryAsync(tempKey, ct);
                 return BadRequest(new { error = "Could not transcribe your recording. Please try again." });
             }
 
@@ -292,7 +358,7 @@ public sealed class ActivityController : ControllerBase
             await _db.SaveChangesAsync(ct);
 
             // 5. Commit audio to final key keyed by attemptId
-            var finalKey = _speakingAudio.CommitAudio(tempKey, attempt.Id, mimeType);
+            var finalKey = await _speakingAudio.CommitAudioAsync(tempKey, attempt.Id, mimeType, ct);
             tempKey = null; // already committed — nothing to delete on error
 
             // Update the stored key to the final name
@@ -308,7 +374,7 @@ public sealed class ActivityController : ControllerBase
         }
         catch (Exception) when (tempKey is not null)
         {
-            _speakingAudio.DeleteTemporary(tempKey);
+            await _speakingAudio.DeleteTemporaryAsync(tempKey, ct);
             return StatusCode(500, new { error = "Could not process your recording. Please try again." });
         }
     }

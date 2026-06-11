@@ -31,11 +31,26 @@ internal sealed class LearningSessionConfiguration : IEntityTypeConfiguration<Le
         builder.Property(e => e.GeneratedFromMemorySnapshotJson)
             .HasColumnName("generated_from_memory_snapshot_json").IsRequired(false);
 
+        // Background generation / lesson buffer (T10)
+        builder.Property(e => e.StudentProfileId).HasColumnName("student_profile_id").IsRequired(false);
+        builder.Property(e => e.CourseSequenceNumber).HasColumnName("course_sequence_number").IsRequired(false);
+        builder.Property(e => e.GenerationStatus).HasColumnName("generation_status")
+            .HasConversion<int>().HasDefaultValue(GenerationStatus.Ready).IsRequired();
+        builder.Property(e => e.ReadyAtUtc).HasColumnName("ready_at_utc").IsRequired(false);
+        builder.Property(e => e.GenerationBatchId).HasColumnName("generation_batch_id").IsRequired(false);
+
         builder.HasIndex(e => new { e.LearningModuleId, e.Order })
             .HasDatabaseName("ix_learning_sessions_module_order");
 
         builder.HasIndex(e => e.Status)
             .HasDatabaseName("ix_learning_sessions_status");
+
+        // Idempotency: one session per student per course sequence number (T10).
+        // Filtered to background-generated rows so legacy rows (null student) are unaffected.
+        builder.HasIndex(e => new { e.StudentProfileId, e.CourseSequenceNumber })
+            .HasDatabaseName("ux_learning_sessions_student_sequence")
+            .IsUnique()
+            .HasFilter("student_profile_id IS NOT NULL AND course_sequence_number IS NOT NULL");
 
         builder.HasOne<LearningModule>()
             .WithMany()

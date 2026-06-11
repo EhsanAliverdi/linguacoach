@@ -186,7 +186,10 @@ public sealed class SpeakingRolePlayActivityTests : IClassFixture<SpeakingRolePl
         Assert.NotNull(attempt);
         Assert.Equal(FakeSpeechToTextService.PlaceholderTranscript, attempt.SubmittedContent);
         Assert.False(string.IsNullOrWhiteSpace(attempt.AudioStorageKey));
-        Assert.DoesNotContain("/", attempt.AudioStorageKey!);  // no path separator exposed
+        // Committed final key uses the speaking-recordings category prefix and the attempt id.
+        Assert.StartsWith("speaking-recordings/", attempt.AudioStorageKey!);
+        Assert.DoesNotContain("tmp", attempt.AudioStorageKey!);   // temp key was committed
+        Assert.DoesNotContain("..", attempt.AudioStorageKey!);    // no path traversal
         Assert.DoesNotContain("\\", attempt.AudioStorageKey!);
     }
 

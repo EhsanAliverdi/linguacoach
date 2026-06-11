@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using LinguaCoach.Api.Middleware;
+using LinguaCoach.Api.Quartz;
 using LinguaCoach.Infrastructure;
 using LinguaCoach.Infrastructure.Diagnostics;
 using LinguaCoach.Persistence;
@@ -158,6 +159,11 @@ if (enableDiagEvents)
 // ── Infrastructure services ─────────────────────────────────────────────────
 builder.Services.AddInfrastructure();
 
+// ── Quartz background jobs (lesson buffer / TTS / cleanup) ──────────────────
+// Runs inside the API process as IHostedService. Skipped in Testing (SQLite has no Quartz schema).
+if (!builder.Environment.IsEnvironment("Testing"))
+    builder.Services.AddSpeakPathQuartz(builder.Configuration);
+
 // ── API ─────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -199,6 +205,14 @@ if (!app.Environment.IsEnvironment("Testing"))
     await WritingScenarioSeeder.SeedAsync(db, seederLogger);
     await LearningActivitySeeder.SeedAsync(db, seederLogger);
     await ExercisePatternSeeder.SeedAsync(db, seederLogger);
+
+    // Storage + Quartz startup health checks (warn-only — do not block startup).
+    var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();
+    var storageError = await storage.HealthCheckAsync();
+    if (storageError is not null)
+        seederLogger.LogWarning("File storage health check failed: {Error}", storageError);
+
+    await QuartzConfiguration.ValidateQuartzSchemaAsync(app.Services, seederLogger);
 }
 
 if (app.Environment.IsDevelopment())
