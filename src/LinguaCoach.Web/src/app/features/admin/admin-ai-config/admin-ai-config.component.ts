@@ -29,8 +29,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'llm.generation': 'Generates activity content: writing, listening, speaking, role-play, email reply.',
   'llm.evaluation': 'Evaluates student attempts: scoring, feedback, placement assessment.',
   'llm.memory': 'Builds and updates the student learning path and memory profile.',
-  'tts.listening': 'Text-to-speech for listening activities. Requires OpenAI voice name.',
-  'tts.placement': 'Text-to-speech for placement assessment. Requires OpenAI voice name.',
+  'tts.listening': 'Text-to-speech for listening activities. Supports openai (voice e.g. onyx), gemini (voice e.g. Kore), qwen (voice e.g. longxiaochun_v2).',
+  'tts.placement': 'Text-to-speech for placement assessment. Supports openai, gemini, and qwen providers. Anthropic has no TTS API.',
 };
 
 @Component({
@@ -111,7 +111,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       <div class="mb-8">
         <h2 class="text-base font-semibold text-slate-900 mb-1">Text-to-Speech</h2>
         <p class="text-sm text-slate-500 mb-4">
-          TTS is independent of LLM config. Currently only OpenAI TTS is supported. Leave blank to disable TTS (returns 503).
+          TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
         </p>
 
         <div class="grid gap-4 sm:grid-cols-2">
@@ -137,15 +137,18 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onTtsProviderChange(cs, $event)" class="sp-ai-select">
                     <option [ngValue]="null">— disable —</option>
                     <option value="openai">openai</option>
+                    <option value="gemini">gemini</option>
+                    <option value="qwen">qwen</option>
                   </select>
                 </label>
 
                 <label>
                   <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Model</span>
                   <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-ai-select sp-ai-model-select">
-                    <option [ngValue]="null">tts-1 (default)</option>
-                    <option value="tts-1">tts-1</option>
-                    <option value="tts-1-hd">tts-1-hd</option>
+                    <option [ngValue]="null">— default —</option>
+                    @for (m of ttsModelsFor(cs.editingProvider ?? ''); track m) {
+                      <option [value]="m">{{ m }}</option>
+                    }
                   </select>
                 </label>
 
@@ -304,6 +307,16 @@ export class AdminAiConfigComponent implements OnInit {
     return this.providers().find(p => p.catalog.providerName === providerName)?.catalog.models ?? [];
   }
 
+  private static readonly TTS_MODELS: Record<string, string[]> = {
+    openai: ['tts-1', 'tts-1-hd'],
+    gemini: ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
+    qwen: ['cosyvoice-v2'],
+  };
+
+  ttsModelsFor(providerName: string): string[] {
+    return AdminAiConfigComponent.TTS_MODELS[providerName] ?? [];
+  }
+
   onCategoryProviderChange(cs: CategoryState, provider: string | null): void {
     cs.editingProvider = provider;
     if (!provider || provider === 'fake') {
@@ -371,7 +384,7 @@ export class AdminAiConfigComponent implements OnInit {
   // ── Provider credentials ───────────────────────────────────────────────────
 
   keyPlaceholder(provider: string): string {
-    return ({ openai: 'sk-…', gemini: 'AIza…', anthropic: 'sk-ant-…' } as Record<string, string>)[provider] ?? '…';
+    return ({ openai: 'sk-…', gemini: 'AIza…', anthropic: 'sk-ant-…', qwen: 'sk-…' } as Record<string, string>)[provider] ?? '…';
   }
 
   toggleKeyEdit(ps: ProviderState): void {

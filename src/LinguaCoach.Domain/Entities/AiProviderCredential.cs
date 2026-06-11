@@ -18,7 +18,7 @@ public sealed class AiProviderCredential : BaseEntity
     public Dictionary<string, ModelTestResult> ModelTests { get; private set; } = new();
 
     private static readonly HashSet<string> KnownProviders = new(StringComparer.OrdinalIgnoreCase)
-        { "openai", "gemini", "anthropic" };
+        { "openai", "gemini", "anthropic", "qwen" };
 
     private AiProviderCredential() { ProviderName = string.Empty; }
 

@@ -10,7 +10,8 @@ public interface ITextToSpeechService
 
 public sealed record TextToSpeechOptions(
     string TargetLanguageCode,
-    string? Voice = null);
+    string? Voice = null,
+    string? Model = null);
 
 public sealed record TtsResult(
     bool Success,

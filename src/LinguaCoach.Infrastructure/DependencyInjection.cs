@@ -136,6 +136,8 @@ public static class DependencyInjection
         services.AddScoped<ITextToSpeechService, FakeTextToSpeechService>();
         services.AddScoped<FakeTextToSpeechService>();
         services.AddScoped<OpenAiTextToSpeechService>();
+        services.AddScoped<GeminiTextToSpeechService>();
+        services.AddScoped<QwenTextToSpeechService>();
         services.AddScoped<TtsProviderResolver>();
 
         // Speaking sessions

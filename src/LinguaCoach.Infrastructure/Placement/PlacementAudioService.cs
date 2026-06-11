@@ -47,13 +47,14 @@ public sealed class PlacementAudioService
 
         try
         {
-            var (tts, voice) = await _ttsResolver.ResolveAsync("tts.placement", ct);
+            var (tts, voice, model) = await _ttsResolver.ResolveAsync("tts.placement", ct);
 
             var result = await tts.GenerateSpeechAsync(
                 audioScript,
                 new TextToSpeechOptions(
                     TargetLanguageCode: "en-GB",
-                    Voice: voice ?? "BritishEnglishMale"),
+                    Voice: voice ?? "BritishEnglishMale",
+                    Model: model),
                 ct);
 
             if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)

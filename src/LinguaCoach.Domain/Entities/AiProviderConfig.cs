@@ -75,6 +75,8 @@ public sealed class AiProviderConfig : BaseEntity
         ["gemini"] = new(StringComparer.OrdinalIgnoreCase)
         {
             "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite",
+            // TTS model
+            "gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts",
         },
         ["anthropic"] = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -85,6 +87,8 @@ public sealed class AiProviderConfig : BaseEntity
         ["qwen"] = new(StringComparer.OrdinalIgnoreCase)
         {
             "qwen-plus", "qwen-max", "qwen-turbo", "qwen3-235b-a22b", "qwen3-coder-plus",
+            // TTS model
+            "cosyvoice-v2",
         },
     };
 

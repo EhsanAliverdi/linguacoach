@@ -43,9 +43,10 @@ public sealed class ListeningAudioService
 
         ITextToSpeechService tts;
         string? voice;
+        string? model;
         try
         {
-            (tts, voice) = await _ttsResolver.ResolveAsync("tts.listening", ct);
+            (tts, voice, model) = await _ttsResolver.ResolveAsync("tts.listening", ct);
         }
         catch (AiServiceUnavailableException)
         {
@@ -56,7 +57,7 @@ public sealed class ListeningAudioService
 
         var result = await tts.GenerateSpeechAsync(
             content.AudioScript,
-            new TextToSpeechOptions(targetLanguageCode, voice),
+            new TextToSpeechOptions(targetLanguageCode, voice, model),
             ct);
 
         if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)

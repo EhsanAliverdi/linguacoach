@@ -32,11 +32,11 @@ public sealed class TtsProviderResolver
     }
 
     /// <summary>
-    /// Resolves the TTS service and voice for a feature key.
+    /// Resolves the TTS service, voice, and model for a feature key.
     /// Throws AiServiceUnavailableException if no configuration exists at all.
     /// Returns FakeTextToSpeechService when provider is explicitly set to "fake".
     /// </summary>
-    public async Task<(ITextToSpeechService Service, string? Voice)> ResolveAsync(
+    public async Task<(ITextToSpeechService Service, string? Voice, string? Model)> ResolveAsync(
         string featureKey,
         CancellationToken ct = default)
     {
@@ -46,7 +46,7 @@ public sealed class TtsProviderResolver
 
         if (featureConfig is not null)
         {
-            return ResolveFromProvider(featureKey, featureConfig.ProviderName, featureConfig.VoiceName);
+            return ResolveFromProvider(featureKey, featureConfig.ProviderName, featureConfig.VoiceName, featureConfig.ModelName);
         }
 
         // 2. AiConfigCategory row (tts.listening / tts.placement map to themselves)
@@ -55,7 +55,7 @@ public sealed class TtsProviderResolver
 
         if (categoryConfig is not null)
         {
-            return ResolveFromProvider(featureKey, categoryConfig.ProviderName, categoryConfig.VoiceName);
+            return ResolveFromProvider(featureKey, categoryConfig.ProviderName, categoryConfig.VoiceName, categoryConfig.ModelName);
         }
 
         // 3. No config at all
@@ -63,26 +63,43 @@ public sealed class TtsProviderResolver
         throw new AiServiceUnavailableException(featureKey);
     }
 
-    private (ITextToSpeechService Service, string? Voice) ResolveFromProvider(
-        string featureKey, string? providerName, string? voiceName)
+    private (ITextToSpeechService Service, string? Voice, string? Model) ResolveFromProvider(
+        string featureKey, string? providerName, string? voiceName, string? modelName = null)
     {
         var norm = providerName?.ToLowerInvariant();
 
-        if (norm == "openai")
+        switch (norm)
         {
-            _logger.LogDebug("TtsProviderResolver: '{FeatureKey}' → openai voice={Voice}", featureKey, voiceName);
-            return (_services.GetRequiredService<OpenAiTextToSpeechService>(), voiceName);
-        }
+            case "openai":
+                _logger.LogDebug("TtsProviderResolver: '{FeatureKey}' → openai voice={Voice}", featureKey, voiceName);
+                return (_services.GetRequiredService<OpenAiTextToSpeechService>(), voiceName, modelName);
 
-        if (norm == "fake" || string.IsNullOrWhiteSpace(norm))
-        {
-            _logger.LogDebug("TtsProviderResolver: '{FeatureKey}' → fake (explicit)", featureKey);
-            return (_services.GetRequiredService<FakeTextToSpeechService>(), voiceName);
-        }
+            case "gemini":
+                _logger.LogDebug("TtsProviderResolver: '{FeatureKey}' → gemini voice={Voice}", featureKey, voiceName);
+                return (_services.GetRequiredService<GeminiTextToSpeechService>(), voiceName, modelName);
 
-        // Unknown provider — treat as fake in dev, throw in prod
-        _logger.LogWarning("TtsProviderResolver: unknown TTS provider '{Provider}' for '{FeatureKey}', using fake",
-            providerName, featureKey);
-        return (_services.GetRequiredService<FakeTextToSpeechService>(), voiceName);
+            case "qwen":
+                _logger.LogDebug("TtsProviderResolver: '{FeatureKey}' → qwen voice={Voice}", featureKey, voiceName);
+                return (_services.GetRequiredService<QwenTextToSpeechService>(), voiceName, modelName);
+
+            case "anthropic":
+                // Anthropic does not offer a TTS API — degrade gracefully
+                _logger.LogWarning(
+                    "TtsProviderResolver: anthropic does not support TTS for '{FeatureKey}' — returning failure service",
+                    featureKey);
+                return (_services.GetRequiredService<FakeTextToSpeechService>(), voiceName, modelName);
+
+            case "fake":
+            case null:
+            case "":
+                _logger.LogDebug("TtsProviderResolver: '{FeatureKey}' → fake (explicit)", featureKey);
+                return (_services.GetRequiredService<FakeTextToSpeechService>(), voiceName, modelName);
+
+            default:
+                _logger.LogWarning(
+                    "TtsProviderResolver: unknown TTS provider '{Provider}' for '{FeatureKey}', using fake",
+                    providerName, featureKey);
+                return (_services.GetRequiredService<FakeTextToSpeechService>(), voiceName, modelName);
+        }
     }
 }

@@ -10,16 +10,18 @@ namespace LinguaCoach.Infrastructure.Ai;
 /// <summary>
 /// Qwen (Alibaba Cloud Model Studio / DashScope) provider.
 /// Uses the OpenAI-compatible chat completion endpoint.
-/// Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+/// Base URL defaults to DashScope global; override with Qwen:OpenAiCompatible config
+/// (e.g. https://&lt;workspace&gt;.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1).
 /// API key: QWEN_API_KEY environment variable or Qwen:ApiKey config.
 /// </summary>
 public sealed class QwenProvider : IAiProvider
 {
     public string ProviderName => "qwen";
 
-    private const string BaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+    private const string DefaultBaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
     private const string DefaultModel = "qwen-plus";
 
+    private readonly string _baseUrl;
     private readonly string _defaultModel;
     private readonly string? _defaultApiKey;
     private readonly ILogger<QwenProvider> _logger;
@@ -29,6 +31,7 @@ public sealed class QwenProvider : IAiProvider
     {
         _logger = logger;
         _configuration = configuration;
+        _baseUrl = configuration["Qwen:OpenAiCompatible"] ?? DefaultBaseUrl;
         _defaultModel = configuration["Qwen:Model"] ?? DefaultModel;
         _defaultApiKey = configuration["Qwen:ApiKey"] ?? Environment.GetEnvironmentVariable("QWEN_API_KEY");
 
@@ -56,7 +59,7 @@ public sealed class QwenProvider : IAiProvider
         _logger.LogDebug("Calling Qwen model {Model} for prompt key {Key}", modelToUse, request.PromptKey);
 
         var credential = new ApiKeyCredential(apiKey);
-        var clientOptions = new OpenAIClientOptions { Endpoint = new Uri(BaseUrl) };
+        var clientOptions = new OpenAIClientOptions { Endpoint = new Uri(_baseUrl) };
         var chatClient = new ChatClient(modelToUse, credential, clientOptions);
 
         var options = new ChatCompletionOptions
