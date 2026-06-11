@@ -190,6 +190,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
           @for (ps of providers(); track ps.catalog.providerName) {
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
 
+              <!-- Header row: provider name + status badges + action buttons -->
               <div class="flex items-center justify-between gap-4 mb-4">
                 <div class="flex items-center gap-3">
                   <span class="text-sm font-bold text-slate-800 capitalize w-24">{{ ps.catalog.providerName }}</span>
@@ -198,11 +199,21 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   } @else {
                     <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Using env var</span>
                   }
+                  @if (hasEndpointConfig(ps.catalog.providerName) && ps.catalog.apiEndpoint) {
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">Endpoint set</span>
+                  }
                 </div>
                 <div class="flex items-center gap-2">
-                  <button (click)="toggleKeyEdit(ps)" class="text-xs font-medium text-indigo-600 hover:underline">
-                    {{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}
-                  </button>
+                  @if (hasEndpointConfig(ps.catalog.providerName)) {
+                    <!-- Qwen: single Configure button opens unified form -->
+                    <button (click)="toggleQwenConfig(ps)" class="text-xs font-medium text-indigo-600 hover:underline">
+                      Configure
+                    </button>
+                  } @else {
+                    <button (click)="toggleKeyEdit(ps)" class="text-xs font-medium text-indigo-600 hover:underline">
+                      {{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}
+                    </button>
+                  }
                   <button (click)="runTest(ps)" [disabled]="ps.testBusy"
                     class="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50 transition-colors">
                     @if (ps.testBusy) {
@@ -215,6 +226,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 </div>
               </div>
 
+              <!-- Model test chips -->
               <div class="flex flex-wrap gap-2">
                 @for (m of ps.catalog.modelTests; track m.modelName) {
                   <div [class]="modelChipClass(m)" [title]="modelChipTitle(m)">
@@ -228,7 +240,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 }
               </div>
 
-              @if (ps.editingKey) {
+              <!-- Standard key edit form (non-Qwen providers) -->
+              @if (!hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
                 <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-3 items-end">
                   <div class="flex-1 min-w-64">
                     <label class="block text-xs text-slate-500 mb-1">
@@ -253,41 +266,50 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 </div>
               }
 
-              @if (hasEndpointConfig(ps.catalog.providerName)) {
-                <div class="mt-3 pt-3 border-t border-slate-100">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-semibold text-slate-500">API Endpoint</span>
-                    @if (ps.catalog.apiEndpoint) {
-                      <span class="text-xs font-mono text-slate-400 truncate max-w-xs">{{ ps.catalog.apiEndpoint }}</span>
-                    } @else {
-                      <span class="text-xs text-slate-400">Using config default</span>
-                    }
-                    <button (click)="toggleEndpointEdit(ps)" class="text-xs font-medium text-indigo-600 hover:underline ml-2">
-                      {{ ps.catalog.apiEndpoint ? 'Update' : 'Set' }}
-                    </button>
+              <!-- Qwen unified config form -->
+              @if (hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
+                <div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                  <p class="text-xs text-slate-500">
+                    Qwen uses a workspace-specific endpoint. Find these values in Alibaba Cloud Model Studio → your workspace.
+                  </p>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-500 mb-1">
+                        API Key <span class="font-normal text-slate-400">— sk-… from your workspace</span>
+                      </label>
+                      <input type="password" [(ngModel)]="ps.editKeyValue"
+                        placeholder="sk-…"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-500 mb-1">
+                        API Host <span class="font-normal text-slate-400">— workspace base URL</span>
+                      </label>
+                      <input type="text" [(ngModel)]="ps.editEndpointValue"
+                        placeholder="https://ws-xxx.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                      <p class="text-xs text-slate-400 mt-1">OpenAI-compatible endpoint from your workspace. Leave blank to use global DashScope.</p>
+                    </div>
                   </div>
-                  @if (ps.editingEndpoint) {
-                    <div class="flex flex-wrap gap-3 items-end">
-                      <div class="flex-1 min-w-64">
-                        <label class="block text-xs text-slate-500 mb-1">
-                          Workspace endpoint — e.g. https://ws-xxx.maas.aliyuncs.com/compatible-mode/v1
-                        </label>
-                        <input type="text" [(ngModel)]="ps.editEndpointValue"
-                          placeholder="https://…"
-                          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                      </div>
-                      <button (click)="saveEndpoint(ps)" [disabled]="ps.saveEndpointBusy"
-                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                        {{ ps.saveEndpointBusy ? 'Saving…' : 'Save' }}
-                      </button>
-                      @if (ps.catalog.apiEndpoint) {
-                        <button (click)="clearEndpoint(ps)"
-                          class="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                          Clear
-                        </button>
+                  <div class="flex flex-wrap gap-3 items-center pt-1">
+                    <button (click)="saveQwenConfig(ps)" [disabled]="ps.saveKeyBusy || ps.saveEndpointBusy"
+                      class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                      {{ (ps.saveKeyBusy || ps.saveEndpointBusy) ? 'Saving…' : 'Save' }}
+                    </button>
+                    <button (click)="ps.editingKey = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
+                    @if (ps.saveKeyError || ps.saveEndpointError) {
+                      <p class="text-xs text-red-600">{{ ps.saveKeyError || ps.saveEndpointError }}</p>
+                    }
+                  </div>
+                  <!-- Current values summary -->
+                  @if (ps.catalog.hasApiKey || ps.catalog.apiEndpoint) {
+                    <div class="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1 text-xs text-slate-500">
+                      @if (ps.catalog.hasApiKey) {
+                        <div><span class="font-semibold">Key:</span> stored ✓</div>
                       }
-                      <button (click)="ps.editingEndpoint = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
-                      @if (ps.saveEndpointError) { <p class="w-full text-xs text-red-600">{{ ps.saveEndpointError }}</p> }
+                      @if (ps.catalog.apiEndpoint) {
+                        <div class="flex gap-1"><span class="font-semibold shrink-0">Endpoint:</span> <span class="font-mono truncate">{{ ps.catalog.apiEndpoint }}</span></div>
+                      }
                     </div>
                   }
                 </div>
@@ -441,6 +463,38 @@ export class AdminAiConfigComponent implements OnInit {
     ps.editingKey = !ps.editingKey;
     ps.editKeyValue = '';
     ps.saveKeyError = '';
+  }
+
+  toggleQwenConfig(ps: ProviderState): void {
+    ps.editingKey = !ps.editingKey;
+    ps.editKeyValue = '';
+    ps.editEndpointValue = ps.catalog.apiEndpoint ?? '';
+    ps.saveKeyError = '';
+    ps.saveEndpointError = '';
+  }
+
+  saveQwenConfig(ps: ProviderState): void {
+    // Save key and endpoint in sequence; both fields optional (blank = keep existing / use env)
+    ps.saveKeyBusy = true;
+    ps.saveKeyError = '';
+    ps.saveEndpointError = '';
+    this.adminApi.setProviderApiKey(ps.catalog.providerName, ps.editKeyValue || null).subscribe({
+      next: updated => {
+        ps.catalog = updated;
+        ps.saveKeyBusy = false;
+        // Now save endpoint
+        ps.saveEndpointBusy = true;
+        this.adminApi.setProviderEndpoint(ps.catalog.providerName, ps.editEndpointValue || null).subscribe({
+          next: updated2 => {
+            ps.catalog = updated2;
+            ps.editingKey = false;
+            ps.saveEndpointBusy = false;
+          },
+          error: err => { ps.saveEndpointError = err.error?.error ?? 'Failed to save endpoint.'; ps.saveEndpointBusy = false; },
+        });
+      },
+      error: err => { ps.saveKeyError = err.error?.error ?? 'Failed to save key.'; ps.saveKeyBusy = false; },
+    });
   }
 
   toggleEndpointEdit(ps: ProviderState): void {
