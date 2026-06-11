@@ -80,10 +80,26 @@ npx playwright test
 
 New/updated specs: chat reply goal display, email subject/body submission + feedback, admin nav AI Usage location.
 
+## Phase 1 findings
+
+**Real bug found and fixed.** Gap-fill (`gap_fill_workplace_phrase`, `MarkingMode.ExactMatch`) submissions were silently scored 0 regardless of correctness:
+
+- `ExactMatchEvaluator.ParseSubmittedAnswers` deserializes `SubmittedAnswerJson` as `GapFillSubmittedAnswer { Dictionary<string,string?> Answers }` (object/dict shape) — confirmed by `tests/LinguaCoach.UnitTests/Activity/ExactMatchEvaluatorTests.cs`.
+- The frontend (`activity-lesson.component.ts`, `onRendererSubmit`) was sending `JSON.stringify({ kind: 'gapFill', answers: [{gapId, value}, ...] })` for the `gapFill` payload kind — an array, not a dict, plus an extraneous `kind` field.
+- `JsonSerializer.Deserialize<GapFillSubmittedAnswer>` on that shape throws `JsonException` (caught), `ParseSubmittedAnswers` returns an empty dict, and every gap is marked incorrect.
+
+**Fix:** `activity-lesson.component.ts` now converts the `gapFill` payload to `{ "answers": { "gap_1": "value", ... } }` before submission, matching `matchingPairs` (`{ "pairs": {...} }`) which was already correct and matches `PhraseMatchSubmittedAnswer`.
+
+**Phrase match (`phrase_match`, `MarkingMode.KeyedSelection`):** verified correct — `{ pairs: { phraseKey: meaningKey } }` matches `PhraseMatchSubmittedAnswer.Pairs`.
+
+**AI feedback (email_reply, teams_chat_simulation):** `ActivitySubmitHandler.HandlePatternEvaluationAsync` passes `command.SubmittedContent` directly as `SubmittedAnswerJson` to `AiStructuredEvaluator` — non-empty whenever the renderer's `submit()` guards against empty text (confirmed in `ChatReplyComponent`/`FreeTextEntryComponent`). No issue found.
+
+**Attempt/retry storage:** every submission creates a new append-only `ActivityAttempt` row via `_db.ActivityAttempts.Add(attempt)` + `SaveChangesAsync` — confirmed for both legacy and pattern-evaluation paths. No `AttemptNumber` column exists; attempt count is computed client-side (`attemptCount` signal incremented per response) and at query time for history. No issue found — no new column needed.
+
 ## Tasks
 
-- [ ] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
-- [ ] Phase 1: Verify attempt/retry integrity (gap fill, phrase match, AI feedback)
+- [x] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
+- [x] Phase 1: Verify attempt/retry integrity — found and fixed gap-fill submission shape bug
 - [ ] Phase 2: Workplace Chat — goal/tone framing + rubric update
 - [ ] Phase 3: Email — Subject/Body structured renderer + rubric update
 - [ ] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers

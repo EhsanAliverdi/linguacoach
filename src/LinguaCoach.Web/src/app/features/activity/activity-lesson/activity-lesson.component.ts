@@ -507,6 +507,13 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
         pairs[p.leftId] = p.rightId;
       }
       submittedContent = JSON.stringify({ pairs });
+    } else if (payload.kind === 'gapFill') {
+      // Convert to backend's expected { answers: { gapId: value } } format
+      const answers: Record<string, string> = {};
+      for (const a of payload.answers) {
+        answers[a.gapId] = a.value;
+      }
+      submittedContent = JSON.stringify({ answers });
     } else {
       submittedContent = JSON.stringify(payload);
     }
