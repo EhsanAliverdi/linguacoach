@@ -8,6 +8,7 @@ import { GapFillComponent, GapFillContent, GapFillItem } from '../renderers/gap-
 import { AudioAndFreeTextComponent, AudioAndFreeTextContent } from '../renderers/audio-and-free-text/audio-and-free-text.component';
 import { AudioAndGapFillComponent, AudioAndGapFillContent, AudioGapItem } from '../renderers/audio-and-gap-fill/audio-and-gap-fill.component';
 import { ChatReplyComponent, ChatReplyContent } from '../renderers/chat-reply/chat-reply.component';
+import { EmailReplyComponent, EmailReplyContent } from '../renderers/email-reply/email-reply.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -15,7 +16,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'gapFill'; answers: { gapId: string; value: string }[] }
   | { kind: 'audioFreeText'; answers: { questionId: string; answer: string }[]; responseText: string }
   | { kind: 'audioGapFill'; answers: { questionId: string; answer: string }[] }
-  | { kind: 'chatReply'; replyText: string };
+  | { kind: 'chatReply'; replyText: string }
+  | { kind: 'emailReply'; subject: string; body: string };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -29,6 +31,7 @@ export type ExerciseAnswerPayload =
     AudioAndFreeTextComponent,
     AudioAndGapFillComponent,
     ChatReplyComponent,
+    EmailReplyComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -187,8 +190,25 @@ export class ExerciseRendererComponent {
     };
   }
 
+  get emailReplyContent(): EmailReplyContent {
+    const raw = this.raw;
+    return {
+      situation: this.stringValue(raw['situation']) ?? this.activity.situation,
+      audience: this.stringValue(raw['audience']),
+      suggestedSubject: this.stringValue(raw['suggestedSubject']),
+      targetPhrases: this.stringArray(raw['targetPhrases']) ?? this.activity.targetPhrases ?? [],
+      exampleText: this.stringValue(raw['exampleText']) ?? this.activity.exampleText,
+      coachNote: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      wordCountTarget: this.numberValue(raw['wordLimit']),
+    };
+  }
+
   onFreeTextSubmitted(answer: { text: string }): void {
     this.answerSubmitted.emit({ kind: 'freeText', text: answer.text });
+  }
+
+  onEmailReplySubmitted(answer: { subject: string; body: string }): void {
+    this.answerSubmitted.emit({ kind: 'emailReply', subject: answer.subject, body: answer.body });
   }
 
   onMatchingSubmitted(answer: { selections: Record<string, string> }): void {

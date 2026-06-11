@@ -41,6 +41,14 @@
       (submitted)="onChatReplySubmitted($event)"
     />
   }
+  @case ('emailReply') {
+    <app-email-reply
+      [content]="emailReplyContent"
+      [disabled]="disabled"
+      [attemptCount]="attemptCount"
+      (submitted)="onEmailReplySubmitted($event)"
+    />
+  }
   @default {
     <app-free-text-entry
       [content]="freeTextContent"

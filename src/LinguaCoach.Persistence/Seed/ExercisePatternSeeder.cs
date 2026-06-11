@@ -93,7 +93,7 @@ public static class ExercisePatternSeeder
             secondarySkillsJson: """["Grammar","Vocabulary","Tone"]""",
             compatibleKindsJson: """[4]""",           // WritingTask
             activityType: ActivityType.WritingScenario,
-            interactionMode: InteractionMode.FreeTextEntry,
+            interactionMode: InteractionMode.EmailReply,
             markingMode: MarkingMode.AiStructured,
             estimatedMinutes: 7,
             aiGeneratePromptKey: "activity_generate_email_reply",
@@ -156,24 +156,30 @@ public static class ExercisePatternSeeder
         ILogger logger,
         CancellationToken ct = default)
     {
-        var existingKeys = await db.ExercisePatterns
-            .Select(p => p.Key)
-            .ToHashSetAsync(ct);
+        var existing = await db.ExercisePatterns.ToDictionaryAsync(p => p.Key, ct);
 
         var added = 0;
+        var updated = 0;
         foreach (var definition in CreateDefinitions())
         {
-            if (existingKeys.Contains(definition.Key))
+            if (!existing.TryGetValue(definition.Key, out var current))
+            {
+                db.ExercisePatterns.Add(definition);
+                added++;
                 continue;
+            }
 
-            db.ExercisePatterns.Add(definition);
-            added++;
+            if (current.InteractionMode != definition.InteractionMode)
+            {
+                current.UpdateInteractionMode(definition.InteractionMode);
+                updated++;
+            }
         }
 
-        if (added > 0)
+        if (added > 0 || updated > 0)
         {
             await db.SaveChangesAsync(ct);
-            logger.LogInformation("Seeded {Count} exercise pattern(s).", added);
+            logger.LogInformation("Seeded {Added} new and updated {Updated} existing exercise pattern(s).", added, updated);
         }
     }
 }

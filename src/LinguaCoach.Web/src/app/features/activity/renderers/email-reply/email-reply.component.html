@@ -1,0 +1,83 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="email-reply-renderer">
+
+  @if (attemptCount > 0) {
+    <div style="display:flex;align-items:center;gap:8px;background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 14px">
+      <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <span style="font-size:12.5px;font-weight:700;color:var(--sp-text)">Attempt {{ attemptCount + 1 }} — apply the suggestions and rewrite</span>
+    </div>
+  }
+
+  @if (content.coachNote) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.coachNote }}</div>
+  }
+
+  @if (content.situation) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Situation</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.situation }}</p>
+      @if (content.audience) {
+        <p style="font-size:12px;color:var(--sp-muted);margin-top:8px">To: {{ content.audience }}</p>
+      }
+    </div>
+  }
+
+  @if (content.targetPhrases?.length) {
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      @for (phrase of content.targetPhrases!; track phrase) {
+        <span class="sp-phrase-chip" style="font-size:12px;cursor:pointer"
+          (click)="body = body + (body.endsWith(' ') || !body ? '' : ' ') + phrase">{{ phrase }}</span>
+      }
+    </div>
+  }
+
+  @if (content.exampleText) {
+    <details class="sp-collapsible">
+      <summary>
+        <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        See an example
+        <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <div class="sp-collapsible-body">
+        <p style="font-size:13.5px;line-height:1.7;color:var(--sp-text);white-space:pre-wrap">{{ content.exampleText }}</p>
+      </div>
+    </details>
+  }
+
+  <div class="sp-card" style="padding:14px 18px;display:flex;flex-direction:column;gap:12px">
+    <div>
+      <label class="sp-label" for="email-reply-subject">Subject</label>
+      <input
+        id="email-reply-subject"
+        type="text"
+        [(ngModel)]="subject"
+        [disabled]="disabled"
+        class="sp-input"
+        [placeholder]="content.suggestedSubject || 'Subject line…'"
+        data-testid="email-reply-subject-input"
+      />
+    </div>
+
+    <div>
+      <label class="sp-label" for="email-reply-body">Email body</label>
+      <textarea
+        id="email-reply-body"
+        [(ngModel)]="body"
+        [disabled]="disabled"
+        rows="7"
+        placeholder="Write your reply here…"
+        class="sp-input"
+        style="resize:vertical;min-height:160px;line-height:1.7"
+        data-testid="email-reply-body-input"
+      ></textarea>
+      <span style="display:block;text-align:right;font-size:12px;color:var(--sp-faint);margin-top:4px">{{ wordCount }} words</span>
+    </div>
+  </div>
+
+  <button (click)="submit()"
+    [disabled]="disabled || !subject.trim() || !body.trim()"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="email-reply-submit-btn">
+    @if (disabled) { Getting coach feedback… } @else { Get coach feedback }
+  </button>
+</div>

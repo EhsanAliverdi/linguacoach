@@ -18,7 +18,8 @@ export type InteractionMode =
   | 'errorCorrection'
   | 'chatReply'
   | 'audioAndFreeText'
-  | 'audioAndGapFill';
+  | 'audioAndGapFill'
+  | 'emailReply';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

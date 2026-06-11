@@ -68,10 +68,10 @@ public sealed class ExercisePatternPhase2DbTests : IDisposable
     }
 
     [Fact]
-    public async Task EmailReply_Pattern_HasFreeTextEntryInteractionMode()
+    public async Task EmailReply_Pattern_HasEmailReplyInteractionMode()
     {
         var pattern = await _db.ExercisePatterns.SingleAsync(p => p.Key == ExercisePatternKey.EmailReply);
-        Assert.Equal(InteractionMode.FreeTextEntry, pattern.InteractionMode);
+        Assert.Equal(InteractionMode.EmailReply, pattern.InteractionMode);
     }
 
     [Fact]

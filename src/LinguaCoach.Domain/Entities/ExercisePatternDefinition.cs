@@ -121,4 +121,6 @@ public sealed class ExercisePatternDefinition : BaseEntity
     }
 
     public void Deactivate() => IsActive = false;
+
+    public void UpdateInteractionMode(InteractionMode interactionMode) => InteractionMode = interactionMode;
 }

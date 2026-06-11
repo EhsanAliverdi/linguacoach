@@ -106,12 +106,23 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - `docs/architecture/exercise-pattern-library.md` — added evaluation rubric description under `teams_chat_simulation`.
 - Multi-turn chat: deferred (per plan default) — out of scope this sprint.
 
+## Phase 3 findings
+
+- New `InteractionMode.EmailReply = 10` added (append-only enum, per existing convention). `ExercisePatternSeeder` for `email_reply` now sets `InteractionMode.EmailReply` (was `FreeTextEntry`).
+- `ExercisePatternSeeder.SeedAsync` extended to be self-healing: on each run it now also reconciles `InteractionMode` for already-seeded patterns (via new `ExercisePatternDefinition.UpdateInteractionMode`), so existing deployments pick up the `email_reply` change without a data migration.
+- New frontend renderer `EmailReplyComponent` (`renderers/email-reply/`) — subject input + body textarea, registered in `exercise-renderer` dispatch under `'emailReply'` interaction mode. New `ExerciseAnswerPayload` kind `'emailReply'`.
+- `EmailReplyContent` (backend DTO) gains additive `SuggestedSubject` field; `activity_generate_email_reply` prompt now returns `suggestedSubject`.
+- Submission shape for `email_reply` is now `{ "subject": "...", "body": "..." }` (previously `{ "text": "..." }` via the generic free-text path). `activity_evaluate_email_reply` prompt updated to read both fields and evaluate subject + body.
+- `AiStructuredEvaluator` itself unchanged — `SubmittedAnswerJson` is passed through to the AI prompt as opaque text, so the new shape needed no evaluator code changes, only prompt wording.
+- Updated two existing integration test assertions (`ExercisePatternPhase1Tests`, `ExercisePatternPhase2Tests`) and the `InteractionMode` enum-pinning unit test (`InteractionModeMarkingModeTests`) for the new enum value (10 → 11 total values).
+- New Playwright test: "EmailReply renders subject and body fields and submits structured content".
+
 ## Tasks
 
 - [x] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
 - [x] Phase 1: Verify attempt/retry integrity — found and fixed gap-fill submission shape bug
 - [x] Phase 2: Workplace Chat — goal/tone framing + rubric update
-- [ ] Phase 3: Email — Subject/Body structured renderer + rubric update
+- [x] Phase 3: Email — Subject/Body structured renderer + rubric update
 - [ ] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
 - [ ] Phase 5: Admin nav — AI Usage under AI System
 - [ ] Phase 6: Design-token consistency pass (scoped)

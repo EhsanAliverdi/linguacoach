@@ -75,7 +75,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     [InlineData(ExercisePatternKey.GapFillWorkplacePhrase,  "Vocabulary",  (int)InteractionMode.GapFill,          (int)MarkingMode.ExactMatch,      (int)ActivityType.VocabularyPractice)]
     [InlineData(ExercisePatternKey.ListenAndAnswer,         "Listening",   (int)InteractionMode.AudioAndFreeText, (int)MarkingMode.AiStructured,    (int)ActivityType.ListeningComprehension)]
     [InlineData(ExercisePatternKey.ListenAndGapFill,        "Listening",   (int)InteractionMode.AudioAndGapFill,  (int)MarkingMode.ExactMatch,      (int)ActivityType.ListeningComprehension)]
-    [InlineData(ExercisePatternKey.EmailReply,              "Writing",     (int)InteractionMode.FreeTextEntry,    (int)MarkingMode.AiStructured,    (int)ActivityType.WritingScenario)]
+    [InlineData(ExercisePatternKey.EmailReply,              "Writing",     (int)InteractionMode.EmailReply,       (int)MarkingMode.AiStructured,    (int)ActivityType.WritingScenario)]
     [InlineData(ExercisePatternKey.TeamsChatSimulation,     "Writing",     (int)InteractionMode.ChatReply,        (int)MarkingMode.AiStructured,    (int)ActivityType.WritingScenario)]
     [InlineData(ExercisePatternKey.SpokenResponseFromPrompt,"Speaking",    (int)InteractionMode.FreeTextEntry,    (int)MarkingMode.AiOpenEnded,     (int)ActivityType.SpeakingRolePlay)]
     [InlineData(ExercisePatternKey.LessonReflection,        "Reflection",  (int)InteractionMode.ReadOnly,         (int)MarkingMode.NoMarking,       (int)ActivityType.WritingScenario)]

@@ -514,6 +514,8 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
         answers[a.gapId] = a.value;
       }
       submittedContent = JSON.stringify({ answers });
+    } else if (payload.kind === 'emailReply') {
+      submittedContent = JSON.stringify({ subject: payload.subject, body: payload.body });
     } else {
       submittedContent = JSON.stringify(payload);
     }

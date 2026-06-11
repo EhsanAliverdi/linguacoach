@@ -164,6 +164,7 @@ test('ChatReply renders chat bubbles and reply box', async ({ page }) => {
     exercisePatternKey: 'teams_chat_simulation',
     contentJson: JSON.stringify({
       scenario: 'Your manager asks about a delayed document.',
+      learningGoal: 'Apologise for the delay and give a clear new deadline.',
       chatThread: [
         { sender: 'Manager', message: 'Can you update me on the submittal?', timestamp: '09:14' },
       ],
@@ -174,10 +175,35 @@ test('ChatReply renders chat bubbles and reply box', async ({ page }) => {
 
   await page.goto('/activity');
   await expect(page.getByTestId('chat-reply-renderer')).toBeVisible();
+  await expect(page.getByTestId('chat-reply-goal')).toContainText('Apologise for the delay and give a clear new deadline.');
   await expect(page.getByTestId('chat-thread')).toContainText('Can you update me on the submittal?');
   await page.getByTestId('chat-reply-input').fill('I apologise for the delay. I will send the update by 3 pm.');
   await expect(page.getByText('13 words')).toBeVisible();
   await page.getByTestId('chat-reply-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('EmailReply renders subject and body fields and submits structured content', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    title: 'Reply to your manager',
+    interactionMode: 'emailReply',
+    exercisePatternKey: 'email_reply',
+    contentJson: JSON.stringify({
+      situation: 'Your manager emailed asking for a status update on the Q3 report.',
+      audience: 'your manager',
+      suggestedSubject: 'Re: Q3 report status',
+      targetPhrases: ['I wanted to update you'],
+      wordLimit: 80,
+    }),
+  }));
+
+  await page.goto('/activity');
+  await expect(page.getByTestId('email-reply-renderer')).toBeVisible();
+  await expect(page.getByTestId('email-reply-subject-input')).toHaveAttribute('placeholder', 'Re: Q3 report status');
+  await page.getByTestId('email-reply-subject-input').fill('Re: Q3 report status');
+  await page.getByTestId('email-reply-body-input').fill('I wanted to update you on the Q3 report. It will be ready by Friday.');
+  await page.getByTestId('email-reply-submit-btn').click();
   await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
 });
 

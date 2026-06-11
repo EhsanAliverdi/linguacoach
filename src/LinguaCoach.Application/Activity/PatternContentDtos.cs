@@ -114,6 +114,9 @@ public sealed class EmailReplyContent
     public string? ExampleText { get; set; }
     public string? CommonMistakeToAvoid { get; set; }
     public string? InstructionInSourceLanguage { get; set; }
+
+    /// <summary>Suggested/expected subject line wording, shown as a hint above the subject input.</summary>
+    public string? SuggestedSubject { get; set; }
 }
 
 // ── teams_chat_simulation ─────────────────────────────────────────────────────

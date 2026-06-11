@@ -17,4 +17,5 @@ public enum InteractionMode
     ChatReply        = 7,  // Teams-style chat bubble UI, typed reply with word counter
     AudioAndFreeText = 8,  // Play audio clip first, then free-text answer area
     AudioAndGapFill  = 9,  // Play audio, fill gaps in a gapped transcript
+    EmailReply       = 10, // Structured subject + body fields for workplace email replies
 }

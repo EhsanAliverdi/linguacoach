@@ -577,7 +577,8 @@ Create a realistic workplace email the student must reply to. Return ONLY valid 
   "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
   "exampleText": "<a complete polished example reply the student can study>",
   "commonMistakeToAvoid": "<one sentence on the most common mistake {{sourceLanguageName}} speakers make in this type of email>",
-  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} explaining what to write>"
+  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} explaining what to write>",
+  "suggestedSubject": "<a short, appropriate subject line for this reply, e.g. 'Re: Project deadline'>"
 }
 
 Rules:
@@ -823,10 +824,10 @@ Career context: {{careerContext}}
 Activity content:
 {{activityContent}}
 
-Student's reply:
+Student's reply (JSON with "subject" and "body" fields):
 {{studentSubmission}}
 
-Evaluate the reply and return ONLY valid JSON:
+Evaluate both the subject line and the body of the reply (subject clarity/relevance, body grammar, vocabulary, tone, structure, and whether it fully addresses the situation). Return ONLY valid JSON:
 
 {
   "overallScore": <0-100>,
