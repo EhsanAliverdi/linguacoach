@@ -128,6 +128,13 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - No backend changes required — `learningGoal` was already exposed end-to-end (`ActivityController.cs` → `ActivityDto.learningGoal`). Purely additive frontend interface fields, getter mappings, and template insertions.
 - `npx ng build`: succeeds (pre-existing unrelated `PatternEvaluationResultComponent` template warnings confirmed present on `main` before this change too, via `git stash` comparison). `dotnet test tests/LinguaCoach.UnitTests`: 477 passed, 0 failed (no backend changes in this phase).
 
+## Phase 5 findings
+
+- Moved "AI Usage" (`/admin/usage`) nav item from the now-removed "Analytics" group into the "AI System" group, alongside "AI Config" and "Prompts", in `admin-app-layout.component.html` (desktop sidebar only — the mobile drawer never had an Analytics group or AI Usage item).
+- The "Analytics" group contained only this one item, so the empty group label was removed entirely.
+- No Playwright tests reference the nav grouping/labels (only `disabled-actions-cleanup.spec.ts` checks the `/admin/usage` page heading, unaffected by nav placement) — no test updates needed.
+- `npx ng build`: succeeds.
+
 ## Tasks
 
 - [x] Phase 0: Sprint doc + current-sprint.md update + backlog notes (this doc)
@@ -135,7 +142,7 @@ Implemented the lower-risk, single-turn-with-explicit-goal approach (no new AI g
 - [x] Phase 2: Workplace Chat — goal/tone framing + rubric update
 - [x] Phase 3: Email — Subject/Body structured renderer + rubric update
 - [x] Phase 4: Shared Lesson → Practice → Evaluate structure across all 6 active renderers
-- [ ] Phase 5: Admin nav — AI Usage under AI System
+- [x] Phase 5: Admin nav — AI Usage under AI System
 - [ ] Phase 6: Design-token consistency pass (scoped)
 - [ ] Phase 7: Docs close-out
 
