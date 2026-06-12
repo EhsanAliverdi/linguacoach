@@ -6,7 +6,10 @@ export interface EmailReplyContent {
   situation?: string | null;
   audience?: string | null;
   suggestedSubject?: string | null;
+  learningGoal?: string | null;
+  skillFocus?: string | null;
   targetPhrases?: string[];
+  targetVocabulary?: string[];
   exampleText?: string | null;
   coachNote?: string | null;
   wordCountTarget?: number | null;

@@ -16,6 +16,7 @@ export interface ChatReplyContent {
   messages: ChatMessage[];
   replyPrompt?: string | null;
   targetPhrases?: string[];
+  targetVocabulary?: string[];
   wordCountTarget?: number | null;
 }
 

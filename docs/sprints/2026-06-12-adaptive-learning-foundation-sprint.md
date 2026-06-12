@@ -174,6 +174,8 @@ activity type, not only writing.
 - [x] Phase 3 P1: StudentSkillProfile-grounded feedback (implementation) — see note below
 - [x] Phase 3 P2 scoping pass — see note below
 - [x] Phase 3 P2 task 1: surface `teachingNote` as `[goal]` for GapFill/MatchingPairs
+- [x] Phase 3 P2b scoping pass — see note below
+- [x] Phase 3 P2b task 1: surface learningGoal/skillFocus/targetVocabulary for email_reply/teams_chat
 
 ---
 
@@ -319,6 +321,36 @@ Implemented (frontend-only, Option (a) from scoping doc):
   gap_fill_workplace_phrase content; this surfaces it for the first time.
 
 `npm run build` passed (pre-existing CSS warnings only).
+
+### Phase 3 P2b scoping pass (2026-06-12)
+
+See `docs/reviews/2026-06-12-lesson-practice-structure-phase3-p2b-scoping.md` for full
+review (scoping only).
+
+Summary: `email_reply` and `teams_chat_simulation` prompts already generate
+`learningGoal`/`skillFocus`/`targetVocabulary` (and `targetPhrases`, already shown).
+Frontend `EmailReplyContent`/`ChatReplyContent` interfaces don't read all of them —
+another small, frontend-only surfacing task (4 files), same shape as task 1.
+`targetGrammarPoint` remains the only genuinely new cross-cutting field, still
+deferred with no schedule.
+
+### Phase 3 P2b task 1 (2026-06-12) — email_reply/teams_chat field surfacing
+
+Implemented (frontend-only, no backend/prompt changes):
+
+- `EmailReplyContent` (`email-reply.component.ts`) gained `learningGoal`,
+  `skillFocus`, `targetVocabulary?: string[]`. Template now shows a "Goal" line
+  (`learningGoal || skillFocus`) and a "Useful vocabulary" chip row (click to
+  append to body), placed before the existing example/targetPhrases blocks.
+- `ChatReplyContent` (`chat-reply.component.ts`) gained `targetVocabulary?: string[]`.
+  Template shows a "Useful vocabulary" chip row (click to append to reply) above the
+  reply box, alongside the existing `targetPhrases`/`learningGoal` display.
+
+`npm run build` passed (pre-existing CSS warnings only).
+
+Remaining P2/P2b scope: `suggestedPhrases` surfacing for spoken_response (needs
+product decision) and `targetGrammarPoint` (large, cross-cutting, no schedule) —
+both deferred.
 
 ## Risks / unresolved questions
 

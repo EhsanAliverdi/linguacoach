@@ -7,6 +7,13 @@
     </div>
   }
 
+  @if (content.learningGoal || content.skillFocus) {
+    <div data-testid="email-reply-goal" style="font-size:12px;color:var(--sp-muted);display:flex;gap:6px;align-items:flex-start">
+      <span class="sp-eyebrow" style="flex-shrink:0">Goal</span>
+      <span>{{ content.learningGoal || content.skillFocus }}</span>
+    </div>
+  }
+
   @if (content.coachNote) {
     <div class="sp-alert-info" style="font-size:13px">{{ content.coachNote }}</div>
   }
@@ -27,6 +34,18 @@
         <span class="sp-phrase-chip" style="font-size:12px;cursor:pointer"
           (click)="body = body + (body.endsWith(' ') || !body ? '' : ' ') + phrase">{{ phrase }}</span>
       }
+    </div>
+  }
+
+  @if (content.targetVocabulary?.length) {
+    <div>
+      <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">Useful vocabulary</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        @for (word of content.targetVocabulary!; track word) {
+          <span class="sp-phrase-chip" style="font-size:12px;cursor:pointer"
+            (click)="body = body + (body.endsWith(' ') || !body ? '' : ' ') + word">{{ word }}</span>
+        }
+      </div>
     </div>
   }
 

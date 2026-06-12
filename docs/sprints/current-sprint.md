@@ -97,8 +97,11 @@ grounded in student progress instead of generic. 482 unit + 430 integration test
 Phase 3 P2 scoping pass done (2026-06-12) — see
 `docs/reviews/2026-06-12-lesson-practice-structure-phase3-p2-scoping.md`. Full
 "What we learn" grammar/vocab/phrases card remains deferred (cross-cutting AI prompt
-work). Task 1 (surface existing `teachingNote` as `[goal]` for GapFill/MatchingPairs)
-implemented same day, frontend-only. See sprint doc's "Phase 3 P2" sections.
+work). Task 1 (surface existing `teachingNote` as `[goal]` for GapFill/MatchingPairs) and
+P2b task 1 (surface learningGoal/skillFocus/targetVocabulary for email_reply/teams_chat)
+both implemented same day, frontend-only. See sprint doc's "Phase 3 P2"/"P2b" sections.
+Remaining: suggestedPhrases for spoken_response (needs product decision) and
+targetGrammarPoint (large, cross-cutting, no schedule).
 
 ---
 

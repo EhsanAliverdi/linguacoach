@@ -56,6 +56,18 @@
     </div>
   }
 
+  @if (content.targetVocabulary?.length) {
+    <div>
+      <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">Useful vocabulary</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        @for (word of content.targetVocabulary!; track word) {
+          <span class="sp-phrase-chip" style="cursor:pointer"
+            (click)="replyText = replyText + (replyText.endsWith(' ') || !replyText ? '' : ' ') + word">{{ word }}</span>
+        }
+      </div>
+    </div>
+  }
+
   <!-- Reply box -->
   <div>
     <label class="sp-label" for="chat-reply-input">
