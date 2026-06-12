@@ -227,7 +227,7 @@ import { StudentListItem } from '../../../core/models/admin.models';
     .sp-admin-page-sub { font-size: 13.5px; color: #64748B; margin-top: 3px; }
 
     .sp-admin-kpi-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
-    @media(min-width:900px){ .sp-admin-kpi-grid { grid-template-columns: repeat(4,1fr); } }
+    @media(min-width:1180px){ .sp-admin-kpi-grid { grid-template-columns: repeat(4,1fr); } }
 
     .sp-admin-kpi-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
     .sp-admin-kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -243,7 +243,7 @@ import { StudentListItem } from '../../../core/models/admin.models';
     .sp-admin-loading-text { opacity: .4; }
 
     .sp-admin-dash-grid { display: grid; gap: 24px; margin-bottom: 28px; }
-    @media(min-width:900px){ .sp-admin-dash-grid { grid-template-columns: 1fr 1.3fr; align-items: start; } }
+    @media(min-width:1180px){ .sp-admin-dash-grid { grid-template-columns: 1fr 1.3fr; align-items: start; } }
 
     .sp-admin-section-title { font-size: 14px; font-weight: 800; color: #0F172A; letter-spacing: -.01em; margin: 0 0 14px; }
 
@@ -281,7 +281,7 @@ import { StudentListItem } from '../../../core/models/admin.models';
     .sp-admin-btn-sm { display: inline-block; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: #4338CA; color: #fff; text-decoration: none; margin-top: 4px; }
 
     .sp-admin-dash-bottom { display: grid; gap: 24px; }
-    @media(min-width:900px){ .sp-admin-dash-bottom { grid-template-columns: 280px 1fr; align-items: start; } }
+    @media(min-width:1180px){ .sp-admin-dash-bottom { grid-template-columns: 280px 1fr; align-items: start; } }
 
     .sp-admin-status-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; }
     .sp-admin-status-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
@@ -292,7 +292,7 @@ import { StudentListItem } from '../../../core/models/admin.models';
     .sp-admin-status-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #475569; }
 
     .sp-admin-analytics-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
-    @media(max-width:640px){ .sp-admin-analytics-grid { grid-template-columns: 1fr; } }
+    @media(max-width:1179px){ .sp-admin-analytics-grid { grid-template-columns: 1fr; } }
     .sp-admin-placeholder-card { background: #fff; border: 1.5px dashed #E2E8F0; border-radius: 14px; padding: 20px; }
     .sp-admin-placeholder-icon { font-size: 22px; margin-bottom: 8px; }
     .sp-admin-placeholder-title { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px; }

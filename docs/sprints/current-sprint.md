@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 16:30
+lastUpdated: 2026-06-12 17:15
 owner: product
 supersedes:
 supersededBy:
@@ -13,6 +13,13 @@ Last updated: 2026-06-12
 ---
 
 ## Most recently completed sprint
+
+**Admin responsive header polish** — complete (2026-06-12)
+
+`/admin` now keeps dashboard grids tablet-safe between 900px and 930px, where the
+desktop sidebar first appears. The admin header now shows only the avatar button;
+email and role moved into the avatar flyout menu. Related layout rules are
+documented in `docs/architecture/frontend-layout-system.md`.
 
 **Admin stuck batch cancellation** — complete (2026-06-12)
 

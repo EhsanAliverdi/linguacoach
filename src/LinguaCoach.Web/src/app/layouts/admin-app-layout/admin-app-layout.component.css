@@ -234,6 +234,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .sp-admin-avatar {
@@ -247,23 +248,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
-.sp-admin-header-email {
-  font-size: 13px;
-  font-weight: 600;
-  color: #475569;
-}
-
-.sp-admin-role-badge {
-  font-size: 10px;
-  font-weight: 700;
-  background: #EEF2FF;
-  color: #4338CA;
-  padding: 2px 8px;
-  border-radius: 99px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+.sp-admin-avatar:focus-visible {
+  outline: 3px solid #C7D2FE;
+  outline-offset: 3px;
 }
 
 /* ── Content ────────────────────────────────────────────────────────────── */
@@ -273,6 +265,16 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+
+@media (min-width: 900px) and (max-width: 1099px) {
+  .sp-admin-header-inner {
+    padding: 0 20px;
+  }
+
+  .sp-admin-content {
+    padding: 22px 20px 60px;
+  }
 }
 
 @media (min-width: 1100px) {

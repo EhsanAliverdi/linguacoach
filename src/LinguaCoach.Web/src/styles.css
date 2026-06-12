@@ -514,6 +514,41 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 .sp-admin-link:hover{color:#3730A3;}
 button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-family:inherit;}
 
+/* Admin profile flyout */
+.sp-admin-profile-menu{
+  position:absolute;top:calc(100% + 10px);right:0;
+  width:min(280px,calc(100vw - 32px));
+  background:#fff;border:1px solid #E2E8F0;border-radius:12px;
+  box-shadow:0 12px 32px rgba(15,23,42,.14);
+  z-index:200;overflow:hidden;
+}
+.sp-admin-profile-summary{display:flex;align-items:center;gap:12px;padding:14px 16px;}
+.sp-admin-profile-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#FF7A59,#B45CF0);
+  color:#fff;font-size:14px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sp-admin-profile-meta{min-width:0;flex:1;}
+.sp-admin-profile-email{
+  font-size:13px;font-weight:700;color:#0F172A;
+  overflow-wrap:anywhere;line-height:1.35;
+}
+.sp-admin-profile-role{
+  display:inline-flex;margin-top:5px;font-size:10px;font-weight:800;
+  background:#EEF2FF;color:#4338CA;padding:3px 8px;border-radius:99px;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.sp-admin-profile-divider{height:1px;background:#F1F5F9;margin:0 12px;}
+.sp-admin-profile-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:11px 16px;font:inherit;font-size:14px;font-weight:600;
+  text-align:left;background:none;border:none;
+}
+.sp-admin-profile-item-disabled{color:#94A3B8;cursor:not-allowed;}
+.sp-admin-profile-signout{color:#DC2626;cursor:pointer;}
+.sp-admin-profile-signout:hover{background:#FEF2F2;}
+
 /* Form card */
 .sp-admin-form-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
 .sp-admin-form-desc{font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:20px;}

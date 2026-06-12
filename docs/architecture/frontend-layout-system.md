@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:56
+lastUpdated: 2026-06-12 17:15
 owner: architecture
 supersedes:
 supersededBy:
@@ -67,7 +67,7 @@ AppComponent (router-outlet)
     │   ├── nav groups               Overview / Students / AI System / Analytics
     │   └── footer                   sign out button
     └── .sp-admin-main               flex:1, margin-left:240px on desktop
-        ├── .sp-admin-header         sticky top bar with user chip + role badge
+        ├── .sp-admin-header         sticky top bar with avatar profile menu
         └── .sp-admin-content        router-outlet, full available width
 ```
 
@@ -130,8 +130,9 @@ Every component rendered inside a layout outputs **only page content**. No `<asi
 - Create student is not a permanent sidebar item; Students page owns the action
 - Curriculum is hidden from admin navigation pending redefinition
 - "Usage & Analytics" is a "Soon" disabled link
-- Header: sticky 56px bar showing user email + "Admin" badge
+- Header: sticky 56px bar showing only the avatar button. User email, role, profile placeholder, and sign out live inside the avatar flyout menu.
 - Content: full available width with responsive page-level grids/cards
+- Dashboard dense grids should not switch to desktop columns at the 900px shell breakpoint. Keep KPI, dashboard, and analytics grids in their tablet-safe layouts until about 1180px so the fixed admin sidebar does not squeeze content between 900px and 930px.
 - Guard: `adminGuard` (handles auth + role check in one guard)
 
 ---
@@ -203,10 +204,11 @@ All shared classes live in `src/styles.css`.
 | `.sp-admin-main` | Main content area |
 | `.sp-admin-header` | Sticky top header |
 | `.sp-admin-header-inner` | Header flex row |
-| `.sp-admin-header-user` | User chip (avatar + email + badge) |
+| `.sp-admin-header-user` | Avatar profile-menu anchor |
 | `.sp-admin-avatar` | Gradient initial avatar |
-| `.sp-admin-header-email` | Email display |
-| `.sp-admin-role-badge` | "Admin" badge |
+| `.sp-admin-profile-menu` | Avatar flyout containing identity and account actions |
+| `.sp-admin-profile-email` | Email display inside avatar flyout |
+| `.sp-admin-profile-role` | Role badge inside avatar flyout |
 | `.sp-admin-content` | Page content area |
 
 ---
