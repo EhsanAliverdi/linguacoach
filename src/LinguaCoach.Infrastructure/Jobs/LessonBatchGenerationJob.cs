@@ -136,6 +136,35 @@ public sealed class LessonBatchGenerationJob : IJob
         planItem.MarkCompleted();
         await _db.SaveChangesAsync(ct);
 
+        try
+        {
+            await MaterializeSessionsAsync(profile, batch, plans, summaryJson, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "LessonBatchGenerationJob: materialization failed StudentProfileId={StudentProfileId}", studentProfileId);
+            batch.MarkFailed("Failed while creating lesson sessions.");
+            await _db.SaveChangesAsync(ct);
+            return;
+        }
+
+        batch.MarkCompleted();
+        await _db.SaveChangesAsync(ct);
+
+        // Trigger follow-up materialization for activity content + audio.
+        var scheduler = await _schedulerFactory.GetScheduler(ct);
+        await ActivityMaterializationJob.TriggerAsync(scheduler, batch.Id, ct);
+
+        _logger.LogInformation(
+            "LessonBatchGenerationJob: completed BatchId={BatchId} StudentProfileId={StudentProfileId} Sessions={Count}",
+            batch.Id, studentProfileId, batch.CompletedSessionCount);
+    }
+
+    private async Task MaterializeSessionsAsync(
+        StudentProfile profile, GenerationBatch batch, List<SessionPlanDto> plans, string summaryJson, CancellationToken ct)
+    {
+        var studentProfileId = profile.Id;
+
         // Materialize sessions inline (idempotent by StudentProfileId + CourseSequenceNumber).
         var module = await EnsureGeneratedModuleAsync(profile, ct);
         var nextSequence = await NextCourseSequenceAsync(studentProfileId, ct);
@@ -192,17 +221,6 @@ public sealed class LessonBatchGenerationJob : IJob
             batch.AddItem(GenerationJobItemType.Activity, session.Id);
             await _db.SaveChangesAsync(ct);
         }
-
-        batch.MarkCompleted();
-        await _db.SaveChangesAsync(ct);
-
-        // Trigger follow-up materialization for activity content + audio.
-        var scheduler = await _schedulerFactory.GetScheduler(ct);
-        await ActivityMaterializationJob.TriggerAsync(scheduler, batch.Id, ct);
-
-        _logger.LogInformation(
-            "LessonBatchGenerationJob: completed BatchId={BatchId} StudentProfileId={StudentProfileId} Sessions={Count}",
-            batch.Id, studentProfileId, batch.CompletedSessionCount);
     }
 
     private async Task<int> NextCourseSequenceAsync(Guid studentProfileId, CancellationToken ct)

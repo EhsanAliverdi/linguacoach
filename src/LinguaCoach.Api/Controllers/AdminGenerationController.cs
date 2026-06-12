@@ -201,6 +201,12 @@ public sealed class AdminGenerationController : ControllerBase
         if (_schedulerFactory is null)
             return StatusCode(503, new { error = "Background jobs are not enabled in this environment." });
 
+        var hasActiveBatch = await _db.GenerationBatches.AnyAsync(
+            b => b.StudentProfileId == id
+                && (b.Status == GenerationBatchStatus.Queued || b.Status == GenerationBatchStatus.Running), ct);
+        if (hasActiveBatch)
+            return Conflict(new { error = "A lesson generation batch is already running for this student." });
+
         var settings = await _db.LessonGenerationSettings.AsNoTracking().FirstOrDefaultAsync(ct);
         var batchSize = count ?? settings?.RefillBatchSize ?? 4;
 

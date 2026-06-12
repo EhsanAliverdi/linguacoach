@@ -14,6 +14,16 @@ Last updated: 2026-06-12
 
 ## Most recently completed sprint
 
+**Lesson batch generation concurrency fix** — complete (2026-06-12)
+
+Duplicate concurrent batch triggers for the same student caused
+`DbUpdateConcurrencyException` and left `GenerationBatch` rows stuck in
+"Running" forever. Admin endpoint now returns 409 if a batch is already
+running for the student; job marks itself `Failed` on any unhandled error
+during materialization instead of getting stuck. **Manual data fix still
+needed** for the two stuck rows — see
+`docs/reviews/2026-06-12-lesson-batch-job-concurrency-fix-engineering-review.md`.
+
 **Quartz JobDataMap string-only fix (background lesson generation)** — complete (2026-06-12)
 
 `LessonBatchGenerationJob.TriggerAsync` stored non-string values in `JobDataMap`,
