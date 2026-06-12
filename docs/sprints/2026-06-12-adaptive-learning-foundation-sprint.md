@@ -348,9 +348,15 @@ Implemented (frontend-only, no backend/prompt changes):
 
 `npm run build` passed (pre-existing CSS warnings only).
 
-Remaining P2/P2b scope: `suggestedPhrases` surfacing for spoken_response (needs
-product decision) and `targetGrammarPoint` (large, cross-cutting, no schedule) —
-both deferred.
+Remaining P2/P2b scope: `targetGrammarPoint` (large, cross-cutting, no schedule) —
+deferred.
+
+### Phase 3 P2b task 2 (2026-06-12) — spoken_response suggestedPhrases
+
+Product decision: yes, show as a phrases list. On investigation, **already
+implemented** — `activity-lesson.component.html:138-147` already renders
+`suggestedPhrases` as a "Suggested phrases" chip list above the recording task.
+No code change needed.
 
 ## Risks / unresolved questions
 

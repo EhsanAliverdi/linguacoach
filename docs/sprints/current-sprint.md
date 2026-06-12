@@ -100,8 +100,9 @@ Phase 3 P2 scoping pass done (2026-06-12) — see
 work). Task 1 (surface existing `teachingNote` as `[goal]` for GapFill/MatchingPairs) and
 P2b task 1 (surface learningGoal/skillFocus/targetVocabulary for email_reply/teams_chat)
 both implemented same day, frontend-only. See sprint doc's "Phase 3 P2"/"P2b" sections.
-Remaining: suggestedPhrases for spoken_response (needs product decision) and
-targetGrammarPoint (large, cross-cutting, no schedule).
+suggestedPhrases for spoken_response was already implemented (confirmed
+2026-06-12, no change needed). Remaining: targetGrammarPoint (large,
+cross-cutting, no schedule).
 
 ---
 
