@@ -126,13 +126,14 @@
         </div>
       </div>
 
-      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem">
         <input type="text" placeholder="Student profile ID" [(ngModel)]="generateStudentId"
                style="min-width:280px" />
         <button class="sp-btn sp-btn-primary" (click)="generateLessons()" [disabled]="!generateStudentId">
           Generate lessons now
         </button>
       </div>
+      @if (generateStatus()) { <p style="color:#15803d;margin:0 0 1rem">{{ generateStatus() }}</p> }
 
       <h3 style="font-size:.9rem;font-weight:600;margin:.5rem 0">Ready lesson buffer per student</h3>
       <table class="sp-table" style="width:100%;margin-bottom:1rem">

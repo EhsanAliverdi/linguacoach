@@ -14,6 +14,12 @@ Last updated: 2026-06-12
 
 ## Most recently completed sprint
 
+**Admin "Generate lessons now" button fix** — complete (2026-06-12)
+
+Button gave no feedback on click (success or error). Frontend now shows a
+confirmation with queued session count, or the server error message. See
+`docs/reviews/2026-06-12-admin-generate-lessons-button-fix-engineering-review.md`.
+
 **AI Config Overhaul / No-Fallback Rule / Journey Fix** — complete (2026-06-12)
 
 See full sprint plan: `docs/sprints/2026-06-11-ai-config-no-fallback-journey-fix-sprint.md`

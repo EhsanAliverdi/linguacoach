@@ -95,8 +95,9 @@ export class AdminIntegrationsService {
     return this.http.post(`${this.api}/admin/generation/batches/${id}/retry`, {});
   }
 
-  generateLessons(studentProfileId: string, count?: number): Observable<unknown> {
+  generateLessons(studentProfileId: string, count?: number): Observable<{ queued: boolean; requestedCount: number }> {
     const query = count ? `?count=${count}` : '';
-    return this.http.post(`${this.api}/admin/students/${studentProfileId}/generate-lessons${query}`, {});
+    return this.http.post<{ queued: boolean; requestedCount: number }>(
+      `${this.api}/admin/students/${studentProfileId}/generate-lessons${query}`, {});
   }
 }

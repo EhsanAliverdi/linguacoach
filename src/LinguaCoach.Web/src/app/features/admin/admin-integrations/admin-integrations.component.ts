@@ -30,6 +30,7 @@ export class AdminIntegrationsComponent implements OnInit {
   // Background jobs
   batches = signal<BatchesResponse | null>(null);
   batchesError = signal('');
+  generateStatus = signal('');
   generateStudentId = '';
 
   loading = signal(true);
@@ -90,8 +91,18 @@ export class AdminIntegrationsComponent implements OnInit {
 
   generateLessons(): void {
     if (!this.generateStudentId) return;
-    this.svc.generateLessons(this.generateStudentId).subscribe({
-      next: () => { this.generateStudentId = ''; this.loadBatches(); },
+    this.generateStatus.set('');
+    this.batchesError.set('');
+    const studentId = this.generateStudentId;
+    this.svc.generateLessons(studentId).subscribe({
+      next: res => {
+        this.generateStudentId = '';
+        this.generateStatus.set(`Queued generation for ${studentId} (${res?.requestedCount ?? '?'} sessions).`);
+        this.loadBatches();
+      },
+      error: err => {
+        this.batchesError.set(err.error?.error ?? 'Could not queue lesson generation. Check the student profile ID.');
+      },
     });
   }
 }
