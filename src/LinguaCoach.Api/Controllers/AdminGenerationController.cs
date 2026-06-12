@@ -173,6 +173,20 @@ public sealed class AdminGenerationController : ControllerBase
         });
     }
 
+    [HttpPost("generation/batches/{id:guid}/cancel")]
+    public async Task<IActionResult> CancelBatch(Guid id, CancellationToken ct)
+    {
+        var batch = await _db.GenerationBatches.FirstOrDefaultAsync(b => b.Id == id, ct);
+        if (batch is null) return NotFound();
+        if (batch.Status != GenerationBatchStatus.Queued && batch.Status != GenerationBatchStatus.Running)
+            return BadRequest(new { error = "Only queued or running batches can be cancelled." });
+
+        batch.MarkCancelledByAdmin();
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { cancelled = true });
+    }
+
     [HttpPost("generation/batches/{id:guid}/retry")]
     public async Task<IActionResult> RetryBatch(Guid id, CancellationToken ct)
     {

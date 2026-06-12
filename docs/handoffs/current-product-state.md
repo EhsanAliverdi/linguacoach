@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-11 13:25
+lastUpdated: 2026-06-12 16:30
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 ---
 
@@ -125,6 +125,7 @@ Playwright:      175 passed (167 existing + 8 new onboarding step-5 tests)
 - Create student returns to Students with a toast after success
 - Archive uses `StudentLifecycleStage.Archived`, hides archived students by default, and disables sign-in
 - AI Config shows category-level provider/model routing: Default LLM, Content Generation, Evaluation & Feedback, Memory & Learning Path, Listening TTS, and Placement TTS
+- Integrations can trigger lesson generation, inspect recent generation batches, view ready lesson buffers, retry failed/partial batches, and cancel queued/running batches stuck from background generation failures
 - Curriculum is hidden from admin navigation while its future purpose is redefined
 
 ## Placement Assessment — current state

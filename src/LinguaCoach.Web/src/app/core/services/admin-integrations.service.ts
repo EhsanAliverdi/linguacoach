@@ -95,6 +95,10 @@ export class AdminIntegrationsService {
     return this.http.post(`${this.api}/admin/generation/batches/${id}/retry`, {});
   }
 
+  cancelBatch(id: string): Observable<unknown> {
+    return this.http.post(`${this.api}/admin/generation/batches/${id}/cancel`, {});
+  }
+
   generateLessons(studentProfileId: string, count?: number): Observable<{ queued: boolean; requestedCount: number }> {
     const query = count ? `?count=${count}` : '';
     return this.http.post<{ queued: boolean; requestedCount: number }>(

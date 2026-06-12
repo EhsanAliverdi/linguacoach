@@ -9,6 +9,8 @@ namespace LinguaCoach.Domain.Entities;
 /// </summary>
 public sealed class GenerationBatch : BaseEntity
 {
+    public const string AdminCancelledFailureReason = "Cancelled by admin.";
+
     public Guid StudentProfileId { get; private set; }
     public GenerationTriggerReason TriggerReason { get; private set; }
     public GenerationBatchStatus Status { get; private set; }
@@ -77,6 +79,8 @@ public sealed class GenerationBatch : BaseEntity
         FailureReason = failureReason;
         CompletedAtUtc = DateTime.UtcNow;
     }
+
+    public void MarkCancelledByAdmin() => MarkFailed(AdminCancelledFailureReason);
 
     public void ResetForRetry()
     {

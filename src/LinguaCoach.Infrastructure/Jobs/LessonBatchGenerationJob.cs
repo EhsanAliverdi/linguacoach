@@ -133,12 +133,27 @@ public sealed class LessonBatchGenerationJob : IJob
             return;
         }
 
+        if (await IsCancelledByAdminAsync(batch, ct))
+        {
+            _logger.LogInformation(
+                "LessonBatchGenerationJob: cancelled before materialization BatchId={BatchId} StudentProfileId={StudentProfileId}",
+                batch.Id, studentProfileId);
+            return;
+        }
+
         planItem.MarkCompleted();
         await _db.SaveChangesAsync(ct);
 
         try
         {
-            await MaterializeSessionsAsync(profile, batch, plans, summaryJson, ct);
+            var materialized = await MaterializeSessionsAsync(profile, batch, plans, summaryJson, ct);
+            if (!materialized)
+            {
+                _logger.LogInformation(
+                    "LessonBatchGenerationJob: cancelled during materialization BatchId={BatchId} StudentProfileId={StudentProfileId}",
+                    batch.Id, studentProfileId);
+                return;
+            }
         }
         catch (Exception ex)
         {
@@ -160,7 +175,7 @@ public sealed class LessonBatchGenerationJob : IJob
             batch.Id, studentProfileId, batch.CompletedSessionCount);
     }
 
-    private async Task MaterializeSessionsAsync(
+    private async Task<bool> MaterializeSessionsAsync(
         StudentProfile profile, GenerationBatch batch, List<SessionPlanDto> plans, string summaryJson, CancellationToken ct)
     {
         var studentProfileId = profile.Id;
@@ -172,6 +187,9 @@ public sealed class LessonBatchGenerationJob : IJob
 
         foreach (var plan in plans)
         {
+            if (await IsCancelledByAdminAsync(batch, ct))
+                return false;
+
             var sequence = nextSequence++;
 
             var exists = await _db.LearningSessions.AnyAsync(
@@ -221,6 +239,15 @@ public sealed class LessonBatchGenerationJob : IJob
             batch.AddItem(GenerationJobItemType.Activity, session.Id);
             await _db.SaveChangesAsync(ct);
         }
+
+        return true;
+    }
+
+    private async Task<bool> IsCancelledByAdminAsync(GenerationBatch batch, CancellationToken ct)
+    {
+        await _db.Entry(batch).ReloadAsync(ct);
+        return batch.Status == GenerationBatchStatus.Failed
+            && batch.FailureReason == GenerationBatch.AdminCancelledFailureReason;
     }
 
     private async Task<int> NextCourseSequenceAsync(Guid studentProfileId, CancellationToken ct)

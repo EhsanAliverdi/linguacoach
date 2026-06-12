@@ -191,6 +191,9 @@
                 <td>{{ batch.providerName || '—' }}</td>
                 <td class="sp-admin-text-error">{{ batch.failureReason || '' }}</td>
                 <td>
+                  @if (batch.status === 'Queued' || batch.status === 'Running') {
+                    <button class="sp-admin-link" (click)="cancel(batch.id)">Cancel</button>
+                  }
                   @if (batch.status === 'Failed' || batch.status === 'Partial') {
                     <button class="sp-admin-link" (click)="retry(batch.id)">Retry</button>
                   }

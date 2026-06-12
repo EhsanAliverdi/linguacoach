@@ -83,13 +83,20 @@ The exception was unhandled inside `Execute`, so the batch was left in
   refill pipeline can also trigger batches without going through the admin
   endpoint's guard.
 
-## Data cleanup needed
+## Data cleanup
 
 The two existing stuck `GenerationBatch` rows (status `Running`, `0/4`) for
 student `2283fcb4-b1ea-4cb4-9322-287083456805` will now block the new 409 guard
 from ever allowing generation for that student again, since they'll never
-transition out of `Running`. These need to be manually marked `Failed` (or
-deleted) in production via a one-off SQL update:
+transition out of `Running`.
+
+Superseding fix: admins can now cancel these rows from `/admin/integrations`.
+Use the Cancel action on the active recent batch row. The row is marked `Failed`
+with `Cancelled by admin.`, which unblocks "Generate lessons now" without direct
+database access. See
+`docs/reviews/2026-06-12-admin-stuck-batch-cancel-engineering-review.md`.
+
+The old one-off SQL cleanup is no longer the preferred path:
 
 ```sql
 UPDATE "GenerationBatches"
@@ -97,8 +104,6 @@ SET "Status" = 'Failed'
 WHERE "StudentProfileId" = '2283fcb4-b1ea-4cb4-9322-287083456805'
   AND "Status" = 'Running';
 ```
-
-(Run by an operator with prod DB access — not executed as part of this change.)
 
 ## Risks / unresolved questions
 
@@ -115,12 +120,12 @@ WHERE "StudentProfileId" = '2283fcb4-b1ea-4cb4-9322-287083456805'
 Root cause fixed: duplicate concurrent batch triggers for the same student are
 now rejected (409) at the admin endpoint, and any batch that still fails
 mid-materialization is marked `Failed` instead of stuck `Running` forever.
-Existing stuck rows for the affected student need a manual data fix (see
-above) before "Generate lessons now" will work for that student again.
+Existing stuck rows for the affected student need admin cancellation before
+"Generate lessons now" will work for that student again.
 
 ## Next recommended action
 
-1. Run the SQL data-fix above for student
+1. Cancel the stuck active batch rows from `/admin/integrations` for student
    `2283fcb4-b1ea-4cb4-9322-287083456805`.
 2. Retry "Generate lessons now" for that student and confirm a single batch
    completes successfully end-to-end (including the follow-up

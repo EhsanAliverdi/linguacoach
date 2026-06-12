@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 15:00
+lastUpdated: 2026-06-12 16:30
 owner: product
 supersedes:
 supersededBy:
@@ -14,15 +14,24 @@ Last updated: 2026-06-12
 
 ## Most recently completed sprint
 
+**Admin stuck batch cancellation** — complete (2026-06-12)
+
+Admins can now cancel queued/running lesson-generation batches from
+`/admin/integrations` instead of running one-off SQL. The action marks the batch
+`Failed` with the safe reason `Cancelled by admin.` and the background job checks
+for that state before and during session materialization so it does not overwrite
+an admin cancellation. Recent batches now show a Cancel button for active rows and
+the existing Failure column shows the cancellation reason.
+
 **Lesson batch generation concurrency fix** — complete (2026-06-12)
 
 Duplicate concurrent batch triggers for the same student caused
 `DbUpdateConcurrencyException` and left `GenerationBatch` rows stuck in
 "Running" forever. Admin endpoint now returns 409 if a batch is already
 running for the student; job marks itself `Failed` on any unhandled error
-during materialization instead of getting stuck. **Manual data fix still
-needed** for the two stuck rows — see
-`docs/reviews/2026-06-12-lesson-batch-job-concurrency-fix-engineering-review.md`.
+during materialization instead of getting stuck. Existing stuck rows can now be
+cancelled from Admin Integrations rather than fixed by direct SQL. See
+`docs/reviews/2026-06-12-admin-stuck-batch-cancel-engineering-review.md`.
 
 **Quartz JobDataMap string-only fix (background lesson generation)** — complete (2026-06-12)
 

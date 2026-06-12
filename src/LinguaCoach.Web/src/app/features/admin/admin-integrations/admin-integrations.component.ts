@@ -89,6 +89,14 @@ export class AdminIntegrationsComponent implements OnInit {
     this.svc.retryBatch(id).subscribe({ next: () => this.loadBatches() });
   }
 
+  cancel(id: string): void {
+    this.batchesError.set('');
+    this.svc.cancelBatch(id).subscribe({
+      next: () => this.loadBatches(),
+      error: err => this.batchesError.set(err.error?.error ?? 'Could not cancel this batch.'),
+    });
+  }
+
   generateLessons(): void {
     if (!this.generateStudentId) return;
     this.generateStatus.set('');
