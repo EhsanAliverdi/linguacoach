@@ -309,6 +309,10 @@ Session reflection (`GET /api/sessions/{id}/reflection`) is a 501 stub — defer
 ## Next recommended work
 
 1. **Dynamic Pattern Selection** — choose Today's Lesson patterns from weak skills, CEFR, duration, and repetition history.
+   Scoping pass done (2026-06-12): see
+   `docs/reviews/2026-06-12-dynamic-pattern-selection-scoping.md`. Recommended first
+   slice: per-slot pattern pools + last-N-session repetition avoidance in
+   `SessionGeneratorService`/`SessionDurationTemplates`.
 2. **Dynamic Practice Gym session templates** — configurable multi-exercise sessions within Practice Gym.
 3. **Session Reflection AI** — now that evaluation outputs are stable, wire `session_reflection` AI prompt.
 
