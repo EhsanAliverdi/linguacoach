@@ -127,9 +127,25 @@ never used the legacy activity flow), matching the existing fallback in
 students, and any future session-load failure will be shown to the student instead of
 silently disabling the button.
 
+## Follow-up implemented (2026-06-12)
+
+`src/LinguaCoach.Infrastructure/Placement/PlacementService.cs`:
+
+- Injected `ILearningPathGenerator`.
+- After `profile.SetLifecycleStage(StudentLifecycleStage.CourseReady)`, added
+  `GenerateLearningPathAsync(profile.UserId, profile.Id, ct)` — calls
+  `_pathGenerator.GenerateAsync(new GenerateLearningPathCommand(userId), ct)`,
+  wrapped in try/catch (logs a warning on failure, never blocks placement
+  completion — `AiLearningPathGeneratorHandler` itself never throws, falls back to
+  `DefaultPathFactory`).
+
+Now every student gets an active `LearningPath` immediately on placement
+completion. The lazy-generation fallback in `SessionGeneratorService`/
+`ActivityGetHandler` remains in place as a safety net for any pre-existing
+`CourseReady` students who don't yet have a path.
+
+Tests: 482 unit + 430 integration passing.
+
 ## Next recommended action
 
-Consider (separate, smaller follow-up): trigger `LearningPath` generation directly
-inside `PlacementService` when lifecycle moves to `CourseReady`, so the lazy fallback
-in `SessionGeneratorService`/`ActivityGetHandler` becomes a true edge case rather than
-the normal path for some students.
+None — both the reactive fallback and the proactive generation are in place.

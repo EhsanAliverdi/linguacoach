@@ -98,6 +98,11 @@ errors instead of swallowing them.
 Quartz/background-job config investigated as a possible cause — found correct,
 no change needed.
 
+Follow-up implemented same day: `PlacementService` now generates the student's
+`LearningPath` proactively right after `CourseReady`, via `ILearningPathGenerator`
+(best-effort, never blocks placement). The lazy fallback remains as a safety net
+for pre-existing affected students.
+
 Tests: 482 unit + 430 integration passing. `npm run build` passed.
 
 ---

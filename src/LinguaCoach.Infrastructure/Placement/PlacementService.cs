@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
@@ -43,6 +44,7 @@ public sealed class PlacementService :
     private readonly IPlacementEvaluator _evaluator;
     private readonly IStudentMemoryService _memory;
     private readonly PlacementAudioService _audio;
+    private readonly ILearningPathGenerator _pathGenerator;
     private readonly ILogger<PlacementService> _logger;
     private readonly Quartz.ISchedulerFactory? _schedulerFactory;
 
@@ -51,6 +53,7 @@ public sealed class PlacementService :
         IPlacementEvaluator evaluator,
         IStudentMemoryService memory,
         PlacementAudioService audio,
+        ILearningPathGenerator pathGenerator,
         ILogger<PlacementService> logger,
         Quartz.ISchedulerFactory? schedulerFactory = null)
     {
@@ -58,6 +61,7 @@ public sealed class PlacementService :
         _evaluator = evaluator;
         _memory = memory;
         _audio = audio;
+        _pathGenerator = pathGenerator;
         _logger = logger;
         _schedulerFactory = schedulerFactory;
     }
@@ -169,10 +173,36 @@ public sealed class PlacementService :
             "Placement completed StudentProfileId={StudentProfileId} OverallLevel={Level}",
             profile.Id, result.EstimatedOverallLevel);
 
+        // Generate the student's LearningPath now, so SessionGeneratorService never
+        // has to fall back to lazy generation on the student's first "Today's Lesson" request.
+        await GenerateLearningPathAsync(profile.UserId, profile.Id, ct);
+
         // Kick off background lesson buffer generation now that the course is ready.
         await TriggerInitialBufferAsync(profile.Id, ct);
 
         return MapResult(result, isCompleted: true);
+    }
+
+    /// <summary>
+    /// Best-effort: generates the student's LearningPath right after placement, so
+    /// SessionGeneratorService's lazy-generation fallback becomes an edge case rather
+    /// than the normal path. AiLearningPathGeneratorHandler never throws (falls back
+    /// to DefaultPathFactory), but this is wrapped defensively to never block placement
+    /// completion.
+    /// </summary>
+    private async Task GenerateLearningPathAsync(Guid userId, Guid studentProfileId, CancellationToken ct)
+    {
+        try
+        {
+            await _pathGenerator.GenerateAsync(new GenerateLearningPathCommand(userId), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "LearningPath generation failed after placement for StudentProfileId={StudentProfileId}; " +
+                "SessionGeneratorService will generate it lazily on first request.",
+                studentProfileId);
+        }
     }
 
     /// <summary>Best-effort: queues the first lesson batch after placement. Never blocks placement completion.</summary>
