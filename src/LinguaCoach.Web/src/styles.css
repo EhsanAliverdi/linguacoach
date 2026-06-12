@@ -508,10 +508,52 @@ details.sp-collapsible .sp-collapsible-body{padding:0 15px 15px;}
 /* Link */
 .sp-admin-link{font-size:12.5px;font-weight:700;color:#4338CA;text-decoration:none;}
 .sp-admin-link:hover{color:#3730A3;}
+button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-family:inherit;}
 
 /* Form card */
 .sp-admin-form-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
 .sp-admin-form-desc{font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:20px;}
+
+/* Section heading inside a form/table card */
+.sp-admin-section-title{font-size:15px;font-weight:800;color:#0F172A;margin:0 0 14px;}
+.sp-admin-subsection-title{font-size:13px;font-weight:700;color:#334155;margin:18px 0 8px;}
+
+/* Field grid (settings/readonly forms) */
+.sp-admin-field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.sp-admin-field{display:flex;flex-direction:column;gap:6px;}
+.sp-admin-field-label{font-size:12.5px;font-weight:700;color:#475569;}
+.sp-admin-field-checkbox{flex-direction:row;align-items:center;gap:8px;}
+.sp-admin-field-checkbox .sp-admin-field-label{margin:0;}
+.sp-admin-field input[type="text"],
+.sp-admin-field input[type="number"]{
+  padding:9px 12px;font-size:13.5px;font-family:inherit;
+  border:1.5px solid #E2E8F0;border-radius:8px;color:#0F172A;
+  background:#fff;outline:none;transition:border-color .15s;
+}
+.sp-admin-field input[type="text"]:disabled{background:#F8FAFC;color:#64748B;}
+.sp-admin-field input[type="text"]:focus,
+.sp-admin-field input[type="number"]:focus{border-color:#4338CA;}
+.sp-admin-field input[type="checkbox"]{width:16px;height:16px;accent-color:#4338CA;}
+.sp-admin-field-hint{font-size:12px;color:#94A3B8;margin-top:10px;}
+
+/* Stat row (queued / running / failed / last success) */
+.sp-admin-stat-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;}
+.sp-admin-stat{display:flex;flex-direction:column;gap:2px;}
+.sp-admin-stat-value{font-size:20px;font-weight:800;color:#0F172A;}
+.sp-admin-stat-label{font-size:12px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em;}
+
+/* Inline action row (input + button) */
+.sp-admin-action-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.sp-admin-action-row input[type="text"]{
+  min-width:280px;flex:1;padding:9px 12px;font-size:13.5px;font-family:inherit;
+  border:1.5px solid #E2E8F0;border-radius:8px;color:#0F172A;background:#fff;outline:none;
+  transition:border-color .15s;
+}
+.sp-admin-action-row input[type="text"]:focus{border-color:#4338CA;}
+
+/* Status text */
+.sp-admin-text-success{font-size:13px;color:#16A34A;margin:0 0 14px;}
+.sp-admin-text-error{font-size:13px;color:#B91C1C;}
 
 /* Toast notifications */
 .sp-toast-host{
