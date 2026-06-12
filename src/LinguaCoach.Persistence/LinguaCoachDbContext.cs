@@ -59,6 +59,13 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
                 .HasColumnType("xid")
                 .ValueGeneratedOnAddOrUpdate()
                 .IsConcurrencyToken();
+
+            modelBuilder.Entity<PracticeActivityCache>()
+                .Property<uint>("xmin")
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
         }
     }
 }

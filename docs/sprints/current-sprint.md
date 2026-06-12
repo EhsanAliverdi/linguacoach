@@ -14,6 +14,16 @@ Last updated: 2026-06-12
 
 ## Most recently completed sprint
 
+**Practice Gym cache race condition fix** - complete (2026-06-12)
+
+A full code/docs audit found `ActivityGetHandler.TryAssignReadyPracticeCacheAsync` could
+let two concurrent `GET /api/activity/next?pattern=...` requests claim the same `Ready`
+`PracticeActivityCache` row, returning the same `LearningActivity` to both. Added `xmin`
+concurrency token to `PracticeActivityCache` (mirrors existing `LearningPath` config) and
+retry-with-exclusion on `DbUpdateConcurrencyException`, falling back to the next ready
+row or on-demand generation. 483 unit + 434 integration tests pass. See
+`docs/reviews/2026-06-12-practice-gym-cache-race-condition-fix-engineering-review.md`.
+
 **Lesson and Practice classroom alignment** - complete (2026-06-12)
 
 Today's Lesson now consumes ready buffered `LearningSession` rows before falling

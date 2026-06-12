@@ -1569,6 +1569,12 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("student_profile_id");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StudentProfileId", "PatternKey", "Status")

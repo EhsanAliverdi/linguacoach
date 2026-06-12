@@ -301,30 +301,49 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         string patternKey,
         CancellationToken ct)
     {
-        var cache = await _db.PracticeActivityCache
-            .Where(c => c.StudentProfileId == studentProfileId
-                     && c.PatternKey == patternKey
-                     && c.Status == PracticeCacheStatus.Ready
-                     && c.LearningActivityId.HasValue
-                     && (c.ExpiresAtUtc == null || c.ExpiresAtUtc > DateTime.UtcNow))
-            .OrderBy(c => c.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+        var excludedIds = new HashSet<Guid>();
 
-        if (cache is null)
-            return null;
-
-        var activity = await _db.LearningActivities
-            .FirstOrDefaultAsync(a => a.Id == cache.LearningActivityId!.Value && a.IsActive, ct);
-        if (activity is null)
+        while (true)
         {
-            cache.MarkExpired();
-            await _db.SaveChangesAsync(ct);
-            return null;
-        }
+            var cache = await _db.PracticeActivityCache
+                .Where(c => c.StudentProfileId == studentProfileId
+                         && c.PatternKey == patternKey
+                         && c.Status == PracticeCacheStatus.Ready
+                         && c.LearningActivityId.HasValue
+                         && !excludedIds.Contains(c.Id)
+                         && (c.ExpiresAtUtc == null || c.ExpiresAtUtc > DateTime.UtcNow))
+                .OrderBy(c => c.CreatedAt)
+                .FirstOrDefaultAsync(ct);
 
-        cache.MarkAssigned();
-        await _db.SaveChangesAsync(ct);
-        return activity;
+            if (cache is null)
+                return null;
+
+            var activity = await _db.LearningActivities
+                .FirstOrDefaultAsync(a => a.Id == cache.LearningActivityId!.Value && a.IsActive, ct);
+            if (activity is null)
+            {
+                cache.MarkExpired();
+                await _db.SaveChangesAsync(ct);
+                return null;
+            }
+
+            cache.MarkAssigned();
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Another concurrent request already claimed this cache row.
+                // Detach and try the next ready row instead of returning a
+                // duplicate activity to two students/requests.
+                _db.Entry(cache).State = EntityState.Detached;
+                excludedIds.Add(cache.Id);
+                continue;
+            }
+
+            return activity;
+        }
     }
 
     private async Task<ActivityType> ResolveActivityTypeAsync(
