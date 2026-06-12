@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 17:15
+lastUpdated: 2026-06-12 12:53
 owner: product
 supersedes:
 supersededBy:
@@ -13,6 +13,22 @@ Last updated: 2026-06-12
 ---
 
 ## Most recently completed sprint
+
+**Lesson batch materialization fix** - complete (2026-06-12)
+
+Production logs showed AI lesson planning succeeding, then
+`LessonBatchGenerationJob` failing while saving the first generated session with
+`DbUpdateConcurrencyException`. The failed save also left the same `DbContext`
+dirty, so marking the batch failed could throw again and Quartz reported an
+unhandled job exception. Root cause: session/activity `GenerationJobItem` rows
+created after the original batch save were attached only through the aggregate's
+private item collection, so EF could treat them as updates to missing rows
+instead of inserts. The job now explicitly inserts those items, avoids tracked
+path/module state during generated module lookup, and clears failed tracked
+state before marking a materialization failure. Added integration coverage that
+executes `LessonBatchGenerationJob` with a fake lesson-plan provider and verifies
+a completed batch plus ready sessions. See
+`docs/reviews/2026-06-12-lesson-batch-materialization-fix-engineering-review.md`.
 
 **Admin responsive header polish** — complete (2026-06-12)
 

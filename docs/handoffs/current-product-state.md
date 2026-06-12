@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 17:15
+lastUpdated: 2026-06-12 12:53
 owner: product
 supersedes:
 supersededBy:
@@ -126,6 +126,7 @@ Playwright:      175 passed (167 existing + 8 new onboarding step-5 tests)
 - Archive uses `StudentLifecycleStage.Archived`, hides archived students by default, and disables sign-in
 - AI Config shows category-level provider/model routing: Default LLM, Content Generation, Evaluation & Feedback, Memory & Learning Path, Listening TTS, and Placement TTS
 - Integrations can trigger lesson generation, inspect recent generation batches, view ready lesson buffers, retry failed/partial batches, and cancel queued/running batches stuck from background generation failures
+- Background lesson generation now materializes AI lesson plans into ready `LearningSession` rows instead of failing on generated `GenerationJobItem` tracking state
 - Admin shell header is avatar-only; user email, role, profile placeholder, and sign out live in the avatar flyout menu
 - Curriculum is hidden from admin navigation while its future purpose is redefined
 
