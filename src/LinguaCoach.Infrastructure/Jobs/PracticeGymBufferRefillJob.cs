@@ -55,8 +55,13 @@ public sealed class PracticeGymBufferRefillJob : IJob
         var readyMap = readyCounts.ToDictionary(
             r => (r.StudentProfileId, r.PatternKey), r => r.Count);
 
-        // Only refill for students who have any practice cache activity (active learners).
-        var students = readyCounts.Select(r => r.StudentProfileId).Distinct().ToList();
+        // Refill for students who can use the student app, including students with no cache yet.
+        var students = await _db.StudentProfiles
+            .Where(p => p.OnboardingStatus == OnboardingStatus.Complete
+                     && p.LifecycleStage != StudentLifecycleStage.Archived
+                     && p.LifecycleStage >= StudentLifecycleStage.CourseReady)
+            .Select(p => p.Id)
+            .ToListAsync(ct);
 
         var pendingCounts = await _db.PracticeActivityCache
             .Where(c => c.Status == PracticeCacheStatus.Pending)

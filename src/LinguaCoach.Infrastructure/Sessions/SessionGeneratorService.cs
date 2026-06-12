@@ -61,6 +61,18 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
             return await BuildResultAsync(existingSession, isResuming: existingSession.Status == SessionStatus.InProgress, ct);
         }
 
+        // Prefer the background-generated ready lesson buffer before creating
+        // a legacy on-demand session. Page load should consume saved content.
+        var readyBufferedSession = await FindNextReadyBufferedSessionAsync(studentProfileId, ct);
+        if (readyBufferedSession is not null)
+        {
+            _logger.LogInformation(
+                "Returning ready buffered session {SessionId} for student {StudentProfileId}",
+                readyBufferedSession.Id, studentProfileId);
+
+            return await BuildResultAsync(readyBufferedSession, isResuming: false, ct);
+        }
+
         // ── 2. Resolve current module ─────────────────────────────────────────
         var currentModule = await ResolveCurrentModuleAsync(profile.UserId, studentProfileId, ct);
 
@@ -148,6 +160,17 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
                      && s.Status != SessionStatus.Completed
                      && s.CreatedAt >= todayUtc)
             .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    private async Task<LearningSession?> FindNextReadyBufferedSessionAsync(Guid studentProfileId, CancellationToken ct)
+    {
+        return await _db.LearningSessions
+            .Where(s => s.StudentProfileId == studentProfileId
+                     && s.GenerationStatus == GenerationStatus.Ready
+                     && s.Status == SessionStatus.NotStarted)
+            .OrderBy(s => s.CourseSequenceNumber ?? int.MaxValue)
+            .ThenBy(s => s.ReadyAtUtc ?? s.CreatedAt)
             .FirstOrDefaultAsync(ct);
     }
 

@@ -272,6 +272,7 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   usesExerciseRenderer(): boolean {
     const activity = this.activity();
+    if (activity?.activityType === 'speakingRolePlay') return false;
     return activity?.interactionMode != null
       || (activity?.activityType === 'writingScenario' && !!activity.contentJson);
   }

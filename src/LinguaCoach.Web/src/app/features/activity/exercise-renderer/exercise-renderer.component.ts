@@ -109,11 +109,15 @@ export class ExerciseRendererComponent {
         meaningId: `meaning_${index}`,
         phrase: this.stringValue(obj['phrase']) ?? this.stringValue(obj['left']) ?? '',
         meaning: this.stringValue(obj['meaning']) ?? this.stringValue(obj['right']) ?? '',
+        context: this.stringValue(obj['context']),
       };
     }).filter(pair => pair.phrase || pair.meaning);
 
     return {
-      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      learningGoal: this.stringValue(raw['learningGoal'])
+        ?? this.stringValue(raw['teachingNote'])
+        ?? this.activity.learningGoal,
+      teachingNote: this.stringValue(raw['teachingNote']),
       instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
       pairs,
     };

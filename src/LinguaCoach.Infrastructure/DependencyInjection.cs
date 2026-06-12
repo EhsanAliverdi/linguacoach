@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<Jobs.TtsAudioGenerationJob>();
         services.AddScoped<Jobs.AudioCleanupJob>();
         services.AddScoped<Jobs.PracticeGymBufferRefillJob>();
+        services.AddScoped<Jobs.PracticeGymGenerationJob>();
 
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();

@@ -232,6 +232,15 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             "Pattern-keyed activity requested UserId={UserId} PatternKey={PatternKey} ActivityType={ActivityType}",
             profile.UserId, patternKey, pattern.ActivityType);
 
+        var cached = await TryAssignReadyPracticeCacheAsync(profile.Id, patternKey, ct);
+        if (cached is not null)
+        {
+            _logger.LogInformation(
+                "Pattern-keyed activity served from practice cache ActivityId={ActivityId} PatternKey={PatternKey}",
+                cached.Id, patternKey);
+            return MapToDto(cached, pattern.InteractionMode);
+        }
+
         var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
         var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
@@ -285,6 +294,37 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
         var patternDef = await _patternRepo.GetByKeyAsync(patternKey, ct);
         return MapToDto(activity, patternDef?.InteractionMode);
+    }
+
+    private async Task<Domain.Entities.LearningActivity?> TryAssignReadyPracticeCacheAsync(
+        Guid studentProfileId,
+        string patternKey,
+        CancellationToken ct)
+    {
+        var cache = await _db.PracticeActivityCache
+            .Where(c => c.StudentProfileId == studentProfileId
+                     && c.PatternKey == patternKey
+                     && c.Status == PracticeCacheStatus.Ready
+                     && c.LearningActivityId.HasValue
+                     && (c.ExpiresAtUtc == null || c.ExpiresAtUtc > DateTime.UtcNow))
+            .OrderBy(c => c.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (cache is null)
+            return null;
+
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == cache.LearningActivityId!.Value && a.IsActive, ct);
+        if (activity is null)
+        {
+            cache.MarkExpired();
+            await _db.SaveChangesAsync(ct);
+            return null;
+        }
+
+        cache.MarkAssigned();
+        await _db.SaveChangesAsync(ct);
+        return activity;
     }
 
     private async Task<ActivityType> ResolveActivityTypeAsync(

@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Sessions;
+using LinguaCoach.Domain;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -153,14 +154,19 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
 
     private static ExerciseKind ResolveKind(string patternKey) => patternKey switch
     {
-        "phrase_match" => ExerciseKind.VocabularyWarmup,
-        "listen_and_answer" or "listen_and_gap_fill" => ExerciseKind.ListeningInput,
-        "writing_response" => ExerciseKind.WritingTask,
-        "speaking_role_play" => ExerciseKind.SpeakingTask,
-        "lesson_reflection" => ExerciseKind.Review,
-        _ when patternKey.StartsWith("listen") => ExerciseKind.ListeningInput,
-        _ when patternKey.StartsWith("speaking") => ExerciseKind.SpeakingTask,
-        _ when patternKey.StartsWith("writing") => ExerciseKind.WritingTask,
+        ExercisePatternKey.PhraseMatch
+            or ExercisePatternKey.GapFillWorkplacePhrase => ExerciseKind.VocabularyWarmup,
+        ExercisePatternKey.ListenAndAnswer
+            or ExercisePatternKey.ListenAndGapFill => ExerciseKind.ListeningInput,
+        ExercisePatternKey.EmailReply
+            or ExercisePatternKey.TeamsChatSimulation
+            or "writing_response" => ExerciseKind.WritingTask,
+        ExercisePatternKey.SpokenResponseFromPrompt
+            or "speaking_role_play" => ExerciseKind.SpeakingTask,
+        ExercisePatternKey.LessonReflection => ExerciseKind.Review,
+        _ when patternKey.StartsWith("listen", StringComparison.OrdinalIgnoreCase) => ExerciseKind.ListeningInput,
+        _ when patternKey.StartsWith("speaking", StringComparison.OrdinalIgnoreCase) => ExerciseKind.SpeakingTask,
+        _ when patternKey.StartsWith("writing", StringComparison.OrdinalIgnoreCase) => ExerciseKind.WritingTask,
         _ => ExerciseKind.ContextInput
     };
 }

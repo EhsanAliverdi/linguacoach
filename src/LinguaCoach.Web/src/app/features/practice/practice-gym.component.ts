@@ -6,5 +6,6 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [RouterLink],
   templateUrl: './practice-gym.component.html',
+  styleUrl: './practice-gym.component.css',
 })
 export class PracticeGymComponent {}

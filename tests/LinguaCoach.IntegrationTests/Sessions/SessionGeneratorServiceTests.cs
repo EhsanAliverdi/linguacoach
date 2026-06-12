@@ -125,6 +125,41 @@ public sealed class SessionGeneratorServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetOrCreate_UsesReadyBufferedSessionBeforeGenerating()
+    {
+        var (profile, module) = await SeedCourseReadyStudentAsync();
+        var buffered = new LearningSession(
+            module.Id,
+            "Cached vocabulary lesson",
+            "Workplace vocabulary",
+            "Learn useful workplace words.",
+            15,
+            "vocabulary",
+            order: 0);
+        buffered.SetGenerationMetadata(profile.Id, 1, generationBatchId: null);
+        buffered.MarkGenerationReady();
+        _db.LearningSessions.Add(buffered);
+        await _db.SaveChangesAsync();
+
+        var exercise = new SessionExercise(
+            buffered.Id,
+            0,
+            "phrase_match",
+            "vocabulary",
+            "Learn the phrases, then match them to meanings.",
+            5);
+        _db.SessionExercises.Add(exercise);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetOrCreateTodaysSessionAsync(CommandFor(profile));
+
+        Assert.Equal(buffered.Id, result.SessionId);
+        Assert.Equal("Cached vocabulary lesson", result.Title);
+        Assert.Single(result.Exercises);
+        Assert.Equal(ExerciseKind.VocabularyWarmup, result.Exercises[0].Kind);
+    }
+
+    [Fact]
     public async Task GetOrCreate_NoDuplicateSessionsCreated()
     {
         var (profile, module) = await SeedCourseReadyStudentAsync();

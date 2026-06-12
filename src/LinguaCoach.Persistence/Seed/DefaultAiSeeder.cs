@@ -433,41 +433,49 @@ Rules:
     // ── Pattern-specific generation prompts ───────────────────────────────────
 
     private const string ActivityGeneratePhraseMatchContent = """
-You are an expert English language teacher creating a phrase-matching vocabulary exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English language teacher creating a vocabulary lesson plus phrase-matching practice for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 
-Create 6-8 workplace phrase-meaning pairs for a matching exercise. Return ONLY valid JSON:
+Create 6-8 workplace words or phrases. Teach the meaning first, then let the student match each item to its meaning. Return ONLY valid JSON:
 
 {
   "title": "<short title for this activity>",
-  "instructions": "Match each workplace phrase to its correct meaning.",
+  "learningGoal": "<one sentence explaining the vocabulary skill practised>",
+  "instructions": "Study the words and meanings, then match each item to its correct meaning.",
   "pairs": [
-    { "phrase": "<workplace phrase>", "meaning": "<plain-English meaning>", "context": "<brief workplace usage example>" }
+    {
+      "phrase": "<workplace word or phrase>",
+      "meaning": "<plain-English meaning at the student's level>",
+      "context": "<one realistic workplace sentence using the phrase>"
+    }
   ],
-  "teachingNote": "<one sentence about the common thread in these phrases>"
+  "teachingNote": "<one sentence teaching how these words are used at work>"
 }
 
 Rules:
-- Phrases must be realistic {{careerContext}} workplace expressions.
+- Items must be useful workplace English for {{careerContext}}.
 - Meanings must be clear and unambiguous.
-- Include a mix of single words and multi-word expressions.
+- Include a mix of single words and short phrases.
+- Do not create an email, chat, or writing task.
+- This activity must follow: teach vocabulary, practise matching, then AI feedback after submit.
 - Do not include any text outside the JSON object.
 """;
 
     private const string ActivityGenerateGapFillContent = """
-You are an expert English language teacher creating a gap-fill exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English language teacher creating a short language lesson plus gap-fill practice for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 
-Create 5-6 workplace sentences each with one blank to fill. Return ONLY valid JSON:
+Teach one small vocabulary or grammar point. Then create 5-6 workplace sentences each with one blank to fill. Return ONLY valid JSON:
 
 {
   "title": "<short title for this activity>",
+  "learningGoal": "<one sentence explaining the language point>",
   "instructions": "Fill in each blank with the correct workplace word or phrase.",
   "items": [
     {
@@ -484,6 +492,8 @@ Rules:
 - Sentences must be realistic {{careerContext}} workplace contexts.
 - Each blank tests a specific workplace phrase or vocabulary item.
 - Distractors should be plausible but clearly wrong.
+- Do not create a long writing task.
+- This activity must follow: teach the language point, practise gap filling, then AI feedback after submit.
 - Do not include any text outside the JSON object.
 """;
 
@@ -1013,6 +1023,15 @@ Generate exactly {{sessionCount}} progressive lesson session plans. Return ONLY 
 Rules:
 - Return exactly {{sessionCount}} session plans in the array.
 - Each session must have 3-5 exercises.
+- Every exercise must use one of these valid exercisePatternKey values only:
+  phrase_match, gap_fill_workplace_phrase, listen_and_answer, listen_and_gap_fill, email_reply, teams_chat_simulation, spoken_response_from_prompt, lesson_reflection.
+- Use patterns as practice formats. Do not use "writing" as a generic fallback for every skill.
+- For vocabulary-focused lessons, use phrase_match or gap_fill_workplace_phrase.
+- For listening-focused lessons, use listen_and_answer or listen_and_gap_fill.
+- For speaking-focused lessons, use spoken_response_from_prompt.
+- For writing-focused lessons, use email_reply or teams_chat_simulation.
+- Include at least one explicit teaching/practice step before the final review.
+- Prefer ending each session with lesson_reflection.
 - Do not repeat scenarios listed in avoidRepeating.
 - Match difficulty to the learner's studentLevel and domainComplexity.
 - Address the recurringIssues and nextFocusRecommendation from the summary.

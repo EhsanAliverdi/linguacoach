@@ -3,8 +3,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LinguaCoach.Domain;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -80,6 +83,60 @@ public sealed class PatternKeyedActivityEndpointTests : IClassFixture<PatternEva
 
         Assert.NotNull(activity);
         Assert.Equal(ExercisePatternKey.EmailReply, activity.ExercisePatternKey);
+    }
+
+    [Fact]
+    public async Task GetNext_WithPatternPhraseMatch_UsesReadyPracticeCache()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"pm_cache_{Guid.NewGuid():N}@test.com");
+        Guid profileId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var profile = await db.StudentProfiles.SingleAsync(p => p.UserId == userId);
+            profileId = profile.Id;
+            var activity = new LearningActivity(
+                ActivityType.VocabularyPractice,
+                ActivitySource.AiGenerated,
+                "Cached phrase cards",
+                "B1",
+                """
+                {
+                  "title": "Cached phrase cards",
+                  "learningGoal": "Learn useful workplace phrases.",
+                  "instructions": "Study the phrases, then match them.",
+                  "pairs": [
+                    { "phrase": "follow up", "meaning": "ask again later", "context": "I will follow up tomorrow." }
+                  ],
+                  "teachingNote": "Use follow up when you ask again after waiting."
+                }
+                """,
+                exercisePatternKey: ExercisePatternKey.PhraseMatch);
+            db.LearningActivities.Add(activity);
+            await db.SaveChangesAsync();
+
+            var cache = new PracticeActivityCache(
+                profile.Id,
+                ExercisePatternKey.PhraseMatch,
+                "B1",
+                "intermediate_workplace",
+                Guid.NewGuid().ToString("N"),
+                learningActivityId: activity.Id,
+                status: PracticeCacheStatus.Ready);
+            db.PracticeActivityCache.Add(cache);
+            await db.SaveChangesAsync();
+        }
+
+        var body = await GetNextWithPattern(ClientWithToken(token), ExercisePatternKey.PhraseMatch);
+
+        Assert.Equal("Cached phrase cards", body.GetProperty("title").GetString());
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var assigned = await verifyDb.PracticeActivityCache.SingleAsync(c =>
+            c.StudentProfileId == profileId && c.PatternKey == ExercisePatternKey.PhraseMatch);
+        Assert.Equal(PracticeCacheStatus.Assigned, assigned.Status);
     }
 
     // ── invalid pattern key → 400 ─────────────────────────────────────────────

@@ -91,11 +91,6 @@ export class LessonComponent implements OnInit {
           e => e.status !== 'completed' && e.status !== 'skipped'
         );
         this.activeExerciseIndex.set(firstIncomplete >= 0 ? firstIncomplete : 0);
-        // Trigger prepare for the active exercise immediately on load
-        const active = s.exercises[firstIncomplete >= 0 ? firstIncomplete : 0];
-        if (active && active.status !== 'completed' && active.status !== 'skipped') {
-          this.prepareIfNeeded(active);
-        }
       },
       error: err => {
         this.pageState.set('error');
@@ -139,10 +134,6 @@ export class LessonComponent implements OnInit {
     this.activeExerciseIndex.set(index);
     const s = this.session();
     if (!s) return;
-    const exercise = s.exercises[index];
-    if (exercise && exercise.status !== 'completed' && exercise.status !== 'skipped') {
-      this.prepareIfNeeded(exercise);
-    }
   }
 
   /** URL for the activity page for this exercise. */
@@ -189,7 +180,6 @@ export class LessonComponent implements OnInit {
             );
             if (next >= 0) {
               this.activeExerciseIndex.set(next);
-              this.prepareIfNeeded(exercises[next]);
             }
           }
         },

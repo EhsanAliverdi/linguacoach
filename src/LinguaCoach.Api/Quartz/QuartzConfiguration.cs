@@ -57,6 +57,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{PracticeGymBufferRefillJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(30).RepeatForever()));
 
+            // Practice Gym generation - fills queued cache rows every 10 minutes.
+            var practiceGenerationKey = new JobKey(PracticeGymGenerationJob.JobName);
+            q.AddJob<PracticeGymGenerationJob>(opts => opts.WithIdentity(practiceGenerationKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(practiceGenerationKey)
+                .WithIdentity($"{PracticeGymGenerationJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(10).RepeatForever()));
+
             // Audio cleanup — daily.
             var cleanupKey = new JobKey(AudioCleanupJob.JobName);
             q.AddJob<AudioCleanupJob>(opts => opts.WithIdentity(cleanupKey).StoreDurably());

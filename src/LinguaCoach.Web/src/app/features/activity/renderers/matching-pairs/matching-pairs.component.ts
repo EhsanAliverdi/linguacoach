@@ -7,6 +7,7 @@ export interface MatchingPair {
   meaningId: string;
   phrase: string;
   meaning: string;
+  context?: string | null;
 }
 
 export interface MatchingPairsContent {

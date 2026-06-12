@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 12:53
+lastUpdated: 2026-06-12 13:57
 owner: product
 supersedes:
 supersededBy:
@@ -13,6 +13,28 @@ Last updated: 2026-06-12
 ---
 
 ## Most recently completed sprint
+
+**Lesson and Practice classroom alignment** - complete (2026-06-12)
+
+Today's Lesson now consumes ready buffered `LearningSession` rows before falling
+back to lazy session generation. The lesson page no longer auto-prepares later
+steps just because the student opened the page, selected a step, or completed the
+previous step. Existing prepared steps still open directly.
+
+Practice Gym now uses the same classroom framing as Today's Lesson: teach first,
+practice with a supported exercise pattern, then show feedback after submit. The
+Practice Gym page separates skill practice (Listening, Reading, Speaking,
+Writing), vocabulary class, exercise type practice, and future live role play.
+Only implemented patterns are active; Reading, vocabulary queue, live AI role
+play, and future exercise types remain disabled.
+
+Background Practice Gym caching now has both parts: `PracticeGymBufferRefillJob`
+queues pending cache rows for eligible active students, and
+`PracticeGymGenerationJob` materializes those rows into ready `LearningActivity`
+records. `GET /api/activity/next?pattern=...` consumes ready cache entries before
+generating on demand. Phrase-match and gap-fill generation prompts now require a
+lesson component before practice, and lesson batch planning is constrained to the
+active pattern library instead of defaulting every skill to writing.
 
 **Lesson batch materialization fix** - complete (2026-06-12)
 

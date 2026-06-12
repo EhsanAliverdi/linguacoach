@@ -1,114 +1,141 @@
-<div style="max-width:820px;margin:0 auto">
+<div class="sp-practice-page">
 
-  <!-- Page identity -->
-  <div style="margin-bottom:32px">
-    <p class="sp-eyebrow" style="margin-bottom:6px">On-demand practice</p>
-    <h1 data-testid="practice-gym-heading" style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0 0 10px">Practice Gym</h1>
-    <p style="font-size:14px;color:var(--sp-muted);line-height:1.65;max-width:560px;margin:0">
-      Choose a skill or exercise type to practise freely — separate from your structured daily lesson.
+  <header class="sp-practice-header">
+    <p class="sp-eyebrow sp-practice-eyebrow">On-demand practice</p>
+    <h1 data-testid="practice-gym-heading" class="sp-practice-title">Practice Gym</h1>
+    <p class="sp-practice-subtitle">
+      Choose a classroom-style lesson. Each one teaches first, then gives practice and feedback.
     </p>
-  </div>
+  </header>
 
-  <!-- Skills section -->
-  <div style="margin-bottom:28px">
-    <p class="sp-eyebrow" style="margin-bottom:12px">By skill</p>
+  <section class="sp-practice-section">
+    <p class="sp-eyebrow sp-practice-section-label">By skill</p>
     <div class="sp-skill-grid" data-testid="practice-skills-grid">
 
-      <!-- Vocabulary — links to /vocabulary -->
-      <a routerLink="/vocabulary" data-testid="practice-card-vocabulary"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">📖</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Vocabulary</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Saved workplace phrases</div>
-      </a>
-
-      <!-- Listening — /activity?type=ListeningComprehension -->
       <a routerLink="/activity" [queryParams]="{type:'ListeningComprehension'}" data-testid="practice-card-listening"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">🎧</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Listening</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Meeting and update audio</div>
+         class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">L</div>
+        <div class="sp-practice-card-title">Listening</div>
+        <div class="sp-practice-card-copy">Lesson, audio practice, feedback</div>
       </a>
 
-      <!-- Writing — /activity?type=WritingScenario -->
-      <a routerLink="/activity" [queryParams]="{type:'WritingScenario'}" data-testid="practice-card-writing"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">✍️</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Writing</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace messages</div>
-      </a>
+      <div data-testid="practice-card-reading" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">R</div>
+        <div class="sp-practice-card-title">Reading</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
 
-      <!-- Speaking — /activity?type=SpeakingRolePlay -->
       <a routerLink="/activity" [queryParams]="{type:'SpeakingRolePlay'}" data-testid="speaking-card"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">🗣️</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Speaking</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace role-play</div>
+         class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">S</div>
+        <div class="sp-practice-card-title">Speaking</div>
+        <div class="sp-practice-card-copy">Prompt, recording, feedback</div>
+      </a>
+
+      <a routerLink="/activity" [queryParams]="{type:'WritingScenario'}" data-testid="practice-card-writing"
+         class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">W</div>
+        <div class="sp-practice-card-title">Writing</div>
+        <div class="sp-practice-card-copy">Model, draft, feedback</div>
       </a>
 
     </div>
-  </div>
+  </section>
 
-  <!-- Exercise types section -->
-  <div>
-    <p class="sp-eyebrow" style="margin-bottom:12px">By exercise type</p>
-    <div class="sp-skill-grid" data-testid="practice-exercises-grid">
+  <section class="sp-practice-section">
+    <p class="sp-eyebrow sp-practice-section-label">Vocabulary class</p>
+    <div class="sp-skill-grid" data-testid="practice-vocabulary-grid">
 
-      <!-- Workplace Chat — pattern: teams_chat_simulation -->
-      <a routerLink="/activity" [queryParams]="{pattern:'teams_chat_simulation',returnTo:'/practice'}"
-         data-testid="practice-card-workplace-chat"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">💬</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Workplace Chat</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Teams-style messages</div>
+      <a routerLink="/activity" [queryParams]="{pattern:'phrase_match',returnTo:'/practice'}" data-testid="practice-card-vocabulary"
+         class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">V</div>
+        <div class="sp-practice-card-title">Word cards</div>
+        <div class="sp-practice-card-copy">Meaning, example, then match</div>
       </a>
 
-      <!-- Email — pattern: email_reply -->
-      <a routerLink="/activity" [queryParams]="{pattern:'email_reply',returnTo:'/practice'}"
-         data-testid="practice-card-email"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">📧</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Email</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace email replies</div>
-      </a>
-
-      <!-- Gap Fill — pattern: gap_fill_workplace_phrase -->
-      <a routerLink="/activity" [queryParams]="{pattern:'gap_fill_workplace_phrase',returnTo:'/practice'}"
-         data-testid="practice-card-gap-fill"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">📝</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Gap Fill</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Workplace phrase practice</div>
-      </a>
-
-      <!-- Phrase Match — pattern: phrase_match -->
-      <a routerLink="/activity" [queryParams]="{pattern:'phrase_match',returnTo:'/practice'}"
-         data-testid="practice-card-phrase-match"
-         class="sp-card sp-card-hover"
-         style="display:flex;flex-direction:column;gap:8px;padding:16px;text-decoration:none">
-        <div style="font-size:20px">🔗</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Phrase Match</div>
-        <div style="font-size:11px;font-weight:600;color:var(--sp-muted)">Match phrases to meaning</div>
-      </a>
-
-      <!-- Pronunciation — Coming soon -->
-      <div data-testid="pronunciation-card"
-           class="sp-card"
-           aria-disabled="true"
-           style="display:flex;flex-direction:column;gap:8px;padding:16px;opacity:.62">
-        <div style="font-size:20px">🔊</div>
-        <div style="font-size:13px;font-weight:800;color:var(--sp-ink)">Pronunciation</div>
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted)">Coming soon</div>
+      <div data-testid="practice-card-vocabulary-queue" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">Q</div>
+        <div class="sp-practice-card-title">Vocabulary queue</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
       </div>
 
     </div>
-  </div>
+  </section>
+
+  <section class="sp-practice-section">
+    <p class="sp-eyebrow sp-practice-section-label">By exercise type</p>
+    <div class="sp-skill-grid" data-testid="practice-exercises-grid">
+
+      <a routerLink="/activity" [queryParams]="{pattern:'gap_fill_workplace_phrase',returnTo:'/practice'}"
+         data-testid="practice-card-gap-fill" class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">F</div>
+        <div class="sp-practice-card-title">Fill in the blanks</div>
+        <div class="sp-practice-card-copy">Missing words in sentences</div>
+      </a>
+
+      <a routerLink="/activity" [queryParams]="{pattern:'phrase_match',returnTo:'/practice'}"
+         data-testid="practice-card-phrase-match" class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">M</div>
+        <div class="sp-practice-card-title">Matching</div>
+        <div class="sp-practice-card-copy">Words, meanings, phrases</div>
+      </a>
+
+      <a routerLink="/activity" [queryParams]="{pattern:'email_reply',returnTo:'/practice'}"
+         data-testid="practice-card-email" class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">E</div>
+        <div class="sp-practice-card-title">Email</div>
+        <div class="sp-practice-card-copy">Workplace email replies</div>
+      </a>
+
+      <a routerLink="/activity" [queryParams]="{pattern:'teams_chat_simulation',returnTo:'/practice'}"
+         data-testid="practice-card-workplace-chat" class="sp-card sp-card-hover sp-practice-card">
+        <div class="sp-practice-card-mark">C</div>
+        <div class="sp-practice-card-title">Workplace chat</div>
+        <div class="sp-practice-card-copy">Teams-style messages</div>
+      </a>
+
+      <div data-testid="practice-card-multiple-choice" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">A</div>
+        <div class="sp-practice-card-title">Multiple choice</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
+
+      <div data-testid="practice-card-sentence-transformation" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">T</div>
+        <div class="sp-practice-card-title">Sentence transformation</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
+
+      <div data-testid="practice-card-error-correction" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">X</div>
+        <div class="sp-practice-card-title">Error correction</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
+
+      <div data-testid="practice-card-word-formation" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">N</div>
+        <div class="sp-practice-card-title">Word formation</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
+
+      <div data-testid="practice-card-unscrambling" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">U</div>
+        <div class="sp-practice-card-title">Unscrambling</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <p class="sp-eyebrow sp-practice-section-label">Live practice</p>
+    <div class="sp-skill-grid" data-testid="practice-live-grid">
+      <div data-testid="practice-card-ai-role-play" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+        <div class="sp-practice-card-mark">AI</div>
+        <div class="sp-practice-card-title">AI role play</div>
+        <div class="sp-practice-card-muted">Coming soon</div>
+      </div>
+    </div>
+  </section>
 
 </div>
