@@ -77,6 +77,31 @@ product owner.
 
 ---
 
+## Most recently completed sprint
+
+**Today's Lesson button / lazy LearningPath generation fix (CRITICAL)** — complete
+(2026-06-12)
+
+See full review: `docs/reviews/2026-06-12-todays-lesson-button-fix-engineering-review.md`
+
+Root cause: `SessionGeneratorService` threw when a `CourseReady` student had no active
+`LearningPath` (the legacy `/activity` flow was the only place a path got lazily
+created). `SessionsController.Today` returned 400, and the dashboard silently
+swallowed the error, leaving "Start today's lesson" with a null link — button did
+nothing, no session/lesson ever generated for these students.
+
+Fixed: `SessionGeneratorService` now lazily generates a `LearningPath` via
+`ILearningPathGenerator` (same handler `ActivityGetHandler` already uses) when none
+exists, mirroring the existing fallback there. Dashboard now surfaces session-load
+errors instead of swallowing them.
+
+Quartz/background-job config investigated as a possible cause — found correct,
+no change needed.
+
+Tests: 482 unit + 430 integration passing. `npm run build` passed.
+
+---
+
 ## Current priority
 
 **Adaptive Learning Foundation** Phase 2 (numeric `StudentSkillProfile` scores) is done

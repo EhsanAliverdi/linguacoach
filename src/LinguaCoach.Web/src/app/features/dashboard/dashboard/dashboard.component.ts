@@ -92,7 +92,10 @@ export class DashboardComponent implements OnInit {
         this.todaysSession.set(session);
         this.sessionLoading.set(false);
       },
-      error: () => this.sessionLoading.set(false),
+      error: err => {
+        this.sessionLoading.set(false);
+        this.error.set(err.error?.error ?? 'Could not load today\'s lesson.');
+      },
     });
   }
 

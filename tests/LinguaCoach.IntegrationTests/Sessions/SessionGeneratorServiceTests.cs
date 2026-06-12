@@ -1,3 +1,4 @@
+using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -28,7 +29,30 @@ public sealed class SessionGeneratorServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _service = new SessionGeneratorService(_db, NullLogger<SessionGeneratorService>.Instance);
+        _service = new SessionGeneratorService(_db, new FakeLearningPathGenerator(_db), NullLogger<SessionGeneratorService>.Instance);
+    }
+
+    /// <summary>
+    /// Stands in for AiLearningPathGeneratorHandler: creates a minimal active LearningPath
+    /// with one module for the given user's StudentProfile, so SessionGeneratorService's
+    /// lazy-generation fallback can be exercised without AI.
+    /// </summary>
+    private sealed class FakeLearningPathGenerator(LinguaCoachDbContext db) : ILearningPathGenerator
+    {
+        public async Task<LearningPathDto> GenerateAsync(GenerateLearningPathCommand command, CancellationToken ct = default)
+        {
+            var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == command.UserId, ct);
+
+            var path = new LearningPath(profile.Id, "Workplace English", "Lazily generated for tests");
+            db.LearningPaths.Add(path);
+            await db.SaveChangesAsync(ct);
+
+            var module = new LearningModule(path.Id, "Professional Communication", "Core workplace skills", order: 0);
+            db.LearningModules.Add(module);
+            await db.SaveChangesAsync(ct);
+
+            return new LearningPathDto(path.Id, path.Title, path.IsActive, null, 0, 1, []);
+        }
     }
 
     public void Dispose()
@@ -116,14 +140,18 @@ public sealed class SessionGeneratorServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetOrCreate_NoLearningPath_Throws()
+    public async Task GetOrCreate_NoLearningPath_GeneratesPathLazilyAndCreatesSession()
     {
         var student = new StudentProfile(Guid.NewGuid());
+        student.SetLifecycleStage(StudentLifecycleStage.CourseReady);
         _db.StudentProfiles.Add(student);
         await _db.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.GetOrCreateTodaysSessionAsync(new GetOrCreateTodaysSessionCommand(student.Id)));
+        var result = await _service.GetOrCreateTodaysSessionAsync(new GetOrCreateTodaysSessionCommand(student.Id));
+
+        Assert.NotEqual(Guid.Empty, result.SessionId);
+        Assert.NotEmpty(result.Exercises);
+        Assert.True(await _db.LearningPaths.AnyAsync(p => p.StudentProfileId == student.Id && p.IsActive));
     }
 
     [Fact]

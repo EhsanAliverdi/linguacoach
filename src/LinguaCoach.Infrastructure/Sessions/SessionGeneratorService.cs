@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -24,11 +25,16 @@ namespace LinguaCoach.Infrastructure.Sessions;
 public sealed class SessionGeneratorService : ISessionGeneratorService
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly ILearningPathGenerator _pathGenerator;
     private readonly ILogger<SessionGeneratorService> _logger;
 
-    public SessionGeneratorService(LinguaCoachDbContext db, ILogger<SessionGeneratorService> logger)
+    public SessionGeneratorService(
+        LinguaCoachDbContext db,
+        ILearningPathGenerator pathGenerator,
+        ILogger<SessionGeneratorService> logger)
     {
         _db = db;
+        _pathGenerator = pathGenerator;
         _logger = logger;
     }
 
@@ -56,7 +62,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         }
 
         // ── 2. Resolve current module ─────────────────────────────────────────
-        var currentModule = await ResolveCurrentModuleAsync(studentProfileId, ct);
+        var currentModule = await ResolveCurrentModuleAsync(profile.UserId, studentProfileId, ct);
 
         // ── 3. Load student weak skills ───────────────────────────────────────
         var weakSkills = await _db.StudentSkillProfiles
@@ -145,13 +151,27 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
             .FirstOrDefaultAsync(ct);
     }
 
-    private async Task<LearningModule?> ResolveCurrentModuleAsync(Guid studentProfileId, CancellationToken ct)
+    private async Task<LearningModule?> ResolveCurrentModuleAsync(Guid userId, Guid studentProfileId, CancellationToken ct)
     {
         const int SessionsPerModule = 5;
 
         var path = await _db.LearningPaths
             .Include(p => p.Modules)
             .FirstOrDefaultAsync(p => p.StudentProfileId == studentProfileId && p.IsActive, ct);
+
+        if (path is null)
+        {
+            // Lazy generation: student has no path yet (e.g. CourseReady via placement,
+            // never visited the legacy activity flow that previously triggered this).
+            _logger.LogInformation(
+                "No active LearningPath for profile {ProfileId}. Generating default path lazily.",
+                studentProfileId);
+            await _pathGenerator.GenerateAsync(new GenerateLearningPathCommand(userId), ct);
+
+            path = await _db.LearningPaths
+                .Include(p => p.Modules)
+                .FirstOrDefaultAsync(p => p.StudentProfileId == studentProfileId && p.IsActive, ct);
+        }
 
         if (path is null || path.Modules.Count == 0)
             return null;
