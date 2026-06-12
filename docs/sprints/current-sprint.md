@@ -14,6 +14,15 @@ Last updated: 2026-06-12
 
 ## Most recently completed sprint
 
+**Quartz JobDataMap string-only fix (background lesson generation)** — complete (2026-06-12)
+
+`LessonBatchGenerationJob.TriggerAsync` stored non-string values in `JobDataMap`,
+which throws `JobPersistenceException` under Quartz's `UseProperties = true`
+Postgres job store. This broke both the admin "Generate lessons now" button AND
+the background buffer-refill pipeline — explaining why all lessons were
+generated on-the-fly ("Preparing your lesson...") instead of pre-generated. See
+`docs/reviews/2026-06-12-quartz-jobdatamap-string-fix-engineering-review.md`.
+
 **Admin "Generate lessons now" button fix** — complete (2026-06-12)
 
 Button gave no feedback on click (success or error). Frontend now shows a

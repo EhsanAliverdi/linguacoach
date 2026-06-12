@@ -54,8 +54,8 @@ public sealed class LessonBatchGenerationJob : IJob
         var job = JobBuilder.Create<LessonBatchGenerationJob>()
             .WithIdentity($"{JobName}-{studentProfileId:N}-{Guid.NewGuid():N}")
             .UsingJobData(StudentProfileIdKey, studentProfileId.ToString())
-            .UsingJobData(TriggerReasonKey, (int)reason)
-            .UsingJobData(RequestedCountKey, requestedCount)
+            .UsingJobData(TriggerReasonKey, ((int)reason).ToString())
+            .UsingJobData(RequestedCountKey, requestedCount.ToString())
             .Build();
 
         var trigger = TriggerBuilder.Create().StartNow().Build();
@@ -67,8 +67,8 @@ public sealed class LessonBatchGenerationJob : IJob
         var ct = context.CancellationToken;
         var data = context.MergedJobDataMap;
         var studentProfileId = Guid.Parse(data.GetString(StudentProfileIdKey)!);
-        var reason = (GenerationTriggerReason)data.GetInt(TriggerReasonKey);
-        var requestedCount = data.ContainsKey(RequestedCountKey) ? data.GetInt(RequestedCountKey) : 4;
+        var reason = (GenerationTriggerReason)int.Parse(data.GetString(TriggerReasonKey)!);
+        var requestedCount = data.ContainsKey(RequestedCountKey) ? int.Parse(data.GetString(RequestedCountKey)!) : 4;
         var correlationId = context.FireInstanceId;
 
         var settings = await _db.LessonGenerationSettings.AsNoTracking().FirstOrDefaultAsync(ct);
