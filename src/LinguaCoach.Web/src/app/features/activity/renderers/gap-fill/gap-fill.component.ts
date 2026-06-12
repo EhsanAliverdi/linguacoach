@@ -12,6 +12,7 @@ export interface GapFillItem {
 
 export interface GapFillContent {
   learningGoal?: string | null;
+  teachingNote?: string | null;
   instructions?: string | null;
   items: GapFillItem[];
   wordBank?: string[];

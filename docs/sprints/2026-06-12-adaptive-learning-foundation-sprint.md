@@ -170,7 +170,10 @@ activity type, not only writing.
 - [x] Update `current-sprint.md` to record this as a completed planning pass
 - [x] Implement cross-cutting vocabulary extraction (see implementation note above)
 - [x] Phase 2: Numeric `StudentSkillProfile` scores (sequencing item 2) — see note below
-- [ ] Phase 3: Lesson/Practice structure redesign (see note below)
+- [x] Phase 3 planning pass (see "Phase 3 planning pass" section below)
+- [x] Phase 3 P1: StudentSkillProfile-grounded feedback (implementation) — see note below
+- [x] Phase 3 P2 scoping pass — see note below
+- [x] Phase 3 P2 task 1: surface `teachingNote` as `[goal]` for GapFill/MatchingPairs
 
 ---
 
@@ -238,6 +241,84 @@ Scope (to be planned, not yet implemented):
 This phase should be planned (architecture/UX review) before implementation — likely
 depends on Phase 2 (numeric skill scores) for the "based on Student characteristic"
 feedback requirement. Sequencing: Phase 2 before Phase 3.
+
+### Phase 3 planning pass (2026-06-12)
+
+See `docs/reviews/2026-06-12-lesson-practice-structure-phase3-plan.md` for full review.
+
+Summary: most of Phase 3 already exists — Practice rendering, the redo/next loop
+(`tryAgain`/`improveAnswer`/`nextActivity` + `attemptCount`), and per-attempt AI
+feedback are functional for both Lesson and Practice. The genuine gap is grounding
+feedback in `StudentSkillProfile.ScorePercent` (now available from Phase 2). Phase 3 is
+split into:
+
+- **P1 (next)** — feed relevant `StudentSkillProfile.ScorePercent` into the evaluation
+  prompt context so `coachSummary` can reference student progress; optional small UI
+  indicator in `pattern-evaluation-result.component.html`.
+- **P2 (deferred, own phase)** — structured "What we learn" (grammar/vocab/phrases)
+  breakdown, replacing the single `learningGoal` line. Cross-cutting prompt-engineering
+  effort across activity types — needs its own scoping pass.
+- **P3** — no code change; existing redo/next UX likely already satisfies the brief,
+  pending product confirmation.
+
+### Phase 3 P1 (2026-06-12) — StudentSkillProfile-grounded feedback
+
+Implemented:
+
+- `PatternEvaluationRequest` (`src/LinguaCoach.Application/Activity/PatternEvaluationContracts.cs`)
+  gained `StudentSkillContext` (optional string).
+- `PatternSkillUpdateService.GetPrimarySkillKey(string?)` — new public static helper
+  exposing the existing pattern-key -> skill-key map for use outside skill-update.
+- `ActivitySubmitHandler.BuildStudentSkillContextAsync` — for AI-marked patterns
+  (AiStructured/AiOpenEnded) only, looks up the student's `StudentSkillProfile` for the
+  pattern's primary skill and formats a one-line standing summary
+  (`"<label> (<score>/100): <encouraging/developing/strong guidance>."`). Deterministic
+  patterns (gap fill, phrase match) get `null` — no behaviour change for them.
+- `AiStructuredEvaluator` and `AiOpenEndedEvaluator` pass `studentSkillContext` into
+  prompt variables (falls back to "No specific skill history available yet." when null).
+- Prompts updated (hash-based auto-upgrade, no version bump needed):
+  `activity_evaluate_email_reply`, `activity_evaluate_teams_chat_simulation`,
+  `activity_evaluate_spoken_response_from_prompt`, `activity_evaluate_listen_and_answer`
+  — each now includes `{{studentSkillContext}}` and an instruction to use it for a
+  specific, non-generic `coachSummary`.
+
+Tests: `dotnet test` — 482/482 unit, 430/430 integration, no test changes needed (no
+existing test asserted on these prompts' exact text).
+
+P2 (structured "What we learn") remains deferred to its own phase/sprint.
+
+### Phase 3 P2 scoping pass (2026-06-12)
+
+See `docs/reviews/2026-06-12-lesson-practice-structure-phase3-p2-scoping.md` for full
+review (scoping only, no code changes).
+
+Summary: a full "What we learn" grammar/vocab/phrases card requires new AI-prompt
+fields per pattern — genuinely cross-cutting, deferred indefinitely, picked up
+pattern-by-pattern. However, scoping found one concrete near-term win: gap_fill and
+phrase_match generation prompts already produce a `teachingNote` field
+("language pattern practised") that is generated but never surfaced — confirmed
+unused anywhere outside `DefaultAiSeeder.cs`. Surfacing it as the existing `[goal]`
+input on `ExerciseLessonIntroComponent` is a small, frontend-only change
+(`GapFillContent`/`MatchingPairsContent`: `content.learningGoal ?? content.teachingNote`)
+with zero new AI prompt work.
+
+Recorded as task 1 above. Remaining P2 scope (richer "What we learn" card,
+`targetGrammarPoint`, vocab/phrases for pattern-driven generators) stays deferred,
+no own phase scheduled yet.
+
+### Phase 3 P2 task 1 (2026-06-12) — teachingNote surfaced as goal
+
+Implemented (frontend-only, Option (a) from scoping doc):
+
+- `GapFillContent` / `MatchingPairsContent`
+  (`src/LinguaCoach.Web/src/app/features/activity/renderers/{gap-fill,matching-pairs}/*.component.ts`)
+  gained `teachingNote?: string | null`.
+- Both renderers' `<app-exercise-lesson-intro [goal]="...">` binding now reads
+  `content.learningGoal ?? content.teachingNote`.
+- No backend changes — AI already generates `teachingNote` for phrase_match and
+  gap_fill_workplace_phrase content; this surfaces it for the first time.
+
+`npm run build` passed (pre-existing CSS warnings only).
 
 ## Risks / unresolved questions
 

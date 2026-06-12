@@ -43,6 +43,16 @@ public sealed class PatternSkillUpdateService
             ["lesson_reflection"]           = "message_structure",
         };
 
+    /// <summary>
+    /// Returns the primary skill key associated with an exercise pattern, for use when
+    /// building AI evaluation context (e.g. surfacing the student's current
+    /// StudentSkillProfile.ScorePercent for that skill).
+    /// </summary>
+    public static string? GetPrimarySkillKey(string? exercisePatternKey) =>
+        exercisePatternKey is not null && PatternKeyToSkillKey.TryGetValue(exercisePatternKey, out var key)
+            ? key
+            : null;
+
     private readonly LinguaCoachDbContext _db;
     private readonly ILogger<PatternSkillUpdateService> _logger;
 

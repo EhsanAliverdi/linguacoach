@@ -746,6 +746,9 @@ Student level: {{cefrLevel}}
 Activity content (questions and expected answers): {{activityContent}}
 Student answers: {{studentSubmission}}
 
+Student's current progress on the skill this exercise targets: {{studentSkillContext}}
+Use this to make coachSummary specific and encouraging — do not repeat it verbatim.
+
 Evaluate each answer and return ONLY valid JSON:
 
 {
@@ -827,6 +830,9 @@ Activity content:
 Student's reply (JSON with "subject" and "body" fields):
 {{studentSubmission}}
 
+Student's current progress on the skill this exercise targets: {{studentSkillContext}}
+Use this to make coachSummary specific and encouraging — do not repeat it verbatim.
+
 Evaluate both the subject line and the body of the reply (subject clarity/relevance, body grammar, vocabulary, tone, structure, and whether it fully addresses the situation). Return ONLY valid JSON:
 
 {
@@ -865,6 +871,9 @@ Activity content (includes "learningGoal" — the communication goal this exerci
 
 Student's reply:
 {{studentSubmission}}
+
+Student's current progress on the skill this exercise targets: {{studentSkillContext}}
+Use this to make coachSummary specific and encouraging — do not repeat it verbatim.
 
 Evaluate the chat reply against the activity's "learningGoal" as well as tone, conciseness, and professional register:
 - Did the reply address the goal stated in "learningGoal" (e.g. asking for clarification, giving a status update, responding politely)?
@@ -908,6 +917,9 @@ Activity content (prompt and expected points):
 
 Student's transcribed response:
 {{studentSubmission}}
+
+Student's current progress on the skill this exercise targets: {{studentSkillContext}}
+Use this to make coachSummary specific and encouraging — do not repeat it verbatim.
 
 Evaluate clarity, content coverage, and professional register. Return ONLY valid JSON:
 

@@ -11,6 +11,7 @@ export interface MatchingPair {
 
 export interface MatchingPairsContent {
   learningGoal?: string | null;
+  teachingNote?: string | null;
   instructions?: string | null;
   pairs: MatchingPair[];
 }

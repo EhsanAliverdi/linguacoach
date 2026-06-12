@@ -246,6 +246,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         var submittedAnswerJson = command.SubmittedContent;
 
+        var studentSkillContext = await BuildStudentSkillContextAsync(
+            profile.Id, activity.ExercisePatternKey, pattern.MarkingMode, ct);
+
         var evalRequest = new PatternEvaluationRequest(
             ActivityId: activity.Id,
             StudentProfileId: profile.Id,
@@ -256,7 +259,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             ContentJson: activity.AiGeneratedContentJson,
             SubmittedAnswerJson: submittedAnswerJson,
             CefrLevel: profile.CefrLevel,
-            DomainComplexity: profile.CareerProfile?.Name);
+            DomainComplexity: profile.CareerProfile?.Name,
+            StudentSkillContext: studentSkillContext);
 
         var evalResult = await _patternRouter.EvaluateAsync(evalRequest, ct);
 
@@ -347,6 +351,38 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             NextPracticeSuggestion: null,
             FeedbackInSourceLanguage: null,
             PatternEvaluation: patternDto);
+    }
+
+    /// <summary>
+    /// Builds a short human-readable summary of the student's current standing on the
+    /// skill primarily targeted by this exercise pattern, for AI evaluation prompts to
+    /// reference (so coachSummary can be grounded in student progress, not generic).
+    /// Only meaningful for AI-marked patterns — returns null for deterministic ones.
+    /// </summary>
+    private async Task<string?> BuildStudentSkillContextAsync(
+        Guid studentProfileId, string? exercisePatternKey, MarkingMode markingMode, CancellationToken ct)
+    {
+        if (markingMode is not (MarkingMode.AiStructured or MarkingMode.AiOpenEnded))
+            return null;
+
+        var skillKey = PatternSkillUpdateService.GetPrimarySkillKey(exercisePatternKey);
+        if (skillKey is null) return null;
+
+        var profile = await _db.StudentSkillProfiles
+            .Where(x => x.StudentProfileId == studentProfileId && x.SkillKey == skillKey)
+            .Select(x => new { x.SkillLabel, x.ScorePercent })
+            .FirstOrDefaultAsync(ct);
+
+        if (profile is null) return null;
+
+        var standing = profile.ScorePercent switch
+        {
+            < 50 => "an area the student is still developing — give specific, encouraging guidance on this skill",
+            < 75 => "an area the student is making steady progress in",
+            _ => "an area the student is already strong in — acknowledge this and focus feedback elsewhere",
+        };
+
+        return $"{profile.SkillLabel} ({profile.ScorePercent}/100): {standing}.";
     }
 
     private static PatternEvaluationDto BuildPatternEvaluationDto(

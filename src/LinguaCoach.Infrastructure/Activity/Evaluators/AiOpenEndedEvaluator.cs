@@ -48,6 +48,7 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
             ["sourceLanguageName"] = "Persian",
             ["targetLanguageName"] = "English",
             ["exercisePatternKey"] = request.ExercisePatternKey ?? string.Empty,
+            ["studentSkillContext"] = request.StudentSkillContext ?? "No specific skill history available yet.",
         };
 
         _logger.LogInformation(

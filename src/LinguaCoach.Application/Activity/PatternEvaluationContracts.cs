@@ -13,7 +13,8 @@ public sealed record PatternEvaluationRequest(
     string SubmittedAnswerJson,
     string? CefrLevel = null,
     string? DomainComplexity = null,
-    string? SessionContextJson = null);
+    string? SessionContextJson = null,
+    string? StudentSkillContext = null);
 
 public sealed class PatternEvaluationResult
 {

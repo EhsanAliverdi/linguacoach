@@ -85,9 +85,20 @@ product owner.
 `IsWeak` is now derived (`ScorePercent < 50`). Migration `T42_StudentSkillScorePercent`
 backfills existing rows. 482 unit + 430 integration tests pass.
 
-Next: Phase 3 — Lesson/Practice structure redesign (What we learn / Practice / Feedback
-/ Redo -> next), per product owner direction folded into this sprint as its own phase.
-See the sprint doc's "Phase 3" section for scope.
+Phase 3 planning pass done (2026-06-12) — see
+`docs/reviews/2026-06-12-lesson-practice-structure-phase3-plan.md`. Most of Phase 3
+(Practice rendering, redo/next loop, per-attempt AI feedback) already exists.
+
+Phase 3 P1 done (2026-06-12): AI evaluation prompts (email_reply, teams_chat,
+spoken_response, listen_and_answer) now receive the student's current
+`StudentSkillProfile.ScorePercent` for the relevant skill, so `coachSummary` can be
+grounded in student progress instead of generic. 482 unit + 430 integration tests pass.
+
+Phase 3 P2 scoping pass done (2026-06-12) — see
+`docs/reviews/2026-06-12-lesson-practice-structure-phase3-p2-scoping.md`. Full
+"What we learn" grammar/vocab/phrases card remains deferred (cross-cutting AI prompt
+work). Task 1 (surface existing `teachingNote` as `[goal]` for GapFill/MatchingPairs)
+implemented same day, frontend-only. See sprint doc's "Phase 3 P2" sections.
 
 ---
 
