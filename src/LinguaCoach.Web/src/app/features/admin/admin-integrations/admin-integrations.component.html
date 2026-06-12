@@ -49,7 +49,7 @@
     }
 
     <div class="sp-admin-action-row" style="margin-top:16px">
-      <button class="sp-admin-btn-primary" (click)="testConnection()" [disabled]="testing()">
+      <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="testConnection()" [disabled]="testing()">
         {{ testing() ? 'Testing…' : 'Test connection' }}
       </button>
       @if (storageTest(); as t) {
@@ -124,7 +124,7 @@
         </label>
       </div>
       <div style="margin-top:16px">
-        <button class="sp-admin-btn-primary" (click)="saveSettings()">Save</button>
+        <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="saveSettings()">Save</button>
       </div>
     }
   </section>
@@ -157,7 +157,7 @@
 
       <div class="sp-admin-action-row">
         <input type="text" placeholder="Student profile ID" [(ngModel)]="generateStudentId" />
-        <button class="sp-admin-btn-primary" (click)="generateLessons()" [disabled]="!generateStudentId">
+        <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="generateLessons()" [disabled]="!generateStudentId">
           Generate lessons now
         </button>
       </div>
@@ -169,7 +169,7 @@
           <thead><tr><th>Student profile</th><th>Ready lessons</th></tr></thead>
           <tbody>
             @for (row of b.readyBufferPerStudent; track row.studentProfileId) {
-              <tr><td>{{ row.studentProfileId }}</td><td>{{ row.readyCount }}</td></tr>
+              <tr><td class="sp-admin-table-mono">{{ row.studentProfileId }}</td><td>{{ row.readyCount }}</td></tr>
             }
             @if (b.readyBufferPerStudent.length === 0) {
               <tr><td colspan="2" class="sp-admin-table-empty">No ready buffers yet.</td></tr>
