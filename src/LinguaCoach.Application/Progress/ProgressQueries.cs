@@ -57,7 +57,8 @@ public sealed record ProgressSkillSectionDto(
 public sealed record ProgressSkillDto(
     string SkillKey,
     string SkillLabel,
-    bool IsWeak);
+    bool IsWeak,
+    int ScorePercent);
 
 // ── Learning focus ────────────────────────────────────────────────────────────
 

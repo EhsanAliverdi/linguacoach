@@ -82,7 +82,8 @@ public sealed record LearningPathDto(
 public sealed record StudentSkillProfileDto(
     string SkillKey,
     string SkillLabel,
-    bool IsWeak);
+    bool IsWeak,
+    int ScorePercent);
 
 public sealed record StudentLearningMemoryDto(
     string? JourneySummary,

@@ -79,11 +79,15 @@ product owner.
 
 ## Current priority
 
-Resume the **Adaptive Learning Foundation** sequencing
-(`docs/sprints/2026-06-12-adaptive-learning-foundation-sprint.md`): item 2 — numeric
-`StudentSkillProfile` scores (small extension to existing memory model), which unlocks
-Track 10 Stage 3 (ongoing diagnostic percentages). Item 1 (vocabulary extraction,
-cross-cutting engine) is already done.
+**Adaptive Learning Foundation** Phase 2 (numeric `StudentSkillProfile` scores) is done
+(2026-06-12) — see `docs/sprints/2026-06-12-adaptive-learning-foundation-sprint.md`.
+`StudentSkillProfile.ScorePercent` (0-100) replaces the persisted `IsWeak` boolean;
+`IsWeak` is now derived (`ScorePercent < 50`). Migration `T42_StudentSkillScorePercent`
+backfills existing rows. 482 unit + 430 integration tests pass.
+
+Next: Phase 3 — Lesson/Practice structure redesign (What we learn / Practice / Feedback
+/ Redo -> next), per product owner direction folded into this sprint as its own phase.
+See the sprint doc's "Phase 3" section for scope.
 
 ---
 

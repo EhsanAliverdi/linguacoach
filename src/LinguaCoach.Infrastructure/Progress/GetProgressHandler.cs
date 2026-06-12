@@ -225,7 +225,7 @@ public sealed class GetProgressHandler : IGetProgressHandler
             .ToListAsync(ct);
 
         var skills = skillProfiles
-            .Select(s => new ProgressSkillDto(s.SkillKey, s.SkillLabel, s.IsWeak))
+            .Select(s => new ProgressSkillDto(s.SkillKey, s.SkillLabel, s.IsWeak, s.ScorePercent))
             .ToList();
 
         var strengths = skills.Where(s => !s.IsWeak).Select(s => s.SkillLabel).Take(TopSkillCount).ToList();

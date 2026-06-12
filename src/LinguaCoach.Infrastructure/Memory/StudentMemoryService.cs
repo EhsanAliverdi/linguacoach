@@ -139,8 +139,11 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
         var skills = await _db.StudentSkillProfiles
             .Where(x => x.StudentProfileId == studentProfileId)
             .OrderBy(x => x.SkillKey)
-            .Select(x => new { x.SkillKey, x.SkillLabel, x.IsWeak })
+            .Select(x => new { x.SkillKey, x.SkillLabel, x.ScorePercent })
             .ToListAsync(ct);
+        var skillsWithIsWeak = skills
+            .Select(x => new { x.SkillKey, x.SkillLabel, IsWeak = x.ScorePercent < StudentSkillProfile.WeakThreshold })
+            .ToList();
 
         var path = await _db.LearningPaths
             .Include(p => p.Modules)
@@ -165,7 +168,7 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
                 careerProfile = profile.CareerProfile?.Name ?? "General workplace"
             },
             memory = ToMemoryObject(summary),
-            skillProfile = skills,
+            skillProfile = skillsWithIsWeak,
             existingFingerprints,
             curriculumMap = WorkplaceWritingCurriculumMap.Levels,
             moduleCount = Math.Clamp(moduleCount, 3, 5)
@@ -190,7 +193,7 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
         var skills = await _db.StudentSkillProfiles
             .Where(x => x.StudentProfileId == studentProfileId)
             .OrderBy(x => x.SkillKey)
-            .Select(x => new StudentSkillProfileDto(x.SkillKey, x.SkillLabel, x.IsWeak))
+            .Select(x => new StudentSkillProfileDto(x.SkillKey, x.SkillLabel, x.IsWeak, x.ScorePercent))
             .ToListAsync(ct);
 
         return new StudentLearningMemoryDto(
@@ -207,8 +210,11 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
     {
         var skills = await _db.StudentSkillProfiles
             .Where(x => x.StudentProfileId == request.StudentProfile.Id)
-            .Select(x => new { x.SkillKey, x.SkillLabel, x.IsWeak })
+            .Select(x => new { x.SkillKey, x.SkillLabel, x.ScorePercent })
             .ToListAsync(ct);
+        var skillsWithIsWeak = skills
+            .Select(x => new { x.SkillKey, x.SkillLabel, IsWeak = x.ScorePercent < StudentSkillProfile.WeakThreshold, x.ScorePercent })
+            .ToList();
 
         var feedback = ExtractCompactFeedback(request.FeedbackJson);
         var payload = new
@@ -219,7 +225,7 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
                 careerProfile = request.StudentProfile.CareerProfile?.Name ?? "General workplace"
             },
             currentMemory = ToMemoryObject(summary),
-            skillProfile = skills,
+            skillProfile = skillsWithIsWeak,
             activityMetadata = new
             {
                 moduleTitle = request.Module?.Title,
@@ -261,14 +267,16 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
         {
             var isWeak = weakKeys.Select(StudentSkillProfile.NormaliseSkillKey).Contains(key, StringComparer.OrdinalIgnoreCase)
                 && !strongKeys.Select(StudentSkillProfile.NormaliseSkillKey).Contains(key, StringComparer.OrdinalIgnoreCase);
+            var scoreDelta = isWeak ? -10 : 10;
 
             if (existing.TryGetValue(key, out var profile))
             {
-                profile.MarkWeak(isWeak);
+                profile.ApplyScoreDelta(scoreDelta);
             }
             else
             {
-                _db.StudentSkillProfiles.Add(new StudentSkillProfile(studentProfileId, key, SkillLabels[key], isWeak));
+                _db.StudentSkillProfiles.Add(new StudentSkillProfile(
+                    studentProfileId, key, SkillLabels[key], StudentSkillProfile.DefaultScorePercent + scoreDelta));
             }
         }
     }

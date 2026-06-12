@@ -17,7 +17,9 @@ internal sealed class StudentSkillProfileConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.StudentProfileId).HasColumnName("student_profile_id").IsRequired();
         builder.Property(e => e.SkillKey).HasColumnName("skill_key").HasMaxLength(100).IsRequired();
         builder.Property(e => e.SkillLabel).HasColumnName("skill_label").HasMaxLength(200).IsRequired();
-        builder.Property(e => e.IsWeak).HasColumnName("is_weak").IsRequired();
+        builder.Property(e => e.ScorePercent).HasColumnName("score_percent").IsRequired()
+            .HasDefaultValue(StudentSkillProfile.DefaultScorePercent);
+        builder.Ignore(e => e.IsWeak);
         builder.Property(e => e.LastUpdatedUtc).HasColumnName("last_updated_utc").IsRequired();
 
         builder.HasIndex(e => new { e.StudentProfileId, e.SkillKey })

@@ -174,7 +174,7 @@ import { StudentVocabularyItem } from '../../core/models/vocabulary.models';
                     <span style="font-size:13px;font-weight:600;color:var(--sp-ink)">{{ skill.skillLabel }}</span>
                   </div>
                   <span style="font-size:11px;font-weight:600" [style.color]="skill.isWeak ? 'var(--sp-warn,#e65100)' : 'var(--sp-muted)'">
-                    {{ skill.isWeak ? 'Needs work' : 'Good' }}
+                    {{ skill.scorePercent }}%
                   </span>
                 </div>
               }

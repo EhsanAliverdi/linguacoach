@@ -48,8 +48,8 @@ const dataProgress: ProgressSummary = {
   ],
   skillProgress: {
     skills: [
-      { skillKey: 'grammar_accuracy', skillLabel: 'Grammar accuracy', isWeak: false },
-      { skillKey: 'formal_tone', skillLabel: 'Formal tone', isWeak: true },
+      { skillKey: 'grammar_accuracy', skillLabel: 'Grammar accuracy', isWeak: false, scorePercent: 65 },
+      { skillKey: 'formal_tone', skillLabel: 'Formal tone', isWeak: true, scorePercent: 35 },
     ],
     topStrengths: ['Grammar accuracy'],
     weakestSkills: ['Formal tone'],

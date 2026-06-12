@@ -60,7 +60,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
 
         // ── 3. Load student weak skills ───────────────────────────────────────
         var weakSkills = await _db.StudentSkillProfiles
-            .Where(sp => sp.StudentProfileId == studentProfileId && sp.IsWeak)
+            .Where(sp => sp.StudentProfileId == studentProfileId && sp.ScorePercent < StudentSkillProfile.WeakThreshold)
             .Select(sp => sp.SkillKey)
             .ToListAsync(ct);
 

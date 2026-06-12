@@ -75,11 +75,12 @@ public sealed class PatternSkillUpdateService
 
             foreach (var impact in impacts)
             {
-                var isWeak = impact.Delta < 0;
+                // Delta is -1..1; scale to a +/-10 point score nudge.
+                var scoreDelta = (int)Math.Round(impact.Delta * 10);
 
                 if (existing.TryGetValue(impact.NormalisedKey, out var profile))
                 {
-                    profile.MarkWeak(isWeak);
+                    profile.ApplyScoreDelta(scoreDelta);
                 }
                 else
                 {
@@ -87,7 +88,7 @@ public sealed class PatternSkillUpdateService
                         studentProfileId,
                         impact.NormalisedKey,
                         impact.Label,
-                        isWeak));
+                        StudentSkillProfile.DefaultScorePercent + scoreDelta));
                 }
             }
 

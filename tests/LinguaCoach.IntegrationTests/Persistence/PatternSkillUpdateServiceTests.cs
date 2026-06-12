@@ -126,7 +126,9 @@ public sealed class PatternSkillUpdateServiceTests : IDisposable
         var profile = await _db.StudentSkillProfiles
             .FirstAsync(x => x.StudentProfileId == _studentProfileId && x.SkillKey == "workplace_vocabulary");
 
-        Assert.False(profile.IsWeak); // was weak, now updated to not-weak
+        // started weak at 40, +9 from a 0.9 impact -> 49 (still weak, but improved incrementally)
+        Assert.Equal(49, profile.ScorePercent);
+        Assert.True(profile.IsWeak);
     }
 
     // ── fallback from percentage when skillImpacts absent ─────────────────────

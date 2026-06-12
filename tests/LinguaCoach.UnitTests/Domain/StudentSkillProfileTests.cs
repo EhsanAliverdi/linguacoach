@@ -34,4 +34,26 @@ public sealed class StudentSkillProfileTests
 
         profile.IsWeak.Should().BeFalse();
     }
+
+    [Fact]
+    public void ApplyScoreDelta_ClampsToZeroAndHundred()
+    {
+        var profile = new StudentSkillProfile(Guid.NewGuid(), "formal_tone", "Formal tone", scorePercent: 5);
+
+        profile.ApplyScoreDelta(-10);
+        profile.ScorePercent.Should().Be(0);
+
+        profile.ApplyScoreDelta(200);
+        profile.ScorePercent.Should().Be(100);
+    }
+
+    [Fact]
+    public void IsWeak_DerivedFromScorePercent()
+    {
+        var profile = new StudentSkillProfile(Guid.NewGuid(), "formal_tone", "Formal tone", scorePercent: 49);
+        profile.IsWeak.Should().BeTrue();
+
+        profile.ApplyScoreDelta(1);
+        profile.IsWeak.Should().BeFalse();
+    }
 }

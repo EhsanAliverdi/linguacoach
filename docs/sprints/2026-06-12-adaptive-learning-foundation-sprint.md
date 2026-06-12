@@ -169,8 +169,49 @@ activity type, not only writing.
 - [x] Confirm no implementation occurred (planning-only sprint)
 - [x] Update `current-sprint.md` to record this as a completed planning pass
 - [x] Implement cross-cutting vocabulary extraction (see implementation note above)
-- [ ] Phase 2: Numeric `StudentSkillProfile` scores (sequencing item 2)
+- [x] Phase 2: Numeric `StudentSkillProfile` scores (sequencing item 2) — see note below
 - [ ] Phase 3: Lesson/Practice structure redesign (see note below)
+
+---
+
+## Phase 2 (2026-06-12) — Numeric StudentSkillProfile scores
+
+Implemented sequencing item 2: `StudentSkillProfile` now stores a 0-100
+`ScorePercent` instead of a persisted `IsWeak` boolean.
+
+- `StudentSkillProfile` (`src/LinguaCoach.Domain/Entities/StudentSkillProfile.cs`):
+  - New `ScorePercent` (clamped 0-100), `LastUpdatedUtc` unchanged.
+  - `IsWeak` is now a computed property (`ScorePercent < 50`), not persisted.
+  - `ApplyScoreDelta(int delta)` — incremental update, clamped.
+  - `MarkWeak(bool)` kept for backward compatibility — snaps to 40/60.
+  - Bool constructor kept — maps `isWeak` to 40/60 starting score.
+- `PatternSkillUpdateService.ApplyAsync`: SkillImpact delta (-1..1) scaled to
+  +/-10 score points via `ApplyScoreDelta`, instead of snapping `IsWeak`.
+- `StudentMemoryService.UpsertSkillProfilesAsync`: AI memory-update weak/strong
+  deltas now apply +/-10 score nudges via `ApplyScoreDelta`.
+- `StudentSkillProfileDto` and `ProgressSkillDto` gained `ScorePercent`.
+- Frontend: `ProgressSkill` / `StudentSkillProfile` models gained `scorePercent`;
+  Progress page now shows the numeric percentage instead of "Needs work"/"Good".
+- Migration `T42_StudentSkillScorePercent`: adds `score_percent` (default 50),
+  backfills from old `is_weak` (weak -> 40, strong -> 60), drops `is_weak`.
+  `Down` reverses this (score < 50 -> weak).
+- Two LINQ-to-SQL spots (`SessionGeneratorService`, `StudentMemoryService`
+  adaptive-context builders) updated to filter/project on `ScorePercent`
+  directly, since `IsWeak` is a non-mapped computed property.
+
+Test changes:
+- `StudentSkillProfileTests`: added `ApplyScoreDelta` clamping and `IsWeak`
+  derivation tests.
+- `PatternSkillUpdateServiceTests.ExplicitSkillImpacts_UpdatesExistingProfile`:
+  updated for incremental scoring — a single +0.9 impact moves a weak skill
+  from 40 to 49 (still weak, improved), not directly to "not weak" as the old
+  snap-to-bool behavior did. This is the intended Phase 2 change.
+
+Tests: `dotnet test` — 482/482 unit, 430/430 integration. `npm run build` passed
+(pre-existing warnings only).
+
+This unlocks Track 10 Stage 3 (ongoing per-skill diagnostic percentages) — the
+numeric score is now available for display and for future diagnostic UI.
 
 ---
 

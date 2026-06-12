@@ -32,6 +32,7 @@ export interface ProgressSkill {
   skillKey: string;
   skillLabel: string;
   isWeak: boolean;
+  scorePercent: number;
 }
 
 export interface ProgressSkillSection {

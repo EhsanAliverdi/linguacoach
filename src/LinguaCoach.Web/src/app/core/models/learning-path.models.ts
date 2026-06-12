@@ -39,6 +39,7 @@ export interface StudentSkillProfile {
   skillKey: string;
   skillLabel: string;
   isWeak: boolean;
+  scorePercent: number;
 }
 
 export interface StudentLearningMemory {
