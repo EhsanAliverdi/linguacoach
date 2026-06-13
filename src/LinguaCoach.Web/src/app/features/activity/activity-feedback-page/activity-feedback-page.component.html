@@ -1,0 +1,289 @@
+<div style="display:flex;flex-direction:column;gap:16px">
+
+  <!-- Pattern-aware result renderer — shown when patternEvaluation is present -->
+  @if (feedback.patternEvaluation) {
+    <app-pattern-evaluation-result
+      data-testid="pattern-evaluation-result"
+      [result]="feedback.patternEvaluation!">
+    </app-pattern-evaluation-result>
+  }
+
+  <!-- Score card (legacy path — hidden when pattern evaluation renders its own score) -->
+  @if (!feedback.patternEvaluation) {
+  <div class="sp-card-soft" style="padding:20px;display:flex;align-items:center;gap:18px;border-radius:var(--sp-r-lg)">
+    <div style="position:relative;width:72px;height:72px;flex-shrink:0">
+      <svg width="72" height="72" style="transform:rotate(-90deg)">
+        <circle cx="36" cy="36" r="30" stroke="var(--sp-border2)" stroke-width="7" fill="none"/>
+        <circle cx="36" cy="36" r="30" [attr.stroke]="scoreRingColour(feedback.score)" stroke-width="7" fill="none"
+          stroke-linecap="round"
+          [attr.stroke-dasharray]="188.5"
+          [attr.stroke-dashoffset]="feedback.score !== null ? 188.5 * (1 - feedback.score! / 100) : 188.5"/>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:18px;font-weight:800;color:var(--sp-ink)">
+          {{ feedback.score !== null ? feedback.score : '—' }}
+        </span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:15px;font-weight:800;color:var(--sp-ink)">{{ scoreBandLabel(feedback.score) }}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-top:2px">
+        Attempt {{ attemptCount }}
+        @if (previousScore !== null && feedback.score !== null) {
+          <span style="margin-left:6px;font-weight:700"
+            [style.color]="feedback.score! > previousScore! ? 'var(--sp-success)' : 'var(--sp-speaking)'">
+            {{ scoreImprovementMessage() }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+  } <!-- end @if (!patternEvaluation) score card -->
+
+  <!-- Coach summary (legacy path only) -->
+  @if (!feedback.patternEvaluation && feedback.coachSummary) {
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="sp-coach-bubble" style="flex:1;font-size:13.5px;color:var(--sp-text);line-height:1.65">
+        {{ feedback.coachSummary }}
+      </div>
+    </div>
+  }
+
+  <!-- Legacy feedback sections — hidden when pattern evaluation renders its own result -->
+  @if (!feedback.patternEvaluation) {
+
+  <!-- What you did well -->
+  @if (feedback.whatYouDidWell.length) {
+    <div class="sp-card" style="padding:18px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-success);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px">What you did well</p>
+      <ul style="display:flex;flex-direction:column;gap:7px;padding:0;margin:0;list-style:none">
+        @for (point of feedback.whatYouDidWell; track point) {
+          <li style="font-size:13.5px;color:var(--sp-text);line-height:1.55;display:flex;gap:9px;align-items:flex-start">
+            <svg width="14" height="14" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:3px"><polyline points="20 6 9 17 4 12"/></svg>
+            {{ point }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- Listening question feedback -->
+  @if (feedback.questionFeedback?.length) {
+    <div class="sp-card" style="padding:18px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">Listening details</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        @for (q of feedback.questionFeedback!; track q.questionId) {
+          <div style="border-left:3px solid var(--sp-border2);padding-left:12px">
+            <p style="font-size:13.5px;font-weight:700;color:var(--sp-ink);margin-bottom:6px">{{ q.question }}</p>
+            <p style="font-size:12.5px;color:var(--sp-muted);line-height:1.55;margin:0">Your answer: {{ q.studentAnswer || 'No answer' }}</p>
+            <p style="font-size:12.5px;color:var(--sp-text);line-height:1.55;margin:4px 0 0">Expected: {{ q.expectedAnswerSummary }}</p>
+            <p style="font-size:12.5px;color:var(--sp-muted);line-height:1.55;margin:4px 0 0">{{ q.feedback }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (feedback.transcript) {
+    <details class="sp-collapsible" open>
+      <summary>
+        <svg width="14" height="14" fill="none" stroke="var(--sp-listening)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Transcript
+        <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <div class="sp-collapsible-body">
+        <p style="font-size:14px;line-height:1.75;color:var(--sp-text);white-space:pre-wrap">{{ feedback.transcript }}</p>
+      </div>
+    </details>
+  }
+
+  @if (feedback.responseFeedback) {
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Response feedback</p>
+      <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ feedback.responseFeedback }}</p>
+    </div>
+  }
+
+  <!-- SpeakingRolePlay feedback: strengths + improvements -->
+  @if (feedback.speakingStrengths?.length) {
+    <div class="sp-card" style="padding:16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-success);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">What you did well</p>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+        @for (s of feedback.speakingStrengths!; track s) {
+          <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+            <span style="color:var(--sp-success);font-weight:800">✓</span>{{ s }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (feedback.speakingImprovements?.length) {
+    <div class="sp-card" style="padding:16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">How to improve</p>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+        @for (imp of feedback.speakingImprovements!; track imp) {
+          <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+            <span style="color:var(--sp-speaking);font-weight:800">→</span>{{ imp }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (feedback.missingExpectedPoints?.length) {
+    <div class="sp-card" style="padding:16px;border-left:3px solid var(--sp-warn)">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-warn);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Points to include next time</p>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+        @for (pt of feedback.missingExpectedPoints!; track pt) {
+          <li style="font-size:13px;color:var(--sp-text)">• {{ pt }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (feedback.suggestedImprovedResponse) {
+    <details class="sp-collapsible">
+      <summary>
+        <svg width="14" height="14" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Suggested response
+        <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <div class="sp-collapsible-body">
+        <p style="font-size:13px;color:var(--sp-muted);margin-bottom:8px;font-style:italic">This is a coaching suggestion, not the only correct answer.</p>
+        <p style="font-size:14px;line-height:1.75;color:var(--sp-text)">{{ feedback.suggestedImprovedResponse }}</p>
+      </div>
+    </details>
+  }
+
+  <!-- Suggested changes (diff list) -->
+  @if (feedback.changes.length) {
+    <div class="sp-card" style="padding:18px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);letter-spacing:.04em;text-transform:uppercase;margin:0">Suggested changes</p>
+        @if (feedback.focusFirst) {
+          <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:11px">Focus on these first</span>
+        }
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        @for (change of feedback.changes; track $index) {
+          <div class="sp-diff-item">
+            <!-- Original phrase (removed style) -->
+            @if (change.type !== 'add' && change.original) {
+              <div class="sp-diff-remove" style="margin-bottom:6px">
+                <span style="font-size:11px;font-weight:700;color:var(--sp-warn);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">Before</span>
+                <span style="font-size:13.5px;font-weight:500;text-decoration:line-through">{{ change.original }}</span>
+              </div>
+            }
+            <!-- Suggested phrase (added style) -->
+            @if (change.type !== 'remove' && change.suggested) {
+              <div class="sp-diff-add" style="margin-bottom:8px">
+                <span style="font-size:11px;font-weight:700;color:var(--sp-success);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">After</span>
+                <span style="font-size:13.5px;font-weight:600">{{ change.suggested }}</span>
+              </div>
+            }
+            <!-- Reason + category badge -->
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              @if (change.category) {
+                <span class="sp-pill" style="font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px"
+                  [style.background]="categoryColour(change.category) + '22'"
+                  [style.color]="categoryColour(change.category)">
+                  {{ categoryLabel(change.category) }}
+                </span>
+              }
+              @if (change.reason) {
+                <span style="font-size:12.5px;color:var(--sp-muted);line-height:1.55">{{ change.reason }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      @if (feedback.focusFirst) {
+        <p style="font-size:12px;color:var(--sp-muted);margin-top:14px;border-top:1px solid var(--sp-border);padding-top:10px">There are more improvements possible. Fix these first, then try again.</p>
+      }
+    </div>
+  }
+
+  <!-- Native-language explanation (hidden by default, revealed on demand) -->
+  @if (feedback.feedbackInSourceLanguage) {
+    <div>
+      <button (click)="showNativeExplanation.set(!showNativeExplanation())"
+        style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 0;font-size:13px;font-weight:700;color:var(--sp-muted)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          @if (showNativeExplanation()) {
+            <polyline points="18 15 12 9 6 15"/>
+          } @else {
+            <polyline points="6 9 12 15 18 9"/>
+          }
+        </svg>
+        {{ showNativeExplanation() ? 'Hide Persian explanation' : 'Show Persian explanation' }}
+      </button>
+      @if (showNativeExplanation()) {
+        <div>
+          <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">توضیح به فارسی</p>
+          <div class="sp-source-lang-block">{{ feedback.feedbackInSourceLanguage }}</div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Mini lesson -->
+  @if (feedback.miniLesson) {
+    <div style="background:var(--sp-writing-soft);border-radius:var(--sp-r);padding:16px;border-left:3px solid var(--sp-writing)">
+      <p style="font-size:11px;font-weight:800;color:var(--sp-writing-ink);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Lesson</p>
+      <p style="font-size:13.5px;color:var(--sp-text);line-height:1.65;margin:0">{{ feedback.miniLesson }}</p>
+    </div>
+  }
+
+  <!-- Next improvement step -->
+  @if (feedback.nextImprovementStep) {
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Next step to try</p>
+      <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ feedback.nextImprovementStep }}</p>
+    </div>
+  }
+
+  <!-- Suggested improved version (collapsible — clearly labelled as suggestion) -->
+  @if (feedback.correctedText) {
+    <details class="sp-collapsible">
+      <summary>
+        <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Suggested improved version
+        <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <div class="sp-collapsible-body">
+        <p style="font-size:11px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">This is one possible improvement — try writing your own version first.</p>
+        <p style="font-size:14px;line-height:1.75;color:var(--sp-text);white-space:pre-wrap">{{ feedback.correctedText }}</p>
+      </div>
+    </details>
+  }
+
+  <!-- Rewrite challenge card -->
+  @if (feedback.rewriteChallenge) {
+    <div class="sp-card-soft" style="padding:16px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-writing-ink);margin-bottom:6px">✦ Rewrite challenge</p>
+      <p style="font-size:13.5px;color:var(--sp-text);line-height:1.6">{{ feedback.rewriteChallenge }}</p>
+    </div>
+  }
+
+  } <!-- end @if (!patternEvaluation) legacy sections -->
+
+  <!-- Action buttons -->
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+    <button (click)="improveAnswer.emit()" class="sp-button-primary" style="width:100%">
+      Improve my answer →
+    </button>
+    <button (click)="tryAgain.emit()" class="sp-button-ghost" style="width:100%">
+      Try again from scratch
+    </button>
+    <button (click)="nextActivity.emit()" class="sp-button-secondary" style="width:100%">
+      Next activity
+    </button>
+    <button (click)="backToDashboard.emit()" class="sp-button-secondary" style="width:100%;margin-top:2px">
+      Back to Today
+    </button>
+  </div>
+</div>

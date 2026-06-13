@@ -1,0 +1,228 @@
+<!-- SpeakingRolePlay: Learning state (scenario view before recording) -->
+@if (isSpeakingRolePlay && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge" style="background:#fef3c7;color:#92400e">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        Speaking
+      </span>
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity.difficulty }}</span>
+    </div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity.title }}</h2>
+    @if (activity.speakingScenario) {
+      <div class="sp-card" style="padding:16px;background:var(--sp-canvas2)">
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Scenario</p>
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.6">{{ activity.speakingScenario }}</p>
+      </div>
+    }
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      @if (activity.studentRole) {
+        <div class="sp-card" style="padding:12px;flex:1;min-width:140px">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Your role</p>
+          <p style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ activity.studentRole }}</p>
+        </div>
+      }
+      @if (activity.speakingListenerRole) {
+        <div class="sp-card" style="padding:12px;flex:1;min-width:140px">
+          <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Speaking to</p>
+          <p style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ activity.speakingListenerRole }}</p>
+        </div>
+      }
+    </div>
+    @if (activity.speakingGoal) {
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:var(--sp-canvas2);border-radius:12px">
+        <svg style="flex-shrink:0;margin-top:2px" width="16" height="16" fill="none" stroke="var(--sp-speaking)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0"><strong>Goal:</strong> {{ activity.speakingGoal }}</p>
+      </div>
+    }
+    @if (activity.speakingPrompt) {
+      <div class="sp-card" style="padding:16px;border-left:3px solid var(--sp-speaking)">
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Your task</p>
+        <p style="font-size:14px;color:var(--sp-ink);line-height:1.6;font-weight:600">{{ activity.speakingPrompt }}</p>
+      </div>
+    }
+    @if (activity.expectedPoints?.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Cover these points</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+          @for (point of activity.expectedPoints!; track point) {
+            <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+              <span style="color:var(--sp-speaking);font-weight:800;margin-top:2px">·</span>{{ point }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+    @if (activity.suggestedPhrases?.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Suggested phrases</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          @for (phrase of activity.suggestedPhrases!; track phrase) {
+            <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">{{ phrase }}</span>
+          }
+        </div>
+      </div>
+    }
+    @if (activity.maxDurationSeconds) {
+      <p style="font-size:12px;color:var(--sp-muted);text-align:center">🕐 Record up to {{ activity.maxDurationSeconds }} seconds</p>
+    }
+    <button (click)="startPractice.emit()" class="sp-button-primary" style="width:100%">
+      Start recording
+    </button>
+  </div>
+}
+
+<!-- VocabularyPractice: Learning state -->
+@if (isVocabPractice && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge" style="background:#ede9fe;color:#6d28d9">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Vocabulary
+      </span>
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity.difficulty }}</span>
+    </div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity.title }}</h2>
+    @if (activity.instructions) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.6">{{ activity.instructions }}</p>
+      </div>
+    }
+    @if (activity.vocabItems?.length) {
+      <div style="display:flex;flex-direction:column;gap:8px">
+        @for (item of activity.vocabItems!; track item.vocabularyItemId) {
+          <div class="sp-card" style="padding:14px;border-left:3px solid #6d28d9">
+            <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ item.term }}</div>
+            <div style="font-size:12.5px;color:var(--sp-muted);margin-top:4px">{{ item.explanation }}</div>
+          </div>
+        }
+      </div>
+    }
+    <button (click)="startPractice.emit()" class="sp-button-primary" style="width:100%">
+      Start practice
+    </button>
+    <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">Back to Today</button>
+  </div>
+}
+
+<!-- ListeningComprehension: Learning state -->
+@if (isListeningComprehension && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge" style="background:#e0f2fe;color:#0369a1">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        Listening
+      </span>
+      @if (isAiGenerated) { <span class="sp-ai-badge">AI-generated</span> } @else { <span class="sp-fallback-badge">Fallback activity</span> }
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity.difficulty }}</span>
+    </div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity.title }}</h2>
+    <div class="sp-card" style="padding:18px">
+      <p class="sp-eyebrow" style="margin-bottom:8px">Workplace message</p>
+      <p style="font-size:14.5px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ activity.scenario }}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        @if (activity.speakerRole) { <span class="sp-pill">Speaker: {{ activity.speakerRole }}</span> }
+        @if (activity.listenerRole) { <span class="sp-pill">You: {{ activity.listenerRole }}</span> }
+      </div>
+    </div>
+    @if (activity.instructions) {
+      <div class="sp-alert-info" style="font-size:13px">{{ activity.instructions }}</div>
+    }
+    @if (activity.audioAvailable && activity.audioUrl) {
+      <div class="sp-card" style="padding:14px">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Audio message</p>
+        <audio controls [src]="activity.audioUrl!" style="width:100%;display:block"></audio>
+        <p style="font-size:12.5px;color:var(--sp-muted);line-height:1.5;margin-top:8px">Listen to the message, then answer the questions.</p>
+      </div>
+    } @else {
+      <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;font-size:13px;color:var(--sp-text);line-height:1.6">
+        {{ activity.audioUnavailableMessage || 'Audio is temporarily unavailable. Complete this as a transcript-based listening practice.' }}
+      </div>
+    }
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;font-size:13px;font-weight:700;color:var(--sp-text)">
+      Transcript unlocks after you answer.
+    </div>
+    <button (click)="startPractice.emit()" class="sp-button-primary" style="width:100%">Answer questions</button>
+    <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">Back to Today</button>
+  </div>
+}
+
+<!-- WritingScenario: Learning state -->
+@if (!isVocabPractice && !isListeningComprehension && !isSpeakingRolePlay && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge sp-skill-badge-writing">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Writing
+      </span>
+      @if (isAiGenerated) {
+        <span class="sp-ai-badge">✦ AI-generated</span>
+      } @else {
+        <span class="sp-fallback-badge">⚡ Fallback activity</span>
+      }
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity.difficulty }}</span>
+    </div>
+
+    <!-- Title -->
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity.title }}</h2>
+
+    <!-- Situation card -->
+    @if (activity.situation) {
+      <div class="sp-card" style="padding:20px">
+        <p class="sp-eyebrow" style="margin-bottom:8px">Situation</p>
+        <p style="font-size:15px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ activity.situation }}</p>
+      </div>
+    }
+
+    <!-- Learning goal -->
+    @if (activity.learningGoal) {
+      <div style="display:flex;align-items:flex-start;gap:10px;background:var(--sp-success-soft);border-radius:var(--sp-r);padding:14px 16px">
+        <svg width="16" height="16" fill="none" stroke="var(--sp-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <p style="font-size:13px;font-weight:600;color:var(--sp-text);line-height:1.55;margin:0">{{ activity.learningGoal }}</p>
+      </div>
+    }
+
+    <!-- Persian instruction -->
+    @if (activity.instructionInSourceLanguage) {
+      <div class="sp-source-lang-block">{{ activity.instructionInSourceLanguage }}</div>
+    }
+
+    <!-- Target phrases -->
+    @if (activity.targetPhrases.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:8px">Try to use these phrases</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          @for (phrase of activity.targetPhrases; track phrase) {
+            <span class="sp-phrase-chip">{{ phrase }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Common mistake hint -->
+    @if (activity.commonMistakeToAvoid) {
+      <div class="sp-alert-info" style="font-size:13px">
+        <strong>Watch out:</strong> {{ activity.commonMistakeToAvoid }}
+      </div>
+    }
+
+    <!-- Example (collapsed) -->
+    @if (activity.exampleText) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          See an example
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13.5px;line-height:1.7;color:var(--sp-text)">{{ activity.exampleText }}</p>
+        </div>
+      </details>
+    }
+
+    <button (click)="startWriting.emit()" class="sp-button-primary" style="width:100%;margin-top:4px">
+      Start writing →
+    </button>
+  </div>
+}

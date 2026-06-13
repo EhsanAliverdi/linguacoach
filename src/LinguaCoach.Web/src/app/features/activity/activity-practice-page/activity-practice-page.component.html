@@ -1,0 +1,273 @@
+<!-- SpeakingRolePlay: Ready to record -->
+@if (state === 'ready' && isSpeakingRolePlay) {
+  <div style="display:flex;flex-direction:column;gap:24px;align-items:center;text-align:center;padding:16px 0">
+    <div style="width:80px;height:80px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center">
+      <svg width="36" height="36" fill="none" stroke="#92400e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </div>
+    <div>
+      <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">Ready to record</h3>
+      <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;max-width:280px">
+        When you tap Record, speak your response clearly and naturally. Aim for {{ activity.maxDurationSeconds ?? 60 }} seconds.
+      </p>
+    </div>
+    <button (click)="startRecording.emit()" class="sp-button-primary" style="width:100%;max-width:300px;padding:16px;font-size:16px">
+      🔴 Record
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Recording in progress -->
+@if (state === 'recording') {
+  <div style="display:flex;flex-direction:column;gap:24px;align-items:center;text-align:center;padding:16px 0">
+    <div style="width:80px;height:80px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;animation:pulse 1.5s infinite">
+      <svg width="36" height="36" fill="#dc2626" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+    </div>
+    <div>
+      <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Recording…</h3>
+      <p style="font-size:13px;color:var(--sp-muted)">Speak clearly. Tap Stop when finished.</p>
+    </div>
+    <button (click)="stopRecording.emit()" class="sp-button-primary" style="width:100%;max-width:300px;background:#dc2626">
+      ⏹ Stop recording
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Recorded — preview before submit -->
+@if (state === 'recorded' && isSpeakingRolePlay && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin:0">Preview your recording</h3>
+    @if (audioBlobUrl) {
+      <audio [src]="audioBlobUrl" controls style="width:100%;border-radius:8px"></audio>
+    }
+    @if (errorMessage) {
+      <p style="font-size:13px;color:#dc2626;background:#fee2e2;padding:10px 14px;border-radius:8px">{{ errorMessage }}</p>
+    }
+    <button (click)="submitRecording.emit()" class="sp-button-primary" style="width:100%">
+      Submit recording
+    </button>
+    <button (click)="reRecord.emit()" class="sp-button-ghost" style="width:100%">
+      Record again
+    </button>
+  </div>
+}
+
+<!-- SpeakingRolePlay: Submitting audio -->
+@if (state === 'submitting-audio') {
+  <div style="display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;padding:24px 0">
+    <div class="sp-loading-pulse" style="width:80px;height:80px;border-radius:50%"></div>
+    <p style="font-size:14px;color:var(--sp-muted)">Transcribing and evaluating your response…</p>
+  </div>
+}
+
+<!-- Exercise Pattern Engine renderers -->
+@if ((state === 'writing' || state === 'submitting') && usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="sp-skill-badge sp-skill-badge-writing">
+        {{ rendererSkillLabel }}
+      </span>
+      @if (isAiGenerated) {
+        <span class="sp-ai-badge">AI-generated</span>
+      } @else {
+        <span class="sp-fallback-badge">Fallback activity</span>
+      }
+      <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity.difficulty }}</span>
+    </div>
+
+    <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ activity.title }}</h2>
+
+    @if (activity.instructionInSourceLanguage) {
+      <div class="sp-source-lang-block">{{ activity.instructionInSourceLanguage }}</div>
+    }
+
+    <app-exercise-renderer
+      [activity]="activity"
+      [disabled]="state === 'submitting'"
+      [attemptCount]="attemptCount"
+      (answerSubmitted)="rendererSubmit.emit($event)"
+      (readOnlyDone)="readOnlyDone.emit()"
+    />
+
+    <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">
+      Back to Today
+    </button>
+  </div>
+}
+
+<!-- VocabularyPractice: Writing/Practice state -->
+@if ((state === 'writing' || state === 'submitting') && isVocabPractice && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity.title }}</h2>
+    <p style="font-size:13px;color:var(--sp-muted)">{{ activity.instructions }}</p>
+
+    @if (attemptCount > 0) {
+      <div style="background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--sp-text)">
+        Attempt {{ attemptCount + 1 }} — try again with the suggestions in mind
+      </div>
+    }
+
+    @for (item of activity.vocabItems!; track item.vocabularyItemId) {
+      <div class="sp-card" style="padding:16px">
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin-bottom:10px">{{ item.prompt }}</p>
+        <input
+          type="text"
+          [attr.aria-label]="'Answer for ' + item.term"
+          [(ngModel)]="vocabAnswers[item.vocabularyItemId]"
+          placeholder="Type the missing phrase…"
+          class="sp-input"
+          style="font-size:14px"
+          [disabled]="state === 'submitting'"
+        />
+        <div style="margin-top:8px">
+          <button (click)="toggleHint.emit(item.vocabularyItemId)"
+                  class="sp-button-ghost"
+                  style="font-size:12px;padding:4px 10px">
+            {{ showHints[item.vocabularyItemId] ? 'Hide hint' : 'Show hint' }}
+          </button>
+          @if (showHints[item.vocabularyItemId]) {
+            <p style="font-size:12.5px;color:var(--sp-muted);margin-top:6px;font-style:italic">{{ item.hint }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <button (click)="onSubmitVocab.emit()"
+            [disabled]="state === 'submitting' || !vocabItemsFilled()"
+            class="sp-button-primary"
+            style="width:100%">
+      @if (state === 'submitting') { Checking answers… } @else { Check answers }
+    </button>
+    <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">Back to Today</button>
+  </div>
+}
+
+<!-- ListeningComprehension: Practice state -->
+@if ((state === 'writing' || state === 'submitting') && isListeningComprehension && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity.title }}</h2>
+    <div class="sp-card" style="padding:14px 18px">
+      <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity.scenario }}</p>
+    </div>
+    <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;font-size:13px;color:var(--sp-text);line-height:1.6">
+      Imagine you listened to this workplace message. Answer from what you understood. The transcript stays hidden until you submit.
+    </div>
+    @if (activity.audioAvailable && activity.audioUrl) {
+      <audio controls [src]="activity.audioUrl!" style="width:100%;display:block"></audio>
+    } @else {
+      <div class="sp-alert-info" style="font-size:13px">{{ activity.audioUnavailableMessage || 'Audio is temporarily unavailable. Complete this as a transcript-based listening practice.' }}</div>
+    }
+
+    @for (question of activity.listeningQuestions ?? []; track question.id) {
+      <div class="sp-card" style="padding:16px">
+        <label class="sp-label" [for]="'listening-' + question.id">{{ question.question }}</label>
+        <input
+          [id]="'listening-' + question.id"
+          type="text"
+          [(ngModel)]="listeningAnswers[question.id]"
+          class="sp-input"
+          placeholder="Type your answer"
+          [disabled]="state === 'submitting'"
+        />
+      </div>
+    }
+
+    @if (activity.responseTask) {
+      <div class="sp-card" style="padding:16px">
+        <label class="sp-label" for="listening-response">{{ activity.responseTask!.prompt }}</label>
+        <textarea
+          id="listening-response"
+          [ngModel]="listeningResponseText"
+          (ngModelChange)="listeningResponseTextChange.emit($event)"
+          [disabled]="state === 'submitting'"
+          rows="4"
+          class="sp-input"
+          style="resize:vertical;line-height:1.7"
+          placeholder="Write a short professional reply"
+        ></textarea>
+      </div>
+    }
+
+    <button (click)="onSubmitListening.emit()"
+      [disabled]="state === 'submitting' || !listeningItemsFilled()"
+      class="sp-button-primary"
+      style="width:100%">
+      @if (state === 'submitting') { Checking understanding... } @else { Check understanding }
+    </button>
+    <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">Back to Today</button>
+  </div>
+}
+
+<!-- WritingScenario: Writing state -->
+@if ((state === 'writing' || state === 'submitting') && !isVocabPractice && !isListeningComprehension && !usesExerciseRenderer) {
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Attempt counter if retrying -->
+    @if (attemptCount > 0) {
+      <div style="display:flex;align-items:center;gap:8px;background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 14px">
+        <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span style="font-size:12.5px;font-weight:700;color:var(--sp-text)">Attempt {{ attemptCount + 1 }} — apply the suggestions and rewrite</span>
+      </div>
+    }
+
+    <!-- Compact situation reminder -->
+    @if (activity.situation) {
+      <div class="sp-card" style="padding:14px 18px">
+        <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity.situation }}</p>
+      </div>
+    }
+
+    <!-- Persian instruction reminder -->
+    @if (activity.instructionInSourceLanguage) {
+      <div class="sp-source-lang-block" style="font-size:13px">{{ activity.instructionInSourceLanguage }}</div>
+    }
+
+    <!-- Phrase chips -->
+    @if (activity.targetPhrases.length) {
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        @for (phrase of activity.targetPhrases; track phrase) {
+          <span class="sp-phrase-chip" style="font-size:12px;cursor:pointer" (click)="appendPhrase(phrase)">{{ phrase }}</span>
+        }
+      </div>
+    }
+
+    <!-- Example text hint (collapsed) -->
+    @if (activity.exampleText) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          See an example
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13.5px;line-height:1.7;color:var(--sp-text)">{{ activity.exampleText }}</p>
+        </div>
+      </details>
+    }
+
+    <div>
+      <label class="sp-label" for="draft">Write your response</label>
+      <textarea
+        id="draft"
+        [ngModel]="draftText"
+        (ngModelChange)="draftTextChange.emit($event)"
+        [disabled]="state === 'submitting'"
+        rows="7"
+        placeholder="Write your response here…"
+        class="sp-input"
+        style="resize:vertical;min-height:160px;line-height:1.7"
+      ></textarea>
+      <span style="display:block;text-align:right;font-size:12px;color:var(--sp-faint);margin-top:4px">{{ wordCount }} words</span>
+    </div>
+
+    <button (click)="onSubmit.emit()"
+      [disabled]="state === 'submitting' || !draftText.trim()"
+      class="sp-button-primary"
+      style="width:100%">
+      @if (state === 'submitting') { Getting coach feedback… } @else { Get coach feedback }
+    </button>
+
+    <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">
+      Back to Today
+    </button>
+  </div>
+}

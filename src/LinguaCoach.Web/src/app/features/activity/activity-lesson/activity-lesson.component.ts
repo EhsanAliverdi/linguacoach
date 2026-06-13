@@ -4,9 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityService } from '../../../core/services/activity.service';
-import { ActivityDto, ActivityFeedbackDto, FeedbackChangeDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
-import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
-import { PatternEvaluationResultComponent } from '../pattern-evaluation-result/pattern-evaluation-result.component';
+import { ActivityDto, ActivityFeedbackDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
+import { ExerciseAnswerPayload } from '../exercise-renderer/exercise-renderer.component';
+import { ActivityTeachPageComponent } from '../activity-teach-page/activity-teach-page.component';
+import { ActivityPracticePageComponent } from '../activity-practice-page/activity-practice-page.component';
+import { ActivityFeedbackPageComponent } from '../activity-feedback-page/activity-feedback-page.component';
 
 type PageState =
   | 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error'
@@ -16,7 +18,10 @@ type PageState =
 @Component({
   selector: 'app-activity-lesson',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExerciseRendererComponent, PatternEvaluationResultComponent],
+  imports: [
+    CommonModule, FormsModule,
+    ActivityTeachPageComponent, ActivityPracticePageComponent, ActivityFeedbackPageComponent,
+  ],
   templateUrl: './activity-lesson.component.html',
 })
 export class ActivityLessonComponent implements OnInit, OnDestroy {
@@ -29,9 +34,6 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
   // Retry/improve tracking
   attemptCount = signal(0);
   previousScore = signal<number | null>(null);
-
-  // Native-language explanation visibility (hidden by default)
-  showNativeExplanation = signal(false);
 
   // VocabularyPractice state
   vocabAnswers: Record<string, string> = {};
@@ -209,55 +211,6 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     return 'future';
   }
 
-  scoreRingColour(score: number | null): string {
-    if (score === null) return 'var(--sp-faint)';
-    if (score >= 85) return 'var(--sp-success)';
-    if (score >= 70) return 'var(--sp-vocabulary)';
-    return 'var(--sp-speaking)';
-  }
-
-  scoreBandLabel(score: number | null): string {
-    if (score === null) return '';
-    if (score >= 85) return 'Great work';
-    if (score >= 70) return 'Good effort';
-    return 'Keep going';
-  }
-
-  scoreImprovementMessage(): string {
-    const current = this.feedback()?.score ?? null;
-    const prev = this.previousScore();
-    if (prev === null || current === null) return '';
-    const diff = Math.round(current - prev);
-    if (diff > 0) return `+${diff} — great improvement!`;
-    if (diff < 0) return `${diff} — don't worry, keep practising.`;
-    return 'Same score — try the suggestions above.';
-  }
-
-  categoryColour(category: string | null): string {
-    switch (category) {
-      case 'grammar': return 'var(--sp-writing)';
-      case 'vocabulary': return 'var(--sp-vocabulary)';
-      case 'tone': return 'var(--sp-listening)';
-      case 'clarity': return 'var(--sp-pronunciation)';
-      case 'structure': return 'var(--sp-speaking)';
-      case 'punctuation': return 'var(--sp-muted)';
-      default: return 'var(--sp-muted)';
-    }
-  }
-
-  categoryLabel(category: string | null): string {
-    if (!category) return '';
-    return category.charAt(0).toUpperCase() + category.slice(1);
-  }
-
-  severityOrder(c: FeedbackChangeDto): number {
-    switch (c.severity) {
-      case 'high': return 0;
-      case 'medium': return 1;
-      default: return 2;
-    }
-  }
-
   isVocabPractice(): boolean {
     return this.activity()?.activityType === 'vocabularyPractice';
   }
@@ -294,18 +247,8 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     }
   }
 
-  vocabItemsFilled(): boolean {
-    const items = this.activity()?.vocabItems ?? [];
-    return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
-  }
-
   toggleHint(itemId: string): void {
     this.showHints[itemId] = !this.showHints[itemId];
-  }
-
-  listeningItemsFilled(): boolean {
-    const questions = this.activity()?.listeningQuestions ?? [];
-    return questions.length > 0 && questions.every(q => (this.listeningAnswers[q.id] ?? '').trim().length > 0);
   }
 
   startPractice(): void {
@@ -318,6 +261,14 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   startWriting(): void {
     this.state.set('writing');
+  }
+
+  setDraftText(value: string): void {
+    this.draftText = value;
+  }
+
+  setListeningResponseText(value: string): void {
+    this.listeningResponseText = value;
   }
 
   // ── Speaking: microphone + recording ──────────────────────────────────────
@@ -567,9 +518,5 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   isAiGenerated(): boolean {
     return this.activity()?.source === 'aiGenerated';
-  }
-
-  get wordCount(): number {
-    return this.draftText.trim().split(/\s+/).filter(Boolean).length;
   }
 }

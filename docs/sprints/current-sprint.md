@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-12 13:57
+lastUpdated: 2026-06-13 00:00
 owner: product
 supersedes:
 supersededBy:
@@ -8,9 +8,29 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-12
+Last updated: 2026-06-13
 
 ---
+
+## In progress — Activity 3-page restructure (Teach / Practice / Feedback), full-stack
+
+5-step strangler-fig migration. **Step 1 done (2026-06-13)**: split
+`ActivityLessonComponent` (876-line monolith) into a thin orchestrator shell +
+3 composed, presentational page components — `ActivityTeachPageComponent`,
+`ActivityPracticePageComponent`, `ActivityFeedbackPageComponent` (all under
+`src/LinguaCoach.Web/src/app/features/activity/`). Orchestrator keeps all
+state/signals/HTTP/recording-lifecycle logic; page components receive
+`@Input()`/`@Output()` only. Zero behavior change — `ng build` clean (only
+pre-existing unrelated warnings in `pattern-evaluation-result`).
+
+Step 2 adds an `ActivityPagePresenter` interface (presenter-layer "inheritance
+for scalability"). Steps 3-5 migrate VocabularyPractice, ListeningComprehension,
+WritingScenario, and SpeakingRolePlay onto the pattern engine with a unified
+`{teach, practice}` AI content contract — each its own sprint with AI prompt
+calibration. See
+[2026-06-13-activity-3-page-restructure-eng-plan.md](../reviews/2026-06-13-activity-3-page-restructure-eng-plan.md).
+
+Next: Step 2 (`ActivityPagePresenter` interface + legacy bridge presenters).
 
 ## Most recently completed sprint
 
