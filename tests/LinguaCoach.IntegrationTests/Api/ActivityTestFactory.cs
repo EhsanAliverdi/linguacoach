@@ -244,6 +244,12 @@ internal sealed class FakeAiProvider : IAiProvider
                 { "id": "q2", "question": "What should you do before the meeting?", "expectedAnswer": "Check the latest delivery schedule", "type": "short_answer" }
               ],
               "responseTask": { "prompt": "Reply to confirm you received the message.", "expectedFocus": "acknowledgement" },
+              "practiceMode": "fill_blank",
+              "items": [
+                { "vocabularyItemId": "00000000-0000-0000-0000-000000000001", "term": "could you please", "prompt": "___ send the report?", "hint": "polite request", "explanation": "Used to make polite requests." },
+                { "vocabularyItemId": "00000000-0000-0000-0000-000000000002", "term": "at your earliest convenience", "prompt": "Please respond ___.", "hint": "formal timing", "explanation": "Used to politely request a prompt response." },
+                { "vocabularyItemId": "00000000-0000-0000-0000-000000000003", "term": "please find attached", "prompt": "___ the updated document.", "hint": "email attachment phrase", "explanation": "Used to introduce an attachment in an email." }
+              ],
               "pathTitle": "Workplace English for Document Controller — B1",
               "modules": [
                 {

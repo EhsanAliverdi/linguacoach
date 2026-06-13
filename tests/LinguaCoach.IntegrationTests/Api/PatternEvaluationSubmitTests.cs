@@ -256,29 +256,28 @@ public sealed class PatternEvaluationSubmitTests : IClassFixture<PatternEvaluati
         // No exception = session isolation preserved
     }
 
-    // ── legacy non-pattern activity still works ────────────────────────────────
+    // ── default WritingScenario cadence is pattern-routed ─────────────────────
 
     [Fact]
-    public async Task LegacyWritingScenario_Submit_StillWorks()
+    public async Task DefaultWritingScenario_Submit_ReturnsPatternEvaluation()
     {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"legacy_{Guid.NewGuid():N}@test.com");
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"writing_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        // Get a writing scenario activity (no pattern key)
+        // Get the default WritingScenario activity — now routed through open_writing_task.
         var nextResp = await client.GetAsync("/api/activity/next");
         Assert.Equal(HttpStatusCode.OK, nextResp.StatusCode);
         var nextBody = await nextResp.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
         var activityId = nextBody.GetProperty("activityId").GetGuid();
+        Assert.Equal("open_writing_task", nextBody.GetProperty("exercisePatternKey").GetString());
 
         var submitResp = await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
             new { submittedContent = "I wanted to follow up on the pending approval." });
 
         Assert.Equal(HttpStatusCode.OK, submitResp.StatusCode);
         var body = await submitResp.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
-        // Legacy path: patternEvaluation should be null
-        Assert.True(
-            !body.TryGetProperty("patternEvaluation", out var pe) || pe.ValueKind == JsonValueKind.Null,
-            "Legacy activities should not have patternEvaluation");
+        Assert.True(body.TryGetProperty("patternEvaluation", out var pe) && pe.ValueKind == JsonValueKind.Object);
+        Assert.Equal("open_writing_task", pe.GetProperty("exercisePatternKey").GetString());
     }
 
     // ── deterministic paths do not call AI ───────────────────────────────────
