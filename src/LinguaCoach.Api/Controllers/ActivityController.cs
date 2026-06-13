@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
+using LinguaCoach.Domain;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Activity;
@@ -26,6 +27,7 @@ public sealed class ActivityController : ControllerBase
     private readonly SpeakingAudioService _speakingAudio;
     private readonly ISpeechToTextService _stt;
     private readonly SpeakingRolePlayEvaluator _speakingEvaluator;
+    private readonly IPatternEvaluationRouter _patternRouter;
     private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
 
     private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
@@ -39,6 +41,7 @@ public sealed class ActivityController : ControllerBase
         SpeakingAudioService speakingAudio,
         ISpeechToTextService stt,
         SpeakingRolePlayEvaluator speakingEvaluator,
+        IPatternEvaluationRouter patternRouter,
         LinguaCoach.Application.Storage.IFileStorageService storage)
     {
         _getNextActivity = getNextActivity;
@@ -49,6 +52,7 @@ public sealed class ActivityController : ControllerBase
         _speakingAudio = speakingAudio;
         _stt = stt;
         _speakingEvaluator = speakingEvaluator;
+        _patternRouter = patternRouter;
         _storage = storage;
     }
 
@@ -332,15 +336,81 @@ public sealed class ActivityController : ControllerBase
                 return BadRequest(new { error = "Could not transcribe your recording. Please try again." });
             }
 
-            // 3. AI evaluation
-            var (feedbackJson, score) = await _speakingEvaluator.EvaluateAsync(
-                transcript: sttResult.Transcript,
-                activityContentJson: activity.AiGeneratedContentJson,
-                cefrLevel: profile.CefrLevel ?? "B1",
-                careerContext: profile.CareerProfile?.Name ?? "General",
-                sourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
-                targetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
-                ct: ct);
+            // 3. AI evaluation — pattern-keyed activities route through the pattern
+            // evaluation router; legacy SpeakingRolePlay activities (spoken_response_from_prompt
+            // or no pattern key) keep using the original SpeakingRolePlayEvaluator.
+            string feedbackJson;
+            double score;
+            string promptKey;
+            ActivityFeedbackDto feedback;
+
+            if (activity.ExercisePatternKey == ExercisePatternKey.SpeakingRoleplayTurn)
+            {
+                var evalResult = await _patternRouter.EvaluateAsync(
+                    new PatternEvaluationRequest(
+                        ActivityId: activity.Id,
+                        StudentProfileId: profile.Id,
+                        ExercisePatternKey: activity.ExercisePatternKey,
+                        MarkingMode: MarkingMode.AiOpenEnded,
+                        InteractionMode: InteractionMode.AudioResponse,
+                        ActivityType: activity.ActivityType,
+                        ContentJson: activity.AiGeneratedContentJson,
+                        SubmittedAnswerJson: sttResult.Transcript!,
+                        CefrLevel: profile.CefrLevel ?? "B1",
+                        DomainComplexity: profile.CareerProfile?.Name ?? "General"),
+                    ct);
+
+                score = evalResult.Score;
+                promptKey = "activity_evaluate_speaking_roleplay_turn";
+                feedbackJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    score = evalResult.Score,
+                    coachSummary = evalResult.CoachSummary,
+                    improvements = evalResult.Corrections.Where(c => c.Category == "speaking").Select(c => c.Original).ToList(),
+                    missingExpectedPoints = evalResult.Corrections.Where(c => c.Category == "missing_point").Select(c => c.Original).ToList(),
+                    suggestedImprovedResponse = evalResult.SuggestedImprovedAnswer,
+                });
+
+                feedback = new ActivityFeedbackDto(
+                    AttemptId: Guid.Empty, // replaced below once attempt is persisted
+                    Score: score,
+                    CoachSummary: evalResult.CoachSummary,
+                    FocusFirst: false,
+                    Changes: [],
+                    CorrectedText: null,
+                    WhatYouDidWell: [],
+                    MainMistakes: [],
+                    GrammarIssues: [],
+                    VocabularyIssues: [],
+                    ToneIssues: [],
+                    ClarityIssues: [],
+                    GrammarExplanation: null,
+                    ToneExplanation: null,
+                    VocabularyToRemember: [],
+                    MiniLesson: null,
+                    NextImprovementStep: null,
+                    RewriteChallenge: null,
+                    NextPracticeSuggestion: null,
+                    FeedbackInSourceLanguage: null,
+                    Transcript: sttResult.Transcript,
+                    SpeakingStrengths: evalResult.Corrections.Where(c => c.Category == "speaking").Select(c => c.Suggestion).ToList(),
+                    SpeakingImprovements: evalResult.Corrections.Where(c => c.Category == "speaking").Select(c => c.Original).OfType<string>().ToList(),
+                    MissingExpectedPoints: evalResult.Corrections.Where(c => c.Category == "missing_point").Select(c => c.Original).OfType<string>().ToList(),
+                    SuggestedImprovedResponse: evalResult.SuggestedImprovedAnswer);
+            }
+            else
+            {
+                (feedbackJson, score) = await _speakingEvaluator.EvaluateAsync(
+                    transcript: sttResult.Transcript,
+                    activityContentJson: activity.AiGeneratedContentJson,
+                    cefrLevel: profile.CefrLevel ?? "B1",
+                    careerContext: profile.CareerProfile?.Name ?? "General",
+                    sourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+                    targetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+                    ct: ct);
+                promptKey = SpeakingRolePlayEvaluator.EvaluatePromptKey;
+                feedback = SpeakingRolePlayEvaluator.ParseFeedback(Guid.Empty, feedbackJson, score);
+            }
 
             // 4. Ensure transcript is embedded in feedbackJson for history retrieval
             var storedFeedbackJson = EnsureTranscriptInFeedbackJson(feedbackJson, sttResult.Transcript!);
@@ -350,7 +420,7 @@ public sealed class ActivityController : ControllerBase
                 learningActivityId: activityId,
                 submittedContent: sttResult.Transcript,
                 feedbackJson: storedFeedbackJson,
-                promptKey: SpeakingRolePlayEvaluator.EvaluatePromptKey,
+                promptKey: promptKey,
                 score: score,
                 audioStorageKey: tempKey); // will be renamed below
 
@@ -365,11 +435,8 @@ public sealed class ActivityController : ControllerBase
             attempt.SetAudioStorageKey(finalKey);
             await _db.SaveChangesAsync(ct);
 
-            var feedback = SpeakingRolePlayEvaluator.ParseFeedback(attempt.Id, storedFeedbackJson, score);
-            // Ensure transcript is always present in the returned DTO
-            var finalFeedback = feedback.Transcript is null
-                ? feedback with { Transcript = sttResult.Transcript }
-                : feedback;
+            // Ensure transcript and attemptId are always present in the returned DTO
+            var finalFeedback = feedback with { AttemptId = attempt.Id, Transcript = feedback.Transcript ?? sttResult.Transcript };
             return Ok(finalFeedback);
         }
         catch (Exception) when (tempKey is not null)

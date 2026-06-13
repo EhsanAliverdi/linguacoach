@@ -480,6 +480,8 @@ Pattern-generated activities are rendered by `ActivityDto.interactionMode`, not 
 | `AudioAndGapFill` | `AudioAndGapFillComponent` | `listen_and_gap_fill` |
 | `ChatReply` | `ChatReplyComponent` | `teams_chat_simulation` |
 | `EmailReply` | `EmailReplyComponent` | `email_reply` |
+| `FreeTextEntry` | `FreeTextEntryComponent` | `open_writing_task` |
+| `AudioResponse` | speaking recording UI (`speakingScenario`/`speakingRecord` blocks, activity-type-keyed, not via `ExerciseRendererComponent`) | `speaking_roleplay_turn` |
 
 Each renderer emits one structured answer payload to the parent. The parent submits via the existing activity attempt endpoints. The backend routes by `MarkingMode` through `IPatternEvaluationRouter`. The `ActivityFeedbackDto` returns `patternEvaluation: PatternEvaluationDto | null` — non-null for pattern-keyed activities. The frontend renders `PatternEvaluationResultComponent` when present; legacy feedback sections gate on `!patternEvaluation`.
 
@@ -496,6 +498,8 @@ Each renderer emits one structured answer payload to the parent. The parent subm
 | `email_reply` | `EmailReply` | `AiStructured` | `AiStructuredEvaluator` | Chat/Email |
 | `teams_chat_simulation` | `ChatReply` | `AiStructured` | `AiStructuredEvaluator` | Chat/Email |
 | `spoken_response_from_prompt` | `FreeTextEntry` | `AiOpenEnded` | `AiOpenEndedEvaluator` | SpokenResponse |
+| `open_writing_task` | `FreeTextEntry` | `AiOpenEnded` | `AiOpenEndedEvaluator` | SpokenResponse (open-ended writing feedback) |
+| `speaking_roleplay_turn` | `AudioResponse` | `AiOpenEnded` | `AiOpenEndedEvaluator` (via `/speaking-attempt`) | SpokenResponse (speaking feedback) |
 | `lesson_reflection` | `ReadOnly` | `NoMarking` | `NoMarkingEvaluator` | ReadOnly (complete state) |
 
 ---
@@ -519,7 +523,7 @@ When the session generator selects exercise patterns, it applies these rules:
 
 | Priority | Pattern Keys |
 |---|---|
-| P0 (session model) | `lesson_reflection`, `phrase_match`, `listen_and_answer`, `listen_and_gap_fill`, `gap_fill_with_workplace_phrase`, `email_reply`, `spoken_response_from_prompt` |
+| P0 (session model) | `lesson_reflection`, `phrase_match`, `listen_and_answer`, `listen_and_gap_fill`, `gap_fill_with_workplace_phrase`, `email_reply`, `spoken_response_from_prompt`, `open_writing_task`, `speaking_roleplay_turn` |
 | P1 | `teams_chat_simulation`, `read_and_answer`, `read_and_summarise`, `collocation_match`, `sentence_completion`, `vocabulary_queue_review`, `mistake_review`, `micro_lesson_phrases`, `micro_lesson_dialogue` |
 | P2 | `listen_then_speak`, `listen_and_take_notes`, `read_teams_thread_and_identify_tone`, `direct_to_professional_phrase`, `rewrite_for_polite_tone`, `clarification_request`, `escalation_message`, `micro_lesson_mistake` |
 | P2 (Call Mode sprint) | `call_mode_single_turn`, `call_mode_multi_turn` |

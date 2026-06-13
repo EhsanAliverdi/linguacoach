@@ -69,13 +69,26 @@ no other null-`interactionMode` paths remain. Slice 4 (delete
 follow-up sprint gated on production data review, per the sprint doc. `ng
 build`/`dotnet build` clean.
 
-Steps 4-5 (WritingScenario → `open_writing_task`, SpeakingRolePlay →
-`speaking_roleplay_turn` + AudioResponse) remain — each is a multi-day
-effort with live AI prompt calibration per the eng plan; not started.
+**Steps 4 & 5 done (2026-06-13)** — see
+[2026-06-13-activity-3-page-step4-5-writing-speaking-pattern-review.md](../reviews/2026-06-13-activity-3-page-step4-5-writing-speaking-pattern-review.md).
+Step 4: `WritingScenario` cadence picks now route through
+`HandlePatternKeyedAsync("open_writing_task")`; added `OpenWritingTask`/
+`SpeakingRoleplayTurn` pattern keys, `AudioResponse` interaction mode,
+2 new AI prompt pairs, and generalized `AiOpenEndedEvaluator` via
+`ResolvePromptKey`. Step 5: `SpeakingRolePlay` cadence picks now route
+through `HandlePatternKeyedAsync("speaking_roleplay_turn")`; the
+`/speaking-attempt` endpoint is now pattern-aware (new pattern →
+`IPatternEvaluationRouter`/`AiOpenEndedEvaluator`, legacy →
+unchanged `SpeakingRolePlayEvaluator`). No frontend changes needed —
+existing speaking recording UI/state machine is activity-type-keyed,
+not pattern-key-keyed, and already serves `AudioResponse`. AI prompt
+output for the 4 new prompts is unverified pending live-AI calibration
+(follow-up task). All 5 migration steps now landed. `dotnet build`/
+`ng build` clean, 51/51 unit tests pass.
 
-Next: confirm legacy `/activity` route usage with product, then Step 3
-slice 1 (hint/explanation content-parity decision for
-`gap_fill_workplace_phrase`).
+Next: live-AI calibration pass for the 4 new prompts, then update
+`exercise-pattern-library.md`/`learning-activity-engine.md` roadmap
+tables per the Step 4/5 review's implementation tasks.
 
 ## Most recently completed sprint
 

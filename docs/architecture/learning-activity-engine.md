@@ -287,8 +287,8 @@ The `ActivityFeedbackDto` now includes `patternEvaluation: PatternEvaluationDto 
 
 | Type | Status | Notes |
 |------|--------|-------|
-| `WritingScenario` | Live | AI-generated + SystemFallback seeded from legacy data |
-| `SpeakingRolePlay` | Live (MVP fake STT) | `FakeSpeechToTextService`; real STT deferred |
+| `WritingScenario` | Live | AI-generated + SystemFallback seeded from legacy data; cadence picks routed via `open_writing_task` pattern (Step 4) |
+| `SpeakingRolePlay` | Live (MVP fake STT) | `FakeSpeechToTextService`; real STT deferred; cadence picks routed via `speaking_roleplay_turn` pattern + `AudioResponse` interaction mode (Step 5) |
 | `ListeningComprehension` | Live | TTS audio via `PlacementAudioService`; server-streamed |
 | `VocabularyPractice` | Live | Gap-fill and matching patterns via Pattern Engine |
 | `PronunciationPractice` | Not started | Needs STT + phoneme comparison |

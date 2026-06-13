@@ -84,6 +84,9 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
             if (activityType == ActivityType.WritingScenario)
                 return await HandlePatternKeyedAsync(Domain.ExercisePatternKey.OpenWritingTask, profile, ct);
+
+            if (activityType == ActivityType.SpeakingRolePlay)
+                return await HandlePatternKeyedAsync(Domain.ExercisePatternKey.SpeakingRoleplayTurn, profile, ct);
         }
 
         // Resolve active learning path + current module (lazy-generate if missing).
