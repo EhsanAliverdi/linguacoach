@@ -12,85 +12,48 @@ Last updated: 2026-06-13
 
 ---
 
-## In progress — Activity 3-page restructure (Teach / Practice / Feedback), full-stack
-
-5-step strangler-fig migration. **Step 1 done (2026-06-13)**: split
-`ActivityLessonComponent` (876-line monolith) into a thin orchestrator shell +
-3 composed, presentational page components — `ActivityTeachPageComponent`,
-`ActivityPracticePageComponent`, `ActivityFeedbackPageComponent` (all under
-`src/LinguaCoach.Web/src/app/features/activity/`). Orchestrator keeps all
-state/signals/HTTP/recording-lifecycle logic; page components receive
-`@Input()`/`@Output()` only. Zero behavior change — `ng build` clean (only
-pre-existing unrelated warnings in `pattern-evaluation-result`).
-
-**Step 2 done (2026-06-13)**: added `ActivityPagePresenter` interface under
-`src/LinguaCoach.Web/src/app/features/activity/presenters/` with
-`PatternBackedPresenter` + 4 `Legacy*Presenter` bridges (`LegacySpeaking`,
-`LegacyVocab`, `LegacyListening`, `LegacyWriting`) selected by
-`ActivityPresenterFactory.for(activity)`. `TeachViewModel`/`PracticeViewModel`
-(`block`, `skillBadge`, `ctaLabel`/`ctaAction`) replace the old boolean-flag
-`@Input()`s (`isVocabPractice`, `isListeningComprehension`,
-`isSpeakingRolePlay`, `usesExerciseRenderer`, `rendererSkillLabel`) on
-`ActivityTeachPageComponent`/`ActivityPracticePageComponent`, which now
-`@switch` on `teach.block`/`practice.block`. `PatternBackedPresenter` derives
-skill badge/label from `ActivityDto.interactionMode`/`activityType` so new
-pattern keys need zero presenter changes. Orchestrator
-(`ActivityLessonComponent`) keeps `isSpeakingRolePlay()` for internal
-recording-flow branching; the rest of the old `is*()`/`usesExerciseRenderer()`/
-`rendererSkillLabel()` methods were removed as dead code. 6 new presenter/
-factory unit specs added. `ng build` clean (only pre-existing
-`pattern-evaluation-result` warnings); `ng test` — new specs pass, pre-existing
-unrelated TestBed-provider failures (Login/Onboarding/Vocabulary/Progress/
-ActivityLesson specs missing `ActivatedRoute`/`HttpClient` providers) unchanged
-from before this work. Zero behavior change.
-
-Steps 3-5 migrate VocabularyPractice, ListeningComprehension, WritingScenario,
-and SpeakingRolePlay onto the pattern engine with a unified `{teach, practice}`
-AI content contract — each its own sprint with AI prompt calibration. See
-[2026-06-13-activity-3-page-restructure-eng-plan.md](../reviews/2026-06-13-activity-3-page-restructure-eng-plan.md).
-
-**Step 3 done (2026-06-13)** — see
-[2026-06-13-activity-3-page-step3-vocab-listening-pattern-sprint.md](2026-06-13-activity-3-page-step3-vocab-listening-pattern-sprint.md).
-Slice 1: added per-item `hint` parity to `gap_fill_workplace_phrase`
-(`GapFillItem.hint`, "Show hint" toggle in `gap-fill.component`,
-`mapGapItems` now reads `obj['hint']`) — backend `GapFillItemDto.Hint` and
-the AI prompt schema already supported it. Slice 2: `ActivityGetHandler`'s
-cadence-based `VocabularyPractice`/`ListeningComprehension` picks (every
-4th/5th attempt, no `?type=`/`?pattern=` override) now route through
-`HandlePatternKeyedAsync("gap_fill_workplace_phrase")` /
-`HandlePatternKeyedAsync("listen_and_answer")` instead of the legacy
-null-`interactionMode` generation — every new activity of these types now
-renders via `ExerciseRendererComponent`/`PatternBackedPresenter`. Legacy
-`_vocabGenerator`/`_listeningAudio` branches kept for explicit `?type=`
-overrides (still used by `ActivityController`). Slice 3: confirmed
-`PracticeGymGenerationJob`/`ExercisePrepareHandler` already pattern-based —
-no other null-`interactionMode` paths remain. Slice 4 (delete
-`LegacyVocabPresenter`/`LegacyListeningPresenter` + template branches) is a
-follow-up sprint gated on production data review, per the sprint doc. `ng
-build`/`dotnet build` clean.
-
-**Steps 4 & 5 done (2026-06-13)** — see
-[2026-06-13-activity-3-page-step4-5-writing-speaking-pattern-review.md](../reviews/2026-06-13-activity-3-page-step4-5-writing-speaking-pattern-review.md).
-Step 4: `WritingScenario` cadence picks now route through
-`HandlePatternKeyedAsync("open_writing_task")`; added `OpenWritingTask`/
-`SpeakingRoleplayTurn` pattern keys, `AudioResponse` interaction mode,
-2 new AI prompt pairs, and generalized `AiOpenEndedEvaluator` via
-`ResolvePromptKey`. Step 5: `SpeakingRolePlay` cadence picks now route
-through `HandlePatternKeyedAsync("speaking_roleplay_turn")`; the
-`/speaking-attempt` endpoint is now pattern-aware (new pattern →
-`IPatternEvaluationRouter`/`AiOpenEndedEvaluator`, legacy →
-unchanged `SpeakingRolePlayEvaluator`). No frontend changes needed —
-existing speaking recording UI/state machine is activity-type-keyed,
-not pattern-key-keyed, and already serves `AudioResponse`. AI prompt
-output for the 4 new prompts is unverified pending live-AI calibration
-(follow-up task). All 5 migration steps now landed. `dotnet build`/
-`ng build` clean, 51/51 unit tests pass.
-
-Next: live-AI calibration pass for the 4 new prompts, then update
-`exercise-pattern-library.md`/`learning-activity-engine.md` roadmap
-tables per the Step 4/5 review's implementation tasks.
-
 ## Most recently completed sprint
+
+**Activity 3-page restructure (Teach / Practice / Feedback), full-stack** — complete (2026-06-13)
+
+5-step strangler-fig migration, all steps landed:
+
+- **Step 1** — split `ActivityLessonComponent` (876-line monolith) into a thin
+  orchestrator shell + 3 composed page components (`ActivityTeachPageComponent`,
+  `ActivityPracticePageComponent`, `ActivityFeedbackPageComponent`). Zero
+  behavior change.
+- **Step 2** — added `ActivityPagePresenter` interface + `PatternBackedPresenter`
+  / 4 `Legacy*Presenter` bridges, selected by `ActivityPresenterFactory.for(activity)`.
+  `TeachViewModel`/`PracticeViewModel` replace boolean-flag `@Input()`s.
+- **Step 3** — `gap_fill_workplace_phrase` hint parity; `VocabularyPractice`/
+  `ListeningComprehension` cadence picks now route through
+  `HandlePatternKeyedAsync`. See
+  [2026-06-13-activity-3-page-step3-vocab-listening-pattern-sprint.md](2026-06-13-activity-3-page-step3-vocab-listening-pattern-sprint.md).
+- **Steps 4 & 5** — `WritingScenario`/`SpeakingRolePlay` cadence picks now
+  route through `open_writing_task`/`speaking_roleplay_turn`; new
+  `AudioResponse` interaction mode; `/speaking-attempt` is pattern-aware
+  (new pattern → `IPatternEvaluationRouter`/`AiOpenEndedEvaluator`, legacy →
+  unchanged `SpeakingRolePlayEvaluator`). No frontend changes needed — existing
+  speaking recording UI is activity-type-keyed and already serves
+  `AudioResponse`. See
+  [2026-06-13-activity-3-page-step4-5-writing-speaking-pattern-review.md](../reviews/2026-06-13-activity-3-page-step4-5-writing-speaking-pattern-review.md).
+
+Eng plan: [2026-06-13-activity-3-page-restructure-eng-plan.md](../reviews/2026-06-13-activity-3-page-restructure-eng-plan.md).
+
+`dotnet build`/`ng build` clean, 51/51 unit tests pass.
+
+**Follow-ups (not blocking, tracked separately):**
+- Live-AI calibration pass for the 4 new prompts (`open_writing_task`,
+  `speaking_roleplay_turn` generate/evaluate) — output unverified against a
+  live AI provider.
+- Retire `LegacyVocabPresenter`/`LegacyListeningPresenter`/
+  `LegacyWritingPresenter`/`LegacySpeakingPresenter` + their template branches
+  once production activity rows are regenerated under the pattern engine
+  (gated on production data review).
+
+---
+
+## Previously completed sprint
 
 **Practice Gym cache race condition fix** - complete (2026-06-12)
 
