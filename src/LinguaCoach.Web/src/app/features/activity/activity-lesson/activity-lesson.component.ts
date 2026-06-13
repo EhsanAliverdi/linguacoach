@@ -9,6 +9,8 @@ import { ExerciseAnswerPayload } from '../exercise-renderer/exercise-renderer.co
 import { ActivityTeachPageComponent } from '../activity-teach-page/activity-teach-page.component';
 import { ActivityPracticePageComponent } from '../activity-practice-page/activity-practice-page.component';
 import { ActivityFeedbackPageComponent } from '../activity-feedback-page/activity-feedback-page.component';
+import { ActivityPresenterFactory } from '../presenters/activity-presenter.factory';
+import { FeedbackLayout, PracticeViewModel, TeachViewModel } from '../presenters/activity-page-presenter';
 
 type PageState =
   | 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error'
@@ -211,40 +213,25 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     return 'future';
   }
 
-  isVocabPractice(): boolean {
-    return this.activity()?.activityType === 'vocabularyPractice';
-  }
-
-  isListeningComprehension(): boolean {
-    return this.activity()?.activityType === 'listeningComprehension';
-  }
-
   isSpeakingRolePlay(): boolean {
     return this.activity()?.activityType === 'speakingRolePlay';
   }
 
-  usesExerciseRenderer(): boolean {
-    const activity = this.activity();
-    if (activity?.activityType === 'speakingRolePlay') return false;
-    return activity?.interactionMode != null
-      || (activity?.activityType === 'writingScenario' && !!activity.contentJson);
+  teachViewModel(): TeachViewModel | null {
+    const a = this.activity();
+    return a ? ActivityPresenterFactory.for(a).teachContent(a) : null;
   }
 
-  rendererSkillLabel(): string {
-    switch (this.activity()?.interactionMode) {
-      case 'matchingPairs':
-      case 'gapFill':
-        return 'Vocabulary';
-      case 'audioAndFreeText':
-      case 'audioAndGapFill':
-        return 'Listening';
-      case 'readOnly':
-        return 'Reflection';
-      case 'chatReply':
-      case 'freeTextEntry':
-      default:
-        return this.activity()?.activityType === 'speakingRolePlay' ? 'Speaking' : 'Writing';
-    }
+  practiceViewModel(): PracticeViewModel | null {
+    const a = this.activity();
+    return a ? ActivityPresenterFactory.for(a).practiceContent(a) : null;
+  }
+
+  feedbackLayout(): FeedbackLayout {
+    const a = this.activity();
+    const fb = this.feedback();
+    if (!a || !fb) return 'legacy';
+    return ActivityPresenterFactory.for(a).feedbackLayout(fb);
   }
 
   toggleHint(itemId: string): void {

@@ -1,5 +1,5 @@
 <!-- SpeakingRolePlay: Ready to record -->
-@if (state === 'ready' && isSpeakingRolePlay) {
+@if (state === 'ready' && practice.block === 'speakingRecord') {
   <div style="display:flex;flex-direction:column;gap:24px;align-items:center;text-align:center;padding:16px 0">
     <div style="width:80px;height:80px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center">
       <svg width="36" height="36" fill="none" stroke="#92400e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -33,7 +33,7 @@
 }
 
 <!-- SpeakingRolePlay: Recorded — preview before submit -->
-@if (state === 'recorded' && isSpeakingRolePlay && !usesExerciseRenderer) {
+@if (state === 'recorded' && practice.block === 'speakingRecord') {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin:0">Preview your recording</h3>
     @if (audioBlobUrl) {
@@ -60,11 +60,11 @@
 }
 
 <!-- Exercise Pattern Engine renderers -->
-@if ((state === 'writing' || state === 'submitting') && usesExerciseRenderer) {
+@if ((state === 'writing' || state === 'submitting') && practice.block === 'exerciseRenderer') {
   <div style="display:flex;flex-direction:column;gap:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <span class="sp-skill-badge sp-skill-badge-writing">
-        {{ rendererSkillLabel }}
+        {{ practice.skillBadge.label }}
       </span>
       @if (isAiGenerated) {
         <span class="sp-ai-badge">AI-generated</span>
@@ -95,7 +95,7 @@
 }
 
 <!-- VocabularyPractice: Writing/Practice state -->
-@if ((state === 'writing' || state === 'submitting') && isVocabPractice && !usesExerciseRenderer) {
+@if ((state === 'writing' || state === 'submitting') && practice.block === 'vocabPractice') {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity.title }}</h2>
     <p style="font-size:13px;color:var(--sp-muted)">{{ activity.instructions }}</p>
@@ -142,7 +142,7 @@
 }
 
 <!-- ListeningComprehension: Practice state -->
-@if ((state === 'writing' || state === 'submitting') && isListeningComprehension && !usesExerciseRenderer) {
+@if ((state === 'writing' || state === 'submitting') && practice.block === 'listeningPractice') {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity.title }}</h2>
     <div class="sp-card" style="padding:14px 18px">
@@ -198,7 +198,7 @@
 }
 
 <!-- WritingScenario: Writing state -->
-@if ((state === 'writing' || state === 'submitting') && !isVocabPractice && !isListeningComprehension && !usesExerciseRenderer) {
+@if ((state === 'writing' || state === 'submitting') && practice.block === 'writingPractice') {
   <div style="display:flex;flex-direction:column;gap:16px">
 
     <!-- Attempt counter if retrying -->

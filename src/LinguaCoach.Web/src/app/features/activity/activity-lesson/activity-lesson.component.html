@@ -84,10 +84,7 @@
 @if (state() === 'learning' && activity()) {
   <app-activity-teach-page
     [activity]="activity()!"
-    [isVocabPractice]="isVocabPractice()"
-    [isListeningComprehension]="isListeningComprehension()"
-    [isSpeakingRolePlay]="isSpeakingRolePlay()"
-    [usesExerciseRenderer]="usesExerciseRenderer()"
+    [teach]="teachViewModel()!"
     [isAiGenerated]="isAiGenerated()"
     (startPractice)="startPractice()"
     (startWriting)="startWriting()"
@@ -103,12 +100,8 @@
   <app-activity-practice-page
     [activity]="activity()!"
     [state]="state()"
-    [isVocabPractice]="isVocabPractice()"
-    [isListeningComprehension]="isListeningComprehension()"
-    [isSpeakingRolePlay]="isSpeakingRolePlay()"
-    [usesExerciseRenderer]="usesExerciseRenderer()"
+    [practice]="practiceViewModel()!"
     [isAiGenerated]="isAiGenerated()"
-    [rendererSkillLabel]="rendererSkillLabel()"
     [attemptCount]="attemptCount()"
     [vocabAnswers]="vocabAnswers"
     [showHints]="showHints"

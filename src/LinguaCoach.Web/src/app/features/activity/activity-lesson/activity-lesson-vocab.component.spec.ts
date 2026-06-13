@@ -36,6 +36,28 @@ const vocabActivity: ActivityDto = {
       explanation: 'A formal phrase used in professional emails.',
     },
   ],
+  scenario: null,
+  speakerRole: null,
+  listenerRole: null,
+  transcriptAvailableAfterSubmit: null,
+  listeningQuestions: null,
+  responseTask: null,
+  audioAvailable: null,
+  audioUrl: null,
+  audioContentType: null,
+  audioDurationSeconds: null,
+  audioUnavailableMessage: null,
+  speakingScenario: null,
+  studentRole: null,
+  speakingListenerRole: null,
+  speakingGoal: null,
+  speakingPrompt: null,
+  expectedPoints: null,
+  suggestedPhrases: null,
+  maxDurationSeconds: null,
+  interactionMode: null,
+  exercisePatternKey: null,
+  contentJson: null,
 };
 
 const vocabFeedback: ActivityFeedbackDto = {
@@ -59,6 +81,14 @@ const vocabFeedback: ActivityFeedbackDto = {
   rewriteChallenge: null,
   nextPracticeSuggestion: null,
   feedbackInSourceLanguage: null,
+  questionFeedback: null,
+  transcript: null,
+  responseFeedback: null,
+  speakingStrengths: null,
+  speakingImprovements: null,
+  missingExpectedPoints: null,
+  suggestedImprovedResponse: null,
+  patternEvaluation: null,
 };
 
 describe('ActivityLessonComponent — VocabularyPractice', () => {
@@ -137,8 +167,11 @@ describe('ActivityLessonComponent — VocabularyPractice', () => {
     fixture.componentInstance.startPractice();
     fixture.detectChanges();
 
-    // vocabItemsFilled() should be false
-    expect(fixture.componentInstance.vocabItemsFilled()).toBeFalse();
+    const html: string = fixture.nativeElement.textContent;
+    const submitBtn = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((b: any) => b.textContent.includes('Check answers')) as HTMLButtonElement;
+    expect(submitBtn.disabled).toBeTrue();
+    expect(html).toContain('Check answers');
   }));
 
   it('submit button enabled when all answers filled', fakeAsync(() => {
@@ -152,7 +185,9 @@ describe('ActivityLessonComponent — VocabularyPractice', () => {
     fixture.componentInstance.vocabAnswers['item-2'] = 'at your earliest convenience';
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.vocabItemsFilled()).toBeTrue();
+    const submitBtn = Array.from(fixture.nativeElement.querySelectorAll('button'))
+      .find((b: any) => b.textContent.includes('Check answers')) as HTMLButtonElement;
+    expect(submitBtn.disabled).toBeFalse();
   }));
 
   it('calls submitVocabAttempt on submit and shows feedback', fakeAsync(() => {

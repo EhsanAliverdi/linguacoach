@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivityDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
 import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
+import { PracticeViewModel } from '../presenters/activity-page-presenter';
 
 type PracticePageState =
   | 'loading' | 'learning' | 'writing' | 'submitting' | 'feedback' | 'error'
@@ -18,12 +19,8 @@ type PracticePageState =
 export class ActivityPracticePageComponent {
   @Input({ required: true }) activity!: ActivityDto;
   @Input({ required: true }) state!: PracticePageState;
-  @Input() isVocabPractice = false;
-  @Input() isListeningComprehension = false;
-  @Input() isSpeakingRolePlay = false;
-  @Input() usesExerciseRenderer = false;
+  @Input({ required: true }) practice!: PracticeViewModel;
   @Input() isAiGenerated = false;
-  @Input() rendererSkillLabel = '';
   @Input() attemptCount = 0;
 
   @Input() vocabAnswers: Record<string, string> = {};

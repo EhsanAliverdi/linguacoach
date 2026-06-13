@@ -23,14 +23,33 @@ state/signals/HTTP/recording-lifecycle logic; page components receive
 `@Input()`/`@Output()` only. Zero behavior change — `ng build` clean (only
 pre-existing unrelated warnings in `pattern-evaluation-result`).
 
-Step 2 adds an `ActivityPagePresenter` interface (presenter-layer "inheritance
-for scalability"). Steps 3-5 migrate VocabularyPractice, ListeningComprehension,
-WritingScenario, and SpeakingRolePlay onto the pattern engine with a unified
-`{teach, practice}` AI content contract — each its own sprint with AI prompt
-calibration. See
+**Step 2 done (2026-06-13)**: added `ActivityPagePresenter` interface under
+`src/LinguaCoach.Web/src/app/features/activity/presenters/` with
+`PatternBackedPresenter` + 4 `Legacy*Presenter` bridges (`LegacySpeaking`,
+`LegacyVocab`, `LegacyListening`, `LegacyWriting`) selected by
+`ActivityPresenterFactory.for(activity)`. `TeachViewModel`/`PracticeViewModel`
+(`block`, `skillBadge`, `ctaLabel`/`ctaAction`) replace the old boolean-flag
+`@Input()`s (`isVocabPractice`, `isListeningComprehension`,
+`isSpeakingRolePlay`, `usesExerciseRenderer`, `rendererSkillLabel`) on
+`ActivityTeachPageComponent`/`ActivityPracticePageComponent`, which now
+`@switch` on `teach.block`/`practice.block`. `PatternBackedPresenter` derives
+skill badge/label from `ActivityDto.interactionMode`/`activityType` so new
+pattern keys need zero presenter changes. Orchestrator
+(`ActivityLessonComponent`) keeps `isSpeakingRolePlay()` for internal
+recording-flow branching; the rest of the old `is*()`/`usesExerciseRenderer()`/
+`rendererSkillLabel()` methods were removed as dead code. 6 new presenter/
+factory unit specs added. `ng build` clean (only pre-existing
+`pattern-evaluation-result` warnings); `ng test` — new specs pass, pre-existing
+unrelated TestBed-provider failures (Login/Onboarding/Vocabulary/Progress/
+ActivityLesson specs missing `ActivatedRoute`/`HttpClient` providers) unchanged
+from before this work. Zero behavior change.
+
+Steps 3-5 migrate VocabularyPractice, ListeningComprehension, WritingScenario,
+and SpeakingRolePlay onto the pattern engine with a unified `{teach, practice}`
+AI content contract — each its own sprint with AI prompt calibration. See
 [2026-06-13-activity-3-page-restructure-eng-plan.md](../reviews/2026-06-13-activity-3-page-restructure-eng-plan.md).
 
-Next: Step 2 (`ActivityPagePresenter` interface + legacy bridge presenters).
+Next: Step 3 (pattern-engine migration, first activity type TBD).
 
 ## Most recently completed sprint
 
