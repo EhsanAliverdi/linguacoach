@@ -49,7 +49,19 @@ and SpeakingRolePlay onto the pattern engine with a unified `{teach, practice}`
 AI content contract — each its own sprint with AI prompt calibration. See
 [2026-06-13-activity-3-page-restructure-eng-plan.md](../reviews/2026-06-13-activity-3-page-restructure-eng-plan.md).
 
-Next: Step 3 (pattern-engine migration, first activity type TBD).
+**Step 3 planning pass done (2026-06-13)** — see
+[2026-06-13-activity-3-page-step3-vocab-listening-pattern-sprint.md](2026-06-13-activity-3-page-step3-vocab-listening-pattern-sprint.md).
+Found the pattern engine for vocab/listening (`gap_fill_workplace_phrase`,
+`listen_and_answer`, `listen_and_gap_fill`) is already built and used for
+Today's Lesson — Step 3 is mostly a routing switchover in
+`ActivityGetHandler.ResolveActivityTypeAsync` (every-4th/5th-attempt legacy
+generation path), not new patterns from scratch. Open question before
+implementation: is the legacy `/activity` (no query params) route still
+reachable from student nav?
+
+Next: confirm legacy `/activity` route usage with product, then Step 3
+slice 1 (hint/explanation content-parity decision for
+`gap_fill_workplace_phrase`).
 
 ## Most recently completed sprint
 
