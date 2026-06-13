@@ -266,6 +266,7 @@ export class ExerciseRendererComponent {
           after: parts.after,
           acceptedAnswers: this.stringArray(obj['acceptedAnswers'])
             ?? this.stringValue(obj['answer'])?.split('|').map(a => a.trim()).filter(Boolean),
+          hint: this.stringValue(obj['hint']),
         };
       });
     }

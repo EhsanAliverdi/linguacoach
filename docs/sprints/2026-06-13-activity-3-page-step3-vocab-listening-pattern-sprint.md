@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 lastUpdated: 2026-06-13 00:00
 owner: engineering
 supersedes:
@@ -114,11 +114,52 @@ confirm against `GapFillContent`/`GapFillItem` (Domain) and the
 - Slices 1-3 are one sprint; slice 4 (presenter/template deletion) is a
   separate follow-up sprint gated on production data review.
 
+## Implementation (2026-06-13)
+
+Slices 1-3 implemented per user direction ("finish all the steps").
+
+- **Slice 1**: `gap_fill_workplace_phrase` gap items now carry `hint`
+  end-to-end. `GapFillItem` (frontend) gained `hint?: string | null`;
+  `exercise-renderer.component.ts`'s `mapGapItems` primary branch maps
+  `obj['hint']`; `gap-fill.component.ts`/`.html` add a "Show hint" toggle
+  matching the legacy vocab UX. Backend `GapFillItemDto.Hint` and the AI
+  prompt schema already supported this — no backend change needed.
+- **Slice 2**: in `ActivityGetHandler.HandleAsync`, when
+  `ResolveActivityTypeAsync` picks `VocabularyPractice` or
+  `ListeningComprehension` via the every-4th/5th-attempt cadence (and no
+  `?type=`/`?pattern=` override is present), the handler now calls
+  `HandlePatternKeyedAsync(ExercisePatternKey.GapFillWorkplacePhrase, ...)`
+  / `HandlePatternKeyedAsync(ExercisePatternKey.ListenAndAnswer, ...)`
+  instead of the legacy null-`interactionMode` generation. `_vocabGenerator`
+  and the legacy `ListeningComprehension` AI-generation branch are retained
+  only for the explicit `?type=` override path (`ActivityController`'s
+  legacy `/activity?type=` query), which is still wired up.
+- **Slice 3**: confirmed `PracticeGymGenerationJob` and
+  `ExercisePrepareHandler` (Today's Lesson session generation) were already
+  pattern-keyed per the original findings — no other code path creates
+  `interactionMode == null` rows of these two types via the cadence-driven
+  `/activity/next` flow.
+- **Slice 4** (delete `LegacyVocabPresenter`/`LegacyListeningPresenter` and
+  the `vocabLearning`/`vocabPractice`/`listeningLearning`/`listeningPractice`
+  template branches): **not done** — explicitly deferred as a follow-up
+  sprint gated on production data review (existing rows created via
+  `?type=` overrides still need the legacy presenters). Revisit once
+  `?type=` override usage is confirmed negligible or removed.
+- **Slice 5** (AI prompt calibration pass): not applicable — no prompt
+  changes were made in slice 2 (reusing existing calibrated
+  `activity_generate_gap_fill_workplace_phrase` /
+  `activity_generate_listen_and_answer` prompts).
+- **Slice 6**: `exercise-pattern-library.md` already listed these as P0;
+  no roadmap doc changes needed since `ActivityType` returned by
+  `/activity/next` is unchanged, only the internal representation
+  (`interactionMode`/`contentJson`) now populated.
+
+`dotnet build` and `ng build` clean. Verdict: Step 3 complete except Slice 4
+(intentionally deferred, tracked above).
+
 ## Next recommended action
 
-Confirm with product whether the legacy `/activity` (no-params) route is
-still used by any student-facing nav link. If not, Step 3 collapses to a
-documentation-only update plus a backend cleanup PR (remove dead
-`ResolveActivityTypeAsync` branches) — much smaller than originally scoped.
-If it is still reachable, proceed with slice 1 (hint/explanation parity
-decision) before slice 2 (routing switchover).
+Open a follow-up sprint for Slice 4 (legacy presenter/template removal)
+once production data confirms `?type=`-override-generated legacy rows have
+aged out. Otherwise proceed to Step 4 (WritingScenario →
+`open_writing_task`).

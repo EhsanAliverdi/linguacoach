@@ -8,6 +8,7 @@ export interface GapFillItem {
   before: string;
   after: string;
   acceptedAnswers?: string[];
+  hint?: string | null;
 }
 
 export interface GapFillContent {
@@ -34,6 +35,11 @@ export class GapFillComponent {
   @Output() submitted = new EventEmitter<GapFillAnswer>();
 
   answers: Record<string, string> = {};
+  showHints: Record<string, boolean> = {};
+
+  toggleHint(itemId: string): void {
+    this.showHints[itemId] = !this.showHints[itemId];
+  }
 
   get allFilled(): boolean {
     return this.content?.items?.length > 0 &&

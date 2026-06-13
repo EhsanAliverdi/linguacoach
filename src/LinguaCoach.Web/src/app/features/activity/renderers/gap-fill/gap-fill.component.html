@@ -51,6 +51,19 @@
             <span>{{ item.after }}</span>
           }
         </div>
+        @if (item.hint) {
+          <div style="margin-top:8px">
+            <button (click)="toggleHint(item.id)"
+                    [disabled]="disabled"
+                    class="sp-button-ghost"
+                    style="font-size:12px;padding:4px 10px">
+              {{ showHints[item.id] ? 'Hide hint' : 'Show hint' }}
+            </button>
+            @if (showHints[item.id]) {
+              <p style="font-size:12.5px;color:var(--sp-muted);margin-top:6px;font-style:italic">{{ item.hint }}</p>
+            }
+          </div>
+        }
       </div>
     }
   </div>

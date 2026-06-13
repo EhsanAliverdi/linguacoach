@@ -72,6 +72,17 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         _logger.LogInformation("Next activity requested UserId={UserId} ActivityType={ActivityType}",
             query.UserId, activityType);
 
+        // VocabularyPractice / ListeningComprehension cadence picks are now routed
+        // through the pattern engine so every new activity carries interactionMode.
+        if (!query.PreferredType.HasValue)
+        {
+            if (activityType == ActivityType.VocabularyPractice)
+                return await HandlePatternKeyedAsync(Domain.ExercisePatternKey.GapFillWorkplacePhrase, profile, ct);
+
+            if (activityType == ActivityType.ListeningComprehension)
+                return await HandlePatternKeyedAsync(Domain.ExercisePatternKey.ListenAndAnswer, profile, ct);
+        }
+
         // Resolve active learning path + current module (lazy-generate if missing).
         var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
         if (currentModuleId.HasValue)
