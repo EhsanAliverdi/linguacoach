@@ -19,6 +19,13 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
     private const string SpokenResponsePromptKey = "activity_evaluate_spoken_response_from_prompt";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    private static string ResolvePromptKey(string? patternKey) => patternKey switch
+    {
+        ExercisePatternKey.OpenWritingTask      => "activity_evaluate_open_writing_task",
+        ExercisePatternKey.SpeakingRoleplayTurn => "activity_evaluate_speaking_roleplay_turn",
+        _                                       => SpokenResponsePromptKey, // spoken_response_from_prompt fallback
+    };
+
     private readonly IAiContextBuilder _contextBuilder;
     private readonly AiExecutionService _aiExecution;
     private readonly ILogger<AiOpenEndedEvaluator> _logger;
@@ -51,16 +58,18 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
             ["studentSkillContext"] = request.StudentSkillContext ?? "No specific skill history available yet.",
         };
 
+        var promptKey = ResolvePromptKey(request.ExercisePatternKey);
+
         _logger.LogInformation(
-            "AiOpenEndedEvaluator calling AI ActivityId={ActivityId} PatternKey={PatternKey}",
-            request.ActivityId, request.ExercisePatternKey);
+            "AiOpenEndedEvaluator calling AI ActivityId={ActivityId} PatternKey={PatternKey} PromptKey={PromptKey}",
+            request.ActivityId, request.ExercisePatternKey, promptKey);
 
         string responseJson;
         try
         {
-            var aiRequest = await _contextBuilder.BuildAsync(SpokenResponsePromptKey, variables, cancellationToken);
+            var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, cancellationToken);
             responseJson = await _aiExecution.ExecuteAsync(
-                SpokenResponsePromptKey, aiRequest, request.StudentProfileId, correlationId: null, cancellationToken);
+                promptKey, aiRequest, request.StudentProfileId, correlationId: null, cancellationToken);
         }
         catch (AiUnavailableException ex)
         {

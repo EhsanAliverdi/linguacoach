@@ -135,6 +135,38 @@ public static class ExercisePatternSeeder
             workplaceContext: true),
 
         new(
+            key: ExercisePatternKey.OpenWritingTask,
+            name: "Open Writing Task",
+            primarySkill: "Writing",
+            secondarySkillsJson: """["Grammar","Vocabulary","Tone"]""",
+            compatibleKindsJson: """[4]""",           // WritingTask
+            activityType: ActivityType.WritingScenario,
+            interactionMode: InteractionMode.FreeTextEntry,
+            markingMode: MarkingMode.AiOpenEnded,
+            estimatedMinutes: 7,
+            aiGeneratePromptKey: "activity_generate_open_writing_task",
+            aiEvaluatePromptKey: "activity_evaluate_open_writing_task",
+            teachingPurpose: "Free-form workplace writing with open-ended AI coaching feedback",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.SpeakingRoleplayTurn,
+            name: "Speaking Roleplay Turn",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """["Vocabulary","Fluency"]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.AudioResponse,
+            markingMode: MarkingMode.AiOpenEnded,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_speaking_roleplay_turn",
+            aiEvaluatePromptKey: "activity_evaluate_speaking_roleplay_turn",
+            teachingPurpose: "Practise a spoken workplace roleplay turn with recorded audio response",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
             key: ExercisePatternKey.LessonReflection,
             name: "Lesson Reflection",
             primarySkill: "Reflection",

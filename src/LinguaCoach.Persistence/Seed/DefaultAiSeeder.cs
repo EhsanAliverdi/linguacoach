@@ -33,6 +33,8 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateTeamsChatKey          = "activity_generate_teams_chat_simulation";
     public const string ActivityGenerateSpokenResponseKey     = "activity_generate_spoken_response_from_prompt";
     public const string ActivityGenerateLessonReflectionKey   = "activity_generate_lesson_reflection";
+    public const string ActivityGenerateOpenWritingTaskKey    = "activity_generate_open_writing_task";
+    public const string ActivityGenerateSpeakingRoleplayTurnKey = "activity_generate_speaking_roleplay_turn";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -43,6 +45,8 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateTeamsChatKey          = "activity_evaluate_teams_chat_simulation";
     public const string ActivityEvaluateSpokenResponseKey     = "activity_evaluate_spoken_response_from_prompt";
     public const string ActivityEvaluateLessonReflectionKey   = "activity_evaluate_lesson_reflection";
+    public const string ActivityEvaluateOpenWritingTaskKey    = "activity_evaluate_open_writing_task";
+    public const string ActivityEvaluateSpeakingRoleplayTurnKey = "activity_evaluate_speaking_roleplay_turn";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English language teacher creating a writing practice activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -685,6 +689,71 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateOpenWritingTaskContent = """
+You are an expert English language teacher creating an open-ended workplace writing task for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Create a realistic, free-form workplace writing task (e.g. a short report section, a
+proposal paragraph, a status update, a reflective note) that the student writes from
+scratch in an open text box — not a reply to an incoming message.
+
+Return ONLY valid JSON (no markdown) matching this exact structure:
+
+{
+  "title": "<short descriptive title for this activity, 5-10 words>",
+  "situation": "<2-3 sentences describing the realistic workplace situation>",
+  "prompt": "<the specific writing task, e.g. 'Write a short paragraph explaining the project delay to your manager'>",
+  "learningGoal": "<one sentence stating what writing skill this activity practises>",
+  "targetPhrases": ["<useful phrase 1>", "<useful phrase 2>", "<useful phrase 3>"],
+  "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
+  "exampleText": "<a complete, polished example response the student can study>",
+  "commonMistakeToAvoid": "<one sentence describing a common mistake {{sourceLanguageName}} speakers make in this type of writing, and how to avoid it>",
+  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} telling the student what to write and why>",
+  "wordLimit": <suggested word count, e.g. 60>
+}
+
+Rules:
+- The situation and prompt must be specific and believable for {{careerContext}} professionals.
+- targetPhrases must be phrases the student should actively try to use.
+- The example must be a complete, professional piece of writing matching the prompt.
+- instructionInSourceLanguage must be written entirely in {{sourceLanguageName}}.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateSpeakingRoleplayTurnContent = """
+You are an expert English language teacher creating a spoken workplace roleplay turn for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Create a workplace roleplay scenario where the student records one spoken turn.
+Return ONLY valid JSON:
+
+{
+  "title": "<short title>",
+  "scenario": "<2-3 sentences describing the workplace roleplay situation>",
+  "studentRole": "<student's role in the roleplay>",
+  "listenerRole": "<who the student is speaking to>",
+  "speakingGoal": "<what the student must communicate>",
+  "prompt": "<the specific spoken task, e.g. 'Record a 30-second response explaining the delay to your manager'>",
+  "expectedPoints": ["<key point 1 the answer should cover>", "<key point 2>", "<key point 3>"],
+  "suggestedPhrases": ["<helpful phrase 1>", "<helpful phrase 2>", "<helpful phrase 3>"],
+  "maxDurationSeconds": 60
+}
+
+Rules:
+- The scenario must be realistic for {{careerContext}} professionals.
+- expectedPoints should be specific and verifiable from a spoken response.
+- suggestedPhrases should be professional and at the right level for {{cefrLevel}}.
+- Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -959,6 +1028,78 @@ Evaluate clarity, content coverage, and professional register. Return ONLY valid
 }
 """;
 
+    private const string ActivityEvaluateSpeakingRoleplayTurnContent = """
+You are an English speaking coach evaluating a recorded workplace roleplay turn from a {{sourceLanguageName}}-speaking student.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (scenario, prompt, and expected points):
+{{activityContent}}
+
+Student's transcribed spoken response:
+{{studentSubmission}}
+
+Student's current progress on the skill this exercise targets: {{studentSkillContext}}
+Use this to make coachSummary specific and encouraging — do not repeat it verbatim.
+
+Evaluate clarity, content coverage, and professional register. Return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentence warm feedback on the spoken response>",
+  "strengths": ["<strength 1>", "<strength 2>"],
+  "improvements": ["<improvement area 1>", "<improvement area 2>"],
+  "missingExpectedPoints": ["<any expected point not covered>"],
+  "suggestedImprovedResponse": "<a model spoken response in written form>",
+  "miniLesson": "<one sentence tip for spoken workplace communication>",
+  "nextImprovementStep": "<one sentence suggestion for next spoken practice>"
+}
+
+Rules:
+- overallScore must be a number between 0 and 100.
+- strengths must include at least one genuine positive observation.
+- improvements and missingExpectedPoints may be empty arrays if there are none.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateOpenWritingTaskContent = """
+You are a warm, professional English writing coach evaluating an open-ended workplace writing task from a {{sourceLanguageName}}-speaking student learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (situation and prompt):
+{{activityContent}}
+
+Student's submitted writing:
+---
+{{studentSubmission}}
+---
+
+Student's current progress on the skill this exercise targets: {{studentSkillContext}}
+Use this to make coachSummary specific and encouraging — do not repeat it verbatim.
+
+Evaluate clarity, grammar, vocabulary, and professional tone. Return ONLY valid JSON:
+
+{
+  "overallScore": <number 0-100>,
+  "coachSummary": "<1-2 warm sentences summarising the overall quality and the most important thing to improve>",
+  "strengths": ["<specific genuine strength 1>", "<specific genuine strength 2>"],
+  "improvements": ["<specific improvement area 1>", "<specific improvement area 2>"],
+  "missingExpectedPoints": ["<any part of the prompt the student did not address>"],
+  "suggestedImprovedResponse": "<a suggested improved version of the student's writing — label this as a suggestion, not the answer>",
+  "miniLesson": "<1-2 sentences teaching the single most important rule illustrated by this submission>",
+  "nextImprovementStep": "<one actionable sentence telling the student exactly what to try next time>"
+}
+
+Rules:
+- overallScore must be a number between 0 and 100.
+- strengths must include at least one genuine positive observation.
+- improvements and missingExpectedPoints may be empty arrays if there are none.
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityEvaluateLessonReflectionContent = """
 You are an English language teacher acknowledging a student's lesson reflection.
 
@@ -1210,6 +1351,14 @@ Rules:
             ActivityGenerateLessonReflectionKey, ActivityGenerateLessonReflectionContent,
             maxInputTokens: 500, maxOutputTokens: 400, ct);
 
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateOpenWritingTaskKey, ActivityGenerateOpenWritingTaskContent,
+            maxInputTokens: 900, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSpeakingRoleplayTurnKey, ActivityGenerateSpeakingRoleplayTurnContent,
+            maxInputTokens: 700, maxOutputTokens: 700, ct);
+
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluatePhraseMatchKey, ActivityEvaluatePhraseMatchContent,
@@ -1242,6 +1391,14 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateLessonReflectionKey, ActivityEvaluateLessonReflectionContent,
             maxInputTokens: 800, maxOutputTokens: 600, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateOpenWritingTaskKey, ActivityEvaluateOpenWritingTaskContent,
+            maxInputTokens: 2000, maxOutputTokens: 1500, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateSpeakingRoleplayTurnKey, ActivityEvaluateSpeakingRoleplayTurnContent,
+            maxInputTokens: 1500, maxOutputTokens: 1200, ct);
 
         // AI Config Categories — category-level provider routing.
         // llm.default acts as the catch-all for all LLM features.

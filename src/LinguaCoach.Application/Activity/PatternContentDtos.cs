@@ -137,6 +137,37 @@ public sealed class TeamsChatSimulationContent
     public string? InstructionInSourceLanguage { get; set; }
 }
 
+// ── open_writing_task ────────────────────────────────────────────────────────
+
+public sealed class OpenWritingTaskContent
+{
+    public string? Title { get; set; }
+    public string? Situation { get; set; }
+    public string? Prompt { get; set; }
+    public string? LearningGoal { get; set; }
+    public string[]? TargetPhrases { get; set; }
+    public string[]? TargetVocabulary { get; set; }
+    public string? ExampleText { get; set; }
+    public string? CommonMistakeToAvoid { get; set; }
+    public string? InstructionInSourceLanguage { get; set; }
+    public int? WordLimit { get; set; }
+}
+
+// ── speaking_roleplay_turn ───────────────────────────────────────────────────
+
+public sealed class SpeakingRoleplayTurnContent
+{
+    public string? Title { get; set; }
+    public string? Scenario { get; set; }
+    public string? StudentRole { get; set; }
+    public string? ListenerRole { get; set; }
+    public string? SpeakingGoal { get; set; }
+    public string? Prompt { get; set; }
+    public List<string>? ExpectedPoints { get; set; }
+    public List<string>? SuggestedPhrases { get; set; }
+    public int? MaxDurationSeconds { get; set; }
+}
+
 // ── spoken_response_from_prompt ───────────────────────────────────────────────
 
 public sealed class SpokenResponseContent

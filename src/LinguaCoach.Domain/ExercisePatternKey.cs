@@ -19,9 +19,11 @@ public static class ExercisePatternKey
     // ── Writing / Workplace Communication ────────────────────────────────────
     public const string EmailReply                = "email_reply";
     public const string TeamsChatSimulation       = "teams_chat_simulation";
+    public const string OpenWritingTask           = "open_writing_task";
 
     // ── Speaking ─────────────────────────────────────────────────────────────
     public const string SpokenResponseFromPrompt  = "spoken_response_from_prompt";
+    public const string SpeakingRoleplayTurn      = "speaking_roleplay_turn";
 
     // ── Review / Reflection ──────────────────────────────────────────────────
     public const string LessonReflection          = "lesson_reflection";

@@ -19,7 +19,8 @@ export type InteractionMode =
   | 'chatReply'
   | 'audioAndFreeText'
   | 'audioAndGapFill'
-  | 'emailReply';
+  | 'emailReply'
+  | 'audioResponse';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;
