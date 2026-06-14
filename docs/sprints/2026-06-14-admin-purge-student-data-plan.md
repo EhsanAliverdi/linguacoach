@@ -114,9 +114,13 @@ Single DB transaction. Per the doc's "Soft-Delete vs Hard-Delete" table:
 - `npx tsc -p tsconfig.app.json --noEmit`: clean.
 - `npx ng build --configuration development`: succeeds (pre-existing NG8102
   warnings in `pattern-evaluation-result.component.html`, unrelated).
-- No Playwright coverage added for the new admin reset flow (follow-up).
+- `npx playwright test e2e/admin-students-reset.spec.ts`: 6/6 passing
+  (`src/LinguaCoach.Web/e2e/admin-students-reset.spec.ts`). Covers: default
+  preset state, submit-disabled validation (reason + typed email), full-clean
+  preset checks all 8 flags, success result view (new stage, reset log id),
+  API error display, and modal cancel.
 
 ## Status
 
-Implemented and verified (build + unit tests green). Playwright e2e coverage
-for the admin reset modal is a recommended follow-up.
+Implemented and verified (build + unit tests green + Playwright e2e green).
+No outstanding follow-ups.
