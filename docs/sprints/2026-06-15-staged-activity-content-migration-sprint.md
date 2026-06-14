@@ -5,6 +5,14 @@ owner: architecture
 relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
 relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
 ---
+---
+
+status: in-progress
+lastUpdated: 2026-06-15
+owner: architecture
+relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
+relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
+-----------------------------------------------------------------------------------------
 
 # Staged Activity Content Migration Sprint
 
@@ -12,122 +20,558 @@ relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investi
 
 `docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md`
 confirmed the Learn step for Practice Gym / Today Listening activities
-rendered the full exercise (audio player, "Answer questions" CTA, transcript-
-lock message) because `AiGeneratedContentJson` was one flat exercise-shaped
-payload, forwarded unchanged to both Learn and Practice by
+rendered the full exercise: audio player, "Answer questions" CTA, transcript-lock
+message. This happened because `AiGeneratedContentJson` was one flat
+exercise-shaped payload, forwarded unchanged to both Learn and Practice by
 `LegacyListeningPresenter`.
 
-The full fix requires every generated activity to carry three sections —
-`learnContent`, `practiceContent`, `feedbackPlan` — under a
-`schemaVersion: "module_stage_v1"` envelope, with the Learn page reading
-**only** `learnContent`. This is a 7-phase, cross-stack migration (10
-generation prompts, 12 evaluation prompts, 10 exercise patterns, 5 presenters,
-8 renderers, 3 test layers). It cannot land in one PR.
+The full fix requires every generated activity/module to carry three sections:
 
-## PR1 — Listening reference implementation (this sprint, completed)
+* `learnContent`
+* `practiceContent`
+* `feedbackPlan`
+
+These sections live under a `schemaVersion: "module_stage_v1"` envelope, with the
+Learn page reading **only** `learnContent`.
+
+This is a 7-phase, cross-stack migration:
+
+* generation prompts
+* evaluation prompts
+* exercise patterns
+* presenters
+* renderers
+* backend DTO/API mapping
+* frontend tests
+* Playwright tests
+
+It cannot land in one PR.
+
+## Product model clarification — skills and exercise types are different
+
+The staged model must not assume that one skill equals one fixed activity type.
+
+Wrong assumption:
+
+```text
+Listening = ListeningComprehension
+Writing = WritingScenario
+Speaking = SpeakingRolePlay
+```
+
+Correct model:
+
+```text
+A Learning Module targets one or more skills.
+The Practice stage uses one supported exercise type.
+```
+
+Examples:
+
+| Exercise type                            | Skills tested       |
+| ---------------------------------------- | ------------------- |
+| Summarize Spoken Text                    | Listening + Writing |
+| Multiple Choice, Choose Multiple Answers | Listening           |
+| Fill in the Blanks from Audio            | Listening           |
+| Highlight Correct Summary                | Listening + Reading |
+| Multiple Choice, Choose Single Answer    | Listening           |
+| Select Missing Word                      | Listening           |
+| Highlight Incorrect Words                | Listening + Reading |
+| Write from Dictation                     | Listening + Writing |
+
+Therefore every staged learning module should support:
+
+* `primarySkill`
+* `secondarySkills`
+* `exerciseType`
+* `moduleGoal`
+* `learnContent`
+* `practiceContent`
+* `feedbackPlan`
+
+Example staged metadata:
+
+```json
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "Summarize a spoken workplace update",
+  "moduleGoal": "Listen for the main message and write a concise summary.",
+  "primarySkill": "listening",
+  "secondarySkills": ["writing"],
+  "exerciseType": "summarize_spoken_text",
+  "learnContent": {},
+  "practiceContent": {},
+  "feedbackPlan": {}
+}
+```
+
+Important rules:
+
+* `primarySkill` describes the main skill being developed.
+* `secondarySkills` describes additional skills involved in the task.
+* `exerciseType` selects the Practice renderer and evaluator.
+* The renderer must be chosen by `exerciseType`, not only by skill.
+* The evaluator must understand `primarySkill`, `secondarySkills`, `exerciseType`,
+  and `feedbackPlan`.
+
+When a student selects a skill in Practice Gym, such as Listening, the system may
+serve any ready module where `primarySkill = listening`.
+
+Examples:
+
+* `summarize_spoken_text`
+* `listening_multiple_choice_multi`
+* `listening_fill_in_blanks`
+* `highlight_correct_summary`
+* `listening_multiple_choice_single`
+* `select_missing_word`
+* `highlight_incorrect_words`
+* `write_from_dictation`
+
+When a student selects a specific exercise type, the system should serve that exact
+exercise type.
+
+## Current staged schema direction
+
+The staged schema should evolve toward this shape:
+
+```json
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "...",
+  "moduleGoal": "...",
+  "primarySkill": "listening",
+  "secondarySkills": ["writing"],
+  "exerciseType": "summarize_spoken_text",
+  "learnContent": {
+    "teachingTitle": "...",
+    "explanation": "...",
+    "keyPoints": ["..."],
+    "examples": [
+      {
+        "phrase": "...",
+        "meaning": "...",
+        "note": "..."
+      }
+    ],
+    "strategy": "...",
+    "commonMistakes": ["..."],
+    "sourceLanguageSupport": "..."
+  },
+  "practiceContent": {
+    "instructions": "...",
+    "scenario": "...",
+    "task": "...",
+    "exerciseData": {}
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["..."],
+    "rubric": [],
+    "feedbackFocus": "...",
+    "successCriteria": ["..."]
+  }
+}
+```
+
+`skillFocus` may remain temporarily for backward compatibility, but new staged
+content should prefer `primarySkill` and `secondarySkills`.
+
+## PR1 — Listening reference implementation, completed
 
 PR1 built the shared schema/validator/adapter infrastructure reusable by all
 future activity types, and shipped it end-to-end for `ListeningComprehension`.
 
 Completed work:
 
-1. `ModuleStageContent.cs` — shared DTOs (`LearnContentDto`, `PracticeContentDto`,
-   `FeedbackPlanDto`, `StageContentDto`, `ModuleStageWireDto`).
-2. `ModuleStageContentValidator` — schema/forbidden-key/required-key validation.
-3. `ActivityDto.StageContent` (additive, nullable).
+1. `ModuleStageContent.cs` — shared DTOs:
+
+   * `LearnContentDto`
+   * `PracticeContentDto`
+   * `FeedbackPlanDto`
+   * `StageContentDto`
+   * `ModuleStageWireDto`
+2. `ModuleStageContentValidator` — schema, forbidden-key, and required-key validation.
+3. `ActivityDto.StageContent` — additive, nullable.
 4. Retry-once-then-fail validation in `AiActivityGeneratorHandler` for
    `ListeningComprehension`, replacing `ValidateListeningActivityJson`.
 5. `activity_generate_listening` prompt rewritten to produce `module_stage_v1`.
-6. `ActivityGetHandler.BuildStageContent` / `AdaptLegacyListening` — staged
-   content for new rows, `legacy_adapted_v1` adapter for old rows.
+6. `ActivityGetHandler.BuildStageContent` / `AdaptLegacyListening` — staged content
+   for new rows, `legacy_adapted_v1` adapter for old rows.
 7. `ListeningComprehensionEvaluator.ExtractExerciseDataJson` — unwraps staged
    `exerciseData` before scoring; scoring logic unchanged.
-8. Frontend: `StageContentDto` + related TS types, `ActivityDto.stageContent`.
-9. `LegacyListeningPresenter.teachContent(activity)` — `stagedLearning` view
-   model when `stageContent` present, legacy fallback otherwise.
-10. `activity-teach-page` — new `@case ('stagedLearning')`, old
+8. Frontend:
+
+   * `StageContentDto`
+   * related TypeScript types
+   * `ActivityDto.stageContent`
+9. `LegacyListeningPresenter.teachContent(activity)` — `stagedLearning` view model
+   when `stageContent` is present, legacy fallback otherwise.
+10. `activity-teach-page` — new `@case ('stagedLearning')`; old
     `listeningLearning` case marked deprecated.
 11. `activity-practice-page` — listening case reads
-    `stageContent.practice.{scenario,exerciseData}` via `listeningExerciseData` getter.
-12. Backend tests: `ModuleStageContentValidatorTests`,
-    `ActivityGetHandlerStageContentTests`, `ListeningComprehensionEvaluatorTests`,
-    `ActivityStageContentTests` (integration).
-13. **Found during testing**: `ActivityController.ToActivityResponse` did not
-    map `StageContent` to the API response at all — fixed by adding the full
-    `stageContent` mapping (schemaVersion/learn/practice/feedbackPlan).
-14. Frontend tests: `legacy-listening.presenter.spec.ts` rewritten for the new
-    `teachContent(activity)` signature (staged + fallback cases);
-    `e2e/listening-comprehension-activity.spec.ts` updated — Learn page shows
-    teaching content only (no audio/questions/transcript-lock), Practice page
-    shows the full exercise after "Start practice".
-15. Architecture doc updated (`docs/architecture/learning-activity-engine.md`,
-    "Staged Activity Content (`module_stage_v1`)" section).
+    `stageContent.practice.{scenario,exerciseData}` through
+    `listeningExerciseData` getter.
+12. Backend tests:
 
-Verification: 501+ backend unit tests pass, 2/2 new integration tests pass,
-84/84 Angular unit tests pass, `dotnet build` clean.
+    * `ModuleStageContentValidatorTests`
+    * `ActivityGetHandlerStageContentTests`
+    * `ListeningComprehensionEvaluatorTests`
+    * `ActivityStageContentTests` integration coverage
+13. Found during testing: `ActivityController.ToActivityResponse` did not map
+    `StageContent` to the API response. Fixed by adding full `stageContent` mapping:
+
+    * `schemaVersion`
+    * `learn`
+    * `practice`
+    * `feedbackPlan`
+14. Frontend tests:
+
+    * `legacy-listening.presenter.spec.ts` rewritten for new `teachContent(activity)`
+      signature
+    * staged and fallback cases covered
+    * `e2e/listening-comprehension-activity.spec.ts` updated
+    * Learn page shows teaching content only
+    * Learn page does not show audio/questions/transcript-lock
+    * Practice page shows full exercise after "Start practice"
+15. Architecture doc updated:
+
+    * `docs/architecture/learning-activity-engine.md`
+    * new "Staged Activity Content (`module_stage_v1`)" section
+
+Verification:
+
+* 501+ backend unit tests pass
+* 2/2 new integration tests pass
+* 84/84 Angular unit tests pass
+* `dotnet build` clean
+* Angular build clean
 
 ## Follow-up backlog — apply the PR1 recipe per type/pattern
 
-Each row follows the same recipe: new/updated generation prompt producing
-`module_stage_v1`, `RequiredPracticeKeysByType` entry (if applicable), an
-`AdaptLegacy*` branch in `ActivityGetHandler.BuildStageContent`, an evaluator
-unwrap step, a `stagedLearning` presenter case, and tests (validator + adapter
-+ evaluator + presenter + e2e).
+Each row follows the same recipe:
 
-| Activity type / pattern | Generation prompt key | Evaluation path | Presenter |
-|---|---|---|---|
-| WritingScenario | `activity_generate_writing` | `activity_evaluate_writing` (`AiActivityGeneratorHandler.EvaluateAttemptAsync`) | `LegacyWritingPresenter` |
-| SpeakingRolePlay | `activity_generate_speaking_roleplay` | `activity_evaluate_speaking_roleplay` | `LegacySpeakingPresenter` |
-| VocabularyPractice | (deterministic/seeded) | `NoMarkingEvaluator` / pattern eval | `LegacyVocabPresenter` |
-| phrase_match | `activity_generate_phrase_match` | `KeyedSelectionEvaluator` | `PatternBackedPresenter` |
-| gap_fill_workplace_phrase | `activity_generate_gap_fill_workplace_phrase` | `ExactMatchEvaluator` | `PatternBackedPresenter` |
-| listen_and_answer | `activity_generate_listen_and_answer` | `AiStructuredEvaluator` (`activity_evaluate_listen_and_answer`) | `PatternBackedPresenter` |
-| listen_and_gap_fill | `activity_generate_listen_and_gap_fill` | `ExactMatchEvaluator` | `PatternBackedPresenter` |
-| email_reply | `activity_generate_email_reply` | `AiStructuredEvaluator` (`activity_evaluate_email_reply`) | `PatternBackedPresenter` |
-| teams_chat_simulation | `activity_generate_teams_chat_simulation` | `AiStructuredEvaluator` (`activity_evaluate_teams_chat_simulation`) | `PatternBackedPresenter` |
-| spoken_response_from_prompt | `activity_generate_spoken_response_from_prompt` | `AiOpenEndedEvaluator` | `PatternBackedPresenter` |
-| open_writing_task | `activity_generate_open_writing_task` | `AiOpenEndedEvaluator` (`activity_evaluate_open_writing_task`) | `PatternBackedPresenter` |
-| speaking_roleplay_turn | `activity_generate_speaking_roleplay_turn` | `AiOpenEndedEvaluator` (`activity_evaluate_speaking_roleplay_turn`) | `PatternBackedPresenter` |
-| lesson_reflection | `activity_generate_lesson_reflection` | `NoMarkingEvaluator` | `PatternBackedPresenter` |
+* new/updated generation prompt producing `module_stage_v1`
+* `RequiredPracticeKeysByType` entry where applicable
+* `AdaptLegacy*` branch in `ActivityGetHandler.BuildStageContent`
+* evaluator unwrap step
+* `stagedLearning` presenter case
+* tests:
 
-## Required follow-up architecture (separate workstreams)
+  * validator
+  * adapter
+  * evaluator
+  * presenter
+  * e2e
 
-PR1 (staged schema + Listening reference + compatibility adapter) is **not**
-the final architecture. These are required future PR/sprints:
+| Activity type / pattern     |        Primary skill |                       Secondary skills | Generation prompt key                           | Evaluation path                                                                 | Presenter                 |
+| --------------------------- | -------------------: | -------------------------------------: | ----------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------- |
+| WritingScenario             |              Writing |                   Grammar / Vocabulary | `activity_generate_writing`                     | `activity_evaluate_writing` (`AiActivityGeneratorHandler.EvaluateAttemptAsync`) | `LegacyWritingPresenter`  |
+| SpeakingRolePlay            |             Speaking |                 Listening / Vocabulary | `activity_generate_speaking_roleplay`           | `activity_evaluate_speaking_roleplay`                                           | `LegacySpeakingPresenter` |
+| VocabularyPractice          |           Vocabulary |                      Reading / Writing | deterministic/seeded                            | `NoMarkingEvaluator` / pattern eval                                             | `LegacyVocabPresenter`    |
+| phrase_match                |           Vocabulary |                                Reading | `activity_generate_phrase_match`                | `KeyedSelectionEvaluator`                                                       | `PatternBackedPresenter`  |
+| gap_fill_workplace_phrase   | Grammar / Vocabulary |                                Reading | `activity_generate_gap_fill_workplace_phrase`   | `ExactMatchEvaluator`                                                           | `PatternBackedPresenter`  |
+| listen_and_answer           |            Listening |                                Writing | `activity_generate_listen_and_answer`           | `AiStructuredEvaluator` (`activity_evaluate_listen_and_answer`)                 | `PatternBackedPresenter`  |
+| listen_and_gap_fill         |            Listening |                                Reading | `activity_generate_listen_and_gap_fill`         | `ExactMatchEvaluator`                                                           | `PatternBackedPresenter`  |
+| email_reply                 |              Writing |                   Reading / Vocabulary | `activity_generate_email_reply`                 | `AiStructuredEvaluator` (`activity_evaluate_email_reply`)                       | `PatternBackedPresenter`  |
+| teams_chat_simulation       |              Writing | Reading / Speaking-style communication | `activity_generate_teams_chat_simulation`       | `AiStructuredEvaluator` (`activity_evaluate_teams_chat_simulation`)             | `PatternBackedPresenter`  |
+| spoken_response_from_prompt |             Speaking |                              Listening | `activity_generate_spoken_response_from_prompt` | `AiOpenEndedEvaluator`                                                          | `PatternBackedPresenter`  |
+| open_writing_task           |              Writing |                   Grammar / Vocabulary | `activity_generate_open_writing_task`           | `AiOpenEndedEvaluator` (`activity_evaluate_open_writing_task`)                  | `PatternBackedPresenter`  |
+| speaking_roleplay_turn      |             Speaking |                              Listening | `activity_generate_speaking_roleplay_turn`      | `AiOpenEndedEvaluator` (`activity_evaluate_speaking_roleplay_turn`)             | `PatternBackedPresenter`  |
+| lesson_reflection           |  Reflection / Review |                                Writing | `activity_generate_lesson_reflection`           | `NoMarkingEvaluator`                                                            | `PatternBackedPresenter`  |
 
-- **Stage-aware generation for all remaining types/patterns** — apply the PR1
-  recipe (table above) to each remaining `ActivityType`/`ExercisePattern`.
-- **Practice Gym pre-generation pool** — replace per-click
-  `/activity?type=...` generation with: (1) look up a ready `module_stage_v1`
-  record in a pool/cache for the requested skill/type, (2) open it immediately
-  if found, (3) if not found, show a "preparing practice" state or fall back
-  to on-demand generation, (4) background job replenishes the pool.
-  `/activity?type=...` direct generation is **not** the desired long-term Gym
-  flow — it remains only as the fallback path.
-- **Today lesson/module pre-generation** — Today's session's `LearningActivity`
-  rows should be prepared by a background job ahead of the student opening
-  "Today's Lesson," each already a `module_stage_v1` record; "Start module"
-  should not normally trigger synchronous AI generation, only fallback for
-  missing modules.
-- **MinIO/object-storage asset lifecycle for audio** — TTS generation happens
-  in a background job; resulting audio file is uploaded to object storage;
-  `practiceContent.exerciseData.audioAssetUrl` (reserved as an optional field
-  in PR1's schema) is populated with the stored URL before the student reaches
-  Practice. The Practice page consumes this stored asset rather than
-  triggering generation.
-- **Background job replenishment** — scheduled/triggered jobs that keep both
-  the Today pipeline and the Gym pool stocked with valid `module_stage_v1`
-  records (text + audio assets where applicable).
+## New listening-related exercise backlog
 
-### Acceptance criteria for follow-up architecture
+These exercise types should be added as first-class `exerciseType` values over
+future PRs. They should not be forced into one generic `ListeningComprehension`
+shape.
 
-- Staged schema (PR1) is compatible with pre-generated modules — confirmed by
-  the optional `audioAssetUrl` pass-through field.
-- Practice Gym cache/pool stores staged (`module_stage_v1`) content, not flat
-  exercises.
-- Today modules are prepared ahead of use by background jobs.
-- Audio assets are generated and stored (MinIO) before Practice when possible.
-- Student click path consumes ready content first; on-demand generation is
-  fallback only.
-- Docs clearly state `/activity?type=...` direct generation is not the
-  desired long-term Gym/Today flow.
+| New exercise type                  | Primary skill |  Secondary skills | Practice behaviour                                                       | Evaluator requirement                                                             |
+| ---------------------------------- | ------------: | ----------------: | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `summarize_spoken_text`            |     Listening |           Writing | Listen to 60–90 second audio and write 50–70 word summary in 10 minutes  | Evaluate main idea, key details, summary accuracy, structure, grammar, word count |
+| `listening_multiple_choice_multi`  |     Listening |           Reading | Listen to 40–90 second audio and select multiple correct options         | Evaluate all correct selections, missed correct answers, false positives          |
+| `listening_fill_in_blanks`         |     Listening | Reading / Writing | Read transcript with missing words and type words while listening        | Exact/near-exact word matching, spelling tolerance if configured                  |
+| `highlight_correct_summary`        |     Listening |           Reading | Listen to audio and select paragraph that best summarizes it             | Evaluate selected summary and distractor reasoning                                |
+| `listening_multiple_choice_single` |     Listening |           Reading | Listen to short recording and choose one correct answer                  | Evaluate single selected answer                                                   |
+| `select_missing_word`              |     Listening |           Reading | Listen to audio where final word/phrase is beeped and select best ending | Evaluate selected missing phrase                                                  |
+| `highlight_incorrect_words`        |     Listening |           Reading | Listen while reading transcript and click words that differ from audio   | Evaluate correct clicks, missed differences, false positives                      |
+| `write_from_dictation`             |     Listening |           Writing | Listen to a short sentence and type it exactly                           | Evaluate exact wording, spelling, punctuation/capitalisation rules                |
+
+Implementation note:
+
+These should be implemented as exercise patterns or equivalent renderer/evaluator
+pairs. They should use the same `module_stage_v1` contract:
+
+* Learn teaches the strategy.
+* Practice renders the task.
+* Feedback evaluates the task using exercise-specific rules.
+
+## Practice Gym behaviour target
+
+Practice Gym should support two selection modes.
+
+### By skill
+
+Examples:
+
+* Listening
+* Speaking
+* Writing
+* Reading
+* Vocabulary
+* Grammar
+
+When a student selects a skill, the app should serve a ready staged module where:
+
+```text
+primarySkill = selected skill
+```
+
+The exercise type may vary.
+
+Example:
+
+```text
+Student selects Listening
+→ app may serve summarize_spoken_text
+→ app may serve highlight_incorrect_words
+→ app may serve write_from_dictation
+→ app may serve listening_multiple_choice_single
+```
+
+### By exercise type
+
+Examples:
+
+* Summarize Spoken Text
+* Fill in the Blanks
+* Highlight Incorrect Words
+* Email Reply
+* Workplace Chat
+* Sentence Transformation
+
+When a student selects a specific exercise type, the app should serve that exact
+exercise type.
+
+## Today lesson behaviour target
+
+Today’s Lesson contains several Learning Modules.
+
+Each module has:
+
+* title
+* module goal
+* primary skill
+* secondary skills
+* exercise type
+* estimated duration
+* Learn
+* Practice
+* Feedback
+
+The Today generator should not only create a list of raw exercises. It should create
+a balanced set of staged modules based on:
+
+* student level
+* weak skills
+* recent attempts
+* desired study time
+* variety across exercise types
+* skill balance
+* spaced repetition needs
+
+Example Today lesson:
+
+```text
+Today’s Lesson — 30 minutes
+
+Module 1
+- Primary skill: Vocabulary
+- Exercise type: phrase_match
+- Learn → Practice → Feedback
+
+Module 2
+- Primary skill: Listening
+- Secondary skill: Writing
+- Exercise type: summarize_spoken_text
+- Learn → Practice → Feedback
+
+Module 3
+- Primary skill: Writing
+- Secondary skill: Grammar
+- Exercise type: email_reply
+- Learn → Practice → Feedback
+```
+
+## Required follow-up architecture — separate workstreams
+
+PR1, staged schema + Listening reference + compatibility adapter, is **not** the
+final architecture. These are required future PR/sprints.
+
+### 1. Stage-aware generation for all remaining types/patterns
+
+Apply the PR1 recipe to each remaining `ActivityType` and `ExercisePattern`.
+
+Each migrated type must produce:
+
+* `primarySkill`
+* `secondarySkills`
+* `exerciseType`
+* `learnContent`
+* `practiceContent`
+* `feedbackPlan`
+
+### 2. Skill-to-exercise selection model
+
+Add a selection layer that maps a requested skill to eligible exercise types.
+
+Example:
+
+```text
+Listening →
+- summarize_spoken_text
+- listen_and_answer
+- listen_and_gap_fill
+- listening_multiple_choice_multi
+- listening_multiple_choice_single
+- select_missing_word
+- highlight_correct_summary
+- highlight_incorrect_words
+- write_from_dictation
+```
+
+This should be used by:
+
+* Practice Gym
+* Today lesson generation
+* background pre-generation jobs
+* adaptive curriculum planning
+
+### 3. Practice Gym pre-generation pool
+
+Replace per-click `/activity?type=...` generation with:
+
+1. Look up a ready `module_stage_v1` record in a pool/cache for the requested
+   skill or exercise type.
+2. Open it immediately if found.
+3. If not found, show a "preparing practice" state or fall back to on-demand generation.
+4. Background job replenishes the pool.
+
+`/activity?type=...` direct generation is **not** the desired long-term Gym flow.
+It remains only as the fallback path.
+
+The Practice Gym cache/pool must store staged modules, not flat exercises.
+
+### 4. Today lesson/module pre-generation
+
+Today’s session `LearningActivity` rows should be prepared by a background job ahead
+of the student opening "Today’s Lesson."
+
+Each prepared row should already be a `module_stage_v1` record.
+
+"Start module" should not normally trigger synchronous AI generation. It should only
+fallback to generation for missing modules.
+
+### 5. MinIO/object-storage asset lifecycle for audio
+
+TTS generation should happen in a background job.
+
+The resulting audio file should be uploaded to MinIO or the configured object storage.
+
+For audio-based exercise types, `practiceContent.exerciseData` may include:
+
+```json
+{
+  "audioAssetUrl": "...",
+  "audioContentType": "audio/mpeg",
+  "audioDurationSeconds": 73
+}
+```
+
+The Practice page should consume the stored asset rather than triggering generation.
+
+Audio asset lifecycle must cover:
+
+* generation
+* upload
+* retrieval
+* expiry/signing if needed
+* retry on failed generation
+* fallback if asset is missing
+* cleanup policy
+
+### 6. Background job replenishment
+
+Scheduled or triggered jobs must keep both the Today pipeline and the Practice Gym
+pool stocked with valid `module_stage_v1` records.
+
+Jobs should generate:
+
+* text content
+* practice data
+* feedback plan
+* audio assets where applicable
+* metadata:
+
+  * primary skill
+  * secondary skills
+  * exercise type
+  * level
+  * estimated duration
+  * source: Today or Practice Gym
+  * readiness status
+
+### 7. Renderer and evaluator registry
+
+Renderer and evaluator lookup should be based on `exerciseType`.
+
+Do not rely only on old `ActivityType`.
+
+Example:
+
+```text
+exerciseType = summarize_spoken_text
+→ renderer = SummarizeSpokenTextRenderer
+→ evaluator = SummarizeSpokenTextEvaluator
+```
+
+This registry should support multi-skill exercises.
+
+### 8. Analytics and progress model
+
+Progress should track more than one skill per module.
+
+A single attempt may improve several skills.
+
+Example:
+
+```text
+summarize_spoken_text
+→ Listening score
+→ Writing score
+→ Overall module score
+```
+
+Future progress records should support:
+
+* primary skill score
+* secondary skill score
+* exercise type
+* module goal
+* attempt score
+* feedback viewed
+* retry count
+
+## Acceptance criteria for follow-up architecture
+
+* Staged schema is compatible with pre-generated modules.
+* Staged schema supports `primarySkill`, `secondarySkills`, and `exerciseType`.
+* Practice Gym cache/pool stores staged `module_stage_v1` modules, not flat exercises.
+* Practice Gym skill selection can serve varied exercise types.
+* Today modules are prepared ahead of use by background jobs.
+* Today lesson generation can include multi-skill modules.
+* Audio assets are generated and stored in MinIO/object storage before Practice when possible.
+* Student click path consumes ready content first.
+* On-demand generation is fallback only.
+* Renderer selection is based on `exerciseType`.
+* Evaluators understand multi-skill exercises.
+* Docs clearly state `/activity?type=...` direct generation is not the desired long-term Gym/Today flow.
