@@ -43,6 +43,10 @@
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       Prompts
     </a>
+    <a routerLink="/admin/exercise-types" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      Exercise Types
+    </a>
     <div class="sp-admin-nav-group-label">System</div>
     <a routerLink="/admin/integrations" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
@@ -111,6 +115,10 @@
         <span class="sp-admin-nav-label">AI Usage</span>
       </a>
 
+      <a routerLink="/admin/exercise-types" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Exercise Types' : ''">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span class="sp-admin-nav-label">Exercise Types</span>
+      </a>
       <div class="sp-admin-nav-group-label">System</div>
       <a routerLink="/admin/integrations" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Integrations' : ''">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>

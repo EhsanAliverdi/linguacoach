@@ -79,6 +79,18 @@ public sealed class PracticeGymGenerationJob : IJob
 
     private async Task MaterializeAsync(PracticeActivityCache cache, CancellationToken ct)
     {
+        var exerciseType = await _db.ExerciseTypeDefinitions
+            .FirstOrDefaultAsync(e => e.Key == cache.PatternKey
+                                   && e.IsEnabled
+                                   && e.ImplementationStatus == "ready"
+                                   && e.SupportsPracticeGym, ct);
+        if (exerciseType is null)
+        {
+            cache.MarkExpired();
+            await _db.SaveChangesAsync(ct);
+            return;
+        }
+
         var pattern = await _patternRepo.GetByKeyAsync(cache.PatternKey, ct);
         if (pattern is null || !pattern.IsActive)
         {

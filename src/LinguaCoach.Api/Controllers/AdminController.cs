@@ -16,6 +16,7 @@ public sealed class AdminController : ControllerBase
     private readonly IAdminPromptHandler _promptHandler;
     private readonly IAdminCurriculumHandler _curriculumHandler;
     private readonly IAdminAiConfigHandler _aiConfigHandler;
+    private readonly IExerciseTypeCatalogService _exerciseTypes;
     private readonly LinguaCoach.Application.LearningPath.IStudentMemoryQuery _memoryQuery;
 
     public AdminController(
@@ -24,6 +25,7 @@ public sealed class AdminController : ControllerBase
         IAdminPromptHandler promptHandler,
         IAdminCurriculumHandler curriculumHandler,
         IAdminAiConfigHandler aiConfigHandler,
+        IExerciseTypeCatalogService exerciseTypes,
         LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery)
     {
         _createStudentHandler = createStudentHandler;
@@ -31,7 +33,31 @@ public sealed class AdminController : ControllerBase
         _promptHandler = promptHandler;
         _curriculumHandler = curriculumHandler;
         _aiConfigHandler = aiConfigHandler;
+        _exerciseTypes = exerciseTypes;
         _memoryQuery = memoryQuery;
+    }
+
+
+    // ── Exercise type catalog ────────────────────────────────────────────────
+
+    [HttpGet("exercise-types")]
+    public async Task<IActionResult> ListExerciseTypes(CancellationToken ct)
+        => Ok(await _exerciseTypes.ListAllAsync(ct));
+
+    [HttpPatch("exercise-types/{key}")]
+    public async Task<IActionResult> UpdateExerciseType(string key, [FromBody] UpdateExerciseTypeRequest request, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _exerciseTypes.UpdateAsync(
+                new UpdateExerciseTypeDefinitionCommand(
+                    key,
+                    request.IsEnabled,
+                    request.SupportsPracticeGym,
+                    request.SupportsTodayLesson),
+                ct));
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -405,3 +431,5 @@ public sealed record SetProviderEndpointRequest(string? ApiEndpoint);
 public sealed record AddProviderModelRequest(string ModelName);
 public sealed record TestProviderModelRequest(string ModelName);
 public sealed record UpdateAiCategoryRequest(string? ProviderName, string? ModelName, string? VoiceName = null);
+
+public sealed record UpdateExerciseTypeRequest(bool? IsEnabled, bool? SupportsPracticeGym, bool? SupportsTodayLesson);

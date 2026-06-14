@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-15 08:45
+lastUpdated: 2026-06-15 10:05
 owner: architecture
 supersedes:
 supersededBy:
@@ -481,3 +481,45 @@ are unchanged.
 - **Prompts are data, not code.** All prompt templates live in the `ai_prompts` table, versioned, editable by Admin without a deployment.
 - **JSONB content is type-specific but schema-less at the DB level.** The application enforces the schema in code. This allows schema evolution without migrations.
 - **`instructionInSourceLanguage` is always present in all activity types.** It is the bridge for Persian (or any source-language) students who need the task explained in their native language. It must be rendered with `dir="rtl"` for RTL source languages.
+
+## Exercise Type Catalog
+
+Phase 3A adds `ExerciseTypeDefinition` as the durable catalog for future exercise selection.
+Skills and exercise types are separate concepts. A module can target `primarySkill`
+and `secondarySkills`, while its Practice stage uses one `exerciseType`.
+
+The catalog is now the source of truth for future generation eligibility. Each row stores:
+
+* stable `Key`
+* display metadata
+* `PrimarySkill` and `SecondarySkillsJson`
+* admin `IsEnabled`
+* `ImplementationStatus`
+* renderer, evaluator, prompt, legacy `ActivityType`, and pattern mapping keys
+* duration, audio, image, Practice Gym, and Today support flags
+
+`IsAvailableForGeneration` is computed by the application from:
+
+```text
+IsEnabled && ImplementationStatus == "ready"
+```
+
+Admin enable or disable affects future generation only. Existing `LearningActivity`
+and `ActivityAttempt` records still load through legacy `/activity` compatibility,
+even if their exercise type is later disabled.
+
+Future PTE-style exercise types are seeded as catalog rows with
+`ImplementationStatus = "planned"`. Admins can see them, but enabling them does not
+make them runnable until their renderer, evaluator, prompt, and safe generation path
+are marked ready.
+
+Generation filters now check the catalog before creating new work:
+
+* Practice Gym pattern requests require enabled, ready, Practice Gym-supported rows.
+* Practice Gym background cache queues only enabled, ready, Practice Gym-supported rows.
+* Today session generation removes disabled or unavailable deterministic patterns.
+* Explicit legacy `ActivityType` requests require at least one enabled ready mapped type.
+
+Renderer and evaluator selection still keep legacy compatibility, but new staged
+module work should increasingly select by catalog `exerciseType` rather than skill
+or broad `ActivityType` alone.

@@ -90,6 +90,9 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
 
         // ── 5. Apply weak-skill substitution ─────────────────────────────────
         var steps = ApplyWeakSkillSubstitution(template, weakSkillSet, profile.SkillFocus);
+        steps = await FilterUnavailableExerciseTypesAsync(steps, ct);
+        if (steps.Count == 0)
+            throw new InvalidOperationException("No enabled ready exercise types are available for today's lesson.");
 
         // ── 6. Build session metadata ─────────────────────────────────────────
         var (title, topic, goal, focusSkill) = BuildSessionMetadata(steps, currentModule, profile);
@@ -213,6 +216,31 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         return modules.FirstOrDefault(m =>
             completedCounts.GetValueOrDefault(m.Id, 0) < SessionsPerModule)
             ?? modules.Last();
+    }
+
+
+    private async Task<List<ExerciseStepTemplate>> FilterUnavailableExerciseTypesAsync(
+        IReadOnlyList<ExerciseStepTemplate> steps,
+        CancellationToken ct)
+    {
+        var requestedKeys = steps.Select(s => s.PatternKey).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
+        var availableKeys = await _db.ExerciseTypeDefinitions
+            .Where(e => requestedKeys.Contains(e.Key)
+                     && e.IsEnabled
+                     && e.ImplementationStatus == "ready"
+                     && e.SupportsTodayLesson)
+            .Select(e => e.Key)
+            .ToHashSetAsync(ct);
+
+        var filtered = steps.Where(s => availableKeys.Contains(s.PatternKey)).ToList();
+        if (filtered.Count != steps.Count)
+        {
+            _logger.LogWarning(
+                "Today generation removed {Count} disabled or unavailable exercise step(s).",
+                steps.Count - filtered.Count);
+        }
+
+        return filtered;
     }
 
     private static List<ExerciseStepTemplate> ApplyWeakSkillSubstitution(

@@ -175,3 +175,31 @@ export interface AdminStudentLearningMemory {
   coveredScenarioCount: number;
   skillProfile: { skillKey: string; skillLabel: string; isWeak: boolean }[];
 }
+
+export interface ExerciseTypeDefinition {
+  key: string;
+  displayName: string;
+  description: string;
+  primarySkill: string;
+  secondarySkills: string[];
+  category: string;
+  isEnabled: boolean;
+  implementationStatus: string;
+  isAvailableForGeneration: boolean;
+  rendererKey: string;
+  evaluatorKey: string;
+  generationPromptKey: string;
+  legacyActivityType: string | null;
+  exercisePatternKey: string | null;
+  estimatedDurationMinutes: number;
+  requiresAudio: boolean;
+  requiresImage: boolean;
+  supportsPracticeGym: boolean;
+  supportsTodayLesson: boolean;
+}
+
+export interface UpdateExerciseTypeRequest {
+  isEnabled?: boolean;
+  supportsPracticeGym?: boolean;
+  supportsTodayLesson?: boolean;
+}

@@ -19,12 +19,6 @@ public sealed class PracticeGymBufferRefillJob : IJob
 {
     public const string JobName = "practice-gym-buffer-refill";
 
-    private static readonly string[] EnabledPatternKeys =
-    {
-        "phrase_match", "gap_fill_workplace_phrase", "listen_and_answer",
-        "email_reply", "teams_chat_simulation", "spoken_response_from_prompt"
-    };
-
     private readonly LinguaCoachDbContext _db;
     private readonly ILogger<PracticeGymBufferRefillJob> _logger;
 
@@ -71,10 +65,19 @@ public sealed class PracticeGymBufferRefillJob : IJob
         var pendingMap = pendingCounts.ToDictionary(
             r => (r.StudentProfileId, r.PatternKey), r => r.Count);
 
+        var enabledPatternKeys = await _db.ExerciseTypeDefinitions
+            .Where(e => e.IsEnabled
+                     && e.ImplementationStatus == "ready"
+                     && e.SupportsPracticeGym
+                     && e.ExercisePatternKey != null)
+            .Select(e => e.ExercisePatternKey!)
+            .Distinct()
+            .ToListAsync(ct);
+
         var queued = 0;
         foreach (var studentProfileId in students)
         {
-            foreach (var pattern in EnabledPatternKeys)
+            foreach (var pattern in enabledPatternKeys)
             {
                 var ready = readyMap.GetValueOrDefault((studentProfileId, pattern), 0);
                 var pending = pendingMap.GetValueOrDefault((studentProfileId, pattern), 0);
