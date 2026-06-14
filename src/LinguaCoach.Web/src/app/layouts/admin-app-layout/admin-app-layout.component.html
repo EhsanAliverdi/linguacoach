@@ -2,7 +2,8 @@
 <div class="sp-sidebar-backdrop" [class.is-open]="drawerOpen()" (click)="closeDrawer()"></div>
 
 <!-- Mobile drawer (nav content mirrored from desktop sidebar) -->
-<nav class="sp-sidebar-drawer" [class.is-open]="drawerOpen()">
+<nav class="sp-sidebar-drawer" [class.is-open]="drawerOpen()"
+  (touchstart)="onDrawerTouchStart($event)" (touchmove)="onDrawerTouchMove($event)" (touchend)="onDrawerTouchEnd()">
   <div style="padding:18px 14px 12px;border-bottom:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between">
     <a routerLink="/admin" (click)="closeDrawer()" style="display:flex;align-items:center;gap:9px;text-decoration:none">
       <svg width="28" height="28" viewBox="0 0 48 48" fill="none" aria-hidden="true">

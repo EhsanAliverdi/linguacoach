@@ -1,6 +1,7 @@
 import { Component, HostListener, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 
 const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
@@ -23,7 +24,14 @@ export class AdminAppLayoutComponent {
     return email.charAt(0).toUpperCase() || 'A';
   });
 
-  constructor(public auth: AuthService) {}
+  private touchStartX = 0;
+  private touchCurrentX = 0;
+
+  constructor(public auth: AuthService, router: Router) {
+    router.events.pipe(filter(e => e instanceof NavigationStart)).subscribe(() => {
+      this.closeDrawer();
+    });
+  }
 
   toggleSidebar(): void {
     const next = !this.collapsed();
@@ -33,6 +41,27 @@ export class AdminAppLayoutComponent {
 
   openDrawer(): void { this.drawerOpen.set(true); }
   closeDrawer(): void { this.drawerOpen.set(false); }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.drawerOpen()) this.closeDrawer();
+    if (this.profileMenuOpen()) this.profileMenuOpen.set(false);
+  }
+
+  onDrawerTouchStart(event: TouchEvent): void {
+    this.touchStartX = event.touches[0].clientX;
+    this.touchCurrentX = this.touchStartX;
+  }
+
+  onDrawerTouchMove(event: TouchEvent): void {
+    this.touchCurrentX = event.touches[0].clientX;
+  }
+
+  onDrawerTouchEnd(): void {
+    if (this.touchStartX - this.touchCurrentX > 60) {
+      this.closeDrawer();
+    }
+  }
 
   toggleProfileMenu(event: Event): void {
     event.stopPropagation();
