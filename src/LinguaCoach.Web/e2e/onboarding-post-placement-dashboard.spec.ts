@@ -129,11 +129,11 @@ test('Practice Gym page has skill cards that route to implemented activities and
 
   await page.goto('/practice');
 
-  await expect(page.getByRole('link', { name: /Writing Workplace messages/i })).toHaveAttribute('href', /type=WritingScenario/);
-  await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).toHaveAttribute('href', /type=ListeningComprehension/);
-  await expect(page.getByRole('link', { name: /Speaking Workplace role-play/i })).toHaveAttribute('href', /type=SpeakingRolePlay/);
+  await expect(page.getByTestId('practice-card-writing')).toHaveAttribute('href', '/module/gym-writing');
+  await expect(page.getByTestId('practice-card-listening')).toHaveAttribute('href', '/module/gym-listening');
+  await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', '/module/gym-speaking');
 
-  const pronunciation = page.getByTestId('pronunciation-card');
-  await expect(pronunciation).toContainText('Coming soon');
-  await expect(pronunciation.locator('a')).toHaveCount(0);
+  const aiRolePlay = page.getByTestId('practice-card-ai-role-play');
+  await expect(aiRolePlay).toContainText('Coming soon');
+  await expect(aiRolePlay.locator('a')).toHaveCount(0);
 });

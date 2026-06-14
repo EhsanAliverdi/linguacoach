@@ -136,11 +136,14 @@ export class LessonComponent implements OnInit {
     if (!s) return;
   }
 
-  /** URL for the activity page for this exercise. */
-  activityUrl(exercise: SessionExercise): string {
-    const actId = this.resolvedActivityId(exercise);
-    if (!actId) return '/activity';
-    return `/activity?activityId=${actId}&returnTo=/lesson/${this.sessionId}`;
+  /** URL for the module page for this exercise. */
+  moduleUrl(exercise: SessionExercise): string {
+    return `/module/session-${this.sessionId}-${exercise.exerciseId}`;
+  }
+
+  /** Label for the module CTA button. */
+  moduleCtaLabel(exercise: SessionExercise): string {
+    return exercise.status === 'inProgress' ? 'Continue module' : 'Start module';
   }
 
   startLesson(): void {

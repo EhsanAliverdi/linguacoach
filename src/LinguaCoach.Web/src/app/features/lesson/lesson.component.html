@@ -171,11 +171,11 @@
                 <div style="display:flex;flex-wrap:wrap;gap:10px">
                   <a
                     data-testid="open-activity-btn"
-                    [href]="activityUrl(exercise)"
+                    [routerLink]="moduleUrl(exercise)"
                     (click)="$event.stopPropagation()"
                     class="sp-button-primary"
                     style="min-height:42px;font-size:13.5px;display:inline-flex;align-items:center;text-decoration:none">
-                    Open activity
+                    {{ moduleCtaLabel(exercise) }}
                   </a>
                   <button
                     data-testid="complete-exercise-btn"

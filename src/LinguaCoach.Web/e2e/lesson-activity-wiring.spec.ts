@@ -118,7 +118,7 @@ async function mockActivity(page: Page, activityId: string) {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-test('lesson page calls /prepare for first active exercise on load', async ({ page }) => {
+test('lesson page calls /prepare for first active exercise after Load activity is clicked', async ({ page }) => {
   await withAuth(page);
 
   let prepareCalled = false;
@@ -133,36 +133,38 @@ test('lesson page calls /prepare for first active exercise on load', async ({ pa
   await mockSessionDetail(page);
 
   await page.goto(`/lesson/${SESSION_ID}`);
-  // Wait for the exercise panel to be visible (first exercise is active by default)
-  await page.waitForSelector('[data-testid="exercise-panel"]');
-  // Give the prepare call time to fire
+  await expect(page.getByTestId('retry-prepare-btn')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('retry-prepare-btn').click();
   await page.waitForTimeout(500);
 
   expect(prepareCalled).toBe(true);
 });
 
-test('open activity button appears after prepare completes', async ({ page }) => {
+test('open activity button appears after Load activity prepares the exercise', async ({ page }) => {
   await withAuth(page);
   await mockSessionDetail(page);
   await mockPrepare(page, 'ex-w1', ACTIVITY_ID);
 
   await page.goto(`/lesson/${SESSION_ID}`);
+  await expect(page.getByTestId('retry-prepare-btn')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('retry-prepare-btn').click();
 
   await expect(page.getByTestId('open-activity-btn')).toBeVisible({ timeout: 5000 });
-  await expect(page.getByTestId('open-activity-btn')).toContainText('Open activity');
+  await expect(page.getByTestId('open-activity-btn')).toContainText('Start module');
 });
 
-test('open activity button href includes activityId and returnTo', async ({ page }) => {
+test('open activity button links to the module route for this exercise', async ({ page }) => {
   await withAuth(page);
   await mockSessionDetail(page);
   await mockPrepare(page, 'ex-w1', ACTIVITY_ID);
 
   await page.goto(`/lesson/${SESSION_ID}`);
+  await expect(page.getByTestId('retry-prepare-btn')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('retry-prepare-btn').click();
 
   await expect(page.getByTestId('open-activity-btn')).toBeVisible({ timeout: 5000 });
   const href = await page.getByTestId('open-activity-btn').getAttribute('href');
-  expect(href).toContain(`activityId=${ACTIVITY_ID}`);
-  expect(href).toContain(`returnTo=/lesson/${SESSION_ID}`);
+  expect(href).toBe(`/module/session-${SESSION_ID}-ex-w1`);
 });
 
 test('review step shows review panel, not open activity button', async ({ page }) => {
@@ -269,6 +271,8 @@ test('exercise with activity shows both Open activity and Mark complete buttons'
   await mockPrepare(page, 'ex-w1', ACTIVITY_ID);
 
   await page.goto(`/lesson/${SESSION_ID}`);
+  await expect(page.getByTestId('retry-prepare-btn')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('retry-prepare-btn').click();
 
   await expect(page.getByTestId('open-activity-btn')).toBeVisible({ timeout: 5000 });
   await expect(page.getByTestId('complete-exercise-btn')).toBeVisible();

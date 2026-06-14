@@ -167,9 +167,6 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     this.activity.set(activity);
     if (activity.activityType === 'speakingRolePlay') {
       this.initSpeakingState();
-    } else if (ActivityPresenterFactory.for(activity).teachContent(activity).block === 'exerciseRenderer') {
-      // Pattern-engine activities have no separate Teach page; go straight to Practice.
-      this.state.set('writing');
     } else {
       this.state.set('learning');
     }

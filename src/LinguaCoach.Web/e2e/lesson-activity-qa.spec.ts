@@ -204,6 +204,7 @@ test('phrase_match activity renders with at least one pair visible', async ({ pa
   await withAuth(page);
   await mockActivity(page, PHRASE_MATCH_ACTIVITY);
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('matching-pairs-renderer')).toBeVisible({ timeout: 5000 });
   const count = await page.locator('[data-testid^="phrase-"]').count();
   expect(count, 'phrase_match must render at least one pair — empty columns are a bug').toBeGreaterThan(0);
@@ -223,6 +224,7 @@ test('phrase_match fallback content still renders real pairs not empty columns',
     }),
   });
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('matching-pairs-renderer')).toBeVisible({ timeout: 5000 });
   const count = await page.locator('[data-testid^="phrase-"]').count();
   expect(count, 'fallback phrase_match must still show real pairs').toBeGreaterThan(0);
@@ -232,6 +234,7 @@ test('listen_and_answer with audio renders audio player with src', async ({ page
   await withAuth(page);
   await mockActivity(page, LISTEN_ACTIVITY_WITH_AUDIO);
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('audio-free-text-renderer')).toBeVisible({ timeout: 5000 });
   const src = await page.locator('[data-testid="audio-player"]').getAttribute('src');
   expect(src, 'audio player must have a src — 0:00/0:00 with no src is a bug').toBeTruthy();
@@ -242,6 +245,7 @@ test('listen_and_answer with no audio shows unavailable message not a blank play
   await withAuth(page);
   await mockActivity(page, LISTEN_ACTIVITY_NO_AUDIO);
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('audio-free-text-renderer')).toBeVisible({ timeout: 5000 });
   await expect(page.getByTestId('audio-unavailable')).toBeVisible();
   await expect(page.getByTestId('audio-unavailable')).toContainText('unavailable');
@@ -251,6 +255,7 @@ test('activity back button says Back to Today not Back to dashboard', async ({ p
   await withAuth(page);
   await mockActivity(page, PHRASE_MATCH_ACTIVITY);
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   const backBtn = page.locator('button', { hasText: /back to/i }).first();
   await expect(backBtn).toBeVisible({ timeout: 5000 });
   const text = (await backBtn.textContent() ?? '').toLowerCase();

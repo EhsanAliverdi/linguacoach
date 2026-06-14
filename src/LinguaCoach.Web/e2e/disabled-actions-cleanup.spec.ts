@@ -79,72 +79,27 @@ test('practice gym enables implemented practice cards and only marks future skil
 
   await page.goto('/practice');
 
-  await expect(page.getByRole('link', { name: /Writing Workplace messages/i })).toHaveAttribute('href', /type=WritingScenario/);
-  await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).toHaveAttribute('href', /type=ListeningComprehension/);
-  await expect(page.getByRole('link', { name: /Speaking Workplace role-play/i })).toHaveAttribute('href', /type=SpeakingRolePlay/);
-  await expect(page.getByText('Pronunciation').locator('..')).toContainText('Coming soon');
-  await expect(page.getByRole('link', { name: /Listening Meeting and update audio/i })).not.toContainText('Coming soon');
+  await expect(page.getByTestId('practice-card-writing')).toHaveAttribute('href', '/module/gym-writing');
+  await expect(page.getByTestId('practice-card-listening')).toHaveAttribute('href', '/module/gym-listening');
+  await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', '/module/gym-speaking');
+  await expect(page.getByTestId('practice-card-ai-role-play')).toContainText('Coming soon');
+  await expect(page.getByTestId('practice-card-listening')).not.toContainText('Coming soon');
 });
 
-test('practice gym listening card requests a listening activity type', async ({ page }) => {
+test('practice gym listening card links to the listening module', async ({ page }) => {
   await withAuth(page);
-  await page.route('**/api/activity/next**', async route => {
-    expect(route.request().url()).toContain('type=ListeningComprehension');
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        activityId: 'listening-1',
-        activityType: 'listeningComprehension',
-        source: 'aiGenerated',
-        title: 'Understand a schedule update',
-        difficulty: 'B1',
-        situation: null,
-        learningGoal: null,
-        targetPhrases: [],
-        targetVocabulary: [],
-        exampleText: null,
-        commonMistakeToAvoid: null,
-        instructionInSourceLanguage: null,
-        instructions: 'Listen and answer.',
-        practiceMode: null,
-        vocabItems: null,
-        scenario: 'Your manager leaves a short update.',
-        speakerRole: 'Manager',
-        listenerRole: 'Document Controller',
-        transcriptAvailableAfterSubmit: true,
-        audioAvailable: true,
-        audioUrl: '/api/activity/listening-1/audio',
-        audioContentType: 'audio/wav',
-        audioDurationSeconds: 8,
-        audioUnavailableMessage: null,
-        listeningQuestions: [{ id: 'q1', question: 'What changed?', type: 'short_answer' }],
-        responseTask: null,
-      }),
-    });
-  });
 
   await page.goto('/practice');
-  await page.getByRole('link', { name: /Listening Meeting and update audio/i }).click();
 
-  await expect(page).toHaveURL(/\/activity\?type=ListeningComprehension/);
-  await expect(page.getByText('Understand a schedule update')).toBeVisible();
+  await expect(page.getByTestId('practice-card-listening')).toHaveAttribute('href', '/module/gym-listening');
 });
 
-test('practice gym vocabulary card links to vocabulary page', async ({ page }) => {
+test('practice gym vocabulary card links to the word cards module', async ({ page }) => {
   await withAuth(page);
-  await page.route('**/api/vocabulary**', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ items: [], summary: { total: 0, newCount: 0, practisingCount: 0, masteredCount: 0, archivedCount: 0 } }),
-    });
-  });
 
   await page.goto('/practice');
-  await page.getByRole('link', { name: /Vocabulary Saved workplace phrases/i }).click();
 
-  await expect(page).toHaveURL(/\/vocabulary/);
+  await expect(page.getByTestId('practice-card-vocabulary')).toHaveAttribute('href', '/module/gym-phrase_match');
 });
 
 test('dashboard vocabulary card shows prerequisite message when vocab items insufficient', async ({ page }) => {

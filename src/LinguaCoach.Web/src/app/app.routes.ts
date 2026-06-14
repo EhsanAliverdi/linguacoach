@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { placementRequiredRedirectGuard, placementAccessGuard } from './core/guards/placement.guard';
+import { moduleRedirectGuard } from './core/guards/module-redirect.guard';
 import { AuthService } from './core/services/auth.service';
 import { PublicLayoutComponent } from './layouts/public-layout/public-layout.component';
 import { StudentAppLayoutComponent } from './layouts/student-app-layout/student-app-layout.component';
@@ -137,6 +138,11 @@ export const routes: Routes = [
         path: 'practice',
         canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/practice/practice-gym.component').then(m => m.PracticeGymComponent),
+      },
+      {
+        path: 'module/:moduleRunId',
+        canActivate: [placementRequiredRedirectGuard, moduleRedirectGuard],
+        children: [],
       },
       {
         path: 'activity',

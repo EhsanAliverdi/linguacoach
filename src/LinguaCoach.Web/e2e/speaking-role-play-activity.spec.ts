@@ -104,13 +104,13 @@ test.describe('SpeakingRolePlay activity', () => {
     await expect(speakingCard).toContainText('Speaking');
   });
 
-  test('Practice Gym Pronunciation card remains Coming soon', async ({ page }) => {
+  test('Practice Gym AI role play card remains Coming soon', async ({ page }) => {
     await withAuth(page);
 
     await page.goto('/practice');
-    const pronouncCard = page.getByTestId('pronunciation-card');
-    await expect(pronouncCard).toBeVisible();
-    await expect(pronouncCard).toContainText('Coming soon');
+    const card = page.getByTestId('practice-card-ai-role-play');
+    await expect(card).toBeVisible();
+    await expect(card).toContainText('Coming soon');
   });
 
   test('/activity?type=SpeakingRolePlay renders speaking scenario', async ({ page }) => {

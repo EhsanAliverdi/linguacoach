@@ -77,12 +77,12 @@ test('/practice does not auto-redirect to /activity on load', async ({ page }) =
 
 // ── All 8 cards present ────────────────────────────────────────────────────────
 
-test('Practice Gym shows a Vocabulary card', async ({ page }) => {
+test('Practice Gym shows a Vocabulary (Word cards) card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await expect(page.getByTestId('practice-card-vocabulary')).toBeVisible();
-  await expect(page.getByTestId('practice-card-vocabulary')).toContainText('Vocabulary');
+  await expect(page.getByTestId('practice-card-vocabulary')).toContainText('Word cards');
 });
 
 test('Practice Gym shows a Listening card', async ({ page }) => {
@@ -114,7 +114,7 @@ test('Practice Gym shows a Workplace Chat card', async ({ page }) => {
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await expect(page.getByTestId('practice-card-workplace-chat')).toBeVisible();
-  await expect(page.getByTestId('practice-card-workplace-chat')).toContainText('Workplace Chat');
+  await expect(page.getByTestId('practice-card-workplace-chat')).toContainText('Workplace chat');
 });
 
 test('Practice Gym shows an Email card', async ({ page }) => {
@@ -125,105 +125,101 @@ test('Practice Gym shows an Email card', async ({ page }) => {
   await expect(page.getByTestId('practice-card-email')).toContainText('Email');
 });
 
-test('Practice Gym shows a Gap Fill card', async ({ page }) => {
+test('Practice Gym shows a Fill in the blanks card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await expect(page.getByTestId('practice-card-gap-fill')).toBeVisible();
-  await expect(page.getByTestId('practice-card-gap-fill')).toContainText('Gap Fill');
+  await expect(page.getByTestId('practice-card-gap-fill')).toContainText('Fill in the blanks');
 });
 
-test('Practice Gym shows a Phrase Match card', async ({ page }) => {
+test('Practice Gym shows a Matching card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await expect(page.getByTestId('practice-card-phrase-match')).toBeVisible();
-  await expect(page.getByTestId('practice-card-phrase-match')).toContainText('Phrase Match');
+  await expect(page.getByTestId('practice-card-phrase-match')).toContainText('Matching');
 });
 
 // ── Functional card routing ────────────────────────────────────────────────────
 
-test('Vocabulary card links to /vocabulary', async ({ page }) => {
+test('Vocabulary (Word cards) card links to /module/gym-phrase_match', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-vocabulary');
-  await expect(card).toHaveAttribute('href', '/vocabulary');
+  await expect(card).toHaveAttribute('href', '/module/gym-phrase_match');
 });
 
-test('Listening card links to /activity?type=ListeningComprehension', async ({ page }) => {
+test('Listening card links to /module/gym-listening', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-listening');
-  await expect(card).toHaveAttribute('href', /type=ListeningComprehension/);
+  await expect(card).toHaveAttribute('href', '/module/gym-listening');
 });
 
-test('Writing card links to /activity?type=WritingScenario', async ({ page }) => {
+test('Writing card links to /module/gym-writing', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-writing');
-  await expect(card).toHaveAttribute('href', /type=WritingScenario/);
+  await expect(card).toHaveAttribute('href', '/module/gym-writing');
 });
 
-test('Speaking card links to /activity?type=SpeakingRolePlay', async ({ page }) => {
+test('Speaking card links to /module/gym-speaking', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('speaking-card');
-  await expect(card).toHaveAttribute('href', /type=SpeakingRolePlay/);
+  await expect(card).toHaveAttribute('href', '/module/gym-speaking');
 });
 
 // ── Coming soon cards have no navigable links ──────────────────────────────────
 
 // ── Activated pattern cards — now functional ──────────────────────────────────
 
-test('Workplace Chat card is functional and links to pattern activity', async ({ page }) => {
+test('Workplace Chat card is functional and links to a module', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-workplace-chat');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', /pattern=teams_chat_simulation/);
-  await expect(card).toHaveAttribute('href', /returnTo=%2Fpractice/);
+  await expect(card).toHaveAttribute('href', '/module/gym-teams_chat_simulation');
 });
 
-test('Email card is functional and links to pattern activity', async ({ page }) => {
+test('Email card is functional and links to a module', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-email');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', /pattern=email_reply/);
-  await expect(card).toHaveAttribute('href', /returnTo=%2Fpractice/);
+  await expect(card).toHaveAttribute('href', '/module/gym-email_reply');
 });
 
-test('Gap Fill card is functional and links to pattern activity', async ({ page }) => {
+test('Gap Fill card is functional and links to a module', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-gap-fill');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', /pattern=gap_fill_workplace_phrase/);
-  await expect(card).toHaveAttribute('href', /returnTo=%2Fpractice/);
+  await expect(card).toHaveAttribute('href', '/module/gym-gap_fill_workplace_phrase');
 });
 
-test('Phrase Match card is functional and links to pattern activity', async ({ page }) => {
+test('Phrase Match card is functional and links to a module', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   const card = page.getByTestId('practice-card-phrase-match');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', /pattern=phrase_match/);
-  await expect(card).toHaveAttribute('href', /returnTo=%2Fpractice/);
+  await expect(card).toHaveAttribute('href', '/module/gym-phrase_match');
 });
 
-test('Pronunciation card remains Coming soon and has no link', async ({ page }) => {
+test('AI role play card remains Coming soon and has no link', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('pronunciation-card');
+  const card = page.getByTestId('practice-card-ai-role-play');
   await expect(card).toContainText('Coming soon');
   await expect(card.locator('a')).toHaveCount(0);
 });

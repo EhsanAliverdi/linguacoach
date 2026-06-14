@@ -145,11 +145,12 @@ test('phrase_match result shows score card and per-pair correct/incorrect state'
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('matching-pairs-renderer')).toBeVisible();
-  await page.getByTestId('phrase-0').click();
-  await page.getByTestId('meaning-0').click();
-  await page.getByTestId('phrase-1').click();
-  await page.getByTestId('meaning-1').click();
+  await page.getByTestId('phrase-phrase_0').click();
+  await page.getByTestId('meaning-meaning_0').click();
+  await page.getByTestId('phrase-phrase_1').click();
+  await page.getByTestId('meaning-meaning_1').click();
   await page.getByTestId('matching-pairs-submit-btn').click();
 
   await expect(page.getByTestId('pattern-evaluation-result')).toBeVisible();
@@ -181,9 +182,10 @@ test('phrase_match full score shows Great work label', async ({ page }) => {
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('matching-pairs-renderer')).toBeVisible();
-  await page.getByTestId('phrase-0').click();
-  await page.getByTestId('meaning-0').click();
+  await page.getByTestId('phrase-phrase_0').click();
+  await page.getByTestId('meaning-meaning_0').click();
   await page.getByTestId('matching-pairs-submit-btn').click();
 
   await expect(page.getByTestId('pattern-score-card')).toContainText('Great work');
@@ -218,8 +220,9 @@ test('gap_fill_workplace_phrase result shows per-gap correct/incorrect', async (
     fb);
 
   await page.goto('/activity');
-  await page.getByTestId('gap-input-1').fill('apologise');
-  await page.getByTestId('gap-input-2').fill('wrong');
+  await page.getByTestId('teach-cta-btn').click();
+  await page.getByTestId('gap-input-gap_1').fill('apologise');
+  await page.getByTestId('gap-input-gap_2').fill('wrong');
   await page.getByTestId('gap-fill-submit-btn').click();
 
   await expect(page.getByTestId('pattern-gap-fill-result')).toBeVisible();
@@ -248,6 +251,7 @@ test('listen_and_gap_fill result shows gap feedback', async ({ page }) => {
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('gap-input-1').fill('apologise');
   await page.getByTestId('audio-gap-fill-submit-btn').click();
 
@@ -281,6 +285,7 @@ test('email_reply result shows coach summary and suggested improved answer', asy
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('free-text-input').fill('Please send the document.');
   await page.getByTestId('free-text-submit-btn').click();
 
@@ -315,6 +320,7 @@ test('teams_chat_simulation shows chat/email-style feedback', async ({ page }) =
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('chat-reply-input').fill('I apologise for the delay. I will update you shortly.');
   await page.getByTestId('chat-reply-submit-btn').click();
 
@@ -350,6 +356,7 @@ test('listen_and_answer result shows question-by-question feedback', async ({ pa
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('question-input-q1').fill('project delay');
   await page.getByTestId('question-input-q2').fill('manager');
   await page.getByTestId('audio-free-text-submit-btn').click();
@@ -386,6 +393,7 @@ test('spoken_response_from_prompt result does not claim pronunciation scoring', 
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('free-text-input').fill('The report is late because of issues.');
   await page.getByTestId('free-text-submit-btn').click();
 
@@ -418,6 +426,7 @@ test('spoken_response_from_prompt suggested response labels it as coaching, not 
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('free-text-input').fill('Deadline changed.');
   await page.getByTestId('free-text-submit-btn').click();
 
@@ -439,6 +448,7 @@ test('lesson_reflection renders read-only renderer with no submission form', asy
     baseFeedback());
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   // Read-only renderer renders — no gap inputs or submit buttons
   await expect(page.getByTestId('read-only-renderer')).toBeVisible();
   await expect(page.getByTestId('gap-fill-submit-btn')).toHaveCount(0);
@@ -471,6 +481,7 @@ test('pattern-readonly-complete block renders when patternEvaluation result has 
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('free-text-input').fill('I will use the delay phrase.');
   await page.getByTestId('free-text-submit-btn').click();
 
@@ -508,10 +519,11 @@ test('pattern activity Next activity navigates back via returnTo param', async (
   }));
 
   await page.goto('/activity?activityId=pattern-act-1&returnTo=/lesson/session-123');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('matching-pairs-renderer')).toBeVisible();
 
-  await page.getByTestId('phrase-0').click();
-  await page.getByTestId('meaning-0').click();
+  await page.getByTestId('phrase-phrase_0').click();
+  await page.getByTestId('meaning-meaning_0').click();
   await page.getByTestId('matching-pairs-submit-btn').click();
 
   await expect(page.getByTestId('pattern-evaluation-result')).toBeVisible();
@@ -551,6 +563,7 @@ test('legacy writing activity does not show pattern-evaluation-result', async ({
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('free-text-renderer')).toBeVisible();
   await page.getByTestId('free-text-input').fill('Please approve the document.');
   await page.getByTestId('free-text-submit-btn').click();
@@ -591,6 +604,7 @@ test('pattern result has no horizontal overflow on mobile viewport', async ({ pa
     fb);
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await page.getByTestId('free-text-input').fill('I wanted follow up on the document.');
   await page.getByTestId('free-text-submit-btn').click();
 

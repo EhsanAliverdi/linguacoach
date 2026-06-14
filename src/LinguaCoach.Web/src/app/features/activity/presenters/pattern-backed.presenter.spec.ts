@@ -4,10 +4,33 @@ import { makeActivity, makeFeedback } from './test-helpers';
 describe('PatternBackedPresenter', () => {
   const presenter = new PatternBackedPresenter();
 
-  it('always renders the exercise renderer block', () => {
+  it('renders a patternLearning teach block and an exerciseRenderer practice block', () => {
     const activity = makeActivity({ interactionMode: 'gapFill' });
-    expect(presenter.teachContent(activity).block).toBe('exerciseRenderer');
+    expect(presenter.teachContent(activity).block).toBe('patternLearning');
     expect(presenter.practiceContent(activity).block).toBe('exerciseRenderer');
+  });
+
+  it('extracts teaching-only fields from contentJson for the Learn stage', () => {
+    const activity = makeActivity({
+      interactionMode: 'gapFill',
+      contentJson: JSON.stringify({
+        title: 'Polite Requests',
+        learningGoal: 'Use polite request phrases in workplace messages',
+        instructions: 'Fill in each blank with the correct workplace word or phrase.',
+        teachingNote: 'These phrases soften requests.',
+        items: [{ sentence: 'Could you ___ this?', answer: 'review', distractors: ['look', 'see'] }],
+      }),
+    });
+    const teach = presenter.teachContent(activity);
+    expect(teach.block).toBe('patternLearning');
+    if (teach.block === 'patternLearning') {
+      expect(teach.title).toBe('Polite Requests');
+      expect(teach.learningGoal).toBe('Use polite request phrases in workplace messages');
+      expect(teach.instructions).toContain('Fill in each blank');
+      expect(teach.teachingNote).toContain('soften requests');
+      expect(teach.ctaLabel).toBe('Start practice');
+      expect(teach.ctaAction).toBe('startPractice');
+    }
   });
 
   it('labels vocabulary interaction modes', () => {
