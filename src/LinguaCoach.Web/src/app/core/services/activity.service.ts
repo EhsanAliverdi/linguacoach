@@ -6,6 +6,25 @@ import { ActivityDto, ActivityFeedbackDto, ActivityType, ListeningAnswer, VocabA
 import { environment } from '../../../environments/environment';
 import { ExerciseTypeDefinition } from '../models/admin.models';
 
+
+export interface ExerciseTypeSelection {
+  key: string;
+  displayName: string;
+  primarySkill: string;
+  secondarySkills: string[];
+  rendererKey: string;
+  evaluatorKey: string;
+  legacyActivityType?: string | null;
+  exercisePatternKey?: string | null;
+  isAvailableForGeneration: boolean;
+}
+
+export interface ExerciseTypeSelectionResponse {
+  hasSelection: boolean;
+  selectedExerciseType?: ExerciseTypeSelection | null;
+  reason?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ActivityService {
   private readonly base = `${environment.apiUrl}/activity`;
@@ -14,6 +33,12 @@ export class ActivityService {
 
   getExerciseTypes(): Observable<ExerciseTypeDefinition[]> {
     return this.http.get<ExerciseTypeDefinition[]>(`${this.base}/exercise-types`);
+  }
+
+  selectPracticeGymExerciseType(skill: string): Observable<ExerciseTypeSelectionResponse> {
+    return this.http.get<ExerciseTypeSelectionResponse>(`${this.base}/exercise-types/select`, {
+      params: { skill, context: 'practiceGym' },
+    });
   }
 
   getNext(type?: ActivityType, patternKey?: string): Observable<ActivityDto> {

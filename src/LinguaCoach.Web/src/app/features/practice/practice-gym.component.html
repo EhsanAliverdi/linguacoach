@@ -10,42 +10,102 @@
 
   <section class="sp-practice-section">
     <p class="sp-eyebrow sp-practice-section-label">By skill</p>
+    @if (selectionMessage()) {
+      <div class="sp-practice-alert" role="status" data-testid="practice-selection-message">
+        {{ selectionMessage() }}
+      </div>
+    }
     <div class="sp-skill-grid" data-testid="practice-skills-grid">
 
-      @if (isAvailable('listen_and_answer')) {
-        <a routerLink="/module/gym-listening" data-testid="practice-card-listening"
-           class="sp-card sp-card-hover sp-practice-card">
+      @if (hasSkillAvailable('listening')) {
+        <button type="button" (click)="selectSkill('listening')" data-testid="practice-card-listening"
+                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
           <div class="sp-practice-card-mark">L</div>
           <div class="sp-practice-card-title">Listening</div>
-          <div class="sp-practice-card-copy">Lesson, audio practice, feedback</div>
-        </a>
+          <div class="sp-practice-card-copy">{{ isSelecting('listening') ? 'Finding practice...' : 'Lesson, audio practice, feedback' }}</div>
+        </button>
       } @else {
         <div data-testid="practice-card-listening" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
           <div class="sp-practice-card-mark">L</div>
           <div class="sp-practice-card-title">Listening</div>
-          <div class="sp-practice-card-muted">{{ statusText('listen_and_answer') }}</div>
+          <div class="sp-practice-card-muted">{{ skillStatusText('listening') }}</div>
         </div>
       }
 
-      <div data-testid="practice-card-reading" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">R</div>
-        <div class="sp-practice-card-title">Reading</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
+      @if (hasSkillAvailable('reading')) {
+        <button type="button" (click)="selectSkill('reading')" data-testid="practice-card-reading"
+                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
+          <div class="sp-practice-card-mark">R</div>
+          <div class="sp-practice-card-title">Reading</div>
+          <div class="sp-practice-card-copy">{{ isSelecting('reading') ? 'Finding practice...' : 'Reading practice and feedback' }}</div>
+        </button>
+      } @else {
+        <div data-testid="practice-card-reading" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">R</div>
+          <div class="sp-practice-card-title">Reading</div>
+          <div class="sp-practice-card-muted">{{ skillStatusText('reading') }}</div>
+        </div>
+      }
 
-      <a routerLink="/module/gym-speaking" data-testid="speaking-card"
-         class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">S</div>
-        <div class="sp-practice-card-title">Speaking</div>
-        <div class="sp-practice-card-copy">Prompt, recording, feedback</div>
-      </a>
+      @if (hasSkillAvailable('speaking')) {
+        <button type="button" (click)="selectSkill('speaking')" data-testid="speaking-card"
+                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
+          <div class="sp-practice-card-mark">S</div>
+          <div class="sp-practice-card-title">Speaking</div>
+          <div class="sp-practice-card-copy">{{ isSelecting('speaking') ? 'Finding practice...' : 'Prompt, recording, feedback' }}</div>
+        </button>
+      } @else {
+        <div data-testid="speaking-card" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">S</div>
+          <div class="sp-practice-card-title">Speaking</div>
+          <div class="sp-practice-card-muted">{{ skillStatusText('speaking') }}</div>
+        </div>
+      }
 
-      <a routerLink="/module/gym-writing" data-testid="practice-card-writing"
-         class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">W</div>
-        <div class="sp-practice-card-title">Writing</div>
-        <div class="sp-practice-card-copy">Model, draft, feedback</div>
-      </a>
+      @if (hasSkillAvailable('writing')) {
+        <button type="button" (click)="selectSkill('writing')" data-testid="practice-card-writing"
+                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
+          <div class="sp-practice-card-mark">W</div>
+          <div class="sp-practice-card-title">Writing</div>
+          <div class="sp-practice-card-copy">{{ isSelecting('writing') ? 'Finding practice...' : 'Model, draft, feedback' }}</div>
+        </button>
+      } @else {
+        <div data-testid="practice-card-writing" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">W</div>
+          <div class="sp-practice-card-title">Writing</div>
+          <div class="sp-practice-card-muted">{{ skillStatusText('writing') }}</div>
+        </div>
+      }
+
+      @if (hasSkillAvailable('vocabulary')) {
+        <button type="button" (click)="selectSkill('vocabulary')" data-testid="practice-card-vocabulary-skill"
+                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
+          <div class="sp-practice-card-mark">V</div>
+          <div class="sp-practice-card-title">Vocabulary</div>
+          <div class="sp-practice-card-copy">{{ isSelecting('vocabulary') ? 'Finding practice...' : 'Words, meaning, practice' }}</div>
+        </button>
+      } @else {
+        <div data-testid="practice-card-vocabulary-skill" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">V</div>
+          <div class="sp-practice-card-title">Vocabulary</div>
+          <div class="sp-practice-card-muted">{{ skillStatusText('vocabulary') }}</div>
+        </div>
+      }
+
+      @if (hasSkillAvailable('grammar')) {
+        <button type="button" (click)="selectSkill('grammar')" data-testid="practice-card-grammar"
+                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
+          <div class="sp-practice-card-mark">G</div>
+          <div class="sp-practice-card-title">Grammar</div>
+          <div class="sp-practice-card-copy">{{ isSelecting('grammar') ? 'Finding practice...' : 'Grammar practice and feedback' }}</div>
+        </button>
+      } @else {
+        <div data-testid="practice-card-grammar" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">G</div>
+          <div class="sp-practice-card-title">Grammar</div>
+          <div class="sp-practice-card-muted">{{ skillStatusText('grammar') }}</div>
+        </div>
+      }
 
     </div>
   </section>

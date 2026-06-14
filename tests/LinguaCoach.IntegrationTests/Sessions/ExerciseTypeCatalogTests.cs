@@ -155,6 +155,46 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         Assert.DoesNotContain(practice, e => e.Key == "lesson_reflection");
     }
 
+    [Theory]
+    [InlineData("listening")]
+    [InlineData("writing")]
+    public async Task Registry_SelectsPracticeGymSkill_FromReadyEligibleRows(string skill)
+    {
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var selected = await registry.SelectForPracticeGymSkillAsync(skill);
+
+        Assert.NotNull(selected);
+        Assert.Equal(skill, selected!.PrimarySkill);
+        Assert.True(selected.IsEnabled);
+        Assert.Equal("ready", selected.ImplementationStatus);
+        Assert.True(selected.IsAvailableForGeneration);
+        Assert.True(selected.SupportsPracticeGym);
+    }
+
+    [Fact]
+    public async Task Registry_SelectPracticeGymSkill_ExcludesDisabledPlannedAndUnsupportedRows()
+    {
+        var catalog = new ExerciseTypeCatalogService(_db);
+        await catalog.UpdateAsync(new("listen_and_answer", false, null, null));
+        await catalog.UpdateAsync(new("listen_and_gap_fill", false, null, null));
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var selected = await registry.SelectForPracticeGymSkillAsync("listening");
+
+        Assert.Null(selected);
+    }
+
+    [Fact]
+    public async Task Registry_SelectPracticeGymSkill_ReturnsNullForUnknownSkill()
+    {
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var selected = await registry.SelectForPracticeGymSkillAsync("unknown");
+
+        Assert.Null(selected);
+    }
+
     [Fact]
     public async Task Registry_ReturnsEligibleExerciseTypesForSkillOnly()
     {

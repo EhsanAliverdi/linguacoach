@@ -1,6 +1,6 @@
 ---
 status: in-progress
-lastUpdated: 2026-06-15 10:05
+lastUpdated: 2026-06-15 10:40
 owner: architecture
 relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
 relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
@@ -677,3 +677,22 @@ Phase 3B adds a central exercise-type registry. The registry reads the durable `
 Generation now accepts `exerciseType` as the canonical future selector through `GET /api/activity/next?exerciseType=<key>`. Existing `type=` and `pattern=` routes remain supported. Planned PTE-style rows remain catalog-visible, but they are excluded from generation until `implementationStatus` is `ready`.
 
 Today deterministic step selection now validates configured pattern keys through the registry's Today-ready view. Disabled or unready rows are removed before session creation. Practice Gym routes now prefer `exerciseType` query parameters for implemented cards. Skill-card routing still uses temporary safe defaults until dynamic skill-to-type selection is implemented.
+
+## Phase 3C — Dynamic Practice Gym skill selection, completed
+
+Practice Gym skill cards now resolve through the ExerciseType registry instead of
+assuming one fixed activity type per skill. A skill such as Listening asks for an
+enabled, ready, generation-eligible, Practice Gym-supported exercise type where
+`primarySkill = listening`, then routes to `/activity?exerciseType=<key>`.
+
+Specific exercise type cards still use exact `exerciseType=<key>` routing.
+Disabled, planned, unready, or Practice Gym-unsupported rows remain blocked and
+show safe unavailable states. Planned PTE-style catalog rows are still not
+runnable.
+
+The current selection strategy is intentionally deterministic: choose the first
+eligible registry entry by stable catalog ordering. This is a bridge to future
+pre-generation, not the final Practice Gym pool. The future pool should reuse the
+same registry eligibility rules while adding adaptive choice based on weak
+skills, recent attempts, variety, spaced repetition, admin priority, and ready
+Gym or Today pool availability.

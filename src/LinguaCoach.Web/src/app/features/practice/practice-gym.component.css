@@ -71,3 +71,27 @@
 .sp-practice-card-muted {
   font-weight: 700;
 }
+
+.sp-practice-button {
+  width: 100%;
+  border: 0;
+  background: var(--sp-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sp-practice-button:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.sp-practice-alert {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  color: var(--sp-ink);
+  background: var(--sp-surface);
+  font-size: 13px;
+  font-weight: 650;
+}

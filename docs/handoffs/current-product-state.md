@@ -1,6 +1,6 @@
 ﻿---
 status: current
-lastUpdated: 2026-06-15 10:05
+lastUpdated: 2026-06-15 10:40
 owner: product
 supersedes:
 supersededBy:
@@ -63,19 +63,19 @@ All four activity types use the unified `/activity` path.
 
 ## Practice Gym - activated pattern cards
 
-`GET /api/activity/next` accepts an optional `?pattern=<key>` query parameter in addition to `?type=`.
+`GET /api/activity/next` accepts canonical `?exerciseType=<key>` plus legacy `?pattern=<key>` and `?type=` query parameters.
 
 | Practice Gym card | Route | Status |
 |---|---|---|
-| Vocabulary class | `/activity?pattern=phrase_match&returnTo=/practice` | functional word-card lesson + matching practice |
-| Listening | `/activity?type=ListeningComprehension` | functional |
+| Vocabulary class | `/activity?exerciseType=phrase_match&returnTo=/practice` | functional word-card lesson + matching practice |
+| Listening | dynamic registry selection → `/activity?exerciseType=<key>&returnTo=/practice` | functional |
 | Reading | - | Coming soon |
-| Writing | `/activity?type=WritingScenario` | functional |
-| Speaking | `/activity?type=SpeakingRolePlay` | functional recorded prompt, no pronunciation claim |
-| Matching | `/activity?pattern=phrase_match&returnTo=/practice` | functional |
-| Fill in the blanks | `/activity?pattern=gap_fill_workplace_phrase&returnTo=/practice` | functional |
-| Email | `/activity?pattern=email_reply&returnTo=/practice` | functional |
-| Workplace Chat | `/activity?pattern=teams_chat_simulation&returnTo=/practice` | functional |
+| Writing | dynamic registry selection → `/activity?exerciseType=<key>&returnTo=/practice` | functional |
+| Speaking | dynamic registry selection → `/activity?exerciseType=<key>&returnTo=/practice` | functional recorded prompt, no pronunciation claim |
+| Matching | `/activity?exerciseType=phrase_match&returnTo=/practice` | functional |
+| Fill in the blanks | `/activity?exerciseType=gap_fill_workplace_phrase&returnTo=/practice` | functional |
+| Email | `/activity?exerciseType=email_reply&returnTo=/practice` | functional |
+| Workplace Chat | `/activity?exerciseType=teams_chat_simulation&returnTo=/practice` | functional |
 | Multiple choice | - | Coming soon |
 | Sentence transformation | - | Coming soon |
 | Error correction | - | Coming soon |
@@ -83,6 +83,16 @@ All four activity types use the unified `/activity` path.
 | Unscrambling | - | Coming soon |
 | AI role play | - | Coming soon, live AI |
 | Pronunciation | - | Coming soon, no STT/scoring support |
+
+
+Practice Gym skill cards now use the ExerciseType registry. A skill card no
+longer means one fixed activity type. The selected skill resolves to an enabled,
+ready, generation-eligible, Practice Gym-supported exercise type with the same
+`primarySkill`, then routes through canonical `exerciseType=<key>`. If no
+eligible row exists, the frontend shows a safe unavailable message and does not
+start broken generation. Planned PTE-style rows remain blocked. This is not the
+final Practice Gym pre-generation pool; the future pool should reuse the same
+registry selection rules.
 
 All pattern-keyed activities go through `PatternEvaluationRouter`. Progress updates only after a submitted attempt. Returning from any pattern card goes back to `/practice` via `returnTo`. Ready Practice Gym cache entries are consumed before on-demand AI generation.
 

@@ -42,6 +42,7 @@ public interface IExerciseTypeRegistry
         string primarySkill,
         ExerciseTypeSupportContext supportContext = ExerciseTypeSupportContext.Any,
         CancellationToken ct = default);
+    Task<ExerciseTypeRegistryEntry?> SelectForPracticeGymSkillAsync(string primarySkill, CancellationToken ct = default);
     Task<string?> ResolveRendererKeyAsync(string exerciseTypeKey, CancellationToken ct = default);
     Task<string?> ResolveEvaluatorKeyAsync(string exerciseTypeKey, CancellationToken ct = default);
     Task<string?> ResolveGenerationPromptKeyAsync(string exerciseTypeKey, CancellationToken ct = default);

@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ActivityService } from '../../core/services/activity.service';
 import { ExerciseTypeDefinition } from '../../core/models/admin.models';
 
@@ -12,14 +12,62 @@ import { ExerciseTypeDefinition } from '../../core/models/admin.models';
 })
 export class PracticeGymComponent implements OnInit {
   exerciseTypes = signal<ExerciseTypeDefinition[]>([]);
+  selectingSkill = signal<string | null>(null);
+  selectionMessage = signal<string | null>(null);
 
-  constructor(private activityService: ActivityService) {}
+  constructor(
+    private activityService: ActivityService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.activityService.getExerciseTypes().subscribe({
       next: items => this.exerciseTypes.set(items),
       error: () => this.exerciseTypes.set([]),
     });
+  }
+
+  selectSkill(skill: string): void {
+    if (this.selectingSkill()) return;
+
+    this.selectionMessage.set(null);
+    this.selectingSkill.set(skill);
+
+    this.activityService.selectPracticeGymExerciseType(skill).subscribe({
+      next: result => {
+        this.selectingSkill.set(null);
+        const selected = result.selectedExerciseType;
+        if (!result.hasSelection || !selected?.key) {
+          this.selectionMessage.set(result.reason ?? 'This skill is not ready in Practice Gym yet.');
+          return;
+        }
+
+        this.router.navigate(['/activity'], {
+          queryParams: { exerciseType: selected.key, returnTo: '/practice' },
+        });
+      },
+      error: () => {
+        this.selectingSkill.set(null);
+        this.selectionMessage.set('Practice is temporarily unavailable. Please try again shortly.');
+      },
+    });
+  }
+
+  isSelecting(skill: string): boolean {
+    return this.selectingSkill() === skill;
+  }
+
+  hasSkillAvailable(skill: string): boolean {
+    return this.exerciseTypes().some(type =>
+      type.primarySkill === skill &&
+      type.isEnabled &&
+      type.isAvailableForGeneration &&
+      type.implementationStatus === 'ready' &&
+      type.supportsPracticeGym);
+  }
+
+  skillStatusText(skill: string): string {
+    return this.hasSkillAvailable(skill) ? 'Available' : 'Coming soon';
   }
 
   isAvailable(key: string): boolean {
