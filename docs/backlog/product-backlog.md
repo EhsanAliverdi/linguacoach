@@ -832,10 +832,8 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 - [x] Add admin student learning memory view. `Done` (2026-06-14)
   - `GET /api/admin/students/{id}/learning-memory` now consumed by `/admin/students/:id`
   - Shows journey summary, strengths, weaknesses, recurring mistakes, next focus, covered scenario count, skill profile
-- [ ] Design system: use `sp-admin-*` classes consistently across all admin components. `Planned`
-  - `admin-prompts` and `admin-careers` still use raw Tailwind for their form/table bodies
-  - Migrate incrementally â€” do not break functionality
-  - Document final admin class list in `frontend-layout-system.md`
+- [x] Design system: use `sp-admin-*` classes consistently across all admin components. `Done` (2026-06-14)
+  - `admin-prompts` and `admin-careers` migrated from raw Tailwind to sp-admin-* (sp-admin-table, sp-admin-form-card, sp-admin-field-grid, sp-input, sp-admin-btn-primary, sp-admin-badge)
 - [x] Improve admin mobile drawer. `Done` (2026-06-14)
   - Added swipe-to-close gesture
   - Added route-change auto-close (NavigationStart subscription in AdminAppLayoutComponent)
