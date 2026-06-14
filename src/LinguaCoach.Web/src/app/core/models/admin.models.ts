@@ -1,3 +1,15 @@
+export interface AdminActivityHistoryItem {
+  attemptId: string;
+  activityId: string;
+  activityTitle: string;
+  activityType: string;
+  score: number | null;
+  percentage: number | null;
+  passed: boolean | null;
+  completed: boolean | null;
+  createdAt: string;
+}
+
 export interface AdminStats {
   totalStudents: number;
   onboardedStudents: number;

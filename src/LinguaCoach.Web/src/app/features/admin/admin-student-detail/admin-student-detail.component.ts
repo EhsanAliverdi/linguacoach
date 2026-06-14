@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
-  AdminStudentLearningMemory, ResetStudentResponse,
+  AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -172,6 +172,52 @@ interface StudentEditForm {
                 } @else { <p class="sp-admin-table-empty">No skill profile yet.</p> }
               </div>
             </div>
+          }
+        </section>
+
+        <section class="sp-admin-table-card sp-admin-detail-card sp-admin-wide">
+          <h2 class="sp-admin-card-title">Activity history</h2>
+          @if (historyLoading()) {
+            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+          } @else if (historyError()) {
+            <div class="sp-admin-alert-error">{{ historyError() }}</div>
+          } @else if (history().length === 0) {
+            <p class="sp-admin-table-empty">No activity attempts yet.</p>
+          } @else {
+            <table class="sp-admin-table">
+              <thead>
+                <tr>
+                  <th>Activity</th>
+                  <th>Type</th>
+                  <th>Score</th>
+                  <th>Result</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of history(); track item.attemptId) {
+                  <tr>
+                    <td class="sp-safe-text">{{ item.activityTitle }}</td>
+                    <td>{{ item.activityType }}</td>
+                    <td>{{ item.score !== null ? (item.score | number:'1.0-0') + '%' : (item.percentage !== null ? (item.percentage | number:'1.0-0') + '%' : '—') }}</td>
+                    <td>
+                      @if (item.passed !== null) {
+                        <span class="sp-admin-badge" [class.sp-admin-badge-green]="item.passed" [class.sp-admin-badge-amber]="!item.passed">
+                          {{ item.passed ? 'Passed' : 'Not passed' }}
+                        </span>
+                      } @else if (item.completed !== null) {
+                        <span class="sp-admin-badge" [class.sp-admin-badge-green]="item.completed" [class.sp-admin-badge-amber]="!item.completed">
+                          {{ item.completed ? 'Completed' : 'Incomplete' }}
+                        </span>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>{{ item.createdAt | date:'medium' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           }
         </section>
       </div>
@@ -458,6 +504,10 @@ export class AdminStudentDetailComponent implements OnInit {
   memoryLoading = signal(true);
   memoryError = signal('');
 
+  history = signal<AdminActivityHistoryItem[]>([]);
+  historyLoading = signal(true);
+  historyError = signal('');
+
   editing = signal<StudentListItem | null>(null);
   savingEdit = signal(false);
   editError = signal('');
@@ -541,6 +591,7 @@ export class AdminStudentDetailComponent implements OnInit {
     }
     this.loadStudent(id);
     this.loadMemory(id);
+    this.loadHistory(id);
   }
 
   private loadStudent(id: string): void {
@@ -566,6 +617,15 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getStudentLearningMemory(id).subscribe({
       next: mem => { this.memory.set(mem); this.memoryLoading.set(false); },
       error: () => { this.memoryError.set('Could not load learning memory.'); this.memoryLoading.set(false); },
+    });
+  }
+
+  private loadHistory(id: string): void {
+    this.historyLoading.set(true);
+    this.historyError.set('');
+    this.adminApi.getActivityHistory(id).subscribe({
+      next: items => { this.history.set(items); this.historyLoading.set(false); },
+      error: () => { this.historyError.set('Could not load activity history.'); this.historyLoading.set(false); },
     });
   }
 

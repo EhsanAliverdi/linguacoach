@@ -45,6 +45,17 @@ public sealed record AdminStatsItem(
     int OnboardedStudents,
     int TotalActivityAttempts);
 
+public sealed record AdminActivityHistoryItem(
+    Guid AttemptId,
+    Guid ActivityId,
+    string ActivityTitle,
+    string ActivityType,
+    double? Score,
+    double? Percentage,
+    bool? Passed,
+    bool? Completed,
+    DateTime CreatedAt);
+
 public interface IAdminStudentQuery
 {
     Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
@@ -54,6 +65,7 @@ public interface IAdminStudentQuery
     Task<ResetStudentResponse> ResetStudentAsync(ResetStudentCommand command, CancellationToken ct = default);
     Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default);
     Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<AdminActivityHistoryItem>> GetActivityHistoryAsync(Guid studentProfileId, CancellationToken ct = default);
 }
 
 // ── Student lifecycle reset ─────────────────────────────────────────────────

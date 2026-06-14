@@ -160,6 +160,10 @@ public sealed class AdminController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpGet("students/{studentId:guid}/activity-history")]
+    public async Task<IActionResult> GetActivityHistory(Guid studentId, CancellationToken ct)
+        => Ok(await _studentQuery.GetActivityHistoryAsync(studentId, ct));
+
     [HttpGet("students/{studentId:guid}/learning-memory")]
     public async Task<IActionResult> GetStudentMemory(Guid studentId, CancellationToken ct)
     {

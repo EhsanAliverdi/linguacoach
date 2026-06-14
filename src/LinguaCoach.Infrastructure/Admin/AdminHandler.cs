@@ -85,6 +85,24 @@ public sealed class AdminHandler :
         return new AdminStatsItem(totalStudents, onboardedStudents, totalActivityAttempts);
     }
 
+    public async Task<IReadOnlyList<AdminActivityHistoryItem>> GetActivityHistoryAsync(Guid studentProfileId, CancellationToken ct = default)
+    {
+        return await _db.ActivityAttempts
+            .Where(a => a.StudentProfileId == studentProfileId && a.DeletedAtUtc == null)
+            .OrderByDescending(a => a.CreatedAt)
+            .Join(_db.LearningActivities, a => a.LearningActivityId, act => act.Id, (a, act) => new AdminActivityHistoryItem(
+                a.Id,
+                act.Id,
+                act.Title,
+                act.ActivityType.ToString(),
+                a.Score,
+                a.Percentage,
+                a.Passed,
+                a.Completed,
+                a.CreatedAt))
+            .ToListAsync(ct);
+    }
+
     public async Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default)
     {
         var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
