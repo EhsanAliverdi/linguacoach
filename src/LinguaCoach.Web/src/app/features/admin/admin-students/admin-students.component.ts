@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -39,7 +39,14 @@ interface StudentEditForm {
         <input type="checkbox" [(ngModel)]="includeArchived" (change)="load()" />
         <span>Show archived students</span>
       </label>
-      <span class="sp-admin-table-muted">{{ students().length }} shown</span>
+      <input
+        type="search"
+        class="sp-input sp-admin-search-input"
+        placeholder="Search by email or name…"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="page.set(1)"
+        aria-label="Search students" />
+      <span class="sp-admin-table-muted">{{ filteredStudents().length }} shown</span>
     </div>
 
     @if (loading()) {
@@ -51,17 +58,17 @@ interface StudentEditForm {
         <table class="sp-admin-table">
           <thead>
             <tr>
-              <th>Student</th>
+              <th class="sp-admin-sortable" (click)="setSort('name')">Student{{ sortIndicator('name') }}</th>
               <th>Lifecycle</th>
-              <th>Onboarding</th>
+              <th class="sp-admin-sortable" (click)="setSort('onboarding')">Onboarding{{ sortIndicator('onboarding') }}</th>
               <th>CEFR</th>
               <th>Profile</th>
-              <th>Joined</th>
+              <th class="sp-admin-sortable" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            @for (s of students(); track s.studentProfileId) {
+            @for (s of pagedStudents(); track s.studentProfileId) {
               <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
                 <td>
                   <div class="sp-admin-student-name">{{ displayName(s) }}</div>
@@ -105,10 +112,17 @@ interface StudentEditForm {
             }
           </tbody>
         </table>
-        @if (students().length === 0) {
+        @if (filteredStudents().length === 0) {
           <div class="sp-admin-empty-row">No students found.</div>
         }
       </div>
+      @if (totalPages() > 1) {
+        <div class="sp-admin-pagination">
+          <button type="button" class="sp-button-ghost" [disabled]="page() <= 1" (click)="page.set(page() - 1)">Previous</button>
+          <span class="sp-admin-table-muted">Page {{ page() }} of {{ totalPages() }}</span>
+          <button type="button" class="sp-button-ghost" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">Next</button>
+        </div>
+      }
     }
 
     @if (editing(); as student) {
@@ -348,7 +362,11 @@ interface StudentEditForm {
   `,
   styles: [`
     .sp-admin-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-    .sp-admin-students-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+    .sp-admin-students-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+    .sp-admin-search-input{max-width:280px;flex:1;}
+    .sp-admin-sortable{cursor:pointer;user-select:none;}
+    .sp-admin-sortable:hover{color:#334155;}
+    .sp-admin-pagination{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 0;}
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
     .sp-admin-filter-toggle input{accent-color:#4338CA;}
     .sp-admin-table-scroll{overflow-x:auto;}
@@ -383,6 +401,61 @@ export class AdminStudentsComponent implements OnInit {
   savingEdit = signal(false);
   editError = signal('');
   includeArchived = false;
+
+  searchTerm = '';
+  page = signal(1);
+  readonly pageSize = 25;
+  sortColumn = signal<'name' | 'onboarding' | 'joined'>('joined');
+  sortDirection = signal<'asc' | 'desc'>('desc');
+
+  filteredStudents = computed(() => {
+    const term = this.searchTerm.trim().toLowerCase();
+    let items = this.students();
+    if (term) {
+      items = items.filter(s =>
+        s.email.toLowerCase().includes(term) ||
+        this.displayName(s).toLowerCase().includes(term));
+    }
+
+    const column = this.sortColumn();
+    const direction = this.sortDirection() === 'asc' ? 1 : -1;
+    items = [...items].sort((a, b) => {
+      switch (column) {
+        case 'name':
+          return this.displayName(a).localeCompare(this.displayName(b)) * direction;
+        case 'onboarding':
+          return a.onboardingStatus.localeCompare(b.onboardingStatus) * direction;
+        case 'joined':
+        default:
+          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * direction;
+      }
+    });
+
+    return items;
+  });
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.filteredStudents().length / this.pageSize)));
+
+  pagedStudents = computed(() => {
+    const page = Math.min(this.page(), this.totalPages());
+    const start = (page - 1) * this.pageSize;
+    return this.filteredStudents().slice(start, start + this.pageSize);
+  });
+
+  setSort(column: 'name' | 'onboarding' | 'joined'): void {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('asc');
+    }
+    this.page.set(1);
+  }
+
+  sortIndicator(column: 'name' | 'onboarding' | 'joined'): string {
+    if (this.sortColumn() !== column) return '';
+    return this.sortDirection() === 'asc' ? ' ▲' : ' ▼';
+  }
 
   resetting = signal<StudentListItem | null>(null);
   savingReset = signal(false);
