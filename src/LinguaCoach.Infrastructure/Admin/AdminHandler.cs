@@ -70,6 +70,21 @@ public sealed class AdminHandler :
             .ToList();
     }
 
+    public async Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default)
+    {
+        var totalStudents = await _db.StudentProfiles
+            .Where(p => p.LifecycleStage != StudentLifecycleStage.Archived)
+            .CountAsync(ct);
+
+        var onboardedStudents = await _db.StudentProfiles
+            .Where(p => p.LifecycleStage != StudentLifecycleStage.Archived && p.OnboardingStatus == OnboardingStatus.Complete)
+            .CountAsync(ct);
+
+        var totalActivityAttempts = await _db.ActivityAttempts.CountAsync(ct);
+
+        return new AdminStatsItem(totalStudents, onboardedStudents, totalActivityAttempts);
+    }
+
     public async Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default)
     {
         var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)

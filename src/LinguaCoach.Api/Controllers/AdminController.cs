@@ -68,6 +68,10 @@ public sealed class AdminController : ControllerBase
     public async Task<IActionResult> ListStudents([FromQuery] bool includeArchived, CancellationToken ct)
         => Ok(await _studentQuery.ListStudentsAsync(includeArchived, ct));
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken ct)
+        => Ok(await _studentQuery.GetStatsAsync(ct));
+
     [HttpPut("students/{studentId:guid}")]
     public async Task<IActionResult> UpdateStudent(Guid studentId, [FromBody] UpdateStudentProfileRequest request, CancellationToken ct)
     {

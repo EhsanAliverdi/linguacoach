@@ -1,3 +1,9 @@
+export interface AdminStats {
+  totalStudents: number;
+  onboardedStudents: number;
+  totalActivityAttempts: number;
+}
+
 export interface StudentListItem {
   studentProfileId: string;
   userId: string;

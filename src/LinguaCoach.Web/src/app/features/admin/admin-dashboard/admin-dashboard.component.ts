@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -61,7 +61,11 @@ import { StudentListItem } from '../../../core/models/admin.models';
         </div>
         <div class="sp-admin-kpi-body">
           <div class="sp-admin-kpi-label">Activities tracked</div>
-          <div class="sp-admin-kpi-value sp-admin-kpi-text sp-admin-kpi-soon">Coming soon</div>
+          @if (loadingStats()) {
+            <div class="sp-admin-kpi-value sp-admin-loading-text">—</div>
+          } @else {
+            <div class="sp-admin-kpi-value">{{ stats()?.totalActivityAttempts ?? 0 }}</div>
+          }
         </div>
       </div>
     </div>
@@ -302,6 +306,8 @@ import { StudentListItem } from '../../../core/models/admin.models';
 export class AdminDashboardComponent implements OnInit {
   students = signal<StudentListItem[]>([]);
   loadingStudents = signal(true);
+  stats = signal<AdminStats | null>(null);
+  loadingStats = signal(true);
 
   onboardedCount = () => this.students().filter(s => s.onboardingStatus === 'Complete').length;
 
@@ -311,6 +317,10 @@ export class AdminDashboardComponent implements OnInit {
     this.adminApi.listStudents().subscribe({
       next: s => { this.students.set(s); this.loadingStudents.set(false); },
       error: () => { this.loadingStudents.set(false); },
+    });
+    this.adminApi.getStats().subscribe({
+      next: s => { this.stats.set(s); this.loadingStats.set(false); },
+      error: () => { this.loadingStats.set(false); },
     });
   }
 }

@@ -40,6 +40,11 @@ public sealed record ArchiveStudentCommand(Guid StudentProfileId);
 
 public sealed record ResetStudentPasswordCommand(Guid StudentProfileId, string NewPassword, bool MustChangePassword = true);
 
+public sealed record AdminStatsItem(
+    int TotalStudents,
+    int OnboardedStudents,
+    int TotalActivityAttempts);
+
 public interface IAdminStudentQuery
 {
     Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
@@ -48,6 +53,7 @@ public interface IAdminStudentQuery
     Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default);
     Task<ResetStudentResponse> ResetStudentAsync(ResetStudentCommand command, CancellationToken ct = default);
     Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default);
+    Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default);
 }
 
 // ── Student lifecycle reset ─────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import {
   CareerProfileItem, CurriculumWordItem,
   AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
-  ResetStudentRequest, ResetStudentResponse
+  ResetStudentRequest, ResetStudentResponse, AdminStats
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -35,6 +35,9 @@ export class AdminApiService {
   }
   resetStudent(studentProfileId: string, request: ResetStudentRequest): Observable<ResetStudentResponse> {
     return this.http.post<ResetStudentResponse>(`${this.api}/students/${studentProfileId}/reset`, request);
+  }
+  getStats(): Observable<AdminStats> {
+    return this.http.get<AdminStats>(`${this.api}/stats`);
   }
 
   // Prompts
