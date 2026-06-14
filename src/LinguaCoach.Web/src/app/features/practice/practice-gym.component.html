@@ -97,26 +97,50 @@
         </div>
       }
 
-      <a routerLink="/module/gym-phrase_match"
-         data-testid="practice-card-phrase-match" class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">M</div>
-        <div class="sp-practice-card-title">Matching</div>
-        <div class="sp-practice-card-copy">Words, meanings, phrases</div>
-      </a>
+      @if (isAvailable('phrase_match')) {
+        <a routerLink="/module/gym-phrase_match"
+           data-testid="practice-card-phrase-match" class="sp-card sp-card-hover sp-practice-card">
+          <div class="sp-practice-card-mark">M</div>
+          <div class="sp-practice-card-title">Matching</div>
+          <div class="sp-practice-card-copy">Words, meanings, phrases</div>
+        </a>
+      } @else {
+        <div data-testid="practice-card-phrase-match" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">M</div>
+          <div class="sp-practice-card-title">Matching</div>
+          <div class="sp-practice-card-muted">{{ statusText('phrase_match') }}</div>
+        </div>
+      }
 
-      <a routerLink="/module/gym-email_reply"
-         data-testid="practice-card-email" class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">E</div>
-        <div class="sp-practice-card-title">Email</div>
-        <div class="sp-practice-card-copy">Workplace email replies</div>
-      </a>
+      @if (isAvailable('email_reply')) {
+        <a routerLink="/module/gym-email_reply"
+           data-testid="practice-card-email" class="sp-card sp-card-hover sp-practice-card">
+          <div class="sp-practice-card-mark">E</div>
+          <div class="sp-practice-card-title">Email</div>
+          <div class="sp-practice-card-copy">Workplace email replies</div>
+        </a>
+      } @else {
+        <div data-testid="practice-card-email" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">E</div>
+          <div class="sp-practice-card-title">Email</div>
+          <div class="sp-practice-card-muted">{{ statusText('email_reply') }}</div>
+        </div>
+      }
 
-      <a routerLink="/module/gym-teams_chat_simulation"
-         data-testid="practice-card-workplace-chat" class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">C</div>
-        <div class="sp-practice-card-title">Workplace chat</div>
-        <div class="sp-practice-card-copy">Teams-style messages</div>
-      </a>
+      @if (isAvailable('teams_chat_simulation')) {
+        <a routerLink="/module/gym-teams_chat_simulation"
+           data-testid="practice-card-workplace-chat" class="sp-card sp-card-hover sp-practice-card">
+          <div class="sp-practice-card-mark">C</div>
+          <div class="sp-practice-card-title">Workplace chat</div>
+          <div class="sp-practice-card-copy">Teams-style messages</div>
+        </a>
+      } @else {
+        <div data-testid="practice-card-workplace-chat" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">C</div>
+          <div class="sp-practice-card-title">Workplace chat</div>
+          <div class="sp-practice-card-muted">{{ statusText('teams_chat_simulation') }}</div>
+        </div>
+      }
 
       <div data-testid="practice-card-multiple-choice" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
         <div class="sp-practice-card-mark">A</div>

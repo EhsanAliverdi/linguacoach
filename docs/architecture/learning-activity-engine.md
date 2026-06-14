@@ -523,3 +523,13 @@ Generation filters now check the catalog before creating new work:
 Renderer and evaluator selection still keep legacy compatibility, but new staged
 module work should increasingly select by catalog `exerciseType` rather than skill
 or broad `ActivityType` alone.
+
+## Exercise Type Registry
+
+`ExerciseTypeDefinition` is now the routing source for exercise type metadata. `IExerciseTypeRegistry` resolves normalized `exerciseType` keys to the catalog definition, primary skill, secondary skills, renderer key, evaluator key, generation prompt key, legacy `ActivityType`, and optional `ExercisePatternKey`.
+
+New planning and generation code should choose by `exerciseType` first. `ActivityType` remains the persistence and legacy compatibility bucket. `ExercisePatternKey` remains the pattern-engine compatibility mapping for current renderers and evaluators.
+
+The `/api/activity/next` endpoint now accepts `exerciseType=<key>` for ready implemented types. Existing `type=` and `pattern=` query parameters remain supported. Planned PTE-style catalog rows are visible in Admin but are not generation-eligible, Practice Gym-routable, or Today-routable until their implementation status becomes `ready`.
+
+Skill selection should map to eligible exercise types. It must not assume one fixed legacy activity class per skill. The registry exposes skill helpers for Practice Gym, Today, pre-generation jobs, and future adaptive planning.

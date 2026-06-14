@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
@@ -26,15 +27,18 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly ILearningPathGenerator _pathGenerator;
+    private readonly IExerciseTypeRegistry _exerciseTypes;
     private readonly ILogger<SessionGeneratorService> _logger;
 
     public SessionGeneratorService(
         LinguaCoachDbContext db,
         ILearningPathGenerator pathGenerator,
+        IExerciseTypeRegistry exerciseTypes,
         ILogger<SessionGeneratorService> logger)
     {
         _db = db;
         _pathGenerator = pathGenerator;
+        _exerciseTypes = exerciseTypes;
         _logger = logger;
     }
 
@@ -223,14 +227,11 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         IReadOnlyList<ExerciseStepTemplate> steps,
         CancellationToken ct)
     {
-        var requestedKeys = steps.Select(s => s.PatternKey).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
-        var availableKeys = await _db.ExerciseTypeDefinitions
-            .Where(e => requestedKeys.Contains(e.Key)
-                     && e.IsEnabled
-                     && e.ImplementationStatus == "ready"
-                     && e.SupportsTodayLesson)
-            .Select(e => e.Key)
-            .ToHashSetAsync(ct);
+        var todayTypes = await _exerciseTypes.GetForTodayAsync(ct);
+        var availableKeys = todayTypes
+            .Select(e => e.ExercisePatternKey ?? e.Key)
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var filtered = steps.Where(s => availableKeys.Contains(s.PatternKey)).ToList();
         if (filtered.Count != steps.Count)

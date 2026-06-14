@@ -278,3 +278,11 @@ attempts, and history remain readable.
 Future PTE-style exercise types are visible in the catalog as planned entries.
 They are not generation-eligible until implementation status becomes ready, even
 if an admin enables them.
+
+## Phase 3B ExerciseType routing foundation
+
+The backend now has an `IExerciseTypeRegistry` backed by the persisted exercise type catalog. It resolves `exerciseType` keys to renderer, evaluator, generation prompt, legacy `ActivityType`, and `ExercisePatternKey` metadata.
+
+`GET /api/activity/next?exerciseType=<key>` is supported for ready runnable types. Existing `/activity?type=...` and `/activity?pattern=...` links still work. Practice Gym now routes implemented cards with `exerciseType` where safe. Today session generation validates deterministic pattern keys through the registry before creating steps.
+
+Planned PTE-style exercise types remain visible in Admin. They are not generation-eligible or routable to student activity flows until implementation status is `ready`.

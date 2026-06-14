@@ -11,7 +11,8 @@ public sealed record GetNextActivityQuery(
     /// When set, bypasses the broad ActivityType routing and generates an activity using the
     /// specified exercise pattern definition. PreferredType is ignored when this is supplied.
     /// </summary>
-    string? PreferredPatternKey = null);
+    string? PreferredPatternKey = null,
+    string? PreferredExerciseTypeKey = null);
 
 public sealed record ActivityDto(
     Guid ActivityId,

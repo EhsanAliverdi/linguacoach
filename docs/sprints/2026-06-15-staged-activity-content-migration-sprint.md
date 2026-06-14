@@ -669,3 +669,11 @@ Out of scope for Phase 3A:
 * Today background pre-generation redesign.
 * MinIO audio lifecycle.
 * Speaking, Vocabulary, or pattern prompt migration beyond compatibility gates.
+
+## Phase 3B update: ExerciseType registry foundation
+
+Phase 3B adds a central exercise-type registry. The registry reads the durable `ExerciseTypeDefinition` catalog and resolves each `exerciseType` key to renderer, evaluator, generation prompt, legacy `ActivityType`, and `ExercisePatternKey` compatibility metadata.
+
+Generation now accepts `exerciseType` as the canonical future selector through `GET /api/activity/next?exerciseType=<key>`. Existing `type=` and `pattern=` routes remain supported. Planned PTE-style rows remain catalog-visible, but they are excluded from generation until `implementationStatus` is `ready`.
+
+Today deterministic step selection now validates configured pattern keys through the registry's Today-ready view. Disabled or unready rows are removed before session creation. Practice Gym routes now prefer `exerciseType` query parameters for implemented cards. Skill-card routing still uses temporary safe defaults until dynamic skill-to-type selection is implemented.

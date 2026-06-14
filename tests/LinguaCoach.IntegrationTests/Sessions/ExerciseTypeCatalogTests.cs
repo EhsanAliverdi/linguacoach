@@ -85,3 +85,91 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.DoesNotContain(eligible, e => e.Key == "email_reply");
     }
 }
+
+public sealed class ExerciseTypeRegistryTests : IDisposable
+{
+    private readonly SqliteConnection _connection;
+    private readonly LinguaCoachDbContext _db;
+
+    public ExerciseTypeRegistryTests()
+    {
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
+        var options = new DbContextOptionsBuilder<LinguaCoachDbContext>()
+            .UseSqlite(_connection)
+            .Options;
+        _db = new LinguaCoachDbContext(options);
+        _db.Database.EnsureCreated();
+        ExerciseTypeDefinitionSeeder.SeedAsync(_db, NullLogger.Instance).GetAwaiter().GetResult();
+    }
+
+    public void Dispose()
+    {
+        _db.Dispose();
+        _connection.Dispose();
+    }
+
+    [Theory]
+    [InlineData("writing_scenario", "writing", null, "WritingScenario")]
+    [InlineData("LISTENING COMPREHENSION", "listening", null, "ListeningComprehension")]
+    [InlineData("phrase_match", "vocabulary", "phrase_match", "VocabularyPractice")]
+    [InlineData("email_reply", "writing", "email_reply", "WritingScenario")]
+    public async Task Registry_Resolves_ReadyTypes(string key, string skill, string? pattern, string legacy)
+    {
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var resolved = await registry.GetByKeyAsync(key);
+
+        Assert.NotNull(resolved);
+        Assert.Equal(skill, resolved!.PrimarySkill);
+        Assert.Equal(pattern, resolved.ExercisePatternKey);
+        Assert.Equal(legacy, resolved.LegacyActivityType?.ToString());
+        Assert.True(resolved.IsAvailableForGeneration);
+    }
+
+    [Fact]
+    public async Task Registry_ReturnsPlannedDefinitions_ButExcludesThemFromGeneration()
+    {
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var planned = await registry.GetByKeyAsync("summarize_spoken_text");
+        var eligible = await registry.GetGenerationEligibleAsync();
+
+        Assert.NotNull(planned);
+        Assert.Equal("planned", planned!.ImplementationStatus);
+        Assert.DoesNotContain(eligible, e => e.Key == "summarize_spoken_text");
+    }
+
+    [Fact]
+    public async Task Registry_FiltersDisabledAndContextSpecificTypes()
+    {
+        var catalog = new ExerciseTypeCatalogService(_db);
+        await catalog.UpdateAsync(new("email_reply", false, null, null));
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var practice = await registry.GetForPracticeGymAsync();
+        var today = await registry.GetForTodayAsync();
+
+        Assert.DoesNotContain(practice, e => e.Key == "email_reply");
+        Assert.Contains(today, e => e.Key == "lesson_reflection");
+        Assert.DoesNotContain(practice, e => e.Key == "lesson_reflection");
+    }
+
+    [Fact]
+    public async Task Registry_ReturnsEligibleExerciseTypesForSkillOnly()
+    {
+        var catalog = new ExerciseTypeCatalogService(_db);
+        await catalog.UpdateAsync(new("listen_and_answer", false, null, null));
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var listening = await registry.GetEligibleExerciseTypesForSkillAsync(
+            "Listening",
+            LinguaCoach.Application.Activity.ExerciseTypeSupportContext.PracticeGym);
+        var writing = await registry.GetEligibleExerciseTypesForSkillAsync("writing");
+
+        Assert.DoesNotContain(listening, e => e.Key == "listen_and_answer");
+        Assert.Contains(listening, e => e.Key == "listen_and_gap_fill");
+        Assert.DoesNotContain(listening, e => e.Key == "summarize_spoken_text");
+        Assert.All(writing, e => Assert.Equal("writing", e.PrimarySkill));
+    }
+}

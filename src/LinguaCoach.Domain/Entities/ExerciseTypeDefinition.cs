@@ -68,7 +68,7 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         if (string.IsNullOrWhiteSpace(category)) throw new ArgumentException("Category is required.", nameof(category));
         if (estimatedDurationMinutes <= 0) throw new ArgumentOutOfRangeException(nameof(estimatedDurationMinutes));
 
-        Key = key.Trim();
+        Key = NormalizeKey(key);
         DisplayName = displayName.Trim();
         Description = description.Trim();
         PrimarySkill = primarySkill.Trim().ToLowerInvariant();
@@ -88,6 +88,11 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         SupportsTodayLesson = supportsTodayLesson;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public static string NormalizeKey(string key) =>
+        string.IsNullOrWhiteSpace(key)
+            ? string.Empty
+            : key.Trim().Replace('-', '_').Replace(' ', '_').ToLowerInvariant();
 
     public void SetEnabled(bool isEnabled)
     {

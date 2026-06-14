@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminCurriculumHandler, AdminHandler>();
         services.AddScoped<IAdminAiConfigHandler, AdminHandler>();
         services.AddScoped<IExerciseTypeCatalogService, ExerciseTypeCatalogService>();
+        services.AddScoped<IExerciseTypeRegistry, ExerciseTypeRegistry>();
 
         // Onboarding
         services.AddScoped<IOnboardingHandler, OnboardingHandler>();
