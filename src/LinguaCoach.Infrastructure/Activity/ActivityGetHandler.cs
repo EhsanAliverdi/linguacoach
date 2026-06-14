@@ -28,6 +28,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private readonly VocabularyPracticeGenerator _vocabGenerator;
     private readonly ListeningAudioService _listeningAudio;
     private readonly IExercisePatternRepository _patternRepo;
+    private readonly IExerciseTypeRegistry _exerciseTypes;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
@@ -38,6 +39,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         VocabularyPracticeGenerator vocabGenerator,
         ListeningAudioService listeningAudio,
         IExercisePatternRepository patternRepo,
+        IExerciseTypeRegistry exerciseTypes,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
@@ -47,6 +49,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         _vocabGenerator = vocabGenerator;
         _listeningAudio = listeningAudio;
         _patternRepo = patternRepo;
+        _exerciseTypes = exerciseTypes;
         _logger = logger;
     }
 
@@ -65,6 +68,9 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             throw new InvalidOperationException("Activity requires completed onboarding.");
 
         // Pattern-keyed path: bypass legacy type routing and VocabPracticeGenerator.
+        if (!string.IsNullOrWhiteSpace(query.PreferredExerciseTypeKey))
+            return await HandleExerciseTypeKeyedAsync(query.PreferredExerciseTypeKey, profile, ct);
+
         if (!string.IsNullOrWhiteSpace(query.PreferredPatternKey))
             return await HandlePatternKeyedAsync(query.PreferredPatternKey, profile, ct);
 
@@ -313,6 +319,109 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
         var patternDef = await _patternRepo.GetByKeyAsync(patternKey, ct);
         return MapToDto(activity, patternDef?.InteractionMode);
+    }
+
+
+
+    private async Task<ActivityDto> HandleLegacyActivityTypeAsync(
+        GetNextActivityQuery query,
+        Domain.Entities.StudentProfile profile,
+        ActivityType activityType,
+        CancellationToken ct)
+    {
+        var (currentModuleId, topicHint) = await ResolveCurrentModuleAsync(profile.UserId, profile.Id, ct);
+        var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
+        var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
+
+        if (activityType == ActivityType.VocabularyPractice)
+        {
+            if (!await _vocabGenerator.HasEnoughVocabularyAsync(profile.Id, ct))
+                throw new InvalidOperationException("Vocabulary practice unlocks after you save at least 3 vocabulary items from writing activities. Complete more writing activities to build your vocabulary bank.");
+
+            var (vocabContentJson, vocabTitle) = await _vocabGenerator.GenerateContentAsync(profile.Id, ct);
+            var vocabActivity = new Domain.Entities.LearningActivity(
+                activityType: ActivityType.VocabularyPractice,
+                source: ActivitySource.AiGenerated,
+                title: vocabTitle,
+                difficulty: profile.CefrLevel ?? "B1",
+                aiGeneratedContentJson: vocabContentJson,
+                learningModuleId: currentModuleId);
+            _db.LearningActivities.Add(vocabActivity);
+            await _db.SaveChangesAsync(ct);
+            return MapToDto(vocabActivity, null);
+        }
+
+        var context = new ActivityGenerationContext(
+            ActivityType: activityType,
+            CefrLevel: profile.CefrLevel ?? "B1",
+            CareerContext: profile.CareerProfile?.Name ?? "General",
+            LanguagePairCode: BuildPairCode(profile.LanguagePair),
+            SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+            TopicHint: topicHint,
+            RecentMistakesSummary: recentMistakes);
+
+        string contentJson;
+        try
+        {
+            contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
+        }
+        catch (AiServiceUnavailableException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new AiServiceUnavailableException(activityType.ToString(), ex);
+        }
+
+        var activity = new Domain.Entities.LearningActivity(
+            activityType: activityType,
+            source: ActivitySource.AiGenerated,
+            title: ExtractTitle(contentJson, activityType),
+            difficulty: profile.CefrLevel ?? "B1",
+            aiGeneratedContentJson: contentJson,
+            learningModuleId: currentModuleId);
+        _db.LearningActivities.Add(activity);
+        await _db.SaveChangesAsync(ct);
+
+        if (activityType == ActivityType.ListeningComprehension)
+        {
+            await _listeningAudio.EnsureAudioAsync(activity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return MapToDto(activity, null);
+    }
+
+    private async Task<ActivityDto> HandleExerciseTypeKeyedAsync(
+        string exerciseTypeKey,
+        Domain.Entities.StudentProfile profile,
+        CancellationToken ct)
+    {
+        var definition = await _exerciseTypes.GetByKeyAsync(exerciseTypeKey, ct)
+            ?? throw new InvalidOperationException($"Exercise type '{exerciseTypeKey}' is not recognised.");
+
+        if (!definition.IsEnabled)
+            throw new InvalidOperationException($"Exercise type '{definition.Key}' is disabled by an administrator.");
+
+        if (!definition.ImplementationStatus.Equals("ready", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Exercise type '{definition.Key}' is not implemented yet.");
+
+        if (!definition.SupportsPracticeGym)
+            throw new InvalidOperationException($"Exercise type '{definition.Key}' is not available in Practice Gym.");
+
+        if (!string.IsNullOrWhiteSpace(definition.ExercisePatternKey))
+            return await HandlePatternKeyedAsync(definition.ExercisePatternKey, profile, ct);
+
+        if (definition.LegacyActivityType.HasValue)
+        {
+            var legacyQuery = new GetNextActivityQuery(profile.UserId, PreferredType: definition.LegacyActivityType.Value);
+            var activityType = await ResolveActivityTypeAsync(legacyQuery, profile.Id, ct);
+            return await HandleLegacyActivityTypeAsync(legacyQuery, profile, activityType, ct);
+        }
+
+        throw new InvalidOperationException($"Exercise type '{definition.Key}' does not have a runnable mapping yet.");
     }
 
     private async Task<Domain.Entities.LearningActivity?> TryAssignReadyPracticeCacheAsync(

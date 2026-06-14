@@ -73,15 +73,18 @@ public sealed class ActivityController : ControllerBase
     public async Task<IActionResult> GetNext(
         [FromQuery] ActivityType? type = null,
         [FromQuery] string? pattern = null,
+        [FromQuery] string? exerciseType = null,
         CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
         // pattern takes precedence over type when both are supplied.
-        var query = !string.IsNullOrWhiteSpace(pattern)
-            ? new GetNextActivityQuery(userId, PreferredPatternKey: pattern.Trim())
-            : new GetNextActivityQuery(userId, PreferredType: type);
+        var query = !string.IsNullOrWhiteSpace(exerciseType)
+            ? new GetNextActivityQuery(userId, PreferredExerciseTypeKey: exerciseType.Trim())
+            : !string.IsNullOrWhiteSpace(pattern)
+                ? new GetNextActivityQuery(userId, PreferredPatternKey: pattern.Trim())
+                : new GetNextActivityQuery(userId, PreferredType: type);
 
         try
         {

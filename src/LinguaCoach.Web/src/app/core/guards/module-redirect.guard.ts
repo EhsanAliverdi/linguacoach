@@ -3,15 +3,16 @@ import { CanActivateFn, Router } from '@angular/router';
 import { map, of, switchMap } from 'rxjs';
 import { SessionService } from '../services/session.service';
 
-/** Maps Practice Gym module keys to the /activity query params that create/open that exercise type. */
+/** Maps Practice Gym module keys to the canonical exerciseType route. */
 const GYM_MODULES: Record<string, Record<string, string>> = {
-  listening: { type: 'ListeningComprehension', returnTo: '/practice' },
-  speaking: { type: 'SpeakingRolePlay', returnTo: '/practice' },
-  writing: { type: 'WritingScenario', returnTo: '/practice' },
-  phrase_match: { pattern: 'phrase_match', returnTo: '/practice' },
-  gap_fill_workplace_phrase: { pattern: 'gap_fill_workplace_phrase', returnTo: '/practice' },
-  email_reply: { pattern: 'email_reply', returnTo: '/practice' },
-  teams_chat_simulation: { pattern: 'teams_chat_simulation', returnTo: '/practice' },
+  // Temporary skill-card mapping until dynamic skill choice lands.
+  listening: { exerciseType: 'listen_and_answer', returnTo: '/practice' },
+  speaking: { exerciseType: 'speaking_roleplay_turn', returnTo: '/practice' },
+  writing: { exerciseType: 'open_writing_task', returnTo: '/practice' },
+  phrase_match: { exerciseType: 'phrase_match', returnTo: '/practice' },
+  gap_fill_workplace_phrase: { exerciseType: 'gap_fill_workplace_phrase', returnTo: '/practice' },
+  email_reply: { exerciseType: 'email_reply', returnTo: '/practice' },
+  teams_chat_simulation: { exerciseType: 'teams_chat_simulation', returnTo: '/practice' },
 };
 
 /**

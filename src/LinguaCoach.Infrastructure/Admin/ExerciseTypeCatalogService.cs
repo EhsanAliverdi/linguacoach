@@ -42,14 +42,14 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
 
     public async Task<ExerciseTypeDefinitionDto?> GetByKeyAsync(string key, CancellationToken ct = default)
     {
-        var normalized = key.Trim();
+        var normalized = LinguaCoach.Domain.Entities.ExerciseTypeDefinition.NormalizeKey(key);
         var item = await _db.ExerciseTypeDefinitions.FirstOrDefaultAsync(e => e.Key == normalized, ct);
         return item is null ? null : ToDto(item);
     }
 
     public async Task<ExerciseTypeDefinitionDto> UpdateAsync(UpdateExerciseTypeDefinitionCommand command, CancellationToken ct = default)
     {
-        var item = await _db.ExerciseTypeDefinitions.FirstOrDefaultAsync(e => e.Key == command.Key, ct)
+        var item = await _db.ExerciseTypeDefinitions.FirstOrDefaultAsync(e => e.Key == LinguaCoach.Domain.Entities.ExerciseTypeDefinition.NormalizeKey(command.Key), ct)
             ?? throw new InvalidOperationException($"Exercise type '{command.Key}' was not found.");
 
         if (command.IsEnabled.HasValue) item.SetEnabled(command.IsEnabled.Value);
@@ -63,7 +63,7 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
         e.DisplayName,
         e.Description,
         e.PrimarySkill,
-        ParseSkills(e.SecondarySkillsJson),
+        ParseSkillsForRegistry(e.SecondarySkillsJson),
         e.Category,
         e.IsEnabled,
         e.ImplementationStatus,
@@ -79,7 +79,7 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
         e.SupportsPracticeGym,
         e.SupportsTodayLesson);
 
-    private static IReadOnlyList<string> ParseSkills(string json)
+    public static IReadOnlyList<string> ParseSkillsForRegistry(string json)
     {
         try { return JsonSerializer.Deserialize<List<string>>(json) ?? []; }
         catch { return []; }
