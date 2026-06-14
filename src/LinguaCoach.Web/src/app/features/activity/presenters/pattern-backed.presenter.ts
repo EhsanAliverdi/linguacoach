@@ -23,26 +23,27 @@ export class PatternBackedPresenter implements ActivityPagePresenter {
       learningGoal: stringValue(raw, 'learningGoal'),
       instructions: stringValue(raw, 'instructions'),
       teachingNote: stringValue(raw, 'teachingNote'),
-      scenario: stringValue(raw, 'scenario'),
-      situation: stringValue(raw, 'situation'),
-      audience: stringValue(raw, 'audience'),
-      tone: stringValue(raw, 'tone'),
       skillFocus: stringValue(raw, 'skillFocus'),
-      targetPhrases: stringArray(raw, 'targetPhrases'),
-      targetVocabulary: stringArray(raw, 'targetVocabulary'),
-      exampleText: stringValue(raw, 'exampleText') ?? stringValue(raw, 'exampleReply'),
-      commonMistakeToAvoid: stringValue(raw, 'commonMistakeToAvoid'),
       instructionInSourceLanguage: stringValue(raw, 'instructionInSourceLanguage'),
       toneGuidance: stringValue(raw, 'toneGuidance'),
-      speakerRole: stringValue(raw, 'speakerRole'),
-      listenerRole: stringValue(raw, 'listenerRole'),
     };
   }
 
   practiceContent(activity: ActivityDto): PracticeViewModel {
+    const raw = parsePatternContent(activity);
     return {
       block: 'exerciseRenderer',
       skillBadge: this.skillBadge(activity),
+      scenario: stringValue(raw, 'scenario'),
+      situation: stringValue(raw, 'situation'),
+      audience: stringValue(raw, 'audience'),
+      tone: stringValue(raw, 'tone'),
+      targetPhrases: stringArray(raw, 'targetPhrases'),
+      targetVocabulary: stringArray(raw, 'targetVocabulary'),
+      exampleText: stringValue(raw, 'exampleText') ?? stringValue(raw, 'exampleReply'),
+      commonMistakeToAvoid: stringValue(raw, 'commonMistakeToAvoid'),
+      speakerRole: stringValue(raw, 'speakerRole'),
+      listenerRole: stringValue(raw, 'listenerRole'),
     };
   }
 

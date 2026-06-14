@@ -26,19 +26,9 @@ export interface PatternLearningViewModel {
   learningGoal?: string;
   instructions?: string;
   teachingNote?: string;
-  scenario?: string;
-  situation?: string;
-  audience?: string;
-  tone?: string;
   skillFocus?: string;
-  targetPhrases?: string[];
-  targetVocabulary?: string[];
-  exampleText?: string;
-  commonMistakeToAvoid?: string;
   instructionInSourceLanguage?: string;
   toneGuidance?: string;
-  speakerRole?: string;
-  listenerRole?: string;
 }
 
 export type PracticeBlock =
@@ -62,6 +52,16 @@ export type TeachViewModel = BaseTeachViewModel | PatternLearningViewModel;
 export interface PracticeViewModel {
   block: PracticeBlock;
   skillBadge: SkillBadge;
+  scenario?: string;
+  situation?: string;
+  audience?: string;
+  tone?: string;
+  targetPhrases?: string[];
+  targetVocabulary?: string[];
+  exampleText?: string;
+  commonMistakeToAvoid?: string;
+  speakerRole?: string;
+  listenerRole?: string;
 }
 
 /**

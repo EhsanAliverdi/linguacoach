@@ -217,6 +217,8 @@ Architecture sprint complete (2026-06-09). See sprint doc: [course-session-place
 - [ ] Add backend integration tests for session generation. `Not started`
 - [ ] Add Playwright tests for Today page and session flow. `Not started`
 
+- [ ] Activity Teach page (Page 1) micro-lesson content - see `docs/sprints/2026-06-15-activity-teach-page-microlesson-content-sprint.md`. `Planned`
+
 ### Phase 3 â€” Exercise Pattern Engine `Not started`
 
 - [ ] Define exercise pattern library in code (pattern key â†’ pattern config). `Not started`

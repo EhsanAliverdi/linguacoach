@@ -80,6 +80,80 @@
       <div class="sp-source-lang-block">{{ activity.instructionInSourceLanguage }}</div>
     }
 
+    @if (practice.scenario || practice.situation) {
+      <div class="sp-card" style="padding:16px;background:var(--sp-canvas2)">
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Situation</p>
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.6">{{ practice.scenario ?? practice.situation }}</p>
+      </div>
+    }
+
+    @if (practice.audience || practice.tone) {
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        @if (practice.audience) {
+          <div class="sp-card" style="padding:12px;flex:1;min-width:140px">
+            <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Audience</p>
+            <p style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ practice.audience }}</p>
+          </div>
+        }
+        @if (practice.tone) {
+          <div class="sp-card" style="padding:12px;flex:1;min-width:140px">
+            <p style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Tone</p>
+            <p style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ practice.tone }}</p>
+          </div>
+        }
+      </div>
+    }
+
+    @if (practice.speakerRole || practice.listenerRole) {
+      <p style="font-size:12px;color:var(--sp-muted);margin:0">
+        @if (practice.speakerRole) { Speaker: {{ practice.speakerRole }} }
+        @if (practice.speakerRole && practice.listenerRole) {  · }
+        @if (practice.listenerRole) { You: {{ practice.listenerRole }} }
+      </p>
+    }
+
+    @if (practice.targetVocabulary?.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Key vocabulary</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          @for (word of practice.targetVocabulary!; track word) {
+            <span style="background:#ede9fe;color:#6d28d9;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">{{ word }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    @if (practice.targetPhrases?.length) {
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Useful phrases</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          @for (phrase of practice.targetPhrases!; track phrase) {
+            <span class="sp-phrase-chip" style="cursor:pointer" (click)="appendPhrase(phrase)">{{ phrase }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    @if (practice.exampleText) {
+      <details class="sp-collapsible">
+        <summary>
+          <svg width="14" height="14" fill="none" stroke="var(--sp-writing)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          See an example
+          <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="sp-collapsible-body">
+          <p style="font-size:13.5px;line-height:1.7;color:var(--sp-text);white-space:pre-wrap">{{ practice.exampleText }}</p>
+        </div>
+      </details>
+    }
+
+    @if (practice.commonMistakeToAvoid) {
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:#fef2f2;border-radius:12px">
+        <span style="font-size:16px">⚠️</span>
+        <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0"><strong>Watch out:</strong> {{ practice.commonMistakeToAvoid }}</p>
+      </div>
+    }
+
     <app-exercise-renderer
       [activity]="activity"
       [disabled]="state === 'submitting'"

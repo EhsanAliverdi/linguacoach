@@ -33,6 +33,35 @@ describe('PatternBackedPresenter', () => {
     }
   });
 
+  it('moves exercise-setup fields (scenario, phrases, vocab, example) to the Practice stage, not Learn', () => {
+    const activity = makeActivity({
+      interactionMode: 'gapFill',
+      contentJson: JSON.stringify({
+        learningGoal: 'Use polite request phrases in workplace messages',
+        scenario: 'Your manager asks you to review a report by Friday.',
+        targetPhrases: ['Would you mind...', 'Could you possibly...'],
+        targetVocabulary: ['deadline', 'review'],
+        exampleText: 'Could you possibly review this by Friday?',
+        commonMistakeToAvoid: 'Avoid "Give me the report".',
+      }),
+    });
+    const teach = presenter.teachContent(activity);
+    expect(teach.block).toBe('patternLearning');
+    if (teach.block === 'patternLearning') {
+      expect(teach.learningGoal).toBe('Use polite request phrases in workplace messages');
+      expect((teach as any).scenario).toBeUndefined();
+      expect((teach as any).targetPhrases).toBeUndefined();
+      expect((teach as any).exampleText).toBeUndefined();
+    }
+
+    const practice = presenter.practiceContent(activity);
+    expect(practice.scenario).toBe('Your manager asks you to review a report by Friday.');
+    expect(practice.targetPhrases).toEqual(['Would you mind...', 'Could you possibly...']);
+    expect(practice.targetVocabulary).toEqual(['deadline', 'review']);
+    expect(practice.exampleText).toBe('Could you possibly review this by Friday?');
+    expect(practice.commonMistakeToAvoid).toContain('Give me the report');
+  });
+
   it('labels vocabulary interaction modes', () => {
     expect(presenter.practiceContent(makeActivity({ interactionMode: 'matchingPairs' })).skillBadge.label).toBe('Vocabulary');
     expect(presenter.practiceContent(makeActivity({ interactionMode: 'gapFill' })).skillBadge.label).toBe('Vocabulary');
