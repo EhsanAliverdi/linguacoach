@@ -8,7 +8,17 @@ const WRITING_BADGE: SkillBadge = { label: 'Writing', background: 'var(--sp-writ
 
 /** Bridges the legacy WritingScenario shape until it migrates to `open_writing_task`. */
 export class LegacyWritingPresenter implements ActivityPagePresenter {
-  teachContent(): TeachViewModel {
+  teachContent(activity: import('../../../core/models/activity.models').ActivityDto): TeachViewModel {
+    if (activity.stageContent?.learn) {
+      return {
+        block: 'stagedLearning',
+        skillBadge: WRITING_BADGE,
+        ctaLabel: 'Start practice',
+        ctaAction: 'startWriting',
+        learn: activity.stageContent.learn,
+      };
+    }
+
     return {
       block: 'writingLearning',
       skillBadge: WRITING_BADGE,

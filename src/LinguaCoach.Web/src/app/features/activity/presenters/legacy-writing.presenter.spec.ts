@@ -1,14 +1,24 @@
 import { LegacyWritingPresenter } from './legacy-writing.presenter';
-import { makeFeedback } from './test-helpers';
+import { makeActivity, makeFeedback, makeStageContent } from './test-helpers';
 
 describe('LegacyWritingPresenter', () => {
   const presenter = new LegacyWritingPresenter();
 
   it('returns writing teach content', () => {
-    const teach = presenter.teachContent();
+    const teach = presenter.teachContent(makeActivity({ stageContent: null }));
     expect(teach.block).toBe('writingLearning');
     expect(teach.skillBadge.label).toBe('Writing');
     expect(teach.ctaAction).toBe('startWriting');
+  });
+
+  it('returns stagedLearning teach content when stageContent is present', () => {
+    const stageContent = makeStageContent();
+    const activity = makeActivity({ stageContent });
+    const teach = presenter.teachContent(activity);
+    expect(teach.block).toBe('stagedLearning');
+    expect(teach.skillBadge.label).toBe('Writing');
+    expect(teach.ctaAction).toBe('startWriting');
+    expect((teach as any).learn).toBe(stageContent.learn);
   });
 
   it('returns writing practice content', () => {

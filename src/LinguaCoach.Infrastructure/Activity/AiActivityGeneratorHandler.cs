@@ -80,6 +80,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         switch (context.ActivityType)
         {
             case ActivityType.ListeningComprehension:
+            case ActivityType.WritingScenario:
             {
                 ValidateIsJson(cleaned);
                 var check = ValidateStagedContent(cleaned, context.ActivityType);
@@ -92,7 +93,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                     var retryCheck = ValidateStagedContent(cleaned, context.ActivityType);
                     if (!retryCheck.IsValid)
                         throw new AiResponseValidationException(
-                            $"AI listening activity failed staged validation after retry: {string.Join("; ", retryCheck.Errors)}");
+                            $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
                 }
                 break;
             }
@@ -121,7 +122,9 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 
         var variables = new Dictionary<string, string>
         {
-            ["activityContent"] = context.ActivityContentJson,
+            ["activityContent"] = context.ActivityType == ActivityType.WritingScenario
+                ? BuildWritingEvaluationContent(context.ActivityContentJson)
+                : context.ActivityContentJson,
             ["studentSubmission"] = context.StudentSubmission,
             ["cefrLevel"] = context.CefrLevel,
             ["careerContext"] = context.CareerContext,
@@ -139,6 +142,38 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             evalPromptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
 
         return CleanJson(response);
+    }
+
+
+    private static string BuildWritingEvaluationContent(string contentJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("schemaVersion", out var sv)
+                || sv.GetString() != ModuleStageSchema.Version)
+                return contentJson;
+
+            var payload = new
+            {
+                schemaVersion = ModuleStageSchema.Version,
+                practiceContent = root.TryGetProperty("practiceContent", out var practice)
+                    ? JsonSerializer.Deserialize<object>(practice.GetRawText())
+                    : null,
+                feedbackPlan = root.TryGetProperty("feedbackPlan", out var feedbackPlan)
+                    ? JsonSerializer.Deserialize<object>(feedbackPlan.GetRawText())
+                    : null,
+                learnContent = root.TryGetProperty("learnContent", out var learn)
+                    ? JsonSerializer.Deserialize<object>(learn.GetRawText())
+                    : null,
+            };
+            return JsonSerializer.Serialize(payload);
+        }
+        catch
+        {
+            return contentJson;
+        }
     }
 
     private static void ValidateIsJson(string json)

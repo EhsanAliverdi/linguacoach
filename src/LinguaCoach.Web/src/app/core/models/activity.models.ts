@@ -96,6 +96,17 @@ export interface LearnContentVm {
   sourceLanguageSupport: string | null;
 }
 
+export interface WritingExerciseData {
+  situation?: string | null;
+  audience?: string | null;
+  tone?: string | null;
+  expectedLength?: string | null;
+  prompt?: string | null;
+  requiredPhrases?: string[] | null;
+  targetVocabulary?: string[] | null;
+  successChecklist?: string[] | null;
+}
+
 export interface PracticeContentVm {
   instructions: string;
   scenario: string | null;
@@ -118,6 +129,9 @@ export interface FeedbackPlanVm {
 
 export interface StageContentDto {
   schemaVersion: string;
+  primarySkill?: string | null;
+  secondarySkills?: string[] | null;
+  exerciseType?: string | null;
   learn: LearnContentVm;
   practice: PracticeContentVm;
   feedbackPlan: FeedbackPlanVm;

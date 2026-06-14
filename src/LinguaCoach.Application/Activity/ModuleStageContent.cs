@@ -35,6 +35,9 @@ public sealed record FeedbackPlanDto(
 
 public sealed record StageContentDto(
     string SchemaVersion,
+    string? PrimarySkill,
+    IReadOnlyList<string> SecondarySkills,
+    string? ExerciseType,
     LearnContentDto Learn,
     PracticeContentDto Practice,
     FeedbackPlanDto FeedbackPlan);
@@ -42,6 +45,9 @@ public sealed record StageContentDto(
 /// <summary>Wire shape of a module_stage_v1 JSON document — property names match the AI-generated JSON.</summary>
 public sealed record ModuleStageWireDto(
     string SchemaVersion,
+    string? PrimarySkill,
+    IReadOnlyList<string>? SecondarySkills,
+    string? ExerciseType,
     LearnContentDto LearnContent,
     PracticeContentDto PracticeContent,
     FeedbackPlanDto FeedbackPlan);

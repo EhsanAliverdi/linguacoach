@@ -561,6 +561,9 @@ public sealed class ActivityController : ControllerBase
         stageContent = dto.StageContent is null ? null : new
         {
             schemaVersion = dto.StageContent.SchemaVersion,
+            primarySkill = dto.StageContent.PrimarySkill,
+            secondarySkills = dto.StageContent.SecondarySkills,
+            exerciseType = dto.StageContent.ExerciseType,
             learn = new
             {
                 teachingTitle = dto.StageContent.Learn.TeachingTitle,
