@@ -38,11 +38,14 @@ public sealed record UpdateStudentProfileCommand(
 
 public sealed record ArchiveStudentCommand(Guid StudentProfileId);
 
+public sealed record ResetStudentPasswordCommand(Guid StudentProfileId, string NewPassword, bool MustChangePassword = true);
+
 public interface IAdminStudentQuery
 {
     Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
     Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
     Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);
+    Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default);
 }
 
 // ── Prompt templates ──────────────────────────────────────────────────────────

@@ -29,6 +29,9 @@ export class AdminApiService {
   getStudentLearningMemory(studentProfileId: string): Observable<AdminStudentLearningMemory> {
     return this.http.get<AdminStudentLearningMemory>(`${this.api}/students/${studentProfileId}/learning-memory`);
   }
+  resetStudentPassword(studentProfileId: string, newPassword: string, mustChangePassword = true): Observable<void> {
+    return this.http.post<void>(`${this.api}/students/${studentProfileId}/reset-password`, { newPassword, mustChangePassword });
+  }
 
   // Prompts
   listPrompts(): Observable<PromptTemplateItem[]> {

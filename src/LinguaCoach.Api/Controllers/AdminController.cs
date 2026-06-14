@@ -101,6 +101,22 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
     }
 
+    [HttpPost("students/{studentId:guid}/reset-password")]
+    public async Task<IActionResult> ResetStudentPassword(Guid studentId, [FromBody] ResetStudentPasswordRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await _studentQuery.ResetStudentPasswordAsync(
+                new ResetStudentPasswordCommand(studentId, request.NewPassword, request.MustChangePassword), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpGet("students/{studentId:guid}/learning-memory")]
     public async Task<IActionResult> GetStudentMemory(Guid studentId, CancellationToken ct)
     {
@@ -318,6 +334,7 @@ public sealed record UpdateStudentProfileRequest(
     int? PreferredSessionDurationMinutes = null,
     LinguaCoach.Domain.Enums.ProfessionalExperienceLevel? ProfessionalExperienceLevel = null,
     LinguaCoach.Domain.Enums.RoleFamiliarity? RoleFamiliarity = null);
+public sealed record ResetStudentPasswordRequest(string NewPassword, bool MustChangePassword = true);
 public sealed record CreatePromptVersionRequest(string Key, string Content, int? MaxInputTokens, int? MaxOutputTokens);
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);

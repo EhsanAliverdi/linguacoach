@@ -1,6 +1,7 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { DashboardService } from '../../core/services/dashboard.service';
 
 @Component({
   selector: 'app-profile',
@@ -34,7 +35,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--sp-border)">
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--sp-ink)">Current level</div>
-            <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">Not assessed yet</div>
+            <div style="font-size:12px;color:var(--sp-muted);margin-top:2px">{{ cefrLevel() ?? 'Not assessed yet' }}</div>
           </div>
           <svg width="16" height="16" fill="none" stroke="var(--sp-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
@@ -79,7 +80,7 @@ import { AuthService } from '../../core/services/auth.service';
     </button>
   `,
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   avatarLetter = computed(() => {
     const email = this.auth.currentUser()?.email ?? '';
     return email.charAt(0).toUpperCase() || 'U';
@@ -89,5 +90,14 @@ export class ProfileComponent {
     return this.auth.currentUser()?.email ?? '';
   });
 
-  constructor(public auth: AuthService) {}
+  cefrLevel = signal<string | null>(null);
+
+  constructor(public auth: AuthService, private dashboard: DashboardService) {}
+
+  ngOnInit(): void {
+    this.dashboard.getDashboard().subscribe({
+      next: res => this.cefrLevel.set(res.cefrLevel),
+      error: () => {},
+    });
+  }
 }

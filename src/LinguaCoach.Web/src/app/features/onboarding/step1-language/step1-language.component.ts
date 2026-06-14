@@ -25,6 +25,13 @@ export class Step1LanguageComponent implements OnInit {
       next: pairs => { this.pairs.set(pairs); this.loading.set(false); },
       error: () => { this.error.set('Could not load language options.'); this.loading.set(false); },
     });
+
+    this.onboarding.getStatus().subscribe({
+      next: status => {
+        if (status.languagePairId) this.selected.set(status.languagePairId);
+      },
+      error: () => {},
+    });
   }
 
   select(id: string): void { this.selected.set(id); }

@@ -58,11 +58,7 @@ public sealed class ListeningComprehensionEvaluator
                     : "This message needs another careful pass. Use the transcript to find the task, timing, and reason.",
             QuestionFeedback = questionResults,
             Transcript = content.AudioScript ?? string.Empty,
-            ResponseFeedback = string.IsNullOrWhiteSpace(content.ResponseTask?.Prompt)
-                ? null
-                : string.IsNullOrWhiteSpace(responseText)
-                    ? "Add a short reply confirming what you will do."
-                    : "Your reply should confirm the task, mention the timeline if relevant, and keep a polite workplace tone.",
+            ResponseFeedback = BuildResponseFeedback(content.ResponseTask, responseText, responseScore),
             MiniLesson = "In workplace listening, first identify the action, the reason, and any time or deadline.",
             NextImprovementStep = "Read the transcript once, underline the requested action and deadline, then answer again without looking."
         };
@@ -81,6 +77,29 @@ public sealed class ListeningComprehensionEvaluator
         if (Normalize(answer).Contains(Normalize(expected), StringComparison.OrdinalIgnoreCase)) return 1;
         var matched = expectedTokens.Count(t => actualTokens.Contains(t));
         return Math.Clamp((double)matched / expectedTokens.Count, 0, 1);
+    }
+
+    private static string? BuildResponseFeedback(ListeningResponseTask? responseTask, string? responseText, double responseScore)
+    {
+        if (string.IsNullOrWhiteSpace(responseTask?.Prompt)) return null;
+
+        if (string.IsNullOrWhiteSpace(responseText))
+            return "Add a short reply confirming what you will do.";
+
+        var focusTokens = Tokenize(responseTask.ExpectedFocus ?? string.Empty);
+        var responseTokens = Tokenize(responseText);
+        var missing = focusTokens.Where(t => !responseTokens.Contains(t)).ToList();
+
+        if (focusTokens.Count > 0 && missing.Count > 0)
+        {
+            return $"Your reply is missing some key points from the message: {string.Join(", ", missing)}. " +
+                   "Mention these, confirm the requested action and timeline, and keep a polite workplace tone.";
+        }
+
+        if (responseScore >= 80)
+            return "Your reply covers the key points from the message in a clear, professional tone.";
+
+        return "Your reply should confirm the task, mention the timeline if relevant, and keep a polite workplace tone.";
     }
 
     private static double ScoreResponse(string? responseText, string? expectedFocus)

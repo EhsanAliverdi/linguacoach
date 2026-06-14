@@ -49,25 +49,45 @@
 
 <!-- SpeakingRolePlay: Unsupported browser -->
 @if (state() === 'mic-unsupported') {
-  <div class="sp-empty-state">
-    <div style="font-size:32px;margin-bottom:12px">🎙️</div>
-    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Microphone not supported</h3>
-    <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">
-      Speaking practice requires microphone access. Please use Chrome, Firefox, or Safari on a device with a microphone.
-    </p>
-    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:16px">Back to Today</button>
+  <div class="sp-empty-state" style="align-items:stretch">
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">🎙️</div>
+      <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Microphone not supported</h3>
+      <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px">
+        Recording isn't supported in this browser. Type your response instead.
+      </p>
+    </div>
+    @if (errorMessage()) {
+      <p style="font-size:13px;color:#dc2626;background:#fee2e2;padding:10px 14px;border-radius:8px;margin-top:12px">{{ errorMessage() }}</p>
+    }
+    <textarea rows="6" class="sp-input" style="margin-top:16px;resize:vertical;line-height:1.7"
+      [ngModel]="draftText"
+      (ngModelChange)="setDraftText($event)"
+      placeholder="Type what you would say…"></textarea>
+    <button (click)="submitTextFallback()" [disabled]="!draftText.trim()" class="sp-button-primary" style="margin-top:12px">Get coach feedback</button>
+    <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:8px">Back to Today</button>
   </div>
 }
 
 <!-- SpeakingRolePlay: Mic permission denied -->
 @if (state() === 'mic-denied') {
-  <div class="sp-empty-state">
-    <div style="font-size:32px;margin-bottom:12px">🔇</div>
-    <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Microphone access denied</h3>
-    <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px;text-align:center">
-      SpeakPath needs microphone access to record your response. Please allow microphone access in your browser settings and try again.
-    </p>
-    <button (click)="requestMicPermission()" class="sp-button-primary" style="margin-top:16px">Try again</button>
+  <div class="sp-empty-state" style="align-items:stretch">
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">🔇</div>
+      <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:6px">Microphone access denied</h3>
+      <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:300px">
+        Microphone access was denied. Type your response instead, or allow microphone access and try again.
+      </p>
+    </div>
+    @if (errorMessage()) {
+      <p style="font-size:13px;color:#dc2626;background:#fee2e2;padding:10px 14px;border-radius:8px;margin-top:12px">{{ errorMessage() }}</p>
+    }
+    <textarea rows="6" class="sp-input" style="margin-top:16px;resize:vertical;line-height:1.7"
+      [ngModel]="draftText"
+      (ngModelChange)="setDraftText($event)"
+      placeholder="Type what you would say…"></textarea>
+    <button (click)="submitTextFallback()" [disabled]="!draftText.trim()" class="sp-button-primary" style="margin-top:12px">Get coach feedback</button>
+    <button (click)="requestMicPermission()" class="sp-button-ghost" style="margin-top:8px">Try microphone again</button>
     <button (click)="backToDashboard()" class="sp-button-ghost" style="margin-top:8px">Back to Today</button>
   </div>
 }

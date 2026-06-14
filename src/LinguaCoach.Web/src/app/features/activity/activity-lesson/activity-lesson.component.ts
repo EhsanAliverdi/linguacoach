@@ -167,6 +167,9 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
     this.activity.set(activity);
     if (activity.activityType === 'speakingRolePlay') {
       this.initSpeakingState();
+    } else if (ActivityPresenterFactory.for(activity).teachContent(activity).block === 'exerciseRenderer') {
+      // Pattern-engine activities have no separate Teach page; go straight to Practice.
+      this.state.set('writing');
     } else {
       this.state.set('learning');
     }
@@ -252,6 +255,25 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   setDraftText(value: string): void {
     this.draftText = value;
+  }
+
+  submitTextFallback(): void {
+    const a = this.activity();
+    const fallbackState = this.state();
+    if (!this.draftText.trim() || !a) return;
+    this.state.set('submitting');
+    this.activityService.submitAttempt(a.activityId, this.draftText).subscribe({
+      next: fb => {
+        this.previousScore.set(this.feedback()?.score ?? null);
+        this.feedback.set(fb);
+        this.attemptCount.update(n => n + 1);
+        this.state.set('feedback');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(this.extractError(err, 'Failed to get feedback. Please try again.'));
+        this.state.set(fallbackState);
+      },
+    });
   }
 
   setListeningResponseText(value: string): void {

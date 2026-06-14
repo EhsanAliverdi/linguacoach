@@ -100,6 +100,26 @@ public sealed class AdminHandler :
         return ToStudentListItem(profile, user.Email ?? string.Empty);
     }
 
+    public async Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        var user = await _userManager.FindByIdAsync(profile.UserId.ToString())
+            ?? throw new InvalidOperationException("Student user not found.");
+
+        var removeResult = await _userManager.RemovePasswordAsync(user);
+        if (!removeResult.Succeeded)
+            throw new InvalidOperationException(string.Join("; ", removeResult.Errors.Select(e => e.Description)));
+
+        var addResult = await _userManager.AddPasswordAsync(user, command.NewPassword);
+        if (!addResult.Succeeded)
+            throw new InvalidOperationException(string.Join("; ", addResult.Errors.Select(e => e.Description)));
+
+        user.MustChangePassword = command.MustChangePassword;
+        await _userManager.UpdateAsync(user);
+    }
+
     private static StudentListItem ToStudentListItem(StudentProfile p, string email)
         => new(
             p.Id,

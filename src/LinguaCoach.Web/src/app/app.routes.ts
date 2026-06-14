@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { placementRequiredRedirectGuard, placementAccessGuard } from './core/guards/placement.guard';
+import { AuthService } from './core/services/auth.service';
 import { PublicLayoutComponent } from './layouts/public-layout/public-layout.component';
 import { StudentAppLayoutComponent } from './layouts/student-app-layout/student-app-layout.component';
 import { AdminAppLayoutComponent } from './layouts/admin-app-layout/admin-app-layout.component';
@@ -48,6 +50,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent),
       },
       {
+        path: 'students/new',
+        redirectTo: 'create-student',
+      },
+      {
         path: 'ai-config',
         loadComponent: () => import('./features/admin/admin-ai-config/admin-ai-config.component').then(m => m.AdminAiConfigComponent),
       },
@@ -62,6 +68,10 @@ export const routes: Routes = [
       {
         path: 'usage',
         loadComponent: () => import('./features/admin/admin-ai-usage/admin-ai-usage.component').then(m => m.AdminAiUsageComponent),
+      },
+      {
+        path: 'ai-usage',
+        redirectTo: 'usage',
       },
       {
         path: 'diagnostics',
@@ -165,5 +175,5 @@ export const routes: Routes = [
     ],
   },
 
-  { path: '**', redirectTo: 'login' },
+  { path: '**', redirectTo: () => inject(AuthService).isAuthenticated() ? '/dashboard' : '/login' },
 ];

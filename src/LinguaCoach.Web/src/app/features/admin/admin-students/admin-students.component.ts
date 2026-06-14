@@ -94,6 +94,7 @@ interface StudentEditForm {
                   <div class="sp-admin-row-actions">
                     <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
                     @if (s.lifecycleStage !== 'Archived') {
+                      <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
                       <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
                     }
                   </div>
@@ -188,6 +189,58 @@ interface StudentEditForm {
         </form>
       </section>
     }
+
+    @if (resetting(); as student) {
+      <div class="sp-admin-modal-backdrop" (click)="cancelResetPassword()"></div>
+      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle">
+        <div class="sp-admin-modal-header">
+          <div>
+            <h2 id="resetPasswordTitle">Reset password</h2>
+            <p>{{ student.email }}</p>
+          </div>
+          <button type="button" (click)="cancelResetPassword()" aria-label="Close reset password">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        @if (resetSuccessPassword()) {
+          <div class="sp-admin-edit-grid">
+            <div class="sp-admin-wide sp-admin-alert-success">
+              Password reset. Share this temporary password with the student
+              securely — it will not be shown again.
+            </div>
+            <label class="sp-admin-wide">
+              <span>New temporary password</span>
+              <input class="sp-input" [value]="resetSuccessPassword()" readonly />
+            </label>
+            <div class="sp-admin-modal-actions sp-admin-wide">
+              <button type="button" class="sp-admin-btn-primary" (click)="cancelResetPassword()">Done</button>
+            </div>
+          </div>
+        } @else {
+          <form (ngSubmit)="saveResetPassword()" class="sp-admin-edit-grid">
+            <label class="sp-admin-wide">
+              <span>New temporary password</span>
+              <input class="sp-input" [(ngModel)]="resetForm.newPassword" name="newPassword"
+                placeholder="At least 8 characters, with a digit" autocomplete="off" />
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetForm.mustChangePassword" name="mustChangePassword" style="margin:0;" />
+              <span style="margin:0;">Require password change on next login</span>
+            </label>
+            @if (resetError()) {
+              <div class="sp-admin-alert-error sp-admin-wide">{{ resetError() }}</div>
+            }
+            <div class="sp-admin-modal-actions sp-admin-wide">
+              <button type="button" class="sp-button-ghost" (click)="generateResetPassword()">Generate password</button>
+              <button type="button" class="sp-button-ghost" (click)="cancelResetPassword()">Cancel</button>
+              <button type="submit" class="sp-admin-btn-primary" [disabled]="savingReset() || resetForm.newPassword.length < 8">
+                {{ savingReset() ? 'Saving...' : 'Reset password' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    }
   `,
   styles: [`
     .sp-admin-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
@@ -226,6 +279,12 @@ export class AdminStudentsComponent implements OnInit {
   savingEdit = signal(false);
   editError = signal('');
   includeArchived = false;
+
+  resetting = signal<StudentListItem | null>(null);
+  savingReset = signal(false);
+  resetError = signal('');
+  resetSuccessPassword = signal('');
+  resetForm = { newPassword: '', mustChangePassword: true };
 
   editForm: StudentEditForm = this.emptyForm();
 
@@ -337,6 +396,48 @@ export class AdminStudentsComponent implements OnInit {
         this.toast.success('Student archived');
       },
       error: err => this.toast.error(err.error?.error ?? 'Could not archive student.'),
+    });
+  }
+
+  startResetPassword(student: StudentListItem): void {
+    this.resetting.set(student);
+    this.resetError.set('');
+    this.resetSuccessPassword.set('');
+    this.resetForm = { newPassword: '', mustChangePassword: true };
+  }
+
+  cancelResetPassword(): void {
+    this.resetting.set(null);
+    this.resetError.set('');
+    this.resetSuccessPassword.set('');
+  }
+
+  generateResetPassword(): void {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+      result += chars[Math.floor(Math.random() * chars.length)];
+    }
+    this.resetForm.newPassword = result;
+  }
+
+  saveResetPassword(): void {
+    const student = this.resetting();
+    if (!student || this.resetForm.newPassword.length < 8) return;
+
+    this.savingReset.set(true);
+    this.resetError.set('');
+
+    this.adminApi.resetStudentPassword(student.studentProfileId, this.resetForm.newPassword, this.resetForm.mustChangePassword).subscribe({
+      next: () => {
+        this.savingReset.set(false);
+        this.resetSuccessPassword.set(this.resetForm.newPassword);
+        this.toast.success(`Password reset for ${student.email}`);
+      },
+      error: err => {
+        this.savingReset.set(false);
+        this.resetError.set(err.error?.error ?? 'Could not reset password.');
+      },
     });
   }
 
