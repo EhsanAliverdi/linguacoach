@@ -205,6 +205,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     await WritingScenarioSeeder.SeedAsync(db, seederLogger);
     await LearningActivitySeeder.SeedAsync(db, seederLogger);
     await ExercisePatternSeeder.SeedAsync(db, seederLogger);
+    await ExerciseTypeDefinitionSeeder.SeedAsync(db, seederLogger);
 
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();

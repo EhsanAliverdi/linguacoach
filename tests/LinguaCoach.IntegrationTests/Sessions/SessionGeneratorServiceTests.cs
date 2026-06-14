@@ -4,6 +4,7 @@ using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Persistence;
+using LinguaCoach.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -28,6 +29,7 @@ public sealed class SessionGeneratorServiceTests : IDisposable
         _db = new LinguaCoachDbContext(options);
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
+        ExerciseTypeDefinitionSeeder.SeedAsync(_db, NullLogger.Instance).GetAwaiter().GetResult();
 
         _service = new SessionGeneratorService(_db, new FakeLearningPathGenerator(_db), NullLogger<SessionGeneratorService>.Instance);
     }

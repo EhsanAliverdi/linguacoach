@@ -241,6 +241,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         Domain.Entities.StudentProfile profile,
         CancellationToken ct)
     {
+        await EnsureExerciseTypeAvailableAsync(patternKey, requirePracticeGym: true, ct);
+
         var pattern = await _patternRepo.GetByKeyAsync(patternKey, ct)
             ?? throw new InvalidOperationException(
                 $"Exercise pattern '{patternKey}' is not recognised. Check the pattern key and try again.");
@@ -368,7 +370,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     {
         // Explicit override always wins
         if (query.PreferredType.HasValue)
+        {
+            await EnsureLegacyActivityTypeAvailableAsync(query.PreferredType.Value, ct);
             return query.PreferredType.Value;
+        }
 
         // Check if conditions are right for vocabulary practice
         var totalAttempts = await _db.ActivityAttempts
@@ -392,7 +397,36 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             return ActivityType.ListeningComprehension;
         }
 
-        return ActivityType.WritingScenario;
+        var defaultType = ActivityType.WritingScenario;
+        await EnsureLegacyActivityTypeAvailableAsync(defaultType, ct);
+        return defaultType;
+    }
+
+    private async Task EnsureExerciseTypeAvailableAsync(string key, bool requirePracticeGym, CancellationToken ct)
+    {
+        var definition = await _db.ExerciseTypeDefinitions.FirstOrDefaultAsync(e => e.Key == key, ct)
+            ?? throw new InvalidOperationException($"Exercise type '{key}' is not recognised.");
+
+        if (!definition.IsEnabled)
+            throw new InvalidOperationException($"Exercise type '{key}' is disabled by an administrator.");
+
+        if (!definition.ImplementationStatus.Equals("ready", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Exercise type '{key}' is not implemented yet.");
+
+        if (requirePracticeGym && !definition.SupportsPracticeGym)
+            throw new InvalidOperationException($"Exercise type '{key}' is not available in Practice Gym.");
+    }
+
+    private async Task EnsureLegacyActivityTypeAvailableAsync(ActivityType activityType, CancellationToken ct)
+    {
+        var anyReady = await _db.ExerciseTypeDefinitions.AnyAsync(e =>
+            e.LegacyActivityType == activityType
+            && e.IsEnabled
+            && e.ImplementationStatus == "ready"
+            && e.SupportsPracticeGym, ct);
+
+        if (!anyReady)
+            throw new InvalidOperationException($"No enabled ready exercise types are available for {activityType}.");
     }
 
     private async Task<(Guid? ModuleId, string? TopicHint)> ResolveCurrentModuleAsync(

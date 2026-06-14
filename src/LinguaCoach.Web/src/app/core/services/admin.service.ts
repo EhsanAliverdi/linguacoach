@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ExerciseTypeDefinition, UpdateExerciseTypeRequest } from '../models/admin.models';
 
 export interface CreateStudentRequest {
   email: string;
@@ -30,5 +31,13 @@ export class AdminService {
 
   createStudent(request: CreateStudentRequest): Observable<CreateStudentResponse> {
     return this.http.post<CreateStudentResponse>(`${this.api}/admin/students`, request);
+  }
+
+  listExerciseTypes(): Observable<ExerciseTypeDefinition[]> {
+    return this.http.get<ExerciseTypeDefinition[]>(`${this.api}/admin/exercise-types`);
+  }
+
+  updateExerciseType(key: string, request: UpdateExerciseTypeRequest): Observable<ExerciseTypeDefinition> {
+    return this.http.patch<ExerciseTypeDefinition>(`${this.api}/admin/exercise-types/${key}`, request);
   }
 }

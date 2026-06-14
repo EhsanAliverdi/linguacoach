@@ -67,6 +67,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-prompts/admin-prompts.component').then(m => m.AdminPromptsComponent),
       },
       {
+        path: 'exercise-types',
+        loadComponent: () => import('./features/admin/admin-exercise-types/admin-exercise-types.component').then(m => m.AdminExerciseTypesComponent),
+      },
+      {
         path: 'careers',
         loadComponent: () => import('./features/admin/admin-careers/admin-careers.component').then(m => m.AdminCareersComponent),
       },

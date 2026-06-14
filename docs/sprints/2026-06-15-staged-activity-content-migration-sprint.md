@@ -1,6 +1,6 @@
 ---
 status: in-progress
-lastUpdated: 2026-06-15 08:45
+lastUpdated: 2026-06-15 10:05
 owner: architecture
 relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
 relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
@@ -625,3 +625,47 @@ Future progress records should support:
 * Renderer selection is based on `exerciseType`.
 * Evaluators understand multi-skill exercises.
 * Docs clearly state `/activity?type=...` direct generation is not the desired long-term Gym/Today flow.
+
+## Phase 3A — Exercise Type Catalog and Admin Enable Disable Foundation
+
+Status: implemented in this PR.
+
+Phase 3A adds the durable exercise type catalog before migrating additional
+activity types to `module_stage_v1`.
+
+Key decisions:
+
+* Skills are not exercise types.
+* `primarySkill` and `secondarySkills` describe learning intent.
+* `exerciseType` selects the Practice renderer and evaluator.
+* The catalog is the source of truth for future generation eligibility.
+* Admin enable disable affects future generated modules only.
+* Existing activities and attempts remain readable after disable.
+* `implementationStatus` prevents planned PTE-style types from becoming runnable.
+
+Backend changes:
+
+* Added `exercise_type_definitions` table.
+* Added seeded catalog rows for existing implemented patterns and future PTE-style types.
+* Added admin list and patch APIs under `/api/admin/exercise-types`.
+* Added authenticated student catalog read endpoint at `/api/activity/exercise-types`.
+* Practice Gym generation now checks enabled, ready, Practice Gym-supported rows.
+* Today deterministic session generation filters disabled or unavailable patterns.
+* Background Practice Gym cache queues only catalog-eligible pattern keys.
+
+Admin UI changes:
+
+* Added Admin Exercise Types page.
+* Displays key, skill metadata, category, enabled state, implementation status,
+  surface support, audio and image requirements, and generation availability.
+* Admins can enable or disable an exercise type.
+* Planned rows remain marked Not implemented and blocked from generation.
+
+Out of scope for Phase 3A:
+
+* New PTE renderers.
+* New PTE evaluators.
+* Practice Gym pre-generation pool redesign.
+* Today background pre-generation redesign.
+* MinIO audio lifecycle.
+* Speaking, Vocabulary, or pattern prompt migration beyond compatibility gates.

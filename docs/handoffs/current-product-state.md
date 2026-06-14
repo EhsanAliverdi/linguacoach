@@ -1,6 +1,6 @@
 ﻿---
 status: current
-lastUpdated: 2026-06-12 13:57
+lastUpdated: 2026-06-15 10:05
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath â€” Current Product State
 
-Last updated: 2026-06-12
+Last updated: 2026-06-15
 
 ---
 
@@ -264,3 +264,17 @@ See `docs/backlog/deferred-work.md` for the full deferred work list.
 3. **Session Reflection AI** â€” evaluation outputs now stable; wire `session_reflection` prompt.
 
 See `docs/sprints/current-sprint.md` for the active sprint scope.
+
+## Exercise Type Catalog foundation (Phase 3A)
+
+The platform now has a durable exercise type catalog for future generation control.
+Skills and exercise types are separate: a module can target primary and secondary
+skills, while its Practice stage uses a catalog `exerciseType`.
+
+Admins can list and enable or disable exercise types from Admin Exercise Types.
+Disable affects future Today and Practice Gym generation only. Existing activities,
+attempts, and history remain readable.
+
+Future PTE-style exercise types are visible in the catalog as planned entries.
+They are not generation-eligible until implementation status becomes ready, even
+if an admin enables them.

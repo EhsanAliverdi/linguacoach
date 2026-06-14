@@ -4,12 +4,17 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ActivityDto, ActivityFeedbackDto, ActivityType, ListeningAnswer, VocabAnswer } from '../models/activity.models';
 import { environment } from '../../../environments/environment';
+import { ExerciseTypeDefinition } from '../models/admin.models';
 
 @Injectable({ providedIn: 'root' })
 export class ActivityService {
   private readonly base = `${environment.apiUrl}/activity`;
 
   constructor(private http: HttpClient) {}
+
+  getExerciseTypes(): Observable<ExerciseTypeDefinition[]> {
+    return this.http.get<ExerciseTypeDefinition[]>(`${this.base}/exercise-types`);
+  }
 
   getNext(type?: ActivityType, patternKey?: string): Observable<ActivityDto> {
     if (patternKey) {

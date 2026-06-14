@@ -28,6 +28,7 @@ public sealed class ActivityController : ControllerBase
     private readonly ISpeechToTextService _stt;
     private readonly SpeakingRolePlayEvaluator _speakingEvaluator;
     private readonly IPatternEvaluationRouter _patternRouter;
+    private readonly LinguaCoach.Application.Admin.IExerciseTypeCatalogService _exerciseTypes;
     private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
 
     private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
@@ -42,6 +43,7 @@ public sealed class ActivityController : ControllerBase
         ISpeechToTextService stt,
         SpeakingRolePlayEvaluator speakingEvaluator,
         IPatternEvaluationRouter patternRouter,
+        LinguaCoach.Application.Admin.IExerciseTypeCatalogService exerciseTypes,
         LinguaCoach.Application.Storage.IFileStorageService storage)
     {
         _getNextActivity = getNextActivity;
@@ -53,6 +55,7 @@ public sealed class ActivityController : ControllerBase
         _stt = stt;
         _speakingEvaluator = speakingEvaluator;
         _patternRouter = patternRouter;
+        _exerciseTypes = exerciseTypes;
         _storage = storage;
     }
 
@@ -60,6 +63,11 @@ public sealed class ActivityController : ControllerBase
     /// Returns the next recommended activity for the student.
     /// Primary: AI-generated or deterministic. Fallback: SystemFallback from seed data.
     /// </summary>
+
+    [HttpGet("exercise-types")]
+    public async Task<IActionResult> GetExerciseTypes(CancellationToken ct)
+        => Ok(await _exerciseTypes.ListAllAsync(ct));
+
     [HttpGet("next")]
     [EnableRateLimiting("WritingAi")]
     public async Task<IActionResult> GetNext(

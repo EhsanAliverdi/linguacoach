@@ -12,12 +12,20 @@
     <p class="sp-eyebrow sp-practice-section-label">By skill</p>
     <div class="sp-skill-grid" data-testid="practice-skills-grid">
 
-      <a routerLink="/module/gym-listening" data-testid="practice-card-listening"
-         class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">L</div>
-        <div class="sp-practice-card-title">Listening</div>
-        <div class="sp-practice-card-copy">Lesson, audio practice, feedback</div>
-      </a>
+      @if (isAvailable('listen_and_answer')) {
+        <a routerLink="/module/gym-listening" data-testid="practice-card-listening"
+           class="sp-card sp-card-hover sp-practice-card">
+          <div class="sp-practice-card-mark">L</div>
+          <div class="sp-practice-card-title">Listening</div>
+          <div class="sp-practice-card-copy">Lesson, audio practice, feedback</div>
+        </a>
+      } @else {
+        <div data-testid="practice-card-listening" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">L</div>
+          <div class="sp-practice-card-title">Listening</div>
+          <div class="sp-practice-card-muted">{{ statusText('listen_and_answer') }}</div>
+        </div>
+      }
 
       <div data-testid="practice-card-reading" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
         <div class="sp-practice-card-mark">R</div>
@@ -46,12 +54,20 @@
     <p class="sp-eyebrow sp-practice-section-label">Vocabulary class</p>
     <div class="sp-skill-grid" data-testid="practice-vocabulary-grid">
 
-      <a routerLink="/module/gym-phrase_match" data-testid="practice-card-vocabulary"
-         class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">V</div>
-        <div class="sp-practice-card-title">Word cards</div>
-        <div class="sp-practice-card-copy">Meaning, example, then match</div>
-      </a>
+      @if (isAvailable('phrase_match')) {
+        <a routerLink="/module/gym-phrase_match" data-testid="practice-card-vocabulary"
+           class="sp-card sp-card-hover sp-practice-card">
+          <div class="sp-practice-card-mark">V</div>
+          <div class="sp-practice-card-title">Word cards</div>
+          <div class="sp-practice-card-copy">Meaning, example, then match</div>
+        </a>
+      } @else {
+        <div data-testid="practice-card-vocabulary" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">V</div>
+          <div class="sp-practice-card-title">Word cards</div>
+          <div class="sp-practice-card-muted">{{ statusText('phrase_match') }}</div>
+        </div>
+      }
 
       <div data-testid="practice-card-vocabulary-queue" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
         <div class="sp-practice-card-mark">Q</div>
@@ -66,12 +82,20 @@
     <p class="sp-eyebrow sp-practice-section-label">By exercise type</p>
     <div class="sp-skill-grid" data-testid="practice-exercises-grid">
 
-      <a routerLink="/module/gym-gap_fill_workplace_phrase"
-         data-testid="practice-card-gap-fill" class="sp-card sp-card-hover sp-practice-card">
-        <div class="sp-practice-card-mark">F</div>
-        <div class="sp-practice-card-title">Fill in the blanks</div>
-        <div class="sp-practice-card-copy">Missing words in sentences</div>
-      </a>
+      @if (isAvailable('gap_fill_workplace_phrase')) {
+        <a routerLink="/module/gym-gap_fill_workplace_phrase"
+           data-testid="practice-card-gap-fill" class="sp-card sp-card-hover sp-practice-card">
+          <div class="sp-practice-card-mark">F</div>
+          <div class="sp-practice-card-title">Fill in the blanks</div>
+          <div class="sp-practice-card-copy">Missing words in sentences</div>
+        </a>
+      } @else {
+        <div data-testid="practice-card-gap-fill" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
+          <div class="sp-practice-card-mark">F</div>
+          <div class="sp-practice-card-title">Fill in the blanks</div>
+          <div class="sp-practice-card-muted">{{ statusText('gap_fill_workplace_phrase') }}</div>
+        </div>
+      }
 
       <a routerLink="/module/gym-phrase_match"
          data-testid="practice-card-phrase-match" class="sp-card sp-card-hover sp-practice-card">
