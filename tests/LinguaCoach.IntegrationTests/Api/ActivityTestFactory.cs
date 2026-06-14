@@ -203,6 +203,10 @@ internal sealed class FakeAiProvider : IAiProvider
                   "listenerRole": "Document Controller",
                   "audioScript": "Hi, this is a test workplace voice message. Please note the meeting has been moved to Thursday.",
                   "transcriptAvailableAfterSubmit": true,
+                  "prompt": "Reply to confirm you received the message.",
+                  "situation": "Your manager leaves a short voice message about a project delay.",
+                  "audience": "Manager",
+                  "tone": "professional",
                   "questions": [
                     { "id": "q1", "question": "When was the meeting moved to?", "expectedAnswer": "Thursday", "type": "short_answer" },
                     { "id": "q2", "question": "What should you do before the meeting?", "expectedAnswer": "Check the latest delivery schedule", "type": "short_answer" }

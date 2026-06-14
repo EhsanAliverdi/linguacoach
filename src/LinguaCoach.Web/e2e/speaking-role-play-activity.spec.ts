@@ -94,6 +94,15 @@ const speakingFeedback = {
 test.describe('SpeakingRolePlay activity', () => {
   test('Practice Gym Speaking card is active and links to SpeakingRolePlay', async ({ page }) => {
     await withAuth(page);
+    await page.route('**/api/activity/exercise-types', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { key: 'speaking_roleplay_turn', displayName: 'Speaking Roleplay Turn', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_speaking_roleplay_turn', legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: 'speaking_roleplay_turn', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        ]),
+      });
+    });
 
     await page.goto('/practice');
     const speakingCard = page.getByTestId('speaking-card');

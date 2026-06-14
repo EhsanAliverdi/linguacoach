@@ -37,7 +37,18 @@ public sealed class LearningPathProgressionTests : IClassFixture<ActivityTestFac
         var svc = scope.ServiceProvider.GetRequiredService<StudentProgressService>();
 
         var profile = db.StudentProfiles.First(p => p.UserId == userId);
-        var act = db.LearningActivities.First(); // use any existing activity
+        var act = db.LearningActivities.FirstOrDefault();
+        if (act is null)
+        {
+            act = new LinguaCoach.Domain.Entities.LearningActivity(
+                ActivityType.WritingScenario,
+                LinguaCoach.Domain.Enums.ActivitySource.AiGenerated,
+                "Focus area test activity",
+                "B1",
+                "{}");
+            db.LearningActivities.Add(act);
+            await db.SaveChangesAsync();
+        }
 
         // Feedback JSON: tone appears twice per attempt, grammar once
         var feedbackWithTone = """

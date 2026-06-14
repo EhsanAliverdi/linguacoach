@@ -182,7 +182,7 @@ test('listening comprehension activity hides transcript before submit and reveal
   // Practice page: full exercise content
   await expect(page.getByText('Understand a project update')).toBeVisible();
   await expect(page.locator('audio')).toBeVisible();
-  await expect(page.getByText('Transcript unlocks after you answer.')).toBeVisible();
+  await expect(page.getByText('The transcript stays hidden until you submit.')).toBeVisible();
   await expect(page.getByText('supplier has confirmed a two-day delay')).not.toBeVisible();
 
   await page.getByLabel('What should you check?').fill('the latest delivery schedule');

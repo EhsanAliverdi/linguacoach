@@ -117,7 +117,7 @@ test('course-ready Today page shows placement summary and a secondary Practice l
   expect(consoleErrors).toEqual([]);
 });
 
-test('Practice Gym page has skill cards that route to implemented activities and pronunciation is disabled', async ({ page }) => {
+test('Practice Gym page has skill cards for implemented skills and pronunciation is disabled', async ({ page }) => {
   await withAuth(page);
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({
@@ -126,12 +126,23 @@ test('Practice Gym page has skill cards that route to implemented activities and
       body: JSON.stringify({ status: 'Completed', lifecycleStage: 'ActiveLearning', currentSectionKey: null, currentSectionOrder: 0, totalSections: 6 }),
     });
   });
+  await page.route('**/api/activity/exercise-types', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { key: 'open_writing_task', displayName: 'Open Writing Task', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'free_text_entry', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_open_writing_task', legacyActivityType: 'WritingScenario', exercisePatternKey: 'open_writing_task', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'speaking_roleplay_turn', displayName: 'Speaking Roleplay Turn', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_speaking_roleplay_turn', legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: 'speaking_roleplay_turn', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+      ]),
+    });
+  });
 
   await page.goto('/practice');
 
-  await expect(page.getByTestId('practice-card-writing')).toHaveAttribute('href', '/module/gym-writing');
-  await expect(page.getByTestId('practice-card-listening')).toHaveAttribute('href', '/module/gym-listening');
-  await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', '/module/gym-speaking');
+  await expect(page.getByTestId('practice-card-writing')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('practice-card-listening')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('speaking-card')).not.toContainText('Coming soon');
 
   const aiRolePlay = page.getByTestId('practice-card-ai-role-play');
   await expect(aiRolePlay).toContainText('Coming soon');

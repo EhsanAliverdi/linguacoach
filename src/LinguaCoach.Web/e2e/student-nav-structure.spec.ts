@@ -156,7 +156,10 @@ test('/practice loads Practice Gym page and does not auto-start an activity', as
   await withAuth(page);
 
   let activityApiCalled = false;
-  await page.route('**/api/activity**', () => { activityApiCalled = true; });
+  await page.route('**/api/activity/next**', () => { activityApiCalled = true; });
+  await page.route('**/api/activity/exercise-types', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
 
   await page.goto('/practice');
 

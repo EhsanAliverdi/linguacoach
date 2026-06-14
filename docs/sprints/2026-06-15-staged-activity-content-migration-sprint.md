@@ -1,6 +1,6 @@
 ---
 status: in-progress
-lastUpdated: 2026-06-15 10:40
+lastUpdated: 2026-06-15
 owner: architecture
 relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
 relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
@@ -245,56 +245,6 @@ Verification:
 * 84/84 Angular unit tests pass
 * `dotnet build` clean
 * Angular build clean
-
-## PR2 — WritingScenario staged migration, complete
-
-PR2 applies the PR1 staged-content recipe to the legacy `WritingScenario`
-activity type only. New `activity_generate_writing` content now produces
-`module_stage_v1` with `primarySkill`, `secondarySkills`, and
-`exerciseType: "writing_scenario"`.
-
-Completed work:
-
-1. `activity_generate_writing` now returns staged JSON only.
-2. The prompt separates Learn, Practice, and FeedbackPlan.
-3. Learn is teaching-only and excludes the final writing task, textarea,
-   submitted answer, answer keys, and submit/check controls.
-4. `ModuleStageContentValidator` validates WritingScenario practice data.
-5. Required staged writing practice keys are `prompt`, `situation`,
-   `audience`, and `tone` under `practiceContent.exerciseData`.
-6. `ActivityGetHandler.BuildStageContent` maps staged WritingScenario content
-   normally and adapts old flat WritingScenario JSON to `legacy_adapted_v1`.
-7. The legacy adapter preserves writing task fields in
-   `practiceContent.exerciseData`, including prompt, situation, audience, tone,
-   required phrases, and target vocabulary when present.
-8. API responses expose `stageContent` for WritingScenario through the existing
-   generic response mapping.
-9. `activity_evaluate_writing` receives staged evaluation context based on
-   `practiceContent`, `feedbackPlan`, and teaching context from `learnContent`.
-10. The Angular Writing presenter returns `stagedLearning` when `stageContent`
-    exists and keeps the old fallback path.
-11. The Writing practice page reads staged `practiceContent.exerciseData` for
-    situation, audience, tone, expected length, prompt, required phrases, and
-    target vocabulary.
-
-Out of scope remains unchanged:
-
-* Practice Gym pre-generation pool.
-* Today background generation.
-* MinIO/audio lifecycle.
-* New listening exercise types.
-* ModuleRun persistence.
-* Speaking, Vocabulary, and pattern-backed staged migrations.
-* Removing legacy compatibility paths.
-* Removing `/activity`.
-
-Remaining staged migrations:
-
-* SpeakingRolePlay.
-* VocabularyPractice.
-* Pattern-backed writing exercises.
-* Pattern-backed listening exercises.
-* Pattern-backed chat, email, gap-fill, matching, and reflection flows.
 
 ## Follow-up backlog — apply the PR1 recipe per type/pattern
 
@@ -625,74 +575,3 @@ Future progress records should support:
 * Renderer selection is based on `exerciseType`.
 * Evaluators understand multi-skill exercises.
 * Docs clearly state `/activity?type=...` direct generation is not the desired long-term Gym/Today flow.
-
-## Phase 3A — Exercise Type Catalog and Admin Enable Disable Foundation
-
-Status: implemented in this PR.
-
-Phase 3A adds the durable exercise type catalog before migrating additional
-activity types to `module_stage_v1`.
-
-Key decisions:
-
-* Skills are not exercise types.
-* `primarySkill` and `secondarySkills` describe learning intent.
-* `exerciseType` selects the Practice renderer and evaluator.
-* The catalog is the source of truth for future generation eligibility.
-* Admin enable disable affects future generated modules only.
-* Existing activities and attempts remain readable after disable.
-* `implementationStatus` prevents planned PTE-style types from becoming runnable.
-
-Backend changes:
-
-* Added `exercise_type_definitions` table.
-* Added seeded catalog rows for existing implemented patterns and future PTE-style types.
-* Added admin list and patch APIs under `/api/admin/exercise-types`.
-* Added authenticated student catalog read endpoint at `/api/activity/exercise-types`.
-* Practice Gym generation now checks enabled, ready, Practice Gym-supported rows.
-* Today deterministic session generation filters disabled or unavailable patterns.
-* Background Practice Gym cache queues only catalog-eligible pattern keys.
-
-Admin UI changes:
-
-* Added Admin Exercise Types page.
-* Displays key, skill metadata, category, enabled state, implementation status,
-  surface support, audio and image requirements, and generation availability.
-* Admins can enable or disable an exercise type.
-* Planned rows remain marked Not implemented and blocked from generation.
-
-Out of scope for Phase 3A:
-
-* New PTE renderers.
-* New PTE evaluators.
-* Practice Gym pre-generation pool redesign.
-* Today background pre-generation redesign.
-* MinIO audio lifecycle.
-* Speaking, Vocabulary, or pattern prompt migration beyond compatibility gates.
-
-## Phase 3B update: ExerciseType registry foundation
-
-Phase 3B adds a central exercise-type registry. The registry reads the durable `ExerciseTypeDefinition` catalog and resolves each `exerciseType` key to renderer, evaluator, generation prompt, legacy `ActivityType`, and `ExercisePatternKey` compatibility metadata.
-
-Generation now accepts `exerciseType` as the canonical future selector through `GET /api/activity/next?exerciseType=<key>`. Existing `type=` and `pattern=` routes remain supported. Planned PTE-style rows remain catalog-visible, but they are excluded from generation until `implementationStatus` is `ready`.
-
-Today deterministic step selection now validates configured pattern keys through the registry's Today-ready view. Disabled or unready rows are removed before session creation. Practice Gym routes now prefer `exerciseType` query parameters for implemented cards. Skill-card routing still uses temporary safe defaults until dynamic skill-to-type selection is implemented.
-
-## Phase 3C — Dynamic Practice Gym skill selection, completed
-
-Practice Gym skill cards now resolve through the ExerciseType registry instead of
-assuming one fixed activity type per skill. A skill such as Listening asks for an
-enabled, ready, generation-eligible, Practice Gym-supported exercise type where
-`primarySkill = listening`, then routes to `/activity?exerciseType=<key>`.
-
-Specific exercise type cards still use exact `exerciseType=<key>` routing.
-Disabled, planned, unready, or Practice Gym-unsupported rows remain blocked and
-show safe unavailable states. Planned PTE-style catalog rows are still not
-runnable.
-
-The current selection strategy is intentionally deterministic: choose the first
-eligible registry entry by stable catalog ordering. This is a bridge to future
-pre-generation, not the final Practice Gym pool. The future pool should reuse the
-same registry eligibility rules while adding adaptive choice based on weak
-skills, recent attempts, variety, spaced repetition, admin priority, and ready
-Gym or Today pool availability.

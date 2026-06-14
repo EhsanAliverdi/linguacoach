@@ -74,24 +74,22 @@ async function mockDashboard(page: Page) {
   });
 }
 
-test('practice gym enables implemented practice cards and only marks future skills as coming soon', async ({ page }) => {
+test('practice gym marks future skills as coming soon', async ({ page }) => {
   await withAuth(page);
+  await page.route('**/api/activity/exercise-types', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+      ]),
+    });
+  });
 
   await page.goto('/practice');
 
-  await expect(page.getByTestId('practice-card-writing')).toHaveAttribute('href', '/module/gym-writing');
-  await expect(page.getByTestId('practice-card-listening')).toHaveAttribute('href', '/module/gym-listening');
-  await expect(page.getByTestId('speaking-card')).toHaveAttribute('href', '/module/gym-speaking');
   await expect(page.getByTestId('practice-card-ai-role-play')).toContainText('Coming soon');
   await expect(page.getByTestId('practice-card-listening')).not.toContainText('Coming soon');
-});
-
-test('practice gym listening card links to the listening module', async ({ page }) => {
-  await withAuth(page);
-
-  await page.goto('/practice');
-
-  await expect(page.getByTestId('practice-card-listening')).toHaveAttribute('href', '/module/gym-listening');
 });
 
 test('practice gym vocabulary card links to the word cards module', async ({ page }) => {

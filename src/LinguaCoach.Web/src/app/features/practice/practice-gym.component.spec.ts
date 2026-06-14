@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { PracticeGymComponent } from './practice-gym.component';
 import { ActivityService } from '../../core/services/activity.service';
@@ -22,23 +22,24 @@ describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
   let activityService: jasmine.SpyObj<ActivityService>;
-  let router: jasmine.SpyObj<Router>;
+  let router: Router;
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'selectPracticeGymExerciseType']);
-    router = jasmine.createSpyObj('Router', ['navigate']);
     activityService.getExerciseTypes.and.returnValue(of([readyListening, plannedReading]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
       providers: [
         { provide: ActivityService, useValue: activityService },
-        { provide: Router, useValue: router },
+        provideRouter([]),
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PracticeGymComponent);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
     fixture.detectChanges();
   });
 

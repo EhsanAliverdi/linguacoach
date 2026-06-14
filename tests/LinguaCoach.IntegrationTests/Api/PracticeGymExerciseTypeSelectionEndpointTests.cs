@@ -36,20 +36,31 @@ public sealed class PracticeGymExerciseTypeSelectionEndpointTests : IClassFixtur
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"gym_select_disabled_{Guid.NewGuid():N}@test.com");
 
-        using (var scope = _factory.Services.CreateScope())
+        try
         {
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+                var listening = await db.ExerciseTypeDefinitions.Where(e => e.PrimarySkill == "listening").ToListAsync();
+                foreach (var type in listening) type.SetEnabled(false);
+                await db.SaveChangesAsync();
+            }
+
+            var response = await ClientWithToken(token).GetAsync("/api/activity/exercise-types/select?skill=listening&context=practiceGym");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.False(body.GetProperty("hasSelection").GetBoolean());
+            Assert.Contains("No ready Practice Gym exercise", body.GetProperty("reason").GetString());
+        }
+        finally
+        {
+            using var scope = _factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
             var listening = await db.ExerciseTypeDefinitions.Where(e => e.PrimarySkill == "listening").ToListAsync();
-            foreach (var type in listening) type.SetEnabled(false);
+            foreach (var type in listening) type.SetEnabled(true);
             await db.SaveChangesAsync();
         }
-
-        var response = await ClientWithToken(token).GetAsync("/api/activity/exercise-types/select?skill=listening&context=practiceGym");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.False(body.GetProperty("hasSelection").GetBoolean());
-        Assert.Contains("No ready Practice Gym exercise", body.GetProperty("reason").GetString());
     }
 
     [Fact]
