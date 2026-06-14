@@ -48,8 +48,8 @@ describe('OnboardingResumeComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/onboarding/step-2']);
   }));
 
-  it('navigates to step-3 when currentStep is Track', fakeAsync(() => {
-    onboardingService.getStatus.and.returnValue(of({ currentStep: 'Track', isComplete: false }));
+  it('navigates to step-3 when currentStep is Preference', fakeAsync(() => {
+    onboardingService.getStatus.and.returnValue(of({ currentStep: 'Preference', isComplete: false }));
     create();
     tick();
     expect(router.navigate).toHaveBeenCalledWith(['/onboarding/step-3']);

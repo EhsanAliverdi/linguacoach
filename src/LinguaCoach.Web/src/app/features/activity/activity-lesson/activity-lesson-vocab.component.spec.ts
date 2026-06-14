@@ -1,6 +1,6 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ActivityLessonComponent } from './activity-lesson.component';
 import { ActivityService } from '../../../core/services/activity.service';
 import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
@@ -102,6 +102,7 @@ describe('ActivityLessonComponent — VocabularyPractice', () => {
     TestBed.configureTestingModule({
       imports: [ActivityLessonComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } }, queryParamMap: of({ get: () => null }) } },
         { provide: ActivityService, useValue: activityService },
         { provide: Router, useValue: router },
       ],

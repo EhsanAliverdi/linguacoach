@@ -1,8 +1,10 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ProgressComponent } from './progress.component';
 import { ProgressService } from '../../core/services/progress.service';
 import { ProgressSummary } from '../../core/models/progress.models';
+import { VocabularyService } from '../../core/services/vocabulary.service';
 
 const emptyProgress: ProgressSummary = {
   summary: {
@@ -69,14 +71,19 @@ const dataProgress: ProgressSummary = {
 
 describe('ProgressComponent', () => {
   let progressService: jasmine.SpyObj<ProgressService>;
+  let vocabularyService: jasmine.SpyObj<VocabularyService>;
 
   beforeEach(() => {
     progressService = jasmine.createSpyObj('ProgressService', ['getProgress']);
+    vocabularyService = jasmine.createSpyObj('VocabularyService', ['getVocabulary']);
+    vocabularyService.getVocabulary.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [ProgressComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
         { provide: ProgressService, useValue: progressService },
+        { provide: VocabularyService, useValue: vocabularyService },
       ],
     });
   });

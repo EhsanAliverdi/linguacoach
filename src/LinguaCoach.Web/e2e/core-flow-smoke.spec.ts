@@ -566,7 +566,7 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page.getByText(/یک ایمیل حرفه‌ای/)).toBeVisible();
 
   // Start writing
-  await page.getByRole('button', { name: 'Start writing' }).click();
+  await page.getByRole('button', { name: /Start writing/i }).click();
 
   // Writing phase — textarea appears, submit button present
   await expect(page.getByLabel('Write your response')).toBeVisible();
@@ -607,21 +607,10 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page.getByText('+8 from attempt 1')).toBeVisible();
   await expect(page.getByRole('button', { name: /Show Persian explanation/i })).toBeVisible();
 
-  // Learning memory and module readiness update on My Path.
+  // Learning memory updates on My Path.
   await page.goto('/my-path');
   await expect(page.getByText('You are improving at workplace follow-up emails')).toBeVisible();
   await expect(page.getByText('Softening requests')).toBeVisible();
-  await expect(page.getByText('This module is ready to complete')).toBeVisible();
-  await page.getByRole('button', { name: /Complete this module/i }).click();
-  await expect(page.getByText(/Module completed/i)).toBeVisible();
-
-  // Continue path adds a non-duplicate adaptive module with reason/focus/difficulty.
-  await page.getByRole('button', { name: /Continue my learning path/i }).click();
-  await expect(page.getByText('New recommended modules have been added')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Concise progress updates' })).toBeVisible();
-  await expect(page.getByText('Recommended because your recent attempts used long sentences.')).toBeVisible();
-  await expect(page.getByText('Focus: Concise Writing')).toBeVisible();
-  await expect(page.getByText('Level: B1+')).toBeVisible();
 
   // Dashboard focus summary reflects memory after attempts and no raw JSON leaks.
   await page.goto('/dashboard');

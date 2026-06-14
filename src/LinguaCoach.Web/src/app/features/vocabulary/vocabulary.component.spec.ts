@@ -1,4 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { VocabularyComponent } from './vocabulary.component';
 import { VocabularyService } from '../../core/services/vocabulary.service';
@@ -30,7 +31,10 @@ describe('VocabularyComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [VocabularyComponent],
-      providers: [{ provide: VocabularyService, useValue: vocabService }],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
+        { provide: VocabularyService, useValue: vocabService },
+      ],
     });
   });
 

@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -15,13 +15,17 @@ describe('LoginComponent', () => {
   beforeEach(() => {
     authService = jasmine.createSpyObj('AuthService', ['login']);
     onboardingService = jasmine.createSpyObj('OnboardingService', ['getStatus']);
-    router = jasmine.createSpyObj('Router', ['navigate']);
+    router = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+    (router as any).events = of(null);
+    router.createUrlTree.and.returnValue({} as any);
+    router.serializeUrl.and.returnValue('');
     authNotice = jasmine.createSpyObj('AuthNoticeService', ['consume']);
     authNotice.consume.and.returnValue(null);
 
     TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
         { provide: AuthService, useValue: authService },
         { provide: OnboardingService, useValue: onboardingService },
         { provide: Router, useValue: router },

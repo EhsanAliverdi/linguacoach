@@ -122,12 +122,13 @@ test('Activity with MatchingPairs renders correct component', async ({ page }) =
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('matching-pairs-renderer')).toBeVisible();
-  await expect(page.getByText('I apologise for the delay')).toBeVisible();
-  await page.getByTestId('phrase-1').click();
-  await page.getByTestId('meaning-1').click();
-  await page.getByTestId('phrase-2').click();
-  await page.getByTestId('meaning-2').click();
+  await expect(page.getByTestId('matching-pairs-renderer').getByText('I apologise for the delay').first()).toBeVisible();
+  await page.getByTestId('phrase-phrase_0').click();
+  await page.getByTestId('meaning-meaning_0').click();
+  await page.getByTestId('phrase-phrase_1').click();
+  await page.getByTestId('meaning-meaning_1').click();
   await page.getByTestId('matching-pairs-submit-btn').click();
   await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
 });
@@ -149,9 +150,10 @@ test('GapFill renders blanks and accepts input', async ({ page }) => {
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('gap-fill-renderer')).toBeVisible();
-  await page.getByTestId('gap-input-1').fill('apologise');
-  await page.getByTestId('gap-input-2').fill('confirm');
+  await page.getByTestId('gap-input-gap_1').fill('apologise');
+  await page.getByTestId('gap-input-gap_2').fill('confirm');
   await page.getByTestId('gap-fill-submit-btn').click();
   await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
 });
@@ -174,6 +176,7 @@ test('ChatReply renders chat bubbles and reply box', async ({ page }) => {
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('chat-reply-renderer')).toBeVisible();
   await expect(page.getByTestId('chat-reply-goal')).toContainText('Apologise for the delay and give a clear new deadline.');
   await expect(page.getByTestId('chat-thread')).toContainText('Can you update me on the submittal?');
@@ -199,6 +202,7 @@ test('EmailReply renders subject and body fields and submits structured content'
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('email-reply-renderer')).toBeVisible();
   await expect(page.getByTestId('email-reply-subject-input')).toHaveAttribute('placeholder', 'Re: Q3 report status');
   await page.getByTestId('email-reply-subject-input').fill('Re: Q3 report status');
@@ -222,6 +226,7 @@ test('AudioAndFreeText shows audio before answer fields', async ({ page }) => {
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('audio-free-text-renderer')).toBeVisible();
   const audioBox = page.getByTestId('audio-player-section');
   const questionBox = page.getByTestId('question-list');
@@ -248,6 +253,7 @@ test('AudioAndGapFill shows audio and blanks', async ({ page }) => {
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('audio-gap-fill-renderer')).toBeVisible();
   await expect(page.getByTestId('audio-player')).toBeVisible();
   await page.getByTestId('gap-input-1').fill('apologise');
@@ -270,6 +276,7 @@ test('ReadOnly renders without submission form', async ({ page }) => {
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('read-only-renderer')).toBeVisible();
   await expect(page.getByText('Which phrase will you use at work?')).toBeVisible();
   await expect(page.getByTestId('free-text-submit-btn')).toHaveCount(0);
@@ -288,6 +295,7 @@ test('Legacy writing activity falls back to FreeTextEntry renderer when raw cont
   }));
 
   await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
   await expect(page.getByTestId('free-text-renderer')).toBeVisible();
   await page.getByTestId('free-text-input').fill('I wanted to update you that the task is on track.');
   await page.getByTestId('free-text-submit-btn').click();

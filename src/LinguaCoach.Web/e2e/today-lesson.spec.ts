@@ -371,7 +371,11 @@ test('start lesson button calls start endpoint and updates status', async ({ pag
 
 test('lesson page shows complete exercise button in active exercise panel', async ({ page }) => {
   await withAuth(page);
-  await mockSessionEndpoints(page, { status: 'inProgress', startedAtUtc: new Date().toISOString() });
+  const exercises = TODAYS_SESSION.exercises.map((e, i) => ({
+    ...e,
+    learningActivityId: i === 0 ? 'activity-1' : e.learningActivityId,
+  }));
+  await mockSessionEndpoints(page, { status: 'inProgress', startedAtUtc: new Date().toISOString(), exercises });
   await page.goto(`/lesson/${SESSION_ID}`);
 
   await expect(page.getByTestId('exercise-panel')).toBeVisible();

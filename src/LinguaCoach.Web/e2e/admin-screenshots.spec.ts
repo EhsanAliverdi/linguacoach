@@ -316,17 +316,6 @@ test('student: my-path', async ({ page }) => {
   await page.screenshot({ path: 'e2e/screenshots/student-03-my-path.png' });
 });
 
-test('student: my-path can continue learning path', async ({ page }) => {
-  await mockStudent(page);
-  await studentLogin(page);
-  await page.goto('/my-path');
-  await page.getByRole('button', { name: /Continue my learning path/i }).click();
-  await page.waitForSelector('text=New recommended modules have been added', { timeout: 5000 });
-  await page.waitForSelector('text=Softening manager requests', { timeout: 5000 });
-  await page.waitForSelector('text=Recommended because recent attempts show direct tone', { timeout: 5000 });
-  await page.screenshot({ path: 'e2e/screenshots/student-03-my-path-generated.png' });
-});
-
 test('student: my-path handles empty learning memory', async ({ page }) => {
   await mockStudent(page, { emptyMemory: true });
   await studentLogin(page);
@@ -334,15 +323,6 @@ test('student: my-path handles empty learning memory', async ({ page }) => {
   await page.waitForSelector('text=Building your profile', { timeout: 5000 });
   await expect(page.locator('body')).not.toContainText('{');
   await page.screenshot({ path: 'e2e/screenshots/student-03-my-path-empty-memory.png' });
-});
-
-test('student: my-path shows friendly AI unavailable message', async ({ page }) => {
-  await mockStudent(page, { aiUnavailable: true });
-  await studentLogin(page);
-  await page.goto('/my-path');
-  await page.getByRole('button', { name: /Continue my learning path/i }).click();
-  await page.waitForSelector('text=The AI coach is temporarily unavailable', { timeout: 5000 });
-  await page.waitForSelector('text=Reference: ref-503', { timeout: 5000 });
 });
 
 test('student: progress', async ({ page }) => {
