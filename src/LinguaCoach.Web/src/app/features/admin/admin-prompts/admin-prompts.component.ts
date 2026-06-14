@@ -10,7 +10,7 @@ import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/a
   imports: [CommonModule, FormsModule],
   template: `
     <div class="sp-admin-page-header">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div class="sp-admin-header-row">
         <div>
           <h1 class="sp-admin-page-title">Prompt Templates</h1>
           <p class="sp-admin-page-sub">Manage and version AI prompt templates</p>
@@ -20,69 +20,93 @@ import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/a
     </div>
 
     @if (showForm()) {
-      <div class="bg-white rounded-xl border border-slate-200 p-5 mb-5 shadow-sm">
-        <h3 class="font-medium text-slate-800 mb-3 text-sm">Create new prompt version</h3>
-        <div class="space-y-3">
-          <input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <textarea [(ngModel)]="newContent" rows="6" placeholder="Prompt content with {{'{{variable}}'}} placeholders" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-          <div class="flex gap-3">
-            <input [(ngModel)]="newMaxInput" type="number" placeholder="Max input tokens" class="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <input [(ngModel)]="newMaxOutput" type="number" placeholder="Max output tokens" class="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          @if (formError()) { <p class="text-xs text-red-600">{{ formError() }}</p> }
-          <button (click)="createVersion()" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors">
-            Create
-          </button>
+      <div class="sp-admin-form-card sp-admin-mb">
+        <h3 class="sp-admin-section-title">Create new prompt version</h3>
+        <div class="sp-admin-field-grid">
+          <label class="sp-admin-field sp-admin-wide">
+            <span class="sp-admin-field-label">Key</span>
+            <input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" class="sp-input" />
+          </label>
+          <label class="sp-admin-field sp-admin-wide">
+            <span class="sp-admin-field-label">Content</span>
+            <textarea [(ngModel)]="newContent" rows="6" placeholder="Prompt content with {{'{{variable}}'}} placeholders" class="sp-input sp-admin-mono"></textarea>
+          </label>
+          <label class="sp-admin-field">
+            <span class="sp-admin-field-label">Max input tokens</span>
+            <input [(ngModel)]="newMaxInput" type="number" class="sp-input" />
+          </label>
+          <label class="sp-admin-field">
+            <span class="sp-admin-field-label">Max output tokens</span>
+            <input [(ngModel)]="newMaxOutput" type="number" class="sp-input" />
+          </label>
+        </div>
+        @if (formError()) { <p class="sp-admin-text-error">{{ formError() }}</p> }
+        <div class="sp-admin-action-row">
+          <button (click)="createVersion()" class="sp-admin-btn-primary">Create</button>
         </div>
       </div>
     }
 
     @if (detail()) {
-      <div class="bg-white rounded-xl border border-indigo-200 p-5 mb-5 shadow-sm">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-indigo-600 uppercase tracking-wide">{{ detail()!.key }} v{{ detail()!.version }}</span>
-          <button (click)="detail.set(null)" class="text-xs text-slate-400 hover:text-slate-600">Close</button>
+      <div class="sp-admin-form-card sp-admin-mb">
+        <div class="sp-admin-header-row">
+          <span class="sp-admin-subsection-title">{{ detail()!.key }} v{{ detail()!.version }}</span>
+          <button (click)="detail.set(null)" class="sp-admin-link-button">Close</button>
         </div>
-        <pre class="text-xs text-slate-700 bg-slate-50 rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap font-mono">{{ detail()!.content }}</pre>
+        <pre class="sp-admin-prompt-preview">{{ detail()!.content }}</pre>
       </div>
     }
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 border-b border-slate-200">
+    <div class="sp-admin-table-card">
+      <table class="sp-admin-table">
+        <thead>
           <tr>
-            <th class="text-left px-4 py-3 font-medium text-slate-600">Key</th>
-            <th class="text-left px-4 py-3 font-medium text-slate-600">Version</th>
-            <th class="text-left px-4 py-3 font-medium text-slate-600">Status</th>
-            <th class="text-left px-4 py-3 font-medium text-slate-600">Tokens</th>
-            <th class="px-4 py-3"></th>
+            <th>Key</th>
+            <th>Version</th>
+            <th>Status</th>
+            <th>Tokens</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           @for (p of prompts(); track p.id) {
-            <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-              <td class="px-4 py-3 font-mono text-xs text-slate-700">{{ p.key }}</td>
-              <td class="px-4 py-3 text-slate-600">v{{ p.version }}</td>
-              <td class="px-4 py-3">
-                <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium {{ p.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500' }}">
+            <tr>
+              <td class="sp-admin-table-mono">{{ p.key }}</td>
+              <td>v{{ p.version }}</td>
+              <td>
+                <span class="sp-admin-badge" [class.sp-admin-badge-green]="p.isActive" [class.sp-admin-badge-slate]="!p.isActive">
                   {{ p.isActive ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-xs text-slate-500">{{ p.maxInputTokens }}/{{ p.maxOutputTokens }}</td>
-              <td class="px-4 py-3 flex gap-2 justify-end">
-                <button (click)="viewDetail(p.id)" class="text-xs text-indigo-600 hover:underline">View</button>
+              <td class="sp-admin-table-muted">{{ p.maxInputTokens }}/{{ p.maxOutputTokens }}</td>
+              <td class="sp-admin-row-actions">
+                <button (click)="viewDetail(p.id)" class="sp-admin-link-button">View</button>
                 @if (p.isActive) {
-                  <button (click)="deactivate(p)" class="text-xs text-amber-600 hover:underline">Deactivate</button>
+                  <button (click)="deactivate(p)" class="sp-admin-link-button sp-admin-text-amber">Deactivate</button>
                 } @else {
-                  <button (click)="activate(p)" class="text-xs text-green-600 hover:underline">Activate</button>
+                  <button (click)="activate(p)" class="sp-admin-link-button sp-admin-text-success-link">Activate</button>
                 }
               </td>
             </tr>
           }
         </tbody>
       </table>
+      @if (prompts().length === 0) {
+        <p class="sp-admin-empty-row">No prompt templates yet.</p>
+      }
     </div>
   `,
+  styles: [`
+    .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .sp-admin-wide{grid-column:1/-1;}
+    .sp-admin-link-button{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;color:#4338CA;}
+    .sp-admin-mb{margin-bottom:20px;}
+    .sp-admin-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;}
+    .sp-admin-prompt-preview{font-size:12px;color:#334155;background:#F8FAFC;border-radius:8px;padding:12px;overflow:auto;max-height:220px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;}
+    .sp-admin-row-actions{display:flex;gap:10px;justify-content:flex-end;}
+    .sp-admin-text-amber{color:#D97706;}
+    .sp-admin-text-success-link{color:#16A34A;}
+  `],
 })
 export class AdminPromptsComponent implements OnInit {
   prompts = signal<PromptTemplateItem[]>([]);

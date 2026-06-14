@@ -16,8 +16,8 @@ import { ReferenceService } from '../../../core/services/reference.service';
     </div>
 
     <!-- Career picker -->
-    <div class="flex gap-3 mb-5">
-      <select [(ngModel)]="selectedCareerId" (change)="loadWords()" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <div class="sp-admin-mb">
+      <select [(ngModel)]="selectedCareerId" (change)="loadWords()" class="sp-input sp-admin-select">
         <option value="">Select career profile…</option>
         @for (c of careers(); track c.id) {
           <option [value]="c.id">{{ c.name }}</option>
@@ -28,56 +28,83 @@ import { ReferenceService } from '../../../core/services/reference.service';
     @if (selectedCareerId && words().length >= 0) {
       <!-- Add word form -->
       @if (showAddForm()) {
-        <div class="bg-white rounded-xl border border-slate-200 p-5 mb-4 shadow-sm">
-          <h3 class="font-medium text-slate-800 mb-3 text-sm">Add word</h3>
-          <div class="grid grid-cols-2 gap-3">
-            <input [(ngModel)]="newWord" placeholder="Word or phrase" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <input [(ngModel)]="newDefinition" placeholder="Definition" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <input [(ngModel)]="newExample" placeholder="Example sentence" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <input [(ngModel)]="newPriority" type="number" placeholder="Priority" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <input [(ngModel)]="newTags" placeholder="Tags (comma-separated)" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <div class="sp-admin-form-card sp-admin-mb">
+          <h3 class="sp-admin-section-title">Add word</h3>
+          <div class="sp-admin-field-grid">
+            <label class="sp-admin-field">
+              <span class="sp-admin-field-label">Word or phrase</span>
+              <input [(ngModel)]="newWord" class="sp-input" />
+            </label>
+            <label class="sp-admin-field">
+              <span class="sp-admin-field-label">Definition</span>
+              <input [(ngModel)]="newDefinition" class="sp-input" />
+            </label>
+            <label class="sp-admin-field sp-admin-wide">
+              <span class="sp-admin-field-label">Example sentence</span>
+              <input [(ngModel)]="newExample" class="sp-input" />
+            </label>
+            <label class="sp-admin-field">
+              <span class="sp-admin-field-label">Priority</span>
+              <input [(ngModel)]="newPriority" type="number" class="sp-input" />
+            </label>
+            <label class="sp-admin-field">
+              <span class="sp-admin-field-label">Tags (comma-separated)</span>
+              <input [(ngModel)]="newTags" class="sp-input" />
+            </label>
           </div>
-          <div class="flex gap-2 mt-3">
-            <button (click)="addWord()" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors">Add</button>
-            <button (click)="showAddForm.set(false)" class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+          <div class="sp-admin-action-row">
+            <button (click)="addWord()" class="sp-admin-btn-primary">Add</button>
+            <button (click)="showAddForm.set(false)" class="sp-button-ghost">Cancel</button>
           </div>
         </div>
       } @else {
-        <button (click)="showAddForm.set(true)" class="mb-4 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">+ Add word</button>
+        <button (click)="showAddForm.set(true)" class="sp-admin-btn-primary sp-admin-btn-sm sp-admin-mb">+ Add word</button>
       }
 
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-200">
+      <div class="sp-admin-table-card">
+        <table class="sp-admin-table">
+          <thead>
             <tr>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">Word</th>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">Definition</th>
-              <th class="text-left px-4 py-3 font-medium text-slate-600">Priority</th>
-              <th class="px-4 py-3"></th>
+              <th>Word</th>
+              <th>Definition</th>
+              <th>Priority</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             @for (w of words(); track w.id) {
-              <tr class="border-b border-slate-100 last:border-0">
+              <tr>
                 @if (editingId() === w.id) {
-                  <td class="px-4 py-2" colspan="4">
-                    <div class="grid grid-cols-2 gap-2">
-                      <input [(ngModel)]="editDef" placeholder="Definition" class="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                      <input [(ngModel)]="editExample" placeholder="Example" class="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                      <input [(ngModel)]="editPriority" type="number" placeholder="Priority" class="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                      <input [(ngModel)]="editTags" placeholder="Tags" class="rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  <td colspan="4">
+                    <div class="sp-admin-field-grid">
+                      <label class="sp-admin-field">
+                        <span class="sp-admin-field-label">Definition</span>
+                        <input [(ngModel)]="editDef" class="sp-input" />
+                      </label>
+                      <label class="sp-admin-field">
+                        <span class="sp-admin-field-label">Example</span>
+                        <input [(ngModel)]="editExample" class="sp-input" />
+                      </label>
+                      <label class="sp-admin-field">
+                        <span class="sp-admin-field-label">Priority</span>
+                        <input [(ngModel)]="editPriority" type="number" class="sp-input" />
+                      </label>
+                      <label class="sp-admin-field">
+                        <span class="sp-admin-field-label">Tags</span>
+                        <input [(ngModel)]="editTags" class="sp-input" />
+                      </label>
                     </div>
-                    <div class="flex gap-2 mt-2">
-                      <button (click)="saveEdit(w.id)" class="text-xs text-green-600 font-medium hover:underline">Save</button>
-                      <button (click)="editingId.set(null)" class="text-xs text-slate-400 hover:underline">Cancel</button>
+                    <div class="sp-admin-action-row">
+                      <button (click)="saveEdit(w.id)" class="sp-admin-link-button sp-admin-text-success-link">Save</button>
+                      <button (click)="editingId.set(null)" class="sp-admin-link-button sp-admin-text-muted-link">Cancel</button>
                     </div>
                   </td>
                 } @else {
-                  <td class="px-4 py-3 font-medium text-slate-800">{{ w.word }}</td>
-                  <td class="px-4 py-3 text-slate-600 text-xs">{{ w.definition }}</td>
-                  <td class="px-4 py-3 text-slate-500">{{ w.priority }}</td>
-                  <td class="px-4 py-3">
-                    <button (click)="startEdit(w)" class="text-xs text-indigo-600 hover:underline">Edit</button>
+                  <td>{{ w.word }}</td>
+                  <td class="sp-admin-table-muted">{{ w.definition }}</td>
+                  <td>{{ w.priority }}</td>
+                  <td>
+                    <button (click)="startEdit(w)" class="sp-admin-link-button">Edit</button>
                   </td>
                 }
               </tr>
@@ -85,11 +112,19 @@ import { ReferenceService } from '../../../core/services/reference.service';
           </tbody>
         </table>
         @if (words().length === 0) {
-          <p class="px-4 py-6 text-sm text-slate-400 text-center">No words yet.</p>
+          <p class="sp-admin-empty-row">No words yet.</p>
         }
       </div>
     }
   `,
+  styles: [`
+    .sp-admin-wide{grid-column:1/-1;}
+    .sp-admin-mb{margin-bottom:20px;}
+    .sp-admin-select{max-width:320px;}
+    .sp-admin-link-button{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;color:#4338CA;}
+    .sp-admin-text-success-link{color:#16A34A;}
+    .sp-admin-text-muted-link{color:#94A3B8;}
+  `],
 })
 export class AdminCareersComponent implements OnInit {
   careers = signal<CareerProfileItem[]>([]);
