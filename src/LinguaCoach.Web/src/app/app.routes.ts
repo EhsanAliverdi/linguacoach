@@ -47,6 +47,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-students/admin-students.component').then(m => m.AdminStudentsComponent),
       },
       {
+        path: 'students/:id',
+        loadComponent: () => import('./features/admin/admin-student-detail/admin-student-detail.component').then(m => m.AdminStudentDetailComponent),
+      },
+      {
         path: 'create-student',
         loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent),
       },

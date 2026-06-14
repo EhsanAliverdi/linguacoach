@@ -1,9 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
+import {
+  StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
+  AdminStudentLearningMemory, ResetStudentResponse,
+} from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 
 interface StudentEditForm {
@@ -20,94 +23,157 @@ interface StudentEditForm {
 }
 
 @Component({
-  selector: 'app-admin-students',
+  selector: 'app-admin-student-detail',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="sp-admin-page-header">
       <div class="sp-admin-header-row">
         <div>
-          <h1 class="sp-admin-page-title">Students</h1>
-          <p class="sp-admin-page-sub">Manage pilot student accounts</p>
+          <a routerLink="/admin/students" class="sp-admin-back-link">&larr; Back to students</a>
+          @if (student(); as s) {
+            <h1 class="sp-admin-page-title">{{ displayName(s) }}</h1>
+            <p class="sp-admin-page-sub sp-safe-text">{{ s.email }}</p>
+          }
         </div>
-        <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
+        @if (student(); as s) {
+          <div class="sp-admin-row-actions">
+            <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
+            @if (s.lifecycleStage !== 'Archived') {
+              <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
+              <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
+              <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
+            }
+          </div>
+        }
       </div>
-    </div>
-
-    <div class="sp-admin-students-toolbar">
-      <label class="sp-admin-filter-toggle">
-        <input type="checkbox" [(ngModel)]="includeArchived" (change)="load()" />
-        <span>Show archived students</span>
-      </label>
-      <span class="sp-admin-table-muted">{{ students().length }} shown</span>
     </div>
 
     @if (loading()) {
       <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
     } @else if (error()) {
       <div class="sp-admin-alert-error">{{ error() }}</div>
-    } @else {
-      <div class="sp-admin-table-card sp-admin-table-scroll">
-        <table class="sp-admin-table">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Lifecycle</th>
-              <th>Onboarding</th>
-              <th>CEFR</th>
-              <th>Profile</th>
-              <th>Joined</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of students(); track s.studentProfileId) {
-              <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
-                <td>
-                  <div class="sp-admin-student-name">{{ displayName(s) }}</div>
-                  <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
-                </td>
-                <td>
-                  <span class="sp-admin-badge"
-                    [class.sp-admin-badge-slate]="s.lifecycleStage === 'Archived'"
-                    [class.sp-admin-badge-indigo]="s.lifecycleStage !== 'Archived'">
-                    {{ s.lifecycleStage }}
-                  </span>
-                </td>
-                <td>
-                  <span class="sp-admin-badge"
-                    [class.sp-admin-badge-green]="s.onboardingStatus === 'Complete'"
-                    [class.sp-admin-badge-amber]="s.onboardingStatus !== 'Complete'">
-                    {{ s.onboardingStatus }}
-                  </span>
-                </td>
-                <td>
-                  @if (s.cefrLevel) {
-                    <span class="sp-admin-badge sp-admin-badge-indigo">{{ s.cefrLevel }}</span>
-                  } @else {
-                    <span class="sp-admin-table-empty">-</span>
-                  }
-                </td>
-                <td class="sp-admin-profile-cell">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
-                <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
-                <td>
-                  <div class="sp-admin-row-actions">
-                    <a [routerLink]="[s.studentProfileId]" class="sp-admin-link-button">View</a>
-                    <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
-                    @if (s.lifecycleStage !== 'Archived') {
-                      <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
-                      <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
-                      <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
+    } @else if (student()) {
+      @let s = student()!;
+      <div class="sp-admin-detail-grid">
+        <section class="sp-admin-table-card sp-admin-detail-card">
+          <h2 class="sp-admin-card-title">Profile</h2>
+          <dl class="sp-admin-detail-list">
+            <div>
+              <dt>Lifecycle stage</dt>
+              <dd>
+                <span class="sp-admin-badge"
+                  [class.sp-admin-badge-slate]="s.lifecycleStage === 'Archived'"
+                  [class.sp-admin-badge-indigo]="s.lifecycleStage !== 'Archived'">
+                  {{ s.lifecycleStage }}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>Onboarding</dt>
+              <dd>
+                <span class="sp-admin-badge"
+                  [class.sp-admin-badge-green]="s.onboardingStatus === 'Complete'"
+                  [class.sp-admin-badge-amber]="s.onboardingStatus !== 'Complete'">
+                  {{ s.onboardingStatus }}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>CEFR level</dt>
+              <dd>{{ s.cefrLevel || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Career context</dt>
+              <dd>{{ s.careerContext || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Learning goal</dt>
+              <dd>{{ s.learningGoal || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Learning goal description</dt>
+              <dd>{{ s.learningGoalDescription || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Difficult situations</dt>
+              <dd>{{ s.difficultSituationsText || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Preferred session duration</dt>
+              <dd>{{ s.preferredSessionDurationMinutes ? s.preferredSessionDurationMinutes + ' minutes' : 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Experience level</dt>
+              <dd>{{ experienceLabel(s.professionalExperienceLevel) }}</dd>
+            </div>
+            <div>
+              <dt>Role familiarity</dt>
+              <dd>{{ familiarityLabel(s.roleFamiliarity) }}</dd>
+            </div>
+            <div>
+              <dt>Joined</dt>
+              <dd>{{ s.createdAt | date:'mediumDate' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="sp-admin-table-card sp-admin-detail-card">
+          <h2 class="sp-admin-card-title">Learning memory</h2>
+          @if (memoryLoading()) {
+            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+          } @else if (memoryError()) {
+            <div class="sp-admin-alert-error">{{ memoryError() }}</div>
+          } @else if (memory()) {
+            @let mem = memory()!;
+            <div class="sp-admin-memory">
+              <div>
+                <h3>Journey summary</h3>
+                <p>{{ mem.journeySummary || 'No summary yet.' }}</p>
+              </div>
+              <div>
+                <h3>Strong skills</h3>
+                @if (mem.strongSkills.length) {
+                  <ul>@for (skill of mem.strongSkills; track skill) { <li>{{ skill }}</li> }</ul>
+                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+              </div>
+              <div>
+                <h3>Weak skills</h3>
+                @if (mem.weakSkills.length) {
+                  <ul>@for (skill of mem.weakSkills; track skill) { <li>{{ skill }}</li> }</ul>
+                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+              </div>
+              <div>
+                <h3>Recurring mistakes</h3>
+                @if (mem.recurringMistakes.length) {
+                  <ul>@for (m of mem.recurringMistakes; track m) { <li>{{ m }}</li> }</ul>
+                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+              </div>
+              <div>
+                <h3>Next recommended focus</h3>
+                @if (mem.nextRecommendedFocus.length) {
+                  <ul>@for (f of mem.nextRecommendedFocus; track f) { <li>{{ f }}</li> }</ul>
+                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+              </div>
+              <div>
+                <h3>Covered scenarios</h3>
+                <p>{{ mem.coveredScenarioCount }}</p>
+              </div>
+              <div class="sp-admin-wide">
+                <h3>Skill profile</h3>
+                @if (mem.skillProfile.length) {
+                  <div class="sp-admin-skill-tags">
+                    @for (skill of mem.skillProfile; track skill.skillKey) {
+                      <span class="sp-admin-badge" [class.sp-admin-badge-amber]="skill.isWeak" [class.sp-admin-badge-green]="!skill.isWeak">
+                        {{ skill.skillLabel }}
+                      </span>
                     }
                   </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        @if (students().length === 0) {
-          <div class="sp-admin-empty-row">No students found.</div>
-        }
+                } @else { <p class="sp-admin-table-empty">No skill profile yet.</p> }
+              </div>
+            </div>
+          }
+        </section>
       </div>
     }
 
@@ -347,18 +413,24 @@ interface StudentEditForm {
     }
   `,
   styles: [`
-    .sp-admin-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-    .sp-admin-students-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
-    .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
-    .sp-admin-filter-toggle input{accent-color:#4338CA;}
-    .sp-admin-table-scroll{overflow-x:auto;}
-    .sp-admin-student-name{font-weight:800;color:#0F172A;}
-    .sp-admin-profile-cell{max-width:260px;overflow-wrap:anywhere;}
+    .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .sp-admin-back-link{display:inline-block;margin-bottom:8px;font-size:13px;font-weight:700;color:#4338CA;text-decoration:none;}
     .sp-admin-row-actions{display:flex;align-items:center;gap:10px;white-space:nowrap;}
     .sp-admin-link-button,.sp-admin-danger-link{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;}
     .sp-admin-link-button{color:#4338CA;}
     .sp-admin-danger-link{color:#DC2626;}
-    .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}
+    .sp-admin-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+    .sp-admin-detail-card{padding:20px;}
+    .sp-admin-card-title{font-size:16px;font-weight:800;color:#0F172A;margin-bottom:14px;}
+    .sp-admin-detail-list{display:grid;gap:12px;}
+    .sp-admin-detail-list dt{font-size:12px;font-weight:800;color:#64748B;margin-bottom:2px;}
+    .sp-admin-detail-list dd{font-size:14px;color:#0F172A;}
+    .sp-admin-memory{display:grid;gap:16px;}
+    .sp-admin-memory h3{font-size:12px;font-weight:800;color:#64748B;margin-bottom:6px;}
+    .sp-admin-memory p{font-size:14px;color:#0F172A;}
+    .sp-admin-memory ul{margin:0;padding-left:18px;font-size:14px;color:#0F172A;}
+    .sp-admin-skill-tags{display:flex;flex-wrap:wrap;gap:8px;}
+    .sp-admin-wide{grid-column:1/-1;}
     .sp-admin-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:120;}
     .sp-admin-modal{position:fixed;right:24px;top:76px;bottom:24px;z-index:121;width:min(720px,calc(100vw - 48px));overflow:auto;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.22);}
     .sp-admin-modal-header{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid #E2E8F0;}
@@ -367,22 +439,29 @@ interface StudentEditForm {
     .sp-admin-modal-header button{width:34px;height:34px;border-radius:9px;border:1px solid #E2E8F0;background:#fff;color:#64748B;cursor:pointer;display:grid;place-items:center;}
     .sp-admin-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:22px;}
     .sp-admin-edit-grid label span{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;}
-    .sp-admin-wide{grid-column:1/-1;}
     .sp-admin-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:8px;}
+    @media(max-width:900px){
+      .sp-admin-detail-grid{grid-template-columns:1fr;}
+    }
     @media(max-width:720px){
       .sp-admin-modal{left:12px;right:12px;top:68px;bottom:12px;width:auto;}
       .sp-admin-edit-grid{grid-template-columns:1fr;padding:18px;}
     }
   `],
 })
-export class AdminStudentsComponent implements OnInit {
-  students = signal<StudentListItem[]>([]);
+export class AdminStudentDetailComponent implements OnInit {
+  student = signal<StudentListItem | null>(null);
   loading = signal(true);
   error = signal('');
+
+  memory = signal<AdminStudentLearningMemory | null>(null);
+  memoryLoading = signal(true);
+  memoryError = signal('');
+
   editing = signal<StudentListItem | null>(null);
   savingEdit = signal(false);
   editError = signal('');
-  includeArchived = false;
+  editForm: StudentEditForm = this.emptyForm();
 
   resetting = signal<StudentListItem | null>(null);
   savingReset = signal(false);
@@ -390,12 +469,10 @@ export class AdminStudentsComponent implements OnInit {
   resetSuccessPassword = signal('');
   resetForm = { newPassword: '', mustChangePassword: true };
 
-  editForm: StudentEditForm = this.emptyForm();
-
   resettingData = signal<StudentListItem | null>(null);
   savingResetData = signal(false);
   resetDataError = signal('');
-  resetDataResult = signal<import('../../../core/models/admin.models').ResetStudentResponse | null>(null);
+  resetDataResult = signal<ResetStudentResponse | null>(null);
   resetDataForm = this.emptyResetDataForm();
 
   readonly resetPresets: { key: string; label: string; flags: Omit<ResetStudentRequest, 'reason'> }[] = [
@@ -448,18 +525,47 @@ export class AdminStudentsComponent implements OnInit {
     { value: 4, label: 'Manages or trains others' },
   ];
 
-  constructor(private adminApi: AdminApiService, private toast: ToastService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private adminApi: AdminApiService,
+    private toast: ToastService,
+  ) {}
 
   ngOnInit(): void {
-    this.load();
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.error.set('Missing student id.');
+      this.loading.set(false);
+      return;
+    }
+    this.loadStudent(id);
+    this.loadMemory(id);
   }
 
-  load(): void {
+  private loadStudent(id: string): void {
     this.loading.set(true);
     this.error.set('');
-    this.adminApi.listStudents(this.includeArchived).subscribe({
-      next: s => { this.students.set(s); this.loading.set(false); },
-      error: () => { this.error.set('Could not load students.'); this.loading.set(false); },
+    this.adminApi.listStudents(true).subscribe({
+      next: students => {
+        const found = students.find(s => s.studentProfileId === id);
+        if (!found) {
+          this.error.set('Student not found.');
+        } else {
+          this.student.set(found);
+        }
+        this.loading.set(false);
+      },
+      error: () => { this.error.set('Could not load student.'); this.loading.set(false); },
+    });
+  }
+
+  private loadMemory(id: string): void {
+    this.memoryLoading.set(true);
+    this.memoryError.set('');
+    this.adminApi.getStudentLearningMemory(id).subscribe({
+      next: mem => { this.memory.set(mem); this.memoryLoading.set(false); },
+      error: () => { this.memoryError.set('Could not load learning memory.'); this.memoryLoading.set(false); },
     });
   }
 
@@ -467,6 +573,14 @@ export class AdminStudentsComponent implements OnInit {
     return student.displayName
       || [student.firstName, student.lastName].filter(Boolean).join(' ')
       || student.email;
+  }
+
+  experienceLabel(value: number | null): string {
+    return this.experienceLevels.find(l => l.value === value)?.label ?? 'Not set';
+  }
+
+  familiarityLabel(value: number | null): string {
+    return this.familiarityLevels.find(l => l.value === value)?.label ?? 'Not set';
   }
 
   startEdit(student: StudentListItem): void {
@@ -513,7 +627,7 @@ export class AdminStudentsComponent implements OnInit {
 
     this.adminApi.updateStudent(student.studentProfileId, request).subscribe({
       next: updated => {
-        this.students.update(items => items.map(item => item.studentProfileId === updated.studentProfileId ? updated : item));
+        this.student.set(updated);
         this.savingEdit.set(false);
         this.editing.set(null);
         this.toast.success('Student updated successfully');
@@ -531,11 +645,7 @@ export class AdminStudentsComponent implements OnInit {
 
     this.adminApi.archiveStudent(student.studentProfileId).subscribe({
       next: updated => {
-        if (this.includeArchived) {
-          this.students.update(items => items.map(item => item.studentProfileId === updated.studentProfileId ? updated : item));
-        } else {
-          this.students.update(items => items.filter(item => item.studentProfileId !== updated.studentProfileId));
-        }
+        this.student.set(updated);
         this.toast.success('Student archived');
       },
       error: err => this.toast.error(err.error?.error ?? 'Could not archive student.'),
@@ -629,7 +739,8 @@ export class AdminStudentsComponent implements OnInit {
         this.savingResetData.set(false);
         this.resetDataResult.set(result);
         this.toast.success(`Student data reset for ${student.email}`);
-        this.load();
+        this.loadStudent(student.studentProfileId);
+        this.loadMemory(student.studentProfileId);
       },
       error: err => {
         this.savingResetData.set(false);
