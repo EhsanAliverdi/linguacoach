@@ -606,12 +606,17 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         }
 
         WritingContent? wc = null;
+        StageContentDto? writingStageContent = null;
         if (activity.ActivityType == ActivityType.WritingScenario)
         {
+            writingStageContent = BuildStageContent(activity.AiGeneratedContentJson, activity.Title);
             try
             {
+                var writingJson = writingStageContent is not null && writingStageContent.Practice.ExerciseData.ValueKind == JsonValueKind.Object
+                    ? writingStageContent.Practice.ExerciseData.GetRawText()
+                    : activity.AiGeneratedContentJson;
                 wc = JsonSerializer.Deserialize<WritingContent>(
-                    activity.AiGeneratedContentJson,
+                    writingJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch { /* leave null, safe defaults below */ }
@@ -632,7 +637,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             InstructionInSourceLanguage: wc?.InstructionInSourceLanguage,
             InteractionMode: interactionMode,
             ExercisePatternKey: patternKey,
-            ContentJson: rendererContentJson);
+            ContentJson: rendererContentJson,
+            StageContent: writingStageContent);
     }
 
     internal static StageContentDto? BuildStageContent(string contentJson, string activityTitle)
@@ -644,15 +650,23 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             if (root.TryGetProperty("schemaVersion", out var sv) && sv.GetString() == ModuleStageSchema.Version)
             {
                 var wire = JsonSerializer.Deserialize<ModuleStageWireDto>(root.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return wire is null ? null : new StageContentDto(wire.SchemaVersion, wire.LearnContent, wire.PracticeContent, wire.FeedbackPlan);
+                return wire is null ? null : new StageContentDto(wire.SchemaVersion, wire.PrimarySkill, wire.SecondarySkills ?? [], wire.ExerciseType, wire.LearnContent, wire.PracticeContent, wire.FeedbackPlan);
             }
 
-            return AdaptLegacyListening(root, activityTitle);
+            return AdaptLegacy(root, activityTitle);
         }
         catch
         {
             return null;
         }
+    }
+
+    private static StageContentDto AdaptLegacy(JsonElement root, string activityTitle)
+    {
+        if (LooksLikeLegacyWriting(root))
+            return AdaptLegacyWriting(root, activityTitle);
+
+        return AdaptLegacyListening(root, activityTitle);
     }
 
     private static StageContentDto AdaptLegacyListening(JsonElement root, string activityTitle)
@@ -681,7 +695,81 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             FeedbackFocus: "Main idea and key details from the message",
             SuccessCriteria: []);
 
-        return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, learn, practice, feedbackPlan);
+        return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, "listening", [], "listening_comprehension", learn, practice, feedbackPlan);
+    }
+
+
+    private static bool LooksLikeLegacyWriting(JsonElement root) =>
+        root.ValueKind == JsonValueKind.Object
+        && (root.TryGetProperty("learningGoal", out _)
+            || root.TryGetProperty("targetPhrases", out _)
+            || root.TryGetProperty("exampleText", out _)
+            || root.TryGetProperty("situation", out _) && !root.TryGetProperty("audioScript", out _));
+
+    private static StageContentDto AdaptLegacyWriting(JsonElement root, string activityTitle)
+    {
+        var situation = root.TryGetProperty("situation", out var sit) ? sit.GetString() : null;
+        var audience = root.TryGetProperty("audience", out var aud) ? aud.GetString() : null;
+        var tone = root.TryGetProperty("tone", out var tn) ? tn.GetString() : null;
+        var expectedLength = root.TryGetProperty("expectedLength", out var len) ? len.GetString() : null;
+        var learningGoal = root.TryGetProperty("learningGoal", out var goal) ? goal.GetString() : null;
+        var skillFocus = root.TryGetProperty("skillFocus", out var sf) ? sf.GetString() : "professional workplace writing";
+        var commonMistake = root.TryGetProperty("commonMistakeToAvoid", out var cm) ? cm.GetString() : null;
+        var sourceSupport = root.TryGetProperty("instructionInSourceLanguage", out var sl) ? sl.GetString() : null;
+
+        var examples = root.TryGetProperty("targetPhrases", out var phrases) && phrases.ValueKind == JsonValueKind.Array
+            ? phrases.EnumerateArray()
+                .Where(p => p.ValueKind == JsonValueKind.String)
+                .Take(4)
+                .Select(p => new LearnExampleDto(p.GetString() ?? string.Empty, "Useful phrase for this workplace message.", "Adapt the phrase to your situation."))
+                .ToList()
+            : [];
+
+        var learn = new LearnContentDto(
+            TeachingTitle: activityTitle,
+            Explanation: $"This module practises {skillFocus}. Focus on a clear purpose, a professional tone, and a simple structure.",
+            KeyPoints: ["State the purpose clearly.", "Use a tone that fits the audience.", "Keep sentences direct and easy to follow."],
+            Examples: examples,
+            Strategy: "Before writing, identify the reader, your purpose, and the key information they need.",
+            CommonMistakes: string.IsNullOrWhiteSpace(commonMistake) ? [] : [commonMistake],
+            SourceLanguageSupport: sourceSupport);
+
+        var practiceEnvelope = new
+        {
+            situation,
+            audience,
+            tone,
+            expectedLength,
+            prompt = situation ?? learningGoal ?? "Write a clear professional response for this workplace situation.",
+            requiredPhrases = ReadStringArray(root, "targetPhrases"),
+            targetVocabulary = ReadStringArray(root, "targetVocabulary"),
+            successChecklist = new[] { "Address the situation.", "Use an appropriate tone.", "Write clearly and completely." }
+        };
+        using var practiceDoc = JsonDocument.Parse(JsonSerializer.Serialize(practiceEnvelope));
+        var practice = new PracticeContentDto(
+            Instructions: "Write a professional workplace response for the situation.",
+            Scenario: situation,
+            Task: learningGoal,
+            ExerciseData: practiceDoc.RootElement.Clone());
+
+        var feedbackPlan = new FeedbackPlanDto(
+            EvaluationCriteria: ["Task completion", "Clarity", "Tone", "Grammar accuracy", "Vocabulary use"],
+            Rubric: [],
+            FeedbackFocus: "Help the student improve clarity, tone, grammar, and task completion.",
+            SuccessCriteria: ["The message is clear and complete.", "The tone fits the reader."]);
+
+        return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, "writing", ["grammar", "vocabulary"], "writing_scenario", learn, practice, feedbackPlan);
+    }
+
+    private static string[] ReadStringArray(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var arr) || arr.ValueKind != JsonValueKind.Array)
+            return [];
+        return arr.EnumerateArray()
+            .Where(e => e.ValueKind == JsonValueKind.String)
+            .Select(e => e.GetString() ?? string.Empty)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .ToArray();
     }
 
     private static string ExtractTitle(string contentJson, ActivityType type)

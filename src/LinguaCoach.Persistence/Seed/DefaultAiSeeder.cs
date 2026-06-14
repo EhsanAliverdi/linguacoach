@@ -49,50 +49,70 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateSpeakingRoleplayTurnKey = "activity_evaluate_speaking_roleplay_turn";
 
     private const string ActivityGenerateWritingContent = """
-You are an expert English language teacher creating a writing practice activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English workplace writing coach creating a staged WritingScenario module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to address: {{recentMistakes}}
 
-Choose a varied, realistic workplace writing task. Examples of task types (pick one that fits the context):
-- workplace email (follow-up, update, request, confirmation)
-- Teams or chat message (brief professional message to a colleague)
-- incident explanation (explain a delay or problem professionally)
-- polite request (ask for approval, information, or support)
-- complaint response (respond professionally to a complaint)
-- meeting follow-up (summarise action points after a meeting)
-- apology message (apologise professionally for an error)
-- clarification message (ask for or provide clarification)
-- update to manager (brief status update on a task)
-- customer support response (respond helpfully to a client question)
+Create THREE separate stages: Learn, Practice, and FeedbackPlan.
+Learn teaches writing skills only. Practice contains the actual writing task.
 
-Generate a realistic task and return ONLY valid JSON (no markdown) matching this exact structure:
+Return ONLY valid JSON. No markdown. No text outside JSON.
 
 {
-  "title": "<short descriptive title for this activity, 5-10 words>",
-  "taskType": "<one of: workplace-email | chat-message | incident-explanation | polite-request | complaint-response | meeting-follow-up | apology-message | clarification-message | manager-update | customer-support>",
-  "situation": "<2-3 sentences describing the realistic workplace situation the student must respond to>",
-  "audience": "<who the student is writing to, e.g. 'your direct manager', 'a client', 'a colleague'>",
-  "tone": "<expected tone: formal | semi-formal | polite>",
-  "expectedLength": "<guidance on length, e.g. '3-5 sentences' or '1 short paragraph'>",
-  "learningGoal": "<one sentence stating what communication skill this activity practises>",
-  "skillFocus": "<one key skill, e.g. 'polite requests', 'professional tone', 'follow-up emails'>",
-  "targetPhrases": ["<useful phrase 1>", "<useful phrase 2>", "<useful phrase 3>", "<useful phrase 4>", "<useful phrase 5>"],
-  "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>", "<word 4>", "<word 5>"],
-  "exampleText": "<a complete, polished example response the student can study>",
-  "commonMistakeToAvoid": "<one sentence describing the single most common mistake {{sourceLanguageName}} speakers make in this type of message, and how to avoid it>",
-  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} telling the student what to write and why>"
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title>",
+  "moduleGoal": "<what the student will be able to write after this module>",
+  "primarySkill": "writing",
+  "secondarySkills": ["grammar", "vocabulary"],
+  "exerciseType": "writing_scenario",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading>",
+    "explanation": "<2-4 sentences teaching the writing concept, not the final task>",
+    "keyPoints": ["<writing structure/tone point>", "<clarity point>", "<grammar/vocabulary point>"],
+    "examples": [{"phrase": "<useful phrase or sentence starter>", "meaning": "<what it means / when to use it>", "note": "<tone or grammar note>"}],
+    "strategy": "<how to plan the answer before writing>",
+    "commonMistakes": ["<common writing mistake>", "<common tone/grammar mistake>"],
+    "sourceLanguageSupport": "<optional short support in {{sourceLanguageName}}, or null>"
+  },
+  "practiceContent": {
+    "instructions": "<clear instruction for the writing task>",
+    "scenario": "<workplace situation>",
+    "task": "<what the student must write>",
+    "exerciseData": {
+      "situation": "<workplace context>",
+      "audience": "<recipient or reader>",
+      "tone": "<tone requirement>",
+      "expectedLength": "<word/sentence target>",
+      "prompt": "<final writing prompt shown only in Practice>",
+      "requiredPhrases": ["<optional phrase>"],
+      "targetVocabulary": ["<optional vocabulary>"],
+      "successChecklist": ["<what the response should include>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Task completion", "Clarity", "Tone", "Grammar accuracy", "Vocabulary use"],
+    "rubric": [
+      {"criterion": "Task completion", "description": "The response addresses the workplace situation and includes the required information.", "weight": 0.3},
+      {"criterion": "Clarity and structure", "description": "The response is easy to follow and organised logically.", "weight": 0.25},
+      {"criterion": "Tone", "description": "The response uses an appropriate professional tone.", "weight": 0.2},
+      {"criterion": "Grammar and vocabulary", "description": "The response uses accurate grammar and suitable workplace vocabulary.", "weight": 0.25}
+    ],
+    "feedbackFocus": "Help the student improve clarity, tone, grammar, and task completion.",
+    "successCriteria": ["The message is clear and complete.", "The tone is appropriate for the audience.", "Grammar and vocabulary support the message."]
+  }
 }
 
-Rules:
-- The situation must be specific and believable for {{careerContext}} professionals.
-- Do not repeat the same task type every time — vary it based on the context.
-- targetPhrases must be phrases the student should actively try to use in their response.
-- The example must be a complete, professional response (not a fragment).
-- instructionInSourceLanguage must be written entirely in {{sourceLanguageName}}.
-- Do not include any text outside the JSON object.
+Critical Learn-stage rules:
+- learnContent must not contain the final writing prompt.
+- learnContent must not ask the student to complete the task.
+- learnContent must not contain textarea, submitted answer, expected final answer, answer key, answer controls, submit labels, or check labels.
+- learnContent may contain structure, tone guidance, phrases, short examples, common mistakes, planning strategy, and source-language support.
+- practiceContent.exerciseData must include prompt, situation, audience, and tone.
+- Keep all content appropriate for {{cefrLevel}} and {{careerContext}}.
+- Do not include real company names, secrets, phone numbers, or sensitive content.
 """;
 
     private const string ActivityEvaluateWritingContent = """
@@ -103,6 +123,8 @@ Career context: {{careerContext}}
 
 Activity content:
 {{activityContent}}
+
+If activityContent uses schemaVersion module_stage_v1, evaluate the submission against practiceContent.exerciseData, especially prompt, situation, audience, tone, and expectedLength. Use feedbackPlan as the rubric. Use learnContent only as teaching context for coaching.
 
 Student's submitted message:
 ---
@@ -280,6 +302,8 @@ Career context: {{careerContext}}
 
 Activity content:
 {{activityContent}}
+
+If activityContent uses schemaVersion module_stage_v1, evaluate the submission against practiceContent.exerciseData, especially prompt, situation, audience, tone, and expectedLength. Use feedbackPlan as the rubric. Use learnContent only as teaching context for coaching.
 
 Student's transcript (from their recording):
 ---
@@ -932,6 +956,8 @@ Career context: {{careerContext}}
 Activity content:
 {{activityContent}}
 
+If activityContent uses schemaVersion module_stage_v1, evaluate the submission against practiceContent.exerciseData, especially prompt, situation, audience, tone, and expectedLength. Use feedbackPlan as the rubric. Use learnContent only as teaching context for coaching.
+
 Student's reply (JSON with "subject" and "body" fields):
 {{studentSubmission}}
 
@@ -1133,6 +1159,8 @@ Student level: {{cefrLevel}}
 
 Activity content:
 {{activityContent}}
+
+If activityContent uses schemaVersion module_stage_v1, evaluate the submission against practiceContent.exerciseData, especially prompt, situation, audience, tone, and expectedLength. Use feedbackPlan as the rubric. Use learnContent only as teaching context for coaching.
 
 Student's reflection:
 {{studentSubmission}}

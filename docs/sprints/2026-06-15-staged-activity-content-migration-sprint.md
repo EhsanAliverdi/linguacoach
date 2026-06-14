@@ -1,6 +1,6 @@
 ---
 status: in-progress
-lastUpdated: 2026-06-15
+lastUpdated: 2026-06-15 08:45
 owner: architecture
 relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
 relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
@@ -245,6 +245,56 @@ Verification:
 * 84/84 Angular unit tests pass
 * `dotnet build` clean
 * Angular build clean
+
+## PR2 — WritingScenario staged migration, complete
+
+PR2 applies the PR1 staged-content recipe to the legacy `WritingScenario`
+activity type only. New `activity_generate_writing` content now produces
+`module_stage_v1` with `primarySkill`, `secondarySkills`, and
+`exerciseType: "writing_scenario"`.
+
+Completed work:
+
+1. `activity_generate_writing` now returns staged JSON only.
+2. The prompt separates Learn, Practice, and FeedbackPlan.
+3. Learn is teaching-only and excludes the final writing task, textarea,
+   submitted answer, answer keys, and submit/check controls.
+4. `ModuleStageContentValidator` validates WritingScenario practice data.
+5. Required staged writing practice keys are `prompt`, `situation`,
+   `audience`, and `tone` under `practiceContent.exerciseData`.
+6. `ActivityGetHandler.BuildStageContent` maps staged WritingScenario content
+   normally and adapts old flat WritingScenario JSON to `legacy_adapted_v1`.
+7. The legacy adapter preserves writing task fields in
+   `practiceContent.exerciseData`, including prompt, situation, audience, tone,
+   required phrases, and target vocabulary when present.
+8. API responses expose `stageContent` for WritingScenario through the existing
+   generic response mapping.
+9. `activity_evaluate_writing` receives staged evaluation context based on
+   `practiceContent`, `feedbackPlan`, and teaching context from `learnContent`.
+10. The Angular Writing presenter returns `stagedLearning` when `stageContent`
+    exists and keeps the old fallback path.
+11. The Writing practice page reads staged `practiceContent.exerciseData` for
+    situation, audience, tone, expected length, prompt, required phrases, and
+    target vocabulary.
+
+Out of scope remains unchanged:
+
+* Practice Gym pre-generation pool.
+* Today background generation.
+* MinIO/audio lifecycle.
+* New listening exercise types.
+* ModuleRun persistence.
+* Speaking, Vocabulary, and pattern-backed staged migrations.
+* Removing legacy compatibility paths.
+* Removing `/activity`.
+
+Remaining staged migrations:
+
+* SpeakingRolePlay.
+* VocabularyPractice.
+* Pattern-backed writing exercises.
+* Pattern-backed listening exercises.
+* Pattern-backed chat, email, gap-fill, matching, and reflection flows.
 
 ## Follow-up backlog — apply the PR1 recipe per type/pattern
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 18:00
+lastUpdated: 2026-06-15 08:45
 owner: architecture
 supersedes:
 supersededBy:
@@ -247,6 +247,56 @@ interface ActivityDto {
 The `ActivityType` enum gets a new value. No table changes. No migration. The JSONB column absorbs the new schema transparently.
 
 ---
+
+## Staged Activity Content (`module_stage_v1`)
+
+`LearningActivity.AiGeneratedContentJson` can now store staged module content
+for migrated legacy activity types. The staged shape separates teaching,
+practice, and evaluation planning:
+
+* `learnContent` contains teaching-only content.
+* `practiceContent` contains the actual exercise.
+* `feedbackPlan` contains criteria and rubric guidance.
+
+The target staged metadata includes:
+
+* `schemaVersion: "module_stage_v1"`
+* `primarySkill`
+* `secondarySkills`
+* `exerciseType`
+* `moduleGoal`
+
+PR1 completed this migration for `ListeningComprehension`. PR2 completed it
+for `WritingScenario`. Remaining legacy types and pattern-backed activities are
+still pending.
+
+### WritingScenario staged content
+
+New `WritingScenario` generation uses prompt key `activity_generate_writing`
+and returns `exerciseType: "writing_scenario"`. The Learn stage teaches writing
+structure, tone, useful phrases, common mistakes, and planning strategy only. It
+must not include the final writing prompt, textarea content, submitted answer,
+expected final answer, answer key, answer controls, or submit/check labels.
+
+The Practice stage owns the writing task. Its `practiceContent.exerciseData`
+contains the durable task fields used by the UI and evaluator:
+
+* `prompt`
+* `situation`
+* `audience`
+* `tone`
+* optional `expectedLength`
+* optional `requiredPhrases`
+* optional `targetVocabulary`
+* optional `successChecklist`
+
+Old flat WritingScenario JSON remains supported. The API adapts it to
+`legacy_adapted_v1` so old activities and history continue rendering and
+evaluating.
+
+Future phases still own Practice Gym pre-generation pools, Today background
+generation, MinIO/audio lifecycle, new listening exercise types, ModuleRun
+persistence, and staged migrations for Speaking, Vocabulary, and patterns.
 
 ## Pattern Evaluation Engine — evaluation flow
 

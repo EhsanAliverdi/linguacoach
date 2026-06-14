@@ -284,9 +284,25 @@
     }
 
     <!-- Compact situation reminder -->
-    @if (activity.situation) {
+    @if (writingSituation) {
       <div class="sp-card" style="padding:14px 18px">
-        <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity.situation }}</p>
+        <p style="font-size:12px;font-weight:800;color:var(--sp-faint);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px">Situation</p>
+        <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5;margin:0">{{ writingSituation }}</p>
+      </div>
+    }
+
+    @if (writingAudience || writingTone || writingExpectedLength) {
+      <div class="sp-card" style="padding:14px 18px;display:grid;gap:10px">
+        @if (writingAudience) { <p style="margin:0;font-size:13px"><strong>Audience:</strong> {{ writingAudience }}</p> }
+        @if (writingTone) { <p style="margin:0;font-size:13px"><strong>Tone:</strong> {{ writingTone }}</p> }
+        @if (writingExpectedLength) { <p style="margin:0;font-size:13px"><strong>Expected length:</strong> {{ writingExpectedLength }}</p> }
+      </div>
+    }
+
+    @if (writingPrompt) {
+      <div class="sp-card" style="padding:16px;border-color:var(--sp-writing)">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-writing);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px">Writing prompt</p>
+        <p style="font-size:15px;font-weight:700;color:var(--sp-ink);line-height:1.55;margin:0">{{ writingPrompt }}</p>
       </div>
     }
 
@@ -296,10 +312,18 @@
     }
 
     <!-- Phrase chips -->
-    @if (activity.targetPhrases.length) {
+    @if (writingRequiredPhrases.length) {
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        @for (phrase of activity.targetPhrases; track phrase) {
+        @for (phrase of writingRequiredPhrases; track phrase) {
           <span class="sp-phrase-chip" style="font-size:12px;cursor:pointer" (click)="appendPhrase(phrase)">{{ phrase }}</span>
+        }
+      </div>
+    }
+
+    @if (writingTargetVocabulary.length) {
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        @for (word of writingTargetVocabulary; track word) {
+          <span class="sp-phrase-chip" style="font-size:12px;background:var(--sp-canvas2)">{{ word }}</span>
         }
       </div>
     }

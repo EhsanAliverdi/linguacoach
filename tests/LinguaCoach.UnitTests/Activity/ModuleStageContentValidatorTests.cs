@@ -45,6 +45,48 @@ public sealed class ModuleStageContentValidatorTests
     }
     """;
 
+
+    private const string ValidWritingJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Write a manager update",
+      "moduleGoal": "Write a clear short update to a manager.",
+      "primarySkill": "writing",
+      "secondarySkills": ["grammar", "vocabulary"],
+      "exerciseType": "writing_scenario",
+      "learnContent": {
+        "teachingTitle": "Clear status updates",
+        "explanation": "A good update starts with the main point, then adds the key detail. Keep the tone polite and direct.",
+        "keyPoints": ["Start with purpose", "Use polite tone", "Keep sentences clear"],
+        "examples": [{"phrase": "I wanted to update you on", "meaning": "opens a status update", "note": "polite and direct"}],
+        "strategy": "Plan the audience, purpose, and key details before writing.",
+        "commonMistakes": ["Giving too much background first"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Write a short professional update.",
+        "scenario": "Your task is delayed because another team has not sent data.",
+        "task": "Write to your manager.",
+        "exerciseData": {
+          "situation": "Your task is delayed because another team has not sent data.",
+          "audience": "your manager",
+          "tone": "polite and professional",
+          "expectedLength": "3-5 sentences",
+          "prompt": "Write a short update to your manager explaining the delay and next step.",
+          "requiredPhrases": ["I wanted to update you"],
+          "targetVocabulary": ["delay"],
+          "successChecklist": ["Explain the delay", "Include next step"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Clarity", "Tone", "Grammar accuracy", "Vocabulary use"],
+        "rubric": [{"criterion": "Task completion", "description": "Addresses the situation", "weight": 1.0}],
+        "feedbackFocus": "Clarity, tone, grammar, and task completion",
+        "successCriteria": ["The message is clear and complete."]
+      }
+    }
+    """;
+
     private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
 
     [Fact]
@@ -164,7 +206,7 @@ public sealed class ModuleStageContentValidatorTests
     }
 
     [Fact]
-    public void Validate_ForNonListeningActivityType_SkipsRequiredPracticeKeyCheck()
+    public void Validate_WithMissingRequiredExerciseDataKey_ForWriting_Fails()
     {
         using var doc = JsonDocument.Parse(ValidListeningJson);
         using var ms = new MemoryStream();
@@ -198,7 +240,57 @@ public sealed class ModuleStageContentValidatorTests
         var json = System.Text.Encoding.UTF8.GetString(ms.ToArray());
         var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
 
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("prompt"));
+    }
+
+
+    [Fact]
+    public void Validate_WithValidWritingPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(Parse(ValidWritingJson), ActivityType.WritingScenario);
+
         result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_WithPracticeOnlyWritingKeyInLearnContent_Fails()
+    {
+        using var doc = JsonDocument.Parse(ValidWritingJson);
+        var json = AddLearnProperty(doc.RootElement, "textarea", "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("textarea"));
+    }
+
+    private static string AddLearnProperty(JsonElement root, string name, string value)
+    {
+        using var ms = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(ms))
+        {
+            writer.WriteStartObject();
+            foreach (var prop in root.EnumerateObject())
+            {
+                if (prop.NameEquals("learnContent"))
+                {
+                    writer.WritePropertyName("learnContent");
+                    writer.WriteStartObject();
+                    foreach (var learnProp in prop.Value.EnumerateObject())
+                        learnProp.WriteTo(writer);
+                    writer.WriteString(name, value);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    prop.WriteTo(writer);
+                }
+            }
+            writer.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(ms.ToArray());
     }
 
     private static string RemoveProperty(JsonElement root, string propertyToRemove)

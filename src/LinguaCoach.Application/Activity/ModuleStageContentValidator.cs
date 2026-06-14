@@ -20,12 +20,14 @@ public static class ModuleStageContentValidator
     [
         "audioScript", "audioUrl", "questions", "expectedAnswer", "correctAnswer",
         "answerKey", "gaps", "pairs", "transcriptAvailableAfterSubmit", "transcript",
-        "exerciseData", "interactionMode",
+        "exerciseData", "interactionMode", "submittedAnswer", "studentAnswer",
+        "textarea", "submitLabel", "checkLabel", "answerControls",
     ];
 
     private static readonly Dictionary<ActivityType, string[]> RequiredPracticeKeysByType = new()
     {
         [ActivityType.ListeningComprehension] = ["audioScript", "questions"],
+        [ActivityType.WritingScenario] = ["prompt", "situation", "audience", "tone"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType)

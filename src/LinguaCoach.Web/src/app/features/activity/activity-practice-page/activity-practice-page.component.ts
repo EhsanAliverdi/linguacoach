@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivityDto, ListeningAnswer, ListeningExerciseData, VocabAnswer } from '../../../core/models/activity.models';
+import { ActivityDto, ListeningAnswer, ListeningExerciseData, VocabAnswer, WritingExerciseData } from '../../../core/models/activity.models';
 import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
 import { PracticeViewModel } from '../presenters/activity-page-presenter';
 
@@ -59,6 +59,38 @@ export class ActivityPracticePageComponent {
   listeningItemsFilled(): boolean {
     const questions = this.listeningExerciseData?.questions ?? this.activity.listeningQuestions ?? [];
     return questions.length > 0 && questions.every(q => (this.listeningAnswers[q.id] ?? '').trim().length > 0);
+  }
+
+  get writingExerciseData(): WritingExerciseData | null {
+    return (this.activity.stageContent?.practice?.exerciseData as WritingExerciseData) ?? null;
+  }
+
+  get writingSituation(): string | null {
+    return this.writingExerciseData?.situation ?? this.activity.stageContent?.practice?.scenario ?? this.activity.situation;
+  }
+
+  get writingAudience(): string | null {
+    return this.writingExerciseData?.audience ?? null;
+  }
+
+  get writingTone(): string | null {
+    return this.writingExerciseData?.tone ?? null;
+  }
+
+  get writingExpectedLength(): string | null {
+    return this.writingExerciseData?.expectedLength ?? null;
+  }
+
+  get writingPrompt(): string | null {
+    return this.writingExerciseData?.prompt ?? this.activity.stageContent?.practice?.task ?? this.activity.learningGoal;
+  }
+
+  get writingRequiredPhrases(): string[] {
+    return this.writingExerciseData?.requiredPhrases ?? this.activity.targetPhrases ?? [];
+  }
+
+  get writingTargetVocabulary(): string[] {
+    return this.writingExerciseData?.targetVocabulary ?? this.activity.targetVocabulary ?? [];
   }
 
   get wordCount(): number {
