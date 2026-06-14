@@ -92,7 +92,7 @@ public sealed class VocabularyExtractionService : IVocabularyExtractionService
             var items = ParseItems(response);
             if (items.Count == 0)
             {
-                _logger.LogDebug("VocabularyExtraction returned 0 items ActivityId={ActivityId}", command.ActivityId);
+                _logger.LogInformation("VocabularyExtraction returned 0 items ActivityId={ActivityId}", command.ActivityId);
                 return;
             }
 

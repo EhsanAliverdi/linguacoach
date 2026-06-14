@@ -225,6 +225,23 @@ because `Corrections.Count == 0`, and bump
 this would make root-causing a live report trivial without further code
 changes.
 
+### Item 8 follow-up — done (2026-06-14)
+
+Implemented the logging follow-up above:
+- `ActivitySubmitHandler.cs`: added `LogInformation` when vocabulary
+  extraction is skipped (`Corrections.Count == 0`), including
+  `ActivityAttemptId` and `ExercisePatternKey`.
+- `VocabularyExtractionService.cs`: bumped "0 items returned" log from
+  `LogDebug` to `LogInformation`.
+
+Next live student submission will show in logs whether vocabulary
+extraction is being skipped (pattern produces no `Corrections`) or run
+but returning 0 items (AI extraction call issue) — root cause can then
+be fixed in a follow-up pass.
+
+Verification: `dotnet build` passes clean (same pre-existing
+`OnboardingHandler.cs` warning only).
+
 ### Item 9 — done (2026-06-14)
 
 `ListeningComprehensionEvaluator.Evaluate` (entirely deterministic, no AI

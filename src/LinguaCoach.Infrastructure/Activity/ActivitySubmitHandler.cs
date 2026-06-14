@@ -326,6 +326,12 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 ImprovedVersion: evalResult.SuggestedImprovedAnswer,
                 CorrelationId: null), ct);
         }
+        else
+        {
+            _logger.LogInformation(
+                "VocabularyExtraction skipped — no corrections ActivityAttemptId={ActivityAttemptId} ExercisePatternKey={ExercisePatternKey}",
+                attempt.Id, activity.ExercisePatternKey);
+        }
 
         var patternDto = BuildPatternEvaluationDto(activity.ExercisePatternKey, pattern.MarkingMode, evalResult);
 
