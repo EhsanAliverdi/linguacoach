@@ -42,7 +42,7 @@ Deferred follow-ups:
 - [x] Add student detail page with learning memory and reset tools. `Done` (2026-06-14)
   - Route `/admin/students/:id`, see `docs/sprints/2026-06-14-admin-student-detail-page.md`
   - Activity history not included — separate item below.
-- [ ] Add activity history to admin student detail page. `Not started`
+- [x] Add activity history to admin student detail page. `Done` (2026-06-14)
 
 ---
 
@@ -823,12 +823,12 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   - Route: `/admin/settings`
   - Planned content: platform name/branding config, pilot programme dates, allowed email domains
   - Currently a placeholder / disabled nav item
-- [ ] Improve admin student list page. `Not started`
-  - Add search/filter by email
-  - Add sort by joined date or onboarding status
-  - Add pagination if student count exceeds 25
+- [x] Improve admin student list page. `Done` (2026-06-14)
+  - [x] Add search/filter by email and name
+  - [x] Add sort by name, onboarding status, or joined date
+  - [x] Add pagination (25 per page)
   - [x] Add ability to view individual student (detail page with learning memory). `Done` (2026-06-14)
-  - Activity history view still not started
+  - [x] Activity history view. `Done` (2026-06-14)
 - [x] Add admin student learning memory view. `Done` (2026-06-14)
   - `GET /api/admin/students/{id}/learning-memory` now consumed by `/admin/students/:id`
   - Shows journey summary, strengths, weaknesses, recurring mistakes, next focus, covered scenario count, skill profile
