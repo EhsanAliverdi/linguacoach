@@ -27,6 +27,9 @@ internal sealed class SessionExerciseConfiguration : IEntityTypeConfiguration<Se
         builder.Property(e => e.Status).HasColumnName("status")
             .HasConversion<int>().IsRequired();
         builder.Property(e => e.CompletedAtUtc).HasColumnName("completed_at_utc").IsRequired(false);
+        builder.Property(e => e.DeletedAtUtc).HasColumnName("deleted_at_utc").IsRequired(false);
+
+        builder.HasQueryFilter(e => e.DeletedAtUtc == null);
 
         builder.HasIndex(e => new { e.LearningSessionId, e.Order })
             .HasDatabaseName("ix_session_exercises_session_order");

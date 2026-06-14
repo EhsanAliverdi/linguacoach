@@ -1,10 +1,15 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-06-14 06:30
 owner: architecture
 supersedes:
 supersededBy:
 ---
+
+> **Implementation status (2026-06-14):** Implemented in full, including the
+> admin UI ahead of the originally planned Phase 6. See
+> `docs/sprints/2026-06-14-admin-purge-student-data-plan.md` for the
+> implementation summary.
 
 # Student Lifecycle and Reset Tools
 
@@ -195,7 +200,9 @@ The admin student detail page should include a Reset section:
 - Success: show new stage, cleared items summary
 - Failure: show error with correlation ID
 
-Do not implement admin reset UI until Phase 6. The API endpoint is designed now so it can be implemented consistently.
+The admin reset UI (presets, clear-flag checkboxes, required reason, typed-email
+confirmation, cleared-items summary) was implemented in the same pass as the
+API endpoint — see implementation status note at the top of this document.
 
 ---
 

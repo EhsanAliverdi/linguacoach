@@ -33,6 +33,9 @@ internal sealed class ActivityAttemptConfiguration : IEntityTypeConfiguration<Ac
         builder.Property(e => e.Completed).HasColumnName("completed");
         builder.Property(e => e.MarkingMode).HasColumnName("marking_mode");
         builder.Property(e => e.PromptKey).HasColumnName("prompt_key").HasMaxLength(200).IsRequired();
+        builder.Property(e => e.DeletedAtUtc).HasColumnName("deleted_at_utc").IsRequired(false);
+
+        builder.HasQueryFilter(e => e.DeletedAtUtc == null);
 
         builder.HasIndex(e => e.StudentProfileId)
             .HasDatabaseName("ix_activity_attempts_student");

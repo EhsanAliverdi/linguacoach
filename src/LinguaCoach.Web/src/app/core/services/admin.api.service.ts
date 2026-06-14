@@ -5,7 +5,8 @@ import {
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
   CareerProfileItem, CurriculumWordItem,
   AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
-  AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult
+  AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
+  ResetStudentRequest, ResetStudentResponse
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -31,6 +32,9 @@ export class AdminApiService {
   }
   resetStudentPassword(studentProfileId: string, newPassword: string, mustChangePassword = true): Observable<void> {
     return this.http.post<void>(`${this.api}/students/${studentProfileId}/reset-password`, { newPassword, mustChangePassword });
+  }
+  resetStudent(studentProfileId: string, request: ResetStudentRequest): Observable<ResetStudentResponse> {
+    return this.http.post<ResetStudentResponse>(`${this.api}/students/${studentProfileId}/reset`, request);
   }
 
   // Prompts

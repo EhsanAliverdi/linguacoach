@@ -92,4 +92,8 @@ public sealed class ActivityAttempt : BaseEntity
     {
         AudioStorageKey = key?.Trim();
     }
+
+    public DateTime? DeletedAtUtc { get; private set; }
+
+    public void MarkDeleted() => DeletedAtUtc = DateTime.UtcNow;
 }

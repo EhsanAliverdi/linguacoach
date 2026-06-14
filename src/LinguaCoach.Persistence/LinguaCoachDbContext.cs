@@ -42,6 +42,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ExercisePatternDefinition> ExercisePatterns => Set<ExercisePatternDefinition>();
     public DbSet<AudioAsset> AudioAssets => Set<AudioAsset>();
     public DbSet<LessonGenerationSettings> LessonGenerationSettings => Set<LessonGenerationSettings>();
+    public DbSet<StudentResetLog> StudentResetLogs => Set<StudentResetLog>();
     public DbSet<GenerationBatch> GenerationBatches => Set<GenerationBatch>();
     public DbSet<GenerationJobItem> GenerationJobItems => Set<GenerationJobItem>();
     public DbSet<PracticeActivityCache> PracticeActivityCache => Set<PracticeActivityCache>();

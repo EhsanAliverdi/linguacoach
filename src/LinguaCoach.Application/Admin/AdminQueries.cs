@@ -46,7 +46,47 @@ public interface IAdminStudentQuery
     Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
     Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);
     Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default);
+    Task<ResetStudentResponse> ResetStudentAsync(ResetStudentCommand command, CancellationToken ct = default);
+    Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default);
 }
+
+// ── Student lifecycle reset ─────────────────────────────────────────────────
+// See: docs/architecture/student-lifecycle-reset-tools.md
+
+public sealed record ResetStudentCommand(
+    Guid StudentProfileId,
+    Guid AdminUserId,
+    StudentLifecycleStage TargetStage,
+    bool ClearOnboardingAnswers,
+    bool ClearPlacementResults,
+    bool ClearCoursesAndSessions,
+    bool ClearActivityAttempts,
+    bool ClearVocabulary,
+    bool ClearLearningMemory,
+    bool ClearAudioFiles,
+    bool ClearProgressData,
+    string Reason,
+    string CorrelationId);
+
+public sealed record ClearedItemsResult(
+    bool OnboardingAnswers,
+    bool PlacementResults,
+    bool CoursesAndSessions,
+    bool ActivityAttempts,
+    bool Vocabulary,
+    bool LearningMemory,
+    int AudioFilesDeleted,
+    bool ProgressData);
+
+public sealed record ResetStudentResponse(
+    Guid StudentId,
+    StudentLifecycleStage PreviousStage,
+    StudentLifecycleStage NewStage,
+    ClearedItemsResult ClearedItems,
+    Guid ResetLogId,
+    Guid PerformedByAdminId,
+    DateTime PerformedAtUtc,
+    string CorrelationId);
 
 // ── Prompt templates ──────────────────────────────────────────────────────────
 

@@ -31,6 +31,55 @@ export interface UpdateStudentProfileRequest {
   roleFamiliarity?: number | null;
 }
 
+export type StudentLifecycleStageName =
+  | 'Created'
+  | 'PasswordChangeRequired'
+  | 'OnboardingRequired'
+  | 'OnboardingInProgress'
+  | 'PlacementRequired'
+  | 'PlacementInProgress'
+  | 'PlacementCompleted'
+  | 'CourseReady'
+  | 'InLesson'
+  | 'ActiveLearning'
+  | 'Paused'
+  | 'Archived';
+
+export interface ResetStudentRequest {
+  targetStage: StudentLifecycleStageName;
+  clearOnboardingAnswers: boolean;
+  clearPlacementResults: boolean;
+  clearCoursesAndSessions: boolean;
+  clearActivityAttempts: boolean;
+  clearVocabulary: boolean;
+  clearLearningMemory: boolean;
+  clearAudioFiles: boolean;
+  clearProgressData: boolean;
+  reason: string;
+}
+
+export interface ClearedItemsResult {
+  onboardingAnswers: boolean;
+  placementResults: boolean;
+  coursesAndSessions: boolean;
+  activityAttempts: boolean;
+  vocabulary: boolean;
+  learningMemory: boolean;
+  audioFilesDeleted: number;
+  progressData: boolean;
+}
+
+export interface ResetStudentResponse {
+  studentId: string;
+  previousStage: StudentLifecycleStageName;
+  newStage: StudentLifecycleStageName;
+  clearedItems: ClearedItemsResult;
+  resetLogId: string;
+  performedByAdminId: string;
+  performedAtUtc: string;
+  correlationId: string;
+}
+
 export interface PromptTemplateItem {
   id: string;
   key: string;

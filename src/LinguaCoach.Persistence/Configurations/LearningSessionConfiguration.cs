@@ -38,6 +38,9 @@ internal sealed class LearningSessionConfiguration : IEntityTypeConfiguration<Le
             .HasConversion<int>().HasDefaultValue(GenerationStatus.Ready).IsRequired();
         builder.Property(e => e.ReadyAtUtc).HasColumnName("ready_at_utc").IsRequired(false);
         builder.Property(e => e.GenerationBatchId).HasColumnName("generation_batch_id").IsRequired(false);
+        builder.Property(e => e.DeletedAtUtc).HasColumnName("deleted_at_utc").IsRequired(false);
+
+        builder.HasQueryFilter(e => e.DeletedAtUtc == null);
 
         builder.HasIndex(e => new { e.LearningModuleId, e.Order })
             .HasDatabaseName("ix_learning_sessions_module_order");

@@ -142,4 +142,8 @@ public sealed class LearningSession : BaseEntity
     }
 
     public void MarkGenerationFailed() => GenerationStatus = GenerationStatus.Failed;
+
+    public DateTime? DeletedAtUtc { get; private set; }
+
+    public void MarkDeleted() => DeletedAtUtc = DateTime.UtcNow;
 }

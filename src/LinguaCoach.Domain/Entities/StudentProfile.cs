@@ -243,6 +243,33 @@ public sealed class StudentProfile : BaseEntity
         WorkplaceSeniority = WorkplaceSeniorityCalculator.Compute(experienceLevel, roleFamiliarity);
     }
 
+    /// <summary>
+    /// Admin reset: clears onboarding selections and returns the student to the
+    /// start of onboarding. Does not touch admin-set profile fields (name, career
+    /// context) or CEFR level — those are cleared separately if requested.
+    /// </summary>
+    public void ResetToOnboarding()
+    {
+        OnboardingStatus = OnboardingStatus.NotStarted;
+        LastCompletedStep = OnboardingStep.None;
+        LanguagePairId = null;
+        LanguagePair = null;
+        LearningTrackId = null;
+        LearningTrack = null;
+        CareerProfileId = null;
+        CareerProfile = null;
+        SkillFocus = null;
+        LearningGoalDescription = null;
+        DifficultSituationsText = null;
+        LifecycleStage = StudentLifecycleStage.OnboardingRequired;
+    }
+
+    /// <summary>Admin reset: clears placement results (CEFR level).</summary>
+    public void ClearPlacementResult()
+    {
+        CefrLevel = null;
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────────
 
     private void EnsureStepIsNext(OnboardingStep requestedStep)

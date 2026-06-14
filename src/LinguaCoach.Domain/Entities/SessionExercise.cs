@@ -105,4 +105,8 @@ public sealed class SessionExercise : BaseEntity
         Status = ExerciseStatus.Skipped;
         CompletedAtUtc = DateTime.UtcNow;
     }
+
+    public DateTime? DeletedAtUtc { get; private set; }
+
+    public void MarkDeleted() => DeletedAtUtc = DateTime.UtcNow;
 }

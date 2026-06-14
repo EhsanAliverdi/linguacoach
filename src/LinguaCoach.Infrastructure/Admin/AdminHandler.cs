@@ -1,6 +1,8 @@
+using System.Text.Json;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
+using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -8,6 +10,7 @@ using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Admin;
 
@@ -22,19 +25,25 @@ public sealed class AdminHandler :
     private readonly IAiProviderTester _tester;
     private readonly IServiceProvider _services;
     private readonly IAiProviderResolver _providerResolver;
+    private readonly IFileStorageService _fileStorage;
+    private readonly ILogger<AdminHandler> _logger;
 
     public AdminHandler(
         LinguaCoachDbContext db,
         UserManager<ApplicationUser> userManager,
         IAiProviderTester tester,
         IAiProviderResolver providerResolver,
-        IServiceProvider services)
+        IServiceProvider services,
+        IFileStorageService fileStorage,
+        ILogger<AdminHandler> logger)
     {
         _db = db;
         _userManager = userManager;
         _tester = tester;
         _providerResolver = providerResolver;
         _services = services;
+        _fileStorage = fileStorage;
+        _logger = logger;
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -118,6 +127,228 @@ public sealed class AdminHandler :
 
         user.MustChangePassword = command.MustChangePassword;
         await _userManager.UpdateAsync(user);
+    }
+
+    public async Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default)
+    {
+        var since = DateTime.UtcNow - window;
+        return await _db.StudentResetLogs
+            .CountAsync(l => l.AdminUserId == adminUserId && l.PerformedAtUtc >= since, ct);
+    }
+
+    public async Task<ResetStudentResponse> ResetStudentAsync(ResetStudentCommand command, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(command.Reason))
+            throw new ArgumentException("Reason is required.", nameof(command));
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        var previousStage = profile.LifecycleStage;
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        var onboardingCleared = false;
+        var placementCleared = false;
+        var coursesAndSessionsCleared = false;
+        var attemptsCleared = false;
+        var vocabularyCleared = false;
+        var learningMemoryCleared = false;
+        var audioFilesDeleted = 0;
+        var progressDataCleared = false;
+
+        if (command.ClearAudioFiles)
+        {
+            var audioKeys = new List<string>();
+
+            audioKeys.AddRange(await _db.ActivityAttempts
+                .Where(a => a.StudentProfileId == command.StudentProfileId && a.AudioStorageKey != null)
+                .Select(a => a.AudioStorageKey!)
+                .ToListAsync(ct));
+
+            audioKeys.AddRange(await _db.AudioAssets
+                .Where(a => a.StudentProfileId == command.StudentProfileId)
+                .Select(a => a.ObjectKey)
+                .ToListAsync(ct));
+
+            foreach (var key in audioKeys.Distinct())
+            {
+                try
+                {
+                    await _fileStorage.DeleteAsync(key, ct);
+                    audioFilesDeleted++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete audio file {Key} during student reset", key);
+                }
+            }
+
+            await _db.AudioAssets
+                .Where(a => a.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+
+            await _db.ActivityAttempts
+                .Where(a => a.StudentProfileId == command.StudentProfileId)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.AudioStorageKey, (string?)null), ct);
+        }
+
+        if (command.ClearActivityAttempts)
+        {
+            var attempts = await _db.ActivityAttempts
+                .Where(a => a.StudentProfileId == command.StudentProfileId)
+                .ToListAsync(ct);
+            foreach (var attempt in attempts)
+                attempt.MarkDeleted();
+            attemptsCleared = attempts.Count > 0;
+        }
+
+        if (command.ClearCoursesAndSessions)
+        {
+            var sessions = await _db.LearningSessions
+                .Include(s => s.Exercises)
+                .Where(s => s.StudentProfileId == command.StudentProfileId)
+                .ToListAsync(ct);
+            foreach (var session in sessions)
+            {
+                foreach (var exercise in session.Exercises)
+                    exercise.MarkDeleted();
+                session.MarkDeleted();
+            }
+            coursesAndSessionsCleared = sessions.Count > 0;
+
+            await _db.PracticeActivityCache
+                .Where(c => c.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+
+            var batchIds = await _db.GenerationBatches
+                .Where(b => b.StudentProfileId == command.StudentProfileId)
+                .Select(b => b.Id)
+                .ToListAsync(ct);
+            if (batchIds.Count > 0)
+            {
+                await _db.GenerationJobItems
+                    .Where(i => batchIds.Contains(i.GenerationBatchId))
+                    .ExecuteDeleteAsync(ct);
+                await _db.GenerationBatches
+                    .Where(b => batchIds.Contains(b.Id))
+                    .ExecuteDeleteAsync(ct);
+            }
+        }
+
+        if (command.ClearPlacementResults)
+        {
+            var assessments = await _db.PlacementAssessments
+                .Where(a => a.StudentProfileId == command.StudentProfileId)
+                .ToListAsync(ct);
+            if (assessments.Count > 0)
+            {
+                var assessmentIds = assessments.Select(a => a.Id).ToList();
+                await _db.PlacementAnswers
+                    .Where(a => assessmentIds.Contains(a.PlacementAssessmentId))
+                    .ExecuteDeleteAsync(ct);
+                await _db.PlacementAssessments
+                    .Where(a => assessmentIds.Contains(a.Id))
+                    .ExecuteDeleteAsync(ct);
+            }
+
+            profile.ClearPlacementResult();
+            placementCleared = true;
+        }
+
+        if (command.ClearVocabulary)
+        {
+            await _db.VocabularyEntries
+                .Where(v => v.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+            await _db.StudentVocabularyItems
+                .Where(v => v.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+            vocabularyCleared = true;
+        }
+
+        if (command.ClearLearningMemory)
+        {
+            var summary = await _db.UserLearningSummaries
+                .FirstOrDefaultAsync(s => s.StudentProfileId == command.StudentProfileId, ct);
+            if (summary is not null)
+            {
+                _db.UserLearningSummaries.Remove(summary);
+                learningMemoryCleared = true;
+            }
+
+            var speakingSessionIds = await _db.SpeakingSessions
+                .Where(s => s.StudentProfileId == command.StudentProfileId)
+                .Select(s => s.Id)
+                .ToListAsync(ct);
+            if (speakingSessionIds.Count > 0)
+            {
+                await _db.SpeakingTurns
+                    .Where(t => speakingSessionIds.Contains(t.SpeakingSessionId))
+                    .ExecuteDeleteAsync(ct);
+                await _db.SpeakingSessions
+                    .Where(s => speakingSessionIds.Contains(s.Id))
+                    .ExecuteDeleteAsync(ct);
+            }
+
+            await _db.WritingSubmissions
+                .Where(w => w.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+
+            await _db.AiUsageLogs
+                .Where(l => l.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+        }
+
+        if (command.ClearOnboardingAnswers)
+        {
+            profile.ResetToOnboarding();
+            onboardingCleared = true;
+        }
+
+        if (command.ClearProgressData)
+        {
+            await _db.StudentSkillProfiles
+                .Where(s => s.StudentProfileId == command.StudentProfileId)
+                .ExecuteDeleteAsync(ct);
+            progressDataCleared = true;
+        }
+
+        profile.SetLifecycleStage(command.TargetStage);
+
+        var clearedItems = new ClearedItemsResult(
+            onboardingCleared,
+            placementCleared,
+            coursesAndSessionsCleared,
+            attemptsCleared,
+            vocabularyCleared,
+            learningMemoryCleared,
+            audioFilesDeleted,
+            progressDataCleared);
+
+        var resetLog = new StudentResetLog(
+            command.StudentProfileId,
+            command.AdminUserId,
+            previousStage,
+            command.TargetStage,
+            JsonSerializer.Serialize(clearedItems),
+            command.Reason,
+            command.CorrelationId);
+
+        _db.StudentResetLogs.Add(resetLog);
+
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        return new ResetStudentResponse(
+            command.StudentProfileId,
+            previousStage,
+            command.TargetStage,
+            clearedItems,
+            resetLog.Id,
+            command.AdminUserId,
+            resetLog.PerformedAtUtc,
+            command.CorrelationId);
     }
 
     private static StudentListItem ToStudentListItem(StudentProfile p, string email)

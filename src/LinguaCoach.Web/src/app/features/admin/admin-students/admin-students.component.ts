@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, UpdateStudentProfileRequest } from '../../../core/models/admin.models';
+import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 
 interface StudentEditForm {
@@ -95,6 +95,7 @@ interface StudentEditForm {
                     <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
                     @if (s.lifecycleStage !== 'Archived') {
                       <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
+                      <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
                       <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
                     }
                   </div>
@@ -241,6 +242,108 @@ interface StudentEditForm {
         }
       </section>
     }
+
+    @if (resettingData(); as student) {
+      <div class="sp-admin-modal-backdrop" (click)="cancelResetData()"></div>
+      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="resetDataTitle">
+        <div class="sp-admin-modal-header">
+          <div>
+            <h2 id="resetDataTitle">Reset student data</h2>
+            <p>{{ student.email }}</p>
+          </div>
+          <button type="button" (click)="cancelResetData()" aria-label="Close reset data">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        @if (resetDataResult(); as result) {
+          <div class="sp-admin-edit-grid">
+            <div class="sp-admin-wide sp-admin-alert-success">
+              Reset complete. New stage: {{ result.newStage }} (was {{ result.previousStage }}).
+            </div>
+            <div class="sp-admin-wide sp-admin-table-muted">
+              Cleared: onboarding={{ result.clearedItems.onboardingAnswers }},
+              placement={{ result.clearedItems.placementResults }},
+              courses/sessions={{ result.clearedItems.coursesAndSessions }},
+              attempts={{ result.clearedItems.activityAttempts }},
+              vocabulary={{ result.clearedItems.vocabulary }},
+              memory={{ result.clearedItems.learningMemory }},
+              audio files deleted={{ result.clearedItems.audioFilesDeleted }},
+              progress={{ result.clearedItems.progressData }}.
+            </div>
+            <div class="sp-admin-wide sp-admin-table-muted">Reset log: {{ result.resetLogId }}</div>
+            <div class="sp-admin-modal-actions sp-admin-wide">
+              <button type="button" class="sp-admin-btn-primary" (click)="cancelResetData()">Done</button>
+            </div>
+          </div>
+        } @else {
+          <form (ngSubmit)="saveResetData()" class="sp-admin-edit-grid">
+            <label class="sp-admin-wide">
+              <span>Preset</span>
+              <select class="sp-input" [(ngModel)]="resetDataForm.preset" name="preset" (change)="applyResetPreset()">
+                @for (preset of resetPresets; track preset.key) {
+                  <option [ngValue]="preset.key">{{ preset.label }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearOnboardingAnswers" name="clearOnboardingAnswers" style="margin:0;" />
+              <span style="margin:0;">Clear onboarding answers</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearPlacementResults" name="clearPlacementResults" style="margin:0;" />
+              <span style="margin:0;">Clear placement results</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearCoursesAndSessions" name="clearCoursesAndSessions" style="margin:0;" />
+              <span style="margin:0;">Clear courses and sessions</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearActivityAttempts" name="clearActivityAttempts" style="margin:0;" />
+              <span style="margin:0;">Clear activity attempts</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearVocabulary" name="clearVocabulary" style="margin:0;" />
+              <span style="margin:0;">Clear vocabulary</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearLearningMemory" name="clearLearningMemory" style="margin:0;" />
+              <span style="margin:0;">Clear learning memory</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearAudioFiles" name="clearAudioFiles" style="margin:0;" />
+              <span style="margin:0;">Delete audio files</span>
+            </label>
+            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearProgressData" name="clearProgressData" style="margin:0;" />
+              <span style="margin:0;">Recalculate progress data</span>
+            </label>
+
+            <label class="sp-admin-wide">
+              <span>Reason (required)</span>
+              <textarea class="sp-input" rows="2" [(ngModel)]="resetDataForm.reason" name="reason"
+                placeholder="Why is this reset being performed?"></textarea>
+            </label>
+
+            <label class="sp-admin-wide">
+              <span>Type the student's email to confirm: {{ student.email }}</span>
+              <input class="sp-input" [(ngModel)]="resetDataForm.confirmEmail" name="confirmEmail" autocomplete="off" />
+            </label>
+
+            @if (resetDataError()) {
+              <div class="sp-admin-alert-error sp-admin-wide">{{ resetDataError() }}</div>
+            }
+            <div class="sp-admin-modal-actions sp-admin-wide">
+              <button type="button" class="sp-button-ghost" (click)="cancelResetData()">Cancel</button>
+              <button type="submit" class="sp-admin-btn-primary"
+                [disabled]="savingResetData() || resetDataForm.confirmEmail !== student.email || !resetDataForm.reason.trim()">
+                {{ savingResetData() ? 'Resetting...' : 'Reset data' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    }
   `,
   styles: [`
     .sp-admin-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
@@ -287,6 +390,45 @@ export class AdminStudentsComponent implements OnInit {
   resetForm = { newPassword: '', mustChangePassword: true };
 
   editForm: StudentEditForm = this.emptyForm();
+
+  resettingData = signal<StudentListItem | null>(null);
+  savingResetData = signal(false);
+  resetDataError = signal('');
+  resetDataResult = signal<import('../../../core/models/admin.models').ResetStudentResponse | null>(null);
+  resetDataForm = this.emptyResetDataForm();
+
+  readonly resetPresets: { key: string; label: string; flags: Omit<ResetStudentRequest, 'reason'> }[] = [
+    {
+      key: 'fixPassword',
+      label: 'Fix password',
+      flags: { targetStage: 'PasswordChangeRequired', clearOnboardingAnswers: false, clearPlacementResults: false, clearCoursesAndSessions: false, clearActivityAttempts: false, clearVocabulary: false, clearLearningMemory: false, clearAudioFiles: false, clearProgressData: false },
+    },
+    {
+      key: 'restartOnboarding',
+      label: 'Restart onboarding',
+      flags: { targetStage: 'OnboardingRequired', clearOnboardingAnswers: true, clearPlacementResults: false, clearCoursesAndSessions: false, clearActivityAttempts: false, clearVocabulary: false, clearLearningMemory: false, clearAudioFiles: false, clearProgressData: false },
+    },
+    {
+      key: 'restartPlacement',
+      label: 'Restart placement',
+      flags: { targetStage: 'PlacementRequired', clearOnboardingAnswers: false, clearPlacementResults: true, clearCoursesAndSessions: false, clearActivityAttempts: false, clearVocabulary: false, clearLearningMemory: false, clearAudioFiles: false, clearProgressData: false },
+    },
+    {
+      key: 'resetCourseOnly',
+      label: 'Reset course only',
+      flags: { targetStage: 'CourseReady', clearOnboardingAnswers: false, clearPlacementResults: false, clearCoursesAndSessions: true, clearActivityAttempts: false, clearVocabulary: false, clearLearningMemory: false, clearAudioFiles: false, clearProgressData: false },
+    },
+    {
+      key: 'fullCleanReset',
+      label: 'Full clean reset',
+      flags: { targetStage: 'OnboardingRequired', clearOnboardingAnswers: true, clearPlacementResults: true, clearCoursesAndSessions: true, clearActivityAttempts: true, clearVocabulary: true, clearLearningMemory: true, clearAudioFiles: true, clearProgressData: true },
+    },
+    {
+      key: 'custom',
+      label: 'Custom',
+      flags: { targetStage: 'OnboardingRequired', clearOnboardingAnswers: false, clearPlacementResults: false, clearCoursesAndSessions: false, clearActivityAttempts: false, clearVocabulary: false, clearLearningMemory: false, clearAudioFiles: false, clearProgressData: false },
+    },
+  ];
 
   readonly sessionDurations = [15, 20, 30, 45, 60];
   readonly experienceLevels = [
@@ -439,6 +581,77 @@ export class AdminStudentsComponent implements OnInit {
         this.resetError.set(err.error?.error ?? 'Could not reset password.');
       },
     });
+  }
+
+  startResetData(student: StudentListItem): void {
+    this.resettingData.set(student);
+    this.resetDataError.set('');
+    this.resetDataResult.set(null);
+    this.resetDataForm = this.emptyResetDataForm();
+  }
+
+  cancelResetData(): void {
+    this.resettingData.set(null);
+    this.resetDataError.set('');
+    this.resetDataResult.set(null);
+  }
+
+  applyResetPreset(): void {
+    const preset = this.resetPresets.find(p => p.key === this.resetDataForm.preset);
+    if (!preset) return;
+    Object.assign(this.resetDataForm, preset.flags);
+  }
+
+  saveResetData(): void {
+    const student = this.resettingData();
+    if (!student) return;
+    if (this.resetDataForm.confirmEmail !== student.email || !this.resetDataForm.reason.trim()) return;
+
+    this.savingResetData.set(true);
+    this.resetDataError.set('');
+
+    const request: ResetStudentRequest = {
+      targetStage: this.resetDataForm.targetStage,
+      clearOnboardingAnswers: this.resetDataForm.clearOnboardingAnswers,
+      clearPlacementResults: this.resetDataForm.clearPlacementResults,
+      clearCoursesAndSessions: this.resetDataForm.clearCoursesAndSessions,
+      clearActivityAttempts: this.resetDataForm.clearActivityAttempts,
+      clearVocabulary: this.resetDataForm.clearVocabulary,
+      clearLearningMemory: this.resetDataForm.clearLearningMemory,
+      clearAudioFiles: this.resetDataForm.clearAudioFiles,
+      clearProgressData: this.resetDataForm.clearProgressData,
+      reason: this.resetDataForm.reason.trim(),
+    };
+
+    this.adminApi.resetStudent(student.studentProfileId, request).subscribe({
+      next: result => {
+        this.savingResetData.set(false);
+        this.resetDataResult.set(result);
+        this.toast.success(`Student data reset for ${student.email}`);
+        this.load();
+      },
+      error: err => {
+        this.savingResetData.set(false);
+        this.resetDataError.set(err.error?.error ?? 'Could not reset student data.');
+      },
+    });
+  }
+
+  private emptyResetDataForm() {
+    return {
+      preset: 'restartOnboarding' as string,
+      targetStage: 'OnboardingRequired' as StudentLifecycleStageName,
+      clearOnboardingAnswers: true,
+      clearPlacementResults: false,
+      clearCoursesAndSessions: false,
+      clearActivityAttempts: false,
+      clearVocabulary: false,
+      clearLearningMemory: false,
+      clearAudioFiles: false,
+      clearProgressData: false,
+      reason: '',
+      confirmEmail: '',
+    };
   }
 
   private nullIfBlank(value: string): string | null {

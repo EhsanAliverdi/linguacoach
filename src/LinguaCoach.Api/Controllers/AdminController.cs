@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -115,6 +116,44 @@ public sealed class AdminController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("students/{studentId:guid}/reset")]
+    public async Task<IActionResult> ResetStudent(Guid studentId, [FromBody] ResetStudentRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+            return BadRequest(new { error = "Reason is required." });
+
+        var adminId = GetCurrentUserId();
+        if (adminId == Guid.Empty)
+            return Unauthorized();
+
+        var recentResetCount = await _studentQuery.CountRecentResetsAsync(adminId, TimeSpan.FromHours(1), ct);
+        if (recentResetCount >= 10)
+            return StatusCode(429, new { error = "Rate limit exceeded: max 10 resets per admin per hour." });
+
+        try
+        {
+            var result = await _studentQuery.ResetStudentAsync(
+                new ResetStudentCommand(
+                    studentId,
+                    adminId,
+                    request.TargetStage,
+                    request.ClearOnboardingAnswers,
+                    request.ClearPlacementResults,
+                    request.ClearCoursesAndSessions,
+                    request.ClearActivityAttempts,
+                    request.ClearVocabulary,
+                    request.ClearLearningMemory,
+                    request.ClearAudioFiles,
+                    request.ClearProgressData,
+                    request.Reason,
+                    Guid.NewGuid().ToString()),
+                ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpGet("students/{studentId:guid}/learning-memory")]
@@ -309,6 +348,10 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    private Guid GetCurrentUserId()
+        => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 }
 
 public sealed record CreateStudentRequest(
@@ -335,6 +378,17 @@ public sealed record UpdateStudentProfileRequest(
     LinguaCoach.Domain.Enums.ProfessionalExperienceLevel? ProfessionalExperienceLevel = null,
     LinguaCoach.Domain.Enums.RoleFamiliarity? RoleFamiliarity = null);
 public sealed record ResetStudentPasswordRequest(string NewPassword, bool MustChangePassword = true);
+public sealed record ResetStudentRequest(
+    StudentLifecycleStage TargetStage,
+    bool ClearOnboardingAnswers,
+    bool ClearPlacementResults,
+    bool ClearCoursesAndSessions,
+    bool ClearActivityAttempts,
+    bool ClearVocabulary,
+    bool ClearLearningMemory,
+    bool ClearAudioFiles,
+    bool ClearProgressData,
+    string Reason);
 public sealed record CreatePromptVersionRequest(string Key, string Content, int? MaxInputTokens, int? MaxOutputTokens);
 public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);
