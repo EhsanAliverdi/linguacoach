@@ -34,6 +34,35 @@ async function mockPracticeRoute(page: Page) {
       body: JSON.stringify({ status: 'Completed', lifecycleStage: 'ActiveLearning', currentSectionKey: null, currentSectionOrder: 0, totalSections: 6 }),
     });
   });
+  await page.route('**/api/activity/exercise-types', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'open_writing_task', displayName: 'Open Writing Task', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'free_text_entry', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_open_writing_task', legacyActivityType: 'WritingScenario', exercisePatternKey: 'open_writing_task', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'speaking_roleplay_turn', displayName: 'Speaking Roleplay Turn', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_speaking_roleplay_turn', legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: 'speaking_roleplay_turn', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'phrase_match', displayName: 'Phrase Match', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'matching_pairs', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_phrase_match', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'phrase_match', estimatedDurationMinutes: 3, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'gap_fill_workplace_phrase', displayName: 'Gap Fill Workplace Phrase', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'gap_fill', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_gap_fill_workplace_phrase', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'gap_fill_workplace_phrase', estimatedDurationMinutes: 4, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'email_reply', displayName: 'Email Reply', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'email_reply', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_email_reply', legacyActivityType: 'WritingScenario', exercisePatternKey: 'email_reply', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'teams_chat_simulation', displayName: 'Teams Chat Simulation', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'chat_reply', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_teams_chat_simulation', legacyActivityType: 'WritingScenario', exercisePatternKey: 'teams_chat_simulation', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true }
+      ]),
+    });
+  });
+
+  await page.route('**/api/activity/exercise-types/select?**', async route => {
+    const url = new URL(route.request().url());
+    const skill = url.searchParams.get('skill');
+    const key = skill === 'listening' ? 'listen_and_answer' : skill === 'writing' ? 'open_writing_task' : skill === 'speaking' ? 'speaking_roleplay_turn' : skill === 'vocabulary' ? 'phrase_match' : null;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(key
+        ? { hasSelection: true, selectedExerciseType: { key, displayName: key, primarySkill: skill, secondarySkills: [], rendererKey: 'test', evaluatorKey: 'test', isAvailableForGeneration: true }, reason: null }
+        : { hasSelection: false, selectedExerciseType: null, reason: 'No ready Practice Gym exercise is available.' }),
+    });
+  });
+
 }
 
 // ── Page identity ──────────────────────────────────────────────────────────────
@@ -151,28 +180,28 @@ test('Vocabulary (Word cards) card links to /module/gym-phrase_match', async ({ 
   await expect(card).toHaveAttribute('href', '/module/gym-phrase_match');
 });
 
-test('Listening card links to /module/gym-listening', async ({ page }) => {
+test('Listening skill card selects an exerciseType and opens activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-listening');
-  await expect(card).toHaveAttribute('href', '/module/gym-listening');
+  await page.getByTestId('practice-card-listening').click();
+  await expect(page).toHaveURL(/\/activity\?exerciseType=listen_and_answer/);
 });
 
-test('Writing card links to /module/gym-writing', async ({ page }) => {
+test('Writing skill card selects an exerciseType and opens activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-writing');
-  await expect(card).toHaveAttribute('href', '/module/gym-writing');
+  await page.getByTestId('practice-card-writing').click();
+  await expect(page).toHaveURL(/\/activity\?exerciseType=open_writing_task/);
 });
 
-test('Speaking card links to /module/gym-speaking', async ({ page }) => {
+test('Speaking skill card selects an exerciseType and opens activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('speaking-card');
-  await expect(card).toHaveAttribute('href', '/module/gym-speaking');
+  await page.getByTestId('speaking-card').click();
+  await expect(page).toHaveURL(/\/activity\?exerciseType=speaking_roleplay_turn/);
 });
 
 // ── Coming soon cards have no navigable links ──────────────────────────────────

@@ -1,14 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { map, of, switchMap } from 'rxjs';
+import { catchError, map, of, switchMap } from 'rxjs';
+import { ActivityService } from '../services/activity.service';
 import { SessionService } from '../services/session.service';
 
-/** Maps Practice Gym module keys to the canonical exerciseType route. */
+/** Maps exact Practice Gym module keys to the canonical exerciseType route. */
 const GYM_MODULES: Record<string, Record<string, string>> = {
-  // Temporary skill-card mapping until dynamic skill choice lands.
-  listening: { exerciseType: 'listen_and_answer', returnTo: '/practice' },
-  speaking: { exerciseType: 'speaking_roleplay_turn', returnTo: '/practice' },
-  writing: { exerciseType: 'open_writing_task', returnTo: '/practice' },
   phrase_match: { exerciseType: 'phrase_match', returnTo: '/practice' },
   gap_fill_workplace_phrase: { exerciseType: 'gap_fill_workplace_phrase', returnTo: '/practice' },
   email_reply: { exerciseType: 'email_reply', returnTo: '/practice' },
@@ -25,13 +22,27 @@ const GYM_MODULES: Record<string, Record<string, string>> = {
 export const moduleRedirectGuard: CanActivateFn = (route) => {
   const router = inject(Router);
   const sessionService = inject(SessionService);
+  const activityService = inject(ActivityService);
   const moduleRunId = route.paramMap.get('moduleRunId') ?? '';
 
   if (moduleRunId.startsWith('gym-')) {
     const key = moduleRunId.slice('gym-'.length);
     const params = GYM_MODULES[key];
-    if (!params) return router.parseUrl('/practice');
-    return router.createUrlTree(['/activity'], { queryParams: params });
+    if (params) return router.createUrlTree(['/activity'], { queryParams: params });
+
+    const skillKeys = new Set(['listening', 'speaking', 'writing', 'reading', 'vocabulary', 'grammar']);
+    if (!skillKeys.has(key)) return router.parseUrl('/practice');
+
+    return activityService.selectPracticeGymExerciseType(key).pipe(
+      map(result => {
+        const selected = result.selectedExerciseType;
+        if (!result.hasSelection || !selected?.key) return router.parseUrl('/practice');
+        return router.createUrlTree(['/activity'], {
+          queryParams: { exerciseType: selected.key, returnTo: '/practice' },
+        });
+      }),
+      catchError(() => of(router.parseUrl('/practice'))),
+    );
   }
 
   if (moduleRunId.startsWith('session-')) {

@@ -29,6 +29,7 @@ public sealed class ActivityController : ControllerBase
     private readonly SpeakingRolePlayEvaluator _speakingEvaluator;
     private readonly IPatternEvaluationRouter _patternRouter;
     private readonly LinguaCoach.Application.Admin.IExerciseTypeCatalogService _exerciseTypes;
+    private readonly IExerciseTypeRegistry _exerciseTypeRegistry;
     private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
 
     private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
@@ -44,6 +45,7 @@ public sealed class ActivityController : ControllerBase
         SpeakingRolePlayEvaluator speakingEvaluator,
         IPatternEvaluationRouter patternRouter,
         LinguaCoach.Application.Admin.IExerciseTypeCatalogService exerciseTypes,
+        IExerciseTypeRegistry exerciseTypeRegistry,
         LinguaCoach.Application.Storage.IFileStorageService storage)
     {
         _getNextActivity = getNextActivity;
@@ -56,6 +58,7 @@ public sealed class ActivityController : ControllerBase
         _speakingEvaluator = speakingEvaluator;
         _patternRouter = patternRouter;
         _exerciseTypes = exerciseTypes;
+        _exerciseTypeRegistry = exerciseTypeRegistry;
         _storage = storage;
     }
 
@@ -67,6 +70,46 @@ public sealed class ActivityController : ControllerBase
     [HttpGet("exercise-types")]
     public async Task<IActionResult> GetExerciseTypes(CancellationToken ct)
         => Ok(await _exerciseTypes.ListAllAsync(ct));
+
+
+    [HttpGet("exercise-types/select")]
+    public async Task<IActionResult> SelectExerciseType(
+        [FromQuery] string? skill,
+        [FromQuery] string? context = "practiceGym",
+        CancellationToken ct = default)
+    {
+        if (GetCurrentUserId() == Guid.Empty) return Unauthorized();
+
+        if (!string.Equals(context ?? "practiceGym", "practiceGym", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new ExerciseTypeSelectionResponse(
+                false,
+                null,
+                "Only Practice Gym selection is supported."));
+        }
+
+        if (string.IsNullOrWhiteSpace(skill))
+        {
+            return Ok(new ExerciseTypeSelectionResponse(
+                false,
+                null,
+                "Choose a skill before starting practice."));
+        }
+
+        var selected = await _exerciseTypeRegistry.SelectForPracticeGymSkillAsync(skill, ct);
+        if (selected is null)
+        {
+            return Ok(new ExerciseTypeSelectionResponse(
+                false,
+                null,
+                $"No ready Practice Gym exercise is available for {skill.Trim()} yet."));
+        }
+
+        return Ok(new ExerciseTypeSelectionResponse(
+            true,
+            ToExerciseTypeSelectionDto(selected),
+            null));
+    }
 
     [HttpGet("next")]
     [EnableRateLimiting("WritingAi")]
@@ -615,10 +658,37 @@ public sealed class ActivityController : ControllerBase
     private static string ToCamelCase(string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToLowerInvariant(s[0]) + s[1..];
 
+    private static ExerciseTypeSelectionDto ToExerciseTypeSelectionDto(ExerciseTypeRegistryEntry entry) => new(
+        entry.Key,
+        entry.DisplayName,
+        entry.PrimarySkill,
+        entry.SecondarySkills,
+        entry.RendererKey,
+        entry.EvaluatorKey,
+        entry.LegacyActivityType?.ToString(),
+        entry.ExercisePatternKey,
+        entry.IsAvailableForGeneration);
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 }
+
+public sealed record ExerciseTypeSelectionResponse(
+    bool hasSelection,
+    ExerciseTypeSelectionDto? selectedExerciseType,
+    string? reason);
+
+public sealed record ExerciseTypeSelectionDto(
+    string key,
+    string displayName,
+    string primarySkill,
+    IReadOnlyList<string> secondarySkills,
+    string rendererKey,
+    string evaluatorKey,
+    string? legacyActivityType,
+    string? exercisePatternKey,
+    bool isAvailableForGeneration);
 
 public sealed record SubmitAttemptRequest(
     string? SubmittedContent,

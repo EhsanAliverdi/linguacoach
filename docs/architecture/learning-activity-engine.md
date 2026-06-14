@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-15 10:05
+lastUpdated: 2026-06-15 10:40
 owner: architecture
 supersedes:
 supersededBy:
@@ -533,3 +533,27 @@ New planning and generation code should choose by `exerciseType` first. `Activit
 The `/api/activity/next` endpoint now accepts `exerciseType=<key>` for ready implemented types. Existing `type=` and `pattern=` query parameters remain supported. Planned PTE-style catalog rows are visible in Admin but are not generation-eligible, Practice Gym-routable, or Today-routable until their implementation status becomes `ready`.
 
 Skill selection should map to eligible exercise types. It must not assume one fixed legacy activity class per skill. The registry exposes skill helpers for Practice Gym, Today, pre-generation jobs, and future adaptive planning.
+
+## Practice Gym registry selection
+
+Practice Gym has two selection modes. Skill cards resolve dynamically through
+the ExerciseType registry. Exact exercise type cards keep exact
+`exerciseType=<key>` routing.
+
+For skill cards, the student selects a primary skill such as Listening, Speaking,
+Writing, Reading, Vocabulary, or Grammar. The backend selects only definitions
+that are enabled, `implementationStatus = ready`, available for generation,
+supported by Practice Gym, and matching the selected `primarySkill`. If no
+eligible definition exists, the API returns a safe no-result response and the
+frontend does not route to activity generation.
+
+This means skill cards no longer represent one fixed activity type. Listening
+can resolve to any ready Practice Gym-supported listening exercise type. Planned
+PTE-style rows remain catalog-visible but blocked. They are not generated,
+routed, rendered, or evaluated until future implementation work makes them ready.
+
+The current strategy is deterministic and picks the first eligible registry row
+by stable ordering. Future Practice Gym pre-generation should reuse these
+eligibility rules before selecting from a ready pool. Adaptive selection can then
+consider weak skills, recent attempts, variety, spaced repetition, admin
+priority, and Today/Gym pool availability.

@@ -59,6 +59,19 @@ public sealed class ExerciseTypeRegistry : IExerciseTypeRegistry
         return await ToEntriesAsync(query, ct);
     }
 
+    public async Task<ExerciseTypeRegistryEntry?> SelectForPracticeGymSkillAsync(string primarySkill, CancellationToken ct = default)
+    {
+        var eligible = await GetEligibleExerciseTypesForSkillAsync(
+            primarySkill,
+            ExerciseTypeSupportContext.PracticeGym,
+            ct);
+
+        // TODO: Replace this deterministic first-eligible strategy with adaptive
+        // selection using weak skills, recent attempts, variety, spaced repetition,
+        // admin priority, and pre-generated Today/Gym pool availability.
+        return eligible.FirstOrDefault();
+    }
+
     public async Task<string?> ResolveRendererKeyAsync(string exerciseTypeKey, CancellationToken ct = default) =>
         (await GetByKeyAsync(exerciseTypeKey, ct))?.RendererKey;
 
@@ -77,7 +90,8 @@ public sealed class ExerciseTypeRegistry : IExerciseTypeRegistry
     private IQueryable<ExerciseTypeDefinition> QueryReady() =>
         _db.ExerciseTypeDefinitions.AsNoTracking()
             .Where(e => e.IsEnabled && e.ImplementationStatus == "ready")
-            .OrderBy(e => e.DisplayName);
+            .OrderBy(e => e.DisplayName)
+            .ThenBy(e => e.Key);
 
     private static string NormalizeSkill(string skill) =>
         string.IsNullOrWhiteSpace(skill) ? string.Empty : skill.Trim().ToLowerInvariant();
