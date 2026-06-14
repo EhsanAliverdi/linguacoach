@@ -156,49 +156,75 @@ Rules:
 """;
 
     private const string ActivityGenerateListeningContent = """
-You are an expert English workplace communication coach creating a text-based listening comprehension activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English workplace communication coach creating a staged listening comprehension learning module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to consider: {{recentMistakes}}
 
-Create a realistic short workplace voice-message task. There is no real audio yet, so the transcript must be hidden from the student until after submit.
+This module has THREE separate stages: Learn (teaching only), Practice (the actual exercise), and FeedbackPlan (how to evaluate the student's answers). There is no real audio yet, so the transcript must be hidden from the student until after submit.
 
 Return ONLY valid JSON (no markdown) matching this exact structure:
 
 {
-  "activityType": "ListeningComprehension",
+  "schemaVersion": "module_stage_v1",
   "title": "<short descriptive title, 5-10 words>",
-  "scenario": "<1-2 sentences describing who left the message and why>",
-  "instructions": "Read the situation first. Then answer the questions as if you listened to the message. The transcript is hidden until after you submit.",
-  "speakerRole": "<workplace role speaking>",
-  "listenerRole": "<student workplace role>",
-  "difficulty": "{{cefrLevel}}",
-  "audioScript": "<short realistic workplace voice message, 35-80 words>",
-  "transcriptAvailableAfterSubmit": true,
-  "questions": [
-    {
-      "id": "q1",
-      "question": "<question answerable from the script>",
-      "expectedAnswer": "<short expected answer for backend scoring>",
-      "type": "short_answer"
+  "moduleGoal": "<one sentence: what the student should be able to do after this module>",
+  "skillFocus": "listening",
+  "exerciseType": "listening_comprehension",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading>",
+    "explanation": "<2-3 sentences: a GENERAL workplace-listening strategy. Do NOT reference this specific message or its content>",
+    "keyPoints": ["<2-4 general listening tips>"],
+    "examples": [{"phrase": "<useful general phrase>", "meaning": "<meaning>", "note": "<when to use it>"}],
+    "strategy": "<one sentence: what to listen for in general - action, deadline, reason>",
+    "commonMistakes": ["<1-3 common listening mistakes>"],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "Read the situation first. Then listen and answer the questions. The transcript is hidden until after you submit.",
+    "scenario": "<1-2 sentences describing who left the message and why>",
+    "task": "<optional short reply task description, or null>",
+    "exerciseData": {
+      "speakerRole": "<workplace role speaking>",
+      "listenerRole": "<student workplace role>",
+      "audioScript": "<short realistic workplace voice message, 35-80 words>",
+      "transcriptAvailableAfterSubmit": true,
+      "questions": [
+        {
+          "id": "q1",
+          "question": "<question answerable from the script>",
+          "expectedAnswer": "<short expected answer for backend scoring>",
+          "type": "short_answer"
+        }
+      ],
+      "responseTask": {
+        "prompt": "<optional short workplace reply task>",
+        "expectedFocus": "<what the response should include>"
+      }
     }
-  ],
-  "responseTask": {
-    "prompt": "<optional short workplace reply task>",
-    "expectedFocus": "<what the response should include>"
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Main idea understood", "Requested action identified", "Deadline/details identified"],
+    "rubric": [
+      {"criterion": "Main idea", "description": "<what counts as understanding the main idea>", "weight": 0.4},
+      {"criterion": "Action and deadline", "description": "<what counts as identifying the action/deadline>", "weight": 0.35},
+      {"criterion": "Response quality", "description": "<what counts as a good reply, if responseTask present>", "weight": 0.25}
+    ],
+    "feedbackFocus": "Main idea, requested action, and deadline; then reply quality if a response task is present",
+    "successCriteria": ["<1-2 statements describing what success looks like>"]
   }
 }
 
-Rules:
-- Include 2-4 comprehension questions.
-- Questions must be answerable from audioScript.
+Critical rules:
+- learnContent must NEVER include audioScript, questions, expectedAnswer, transcript, or any reference to this specific message's content. It teaches a general listening strategy only — content that would apply to any workplace listening task.
+- practiceContent.exerciseData must include 2-4 comprehension questions, each answerable from audioScript.
 - Use realistic workplace communication for {{careerContext}}.
 - Keep vocabulary appropriate for {{cefrLevel}}.
 - Do not use real company names, real person names, secrets, phone numbers, or sensitive content.
 - expectedAnswer is for backend evaluation only.
-- Do not include text outside the JSON object.
+- Do not include text outside the JSON object. No markdown fences.
 """;
 
     private const string ActivityGenerateSpeakingRolePlayContent = """
@@ -1281,7 +1307,7 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningKey, ActivityGenerateListeningContent,
-            maxInputTokens: 900, maxOutputTokens: 1000, ct);
+            maxInputTokens: 1200, maxOutputTokens: 1600, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRolePlayKey, ActivityGenerateSpeakingRolePlayContent,

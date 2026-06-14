@@ -1,4 +1,4 @@
-import { ActivityFeedbackDto } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
 import {
   ActivityPagePresenter, defaultFeedbackLayout, FeedbackLayout,
   PracticeViewModel, SkillBadge, TeachViewModel,
@@ -8,7 +8,17 @@ const LISTENING_BADGE: SkillBadge = { label: 'Listening', background: '#e0f2fe',
 
 /** Bridges the legacy ListeningComprehension shape until it migrates to `listening_comprehension`. */
 export class LegacyListeningPresenter implements ActivityPagePresenter {
-  teachContent(): TeachViewModel {
+  teachContent(activity: ActivityDto): TeachViewModel {
+    if (activity.stageContent) {
+      return {
+        block: 'stagedLearning',
+        skillBadge: LISTENING_BADGE,
+        ctaLabel: 'Start practice',
+        ctaAction: 'startPractice',
+        learn: activity.stageContent.learn,
+      };
+    }
+    // Defensive fallback only — backend adapter always populates stageContent for ListeningComprehension.
     return {
       block: 'listeningLearning',
       skillBadge: LISTENING_BADGE,

@@ -68,6 +68,43 @@ const listeningActivity = {
     prompt: 'Write a short reply confirming what you will do.',
     expectedFocus: 'confirm task and timeline',
   },
+  stageContent: {
+    schemaVersion: 'module_stage_v1',
+    learn: {
+      teachingTitle: 'Listening for action and deadline',
+      explanation: 'Listen for the main idea, the action requested, and any deadline.',
+      keyPoints: ['Focus on verbs', 'Note any dates or times'],
+      examples: [{ phrase: 'by end of day', meaning: 'before today finishes', note: 'common deadline phrase' }],
+      strategy: 'Listen for who, what, and when.',
+      commonMistakes: ['Missing the deadline'],
+      sourceLanguageSupport: null,
+    },
+    practice: {
+      instructions: 'Read the situation first. Then answer the questions as if you listened to the message.',
+      scenario: 'Your manager leaves a short voice message about a project delay.',
+      task: 'Write a short reply confirming what you will do.',
+      exerciseData: {
+        speakerRole: 'Manager',
+        listenerRole: 'Document Controller',
+        audioScript: 'Hi, could you please check the latest delivery schedule? The supplier has confirmed a two-day delay.',
+        transcriptAvailableAfterSubmit: true,
+        questions: [
+          { id: 'q1', question: 'What should you check?', type: 'short_answer' },
+          { id: 'q2', question: 'How long is the delay?', type: 'short_answer' },
+        ],
+        responseTask: {
+          prompt: 'Write a short reply confirming what you will do.',
+          expectedFocus: 'confirm task and timeline',
+        },
+      },
+    },
+    feedbackPlan: {
+      evaluationCriteria: ['Main idea understood', 'Requested action identified'],
+      rubric: [],
+      feedbackFocus: 'Main idea and requested action',
+      successCriteria: [],
+    },
+  },
 };
 
 const listeningActivityWithoutAudio = {
@@ -131,12 +168,23 @@ test('listening comprehension activity hides transcript before submit and reveal
   });
 
   await page.goto('/activity');
+
+  // Learn page: teaching content only, no exercise content
+  await expect(page.getByText('Listening for action and deadline')).toBeVisible();
+  await expect(page.getByText('Listen for the main idea, the action requested, and any deadline.')).toBeVisible();
+  await expect(page.locator('audio')).toHaveCount(0);
+  await expect(page.getByText('Transcript unlocks after you answer.')).not.toBeVisible();
+  await expect(page.getByRole('button', { name: /Answer questions/i })).toHaveCount(0);
+  await expect(page.getByText('supplier has confirmed a two-day delay')).not.toBeVisible();
+
+  await page.getByRole('button', { name: /Start practice/i }).click();
+
+  // Practice page: full exercise content
   await expect(page.getByText('Understand a project update')).toBeVisible();
   await expect(page.locator('audio')).toBeVisible();
   await expect(page.getByText('Transcript unlocks after you answer.')).toBeVisible();
   await expect(page.getByText('supplier has confirmed a two-day delay')).not.toBeVisible();
 
-  await page.getByRole('button', { name: /Answer questions/i }).click();
   await page.getByLabel('What should you check?').fill('the latest delivery schedule');
   await page.getByLabel('How long is the delay?').fill('two days');
   await page.getByLabel('Write a short reply confirming what you will do.').fill('Sure, I will check the schedule and send the update before 3 pm.');
@@ -155,6 +203,8 @@ test('listening comprehension activity shows fallback note when audio is unavail
   });
 
   await page.goto('/activity');
+
+  await page.getByRole('button', { name: /Start practice/i }).click();
 
   await expect(page.locator('audio')).toHaveCount(0);
   await expect(page.getByText('Audio is temporarily unavailable')).toBeVisible();

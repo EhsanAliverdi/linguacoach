@@ -558,6 +558,44 @@ public sealed class ActivityController : ControllerBase
         interactionMode = dto.InteractionMode is null ? null : ToCamelCase(dto.InteractionMode.Value.ToString()),
         exercisePatternKey = dto.ExercisePatternKey,
         contentJson = dto.ContentJson,
+        stageContent = dto.StageContent is null ? null : new
+        {
+            schemaVersion = dto.StageContent.SchemaVersion,
+            learn = new
+            {
+                teachingTitle = dto.StageContent.Learn.TeachingTitle,
+                explanation = dto.StageContent.Learn.Explanation,
+                keyPoints = dto.StageContent.Learn.KeyPoints,
+                examples = dto.StageContent.Learn.Examples.Select(e => new
+                {
+                    phrase = e.Phrase,
+                    meaning = e.Meaning,
+                    note = e.Note,
+                }),
+                strategy = dto.StageContent.Learn.Strategy,
+                commonMistakes = dto.StageContent.Learn.CommonMistakes,
+                sourceLanguageSupport = dto.StageContent.Learn.SourceLanguageSupport,
+            },
+            practice = new
+            {
+                instructions = dto.StageContent.Practice.Instructions,
+                scenario = dto.StageContent.Practice.Scenario,
+                task = dto.StageContent.Practice.Task,
+                exerciseData = dto.StageContent.Practice.ExerciseData,
+            },
+            feedbackPlan = new
+            {
+                evaluationCriteria = dto.StageContent.FeedbackPlan.EvaluationCriteria,
+                rubric = dto.StageContent.FeedbackPlan.Rubric.Select(r => new
+                {
+                    criterion = r.Criterion,
+                    description = r.Description,
+                    weight = r.Weight,
+                }),
+                feedbackFocus = dto.StageContent.FeedbackPlan.FeedbackFocus,
+                successCriteria = dto.StageContent.FeedbackPlan.SuccessCriteria,
+            },
+        },
     };
 
     private static string ToCamelCase(string s) =>

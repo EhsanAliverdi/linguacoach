@@ -181,6 +181,41 @@ internal sealed class FakeAiProvider : IAiProvider
     {
         const string json = """
             {
+              "schemaVersion": "module_stage_v1",
+              "moduleGoal": "Understand a short workplace voicemail and respond appropriately.",
+              "skillFocus": "listening",
+              "exerciseType": "listening_comprehension",
+              "learnContent": {
+                "teachingTitle": "Listening for action and deadline",
+                "explanation": "Listen for the main idea, the requested action, and any deadline.",
+                "keyPoints": ["Focus on verbs", "Note any dates or times"],
+                "examples": [{ "phrase": "by end of day", "meaning": "before today finishes", "note": "common deadline phrase" }],
+                "strategy": "Listen for who, what, and when.",
+                "commonMistakes": ["Missing the deadline"],
+                "sourceLanguageSupport": null
+              },
+              "practiceContent": {
+                "instructions": "Read the situation first. Then listen and answer the questions.",
+                "scenario": "Your manager leaves a short voice message about a project delay.",
+                "task": "Reply to confirm you received the message.",
+                "exerciseData": {
+                  "speakerRole": "Manager",
+                  "listenerRole": "Document Controller",
+                  "audioScript": "Hi, this is a test workplace voice message. Please note the meeting has been moved to Thursday.",
+                  "transcriptAvailableAfterSubmit": true,
+                  "questions": [
+                    { "id": "q1", "question": "When was the meeting moved to?", "expectedAnswer": "Thursday", "type": "short_answer" },
+                    { "id": "q2", "question": "What should you do before the meeting?", "expectedAnswer": "Check the latest delivery schedule", "type": "short_answer" }
+                  ],
+                  "responseTask": { "prompt": "Reply to confirm you received the message.", "expectedFocus": "acknowledgement" }
+                }
+              },
+              "feedbackPlan": {
+                "evaluationCriteria": ["Main idea understood", "Requested action identified"],
+                "rubric": [],
+                "feedbackFocus": "Main idea and requested action",
+                "successCriteria": []
+              },
               "overallScore": 68,
               "coachSummary": "Good effort — your message is clear but the tone needs polishing.",
               "focusFirst": false,

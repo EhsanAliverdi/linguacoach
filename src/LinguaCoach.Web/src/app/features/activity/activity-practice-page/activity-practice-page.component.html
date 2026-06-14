@@ -220,7 +220,7 @@
   <div style="display:flex;flex-direction:column;gap:16px">
     <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity.title }}</h2>
     <div class="sp-card" style="padding:14px 18px">
-      <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity.scenario }}</p>
+      <p style="font-size:13px;font-weight:600;color:var(--sp-muted);line-height:1.5">{{ activity.stageContent?.practice?.scenario ?? activity.scenario }}</p>
     </div>
     <div style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;font-size:13px;color:var(--sp-text);line-height:1.6">
       Imagine you listened to this workplace message. Answer from what you understood. The transcript stays hidden until you submit.
@@ -231,7 +231,7 @@
       <div class="sp-alert-info" style="font-size:13px">{{ activity.audioUnavailableMessage || 'Audio is temporarily unavailable. Complete this as a transcript-based listening practice.' }}</div>
     }
 
-    @for (question of activity.listeningQuestions ?? []; track question.id) {
+    @for (question of listeningExerciseData?.questions ?? activity.listeningQuestions ?? []; track question.id) {
       <div class="sp-card" style="padding:16px">
         <label class="sp-label" [for]="'listening-' + question.id">{{ question.question }}</label>
         <input
@@ -245,9 +245,9 @@
       </div>
     }
 
-    @if (activity.responseTask) {
+    @if (listeningExerciseData?.responseTask ?? activity.responseTask) {
       <div class="sp-card" style="padding:16px">
-        <label class="sp-label" for="listening-response">{{ activity.responseTask!.prompt }}</label>
+        <label class="sp-label" for="listening-response">{{ (listeningExerciseData?.responseTask ?? activity.responseTask)!.prompt }}</label>
         <textarea
           id="listening-response"
           [ngModel]="listeningResponseText"

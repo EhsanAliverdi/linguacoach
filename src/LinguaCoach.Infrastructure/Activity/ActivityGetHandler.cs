@@ -503,12 +503,26 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
         if (activity.ActivityType == ActivityType.ListeningComprehension)
         {
+            var stageContent = BuildStageContent(activity.AiGeneratedContentJson, activity.Title);
+
             ListeningContent? lc = null;
             try
             {
+                var exerciseJson = stageContent is not null && stageContent.Practice.ExerciseData.ValueKind == JsonValueKind.Object
+                    ? stageContent.Practice.ExerciseData.GetRawText()
+                    : activity.AiGeneratedContentJson;
                 lc = JsonSerializer.Deserialize<ListeningContent>(
-                    activity.AiGeneratedContentJson,
+                    exerciseJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                // Audio metadata is written back at the root of AiGeneratedContentJson by ListeningAudioService,
+                // not inside practiceContent.exerciseData — read it separately.
+                using var rootDoc = JsonDocument.Parse(activity.AiGeneratedContentJson);
+                if (lc is not null && rootDoc.RootElement.TryGetProperty("audio", out var audioEl))
+                {
+                    lc.Audio = audioEl.Deserialize<ListeningAudioMetadata>(
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
             }
             catch { /* safe defaults */ }
 
@@ -550,7 +564,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 AudioUnavailableMessage: audio?.AudioAvailable == false ? audio.UnavailableMessage : null,
                 InteractionMode: interactionMode,
                 ExercisePatternKey: patternKey,
-                ContentJson: rendererContentJson);
+                ContentJson: rendererContentJson,
+                StageContent: stageContent);
         }
 
         if (activity.ActivityType == ActivityType.SpeakingRolePlay)
@@ -618,6 +633,55 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             InteractionMode: interactionMode,
             ExercisePatternKey: patternKey,
             ContentJson: rendererContentJson);
+    }
+
+    internal static StageContentDto? BuildStageContent(string contentJson, string activityTitle)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("schemaVersion", out var sv) && sv.GetString() == ModuleStageSchema.Version)
+            {
+                var wire = JsonSerializer.Deserialize<ModuleStageWireDto>(root.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return wire is null ? null : new StageContentDto(wire.SchemaVersion, wire.LearnContent, wire.PracticeContent, wire.FeedbackPlan);
+            }
+
+            return AdaptLegacyListening(root, activityTitle);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static StageContentDto AdaptLegacyListening(JsonElement root, string activityTitle)
+    {
+        var learn = new LearnContentDto(
+            TeachingTitle: activityTitle,
+            Explanation: "Workplace listening practice. You will hear a short message and answer questions about it.",
+            KeyPoints: [],
+            Examples: [],
+            Strategy: "Listen for the main idea, the requested action, and any deadline or timing.",
+            CommonMistakes: [],
+            SourceLanguageSupport: null);
+
+        var instructions = root.TryGetProperty("instructions", out var instr) ? instr.GetString() ?? "" : "";
+        var scenario = root.TryGetProperty("scenario", out var scn) ? scn.GetString() : null;
+        string? task = root.TryGetProperty("responseTask", out var rt)
+            && rt.ValueKind == JsonValueKind.Object
+            && rt.TryGetProperty("prompt", out var p)
+            ? p.GetString() : null;
+
+        var practice = new PracticeContentDto(instructions, scenario, task, root.Clone());
+
+        var feedbackPlan = new FeedbackPlanDto(
+            EvaluationCriteria: ["Main idea understood", "Key details identified"],
+            Rubric: [],
+            FeedbackFocus: "Main idea and key details from the message",
+            SuccessCriteria: []);
+
+        return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, learn, practice, feedbackPlan);
     }
 
     private static string ExtractTitle(string contentJson, ActivityType type)

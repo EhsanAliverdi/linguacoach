@@ -1,4 +1,4 @@
-import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, LearnContentVm } from '../../../core/models/activity.models';
 
 export type SkillIcon = 'speaking' | 'vocab' | 'listening' | 'writing';
 
@@ -15,7 +15,16 @@ export type TeachBlock =
   | 'listeningLearning'
   | 'writingLearning'
   | 'patternLearning'
+  | 'stagedLearning'
   | 'exerciseRenderer';
+
+export interface StagedLearningViewModel {
+  block: 'stagedLearning';
+  skillBadge: SkillBadge;
+  ctaLabel: string;
+  ctaAction: 'startPractice' | 'startWriting';
+  learn: LearnContentVm;
+}
 
 export interface PatternLearningViewModel {
   block: 'patternLearning';
@@ -41,13 +50,13 @@ export type PracticeBlock =
 export type FeedbackLayout = 'pattern' | 'legacy';
 
 export interface BaseTeachViewModel {
-  block: Exclude<TeachBlock, 'patternLearning'>;
+  block: Exclude<TeachBlock, 'patternLearning' | 'stagedLearning'>;
   skillBadge: SkillBadge;
   ctaLabel: string;
   ctaAction: 'startPractice' | 'startWriting';
 }
 
-export type TeachViewModel = BaseTeachViewModel | PatternLearningViewModel;
+export type TeachViewModel = BaseTeachViewModel | PatternLearningViewModel | StagedLearningViewModel;
 
 export interface PracticeViewModel {
   block: PracticeBlock;

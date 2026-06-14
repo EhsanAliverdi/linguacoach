@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivityDto, ListeningAnswer, VocabAnswer } from '../../../core/models/activity.models';
+import { ActivityDto, ListeningAnswer, ListeningExerciseData, VocabAnswer } from '../../../core/models/activity.models';
 import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
 import { PracticeViewModel } from '../presenters/activity-page-presenter';
 
@@ -52,8 +52,12 @@ export class ActivityPracticePageComponent {
     return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
   }
 
+  get listeningExerciseData(): ListeningExerciseData | null {
+    return (this.activity.stageContent?.practice?.exerciseData as ListeningExerciseData) ?? null;
+  }
+
   listeningItemsFilled(): boolean {
-    const questions = this.activity.listeningQuestions ?? [];
+    const questions = this.listeningExerciseData?.questions ?? this.activity.listeningQuestions ?? [];
     return questions.length > 0 && questions.every(q => (this.listeningAnswers[q.id] ?? '').trim().length > 0);
   }
 

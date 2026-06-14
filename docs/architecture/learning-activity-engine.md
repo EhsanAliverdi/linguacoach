@@ -289,10 +289,137 @@ The `ActivityFeedbackDto` now includes `patternEvaluation: PatternEvaluationDto 
 |------|--------|-------|
 | `WritingScenario` | Live | AI-generated + SystemFallback seeded from legacy data; cadence picks routed via `open_writing_task` pattern (Step 4) |
 | `SpeakingRolePlay` | Live (MVP fake STT) | `FakeSpeechToTextService`; real STT deferred; cadence picks routed via `speaking_roleplay_turn` pattern + `AudioResponse` interaction mode (Step 5) |
-| `ListeningComprehension` | Live | TTS audio via `PlacementAudioService`; server-streamed |
+| `ListeningComprehension` | Live | TTS audio via `PlacementAudioService`; server-streamed; staged content (`module_stage_v1`) — see below |
 | `VocabularyPractice` | Live | Gap-fill and matching patterns via Pattern Engine |
 | `PronunciationPractice` | Not started | Needs STT + phoneme comparison |
 | `ReadingTask` | Not started | Simplest after Writing — no audio |
+
+---
+
+## Staged Activity Content (`module_stage_v1`)
+
+### Why
+
+The Learn step ("Today's Lesson" / Practice Gym Step 1) must teach a general
+strategy and must never leak practice exercise data (audio script, questions,
+expected answers, transcript). Before this schema, `AiGeneratedContentJson`
+was one flat exercise-shaped payload, and presenters forwarded it unchanged to
+both Learn and Practice — so Listening's Learn step rendered the audio player,
+"Answer questions" CTA, and a transcript-lock message. See
+`docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md`
+for the original investigation.
+
+### Schema contract
+
+New AI generations for migrated activity types return JSON shaped as:
+
+```json
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "...",
+  "moduleGoal": "...",
+  "skillFocus": "listening",
+  "exerciseType": "listening_comprehension",
+  "learnContent": {
+    "teachingTitle": "...",
+    "explanation": "...",
+    "keyPoints": ["..."],
+    "examples": [{ "phrase": "...", "meaning": "...", "note": "..." }],
+    "strategy": "...",
+    "commonMistakes": ["..."],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "...",
+    "scenario": "...",
+    "task": null,
+    "exerciseData": { "...": "type-specific exercise payload" }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["..."],
+    "rubric": [{ "criterion": "...", "description": "...", "weight": 0.4 }],
+    "feedbackFocus": "...",
+    "successCriteria": ["..."]
+  }
+}
+```
+
+C# types live in `LinguaCoach.Application.Activity.ModuleStageContent`
+(`LearnContentDto`, `PracticeContentDto`, `FeedbackPlanDto`, `StageContentDto`,
+and the wire-shape `ModuleStageWireDto` used only for deserializing
+`learnContent`/`practiceContent` property names before mapping to the
+`Learn`/`Practice` domain property names on `StageContentDto`).
+
+For `ListeningComprehension`, `practiceContent.exerciseData` carries
+`speakerRole`, `listenerRole`, `audioScript`, `transcriptAvailableAfterSubmit`,
+`questions[]`, and `responseTask`. An optional `audioAssetUrl` field is
+reserved (not yet populated) for a future pre-generation pipeline that stores
+synthesized audio in object storage ahead of time.
+
+### Validation
+
+`ModuleStageContentValidator.Validate(JsonElement, ActivityType)` checks:
+- `schemaVersion`, `learnContent`, `practiceContent`, `feedbackPlan` are present and are objects.
+- `learnContent` contains none of the forbidden keys: `audioScript`, `audioUrl`,
+  `questions`, `expectedAnswer`, `correctAnswer`, `answerKey`, `gaps`, `pairs`,
+  `transcriptAvailableAfterSubmit`, `transcript`, `exerciseData`, `interactionMode`.
+- `practiceContent`/`exerciseData` contains the required keys for the activity
+  type, per `RequiredPracticeKeysByType` (currently only
+  `ListeningComprehension → ["audioScript", "questions"]`).
+
+`AiActivityGeneratorHandler` retries generation once on validation failure,
+then throws `AiResponseValidationException` if the retry also fails.
+
+### `ActivityDto.StageContent`
+
+Additive, nullable field on `ActivityDto`. Populated by
+`ActivityGetHandler.BuildStageContent`:
+
+- `schemaVersion == "module_stage_v1"` → deserialized 1:1 into `StageContentDto`.
+- Any other/old flat JSON → `AdaptLegacyListening` produces a
+  `legacy_adapted_v1` `StageContentDto`: generic/sparse `learnContent` (no real
+  teaching content existed in old rows — this is intentional, not a bug), and
+  `practiceContent.exerciseData` is the **entire original flat JSON**
+  (`root.Clone()`), so old activities render in Practice exactly as before.
+- Activity types not yet migrated → `StageContent` is `null`; their presenters
+  are unaffected.
+
+`ActivityController.ToActivityResponse` maps `StageContentDto` to the
+`stageContent` field on the API response (camelCase `learn`/`practice`/`feedbackPlan`).
+
+### Evaluation
+
+`ListeningComprehensionEvaluator.ExtractExerciseDataJson` unwraps
+`practiceContent.exerciseData` when `schemaVersion` is `module_stage_v1` or
+`legacy_adapted_v1`, falling back to the raw JSON for any other shape. Scoring
+logic, `MiniLesson`/`NextImprovementStep` text, and `ListeningFeedbackPayload`
+are unchanged.
+
+### Frontend
+
+- `activity.models.ts` adds `StageContentDto` and friends, plus
+  `ActivityDto.stageContent: StageContentDto | null`.
+- `LegacyListeningPresenter.teachContent(activity)` returns
+  `{ block: 'stagedLearning', learn: activity.stageContent.learn, ... }` when
+  `stageContent` is present, else falls back to the legacy `listeningLearning`
+  block (defensive only — the backend adapter always populates `StageContent`
+  for `ListeningComprehension`).
+- `activity-teach-page` has a new `@case ('stagedLearning')` rendering only
+  `learnContent` fields (heading, explanation, key points, examples, strategy,
+  common mistakes, source-language support) plus the CTA. The old
+  `@case ('listeningLearning')` is marked deprecated, not yet removed.
+- `activity-practice-page`'s listening case reads
+  `activity.stageContent.practice.{scenario,exerciseData}` via a
+  `listeningExerciseData` getter, covering both `module_stage_v1` and
+  `legacy_adapted_v1` shapes. Audio fields (`audioUrl`, `audioAvailable`, etc.)
+  remain flat `ActivityDto` fields — server-computed, not part of the AI JSON.
+
+### Per-type migration status
+
+| Activity type | `StageContent` populated? |
+|---|---|
+| `ListeningComprehension` | Yes (`module_stage_v1` for new rows, `legacy_adapted_v1` for old rows) |
+| All other types/patterns | No (`null`) — see `docs/sprints/2026-06-15-staged-activity-content-migration-sprint.md` for the follow-up plan |
 
 ---
 

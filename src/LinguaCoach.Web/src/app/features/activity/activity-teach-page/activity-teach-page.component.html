@@ -105,6 +105,77 @@
     </div>
   }
 
+  @case ('stagedLearning') {
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span class="sp-skill-badge" [style.background]="teach.skillBadge.background" [style.color]="teach.skillBadge.color">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+          {{ teach.skillBadge.label }}
+        </span>
+        @if (isAiGenerated) { <span class="sp-ai-badge">AI-generated</span> } @else { <span class="sp-fallback-badge">Fallback activity</span> }
+        <span style="font-size:12px;font-weight:600;color:var(--sp-muted);margin-left:auto">{{ activity.difficulty }}</span>
+      </div>
+      <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ teach.learn.teachingTitle }}</h2>
+
+      <div class="sp-card" style="padding:18px">
+        <p style="font-size:14.5px;color:var(--sp-text);line-height:1.65">{{ teach.learn.explanation }}</p>
+      </div>
+
+      @if (teach.learn.keyPoints.length) {
+        <div>
+          <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Key points</p>
+          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+            @for (point of teach.learn.keyPoints; track point) {
+              <li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--sp-text)">
+                <span style="color:var(--sp-listening);font-weight:800;margin-top:2px">·</span>{{ point }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (teach.learn.examples.length) {
+        <div style="display:flex;flex-direction:column;gap:8px">
+          @for (example of teach.learn.examples; track example.phrase) {
+            <div class="sp-card" style="padding:14px;border-left:3px solid var(--sp-listening)">
+              <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ example.phrase }}</div>
+              <div style="font-size:12.5px;color:var(--sp-muted);margin-top:4px">{{ example.meaning }}</div>
+              @if (example.note) {
+                <div style="font-size:12px;color:var(--sp-muted);margin-top:4px;font-style:italic">{{ example.note }}</div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (teach.learn.strategy) {
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:var(--sp-canvas2);border-radius:12px">
+          <svg style="flex-shrink:0;margin-top:2px" width="16" height="16" fill="none" stroke="var(--sp-listening)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0"><strong>Strategy:</strong> {{ teach.learn.strategy }}</p>
+        </div>
+      }
+
+      @if (teach.learn.commonMistakes.length) {
+        <div class="sp-alert-info" style="font-size:13px">
+          <strong>Watch out for:</strong>
+          <ul style="margin:6px 0 0;padding-left:18px">
+            @for (mistake of teach.learn.commonMistakes; track mistake) {
+              <li>{{ mistake }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (teach.learn.sourceLanguageSupport) {
+        <div class="sp-source-lang-block">{{ teach.learn.sourceLanguageSupport }}</div>
+      }
+
+      <button (click)="onCta()" class="sp-button-primary" style="width:100%">{{ teach.ctaLabel }}</button>
+      <button (click)="backToDashboard.emit()" class="sp-button-ghost" style="width:100%">Back to Today</button>
+    </div>
+  }
+
+  <!-- deprecated: superseded by stagedLearning, remove once verified unused -->
   @case ('listeningLearning') {
     <div style="display:flex;flex-direction:column;gap:16px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">

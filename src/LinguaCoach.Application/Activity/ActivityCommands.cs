@@ -56,7 +56,10 @@ public sealed record ActivityDto(
     InteractionMode? InteractionMode = null,
     string? ExercisePatternKey = null,
     // Raw content JSON for pattern-specific renderers (Phase 3)
-    string? ContentJson = null);
+    string? ContentJson = null,
+    // Staged learning content (module_stage_v1) — populated for activity types
+    // that have been migrated; null for types not yet migrated.
+    StageContentDto? StageContent = null);
 
 /// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
 public sealed record VocabPracticeItemDto(

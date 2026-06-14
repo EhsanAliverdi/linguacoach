@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Storage;
@@ -34,7 +36,7 @@ public sealed class ListeningAudioService
         if (content.Audio is { AudioAvailable: true } && !string.IsNullOrWhiteSpace(content.Audio.StorageKey))
             return;
 
-        if (string.IsNullOrWhiteSpace(content.AudioScript))
+        if (string.IsNullOrWhiteSpace(content.EffectiveAudioScript))
         {
             content.Audio = ListeningAudioMetadata.Unavailable("Audio script was missing.");
             activity.UpdateContent(JsonSerializer.Serialize(content, JsonOptions()));
@@ -55,7 +57,7 @@ public sealed class ListeningAudioService
         }
 
         var result = await tts.GenerateSpeechAsync(
-            content.AudioScript,
+            content.EffectiveAudioScript!,
             ttsOptions,
             ct);
 
@@ -156,6 +158,36 @@ public sealed class ListeningContent
     public List<ListeningQuestionContent>? Questions { get; set; }
     public ListeningResponseTaskContent? ResponseTask { get; set; }
     public ListeningAudioMetadata? Audio { get; set; }
+
+    /// <summary>Other top-level properties (schemaVersion, learnContent, practiceContent, feedbackPlan) preserved on round-trip.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+
+    /// <summary>
+    /// AudioScript for staged (module_stage_v1 / legacy_adapted_v1) content lives under
+    /// practiceContent.exerciseData.audioScript; for raw legacy content it is at the root.
+    /// </summary>
+    [JsonIgnore]
+    public string? EffectiveAudioScript
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(AudioScript))
+                return AudioScript;
+
+            if (ExtensionData is not null
+                && ExtensionData.TryGetValue("schemaVersion", out var sv)
+                && sv.GetString() is ModuleStageSchema.Version or ModuleStageSchema.LegacyAdaptedVersion
+                && ExtensionData.TryGetValue("practiceContent", out var pc)
+                && pc.TryGetProperty("exerciseData", out var ed)
+                && ed.TryGetProperty("audioScript", out var script))
+            {
+                return script.GetString();
+            }
+
+            return null;
+        }
+    }
 }
 
 public sealed class ListeningQuestionContent

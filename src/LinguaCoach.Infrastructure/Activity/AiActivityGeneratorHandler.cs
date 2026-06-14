@@ -80,8 +80,22 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         switch (context.ActivityType)
         {
             case ActivityType.ListeningComprehension:
-                ValidateListeningActivityJson(cleaned);
+            {
+                ValidateIsJson(cleaned);
+                var check = ValidateStagedContent(cleaned, context.ActivityType);
+                if (!check.IsValid)
+                {
+                    var retryResponse = await _aiExecution.ExecuteAsync(
+                        promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
+                    cleaned = CleanJson(retryResponse);
+                    ValidateIsJson(cleaned);
+                    var retryCheck = ValidateStagedContent(cleaned, context.ActivityType);
+                    if (!retryCheck.IsValid)
+                        throw new AiResponseValidationException(
+                            $"AI listening activity failed staged validation after retry: {string.Join("; ", retryCheck.Errors)}");
+                }
                 break;
+            }
             case ActivityType.VocabularyPractice when isPatternDriven:
                 // Pattern-specific shapes vary — only validate parseable JSON.
                 ValidateIsJson(cleaned);
@@ -169,14 +183,9 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 "AI speaking activity response missing required fields (scenario, speakingGoal).");
     }
 
-    private static void ValidateListeningActivityJson(string json)
+    private static ValidationResult ValidateStagedContent(string json, ActivityType activityType)
     {
         using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        if (!root.TryGetProperty("audioScript", out var script) || script.ValueKind != JsonValueKind.String)
-            throw new AiResponseValidationException("AI listening activity response missing audioScript.");
-        if (!root.TryGetProperty("questions", out var questions) || questions.ValueKind != JsonValueKind.Array || questions.GetArrayLength() == 0)
-            throw new AiResponseValidationException("AI listening activity response missing questions.");
+        return ModuleStageContentValidator.Validate(doc.RootElement, activityType);
     }
 }

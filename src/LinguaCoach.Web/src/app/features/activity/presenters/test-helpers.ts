@@ -1,4 +1,32 @@
-import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, StageContentDto } from '../../../core/models/activity.models';
+
+export function makeStageContent(overrides: Partial<StageContentDto> = {}): StageContentDto {
+  return {
+    schemaVersion: 'module_stage_v1',
+    learn: {
+      teachingTitle: 'Listening for action and deadline',
+      explanation: 'Listen for the main idea, the action requested, and any deadline.',
+      keyPoints: ['Focus on verbs', 'Note any dates or times'],
+      examples: [{ phrase: 'by end of day', meaning: 'before today finishes', note: 'common deadline phrase' }],
+      strategy: 'Listen for who, what, and when.',
+      commonMistakes: ['Missing the deadline'],
+      sourceLanguageSupport: null,
+    },
+    practice: {
+      instructions: 'Listen and answer the questions.',
+      scenario: 'A colleague leaves a voicemail.',
+      task: null,
+      exerciseData: {},
+    },
+    feedbackPlan: {
+      evaluationCriteria: ['Main idea understood'],
+      rubric: [],
+      feedbackFocus: 'Main idea and deadline',
+      successCriteria: [],
+    },
+    ...overrides,
+  };
+}
 
 export function makeActivity(overrides: Partial<ActivityDto> = {}): ActivityDto {
   return {
@@ -39,6 +67,7 @@ export function makeActivity(overrides: Partial<ActivityDto> = {}): ActivityDto 
     interactionMode: null,
     exercisePatternKey: null,
     contentJson: null,
+    stageContent: null,
     ...overrides,
   };
 }

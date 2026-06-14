@@ -12,7 +12,8 @@ public sealed class ListeningComprehensionEvaluator
         IReadOnlyList<ListeningAnswerDto> answers,
         string? responseText)
     {
-        var content = JsonSerializer.Deserialize<ListeningContent>(contentJson,
+        var exerciseDataJson = ExtractExerciseDataJson(contentJson);
+        var content = JsonSerializer.Deserialize<ListeningContent>(exerciseDataJson,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new ListeningContent();
 
         var questionResults = new List<ListeningQuestionFeedback>();
@@ -67,6 +68,20 @@ public sealed class ListeningComprehensionEvaluator
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         }), overall);
+    }
+
+    private static string ExtractExerciseDataJson(string contentJson)
+    {
+        using var doc = JsonDocument.Parse(contentJson);
+        var root = doc.RootElement;
+        if (root.TryGetProperty("schemaVersion", out var sv)
+            && sv.GetString() is ModuleStageSchema.Version or ModuleStageSchema.LegacyAdaptedVersion
+            && root.TryGetProperty("practiceContent", out var pc)
+            && pc.TryGetProperty("exerciseData", out var ed))
+        {
+            return ed.GetRawText();
+        }
+        return contentJson;
     }
 
     private static double ScoreAnswer(string answer, string expected)

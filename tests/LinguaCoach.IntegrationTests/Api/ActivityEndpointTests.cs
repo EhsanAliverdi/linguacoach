@@ -269,3 +269,135 @@ internal sealed class AlwaysFailingAiActivityGenerator : IAiActivityGenerator
     public Task<string> EvaluateAttemptAsync(ActivityEvaluationContext context, CancellationToken ct)
         => throw new InvalidOperationException("Simulated AI evaluation failure (test).");
 }
+
+/// <summary>
+/// Verifies GET /api/activity/{id} exposes `stageContent.learn` for ListeningComprehension,
+/// with the Learn step containing no audio/question/transcript content (the original bug),
+/// for both module_stage_v1 rows and legacy flat rows via the compatibility adapter.
+/// </summary>
+public sealed class ActivityStageContentTests : IClassFixture<ActivityTestFactory>
+{
+    private readonly ActivityTestFactory _factory;
+
+    public ActivityStageContentTests(ActivityTestFactory factory)
+    {
+        _factory = factory;
+    }
+
+    private const string StagedListeningJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Voicemail practice",
+      "moduleGoal": "Understand a workplace voicemail",
+      "skillFocus": "listening",
+      "exerciseType": "listening_comprehension",
+      "learnContent": {
+        "teachingTitle": "Listening for action and deadline",
+        "explanation": "Listen for the main idea, the action requested, and any deadline.",
+        "keyPoints": ["Focus on verbs", "Note any dates or times"],
+        "examples": [{"phrase": "by end of day", "meaning": "before today finishes", "note": "common deadline phrase"}],
+        "strategy": "Listen for who, what, and when.",
+        "commonMistakes": ["Missing the deadline"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen and answer the questions.",
+        "scenario": "A colleague leaves a voicemail.",
+        "task": null,
+        "exerciseData": {
+          "speakerRole": "Manager",
+          "listenerRole": "You",
+          "audioScript": "Hi, please send me the report by 5pm today.",
+          "transcriptAvailableAfterSubmit": true,
+          "questions": [{"id": "q1", "question": "What was requested?", "expectedAnswer": "the report", "type": "short_answer"}],
+          "responseTask": null
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Main idea understood"],
+        "rubric": [{"criterion": "Main idea", "description": "Identifies the request", "weight": 1.0}],
+        "feedbackFocus": "Main idea and deadline",
+        "successCriteria": ["Identifies the requested action and deadline"]
+      }
+    }
+    """;
+
+    private const string LegacyFlatListeningJson = """
+    {
+      "scenario": "A colleague leaves a voicemail.",
+      "speakerRole": "Manager",
+      "listenerRole": "You",
+      "instructions": "Listen and answer the questions.",
+      "audioScript": "Hi, please send me the report by 5pm today.",
+      "transcriptAvailableAfterSubmit": true,
+      "questions": [{"id": "q1", "question": "What was requested?", "expectedAnswer": "the report", "type": "short_answer"}],
+      "responseTask": null
+    }
+    """;
+
+    private async Task<(HttpClient Client, Guid ActivityId)> SeedListeningActivityAsync(string contentJson, string title)
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"stagecontent_{Guid.NewGuid():N}@test.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var activity = new LinguaCoach.Domain.Entities.LearningActivity(
+            activityType: ActivityType.ListeningComprehension,
+            source: ActivitySource.AiGenerated,
+            title: title,
+            difficulty: "B1",
+            aiGeneratedContentJson: contentJson);
+        db.LearningActivities.Add(activity);
+        await db.SaveChangesAsync();
+
+        return (client, activity.Id);
+    }
+
+    [Fact]
+    public async Task GetById_WithModuleStageV1Content_ExposesStageContentWithoutExerciseDataInLearn()
+    {
+        var (client, activityId) = await SeedListeningActivityAsync(StagedListeningJson, "Voicemail practice");
+
+        var response = await client.GetAsync($"/api/activity/{activityId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var stageContent = body.GetProperty("stageContent");
+        Assert.Equal("module_stage_v1", stageContent.GetProperty("schemaVersion").GetString());
+
+        var learn = stageContent.GetProperty("learn");
+        Assert.Equal("Listening for action and deadline", learn.GetProperty("teachingTitle").GetString());
+        Assert.True(learn.GetProperty("keyPoints").GetArrayLength() > 0);
+
+        // The Learn step must never carry exercise content.
+        var learnJson = learn.GetRawText();
+        Assert.DoesNotContain("audioScript", learnJson);
+        Assert.DoesNotContain("questions", learnJson);
+        Assert.DoesNotContain("transcript", learnJson);
+
+        var exerciseData = stageContent.GetProperty("practice").GetProperty("exerciseData");
+        Assert.True(exerciseData.GetProperty("questions").GetArrayLength() > 0);
+    }
+
+    [Fact]
+    public async Task GetById_WithLegacyFlatContent_AdaptsToLegacyAdaptedV1StageContent()
+    {
+        var (client, activityId) = await SeedListeningActivityAsync(LegacyFlatListeningJson, "Voicemail practice (legacy)");
+
+        var response = await client.GetAsync($"/api/activity/{activityId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var stageContent = body.GetProperty("stageContent");
+        Assert.Equal("legacy_adapted_v1", stageContent.GetProperty("schemaVersion").GetString());
+
+        var learn = stageContent.GetProperty("learn");
+        Assert.Equal("Voicemail practice (legacy)", learn.GetProperty("teachingTitle").GetString());
+
+        // Old flat JSON passes through unchanged for Practice.
+        var exerciseData = stageContent.GetProperty("practice").GetProperty("exerciseData");
+        Assert.Equal("Hi, please send me the report by 5pm today.", exerciseData.GetProperty("audioScript").GetString());
+    }
+}

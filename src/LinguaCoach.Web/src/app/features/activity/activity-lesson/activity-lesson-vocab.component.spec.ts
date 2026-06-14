@@ -58,6 +58,7 @@ const vocabActivity: ActivityDto = {
   interactionMode: null,
   exercisePatternKey: null,
   contentJson: null,
+  stageContent: null,
 };
 
 const vocabFeedback: ActivityFeedbackDto = {

@@ -73,6 +73,63 @@ export interface ActivityDto {
   interactionMode: InteractionMode | null;
   exercisePatternKey: string | null;
   contentJson?: string | null;
+  // Staged learning content (module_stage_v1) — populated for activity types
+  // that have been migrated; null for types not yet migrated.
+  stageContent: StageContentDto | null;
+}
+
+// ── Staged learning content (module_stage_v1) ─────────────────────────────────
+
+export interface LearnExample {
+  phrase: string;
+  meaning: string;
+  note: string | null;
+}
+
+export interface LearnContentVm {
+  teachingTitle: string;
+  explanation: string;
+  keyPoints: string[];
+  examples: LearnExample[];
+  strategy: string | null;
+  commonMistakes: string[];
+  sourceLanguageSupport: string | null;
+}
+
+export interface PracticeContentVm {
+  instructions: string;
+  scenario: string | null;
+  task: string | null;
+  exerciseData: unknown;
+}
+
+export interface FeedbackRubricItem {
+  criterion: string;
+  description: string;
+  weight: number;
+}
+
+export interface FeedbackPlanVm {
+  evaluationCriteria: string[];
+  rubric: FeedbackRubricItem[];
+  feedbackFocus: string | null;
+  successCriteria: string[];
+}
+
+export interface StageContentDto {
+  schemaVersion: string;
+  learn: LearnContentVm;
+  practice: PracticeContentVm;
+  feedbackPlan: FeedbackPlanVm;
+}
+
+export interface ListeningExerciseData {
+  speakerRole: string;
+  listenerRole: string;
+  audioScript: string;
+  transcriptAvailableAfterSubmit: boolean;
+  questions: ListeningQuestion[];
+  responseTask: ListeningResponseTask | null;
 }
 
 export interface VocabAnswer {
