@@ -721,4 +721,184 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── listen_and_answer pattern key tests ───────────────────────────────────
+
+    private const string ValidListenAndAnswerJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Team Update Voicemail",
+      "learnContent": {
+        "teachingTitle": "Listening for action and deadline",
+        "explanation": "Focus on the main request and any deadline mentioned.",
+        "keyPoints": ["Listen for verbs", "Note dates or deadlines"],
+        "strategy": "Identify who, what, and when.",
+        "commonMistakes": ["Missing the deadline"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen and answer the questions.",
+        "scenario": "A manager leaves a voicemail for the team.",
+        "task": "Answer each comprehension question.",
+        "exerciseData": {
+          "speakerRole": "Manager",
+          "listenerRole": "Team Member",
+          "audioScript": "Hi everyone, please send me your status updates by end of day Friday.",
+          "transcriptAvailableAfterSubmit": true,
+          "questions": [
+            { "id": "q1", "question": "What was requested?", "expectedAnswer": "status updates", "type": "short_answer" }
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Main idea understood"],
+        "rubric": [],
+        "feedbackFocus": "Comprehension accuracy",
+        "successCriteria": ["Student identifies the request"]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ListenAndAnswer_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidListenAndAnswerJson), ActivityType.ListeningComprehension, "listen_and_answer");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("questions")]
+    public void Validate_ListenAndAnswer_MissingRequiredKey_Fails(string missingKey)
+    {
+        var json = RemoveExerciseDataKey(ValidListenAndAnswerJson, missingKey);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listen_and_answer");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(missingKey));
+    }
+
+    // ── listen_and_gap_fill pattern key tests ─────────────────────────────────
+
+    private const string ValidListenAndGapFillJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Fill the Gaps",
+      "learnContent": {
+        "teachingTitle": "Catching key words",
+        "explanation": "Listen for content words — nouns, verbs, and adjectives carry the most meaning.",
+        "keyPoints": ["Predict word type before listening", "Focus on stressed syllables"],
+        "strategy": "Listen for the word type suggested by the sentence context.",
+        "commonMistakes": ["Guessing from meaning instead of listening carefully"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen and fill in the missing words.",
+        "scenario": "A manager gives a project update.",
+        "task": "Complete the gaps with the exact word you hear.",
+        "exerciseData": {
+          "speakerRole": "Project Manager",
+          "audioScript": "The deadline has been moved to next Monday. Please submit your draft by Friday.",
+          "transcriptAvailableAfterSubmit": true,
+          "gaps": [
+            { "id": "g1", "sentenceWithBlank": "The ___ has been moved to next Monday.", "answer": "deadline", "hint": "noun" },
+            { "id": "g2", "sentenceWithBlank": "Please ___ your draft by Friday.", "answer": "submit", "hint": "verb" }
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Exact word match"],
+        "rubric": [],
+        "feedbackFocus": "Exact word recognition",
+        "successCriteria": ["Student fills at least 1 of 2 gaps correctly"]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ListenAndGapFill_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidListenAndGapFillJson), ActivityType.ListeningComprehension, "listen_and_gap_fill");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("gaps")]
+    public void Validate_ListenAndGapFill_MissingRequiredKey_Fails(string missingKey)
+    {
+        var json = RemoveExerciseDataKey(ValidListenAndGapFillJson, missingKey);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listen_and_gap_fill");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(missingKey));
+    }
+
+    [Fact]
+    public void Validate_ListenAndGapFill_WithQuestionsInsteadOfGaps_Fails()
+    {
+        // gaps is required for listen_and_gap_fill; questions alone is insufficient.
+        var json = RemoveExerciseDataKey(ValidListenAndGapFillJson, "gaps");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listen_and_gap_fill");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("gaps"));
+    }
+
+    [Fact]
+    public void Validate_ListenAndAnswer_PatternKeyOverrides_ActivityTypeCheck()
+    {
+        // listen_and_answer requires "questions", not "gaps".
+        // This verifies that the pattern-key lookup overrides the ActivityType-level requirement.
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidListenAndAnswerJson), ActivityType.ListeningComprehension, "listen_and_answer");
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    private static string RemoveExerciseDataKey(string originalJson, string keyToRemove)
+    {
+        using var doc = JsonDocument.Parse(originalJson);
+        using var ms = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(ms))
+        {
+            writer.WriteStartObject();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (prop.NameEquals("practiceContent"))
+                {
+                    writer.WritePropertyName("practiceContent");
+                    writer.WriteStartObject();
+                    foreach (var pcProp in prop.Value.EnumerateObject())
+                    {
+                        if (pcProp.NameEquals("exerciseData"))
+                        {
+                            writer.WritePropertyName("exerciseData");
+                            writer.WriteStartObject();
+                            foreach (var edProp in pcProp.Value.EnumerateObject())
+                                if (!edProp.NameEquals(keyToRemove)) edProp.WriteTo(writer);
+                            writer.WriteEndObject();
+                        }
+                        else pcProp.WriteTo(writer);
+                    }
+                    writer.WriteEndObject();
+                }
+                else prop.WriteTo(writer);
+            }
+            writer.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(ms.ToArray());
+    }
+
 }

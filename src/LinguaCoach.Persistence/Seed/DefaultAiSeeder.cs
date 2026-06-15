@@ -698,29 +698,69 @@ Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes: {{recentMistakes}}
 
-Create a realistic spoken workplace message (voicemail, meeting snippet, or team update) and comprehension questions. Return ONLY valid JSON:
+Create a realistic spoken workplace message (voicemail, meeting snippet, or team update) and comprehension questions. Return ONLY valid JSON in this exact format:
 
 {
+  "schemaVersion": "module_stage_v1",
   "title": "<short descriptive title>",
-  "scenario": "<1-2 sentences describing the workplace context>",
-  "instructions": "Listen to the message and answer the questions.",
-  "speakerRole": "<who is speaking, e.g. 'Project Manager'>",
-  "listenerRole": "<who the listener is, e.g. 'Team Member'>",
-  "audioScript": "<the spoken message text, 60-120 words, natural spoken English>",
-  "transcriptAvailableAfterSubmit": true,
-  "questions": [
-    { "id": "q1", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" },
-    { "id": "q2", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" }
-  ],
-  "responseTask": {
-    "prompt": "<short written follow-up task based on the message>",
-    "expectedFocus": "<key language focus for the written response>"
+  "learnContent": {
+    "teachingTitle": "<title of the listening skill being practised>",
+    "explanation": "<1-2 sentences: what this kind of workplace listening develops>",
+    "keyPoints": [
+      "<strategy point 1>",
+      "<strategy point 2>",
+      "<strategy point 3>"
+    ],
+    "strategy": "<one concrete tip for understanding this type of spoken message>",
+    "commonMistakes": [
+      "<common listening error 1>",
+      "<common listening error 2>"
+    ],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "Listen to the message and answer the questions.",
+    "scenario": "<1-2 sentences describing the workplace context>",
+    "task": "Answer each comprehension question based on what you heard.",
+    "exerciseData": {
+      "speakerRole": "<who is speaking, e.g. 'Project Manager'>",
+      "listenerRole": "<who the listener is, e.g. 'Team Member'>",
+      "audioScript": "<the spoken message text, 60-120 words, natural spoken English>",
+      "transcriptAvailableAfterSubmit": true,
+      "questions": [
+        { "id": "q1", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" },
+        { "id": "q2", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" },
+        { "id": "q3", "question": "<comprehension question>", "expectedAnswer": "<concise expected answer>", "type": "short_answer" }
+      ],
+      "responseTask": {
+        "prompt": "<short written follow-up task based on the message>",
+        "expectedFocus": "<key language focus for the written response>"
+      }
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Accuracy of answers to each question",
+      "Evidence of understanding main point and key details",
+      "Correct use of workplace vocabulary in answers"
+    ],
+    "rubric": [
+      { "criterion": "Main idea", "weight": 0.4 },
+      { "criterion": "Supporting detail", "weight": 0.4 },
+      { "criterion": "Implication / inference", "weight": 0.2 }
+    ],
+    "feedbackFocus": "Comprehension accuracy and vocabulary",
+    "successCriteria": [
+      "Student correctly identifies the main point",
+      "Student answers at least 2 of 3 questions correctly"
+    ]
   }
 }
 
 Rules:
+- learnContent must NEVER include audioScript, questions, expectedAnswer, transcript, or any reference to this specific message's content. It teaches a general listening strategy only.
+- practiceContent.exerciseData must include audioScript and 2-3 comprehension questions.
 - audioScript must sound natural and spoken, not formal written text.
-- Include 2-3 comprehension questions.
 - Questions should test different aspects: main point, detail, implication.
 - Do not include any text outside the JSON object.
 """;
@@ -731,29 +771,75 @@ You are an expert English language teacher creating a listening gap-fill activit
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
+Recent mistakes: {{recentMistakes}}
 
-Create a spoken workplace message with 4-5 key words/phrases to fill in. Return ONLY valid JSON:
+Create a spoken workplace message with 4-5 key words/phrases for the student to fill in. Return ONLY valid JSON in this exact format:
 
 {
+  "schemaVersion": "module_stage_v1",
   "title": "<short title>",
-  "scenario": "<1 sentence describing the context>",
-  "instructions": "Listen and fill in the missing words.",
-  "speakerRole": "<speaker role>",
-  "audioScript": "<the full spoken text, 60-90 words>",
-  "transcriptAvailableAfterSubmit": true,
-  "gaps": [
-    {
-      "id": "g1",
-      "sentenceWithBlank": "<sentence from the script with ___ for the blank>",
-      "answer": "<exact word/phrase from the script>",
-      "hint": "<optional category hint, e.g. 'verb'>"
+  "learnContent": {
+    "teachingTitle": "<title of the listening skill being practised>",
+    "explanation": "<1-2 sentences: why listening for exact words matters in workplace communication>",
+    "keyPoints": [
+      "<strategy point 1>",
+      "<strategy point 2>",
+      "<strategy point 3>"
+    ],
+    "strategy": "<one concrete tip for catching key words while listening>",
+    "commonMistakes": [
+      "<common gap-fill listening error 1>",
+      "<common gap-fill listening error 2>"
+    ],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "Listen and fill in the missing words.",
+    "scenario": "<1 sentence describing the workplace context>",
+    "task": "Complete each gap with the exact word or phrase you hear.",
+    "exerciseData": {
+      "speakerRole": "<speaker role>",
+      "audioScript": "<the full spoken text, 60-90 words>",
+      "transcriptAvailableAfterSubmit": true,
+      "gaps": [
+        {
+          "id": "g1",
+          "sentenceWithBlank": "<verbatim sentence from audioScript with the answer replaced by ___>",
+          "answer": "<exact word/phrase from the script>",
+          "hint": "<optional category hint, e.g. 'verb'>"
+        },
+        {
+          "id": "g2",
+          "sentenceWithBlank": "<verbatim sentence from audioScript with the answer replaced by ___>",
+          "answer": "<exact word/phrase from the script>",
+          "hint": "<optional category hint>"
+        }
+      ]
     }
-  ]
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Exact match of each gap answer (case-insensitive)",
+      "Key workplace vocabulary correctly identified",
+      "Accurate sound discrimination for similar words"
+    ],
+    "rubric": [
+      { "criterion": "Key vocabulary accuracy", "weight": 0.6 },
+      { "criterion": "Functional word accuracy", "weight": 0.4 }
+    ],
+    "feedbackFocus": "Exact word recognition and workplace vocabulary",
+    "successCriteria": [
+      "Student correctly fills at least 3 of 5 gaps",
+      "Student identifies the key workplace terms"
+    ]
+  }
 }
 
 Rules:
-- The gaps must be key workplace vocabulary, not filler words.
+- learnContent must NEVER include audioScript, gaps, sentenceWithBlank, answer, or any reference to this specific message's content. It teaches a general listening strategy only.
+- practiceContent.exerciseData must include audioScript and gaps (4-5 items).
 - sentenceWithBlank must be a verbatim excerpt from audioScript with the answer replaced by ___.
+- The gaps must be key workplace vocabulary, not filler words.
 - Do not include any text outside the JSON object.
 """;
 

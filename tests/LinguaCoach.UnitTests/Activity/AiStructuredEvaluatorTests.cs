@@ -220,4 +220,51 @@ public sealed class AiStructuredEvaluatorTests
         result.Score.Should().Be(65);
         result.Completed.Should().BeTrue();
     }
+
+    // ── CompactContent — staged unwrapping ────────────────────────────────────
+
+    [Fact]
+    public void CompactContent_StagedContent_ExcludesLearnContentAndReturnsExerciseData()
+    {
+        var staged = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "title": "Test",
+          "learnContent": { "teachingTitle": "SHOULD NOT APPEAR", "explanation": "hidden strategy" },
+          "practiceContent": {
+            "instructions": "Listen and answer.",
+            "exerciseData": {
+              "audioScript": "Hi, please send the report.",
+              "questions": [{ "id": "q1", "question": "What was requested?", "expectedAnswer": "the report" }]
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": ["accuracy"], "feedbackFocus": "comprehension" }
+        }
+        """;
+
+        var result = AiStructuredEvaluator.CompactContent(staged);
+
+        result.Should().Contain("audioScript");
+        result.Should().Contain("questions");
+        result.Should().Contain("feedbackFocus");
+        result.Should().NotContain("SHOULD NOT APPEAR");
+        result.Should().NotContain("learnContent");
+    }
+
+    [Fact]
+    public void CompactContent_LegacyFlatContent_ReturnedAsIs()
+    {
+        var legacy = """{"audioScript":"Hi team.","questions":[{"id":"q1","question":"What?","expectedAnswer":"hi"}]}""";
+
+        var result = AiStructuredEvaluator.CompactContent(legacy);
+
+        result.Should().Contain("audioScript");
+        result.Should().Contain("questions");
+    }
+
+    [Fact]
+    public void CompactContent_EmptyJson_ReturnsEmptyObject()
+    {
+        AiStructuredEvaluator.CompactContent("{}").Should().Be("{}");
+    }
 }

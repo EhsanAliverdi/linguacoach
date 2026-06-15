@@ -178,11 +178,33 @@ public sealed class AiStructuredEvaluator : IPatternEvaluator
         return s;
     }
 
-    // Truncate activity content to protect token budget — include only fields needed for marking.
-    private static string CompactContent(string contentJson)
+    // For staged activities pass only practiceContent.exerciseData + feedbackPlan to the evaluator.
+    // Marked internal for unit testing.
+    // Excluding learnContent keeps token usage low and avoids exposing teaching text as an answer source.
+    internal static string CompactContent(string contentJson)
     {
         if (string.IsNullOrWhiteSpace(contentJson) || contentJson == "{}") return "{}";
-        // Limit to 2000 chars; AI prompts are written to use whatever is provided
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("schemaVersion", out var sv)
+                && sv.GetString() == ModuleStageSchema.Version
+                && root.TryGetProperty("practiceContent", out var pc)
+                && pc.TryGetProperty("exerciseData", out var ed))
+            {
+                var payload = new
+                {
+                    exerciseData = JsonSerializer.Deserialize<object>(ed.GetRawText(), JsonOptions),
+                    feedbackPlan = root.TryGetProperty("feedbackPlan", out var fp)
+                        ? JsonSerializer.Deserialize<object>(fp.GetRawText(), JsonOptions)
+                        : null,
+                };
+                var serialized = JsonSerializer.Serialize(payload, JsonOptions);
+                return serialized.Length > 3000 ? serialized[..3000] : serialized;
+            }
+        }
+        catch { /* fall through to legacy path */ }
         return contentJson.Length > 2000 ? contentJson[..2000] : contentJson;
     }
 }

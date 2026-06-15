@@ -17,6 +17,8 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
     {
         "phrase_match",
         "gap_fill_workplace_phrase",
+        "listen_and_answer",
+        "listen_and_gap_fill",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";
@@ -90,14 +92,14 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             case ActivityType.SpeakingRolePlay:
             {
                 ValidateIsJson(cleaned);
-                var check = ValidateStagedContent(cleaned, context.ActivityType);
+                var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
                 if (!check.IsValid)
                 {
                     var retryResponse = await _aiExecution.ExecuteAsync(
                         promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
                     cleaned = CleanJson(retryResponse);
                     ValidateIsJson(cleaned);
-                    var retryCheck = ValidateStagedContent(cleaned, context.ActivityType);
+                    var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
                     if (!retryCheck.IsValid)
                         throw new AiResponseValidationException(
                             $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");

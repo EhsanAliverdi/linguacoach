@@ -738,4 +738,71 @@ Both patterns are AI-generated but deterministically evaluated (no AI call at ev
 - Today pre-generation
 - MinIO/audio lifecycle
 - Planned future exercise format renderers/evaluators remain planned and non-runnable
+
+---
+
+## Phase 7B — migrate `listen_and_answer` and `listen_and_gap_fill` to `module_stage_v1`
+
+**Date:** 2026-06-15
+**Commit:** pending
+**Status:** complete
+
+### Goals
+
+Migrate the two listening pattern-backed activities to `module_stage_v1`. Same recipe as Phase 7A. No MinIO/audio lifecycle changes, no Today pre-generation, no other patterns.
+
+### Files changed
+
+1. **`src/LinguaCoach.Application/Activity/ModuleStageContentValidator.cs`**
+   - Added `listen_and_answer` → `["audioScript", "questions"]` to `RequiredPracticeKeysByPatternKey`.
+   - Added `listen_and_gap_fill` → `["audioScript", "gaps"]` to `RequiredPracticeKeysByPatternKey`.
+   - Pattern-key lookup takes precedence over `ActivityType.ListeningComprehension` (which requires `questions`) — this prevents `listen_and_gap_fill` being incorrectly validated against the `questions` requirement.
+
+2. **`src/LinguaCoach.Infrastructure/Activity/AiActivityGeneratorHandler.cs`**
+   - Added `listen_and_answer` and `listen_and_gap_fill` to `StagedPatternKeys`.
+   - `ListeningComprehension/WritingScenario/SpeakingRolePlay` case now passes `context.ExercisePatternKey` to `ValidateStagedContent` (and retry) so the correct pattern-key-based required keys are used on validation and retry.
+
+3. **`src/LinguaCoach.Infrastructure/Activity/Evaluators/AiStructuredEvaluator.cs`**
+   - `CompactContent` now detects `module_stage_v1` content and returns only `practiceContent.exerciseData` + `feedbackPlan` — excludes `learnContent` to protect token budget and prevent teaching text being used as an answer source by the evaluator AI.
+   - `CompactContent` marked `internal static` for unit testing.
+
+4. **`src/LinguaCoach.Persistence/Seed/DefaultAiSeeder.cs`**
+   - `ActivityGenerateListenAndAnswerContent`: Rewritten to produce `module_stage_v1`. `learnContent` teaches general listening strategy (no audioScript/questions/transcript). `practiceContent.exerciseData` carries `speakerRole`, `listenerRole`, `audioScript`, `transcriptAvailableAfterSubmit`, `questions`, and `responseTask`.
+   - `ActivityGenerateListenAndGapFillContent`: Rewritten to produce `module_stage_v1`. `learnContent` teaches key-word catching strategy. `practiceContent.exerciseData` carries `speakerRole`, `audioScript`, `transcriptAvailableAfterSubmit`, and `gaps` (4–5 items with `id`, `sentenceWithBlank`, `answer`, `hint`).
+   - Both prompts include strict Learn-stage rules: no audioScript/questions/gaps/expectedAnswer/transcript in `learnContent`.
+
+5. **`tests/LinguaCoach.UnitTests/Activity/ModuleStageContentValidatorTests.cs`**
+   - `Validate_ListenAndAnswer_WithValidPayload_ReturnsValid` — valid staged `listen_and_answer` passes.
+   - `Validate_ListenAndAnswer_MissingRequiredKey_Fails` (Theory: `audioScript`, `questions`) — missing either required key fails.
+   - `Validate_ListenAndGapFill_WithValidPayload_ReturnsValid` — valid staged `listen_and_gap_fill` passes.
+   - `Validate_ListenAndGapFill_MissingRequiredKey_Fails` (Theory: `audioScript`, `gaps`) — missing either required key fails.
+   - `Validate_ListenAndGapFill_WithQuestionsInsteadOfGaps_Fails` — wrong required key explicitly fails.
+   - `Validate_ListenAndAnswer_PatternKeyOverrides_ActivityTypeCheck` — confirms pattern-key lookup overrides ActivityType-level `questions` requirement.
+   - `RemoveExerciseDataKey` helper added (reusable within the file).
+
+6. **`tests/LinguaCoach.UnitTests/Activity/AiStructuredEvaluatorTests.cs`**
+   - `CompactContent_StagedContent_ExcludesLearnContentAndReturnsExerciseData` — staged JSON: result contains `audioScript`, `questions`, `feedbackFocus`; does not contain `learnContent` or the teaching title.
+   - `CompactContent_LegacyFlatContent_ReturnedAsIs` — legacy flat JSON passes through.
+   - `CompactContent_EmptyJson_ReturnsEmptyObject` — `{}` returns `{}`.
+
+### What the `ExactMatchEvaluator` change covers for free
+
+`ExactMatchEvaluator` already has `UnwrapStagedContent` from Phase 7A. Its `ParseExpectedItems` already branches on `patternKey == "listen_and_gap_fill"` and deserialises as `ListenAndGapFillContent { Gaps }`. With staged content now wrapping exerciseData, the existing unwrap + deserialise path handles it without further changes.
+
+### No presenter changes needed
+
+`PatternBackedPresenter.teachContent` already returns `stagedLearning` for any activity where `activity.stageContent?.learn` is present. Once the generator produces `module_stage_v1` for these patterns, `ActivityGetHandler.BuildStageContent` parses it and populates `StageContentDto` automatically. Presenter tests already cover this path for all `stageContent`-bearing activities.
+
+### Verification
+
+- `dotnet build` clean (0 errors, 6 pre-existing warnings)
+- 557/557 backend unit tests pass (+11 from Phase 7B)
+- Angular build unchanged (no frontend changes in this phase)
+
+### Still out of scope
+
+- `email_reply`, `teams_chat_simulation`, `spoken_response_from_prompt`, `open_writing_task`, `speaking_roleplay_turn`, `lesson_reflection`
+- Today pre-generation
+- MinIO/audio lifecycle
+- Planned future exercise format renderers/evaluators remain planned and non-runnable
 - Practice Gym pool changes (existing compatibility unchanged)
