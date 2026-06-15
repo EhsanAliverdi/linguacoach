@@ -49,7 +49,8 @@ public static class ExerciseTypeDefinitionSeeder
         Planned("listening_multiple_choice_multi", "Listening Multiple Choice Multiple", "Choose multiple answers from audio.", "listening", "[]", "Planned listening format", true, false, requiresAudio: true),
         Planned("listening_fill_in_blanks", "Listening Fill in Blanks", "Fill missing words from audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),
         Planned("highlight_correct_summary", "Highlight Correct Summary", "Choose the correct audio summary.", "listening", "[\"reading\"]", "Planned listening format", true, false, requiresAudio: true),
-        Planned("listening_multiple_choice_single", "Listening Multiple Choice Single", "Choose one answer from audio.", "listening", "[]", "Planned listening format", true, false, requiresAudio: true),
+        Ready(ExercisePatternKey.ListeningMultipleChoiceSingle, "Listening Multiple Choice Single", "Listen to a short audio script and choose one answer.", "listening", "[]", "Pattern", "listening_multiple_choice_single", "keyed_selection", "activity_generate_listening_multiple_choice_single", ActivityType.ListeningComprehension, ExercisePatternKey.ListeningMultipleChoiceSingle, 5, false, false, true, false),
+        // listening_multiple_choice_single promoted to Ready above
         Planned("select_missing_word", "Select Missing Word", "Select the missing audio ending.", "listening", "[]", "Planned listening format", true, false, requiresAudio: true),
         Planned("highlight_incorrect_words", "Highlight Incorrect Words", "Find words that differ from audio.", "listening", "[\"reading\"]", "Planned listening format", true, false, requiresAudio: true),
         Planned("write_from_dictation", "Write From Dictation", "Write the sentence you hear.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true)

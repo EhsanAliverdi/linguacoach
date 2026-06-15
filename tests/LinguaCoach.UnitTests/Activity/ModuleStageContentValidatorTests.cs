@@ -1922,4 +1922,99 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── listening_multiple_choice_single pattern key tests ────────────────────
+
+    private const string ValidListeningMultipleChoiceSingleJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Listening for the main idea: team update",
+      "moduleGoal": "Practise listening for the main idea in a short workplace announcement.",
+      "primarySkill": "listening",
+      "secondarySkills": [],
+      "exerciseType": "listening_multiple_choice_single",
+      "learnContent": {
+        "teachingTitle": "Listening for the main idea",
+        "explanation": "Listen for the overall point of the speaker before focusing on small details, and watch for signal words that show contrast.",
+        "keyPoints": ["Listen for the main idea before the details", "Watch for signal words like 'however' or 'instead'"],
+        "examples": [{ "phrase": "instead", "meaning": "signals a change of plan", "note": "the information after 'instead' is often the key point" }],
+        "strategy": "Listen once for the overall message, then again for supporting details.",
+        "commonMistakes": ["Choosing an answer based on one familiar word"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen to the audio, then choose the one best answer to the question.",
+        "scenario": "A short team update about a schedule change.",
+        "task": "Listen and choose the option that best answers the question.",
+        "exerciseData": {
+          "audioScript": "Good morning everyone. We were planning to release the update on Friday, but instead we'll release it next Monday so the support team has time to prepare.",
+          "audioUrl": null,
+          "question": "When will the update be released?",
+          "options": [
+            { "id": "A", "text": "On Friday" },
+            { "id": "B", "text": "Next Monday" },
+            { "id": "C", "text": "It has been cancelled" },
+            { "id": "D", "text": "Immediately" }
+          ],
+          "correctOptionId": "B",
+          "explanation": "The speaker says 'instead we'll release it next Monday', so the update is now planned for Monday.",
+          "distractorExplanations": {
+            "A": "Friday was the original plan, which was changed.",
+            "C": "The update was not cancelled, only rescheduled.",
+            "D": "The speaker does not say the release is immediate."
+          },
+          "successChecklist": ["Selected the option supported by the audio", "Can explain why the other options are wrong"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Listening for contrast", "Distractor elimination"],
+        "rubric": [],
+        "feedbackFocus": "Help the student listen for meaning and choose the best supported answer.",
+        "successCriteria": ["The selected option is supported by the audio.", "The student avoids distractors based on isolated words."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ListeningMultipleChoiceSingle_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidListeningMultipleChoiceSingleJson), ActivityType.ListeningComprehension, "listening_multiple_choice_single");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    public void Validate_ListeningMultipleChoiceSingle_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidListeningMultipleChoiceSingleJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listening_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("transcript")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    public void Validate_ListeningMultipleChoiceSingle_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidListeningMultipleChoiceSingleJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listening_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

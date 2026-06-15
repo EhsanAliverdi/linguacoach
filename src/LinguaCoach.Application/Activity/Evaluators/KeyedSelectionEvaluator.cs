@@ -17,7 +17,8 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
         PatternEvaluationRequest request,
         CancellationToken cancellationToken)
     {
-        if (request.ExercisePatternKey == "reading_multiple_choice_single")
+        if (request.ExercisePatternKey == "reading_multiple_choice_single"
+            || request.ExercisePatternKey == "listening_multiple_choice_single")
             return EvaluateReadingMultipleChoiceSingleAsync(request);
 
         if (request.ExercisePatternKey == "reading_multiple_choice_multi")
@@ -130,7 +131,7 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
         }
 
         var itemResult = new PatternEvaluationItemResult(
-            ItemKey: "reading_multiple_choice_single",
+            ItemKey: request.ExercisePatternKey ?? "reading_multiple_choice_single",
             StudentAnswer: selectedOptionId,
             CorrectAnswer: correctOptionId,
             AcceptedAnswers: correctOptionId is null ? [] : [correctOptionId],
@@ -139,9 +140,10 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             MaxScore: maxScore,
             Feedback: feedback);
 
+        var sourceNoun = request.ExercisePatternKey == "listening_multiple_choice_single" ? "audio" : "passage";
         var coachSummary = isCorrect
             ? "Correct — you selected the best-supported answer."
-            : "Not quite — review the passage and the explanation to see why another option fits best.";
+            : $"Not quite — review the {sourceNoun} and the explanation to see why another option fits best.";
 
         var result = PatternEvaluationResult.Create(
             score: score,

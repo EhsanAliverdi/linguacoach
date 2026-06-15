@@ -1158,3 +1158,23 @@ Evaluated deterministically — no AI evaluation call required.
 Fixed pre-existing Phase 8F validator bug: `ForbiddenLearnContentKeys` incorrectly included `keyPoints` (a standard learnContent field present in nearly all formats) plus duplicate/overly-broad `answerKey`, `textarea`, `submit` entries — these were silently failing ~17 unit tests before this phase. Removed.
 
 Tests: 671 unit / 482 integration / 116 Angular — all green. Production Angular build succeeds.
+
+### Phase 8H — `listening_multiple_choice_single` — COMPLETE 2026-06-15
+
+`listening_multiple_choice_single` — first runnable listening-primary format. Student listens to a short audio script and chooses one correct answer from 4 options. Primary skill: listening; secondary: none. `InteractionMode.MultipleChoice` reused (no new enum value), `MarkingMode.KeyedSelection`. New `ExercisePatternKey.ListeningMultipleChoiceSingle = "listening_multiple_choice_single"`. Pattern metadata: `ActivityType.ListeningComprehension`, `compatibleKindsJson: [2]` (ListeningInput), `requiresAudio: false`, estimated 5 minutes. `ExerciseTypeDefinitionSeeder` entry promoted from `Planned` to `Ready` (SupportsPracticeGym=true, SupportsTodayLesson=false).
+
+`ModuleStageContentValidator`: required practice keys `["audioScript","question","options","correctOptionId"]`. No new forbidden learnContent keys needed — all required keys (audioScript, transcript, question, options, correctOptionId, distractorExplanations, answerKey, correctAnswer, selectedAnswer, checkAnswer) were already forbidden from prior phases.
+
+`AiActivityGeneratorHandler.StagedPatternKeys` includes `listening_multiple_choice_single`. Deterministic evaluation only — no AI call. `KeyedSelectionEvaluator` (previously single-purpose for `reading_multiple_choice_single`) now dispatches both `reading_multiple_choice_single` and `listening_multiple_choice_single` to a shared pattern-agnostic evaluator: compares `selectedOptionId` to `correctOptionId`, returns explanation + distractor explanation, with a "passage" vs "audio" wording switch based on pattern key.
+
+AI prompt seeded: `activity_generate_listening_multiple_choice_single` (maxInput:900, maxOutput:900) — generates `audioScript` (30-70 words natural spoken English), `question`, 4 `options`, `correctOptionId`, `explanation`, `distractorExplanations`, `audioUrl: null`. No evaluate-prompt seeded (deterministic evaluation).
+
+**Audio/TTS reuse note**: `audioUrl` is always `null` from generation since no TTS pipeline produces pre-generated audio for staged content. Frontend renders an explicit fallback ("Audio is temporarily unavailable") with the `audioScript` shown as text below it, so the exercise is usable without MinIO/audio asset infrastructure. This is a deliberate, documented tradeoff: the script is technically visible before submission (it is the only way to consume the "audio" content), but `question`/`options`/`correctOptionId` remain hidden until after submission, preserving the assessment integrity of the exercise. No MinIO, new storage, or background TTS jobs were introduced.
+
+Frontend: reused `ReadingMultipleChoiceComponent`/`reading-multiple-choice.component.html` (renamed conceptually to a generic single-choice renderer) — added optional `audioScript`/`audioUrl`/`scenario` fields to `ReadingMultipleChoiceContent`, made `passage` optional, added an "Audio" section (audio player when `audioUrl` set, text fallback otherwise) and a "Context" scenario block. `exercise-renderer.component.ts` `readingMultipleChoiceContent` getter fixed to read from `stagedExerciseData` (practiceContent.exerciseData) with fallback to `raw`, fixing a latent bug affecting both `reading_multiple_choice_single` and this new format under module_stage_v1 staged content.
+
+Practice Gym: `listening_multiple_choice_single` appears under the Listening skill, pool-first with on-demand fallback, same as other ready formats. All other listening formats (`listen_and_answer`, `listen_and_gap_fill` excluded — already ready from MVP; remaining planned listening formats `listening_multiple_choice_multi`, `listening_fill_in_blanks`, `highlight_correct_summary`, `select_missing_word`, `highlight_incorrect_words`, `write_from_dictation`, `summarize_spoken_text`) remain planned/non-runnable.
+
+Tests: 684 unit / 483 integration / 118 Angular — all green. Angular dev and production builds succeed.
+
+See [Phase 8H review](../reviews/2026-06-15-phase-8h-listening-multiple-choice-single-implementation.md).

@@ -42,6 +42,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateReadingWritingFillInBlanksKey       = "activity_generate_reading_writing_fill_in_blanks";
     public const string ActivityGenerateSummarizeWrittenTextKey             = "activity_generate_summarize_written_text";
     public const string ActivityGenerateWriteEssayKey                       = "activity_generate_write_essay";
+    public const string ActivityGenerateListeningMultipleChoiceSingleKey    = "activity_generate_listening_multiple_choice_single";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1388,6 +1389,85 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateListeningMultipleChoiceSingleContent = """
+You are an expert English language teacher creating a listening comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": [],
+  "exerciseType": "listening_multiple_choice_single",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Listening for the main idea'>",
+    "explanation": "<2-3 sentences: a general listening strategy for this kind of question — no reference to the specific audio below>",
+    "keyPoints": [
+      "<how to listen for the main idea>",
+      "<how to identify key details>",
+      "<how to avoid distractors>"
+    ],
+    "examples": [
+      { "phrase": "<short listening phrase or signal expression>", "meaning": "<what it usually signals>", "note": "<listening strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen and choose the best supported answer>",
+    "commonMistakes": [
+      "<choosing based on one familiar word>",
+      "<missing contrast words or negative forms>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about listening strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio, then choose the one best answer to the question.",
+    "scenario": "<1 sentence describing the workplace context of the audio>",
+    "task": "Listen and choose the option that best answers the question.",
+    "exerciseData": {
+      "audioScript": "<a short, natural spoken-English script, 30-70 words, realistic for {{careerContext}} professionals>",
+      "audioUrl": null,
+      "question": "<a single-answer comprehension question about the audio>",
+      "options": [
+        { "id": "A", "text": "<option A text>" },
+        { "id": "B", "text": "<option B text>" },
+        { "id": "C", "text": "<option C text>" },
+        { "id": "D", "text": "<option D text>" }
+      ],
+      "correctOptionId": "<id of the correct option, e.g. 'A'>",
+      "explanation": "<1-2 sentences explaining why the correct option is right, referring to the audio>",
+      "distractorExplanations": {
+        "<id of an incorrect option>": "<why this option is wrong>",
+        "<id of another incorrect option>": "<why this option is wrong>",
+        "<id of the remaining incorrect option>": "<why this option is wrong>"
+      },
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Listening for contrast", "Distractor elimination"],
+    "rubric": [],
+    "feedbackFocus": "Help the student listen for meaning and choose the best supported answer.",
+    "successCriteria": [
+      "The selected option is supported by the audio.",
+      "The student avoids distractors based on isolated words."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the audioScript, transcript, question, options, correctOptionId, explanation, distractorExplanations, or any reference to this specific exercise's content. It teaches general listening strategy only.
+- practiceContent.exerciseData.audioScript must be short (30-70 words), natural spoken English, and realistic for {{careerContext}} professionals and topic area {{topicHint}}.
+- practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
+- practiceContent.exerciseData.options must contain exactly 4 options with ids "A", "B", "C", "D", with exactly one correct option.
+- distractorExplanations must contain an entry for each of the 3 incorrect option ids.
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateReadingMultipleChoiceMultiContent = """
 You are an expert English language teacher creating a reading comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -2642,6 +2722,10 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceSingleKey, ActivityGenerateReadingMultipleChoiceSingleContent,
+            maxInputTokens: 900, maxOutputTokens: 900, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateListeningMultipleChoiceSingleKey, ActivityGenerateListeningMultipleChoiceSingleContent,
             maxInputTokens: 900, maxOutputTokens: 900, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,

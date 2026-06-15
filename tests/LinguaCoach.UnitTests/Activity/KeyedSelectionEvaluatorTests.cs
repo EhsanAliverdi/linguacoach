@@ -319,6 +319,101 @@ public sealed class KeyedSelectionEvaluatorTests
         result.ItemResults.Single().StudentAnswer.Should().BeNull();
     }
 
+    // ── listening_multiple_choice_single ──────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeListeningRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "listening_multiple_choice_single",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.MultipleChoice,
+            ActivityType: ActivityType.ListeningComprehension,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedListeningContent(string correctOptionId = "B") => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test listening",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Listen and choose.",
+            scenario = "Team update",
+            task = "Choose the best answer.",
+            exerciseData = new
+            {
+                audioScript = "We were planning to release on Friday, but instead we'll release next Monday.",
+                audioUrl = (string?)null,
+                question = "When will the release happen?",
+                options = new[]
+                {
+                    new { id = "A", text = "Friday" },
+                    new { id = "B", text = "Next Monday" },
+                    new { id = "C", text = "Cancelled" },
+                    new { id = "D", text = "Immediately" },
+                },
+                correctOptionId,
+                explanation = "The speaker says the release moved to next Monday.",
+                distractorExplanations = new Dictionary<string, string>
+                {
+                    ["A"] = "Friday was the original plan, which changed.",
+                    ["C"] = "The release was not cancelled.",
+                    ["D"] = "The release is not immediate.",
+                },
+                successChecklist = new[] { "Selected the supported option" },
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    [Fact]
+    public async Task ListeningMultipleChoice_CorrectSelection_ReturnsFullScore()
+    {
+        var content = StagedListeningContent(correctOptionId: "B");
+        var submitted = SelectedOption("B");
+
+        var result = await _sut.EvaluateAsync(MakeListeningRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("Monday");
+    }
+
+    [Fact]
+    public async Task ListeningMultipleChoice_IncorrectSelection_ReturnsZeroScore_WithDistractorExplanation()
+    {
+        var content = StagedListeningContent(correctOptionId: "B");
+        var submitted = SelectedOption("A");
+
+        var result = await _sut.EvaluateAsync(MakeListeningRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        var item = result.ItemResults.Single();
+        item.IsCorrect.Should().BeFalse();
+        item.CorrectAnswer.Should().Be("B");
+        item.Feedback.Should().Contain("Friday was the original plan");
+    }
+
+    [Fact]
+    public async Task ListeningMultipleChoice_NoSelection_ReturnsZeroScore_AndIsStillCompleted()
+    {
+        var content = StagedListeningContent(correctOptionId: "B");
+
+        var result = await _sut.EvaluateAsync(MakeListeningRequest(content, submittedJson: ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
+
     // ── reading_multiple_choice_multi ─────────────────────────────────────────
 
     private static PatternEvaluationRequest MakeReadingMultiRequest(string contentJson, string submittedJson) =>

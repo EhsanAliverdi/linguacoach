@@ -10,12 +10,15 @@ export interface ReadingMultipleChoiceOption {
 export interface ReadingMultipleChoiceContent {
   learningGoal?: string | null;
   instructions?: string | null;
-  passage: string;
+  passage?: string | null;
   question: string;
   options: ReadingMultipleChoiceOption[];
   correctOptionId?: string | null;
   explanation?: string | null;
   distractorExplanations?: Record<string, string> | null;
+  audioScript?: string | null;
+  audioUrl?: string | null;
+  scenario?: string | null;
 }
 
 export interface ReadingMultipleChoiceAnswer {

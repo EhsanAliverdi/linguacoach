@@ -176,6 +176,21 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task ListeningMultipleChoiceSingle_IsReadyAndEligible()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "listening_multiple_choice_single");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "listening_multiple_choice_single");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
@@ -183,7 +198,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
             "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
             "retell_lecture", "summarize_group_discussion", "answer_short_question",
             "summarize_spoken_text", "listening_multiple_choice_multi", "listening_fill_in_blanks",
-            "highlight_correct_summary", "listening_multiple_choice_single", "select_missing_word",
+            "highlight_correct_summary", "select_missing_word",
             "highlight_incorrect_words", "write_from_dictation",
         };
 
@@ -332,6 +347,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         var catalog = new ExerciseTypeCatalogService(_db);
         await catalog.UpdateAsync(new("listen_and_answer", false, null, null));
         await catalog.UpdateAsync(new("listen_and_gap_fill", false, null, null));
+        await catalog.UpdateAsync(new("listening_multiple_choice_single", false, null, null));
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var selected = await registry.SelectForPracticeGymSkillAsync("listening");

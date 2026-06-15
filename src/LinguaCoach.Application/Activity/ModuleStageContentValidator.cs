@@ -63,6 +63,7 @@ public static class ModuleStageContentValidator
         ["reading_writing_fill_in_blanks"]       = ["passageWithBlanks", "gaps"],
         ["summarize_written_text"]               = ["sourceText", "prompt"],
         ["write_essay"]                           = ["prompt", "topic"],
+        ["listening_multiple_choice_single"]     = ["audioScript", "question", "options", "correctOptionId"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)
