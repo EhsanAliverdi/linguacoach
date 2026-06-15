@@ -2399,4 +2399,109 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── highlight_incorrect_words pattern key tests ───────────────────────────
+
+    private const string ValidHighlightIncorrectWordsJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Spotting words that differ: status call",
+      "moduleGoal": "Practise listening closely and spotting words that differ from spoken audio.",
+      "primarySkill": "listening",
+      "secondarySkills": ["reading"],
+      "exerciseType": "highlight_incorrect_words",
+      "learnContent": {
+        "teachingTitle": "Spotting words that differ",
+        "explanation": "Read along while you listen and notice when a written word does not match what you hear; even a small change can alter the meaning.",
+        "keyPoints": ["Read along while listening", "Small changes alter meaning", "Focus on content words"],
+        "examples": [{ "phrase": "next week", "meaning": "a future time", "note": "compare it to what you hear" }],
+        "strategy": "Compare every word you read against what you hear.",
+        "commonMistakes": ["Selecting words that match the audio", "Missing a similar-sounding change", "Reading without listening"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen to the audio, then click the words that are different.",
+        "scenario": "A manager confirms a meeting time.",
+        "task": "Listen and select every word that differs from the audio.",
+        "exerciseData": {
+          "audioScript": "Let's meet on Monday at nine to review the final budget.",
+          "audioUrl": null,
+          "displayTranscript": "Let's meet on Tuesday at nine to review the draft budget.",
+          "tokens": [
+            { "id": "t0", "text": "Let's", "position": 0 },
+            { "id": "t1", "text": "meet", "position": 1 },
+            { "id": "t2", "text": "on", "position": 2 },
+            { "id": "t3", "text": "Tuesday", "position": 3 },
+            { "id": "t4", "text": "at", "position": 4 },
+            { "id": "t5", "text": "nine", "position": 5 },
+            { "id": "t6", "text": "to", "position": 6 },
+            { "id": "t7", "text": "review", "position": 7 },
+            { "id": "t8", "text": "the", "position": 8 },
+            { "id": "t9", "text": "draft", "position": 9 },
+            { "id": "t10", "text": "budget.", "position": 10 }
+          ],
+          "incorrectTokenIds": ["t3", "t9"],
+          "corrections": { "t3": "Monday", "t9": "final" },
+          "tokenExplanations": { "t3": "The audio says Monday, not Tuesday.", "t9": "The audio says final, not draft." },
+          "question": "Which words are different from the audio?",
+          "explanation": "Two words were changed: the day and the budget description."
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Careful listening", "Word-level accuracy", "Difference detection"],
+        "rubric": [],
+        "feedbackFocus": "Help the student detect every word that differs from the audio.",
+        "successCriteria": ["The student selects all changed words.", "The student avoids words that match the audio.", "The student understands each change."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_HighlightIncorrectWords_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidHighlightIncorrectWordsJson), ActivityType.ListeningComprehension, "highlight_incorrect_words");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("displayTranscript")]
+    [InlineData("tokens")]
+    [InlineData("incorrectTokenIds")]
+    public void Validate_HighlightIncorrectWords_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidHighlightIncorrectWordsJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "highlight_incorrect_words");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("transcript")]
+    [InlineData("displayTranscript")]
+    [InlineData("tokens")]
+    [InlineData("incorrectTokenIds")]
+    [InlineData("corrections")]
+    [InlineData("answerKey")]
+    [InlineData("correctAnswer")]
+    [InlineData("selectedTokenIds")]
+    [InlineData("submit")]
+    [InlineData("checkAnswer")]
+    public void Validate_HighlightIncorrectWords_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidHighlightIncorrectWordsJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "highlight_incorrect_words");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

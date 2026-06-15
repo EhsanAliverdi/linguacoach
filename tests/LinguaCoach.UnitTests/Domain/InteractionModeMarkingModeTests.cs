@@ -27,7 +27,8 @@ public sealed class InteractionModeMarkingModeTests
     [Fact] public void InteractionMode_ReadingWritingFillInBlanks_IsFifteen()      => Assert.Equal(15, (int)InteractionMode.ReadingWritingFillInBlanks);
     [Fact] public void InteractionMode_ListeningFillInBlanks_IsSixteen()           => Assert.Equal(16, (int)InteractionMode.ListeningFillInBlanks);
     [Fact] public void InteractionMode_HighlightCorrectSummary_IsSeventeen()       => Assert.Equal(17, (int)InteractionMode.HighlightCorrectSummary);
-    [Fact] public void InteractionMode_HasExactlyEighteenValues()                  => Assert.Equal(18, Enum.GetValues<InteractionMode>().Length);
+    [Fact] public void InteractionMode_HighlightIncorrectWords_IsEighteen()        => Assert.Equal(18, (int)InteractionMode.HighlightIncorrectWords);
+    [Fact] public void InteractionMode_HasExactlyNineteenValues()                  => Assert.Equal(19, Enum.GetValues<InteractionMode>().Length);
 
     // ── MarkingMode ───────────────────────────────────────────────────────────
     [Fact] public void MarkingMode_AiOpenEnded_IsZero()    => Assert.Equal(0, (int)MarkingMode.AiOpenEnded);

@@ -72,6 +72,7 @@ describe('PatternBackedPresenter', () => {
     expect(presenter.practiceContent(makeActivity({ interactionMode: 'audioAndGapFill' })).skillBadge.label).toBe('Listening');
     expect(presenter.practiceContent(makeActivity({ interactionMode: 'listeningFillInBlanks' })).skillBadge.label).toBe('Listening');
     expect(presenter.practiceContent(makeActivity({ interactionMode: 'highlightCorrectSummary' })).skillBadge.label).toBe('Listening');
+    expect(presenter.practiceContent(makeActivity({ interactionMode: 'highlightIncorrectWords' })).skillBadge.label).toBe('Listening');
   });
 
   it('labels readOnly as Reflection', () => {

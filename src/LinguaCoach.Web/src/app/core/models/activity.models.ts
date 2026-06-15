@@ -26,7 +26,8 @@ export type InteractionMode =
   | 'reorderParagraphs'
   | 'readingWritingFillInBlanks'
   | 'listeningFillInBlanks'
-  | 'highlightCorrectSummary';
+  | 'highlightCorrectSummary'
+  | 'highlightIncorrectWords';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

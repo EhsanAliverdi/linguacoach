@@ -251,6 +251,36 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task HighlightIncorrectWords_IsReadyAndEligible()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "highlight_incorrect_words");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "highlight_incorrect_words");
+    }
+
+    [Fact]
+    public async Task WriteFromDictationAndSummarizeSpokenText_RemainNonRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        foreach (var key in new[] { "write_from_dictation", "summarize_spoken_text" })
+        {
+            var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+            Assert.Equal("planned", type.ImplementationStatus);
+            Assert.False(type.IsAvailableForGeneration);
+            Assert.DoesNotContain(eligible, e => e.Key == key);
+        }
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
@@ -258,7 +288,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
             "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
             "retell_lecture", "summarize_group_discussion", "answer_short_question",
             "summarize_spoken_text",
-            "highlight_incorrect_words", "write_from_dictation",
+            "write_from_dictation",
         };
 
         var service = new ExerciseTypeCatalogService(_db);
@@ -411,6 +441,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         await catalog.UpdateAsync(new("listening_fill_in_blanks", false, null, null));
         await catalog.UpdateAsync(new("select_missing_word", false, null, null));
         await catalog.UpdateAsync(new("highlight_correct_summary", false, null, null));
+        await catalog.UpdateAsync(new("highlight_incorrect_words", false, null, null));
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var selected = await registry.SelectForPracticeGymSkillAsync("listening");

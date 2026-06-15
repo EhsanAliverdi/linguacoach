@@ -357,3 +357,66 @@ test('HighlightCorrectSummary shows audio fallback, question, options, and submi
   await page.getByTestId('highlight-correct-summary-submit-btn').click();
   await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
 });
+
+test('HighlightIncorrectWords shows audio fallback, selectable tokens, and submits selection', async ({ page }) => {
+  await withAuth(page);
+
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Spotting words that differ',
+    interactionMode: 'highlightIncorrectWords',
+    exercisePatternKey: 'highlight_incorrect_words',
+    audioUrl: null,
+    learningGoal: 'Spot words that differ from a spoken passage.',
+    contentJson: JSON.stringify({
+      learningGoal: 'Spot words that differ from a spoken passage.',
+      instructions: 'Listen to the audio, then click the words that are different.',
+      scenario: 'A manager confirms a meeting time.',
+      audioScript: 'Let us meet on Monday at nine to review the final budget.',
+      audioUrl: null,
+      displayTranscript: 'Let us meet on Tuesday at nine to review the draft budget.',
+      tokens: [
+        { id: 't0', text: 'Let', position: 0 },
+        { id: 't1', text: 'us', position: 1 },
+        { id: 't2', text: 'meet', position: 2 },
+        { id: 't3', text: 'on', position: 3 },
+        { id: 't4', text: 'Tuesday', position: 4 },
+        { id: 't5', text: 'at', position: 5 },
+        { id: 't6', text: 'nine', position: 6 },
+        { id: 't7', text: 'to', position: 7 },
+        { id: 't8', text: 'review', position: 8 },
+        { id: 't9', text: 'the', position: 9 },
+        { id: 't10', text: 'draft', position: 10 },
+        { id: 't11', text: 'budget.', position: 11 },
+      ],
+      incorrectTokenIds: ['t4', 't10'],
+      corrections: { t4: 'Monday', t10: 'final' },
+      tokenExplanations: { t4: 'Audio says Monday.', t10: 'Audio says final.' },
+      question: 'Which words are different from the audio?',
+      explanation: 'Two words were changed: the day and the budget description.',
+    }),
+  }));
+
+  await page.goto('/activity');
+
+  // Learn page shows teaching only — no audio script, transcript tokens, or answers leaked.
+  await expect(page.getByTestId('teach-cta-btn')).toBeVisible();
+  await expect(page.getByTestId('audio-script-fallback')).toHaveCount(0);
+  await expect(page.getByTestId('hiw-token-t4')).toHaveCount(0);
+
+  await page.getByTestId('teach-cta-btn').click();
+
+  // Practice page: audio fallback, question, and selectable tokens visible.
+  await expect(page.getByTestId('highlight-incorrect-words-renderer')).toBeVisible();
+  await expect(page.getByTestId('audio-script-fallback')).toBeVisible();
+  await expect(page.getByTestId('hiw-question')).toContainText('Which words are different from the audio?');
+  await expect(page.getByTestId('hiw-token-t4')).toBeVisible();
+
+  // Corrections are not revealed before submit.
+  await expect(page.getByText('Audio says Monday.')).toHaveCount(0);
+
+  await page.getByTestId('hiw-token-t4').click();
+  await page.getByTestId('hiw-token-t10').click();
+  await page.getByTestId('highlight-incorrect-words-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});

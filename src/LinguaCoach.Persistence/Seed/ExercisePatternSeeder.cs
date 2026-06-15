@@ -373,6 +373,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise choosing the summary that best matches the meaning of a spoken passage",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.HighlightIncorrectWords,
+            name: "Highlight Incorrect Words",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Reading"]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.HighlightIncorrectWords,
+            markingMode: MarkingMode.KeyedSelection,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_highlight_incorrect_words",
+            aiEvaluatePromptKey: "activity_evaluate_highlight_incorrect_words",
+            teachingPurpose: "Practise listening closely and spotting transcript words that differ from a spoken passage",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

@@ -845,4 +845,131 @@ public sealed class KeyedSelectionEvaluatorTests
         result.Completed.Should().BeTrue();
         result.Score.Should().Be(0);
     }
+
+    // ── highlight_incorrect_words ─────────────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeHighlightIncorrectWordsRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "highlight_incorrect_words",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.HighlightIncorrectWords,
+            ActivityType: ActivityType.ListeningComprehension,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedHighlightIncorrectWordsContent(params string[] incorrectTokenIds) => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test highlight incorrect words",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Click the words that differ.",
+            scenario = "Meeting confirmation",
+            task = "Select every word that differs from the audio.",
+            exerciseData = new
+            {
+                audioScript = "Let's meet on Monday at nine to review the final budget.",
+                audioUrl = (string?)null,
+                displayTranscript = "Let's meet on Tuesday at nine to review the draft budget.",
+                tokens = new[]
+                {
+                    new { id = "t0", text = "Let's", position = 0 },
+                    new { id = "t3", text = "Tuesday", position = 3 },
+                    new { id = "t9", text = "draft", position = 9 },
+                },
+                incorrectTokenIds,
+                corrections = new Dictionary<string, string> { ["t3"] = "Monday", ["t9"] = "final" },
+                tokenExplanations = new Dictionary<string, string> { ["t3"] = "Audio says Monday.", ["t9"] = "Audio says final." },
+                question = "Which words are different from the audio?",
+                explanation = "Two words were changed.",
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    private static string SelectedTokens(params string[] tokenIds) =>
+        JsonSerializer.Serialize(new { selectedTokenIds = tokenIds }, JsonOptions);
+
+    [Fact]
+    public async Task HighlightIncorrectWords_ExactSelection_ReturnsFullScore()
+    {
+        var content = StagedHighlightIncorrectWordsContent("t3", "t9");
+        var submitted = SelectedTokens("t3", "t9");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightIncorrectWordsRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HighlightIncorrectWords_MissingOne_ReturnsIncorrect_WithMissedList()
+    {
+        var content = StagedHighlightIncorrectWordsContent("t3", "t9");
+        var submitted = SelectedTokens("t3");  // missed t9
+
+        var result = await _sut.EvaluateAsync(MakeHighlightIncorrectWordsRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("Missed");
+        result.ItemResults.Single().Feedback.Should().Contain("t9");
+    }
+
+    [Fact]
+    public async Task HighlightIncorrectWords_FalsePositive_ReturnsIncorrect()
+    {
+        var content = StagedHighlightIncorrectWordsContent("t3", "t9");
+        var submitted = SelectedTokens("t3", "t9", "t0");  // t0 matches audio
+
+        var result = await _sut.EvaluateAsync(MakeHighlightIncorrectWordsRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.ItemResults.Single().Feedback.Should().Contain("t0");
+    }
+
+    [Fact]
+    public async Task HighlightIncorrectWords_DuplicateAndUnknownIds_HandledSafely()
+    {
+        var content = StagedHighlightIncorrectWordsContent("t3", "t9");
+        var submitted = SelectedTokens("t3", "t3", "t9", "tZ");  // duplicate t3, unknown tZ
+
+        var result = await _sut.EvaluateAsync(MakeHighlightIncorrectWordsRequest(content, submitted), default);
+
+        result.Completed.Should().BeTrue();
+        // tZ is a false positive so the answer is not perfect.
+        result.Passed.Should().BeFalse();
+        result.ItemResults.Single().Feedback.Should().Contain("tZ");
+    }
+
+    [Fact]
+    public async Task HighlightIncorrectWords_EmptySelection_ReturnsZeroScore_StillCompleted()
+    {
+        var content = StagedHighlightIncorrectWordsContent("t3", "t9");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightIncorrectWordsRequest(content, ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task HighlightIncorrectWords_InvalidJson_HandledSafely()
+    {
+        var content = StagedHighlightIncorrectWordsContent("t3", "t9");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightIncorrectWordsRequest(content, "not-json"), default);
+
+        result.Completed.Should().BeTrue();
+        result.Score.Should().Be(0);
+    }
 }

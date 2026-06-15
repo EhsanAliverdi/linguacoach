@@ -95,6 +95,13 @@ const readyHighlightCorrectSummary: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readyHighlightIncorrectWords: any = {
+  key: 'highlight_incorrect_words', displayName: 'Highlight Incorrect Words', primarySkill: 'listening', secondarySkills: ['reading'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'highlight_incorrect_words', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_highlight_incorrect_words',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -103,7 +110,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti, readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti, readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary, readyHighlightIncorrectWords]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -448,6 +455,30 @@ describe('PracticeGymComponent', () => {
   it('highlight_correct_summary is ready and available in Practice Gym', () => {
     expect(component.isAvailable('highlight_correct_summary')).toBeTrue();
     expect(component.statusText('highlight_correct_summary')).toBe('Available');
+  });
+
+  it('highlight_incorrect_words is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('highlight_incorrect_words')).toBeTrue();
+    expect(component.statusText('highlight_incorrect_words')).toBe('Available');
+  });
+
+  it('clicking Listening can return highlight_incorrect_words and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-hiw-1',
+      exerciseType: 'highlight_incorrect_words',
+      primarySkill: 'listening',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('listening');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-hiw-1', returnTo: '/practice' },
+    });
   });
 
   it('clicking Listening can return highlight_correct_summary and routes correctly', () => {

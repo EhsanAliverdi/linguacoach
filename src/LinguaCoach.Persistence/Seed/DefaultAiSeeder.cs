@@ -47,6 +47,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateListeningFillInBlanksKey            = "activity_generate_listening_fill_in_blanks";
     public const string ActivityGenerateSelectMissingWordKey                = "activity_generate_select_missing_word";
     public const string ActivityGenerateHighlightCorrectSummaryKey          = "activity_generate_highlight_correct_summary";
+    public const string ActivityGenerateHighlightIncorrectWordsKey          = "activity_generate_highlight_incorrect_words";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1636,6 +1637,88 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateHighlightIncorrectWordsContent = """
+You are an expert English language teacher creating a listening comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what careful-listening skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["reading"],
+  "exerciseType": "highlight_incorrect_words",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Spotting words that differ'>",
+    "explanation": "<2-4 sentences teaching how to listen closely and notice when a written transcript differs from spoken audio — no reference to the specific audio below>",
+    "keyPoints": [
+      "<how to read along while listening for mismatches>",
+      "<how small changes alter meaning>",
+      "<how to focus on content words, not just sounds>"
+    ],
+    "examples": [
+      { "phrase": "<short signal phrase>", "meaning": "<what to listen for>", "note": "<listening strategy note>" }
+    ],
+    "strategy": "<one sentence: how to compare what you hear to what you read>",
+    "commonMistakes": [
+      "<selecting words that actually match the audio>",
+      "<missing a changed word that sounds similar>",
+      "<reading the transcript without listening carefully>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about listening-for-differences strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio, then click the words in the transcript that are different from what you hear.",
+    "scenario": "<1 sentence describing the workplace context of the audio>",
+    "task": "Listen and select every word that differs from the audio.",
+    "exerciseData": {
+      "audioScript": "<a short, natural spoken-English script, 30-60 words, realistic for {{careerContext}} professionals — this is the CORRECT spoken version>",
+      "audioUrl": null,
+      "displayTranscript": "<the same passage but with 2-4 words changed to different words; this is the text the student reads>",
+      "tokens": [
+        { "id": "t0", "text": "<first word of displayTranscript>", "position": 0 },
+        { "id": "t1", "text": "<second word>", "position": 1 }
+      ],
+      "incorrectTokenIds": ["<id of each token whose text differs from the audio, 2-4 ids>"],
+      "corrections": {
+        "<incorrect token id>": "<the word actually spoken in the audio for that position>"
+      },
+      "tokenExplanations": {
+        "<incorrect token id>": "<1 short sentence: how this word differs and why it matters>"
+      },
+      "question": "Which words are different from the audio?",
+      "explanation": "<1-2 sentences summarising the changed words, referring to the audio>"
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Careful listening", "Word-level accuracy", "Difference detection"],
+    "rubric": [],
+    "feedbackFocus": "Help the student listen closely and detect every word that differs from the audio.",
+    "successCriteria": [
+      "The student selects all changed words.",
+      "The student does not select words that match the audio.",
+      "The student understands how each change alters meaning."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain audioScript, transcript, displayTranscript, tokens, incorrectTokenIds, corrections, answerKey, or any reference to this specific exercise's content. It teaches general listening-for-differences strategy only.
+- practiceContent.exerciseData.audioScript is the CORRECT spoken version, short (30-60 words), natural spoken English, realistic for {{careerContext}} professionals and topic area {{topicHint}}.
+- practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
+- displayTranscript must be the same passage as audioScript but with exactly 2-4 single words changed to different (real, plausible) words.
+- tokens must list EVERY word of displayTranscript in order, each with a unique id (t0, t1, ...) and a zero-based position. Split on whitespace; keep punctuation attached to its word.
+- incorrectTokenIds must list the token ids whose text differs from the audio — exactly the 2-4 changed words, nothing else.
+- corrections and tokenExplanations must contain an entry for each incorrect token id.
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateListeningMultipleChoiceMultiContent = """
 You are an expert English language teacher creating a listening comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -3093,6 +3176,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateHighlightCorrectSummaryKey, ActivityGenerateHighlightCorrectSummaryContent,
             maxInputTokens: 1400, maxOutputTokens: 1100, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateHighlightIncorrectWordsKey, ActivityGenerateHighlightIncorrectWordsContent,
+            maxInputTokens: 1400, maxOutputTokens: 1500, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,

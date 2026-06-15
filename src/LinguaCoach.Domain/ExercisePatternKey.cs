@@ -45,4 +45,5 @@ public static class ExercisePatternKey
     public const string ListeningFillInBlanks          = "listening_fill_in_blanks";
     public const string SelectMissingWord              = "select_missing_word";
     public const string HighlightCorrectSummary        = "highlight_correct_summary";
+    public const string HighlightIncorrectWords        = "highlight_incorrect_words";
 }

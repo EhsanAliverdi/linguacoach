@@ -59,6 +59,7 @@ public class ActivityTestFactory : ApiTestFactory
             "activity_generate_speaking_roleplay",
             "activity_generate_listening",
             "activity_generate_highlight_correct_summary",
+            "activity_generate_highlight_incorrect_words",
             // Pattern-keyed evaluation prompts
             "activity_evaluate_phrase_match",
             "activity_evaluate_gap_fill_workplace_phrase",
@@ -239,6 +240,29 @@ internal sealed class FakeAiProvider : IAiProvider
                     "C": "The meeting did not stay on Monday.",
                     "D": "The meeting did not move to next month."
                   },
+                  "displayTranscript": "Hi, this is a test workplace voice message. Please note the meeting has been moved to Friday.",
+                  "tokens": [
+                    { "id": "t0", "text": "Hi,", "position": 0 },
+                    { "id": "t1", "text": "this", "position": 1 },
+                    { "id": "t2", "text": "is", "position": 2 },
+                    { "id": "t3", "text": "a", "position": 3 },
+                    { "id": "t4", "text": "test", "position": 4 },
+                    { "id": "t5", "text": "workplace", "position": 5 },
+                    { "id": "t6", "text": "voice", "position": 6 },
+                    { "id": "t7", "text": "message.", "position": 7 },
+                    { "id": "t8", "text": "Please", "position": 8 },
+                    { "id": "t9", "text": "note", "position": 9 },
+                    { "id": "t10", "text": "the", "position": 10 },
+                    { "id": "t11", "text": "meeting", "position": 11 },
+                    { "id": "t12", "text": "has", "position": 12 },
+                    { "id": "t13", "text": "been", "position": 13 },
+                    { "id": "t14", "text": "moved", "position": 14 },
+                    { "id": "t15", "text": "to", "position": 15 },
+                    { "id": "t16", "text": "Friday.", "position": 16 }
+                  ],
+                  "incorrectTokenIds": ["t16"],
+                  "corrections": { "t16": "Thursday." },
+                  "tokenExplanations": { "t16": "The audio says Thursday, not Friday." },
                   "items": [
                     { "vocabularyItemId": "00000000-0000-0000-0000-000000000001", "term": "could you please", "prompt": "___ send the report?", "hint": "polite request", "explanation": "Used to make polite requests." },
                     { "vocabularyItemId": "00000000-0000-0000-0000-000000000002", "term": "at your earliest convenience", "prompt": "Please respond ___.", "hint": "formal timing", "explanation": "Used to politely request a prompt response." },

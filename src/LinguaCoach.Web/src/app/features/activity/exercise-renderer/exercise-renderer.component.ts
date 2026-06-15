@@ -16,6 +16,7 @@ import { ReorderParagraphsComponent, ReorderParagraphsContent } from '../rendere
 import { ReadingWritingFillInBlanksComponent, ReadingWritingFillInBlanksContent } from '../renderers/reading-writing-fill-in-blanks/reading-writing-fill-in-blanks.component';
 import { ListeningFillInBlanksComponent, ListeningFillInBlanksContent } from '../renderers/listening-fill-in-blanks/listening-fill-in-blanks.component';
 import { HighlightCorrectSummaryComponent, HighlightCorrectSummaryContent } from '../renderers/highlight-correct-summary/highlight-correct-summary.component';
+import { HighlightIncorrectWordsComponent, HighlightIncorrectWordsContent } from '../renderers/highlight-incorrect-words/highlight-incorrect-words.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -31,7 +32,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'reorderParagraphs'; orderedIds: string[] }
   | { kind: 'readingWritingFillInBlanks'; answers: Record<string, string> }
   | { kind: 'listeningFillInBlanks'; answers: Record<string, string> }
-  | { kind: 'highlightCorrectSummary'; selectedOptionId: string };
+  | { kind: 'highlightCorrectSummary'; selectedOptionId: string }
+  | { kind: 'highlightIncorrectWords'; selectedTokenIds: string[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -53,6 +55,7 @@ export type ExerciseAnswerPayload =
     ReadingWritingFillInBlanksComponent,
     ListeningFillInBlanksComponent,
     HighlightCorrectSummaryComponent,
+    HighlightIncorrectWordsComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -439,6 +442,38 @@ export class ExerciseRendererComponent {
 
   onHighlightCorrectSummarySubmitted(answer: { selectedOptionId: string }): void {
     this.answerSubmitted.emit({ kind: 'highlightCorrectSummary', selectedOptionId: answer.selectedOptionId });
+  }
+
+  get highlightIncorrectWordsContent(): HighlightIncorrectWordsContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const tokens = this.arrayValue(ed['tokens'] ?? raw['tokens']).map((tok, index) => {
+      const obj = this.objectValue(tok) ?? {};
+      const positionRaw = obj['position'];
+      const position = typeof positionRaw === 'number' ? positionRaw : index;
+      return {
+        id: this.stringValue(obj['id']) ?? `t${index}`,
+        text: this.stringValue(obj['text']) ?? '',
+        position,
+      };
+    });
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      audioScript: this.stringValue(ed['audioScript'] ?? raw['audioScript']),
+      audioUrl: this.stringValue(ed['audioUrl'] ?? raw['audioUrl']),
+      displayTranscript: this.stringValue(ed['displayTranscript'] ?? raw['displayTranscript']),
+      tokens,
+      question: this.stringValue(ed['question'] ?? raw['question']),
+    };
+  }
+
+  onHighlightIncorrectWordsSubmitted(answer: { selectedTokenIds: string[] }): void {
+    this.answerSubmitted.emit({ kind: 'highlightIncorrectWords', selectedTokenIds: answer.selectedTokenIds });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

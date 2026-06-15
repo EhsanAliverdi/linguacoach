@@ -90,6 +90,13 @@
       (submitted)="onHighlightCorrectSummarySubmitted($event)"
     />
   }
+  @case ('highlightIncorrectWords') {
+    <app-highlight-incorrect-words
+      [content]="highlightIncorrectWordsContent"
+      [disabled]="disabled"
+      (submitted)="onHighlightIncorrectWordsSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

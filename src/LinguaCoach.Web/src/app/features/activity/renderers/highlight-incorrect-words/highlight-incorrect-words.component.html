@@ -1,0 +1,58 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="highlight-incorrect-words-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  @if (content.audioScript) {
+    <div class="sp-card" style="padding:14px" data-testid="audio-player-section">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Audio</p>
+      @if (content.audioUrl) {
+        <audio controls [src]="content.audioUrl" style="width:100%;display:block" data-testid="audio-player"></audio>
+        <p style="font-size:12px;color:var(--sp-muted);margin-top:8px">Listen to the audio, then click the words below that are different.</p>
+      } @else {
+        <div class="sp-alert-info" style="font-size:13px" data-testid="audio-unavailable">
+          Audio is temporarily unavailable. Read the script below, then select the words that differ.
+        </div>
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap;margin-top:8px" data-testid="audio-script-fallback">{{ content.audioScript }}</p>
+      }
+    </div>
+  }
+
+  <div style="font-size:15px;font-weight:700;color:var(--sp-text)" data-testid="hiw-question">
+    {{ content.question || 'Which words are different from the audio?' }}
+  </div>
+
+  <div class="sp-card" style="padding:16px;line-height:2.2" data-testid="hiw-tokens">
+    @for (tok of content.tokens; track tok.id) {
+      <button
+        type="button"
+        (click)="toggle(tok.id)"
+        [disabled]="disabled"
+        [attr.aria-pressed]="isSelected(tok.id)"
+        [attr.data-testid]="'hiw-token-' + tok.id"
+        [style.border]="isSelected(tok.id) ? '2px solid var(--sp-primary, #2563eb)' : '1px solid var(--sp-border)'"
+        [style.background]="isSelected(tok.id) ? 'var(--sp-primary-soft, #e0ecff)' : 'transparent'"
+        style="display:inline;padding:2px 6px;margin:2px;border-radius:6px;font-size:14px;color:var(--sp-text);cursor:pointer">
+        {{ tok.text }}
+      </button>
+    }
+  </div>
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="highlight-incorrect-words-submit-btn">
+    @if (disabled) { Checking answer… } @else { Check answer }
+  </button>
+</div>

@@ -27,6 +27,9 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             || request.ExercisePatternKey == "listening_multiple_choice_multi")
             return EvaluateReadingMultipleChoiceMultiAsync(request);
 
+        if (request.ExercisePatternKey == "highlight_incorrect_words")
+            return EvaluateHighlightIncorrectWordsAsync(request);
+
         var expectedMap = ParseExpectedPairs(request.ContentJson);
         var submittedMap = ParseSubmittedPairs(request.SubmittedAnswerJson);
 
@@ -241,6 +244,129 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
         return Task.FromResult(result);
     }
 
+    // ── highlight_incorrect_words ────────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateHighlightIncorrectWordsAsync(
+        PatternEvaluationRequest request)
+    {
+        var exerciseData = ParseHighlightIncorrectWordsData(request.ContentJson);
+        var selectedIds = ParseSelectedTokenIds(request.SubmittedAnswerJson);
+
+        var incorrectIds = exerciseData?.IncorrectTokenIds is { Count: > 0 }
+            ? new HashSet<string>(exerciseData.IncorrectTokenIds, StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+
+        // De-duplicate submitted ids defensively.
+        var selectedSet = new HashSet<string>(selectedIds ?? [], StringComparer.Ordinal);
+
+        var correctlySelected = selectedSet.Where(id => incorrectIds.Contains(id)).OrderBy(x => x).ToList();
+        var missed = incorrectIds.Where(id => !selectedSet.Contains(id)).OrderBy(x => x).ToList();
+        var falsePositives = selectedSet.Where(id => !incorrectIds.Contains(id)).OrderBy(x => x).ToList();
+
+        var isCorrect = missed.Count == 0 && falsePositives.Count == 0 && incorrectIds.Count > 0;
+
+        var score = isCorrect ? 1.0 : 0.0;
+        const double maxScore = 1.0;
+
+        string feedback;
+        if (selectedSet.Count == 0)
+        {
+            feedback = $"No words selected — the incorrect words are: {string.Join(", ", incorrectIds.OrderBy(x => x))}.";
+        }
+        else if (isCorrect)
+        {
+            feedback = exerciseData?.Explanation ?? "Correct — you found every word that differed from the audio.";
+        }
+        else
+        {
+            var parts = new List<string>();
+            if (correctlySelected.Count > 0)
+                parts.Add($"Correctly found: {string.Join(", ", correctlySelected)}.");
+            if (missed.Count > 0)
+                parts.Add($"Missed: {string.Join(", ", missed)}.");
+            if (falsePositives.Count > 0)
+                parts.Add($"Selected words that matched the audio: {string.Join(", ", falsePositives)}.");
+            feedback = string.Join(" ", parts);
+            if (!string.IsNullOrWhiteSpace(exerciseData?.Explanation))
+                feedback += $" {exerciseData.Explanation}";
+        }
+
+        // Append corrections and token explanations for the incorrect tokens.
+        var details = new List<string>();
+        if (exerciseData?.Corrections is not null)
+        {
+            foreach (var (tokenId, correction) in exerciseData.Corrections.OrderBy(kvp => kvp.Key))
+            {
+                if (!string.IsNullOrWhiteSpace(correction))
+                    details.Add($"{tokenId} should be \"{correction}\"");
+            }
+        }
+        if (exerciseData?.TokenExplanations is not null)
+        {
+            foreach (var (tokenId, note) in exerciseData.TokenExplanations.OrderBy(kvp => kvp.Key))
+            {
+                if (!string.IsNullOrWhiteSpace(note))
+                    details.Add($"{tokenId}: {note}");
+            }
+        }
+        if (details.Count > 0)
+            feedback += " " + string.Join(" | ", details);
+
+        var itemResult = new PatternEvaluationItemResult(
+            ItemKey: request.ExercisePatternKey ?? "highlight_incorrect_words",
+            StudentAnswer: selectedSet.Count > 0 ? string.Join(",", selectedSet.OrderBy(x => x)) : null,
+            CorrectAnswer: string.Join(",", incorrectIds.OrderBy(x => x)),
+            AcceptedAnswers: [string.Join(",", incorrectIds.OrderBy(x => x))],
+            IsCorrect: isCorrect,
+            Score: score,
+            MaxScore: maxScore,
+            Feedback: feedback);
+
+        var coachSummary = isCorrect
+            ? "Correct — you identified every word that differed from the audio."
+            : missed.Count > 0 && falsePositives.Count == 0
+                ? "You found some changed words but missed others — listen again for every difference."
+                : "Not quite — listen closely and select only the words that differ from the audio.";
+
+        var result = PatternEvaluationResult.Create(
+            score: score,
+            maxScore: maxScore,
+            passed: isCorrect,
+            completed: true,
+            itemResults: [itemResult],
+            coachSummary: coachSummary);
+
+        return Task.FromResult(result);
+    }
+
+    private static HighlightIncorrectWordsExerciseData? ParseHighlightIncorrectWordsData(string contentJson)
+    {
+        try
+        {
+            var json = UnwrapStagedContent(contentJson);
+            return JsonSerializer.Deserialize<HighlightIncorrectWordsExerciseData>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static List<string>? ParseSelectedTokenIds(string submittedAnswerJson)
+    {
+        if (string.IsNullOrWhiteSpace(submittedAnswerJson)) return null;
+
+        try
+        {
+            var dto = JsonSerializer.Deserialize<HighlightIncorrectWordsSubmittedAnswer>(submittedAnswerJson, JsonOptions);
+            return dto?.SelectedTokenIds is { Count: > 0 } ? dto.SelectedTokenIds : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     private static ReadingMultipleChoiceMultiExerciseData? ParseReadingMultiExerciseData(string contentJson)
     {
         try
@@ -417,4 +543,23 @@ public sealed class ReadingMultipleChoiceMultiExerciseData
 public sealed class ReadingMultipleChoiceMultiSubmittedAnswer
 {
     public List<string> SelectedOptionIds { get; set; } = [];
+}
+
+/// <summary>
+/// practiceContent.exerciseData shape for highlight_incorrect_words.
+/// </summary>
+public sealed class HighlightIncorrectWordsExerciseData
+{
+    public List<string>? IncorrectTokenIds { get; set; }
+    public string? Explanation { get; set; }
+    public Dictionary<string, string>? Corrections { get; set; }
+    public Dictionary<string, string>? TokenExplanations { get; set; }
+}
+
+/// <summary>
+/// Submitted answer shape for highlight_incorrect_words.
+/// </summary>
+public sealed class HighlightIncorrectWordsSubmittedAnswer
+{
+    public List<string> SelectedTokenIds { get; set; } = [];
 }

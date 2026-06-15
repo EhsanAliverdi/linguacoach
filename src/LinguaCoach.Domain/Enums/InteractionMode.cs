@@ -25,4 +25,5 @@ public enum InteractionMode
     ReadingWritingFillInBlanks = 15, // Reading passage with per-gap dropdown — reading + writing skills
     ListeningFillInBlanks      = 16, // Audio script with transcript gaps — per-gap dropdown, listening + writing skills
     HighlightCorrectSummary    = 17, // Audio script with summary option cards — choose the summary that best matches, listening + reading skills
+    HighlightIncorrectWords    = 18, // Audio script with clickable transcript tokens — select words that differ from the audio, listening + reading skills
 }

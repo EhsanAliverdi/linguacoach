@@ -35,6 +35,8 @@ public static class ModuleStageContentValidator
         "answer", "answers", "acceptedAnswers", "submit",
         "incompleteText", "missingWord", "missingPhrase",
         "summaryOptions", "checkAnswer",
+        "displayTranscript", "tokens", "incorrectTokenIds", "corrections",
+        "tokenExplanations", "selectedTokenIds",
     ];
 
     private static readonly Dictionary<ActivityType, string[]> RequiredPracticeKeysByType = new()
@@ -71,6 +73,7 @@ public static class ModuleStageContentValidator
         ["listening_fill_in_blanks"]             = ["audioScript", "passageWithBlanks", "gaps"],
         ["select_missing_word"]                  = ["audioScript", "incompleteText", "options", "correctOptionId"],
         ["highlight_correct_summary"]            = ["audioScript", "options", "correctOptionId"],
+        ["highlight_incorrect_words"]            = ["audioScript", "displayTranscript", "tokens", "incorrectTokenIds"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)

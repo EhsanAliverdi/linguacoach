@@ -56,7 +56,8 @@ public static class ExerciseTypeDefinitionSeeder
         // listening_multiple_choice_single promoted to Ready above
         Ready(ExercisePatternKey.SelectMissingWord, "Select Missing Word", "Listen to an audio script and choose the word or phrase that completes it.", "listening", "[]", "Pattern", "select_missing_word", "keyed_selection", "activity_generate_select_missing_word", ActivityType.ListeningComprehension, ExercisePatternKey.SelectMissingWord, 5, false, false, true, false),
         // select_missing_word promoted to Ready above
-        Planned("highlight_incorrect_words", "Highlight Incorrect Words", "Find words that differ from audio.", "listening", "[\"reading\"]", "Planned listening format", true, false, requiresAudio: true),
+        Ready(ExercisePatternKey.HighlightIncorrectWords, "Highlight Incorrect Words", "Listen to a short audio script and select the transcript words that differ from it.", "listening", "[\"reading\"]", "Pattern", "highlight_incorrect_words", "keyed_selection", "activity_generate_highlight_incorrect_words", ActivityType.ListeningComprehension, ExercisePatternKey.HighlightIncorrectWords, 5, false, false, true, false),
+        // highlight_incorrect_words promoted to Ready above
         Planned("write_from_dictation", "Write From Dictation", "Write the sentence you hear.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true)
     ];
 
