@@ -20,8 +20,10 @@ public sealed class InteractionModeMarkingModeTests
     [Fact] public void InteractionMode_AudioAndFreeText_IsEight()=> Assert.Equal(8, (int)InteractionMode.AudioAndFreeText);
     [Fact] public void InteractionMode_AudioAndGapFill_IsNine()  => Assert.Equal(9, (int)InteractionMode.AudioAndGapFill);
     [Fact] public void InteractionMode_EmailReply_IsTen()        => Assert.Equal(10, (int)InteractionMode.EmailReply);
-    [Fact] public void InteractionMode_AudioResponse_IsEleven()  => Assert.Equal(11, (int)InteractionMode.AudioResponse);
-    [Fact] public void InteractionMode_HasExactlyTwelveValues()  => Assert.Equal(12, Enum.GetValues<InteractionMode>().Length);
+    [Fact] public void InteractionMode_AudioResponse_IsEleven()        => Assert.Equal(11, (int)InteractionMode.AudioResponse);
+    [Fact] public void InteractionMode_MultipleChoiceMulti_IsTwelve()  => Assert.Equal(12, (int)InteractionMode.MultipleChoiceMulti);
+    [Fact] public void InteractionMode_ReadingFillInBlanks_IsThirteen() => Assert.Equal(13, (int)InteractionMode.ReadingFillInBlanks);
+    [Fact] public void InteractionMode_HasExactlyFourteenValues()       => Assert.Equal(14, Enum.GetValues<InteractionMode>().Length);
 
     // ── MarkingMode ───────────────────────────────────────────────────────────
     [Fact] public void MarkingMode_AiOpenEnded_IsZero()    => Assert.Equal(0, (int)MarkingMode.AiOpenEnded);

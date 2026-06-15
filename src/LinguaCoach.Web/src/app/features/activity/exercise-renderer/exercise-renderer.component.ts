@@ -10,6 +10,8 @@ import { AudioAndGapFillComponent, AudioAndGapFillContent, AudioGapItem } from '
 import { ChatReplyComponent, ChatReplyContent } from '../renderers/chat-reply/chat-reply.component';
 import { EmailReplyComponent, EmailReplyContent } from '../renderers/email-reply/email-reply.component';
 import { ReadingMultipleChoiceComponent, ReadingMultipleChoiceContent } from '../renderers/reading-multiple-choice/reading-multiple-choice.component';
+import { ReadingMultipleChoiceMultiComponent, ReadingMultipleChoiceMultiContent } from '../renderers/reading-multiple-choice-multi/reading-multiple-choice-multi.component';
+import { ReadingFillInBlanksComponent, ReadingFillInBlanksContent } from '../renderers/reading-fill-in-blanks/reading-fill-in-blanks.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -19,7 +21,9 @@ export type ExerciseAnswerPayload =
   | { kind: 'audioGapFill'; answers: { questionId: string; answer: string }[] }
   | { kind: 'chatReply'; replyText: string }
   | { kind: 'emailReply'; subject: string; body: string }
-  | { kind: 'multipleChoiceSingle'; selectedOptionId: string };
+  | { kind: 'multipleChoiceSingle'; selectedOptionId: string }
+  | { kind: 'multipleChoiceMulti'; selectedOptionIds: string[] }
+  | { kind: 'readingFillInBlanks'; answers: Record<string, string> };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -35,6 +39,8 @@ export type ExerciseAnswerPayload =
     ChatReplyComponent,
     EmailReplyComponent,
     ReadingMultipleChoiceComponent,
+    ReadingMultipleChoiceMultiComponent,
+    ReadingFillInBlanksComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -243,6 +249,65 @@ export class ExerciseRendererComponent {
       explanation: this.stringValue(raw['explanation']),
       distractorExplanations,
     };
+  }
+
+  get readingMultipleChoiceMultiContent(): ReadingMultipleChoiceMultiContent {
+    const raw = this.raw;
+    const options = this.arrayValue(raw['options']).map((opt, index) => {
+      const obj = this.objectValue(opt) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? String.fromCharCode(65 + index),
+        text: this.stringValue(obj['text']) ?? '',
+      };
+    });
+
+    const optionExplanationsObj = this.objectValue(raw['optionExplanations']);
+    const optionExplanations = optionExplanationsObj
+      ? Object.fromEntries(
+          Object.entries(optionExplanationsObj)
+            .map(([key, value]) => [key, this.stringValue(value) ?? ''])
+            .filter(([, value]) => value),
+        )
+      : null;
+
+    const correctOptionIds = this.stringArray(raw['correctOptionIds']) ?? null;
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
+      passage: this.stringValue(raw['passage']) ?? '',
+      question: this.stringValue(raw['question']) ?? '',
+      options,
+      correctOptionIds,
+      explanation: this.stringValue(raw['explanation']),
+      optionExplanations,
+    };
+  }
+
+  get readingFillInBlanksContent(): ReadingFillInBlanksContent {
+    const raw = this.raw;
+    const gaps = this.arrayValue(raw['gaps']).map((gap) => {
+      const obj = this.objectValue(gap) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? '',
+        options: this.stringArray(obj['options']) ?? [],
+      };
+    }).filter(g => g.id);
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
+      passageWithBlanks: this.stringValue(raw['passageWithBlanks']) ?? '',
+      gaps,
+    };
+  }
+
+  onReadingFillInBlanksSubmitted(answer: { answers: Record<string, string> }): void {
+    this.answerSubmitted.emit({ kind: 'readingFillInBlanks', answers: answer.answers });
+  }
+
+  onReadingMultipleChoiceMultiSubmitted(answer: { selectedOptionIds: string[] }): void {
+    this.answerSubmitted.emit({ kind: 'multipleChoiceMulti', selectedOptionIds: answer.selectedOptionIds });
   }
 
   onReadingMultipleChoiceSubmitted(answer: { selectedOptionId: string }): void {

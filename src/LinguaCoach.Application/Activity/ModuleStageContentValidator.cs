@@ -26,6 +26,8 @@ public static class ModuleStageContentValidator
         "practiceMode", "selectedAnswer", "selectedAnswers", "options", "fillBlank",
         "matchingPairs", "submitButton", "checkButton",
         "passage", "question", "correctOptionId", "distractorExplanations",
+        "correctOptionIds", "optionExplanations",
+        "passageWithBlanks", "gaps",
     ];
 
     private static readonly Dictionary<ActivityType, string[]> RequiredPracticeKeysByType = new()
@@ -51,6 +53,8 @@ public static class ModuleStageContentValidator
         ["speaking_roleplay_turn"]         = ["prompt", "partnerTurn"],
         ["lesson_reflection"]              = ["prompt"],
         ["reading_multiple_choice_single"] = ["passage", "question", "options", "correctOptionId"],
+        ["reading_multiple_choice_multi"]   = ["passage", "question", "options", "correctOptionIds"],
+        ["reading_fill_in_blanks"]          = ["passageWithBlanks", "gaps"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)

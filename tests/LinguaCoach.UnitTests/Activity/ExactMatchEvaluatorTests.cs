@@ -295,4 +295,74 @@ public sealed class ExactMatchEvaluatorTests
     {
         ExactMatchEvaluator.Normalize(input).Should().Be(expected);
     }
+
+    // ── reading_fill_in_blanks ────────────────────────────────────────────────
+
+    private static string ReadingFillInBlanksContent(params (string id, string answer, string[] options)[] gaps)
+    {
+        var gapDtos = gaps.Select(g => new ReadingFillInBlanksGapDto
+        {
+            Id = g.id,
+            Answer = g.answer,
+            Options = g.options.ToList(),
+        }).ToList();
+        var content = new LinguaCoach.Application.Activity.ReadingFillInBlanksContent
+        {
+            PassageWithBlanks = "The {{gap1}} ran quickly.",
+            Gaps = gapDtos,
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    private static string FillBlanksSubmitted(params (string key, string? val)[] pairs)
+    {
+        var d = pairs.ToDictionary(p => p.key, p => p.val);
+        return JsonSerializer.Serialize(new GapFillSubmittedAnswer { Answers = d! }, JsonOptions);
+    }
+
+    [Fact]
+    public async Task ReadingFillInBlanks_AllCorrect_ReturnsFullScore()
+    {
+        var content = ReadingFillInBlanksContent(
+            ("gap1", "dog", ["dog", "cat", "bird", "fish"]),
+            ("gap2", "quickly", ["slowly", "quickly", "quietly", "loudly"]));
+        var submitted = FillBlanksSubmitted(("gap1", "dog"), ("gap2", "quickly"));
+
+        var request = MakeRequest(content, submitted, "reading_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.Score.Should().Be(2);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeTrue();
+        result.ItemResults.Should().AllSatisfy(i => i.IsCorrect.Should().BeTrue());
+    }
+
+    [Fact]
+    public async Task ReadingFillInBlanks_OneWrong_ReturnsPartialScore()
+    {
+        var content = ReadingFillInBlanksContent(
+            ("gap1", "dog", ["dog", "cat", "bird", "fish"]),
+            ("gap2", "quickly", ["slowly", "quickly", "quietly", "loudly"]));
+        var submitted = FillBlanksSubmitted(("gap1", "cat"), ("gap2", "quickly"));
+
+        var request = MakeRequest(content, submitted, "reading_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeFalse();
+        result.ItemResults.Should().ContainSingle(i => i.IsCorrect);
+    }
+
+    [Fact]
+    public async Task ReadingFillInBlanks_NormalizesCase()
+    {
+        var content = ReadingFillInBlanksContent(("gap1", "Dog", ["Dog", "Cat"]));
+        var submitted = FillBlanksSubmitted(("gap1", "dog"));
+
+        var request = MakeRequest(content, submitted, "reading_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
 }

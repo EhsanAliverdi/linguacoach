@@ -183,6 +183,23 @@ public sealed class SpokenResponseContent
     public int? MaxDurationSeconds { get; set; }
 }
 
+// ── reading_fill_in_blanks ────────────────────────────────────────────────────
+
+public sealed class ReadingFillInBlanksContent
+{
+    public string? PassageWithBlanks { get; set; }
+    public List<ReadingFillInBlanksGapDto>? Gaps { get; set; }
+    public List<string>? SuccessChecklist { get; set; }
+}
+
+public sealed class ReadingFillInBlanksGapDto
+{
+    public string? Id { get; set; }
+    public string? Answer { get; set; }
+    public List<string>? Options { get; set; }
+    public string? Explanation { get; set; }
+}
+
 // ── lesson_reflection ─────────────────────────────────────────────────────────
 
 public sealed class LessonReflectionContent

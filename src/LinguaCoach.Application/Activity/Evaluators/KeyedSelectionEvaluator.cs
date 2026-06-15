@@ -20,6 +20,9 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
         if (request.ExercisePatternKey == "reading_multiple_choice_single")
             return EvaluateReadingMultipleChoiceSingleAsync(request);
 
+        if (request.ExercisePatternKey == "reading_multiple_choice_multi")
+            return EvaluateReadingMultipleChoiceMultiAsync(request);
+
         var expectedMap = ParseExpectedPairs(request.ContentJson);
         var submittedMap = ParseSubmittedPairs(request.SubmittedAnswerJson);
 
@@ -149,6 +152,115 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             coachSummary: coachSummary);
 
         return Task.FromResult(result);
+    }
+
+    // ── reading_multiple_choice_multi ────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateReadingMultipleChoiceMultiAsync(
+        PatternEvaluationRequest request)
+    {
+        var exerciseData = ParseReadingMultiExerciseData(request.ContentJson);
+        var selectedIds = ParseSelectedOptionIds(request.SubmittedAnswerJson);
+
+        var correctIds = exerciseData?.CorrectOptionIds is { Count: > 0 }
+            ? new HashSet<string>(exerciseData.CorrectOptionIds, StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+
+        var selectedSet = new HashSet<string>(selectedIds ?? [], StringComparer.Ordinal);
+
+        var missed = correctIds.Where(id => !selectedSet.Contains(id)).ToList();
+        var falsePositives = selectedSet.Where(id => !correctIds.Contains(id)).ToList();
+        var isCorrect = missed.Count == 0 && falsePositives.Count == 0 && correctIds.Count > 0;
+
+        var score = isCorrect ? 1.0 : 0.0;
+        const double maxScore = 1.0;
+
+        string feedback;
+        if (selectedSet.Count == 0)
+        {
+            feedback = $"No answers selected — the correct answers are: {string.Join(", ", correctIds.OrderBy(x => x))}.";
+        }
+        else if (isCorrect)
+        {
+            feedback = exerciseData?.Explanation ?? "Correct — you selected all supported answers.";
+        }
+        else
+        {
+            var parts = new List<string>();
+            if (missed.Count > 0)
+                parts.Add($"You missed: {string.Join(", ", missed.OrderBy(x => x))}.");
+            if (falsePositives.Count > 0)
+                parts.Add($"Incorrectly selected: {string.Join(", ", falsePositives.OrderBy(x => x))}.");
+            feedback = string.Join(" ", parts);
+            if (!string.IsNullOrWhiteSpace(exerciseData?.Explanation))
+                feedback += $" {exerciseData.Explanation}";
+        }
+
+        var optionDetails = new List<string>();
+        if (exerciseData?.OptionExplanations is not null)
+        {
+            foreach (var (optId, note) in exerciseData.OptionExplanations.OrderBy(kvp => kvp.Key))
+            {
+                if (!string.IsNullOrWhiteSpace(note))
+                    optionDetails.Add($"{optId}: {note}");
+            }
+        }
+        if (optionDetails.Count > 0)
+            feedback += " " + string.Join(" | ", optionDetails);
+
+        var itemResult = new PatternEvaluationItemResult(
+            ItemKey: "reading_multiple_choice_multi",
+            StudentAnswer: selectedSet.Count > 0 ? string.Join(",", selectedSet.OrderBy(x => x)) : null,
+            CorrectAnswer: string.Join(",", correctIds.OrderBy(x => x)),
+            AcceptedAnswers: [string.Join(",", correctIds.OrderBy(x => x))],
+            IsCorrect: isCorrect,
+            Score: score,
+            MaxScore: maxScore,
+            Feedback: feedback);
+
+        var coachSummary = isCorrect
+            ? "Correct — you selected all answers supported by the passage."
+            : missed.Count > 0 && falsePositives.Count == 0
+                ? "You found some correct answers but missed others — review the passage for all supported options."
+                : "Not quite — check which options are directly supported by the passage and avoid unsupported ones.";
+
+        var result = PatternEvaluationResult.Create(
+            score: score,
+            maxScore: maxScore,
+            passed: isCorrect,
+            completed: true,
+            itemResults: [itemResult],
+            coachSummary: coachSummary);
+
+        return Task.FromResult(result);
+    }
+
+    private static ReadingMultipleChoiceMultiExerciseData? ParseReadingMultiExerciseData(string contentJson)
+    {
+        try
+        {
+            var json = UnwrapStagedContent(contentJson);
+            return JsonSerializer.Deserialize<ReadingMultipleChoiceMultiExerciseData>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static List<string>? ParseSelectedOptionIds(string submittedAnswerJson)
+    {
+        if (string.IsNullOrWhiteSpace(submittedAnswerJson)) return null;
+
+        try
+        {
+            var dto = JsonSerializer.Deserialize<ReadingMultipleChoiceMultiSubmittedAnswer>(submittedAnswerJson, JsonOptions);
+            return dto?.SelectedOptionIds is { Count: > 0 } ? dto.SelectedOptionIds : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static ReadingMultipleChoiceExerciseData? ParseReadingExerciseData(string contentJson)
@@ -281,4 +393,22 @@ public sealed class ReadingMultipleChoiceExerciseData
 public sealed class ReadingMultipleChoiceSubmittedAnswer
 {
     public string? SelectedOptionId { get; set; }
+}
+
+/// <summary>
+/// practiceContent.exerciseData shape for reading_multiple_choice_multi.
+/// </summary>
+public sealed class ReadingMultipleChoiceMultiExerciseData
+{
+    public List<string>? CorrectOptionIds { get; set; }
+    public string? Explanation { get; set; }
+    public Dictionary<string, string>? OptionExplanations { get; set; }
+}
+
+/// <summary>
+/// Submitted answer shape for reading_multiple_choice_multi.
+/// </summary>
+public sealed class ReadingMultipleChoiceMultiSubmittedAnswer
+{
+    public List<string> SelectedOptionIds { get; set; } = [];
 }

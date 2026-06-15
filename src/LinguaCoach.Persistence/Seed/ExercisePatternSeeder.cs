@@ -197,6 +197,38 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise careful reading and choosing the best-supported answer",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.ReadingFillInBlanks,
+            name: "Reading Fill in Blanks",
+            primarySkill: "Reading",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[3]""",           // ReadingInput
+            activityType: ActivityType.ReadingTask,
+            interactionMode: InteractionMode.ReadingFillInBlanks,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_reading_fill_in_blanks",
+            aiEvaluatePromptKey: "activity_evaluate_reading_fill_in_blanks",
+            teachingPurpose: "Practise reading context clues to choose the correct missing word in a passage",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.ReadingMultipleChoiceMulti,
+            name: "Reading Multiple Choice Multiple",
+            primarySkill: "Reading",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[3]""",           // ReadingInput
+            activityType: ActivityType.ReadingTask,
+            interactionMode: InteractionMode.MultipleChoiceMulti,
+            markingMode: MarkingMode.KeyedSelection,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_reading_multiple_choice_multi",
+            aiEvaluatePromptKey: "activity_evaluate_reading_multiple_choice_multi",
+            teachingPurpose: "Practise reading carefully and selecting all answers supported by the passage",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

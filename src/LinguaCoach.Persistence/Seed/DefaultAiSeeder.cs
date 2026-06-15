@@ -36,6 +36,8 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateOpenWritingTaskKey    = "activity_generate_open_writing_task";
     public const string ActivityGenerateSpeakingRoleplayTurnKey = "activity_generate_speaking_roleplay_turn";
     public const string ActivityGenerateReadingMultipleChoiceSingleKey = "activity_generate_reading_multiple_choice_single";
+    public const string ActivityGenerateReadingMultipleChoiceMultiKey  = "activity_generate_reading_multiple_choice_multi";
+    public const string ActivityGenerateReadingFillInBlanksKey         = "activity_generate_reading_fill_in_blanks";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1380,6 +1382,171 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateReadingMultipleChoiceMultiContent = """
+You are an expert English language teacher creating a reading comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what reading skill this practises>",
+  "primarySkill": "reading",
+  "secondarySkills": [],
+  "exerciseType": "reading_multiple_choice_multi",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Selecting all supported answers in a workplace text'>",
+    "explanation": "<2-3 sentences: a general reading strategy for multiple-answer questions — no reference to the specific passage below>",
+    "keyPoints": [
+      "<reading strategy point 1, e.g. 'Read the passage fully before selecting any answers'>",
+      "<reading strategy point 2, e.g. 'Each correct option must be directly supported by the passage'>",
+      "<reading strategy point 3, e.g. 'Eliminate options that are partially true or not mentioned'>"
+    ],
+    "examples": [
+      { "phrase": "<example signal word or phrase>", "meaning": "<what it signals in a text>", "note": "<how to use it when reading for multiple answers>" }
+    ],
+    "strategy": "<one sentence: how to approach a multiple-answer reading question>",
+    "commonMistakes": [
+      "<common mistake, e.g. 'Stopping after finding one correct option without checking the rest'>",
+      "<second common mistake, e.g. 'Choosing options that sound reasonable but are not in the passage'>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about multiple-answer reading strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the passage, then choose ALL correct answers to the question.",
+    "scenario": "<1 sentence describing the workplace context of the passage>",
+    "task": "Read the passage and select every option that is supported by the text.",
+    "exerciseData": {
+      "passage": "<a realistic workplace reading passage, 80-160 words>",
+      "question": "<a multiple-answer comprehension question about the passage>",
+      "options": [
+        { "id": "A", "text": "<option A text>" },
+        { "id": "B", "text": "<option B text>" },
+        { "id": "C", "text": "<option C text>" },
+        { "id": "D", "text": "<option D text>" }
+      ],
+      "correctOptionIds": ["<id of first correct option>", "<id of second correct option>"],
+      "explanation": "<1-2 sentences explaining why the correct options are right, referring to the passage>",
+      "optionExplanations": {
+        "A": "<why this option is correct or incorrect, with reference to the passage>",
+        "B": "<why this option is correct or incorrect, with reference to the passage>",
+        "C": "<why this option is correct or incorrect, with reference to the passage>",
+        "D": "<why this option is correct or incorrect, with reference to the passage>"
+      },
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Inference", "Complete answer selection", "Distractor elimination"],
+    "rubric": [],
+    "feedbackFocus": "Help the student select all answers supported by the passage and avoid unsupported distractors.",
+    "successCriteria": [
+      "All selected options are supported by the passage.",
+      "No correct options are missed.",
+      "Unsupported distractors are avoided."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the passage, question, options, correctOptionIds, optionExplanations, or any reference to this specific exercise's content. It teaches general reading strategy only.
+- practiceContent.exerciseData.passage must be realistic for {{careerContext}} professionals and relevant to topic area {{topicHint}}.
+- practiceContent.exerciseData.options must contain exactly 4 options with ids "A", "B", "C", "D".
+- correctOptionIds must contain AT LEAST TWO correct option ids (this is a multiple-answer exercise, not a single-answer exercise).
+- optionExplanations must contain an entry for every option id ("A", "B", "C", "D").
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateReadingFillInBlanksContent = """
+You are an expert English language teacher creating a reading fill-in-the-blanks exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what reading/context skill this practises>",
+  "primarySkill": "reading",
+  "secondarySkills": [],
+  "exerciseType": "reading_fill_in_blanks",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Using context clues to choose missing words'>",
+    "explanation": "<2-3 sentences: a general reading strategy for fill-in-the-blanks questions — no reference to the specific passage below>",
+    "keyPoints": [
+      "<reading strategy point 1, e.g. 'Read the whole sentence before choosing a word'>",
+      "<reading strategy point 2, e.g. 'Use grammar clues — noun, verb, adjective — to narrow your choice'>",
+      "<reading strategy point 3, e.g. 'Check that the word fits both the meaning and the grammar'>"
+    ],
+    "examples": [
+      { "phrase": "<example sentence fragment with a blank>", "meaning": "<what the context shows>", "note": "<reading or grammar strategy note>" }
+    ],
+    "strategy": "<one sentence: how to read each sentence and choose the best missing word>",
+    "commonMistakes": [
+      "<common mistake, e.g. 'Choosing a word that fits the meaning but not the grammar'>",
+      "<second common mistake, e.g. 'Not reading the full sentence before selecting'>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about context-clue strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the passage and choose the correct word for each blank.",
+    "scenario": "<1 sentence describing the workplace context of the passage>",
+    "task": "Read the passage and select the word that best fits each blank.",
+    "exerciseData": {
+      "passageWithBlanks": "<a realistic workplace reading passage, 80-150 words, with blanks marked as {{gap1}}, {{gap2}}, {{gap3}} etc.>",
+      "gaps": [
+        {
+          "id": "gap1",
+          "answer": "<the correct word for this blank>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<1 sentence: why this word fits the context and grammar of the sentence>"
+        },
+        {
+          "id": "gap2",
+          "answer": "<the correct word for this blank>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<1 sentence: why this word fits>"
+        },
+        {
+          "id": "gap3",
+          "answer": "<the correct word for this blank>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<1 sentence: why this word fits>"
+        }
+      ],
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Context understanding", "Correct word choice", "Grammar fit", "Word form"],
+    "rubric": [],
+    "feedbackFocus": "Help the student use sentence context and grammar clues to choose missing words.",
+    "successCriteria": [
+      "Each selected word fits the context of the passage.",
+      "Each selected word fits the grammar of the surrounding sentence."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the passageWithBlanks, gap ids, gap options, correct answers, or any reference to this specific exercise's content. It teaches general reading/context-clue strategy only.
+- practiceContent.exerciseData.passageWithBlanks must use placeholder tokens {{gap1}}, {{gap2}}, {{gap3}} (etc.) exactly where blanks appear — one token per gap.
+- Each gap must have exactly 4 options, one of which is the correct answer. Shuffle the options so the correct answer is not always first.
+- Gaps must be numbered gap1, gap2, gap3 in order of appearance.
+- Include between 2 and 4 gaps total.
+- The passage must be realistic for {{careerContext}} professionals and relevant to topic area {{topicHint}}.
+- Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -1992,6 +2159,14 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceSingleKey, ActivityGenerateReadingMultipleChoiceSingleContent,
             maxInputTokens: 900, maxOutputTokens: 900, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,
+            maxInputTokens: 900, maxOutputTokens: 1000, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateReadingFillInBlanksKey, ActivityGenerateReadingFillInBlanksContent,
+            maxInputTokens: 900, maxOutputTokens: 1100, ct);
 
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

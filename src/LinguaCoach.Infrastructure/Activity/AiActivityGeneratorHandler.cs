@@ -23,6 +23,8 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "speaking_roleplay_turn",
         "lesson_reflection",
         "reading_multiple_choice_single",
+        "reading_multiple_choice_multi",
+        "reading_fill_in_blanks",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

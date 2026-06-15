@@ -25,6 +25,8 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn", "Record one spoken workplace roleplay turn.", "speaking", "[]", "Pattern", "audio_response", "ai_open_ended", "activity_generate_speaking_roleplay_turn", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpeakingRoleplayTurn, 5, false, false, true, true),
         Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false, false, true),
         Ready(ExercisePatternKey.ReadingMultipleChoiceSingle, "Reading Multiple Choice Single", "Choose one answer from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_single", "keyed_selection", "activity_generate_reading_multiple_choice_single", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceSingle, 5, false, false, true, false),
+        Ready(ExercisePatternKey.ReadingMultipleChoiceMulti, "Reading Multiple Choice Multiple", "Choose multiple answers from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_multi", "keyed_selection", "activity_generate_reading_multiple_choice_multi", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceMulti, 5, false, false, true, false),
+        Ready(ExercisePatternKey.ReadingFillInBlanks, "Reading Fill in Blanks", "Fill blanks in a reading passage.", "reading", "[]", "Pattern", "reading_fill_in_blanks", "exact_match", "activity_generate_reading_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingFillInBlanks, 5, false, false, true, false),
 
         Planned("read_aloud", "Read Aloud", "Read text aloud clearly.", "speaking", "[\"reading\"]", "Planned speaking format", true, false),
         Planned("repeat_sentence", "Repeat Sentence", "Repeat an audio sentence accurately.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),
@@ -36,9 +38,9 @@ public static class ExerciseTypeDefinitionSeeder
         Planned("summarize_written_text", "Summarize Written Text", "Write a concise summary of a passage.", "writing", "[\"reading\"]", "Planned reading/writing format", true, false),
         Planned("write_essay", "Write Essay", "Write a structured essay.", "writing", "[]", "Planned reading/writing format", true, false),
         Planned("reading_writing_fill_in_blanks", "Reading and Writing Fill in Blanks", "Choose words for text blanks.", "reading", "[\"writing\"]", "Planned reading/writing format", true, false),
-        Planned("reading_multiple_choice_multi", "Reading Multiple Choice Multiple", "Choose multiple answers from reading.", "reading", "[]", "Planned reading/writing format", true, false),
+        // reading_multiple_choice_multi promoted to Ready above
         Planned("reorder_paragraphs", "Reorder Paragraphs", "Put paragraphs in logical order.", "reading", "[]", "Planned reading/writing format", true, false),
-        Planned("reading_fill_in_blanks", "Reading Fill in Blanks", "Fill blanks in a reading passage.", "reading", "[]", "Planned reading/writing format", true, false),
+        // reading_fill_in_blanks promoted to Ready above
         Planned("summarize_spoken_text", "Summarize Spoken Text", "Write a summary of spoken audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),
         Planned("listening_multiple_choice_multi", "Listening Multiple Choice Multiple", "Choose multiple answers from audio.", "listening", "[]", "Planned listening format", true, false, requiresAudio: true),
         Planned("listening_fill_in_blanks", "Listening Fill in Blanks", "Fill missing words from audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),

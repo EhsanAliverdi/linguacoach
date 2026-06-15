@@ -1472,4 +1472,169 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── reading_multiple_choice_multi pattern key tests ───────────────────────
+
+    private const string ValidReadingMultipleChoiceMultiJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Reading for multiple supported facts",
+      "moduleGoal": "Practise identifying all answers supported by a workplace text.",
+      "primarySkill": "reading",
+      "secondarySkills": [],
+      "exerciseType": "reading_multiple_choice_multi",
+      "learnContent": {
+        "teachingTitle": "Selecting all answers supported by the passage",
+        "explanation": "In multiple-answer questions, more than one option may be correct. Read the passage fully and check each option against the text before selecting.",
+        "keyPoints": ["Read every option before selecting any", "Each correct option must be directly supported by the passage", "Eliminate options that are not mentioned"],
+        "examples": [{ "phrase": "in addition", "meaning": "signals another point", "note": "look for additional facts after this phrase" }],
+        "strategy": "Read the passage, then test each option individually against what the text says.",
+        "commonMistakes": ["Stopping after finding one correct option", "Selecting options that sound reasonable but are not in the passage"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the passage, then choose ALL correct answers to the question.",
+        "scenario": "An internal memo about a project update.",
+        "task": "Select every option that is supported by the text.",
+        "exerciseData": {
+          "passage": "The project was delayed due to testing issues and budget approval delays. The team worked overtime to meet the revised deadline. No staff left the company during this period.",
+          "question": "Which of the following caused the project delay?",
+          "options": [
+            { "id": "A", "text": "Testing issues" },
+            { "id": "B", "text": "Staff resignations" },
+            { "id": "C", "text": "Budget approval delays" },
+            { "id": "D", "text": "Office relocation" }
+          ],
+          "correctOptionIds": ["A", "C"],
+          "explanation": "The passage explicitly mentions testing issues and budget approval delays as causes.",
+          "optionExplanations": {
+            "A": "Correct — testing issues are mentioned.",
+            "B": "Incorrect — no staff left the company.",
+            "C": "Correct — budget approval delays are mentioned.",
+            "D": "Incorrect — office relocation is not mentioned."
+          },
+          "successChecklist": ["Selected all passage-supported options", "Avoided unsupported distractors"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Complete answer selection", "Distractor elimination"],
+        "rubric": [],
+        "feedbackFocus": "Help the student select all answers supported by the passage.",
+        "successCriteria": ["All selected options are supported by the passage.", "No correct options are missed."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ReadingMultipleChoiceMulti_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidReadingMultipleChoiceMultiJson), ActivityType.ReadingTask, "reading_multiple_choice_multi");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("passage")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionIds")]
+    public void Validate_ReadingMultipleChoiceMulti_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidReadingMultipleChoiceMultiJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_multi");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("passage")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionIds")]
+    [InlineData("answerKey")]
+    [InlineData("selectedAnswers")]
+    [InlineData("optionExplanations")]
+    public void Validate_ReadingMultipleChoiceMulti_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidReadingMultipleChoiceMultiJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_multi");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
+    // ── reading_fill_in_blanks pattern key tests ──────────────────────────────
+
+    private const string ValidReadingFillInBlanksJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Fill in the Blanks",
+      "moduleGoal": "Practise reading context clues to choose the correct missing word.",
+      "primarySkill": "reading",
+      "secondarySkills": [],
+      "exerciseType": "reading_fill_in_blanks",
+      "learnContent": {
+        "teachingTitle": "Reading for context clues",
+        "explanation": "Read the passage and select the word that best completes each blank."
+      },
+      "practiceContent": {
+        "exerciseData": {
+          "passageWithBlanks": "The {{gap1}} ran quickly across the {{gap2}}.",
+          "gaps": [
+            { "id": "gap1", "answer": "dog", "options": ["dog","cat","bird","fish"], "explanation": "Dogs are known to run quickly." },
+            { "id": "gap2", "answer": "park", "options": ["park","river","mountain","desert"], "explanation": "Parks are common open spaces." }
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "coachingFocus": "vocabulary and context clues"
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ReadingFillInBlanks_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidReadingFillInBlanksJson), ActivityType.ReadingTask, "reading_fill_in_blanks");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("passageWithBlanks")]
+    [InlineData("gaps")]
+    public void Validate_ReadingFillInBlanks_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidReadingFillInBlanksJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_fill_in_blanks");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("passage")]
+    [InlineData("correctOptionId")]
+    [InlineData("answerKey")]
+    public void Validate_ReadingFillInBlanks_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidReadingFillInBlanksJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_fill_in_blanks");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

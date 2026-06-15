@@ -48,6 +48,20 @@
       (submitted)="onReadingMultipleChoiceSubmitted($event)"
     />
   }
+  @case ('multipleChoiceMulti') {
+    <app-reading-multiple-choice-multi
+      [content]="readingMultipleChoiceMultiContent"
+      [disabled]="disabled"
+      (submitted)="onReadingMultipleChoiceMultiSubmitted($event)"
+    />
+  }
+  @case ('readingFillInBlanks') {
+    <app-reading-fill-in-blanks
+      [content]="readingFillInBlanksContent"
+      [disabled]="disabled"
+      (submitted)="onReadingFillInBlanksSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

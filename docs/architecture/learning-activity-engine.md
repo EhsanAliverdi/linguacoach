@@ -670,7 +670,15 @@ Old flat vocabulary JSON is adapted to `legacy_adapted_v1`. The adapter teaches 
 
 Completed staged migrations: `ListeningComprehension`, `WritingScenario`, `SpeakingRolePlay`, and `VocabularyPractice`. Remaining pattern-backed activities are pending. Planned future exercise formats remain planned and non-runnable unless implemented end-to-end. Today pre-generation and MinIO/audio lifecycle remain future phases.
 
-## Reference implementation — first runnable planned future exercise format
+## Runnable planned future exercise formats
+
+**Phase 8A (2026-06-15):** `reading_multiple_choice_single` — first runnable planned future reading format. Uses `ActivityType.ReadingTask`, `InteractionMode.MultipleChoice`, `MarkingMode.KeyedSelection`. Single-answer; evaluated deterministically.
+
+**Phase 8B (2026-06-15):** `reading_multiple_choice_multi` — second runnable planned future reading format. Uses `ActivityType.ReadingTask`, `InteractionMode.MultipleChoiceMulti` (new enum value 12), `MarkingMode.KeyedSelection`. Multi-answer; evaluated deterministically by comparing the submitted set of option IDs to `correctOptionIds`. Identifies missed correct options and false positives.
+
+All other planned future exercise formats remain `planned` and non-generation-eligible.
+
+## Reference implementation pattern
 
 `reading_multiple_choice_single` (Phase 8A) is the reference implementation
 for converting a planned future exercise format (reading, writing, listening,

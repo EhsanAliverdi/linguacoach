@@ -1,0 +1,50 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="reading-multiple-choice-multi-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  <div class="sp-card" style="padding:16px" data-testid="reading-passage">
+    <p style="font-size:14px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap">{{ content.passage }}</p>
+  </div>
+
+  <div style="font-size:15px;font-weight:700;color:var(--sp-text)" data-testid="reading-question">
+    {{ content.question }}
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    @for (option of content.options; track option.id) {
+      <button
+        (click)="toggleOption(option.id)"
+        [disabled]="disabled"
+        class="sp-card"
+        style="text-align:left;padding:12px 14px;cursor:pointer;display:flex;gap:10px;align-items:flex-start"
+        [style.border]="isSelected(option.id) ? '2px solid var(--sp-primary, #2563eb)' : '1px solid var(--sp-border)'"
+        [attr.data-testid]="'reading-multi-option-' + option.id"
+        [attr.aria-pressed]="isSelected(option.id)"
+      >
+        <span
+          style="width:18px;height:18px;border:2px solid var(--sp-border);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px"
+          [style.background]="isSelected(option.id) ? 'var(--sp-primary, #2563eb)' : 'transparent'"
+          [style.border-color]="isSelected(option.id) ? 'var(--sp-primary, #2563eb)' : 'var(--sp-border)'"
+        >
+          @if (isSelected(option.id)) {
+            <span style="color:#fff;font-size:11px;font-weight:700;line-height:1">✓</span>
+          }
+        </span>
+        <span style="font-weight:700;color:var(--sp-muted)">{{ option.id }}</span>
+        <span style="font-size:14px;color:var(--sp-text)">{{ option.text }}</span>
+      </button>
+    }
+  </div>
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="reading-multiple-choice-multi-submit-btn">
+    @if (disabled) { Checking answers… } @else { Check answers }
+  </button>
+</div>

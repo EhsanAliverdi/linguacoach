@@ -18,6 +18,20 @@ const readyReading: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readyReadingMulti: any = {
+  key: 'reading_multiple_choice_multi', displayName: 'Reading Multiple Choice Multiple', primarySkill: 'reading', secondarySkills: [],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'reading_multiple_choice_multi', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_reading_multiple_choice_multi',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
+const readyReadingFillInBlanks: any = {
+  key: 'reading_fill_in_blanks', displayName: 'Reading Fill in Blanks', primarySkill: 'reading', secondarySkills: [],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'reading_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reading_fill_in_blanks',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -26,7 +40,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -129,6 +143,52 @@ describe('PracticeGymComponent', () => {
     expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'reading' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-789', returnTo: '/practice' },
+    });
+  });
+
+  it('reading_multiple_choice_multi is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('reading_multiple_choice_multi')).toBeTrue();
+    expect(component.statusText('reading_multiple_choice_multi')).toBe('Available');
+  });
+
+  it('clicking Reading can return reading_multiple_choice_multi and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-multi-1',
+      exerciseType: 'reading_multiple_choice_multi',
+      primarySkill: 'reading',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('reading');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-multi-1', returnTo: '/practice' },
+    });
+  });
+
+  it('reading_fill_in_blanks is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('reading_fill_in_blanks')).toBeTrue();
+    expect(component.statusText('reading_fill_in_blanks')).toBe('Available');
+  });
+
+  it('clicking Reading can return reading_fill_in_blanks and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-fib-1',
+      exerciseType: 'reading_fill_in_blanks',
+      primarySkill: 'reading',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('reading');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-fib-1', returnTo: '/practice' },
     });
   });
 });

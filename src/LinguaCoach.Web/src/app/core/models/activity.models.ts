@@ -20,7 +20,9 @@ export type InteractionMode =
   | 'audioAndFreeText'
   | 'audioAndGapFill'
   | 'emailReply'
-  | 'audioResponse';
+  | 'audioResponse'
+  | 'multipleChoiceMulti'
+  | 'readingFillInBlanks';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

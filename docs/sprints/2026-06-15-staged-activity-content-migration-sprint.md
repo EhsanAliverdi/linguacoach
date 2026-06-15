@@ -1083,3 +1083,59 @@ Pick the next planned reading or writing format with a similarly simple,
 deterministic, keyed-selection or exact-match shape (e.g. another
 single-answer reading format) and repeat this recipe: pattern definition →
 catalog row → validator keys → evaluator branch → prompt → renderer.
+
+---
+
+## Phase 8B — `reading_multiple_choice_multi` — COMPLETE 2026-06-15
+
+### Goal
+
+Make `reading_multiple_choice_multi` the second runnable planned future reading exercise format.
+
+The student reads a workplace passage and selects **all** answers supported by the text.
+Evaluated deterministically — no AI evaluation call required.
+
+### What was implemented
+
+| File | Change |
+|------|--------|
+| `src/LinguaCoach.Domain/ExercisePatternKey.cs` | Added `ReadingMultipleChoiceMulti = "reading_multiple_choice_multi"` |
+| `src/LinguaCoach.Domain/Enums/InteractionMode.cs` | Added `MultipleChoiceMulti = 12` (append-only) |
+| `src/LinguaCoach.Persistence/Seed/ExercisePatternSeeder.cs` | Added `ReadingMultipleChoiceMulti` pattern with `InteractionMode.MultipleChoiceMulti`, `MarkingMode.KeyedSelection`, `ReadingInput` compat kind |
+| `src/LinguaCoach.Persistence/Seed/ExerciseTypeDefinitionSeeder.cs` | Promoted `reading_multiple_choice_multi` catalog row from `Planned` to `Ready`; total catalog rows unchanged at 36 |
+| `src/LinguaCoach.Application/Activity/ModuleStageContentValidator.cs` | Added `correctOptionIds` and `optionExplanations` to `ForbiddenLearnContentKeys`; added `reading_multiple_choice_multi` → `["passage", "question", "options", "correctOptionIds"]` to `RequiredPracticeKeysByPatternKey` |
+| `src/LinguaCoach.Application/Activity/Evaluators/KeyedSelectionEvaluator.cs` | New deterministic evaluation path for `reading_multiple_choice_multi` — compares submitted `selectedOptionIds` set to `correctOptionIds` set; identifies missed correct options and false positives; includes option-level explanations in feedback |
+| `src/LinguaCoach.Persistence/Seed/DefaultAiSeeder.cs` | New `activity_generate_reading_multiple_choice_multi` prompt producing `module_stage_v1` with `passage`, `question`, 4 options A–D, `correctOptionIds` (at least two), `explanation`, `optionExplanations`, `successChecklist` |
+| `src/LinguaCoach.Infrastructure/Activity/AiActivityGeneratorHandler.cs` | Added `reading_multiple_choice_multi` to `StagedPatternKeys` for staged content validation on generation |
+| `src/LinguaCoach.Web/.../renderers/reading-multiple-choice-multi/` | New `ReadingMultipleChoiceMultiComponent` — checkbox-style multi-select renderer; shows passage, question, togglable options, submit button |
+| `src/LinguaCoach.Web/.../exercise-renderer/exercise-renderer.component.ts` | Imported new component; added `readingMultipleChoiceMultiContent` getter; added `onReadingMultipleChoiceMultiSubmitted` handler; added `multipleChoiceMulti` to `ExerciseAnswerPayload` union |
+| `src/LinguaCoach.Web/.../exercise-renderer/exercise-renderer.component.html` | Added `@case ('multipleChoiceMulti')` branch |
+| `src/LinguaCoach.Web/src/app/core/models/activity.models.ts` | Added `'multipleChoiceMulti'` to `InteractionMode` union type |
+| `tests/.../Sessions/ExerciseTypeCatalogTests.cs` | Added `ReadingMultipleChoiceMulti_IsReadyAndEligible`; updated `OtherPlannedReadingTypes_RemainUnchanged` to exclude both ready reading keys |
+| `tests/.../Sessions/ExercisePatternPhase1Tests.cs` | Updated pattern counts from 11→12 (all active) and 10→11 (after deactivation) |
+| `tests/.../Domain/InteractionModeMarkingModeTests.cs` | Added pin test for `MultipleChoiceMulti = 12`; updated count to 13 |
+| `tests/.../Activity/KeyedSelectionEvaluatorTests.cs` | Added 5 evaluator tests: exact correct set, missing one correct, false positive, no selection, invalid JSON |
+| `tests/.../Activity/ModuleStageContentValidatorTests.cs` | Added valid payload test, 4 missing-required-key tests, 7 forbidden-learn-key tests |
+| `tests/.../practice/practice-gym.component.spec.ts` | Added `readyReadingMulti` fixture; added 2 new tests for multi availability and routing |
+
+### CI/CD results
+
+- `git diff --check`: PASS
+- `dotnet restore`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors, 6 pre-existing warnings)
+- `dotnet test --configuration Release`: **621 unit / 475 integration / 3 architecture = 1099/1099 PASS**
+- Angular unit tests: **106/106 PASS** (up from 104 — 2 new tests added)
+- Angular production build: PASS
+
+### Scope boundaries respected
+
+- Only `reading_multiple_choice_multi` became runnable; all other planned rows untouched
+- No audio formats, Today pre-generation, MinIO, or speaking/listening formats touched
+- `/activity` `exerciseType=`/`type=`/`pattern=` query compatibility preserved
+- No student data, activity history, or pool behavior changes beyond adding one new pattern
+- "PTE" terminology not used anywhere in code, comments, tests, or docs
+
+### Phase 8C candidate
+
+Next candidate: `reading_fill_in_blanks` or `reading_writing_fill_in_blanks` — both have deterministic evaluation shapes (word selection) and are already in the catalog as `Planned`.
+Alternatively: `reorder_paragraphs` for a drag-and-drop reading format.

@@ -318,4 +318,120 @@ public sealed class KeyedSelectionEvaluatorTests
         result.Completed.Should().BeTrue();
         result.ItemResults.Single().StudentAnswer.Should().BeNull();
     }
+
+    // ── reading_multiple_choice_multi ─────────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeReadingMultiRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "reading_multiple_choice_multi",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.MultipleChoiceMulti,
+            ActivityType: ActivityType.ReadingTask,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedReadingMultiContent(string[] correctOptionIds) => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test reading multi",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Read and choose all correct answers.",
+            scenario = "Workplace email",
+            task = "Select all supported answers.",
+            exerciseData = new
+            {
+                passage = "The project was delayed due to testing and budget approval.",
+                question = "Why was the project delayed?",
+                options = new[]
+                {
+                    new { id = "A", text = "Testing issues" },
+                    new { id = "B", text = "Staff holiday" },
+                    new { id = "C", text = "Budget approval" },
+                    new { id = "D", text = "Office relocation" },
+                },
+                correctOptionIds,
+                explanation = "Testing and budget approval are both mentioned in the passage.",
+                optionExplanations = new Dictionary<string, string>
+                {
+                    ["A"] = "Correct — testing is mentioned.",
+                    ["B"] = "Incorrect — holidays are not mentioned.",
+                    ["C"] = "Correct — budget approval is mentioned.",
+                    ["D"] = "Incorrect — relocation is not mentioned.",
+                },
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    private static string SelectedOptions(params string[] ids) =>
+        JsonSerializer.Serialize(new ReadingMultipleChoiceMultiSubmittedAnswer { SelectedOptionIds = [.. ids] }, JsonOptions);
+
+    [Fact]
+    public async Task ReadingMultiChoiceMulti_ExactCorrectSet_ReturnsFullScore()
+    {
+        var content = StagedReadingMultiContent(["A", "C"]);
+        var submitted = SelectedOptions("A", "C");
+
+        var result = await _sut.EvaluateAsync(MakeReadingMultiRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadingMultiChoiceMulti_MissingOneCorrect_ReturnsIncorrect()
+    {
+        var content = StagedReadingMultiContent(["A", "C"]);
+        var submitted = SelectedOptions("A");  // missed C
+
+        var result = await _sut.EvaluateAsync(MakeReadingMultiRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("missed");
+    }
+
+    [Fact]
+    public async Task ReadingMultiChoiceMulti_FalsePositive_ReturnsIncorrect()
+    {
+        var content = StagedReadingMultiContent(["A", "C"]);
+        var submitted = SelectedOptions("A", "B", "C");  // B is wrong
+
+        var result = await _sut.EvaluateAsync(MakeReadingMultiRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.ItemResults.Single().Feedback.Should().Contain("B");
+    }
+
+    [Fact]
+    public async Task ReadingMultiChoiceMulti_NoSelection_ReturnsIncorrect_StillCompleted()
+    {
+        var content = StagedReadingMultiContent(["A", "C"]);
+
+        var result = await _sut.EvaluateAsync(MakeReadingMultiRequest(content, ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ReadingMultiChoiceMulti_InvalidJson_HandledSafely()
+    {
+        var content = StagedReadingMultiContent(["A", "C"]);
+
+        var result = await _sut.EvaluateAsync(MakeReadingMultiRequest(content, "not-json"), default);
+
+        result.Completed.Should().BeTrue();
+        result.Score.Should().Be(0);
+    }
 }

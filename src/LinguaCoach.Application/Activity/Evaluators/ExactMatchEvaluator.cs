@@ -103,6 +103,17 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
                 result.Add((key, accepted));
             }
         }
+        else if (patternKey == "reading_fill_in_blanks")
+        {
+            var content = JsonSerializer.Deserialize<ReadingFillInBlanksContent>(json, JsonOptions);
+            if (content?.Gaps is null) return result;
+            foreach (var gap in content.Gaps)
+            {
+                var key = gap.Id ?? Guid.NewGuid().ToString();
+                var accepted = BuildAcceptedList(gap.Answer);
+                result.Add((key, accepted));
+            }
+        }
         else
         {
             // gap_fill_workplace_phrase (and fallback)

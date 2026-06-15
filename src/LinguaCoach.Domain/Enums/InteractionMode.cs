@@ -18,5 +18,7 @@ public enum InteractionMode
     AudioAndFreeText = 8,  // Play audio clip first, then free-text answer area
     AudioAndGapFill  = 9,  // Play audio, fill gaps in a gapped transcript
     EmailReply       = 10, // Structured subject + body fields for workplace email replies
-    AudioResponse    = 11, // Record a spoken response via microphone, submitted as audio
+    AudioResponse         = 11, // Record a spoken response via microphone, submitted as audio
+    MultipleChoiceMulti   = 12, // Select multiple correct answers from A/B/C/D options
+    ReadingFillInBlanks   = 13, // Reading passage with per-gap dropdown option selection
 }
