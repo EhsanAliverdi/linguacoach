@@ -55,6 +55,13 @@
       (submitted)="onReadingMultipleChoiceMultiSubmitted($event)"
     />
   }
+  @case ('reorderParagraphs') {
+    <app-reorder-paragraphs
+      [content]="reorderParagraphsContent"
+      [disabled]="disabled"
+      (submitted)="onReorderParagraphsSubmitted($event)"
+    />
+  }
   @case ('readingFillInBlanks') {
     <app-reading-fill-in-blanks
       [content]="readingFillInBlanksContent"

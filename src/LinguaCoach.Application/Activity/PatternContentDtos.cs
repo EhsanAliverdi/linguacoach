@@ -200,6 +200,23 @@ public sealed class ReadingFillInBlanksGapDto
     public string? Explanation { get; set; }
 }
 
+// ── reorder_paragraphs ───────────────────────────────────────────────────────
+
+public sealed class ReorderParagraphsContent
+{
+    public List<ReorderParagraphsItemDto>? Items { get; set; }
+    public List<string>? CorrectOrder { get; set; }
+    public string? Explanation { get; set; }
+    public Dictionary<string, string>? ItemExplanations { get; set; }
+    public List<string>? SuccessChecklist { get; set; }
+}
+
+public sealed class ReorderParagraphsItemDto
+{
+    public string? Id { get; set; }
+    public string? Text { get; set; }
+}
+
 // ── lesson_reflection ─────────────────────────────────────────────────────────
 
 public sealed class LessonReflectionContent

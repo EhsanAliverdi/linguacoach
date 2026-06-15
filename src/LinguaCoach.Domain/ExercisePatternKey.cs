@@ -32,4 +32,5 @@ public static class ExercisePatternKey
     public const string ReadingMultipleChoiceSingle = "reading_multiple_choice_single";
     public const string ReadingMultipleChoiceMulti  = "reading_multiple_choice_multi";
     public const string ReadingFillInBlanks         = "reading_fill_in_blanks";
+    public const string ReorderParagraphs           = "reorder_paragraphs";
 }

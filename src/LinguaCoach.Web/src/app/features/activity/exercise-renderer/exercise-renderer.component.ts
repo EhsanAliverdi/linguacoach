@@ -12,6 +12,7 @@ import { EmailReplyComponent, EmailReplyContent } from '../renderers/email-reply
 import { ReadingMultipleChoiceComponent, ReadingMultipleChoiceContent } from '../renderers/reading-multiple-choice/reading-multiple-choice.component';
 import { ReadingMultipleChoiceMultiComponent, ReadingMultipleChoiceMultiContent } from '../renderers/reading-multiple-choice-multi/reading-multiple-choice-multi.component';
 import { ReadingFillInBlanksComponent, ReadingFillInBlanksContent } from '../renderers/reading-fill-in-blanks/reading-fill-in-blanks.component';
+import { ReorderParagraphsComponent, ReorderParagraphsContent } from '../renderers/reorder-paragraphs/reorder-paragraphs.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -23,7 +24,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'emailReply'; subject: string; body: string }
   | { kind: 'multipleChoiceSingle'; selectedOptionId: string }
   | { kind: 'multipleChoiceMulti'; selectedOptionIds: string[] }
-  | { kind: 'readingFillInBlanks'; answers: Record<string, string> };
+  | { kind: 'readingFillInBlanks'; answers: Record<string, string> }
+  | { kind: 'reorderParagraphs'; orderedIds: string[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -41,6 +43,7 @@ export type ExerciseAnswerPayload =
     ReadingMultipleChoiceComponent,
     ReadingMultipleChoiceMultiComponent,
     ReadingFillInBlanksComponent,
+    ReorderParagraphsComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -304,6 +307,27 @@ export class ExerciseRendererComponent {
 
   onReadingFillInBlanksSubmitted(answer: { answers: Record<string, string> }): void {
     this.answerSubmitted.emit({ kind: 'readingFillInBlanks', answers: answer.answers });
+  }
+
+  get reorderParagraphsContent(): ReorderParagraphsContent {
+    const raw = this.raw;
+    const items = this.arrayValue(raw['items']).map((item) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? '',
+        text: this.stringValue(obj['text']) ?? '',
+      };
+    }).filter(i => i.id);
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
+      items,
+    };
+  }
+
+  onReorderParagraphsSubmitted(answer: { orderedIds: string[] }): void {
+    this.answerSubmitted.emit({ kind: 'reorderParagraphs', orderedIds: answer.orderedIds });
   }
 
   onReadingMultipleChoiceMultiSubmitted(answer: { selectedOptionIds: string[] }): void {

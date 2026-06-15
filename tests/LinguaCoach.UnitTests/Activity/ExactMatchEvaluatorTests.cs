@@ -365,4 +365,101 @@ public sealed class ExactMatchEvaluatorTests
 
         result.ItemResults.Single().IsCorrect.Should().BeTrue();
     }
+
+    // ── reorder_paragraphs ────────────────────────────────────────────────────
+
+    private static string ReorderParagraphsContent(
+        string[] correctOrder,
+        params (string id, string text)[] items)
+    {
+        var content = new LinguaCoach.Application.Activity.ReorderParagraphsContent
+        {
+            Items = items.Select(i => new LinguaCoach.Application.Activity.ReorderParagraphsItemDto { Id = i.id, Text = i.text }).ToList(),
+            CorrectOrder = correctOrder.ToList(),
+            Explanation = "This is the logical order because each paragraph follows from the previous.",
+            ItemExplanations = correctOrder
+                .Select((id, idx) => (id, explanation: $"Paragraph {idx + 1} explanation."))
+                .ToDictionary(x => x.id, x => x.explanation),
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    private static string ReorderSubmitted(params string[] orderedIds) =>
+        JsonSerializer.Serialize(new ReorderParagraphsSubmittedAnswer { OrderedIds = orderedIds.ToList() }, JsonOptions);
+
+    [Fact]
+    public async Task ReorderParagraphs_CorrectOrder_ReturnsFullScore()
+    {
+        var content = ReorderParagraphsContent(
+            ["p1", "p2", "p3", "p4"],
+            ("p1", "First paragraph."), ("p2", "Second paragraph."), ("p3", "Third paragraph."), ("p4", "Fourth paragraph."));
+        var submitted = ReorderSubmitted("p1", "p2", "p3", "p4");
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "reorder_paragraphs"), default);
+
+        result.Score.Should().Be(4);
+        result.MaxScore.Should().Be(4);
+        result.Passed.Should().BeTrue();
+        result.ItemResults.Should().AllSatisfy(i => i.IsCorrect.Should().BeTrue());
+    }
+
+    [Fact]
+    public async Task ReorderParagraphs_OneMisplaced_ReturnsPartialScore()
+    {
+        var content = ReorderParagraphsContent(
+            ["p1", "p2", "p3", "p4"],
+            ("p1", "First."), ("p2", "Second."), ("p3", "Third."), ("p4", "Fourth."));
+        var submitted = ReorderSubmitted("p1", "p3", "p2", "p4"); // p2/p3 swapped
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "reorder_paragraphs"), default);
+
+        result.Score.Should().Be(2); // p1 and p4 correct
+        result.MaxScore.Should().Be(4);
+        result.Passed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReorderParagraphs_DuplicateIds_DeduplicatesAndEvaluates()
+    {
+        var content = ReorderParagraphsContent(
+            ["p1", "p2", "p3"],
+            ("p1", "First."), ("p2", "Second."), ("p3", "Third."));
+        var submitted = ReorderSubmitted("p1", "p1", "p2"); // duplicate p1
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "reorder_paragraphs"), default);
+
+        // After dedup: [p1, p2] — position 1 (p1) correct, position 2 (p2 vs expected p2) correct, position 3 missing
+        result.ItemResults.Should().HaveCount(3);
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReorderParagraphs_EmptySubmission_ReturnsZeroScore()
+    {
+        var content = ReorderParagraphsContent(
+            ["p1", "p2"],
+            ("p1", "First."), ("p2", "Second."));
+        var submitted = ReorderSubmitted(); // nothing submitted
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "reorder_paragraphs"), default);
+
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReorderParagraphs_AllWrong_ReturnsZeroScore()
+    {
+        var content = ReorderParagraphsContent(
+            ["p1", "p2", "p3"],
+            ("p1", "First."), ("p2", "Second."), ("p3", "Third."));
+        var submitted = ReorderSubmitted("p3", "p1", "p2"); // completely wrong
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "reorder_paragraphs"), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+    }
 }

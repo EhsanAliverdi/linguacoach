@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using LinguaCoach.Application.Activity;
 using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Application.Activity.Evaluators;
@@ -18,6 +19,9 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         PatternEvaluationRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.ExercisePatternKey == "reorder_paragraphs")
+            return EvaluateReorderParagraphsAsync(request);
+
         var expectedItems = ParseExpectedItems(request.ContentJson, request.ExercisePatternKey);
         var submittedMap = ParseSubmittedAnswers(request.SubmittedAnswerJson);
 
@@ -172,6 +176,95 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         return s;
     }
 
+    // ── reorder_paragraphs ────────────────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateReorderParagraphsAsync(
+        PatternEvaluationRequest request)
+    {
+        var json = UnwrapStagedContent(request.ContentJson);
+        ReorderParagraphsContent? content = null;
+        try { content = JsonSerializer.Deserialize<ReorderParagraphsContent>(json, JsonOptions); }
+        catch (JsonException) { /* fall through to empty */ }
+
+        var correctOrder = content?.CorrectOrder ?? [];
+        var totalMax = (double)correctOrder.Count;
+
+        ReorderParagraphsSubmittedAnswer? submitted = null;
+        if (!string.IsNullOrWhiteSpace(request.SubmittedAnswerJson))
+        {
+            try { submitted = JsonSerializer.Deserialize<ReorderParagraphsSubmittedAnswer>(request.SubmittedAnswerJson, JsonOptions); }
+            catch (JsonException) { /* leave null */ }
+        }
+
+        var submittedOrder = submitted?.OrderedIds ?? [];
+
+        // Deduplicate submitted ids (keep first occurrence)
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var deduped = submittedOrder.Where(id => seen.Add(id)).ToList();
+
+        var itemResults = new List<PatternEvaluationItemResult>();
+        double totalScore = 0;
+
+        for (var i = 0; i < correctOrder.Count; i++)
+        {
+            var expectedId = correctOrder[i];
+            var submittedId = i < deduped.Count ? deduped[i] : null;
+            var isCorrect = string.Equals(submittedId, expectedId, StringComparison.Ordinal);
+            var score = isCorrect ? 1.0 : 0.0;
+            totalScore += score;
+
+            string itemExplanation = string.Empty;
+            if (content?.ItemExplanations is not null)
+                content.ItemExplanations.TryGetValue(expectedId, out itemExplanation!);
+
+            var feedback = isCorrect
+                ? $"Correct — \"{expectedId}\" is in the right position."
+                : submittedId is null
+                    ? $"Position {i + 1}: expected \"{expectedId}\" but nothing was placed here."
+                    : $"Position {i + 1}: you placed \"{submittedId}\" but \"{expectedId}\" belongs here.";
+
+            if (!string.IsNullOrWhiteSpace(itemExplanation))
+                feedback += $" {itemExplanation}";
+
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: $"position_{i + 1}",
+                StudentAnswer: submittedId,
+                CorrectAnswer: expectedId,
+                AcceptedAnswers: [expectedId],
+                IsCorrect: isCorrect,
+                Score: score,
+                MaxScore: 1,
+                Feedback: feedback));
+        }
+
+        var percentage = PatternEvaluationResult.CalculatePercentage(totalScore, totalMax);
+        var passed = totalMax == 0 || percentage >= 60;
+
+        var correct = itemResults.Count(r => r.IsCorrect);
+        var total = itemResults.Count;
+        string coachSummary;
+        if (total == 0)
+            coachSummary = "Activity completed.";
+        else if (correct == total)
+            coachSummary = !string.IsNullOrWhiteSpace(content?.Explanation)
+                ? $"Well done — perfect order! {content.Explanation}"
+                : "Well done — the paragraphs are in the correct order!";
+        else if (correct == 0)
+            coachSummary = "Review how topic sentences, pronouns, and sequence words connect paragraphs logically.";
+        else
+            coachSummary = $"You placed {correct} of {total} paragraphs correctly. Look at the highlighted positions and consider how each paragraph connects to the next.";
+
+        var result = PatternEvaluationResult.Create(
+            score: totalScore,
+            maxScore: totalMax,
+            passed: passed,
+            completed: true,
+            itemResults: itemResults,
+            coachSummary: coachSummary);
+
+        return Task.FromResult(result);
+    }
+
     // ── coach summary ──────────────────────────────────────────────────────────
 
     private static string BuildCoachSummary(List<PatternEvaluationItemResult> items)
@@ -192,4 +285,12 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
 public sealed class GapFillSubmittedAnswer
 {
     public Dictionary<string, string?> Answers { get; set; } = new(StringComparer.Ordinal);
+}
+
+/// <summary>
+/// Submitted answer shape for reorder_paragraphs.
+/// </summary>
+public sealed class ReorderParagraphsSubmittedAnswer
+{
+    public List<string> OrderedIds { get; set; } = [];
 }

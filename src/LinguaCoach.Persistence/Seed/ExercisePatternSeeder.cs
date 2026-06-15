@@ -215,6 +215,22 @@ public static class ExercisePatternSeeder
             workplaceContext: true),
 
         new(
+            key: ExercisePatternKey.ReorderParagraphs,
+            name: "Reorder Paragraphs",
+            primarySkill: "Reading",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[3]""",           // ReadingInput
+            activityType: ActivityType.ReadingTask,
+            interactionMode: InteractionMode.ReorderParagraphs,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_reorder_paragraphs",
+            aiEvaluatePromptKey: "activity_evaluate_reorder_paragraphs",
+            teachingPurpose: "Practise reading coherence and logical sequencing of paragraph blocks",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
             key: ExercisePatternKey.ReadingMultipleChoiceMulti,
             name: "Reading Multiple Choice Multiple",
             primarySkill: "Reading",

@@ -32,6 +32,13 @@ const readyReadingFillInBlanks: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readyReorderParagraphs: any = {
+  key: 'reorder_paragraphs', displayName: 'Reorder Paragraphs', primarySkill: 'reading', secondarySkills: [],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'reorder_paragraphs', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reorder_paragraphs',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -40,7 +47,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -189,6 +196,29 @@ describe('PracticeGymComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-fib-1', returnTo: '/practice' },
+    });
+  });
+
+  it('reorder_paragraphs is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('reorder_paragraphs')).toBeTrue();
+    expect(component.statusText('reorder_paragraphs')).toBe('Available');
+  });
+
+  it('clicking Reading can return reorder_paragraphs and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-rp-1',
+      exerciseType: 'reorder_paragraphs',
+      primarySkill: 'reading',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('reading');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-rp-1', returnTo: '/practice' },
     });
   });
 });

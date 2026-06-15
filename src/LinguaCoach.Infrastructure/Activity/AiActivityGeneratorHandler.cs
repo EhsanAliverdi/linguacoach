@@ -25,6 +25,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "reading_multiple_choice_single",
         "reading_multiple_choice_multi",
         "reading_fill_in_blanks",
+        "reorder_paragraphs",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

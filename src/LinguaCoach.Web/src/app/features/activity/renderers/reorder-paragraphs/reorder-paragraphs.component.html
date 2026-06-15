@@ -1,0 +1,44 @@
+<app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+<p class="instructions-text">
+  {{ content.instructions ?? 'Read the paragraphs and put them in the correct logical order.' }}
+</p>
+
+<div class="reorder-list">
+  @for (item of orderedItems; track item.id; let i = $index; let last = $last) {
+    <div class="reorder-item" [attr.data-testid]="'reorder-item-' + item.id">
+      <div class="reorder-controls">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          [disabled]="disabled || i === 0"
+          (click)="moveUp(i)"
+          [attr.aria-label]="'Move paragraph up'"
+          data-testid="move-up"
+        >&#8593;</button>
+        <span class="position-label">{{ i + 1 }}</span>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          [disabled]="disabled || last"
+          (click)="moveDown(i)"
+          [attr.aria-label]="'Move paragraph down'"
+          data-testid="move-down"
+        >&#8595;</button>
+      </div>
+      <div class="reorder-text">{{ item.text }}</div>
+    </div>
+  }
+</div>
+
+<div class="submit-row">
+  <button
+    type="button"
+    class="btn btn-primary"
+    [disabled]="!canSubmit || disabled"
+    (click)="submit()"
+    data-testid="reorder-submit"
+  >
+    Check Order
+  </button>
+</div>

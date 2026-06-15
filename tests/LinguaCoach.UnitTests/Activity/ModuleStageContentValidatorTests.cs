@@ -1637,4 +1637,76 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── reorder_paragraphs pattern key tests ──────────────────────────────────
+
+    private const string ValidReorderParagraphsJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Reorder the Team Update",
+      "moduleGoal": "Practise recognising logical paragraph order in a workplace email update.",
+      "primarySkill": "reading",
+      "secondarySkills": [],
+      "exerciseType": "reorder_paragraphs",
+      "learnContent": {
+        "teachingTitle": "Putting paragraphs in logical order",
+        "explanation": "Look for topic sentences, pronouns, and sequence words to identify paragraph order."
+      },
+      "practiceContent": {
+        "exerciseData": {
+          "items": [
+            { "id": "p1", "text": "The project kick-off meeting has been scheduled for Monday." },
+            { "id": "p2", "text": "All team members should confirm their attendance by Friday." },
+            { "id": "p3", "text": "The agenda will be shared in advance." },
+            { "id": "p4", "text": "Please bring any questions you have about the new process." }
+          ],
+          "correctOrder": ["p1", "p2", "p3", "p4"],
+          "explanation": "The opening sentence introduces the event; subsequent paragraphs provide logistic details."
+        }
+      },
+      "feedbackPlan": {
+        "feedbackFocus": "Help the student recognise logical flow and paragraph cohesion."
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ReorderParagraphs_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidReorderParagraphsJson), ActivityType.ReadingTask, "reorder_paragraphs");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("items")]
+    [InlineData("correctOrder")]
+    public void Validate_ReorderParagraphs_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidReorderParagraphsJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reorder_paragraphs");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("items")]
+    [InlineData("correctOrder")]
+    [InlineData("answerKey")]
+    [InlineData("selectedOrder")]
+    public void Validate_ReorderParagraphs_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidReorderParagraphsJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reorder_paragraphs");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

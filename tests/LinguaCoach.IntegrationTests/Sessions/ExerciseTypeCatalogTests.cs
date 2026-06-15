@@ -116,9 +116,24 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task ReorderParagraphs_IsReadyAndEligible()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reorder_paragraphs");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reorder_paragraphs");
+    }
+
+    [Fact]
     public async Task OtherPlannedReadingTypes_RemainUnchanged()
     {
-        var readyReadingKeys = new[] { "reading_multiple_choice_single", "reading_multiple_choice_multi", "reading_fill_in_blanks" };
+        var readyReadingKeys = new[] { "reading_multiple_choice_single", "reading_multiple_choice_multi", "reading_fill_in_blanks", "reorder_paragraphs" };
         var planned = await _db.ExerciseTypeDefinitions
             .Where(e => e.PrimarySkill == "reading" && !readyReadingKeys.Contains(e.Key))
             .ToListAsync();

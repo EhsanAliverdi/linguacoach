@@ -75,7 +75,7 @@ and route to `/activity?activityId=<id>&returnTo=/practice`.
 |---|---|---|
 | Vocabulary class | `/activity?exerciseType=phrase_match&returnTo=/practice` (module link, unaffected) | functional word-card lesson + matching practice |
 | Listening | pool-aware skill selection | functional |
-| Reading | pool-aware skill selection (`reading_multiple_choice_single`, `reading_multiple_choice_multi`) | functional |
+| Reading | pool-aware skill selection (`reading_multiple_choice_single`, `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reorder_paragraphs`) | functional |
 | Writing | pool-aware skill selection | functional |
 | Speaking | pool-aware skill selection | functional recorded prompt, no pronunciation claim |
 | Matching | `/activity?exerciseType=phrase_match&returnTo=/practice` (module link, unaffected) | functional |
@@ -348,4 +348,4 @@ Completed staged migrations:
 - `SpeakingRolePlay`
 - `VocabularyPractice`
 
-Remaining staged migrations are pattern-backed activities. Two planned future exercise formats have been made runnable: `reading_multiple_choice_single` (Phase 8A) and `reading_multiple_choice_multi` (Phase 8B). All other planned future exercise formats remain planned and non-runnable. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase.
+Remaining staged migrations are pattern-backed activities. Four planned future exercise formats have been made runnable: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), and `reorder_paragraphs` (Phase 8D). All other planned future exercise formats remain planned and non-runnable. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase.

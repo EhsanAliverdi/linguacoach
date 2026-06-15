@@ -1135,7 +1135,14 @@ Evaluated deterministically — no AI evaluation call required.
 - No student data, activity history, or pool behavior changes beyond adding one new pattern
 - "PTE" terminology not used anywhere in code, comments, tests, or docs
 
-### Phase 8C candidate
+### Phase 8C — COMPLETE 2026-06-15
 
-Next candidate: `reading_fill_in_blanks` or `reading_writing_fill_in_blanks` — both have deterministic evaluation shapes (word selection) and are already in the catalog as `Planned`.
-Alternatively: `reorder_paragraphs` for a drag-and-drop reading format.
+`reading_fill_in_blanks` — passage with `{{gapN}}` tokens, per-gap dropdown options, `ExactMatchEvaluator` gap-keyed branch, `InteractionMode.ReadingFillInBlanks = 13`. Tests: 631 unit / 476 integration / 3 arch / 108 Angular — all green.
+
+### Phase 8D — COMPLETE 2026-06-15
+
+`reorder_paragraphs` — shuffled paragraph blocks, move-up/move-down UI, `ExactMatchEvaluator` position-keyed branch, `InteractionMode.ReorderParagraphs = 14`. Submitted shape: `{ orderedIds: string[] }`. Per-position scoring with partial credit. Tests: 644 unit / 477 integration / 3 arch / 110 Angular — all green.
+
+### Phase 8E candidate
+
+Next candidate: `reading_writing_fill_in_blanks` (reading + writing combined), `listening_multiple_choice_single`, or `summarize_written_text` — all have deterministic or AI evaluation shapes and are already in the catalog as `Planned`.

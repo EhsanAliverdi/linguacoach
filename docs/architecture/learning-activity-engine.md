@@ -676,6 +676,10 @@ Completed staged migrations: `ListeningComprehension`, `WritingScenario`, `Speak
 
 **Phase 8B (2026-06-15):** `reading_multiple_choice_multi` — second runnable planned future reading format. Uses `ActivityType.ReadingTask`, `InteractionMode.MultipleChoiceMulti` (new enum value 12), `MarkingMode.KeyedSelection`. Multi-answer; evaluated deterministically by comparing the submitted set of option IDs to `correctOptionIds`. Identifies missed correct options and false positives.
 
+**Phase 8C (2026-06-15):** `reading_fill_in_blanks` — third runnable planned future reading format. Uses `ActivityType.ReadingTask`, `InteractionMode.ReadingFillInBlanks` (new enum value 13), `MarkingMode.ExactMatch`. Passage with `{{gapN}}` tokens; per-gap dropdown options; evaluated deterministically by `ExactMatchEvaluator` gap-keyed branch.
+
+**Phase 8D (2026-06-15):** `reorder_paragraphs` — fourth runnable planned future reading format. Uses `ActivityType.ReadingTask`, `InteractionMode.ReorderParagraphs` (new enum value 14), `MarkingMode.ExactMatch`. Student reorders shuffled paragraph blocks using move-up/move-down controls; evaluated deterministically by `ExactMatchEvaluator` position-keyed branch. Submitted answer shape: `{ orderedIds: string[] }`. Per-position scoring; partial credit supported.
+
 All other planned future exercise formats remain `planned` and non-generation-eligible.
 
 ## Reference implementation pattern

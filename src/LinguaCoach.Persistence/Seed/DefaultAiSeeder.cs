@@ -38,6 +38,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateReadingMultipleChoiceSingleKey = "activity_generate_reading_multiple_choice_single";
     public const string ActivityGenerateReadingMultipleChoiceMultiKey  = "activity_generate_reading_multiple_choice_multi";
     public const string ActivityGenerateReadingFillInBlanksKey         = "activity_generate_reading_fill_in_blanks";
+    public const string ActivityGenerateReorderParagraphsKey           = "activity_generate_reorder_paragraphs";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1547,6 +1548,92 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateReorderParagraphsContent = """
+You are an expert English language teacher creating a reorder-paragraphs reading exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what sequencing/coherence reading skill this practises>",
+  "primarySkill": "reading",
+  "secondarySkills": [],
+  "exerciseType": "reorder_paragraphs",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Putting paragraphs in a logical order'>",
+    "explanation": "<2-4 sentences: general strategy for recognising paragraph order — look for topic sentences, pronoun references, time/sequence words, and logical flow. No reference to the specific paragraphs below.>",
+    "keyPoints": [
+      "<e.g. 'The opening sentence usually introduces the topic without referring back to earlier text'>",
+      "<e.g. 'Pronouns like 'this', 'it', or 'they' refer back to something already mentioned'>",
+      "<e.g. 'Sequence words like 'first', 'then', 'finally' signal order'>"
+    ],
+    "examples": [
+      { "phrase": "<sequence signal word or short example>", "meaning": "<what it signals>", "note": "<ordering strategy note>" }
+    ],
+    "strategy": "<one sentence: how to identify the correct paragraph order>",
+    "commonMistakes": [
+      "<common ordering mistake>",
+      "<common pronoun/reference mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about text cohesion strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the paragraph blocks and put them in the correct logical order.",
+    "scenario": "<1 sentence describing the workplace context of the text>",
+    "task": "Put the paragraphs in the correct order to form a coherent text.",
+    "exerciseData": {
+      "items": [
+        { "id": "p1", "text": "<paragraph or sentence block, 20-50 words>" },
+        { "id": "p2", "text": "<paragraph or sentence block, 20-50 words>" },
+        { "id": "p3", "text": "<paragraph or sentence block, 20-50 words>" },
+        { "id": "p4", "text": "<paragraph or sentence block, 20-50 words>" }
+      ],
+      "correctOrder": ["p1", "p2", "p3", "p4"],
+      "explanation": "<1-2 sentences: why this order is the most logical>",
+      "itemExplanations": {
+        "p1": "<why this paragraph comes first>",
+        "p2": "<why this paragraph comes second>",
+        "p3": "<why this paragraph comes third>",
+        "p4": "<why this paragraph comes last>"
+      },
+      "successChecklist": [
+        "The text reads as a coherent whole.",
+        "Pronouns and references connect logically."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Opening sentence recognition",
+      "Logical sequence",
+      "Reference tracking",
+      "Cohesion and coherence"
+    ],
+    "rubric": [],
+    "feedbackFocus": "Help the student recognise logical flow and paragraph cohesion.",
+    "successCriteria": [
+      "The order creates a coherent text.",
+      "Pronouns, references, and sequence words connect logically."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual paragraph items, the correct order, answer keys, or any reference to this specific exercise's content. It teaches general sequencing/coherence strategy only.
+- practiceContent.exerciseData.items must contain exactly 4 paragraph blocks with ids p1, p2, p3, p4.
+- correctOrder must list exactly those 4 ids in the logically correct sequence.
+- The items presented to the student will be shuffled — the id order in the items array must NOT match the correctOrder. Place them in a different order so the student must reorder them.
+- itemExplanations keys must match the ids in correctOrder exactly.
+- Each paragraph block must be realistic for {{careerContext}} professionals and relevant to {{topicHint}}.
+- Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -2167,6 +2254,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingFillInBlanksKey, ActivityGenerateReadingFillInBlanksContent,
             maxInputTokens: 900, maxOutputTokens: 1100, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateReorderParagraphsKey, ActivityGenerateReorderParagraphsContent,
+            maxInputTokens: 900, maxOutputTokens: 1200, ct);
 
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
