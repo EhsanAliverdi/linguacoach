@@ -462,4 +462,49 @@ public sealed class ExactMatchEvaluatorTests
         result.Score.Should().Be(0);
         result.Passed.Should().BeFalse();
     }
+
+    // ── reading_writing_fill_in_blanks ────────────────────────────────────────
+
+    [Fact]
+    public async Task ReadingWritingFillInBlanks_AllCorrect_ReturnsFullScore()
+    {
+        var content = ReadingFillInBlanksContent(
+            ("gap1", "acquisition", ["acquisition", "acquirement", "acquiring"]),
+            ("gap2", "significant", ["significant", "signify", "significance"]));
+        var submitted = FillBlanksSubmitted(("gap1", "acquisition"), ("gap2", "significant"));
+
+        var request = MakeRequest(content, submitted, "reading_writing_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.Score.Should().Be(2);
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadingWritingFillInBlanks_OneWrong_ReturnsPartialScore()
+    {
+        var content = ReadingFillInBlanksContent(
+            ("gap1", "acquisition", ["acquisition", "acquirement", "acquiring"]),
+            ("gap2", "significant", ["significant", "signify", "significance"]));
+        var submitted = FillBlanksSubmitted(("gap1", "acquirement"), ("gap2", "significant"));
+
+        var request = MakeRequest(content, submitted, "reading_writing_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.Score.Should().Be(1);
+        result.ItemResults.Single(r => r.ItemKey == "gap1").IsCorrect.Should().BeFalse();
+        result.ItemResults.Single(r => r.ItemKey == "gap2").IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadingWritingFillInBlanks_NormalizesCase()
+    {
+        var content = ReadingFillInBlanksContent(("gap1", "Significant", ["Significant", "signify"]));
+        var submitted = FillBlanksSubmitted(("gap1", "significant"));
+
+        var request = MakeRequest(content, submitted, "reading_writing_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
 }

@@ -69,6 +69,13 @@
       (submitted)="onReadingFillInBlanksSubmitted($event)"
     />
   }
+  @case ('readingWritingFillInBlanks') {
+    <app-reading-writing-fill-in-blanks
+      [content]="readingWritingFillInBlanksContent"
+      [disabled]="disabled"
+      (submitted)="onReadingWritingFillInBlanksSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

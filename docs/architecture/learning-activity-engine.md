@@ -680,6 +680,8 @@ Completed staged migrations: `ListeningComprehension`, `WritingScenario`, `Speak
 
 **Phase 8D (2026-06-15):** `reorder_paragraphs` — fourth runnable planned future reading format. Uses `ActivityType.ReadingTask`, `InteractionMode.ReorderParagraphs` (new enum value 14), `MarkingMode.ExactMatch`. Student reorders shuffled paragraph blocks using move-up/move-down controls; evaluated deterministically by `ExactMatchEvaluator` position-keyed branch. Submitted answer shape: `{ orderedIds: string[] }`. Per-position scoring; partial credit supported.
 
+**Phase 8E (2026-06-15):** `reading_writing_fill_in_blanks` — fifth runnable planned future reading format; also targets writing (secondary skill). Uses `ActivityType.ReadingTask`, `InteractionMode.ReadingWritingFillInBlanks` (new enum value 15), `MarkingMode.ExactMatch`. Identical JSON schema and dropdown UI to `reading_fill_in_blanks`; AI prompt emphasises word-form and collocation knowledge. `ExactMatchEvaluator` `ParseExpectedItems` branch extended with OR condition. All reading-primary exercise types are now Ready.
+
 All other planned future exercise formats remain `planned` and non-generation-eligible.
 
 ## Reference implementation pattern

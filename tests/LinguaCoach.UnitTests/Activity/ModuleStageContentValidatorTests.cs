@@ -1709,4 +1709,74 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── reading_writing_fill_in_blanks pattern key tests ──────────────────────
+
+    private const string ValidReadingWritingFillInBlanksJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Word Forms in Context",
+      "moduleGoal": "Practise choosing the correct word form to complete a workplace passage.",
+      "primarySkill": "reading",
+      "secondarySkills": ["writing"],
+      "exerciseType": "reading_writing_fill_in_blanks",
+      "learnContent": {
+        "teachingTitle": "Choosing the right word form",
+        "explanation": "Read the passage and select the word that best fits each blank grammatically and contextually."
+      },
+      "practiceContent": {
+        "instructions": "Read the passage and choose the correct word for each blank.",
+        "exerciseData": {
+          "passageWithBlanks": "The {{gap1}} of a new system requires {{gap2}} planning.",
+          "gaps": [
+            { "id": "gap1", "answer": "implementation", "options": ["implementation", "implement", "implemented"], "explanation": "A noun is required here." },
+            { "id": "gap2", "answer": "careful", "options": ["careful", "carefully", "care"], "explanation": "An adjective modifying 'planning' is needed." }
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "feedbackFocus": "Help the student recognise word forms from context."
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ReadingWritingFillInBlanks_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidReadingWritingFillInBlanksJson), ActivityType.ReadingTask, "reading_writing_fill_in_blanks");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("passageWithBlanks")]
+    [InlineData("gaps")]
+    public void Validate_ReadingWritingFillInBlanks_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidReadingWritingFillInBlanksJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_writing_fill_in_blanks");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("passageWithBlanks")]
+    [InlineData("gaps")]
+    [InlineData("answerKey")]
+    [InlineData("selectedAnswer")]
+    public void Validate_ReadingWritingFillInBlanks_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidReadingWritingFillInBlanksJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_writing_fill_in_blanks");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

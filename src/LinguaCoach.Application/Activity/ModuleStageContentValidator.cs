@@ -55,8 +55,9 @@ public static class ModuleStageContentValidator
         ["lesson_reflection"]              = ["prompt"],
         ["reading_multiple_choice_single"] = ["passage", "question", "options", "correctOptionId"],
         ["reading_multiple_choice_multi"]   = ["passage", "question", "options", "correctOptionIds"],
-        ["reading_fill_in_blanks"]          = ["passageWithBlanks", "gaps"],
-        ["reorder_paragraphs"]              = ["items", "correctOrder"],
+        ["reading_fill_in_blanks"]               = ["passageWithBlanks", "gaps"],
+        ["reorder_paragraphs"]                   = ["items", "correctOrder"],
+        ["reading_writing_fill_in_blanks"]       = ["passageWithBlanks", "gaps"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)

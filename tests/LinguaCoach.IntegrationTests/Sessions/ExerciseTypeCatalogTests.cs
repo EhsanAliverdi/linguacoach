@@ -131,16 +131,43 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task OtherPlannedReadingTypes_RemainUnchanged()
+    public async Task ReadingWritingFillInBlanks_IsReadyAndEligible()
     {
-        var readyReadingKeys = new[] { "reading_multiple_choice_single", "reading_multiple_choice_multi", "reading_fill_in_blanks", "reorder_paragraphs" };
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_writing_fill_in_blanks");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reading_writing_fill_in_blanks");
+    }
+
+    [Fact]
+    public async Task AllReadingPrimaryTypes_AreNowReady()
+    {
+        // All reading-primary exercise types have been promoted to Ready in Phases 8A-8E.
+        // This test verifies no reading-primary type is left in planned status.
+        var readingTypes = await _db.ExerciseTypeDefinitions
+            .Where(e => e.PrimarySkill == "reading")
+            .ToListAsync();
+
+        Assert.NotEmpty(readingTypes);
+        Assert.All(readingTypes, e => Assert.Equal("ready", e.ImplementationStatus));
+    }
+
+    [Fact]
+    public async Task OtherPlannedTypes_RemainUnchanged()
+    {
         var planned = await _db.ExerciseTypeDefinitions
-            .Where(e => e.PrimarySkill == "reading" && !readyReadingKeys.Contains(e.Key))
+            .Where(e => e.ImplementationStatus == "planned")
             .ToListAsync();
 
         Assert.NotEmpty(planned);
-        Assert.All(planned, e => Assert.Equal("planned", e.ImplementationStatus));
         Assert.All(planned, e => Assert.False(e.IsAvailableForGeneration));
+        Assert.DoesNotContain(planned, e => e.PrimarySkill == "reading");
     }
 
     [Fact]

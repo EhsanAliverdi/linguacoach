@@ -1143,6 +1143,6 @@ Evaluated deterministically — no AI evaluation call required.
 
 `reorder_paragraphs` — shuffled paragraph blocks, move-up/move-down UI, `ExactMatchEvaluator` position-keyed branch, `InteractionMode.ReorderParagraphs = 14`. Submitted shape: `{ orderedIds: string[] }`. Per-position scoring with partial credit. Tests: 644 unit / 477 integration / 3 arch / 110 Angular — all green.
 
-### Phase 8E candidate
+### Phase 8E — COMPLETE 2026-06-15
 
-Next candidate: `reading_writing_fill_in_blanks` (reading + writing combined), `listening_multiple_choice_single`, or `summarize_written_text` — all have deterministic or AI evaluation shapes and are already in the catalog as `Planned`.
+`reading_writing_fill_in_blanks` — same `{{gapN}}`/dropdown UI as `reading_fill_in_blanks`, secondary skill `["writing"]`, `InteractionMode.ReadingWritingFillInBlanks = 15`, `ExactMatchEvaluator` reuses the `reading_fill_in_blanks` branch (patternKey OR condition). All reading-primary exercise types are now Ready. Tests: 655 unit / 479 integration / 3 arch / 112 Angular — all green.

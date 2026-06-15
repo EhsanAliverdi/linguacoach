@@ -38,7 +38,8 @@ public static class ExerciseTypeDefinitionSeeder
         Planned("answer_short_question", "Answer Short Question", "Answer a short spoken question.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),
         Planned("summarize_written_text", "Summarize Written Text", "Write a concise summary of a passage.", "writing", "[\"reading\"]", "Planned reading/writing format", true, false),
         Planned("write_essay", "Write Essay", "Write a structured essay.", "writing", "[]", "Planned reading/writing format", true, false),
-        Planned("reading_writing_fill_in_blanks", "Reading and Writing Fill in Blanks", "Choose words for text blanks.", "reading", "[\"writing\"]", "Planned reading/writing format", true, false),
+        Ready(ExercisePatternKey.ReadingWritingFillInBlanks, "Reading and Writing Fill in Blanks", "Choose the correct word for each blank in a reading passage.", "reading", "[\"writing\"]", "Pattern", "reading_writing_fill_in_blanks", "exact_match", "activity_generate_reading_writing_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingWritingFillInBlanks, 5, false, false, true, false),
+        // reading_writing_fill_in_blanks promoted to Ready above
         // reading_multiple_choice_multi promoted to Ready above
         // reorder_paragraphs promoted to Ready above
         // reading_fill_in_blanks promoted to Ready above

@@ -13,6 +13,7 @@ import { ReadingMultipleChoiceComponent, ReadingMultipleChoiceContent } from '..
 import { ReadingMultipleChoiceMultiComponent, ReadingMultipleChoiceMultiContent } from '../renderers/reading-multiple-choice-multi/reading-multiple-choice-multi.component';
 import { ReadingFillInBlanksComponent, ReadingFillInBlanksContent } from '../renderers/reading-fill-in-blanks/reading-fill-in-blanks.component';
 import { ReorderParagraphsComponent, ReorderParagraphsContent } from '../renderers/reorder-paragraphs/reorder-paragraphs.component';
+import { ReadingWritingFillInBlanksComponent, ReadingWritingFillInBlanksContent } from '../renderers/reading-writing-fill-in-blanks/reading-writing-fill-in-blanks.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -25,7 +26,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'multipleChoiceSingle'; selectedOptionId: string }
   | { kind: 'multipleChoiceMulti'; selectedOptionIds: string[] }
   | { kind: 'readingFillInBlanks'; answers: Record<string, string> }
-  | { kind: 'reorderParagraphs'; orderedIds: string[] };
+  | { kind: 'reorderParagraphs'; orderedIds: string[] }
+  | { kind: 'readingWritingFillInBlanks'; answers: Record<string, string> };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -44,6 +46,7 @@ export type ExerciseAnswerPayload =
     ReadingMultipleChoiceMultiComponent,
     ReadingFillInBlanksComponent,
     ReorderParagraphsComponent,
+    ReadingWritingFillInBlanksComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -307,6 +310,28 @@ export class ExerciseRendererComponent {
 
   onReadingFillInBlanksSubmitted(answer: { answers: Record<string, string> }): void {
     this.answerSubmitted.emit({ kind: 'readingFillInBlanks', answers: answer.answers });
+  }
+
+  get readingWritingFillInBlanksContent(): ReadingWritingFillInBlanksContent {
+    const raw = this.raw;
+    const gaps = this.arrayValue(raw['gaps']).map((gap) => {
+      const obj = this.objectValue(gap) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? '',
+        options: this.stringArray(obj['options']) ?? [],
+      };
+    }).filter(g => g.id);
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
+      passageWithBlanks: this.stringValue(raw['passageWithBlanks']) ?? '',
+      gaps,
+    };
+  }
+
+  onReadingWritingFillInBlanksSubmitted(answer: { answers: Record<string, string> }): void {
+    this.answerSubmitted.emit({ kind: 'readingWritingFillInBlanks', answers: answer.answers });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

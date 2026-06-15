@@ -38,7 +38,8 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateReadingMultipleChoiceSingleKey = "activity_generate_reading_multiple_choice_single";
     public const string ActivityGenerateReadingMultipleChoiceMultiKey  = "activity_generate_reading_multiple_choice_multi";
     public const string ActivityGenerateReadingFillInBlanksKey         = "activity_generate_reading_fill_in_blanks";
-    public const string ActivityGenerateReorderParagraphsKey           = "activity_generate_reorder_paragraphs";
+    public const string ActivityGenerateReorderParagraphsKey                = "activity_generate_reorder_paragraphs";
+    public const string ActivityGenerateReadingWritingFillInBlanksKey       = "activity_generate_reading_writing_fill_in_blanks";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1634,6 +1635,106 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateReadingWritingFillInBlanksContent = """
+You are an expert English language teacher creating a reading-and-writing fill-in-the-blanks exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+This exercise combines reading comprehension with vocabulary and word-form knowledge. The student reads a passage and selects the correct word for each blank from dropdown options.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what reading/word-form/vocabulary skill this practises>",
+  "primarySkill": "reading",
+  "secondarySkills": ["writing"],
+  "exerciseType": "reading_writing_fill_in_blanks",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Choosing the right word form'>",
+    "explanation": "<2-4 sentences: general strategy for reading context clues and recognising the correct word form (noun, verb, adjective, adverb) or meaning. No reference to the specific passage below.>",
+    "keyPoints": [
+      "<e.g. 'Read the full sentence before choosing — the surrounding words indicate the word class needed'>",
+      "<e.g. 'Collocations matter: certain nouns pair with certain verbs or adjectives'>",
+      "<e.g. 'Consider whether a noun, verb, adjective, or adverb fits the grammatical slot'>"
+    ],
+    "examples": [
+      { "phrase": "<target vocabulary or collocation>", "meaning": "<what it means>", "note": "<word-form or usage note>" }
+    ],
+    "strategy": "<one sentence: how to identify the correct word from context>",
+    "commonMistakes": [
+      "<common word-form mistake, e.g. using noun where adjective needed>",
+      "<common collocation mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about choosing word forms, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the passage and choose the correct word for each blank.",
+    "scenario": "<1 sentence describing the workplace context of the passage>",
+    "task": "Select the best word for each numbered gap in the passage.",
+    "exerciseData": {
+      "passageWithBlanks": "<A workplace passage of 80-120 words with 4-5 blanks marked as {{gap1}}, {{gap2}}, {{gap3}}, {{gap4}} (and optionally {{gap5}}). Each blank must require the student to use reading context AND word-form or vocabulary knowledge to choose correctly.>",
+      "gaps": [
+        {
+          "id": "gap1",
+          "answer": "<correct word>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<why this word is correct, mentioning word form or collocation>"
+        },
+        {
+          "id": "gap2",
+          "answer": "<correct word>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<why this word is correct>"
+        },
+        {
+          "id": "gap3",
+          "answer": "<correct word>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<why this word is correct>"
+        },
+        {
+          "id": "gap4",
+          "answer": "<correct word>",
+          "options": ["<correct word>", "<plausible distractor>", "<plausible distractor>"],
+          "explanation": "<why this word is correct>"
+        }
+      ],
+      "successChecklist": [
+        "Each blank has the grammatically and contextually correct word.",
+        "All distractors are plausible but clearly wrong in context."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Word-form accuracy",
+      "Vocabulary range",
+      "Reading context use",
+      "Collocation knowledge"
+    ],
+    "rubric": [],
+    "feedbackFocus": "Help the student recognise word forms and context clues.",
+    "successCriteria": [
+      "The correct word fits grammatically and contextually in every gap.",
+      "All distractors tested a meaningful contrast."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the passage, gap answers, options, or any reference to the specific exercise content. It teaches the general reading/word-form strategy only.
+- Use exactly the token format {{gap1}}, {{gap2}}, etc. in passageWithBlanks — no spaces inside the braces.
+- Each gap must have exactly 3 options. The correct answer must appear in the options array. Shuffle option order so the correct answer is not always first.
+- Distractors must be plausible words (e.g. wrong word form, near-synonym, or common collocation error) — not obviously wrong.
+- The passage must be realistic for {{careerContext}} professionals and relevant to {{topicHint}}.
+- Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -2257,6 +2358,10 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReorderParagraphsKey, ActivityGenerateReorderParagraphsContent,
+            maxInputTokens: 900, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateReadingWritingFillInBlanksKey, ActivityGenerateReadingWritingFillInBlanksContent,
             maxInputTokens: 900, maxOutputTokens: 1200, ct);
 
         // Exercise Pattern Engine — pattern-specific evaluation prompts

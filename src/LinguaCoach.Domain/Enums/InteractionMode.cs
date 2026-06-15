@@ -21,5 +21,6 @@ public enum InteractionMode
     AudioResponse         = 11, // Record a spoken response via microphone, submitted as audio
     MultipleChoiceMulti   = 12, // Select multiple correct answers from A/B/C/D options
     ReadingFillInBlanks   = 13, // Reading passage with per-gap dropdown option selection
-    ReorderParagraphs     = 14, // Move paragraph/sentence blocks into correct logical order
+    ReorderParagraphs          = 14, // Move paragraph/sentence blocks into correct logical order
+    ReadingWritingFillInBlanks = 15, // Reading passage with per-gap dropdown — reading + writing skills
 }

@@ -107,7 +107,7 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
                 result.Add((key, accepted));
             }
         }
-        else if (patternKey == "reading_fill_in_blanks")
+        else if (patternKey == "reading_fill_in_blanks" || patternKey == "reading_writing_fill_in_blanks")
         {
             var content = JsonSerializer.Deserialize<ReadingFillInBlanksContent>(json, JsonOptions);
             if (content?.Gaps is null) return result;

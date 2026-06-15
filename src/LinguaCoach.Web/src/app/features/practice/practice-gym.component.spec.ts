@@ -39,6 +39,13 @@ const readyReorderParagraphs: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readyReadingWritingFillInBlanks: any = {
+  key: 'reading_writing_fill_in_blanks', displayName: 'Reading and Writing Fill in Blanks', primarySkill: 'reading', secondarySkills: ['writing'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'reading_writing_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reading_writing_fill_in_blanks',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -47,7 +54,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -219,6 +226,29 @@ describe('PracticeGymComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-rp-1', returnTo: '/practice' },
+    });
+  });
+
+  it('reading_writing_fill_in_blanks is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('reading_writing_fill_in_blanks')).toBeTrue();
+    expect(component.statusText('reading_writing_fill_in_blanks')).toBe('Available');
+  });
+
+  it('clicking Reading can return reading_writing_fill_in_blanks and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-rwfib-1',
+      exerciseType: 'reading_writing_fill_in_blanks',
+      primarySkill: 'reading',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('reading');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-rwfib-1', returnTo: '/practice' },
     });
   });
 });

@@ -23,7 +23,8 @@ export type InteractionMode =
   | 'audioResponse'
   | 'multipleChoiceMulti'
   | 'readingFillInBlanks'
-  | 'reorderParagraphs';
+  | 'reorderParagraphs'
+  | 'readingWritingFillInBlanks';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

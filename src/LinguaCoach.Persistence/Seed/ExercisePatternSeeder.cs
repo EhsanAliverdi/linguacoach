@@ -231,6 +231,22 @@ public static class ExercisePatternSeeder
             workplaceContext: true),
 
         new(
+            key: ExercisePatternKey.ReadingWritingFillInBlanks,
+            name: "Reading and Writing Fill in Blanks",
+            primarySkill: "Reading",
+            secondarySkillsJson: """["Writing"]""",
+            compatibleKindsJson: """[3]""",           // ReadingInput
+            activityType: ActivityType.ReadingTask,
+            interactionMode: InteractionMode.ReadingWritingFillInBlanks,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_reading_writing_fill_in_blanks",
+            aiEvaluatePromptKey: "activity_evaluate_reading_writing_fill_in_blanks",
+            teachingPurpose: "Practise reading context clues and word-form knowledge to complete passage blanks",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
             key: ExercisePatternKey.ReadingMultipleChoiceMulti,
             name: "Reading Multiple Choice Multiple",
             primarySkill: "Reading",

@@ -483,6 +483,8 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
       submittedContent = JSON.stringify({ answers: payload.answers });
     } else if (payload.kind === 'reorderParagraphs') {
       submittedContent = JSON.stringify({ orderedIds: payload.orderedIds });
+    } else if (payload.kind === 'readingWritingFillInBlanks') {
+      submittedContent = JSON.stringify({ answers: payload.answers });
     } else {
       submittedContent = JSON.stringify(payload);
     }
