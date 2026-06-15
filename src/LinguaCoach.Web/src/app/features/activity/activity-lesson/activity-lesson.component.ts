@@ -361,8 +361,11 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
 
   onSubmitVocab(): void {
     const a = this.activity();
-    if (!a?.vocabItems?.length) return;
-    const answers: VocabAnswer[] = a.vocabItems.map(item => ({
+    if (!a) return;
+    const stagedItems = (a.stageContent?.practice?.exerciseData as { items?: NonNullable<typeof a.vocabItems> } | null)?.items;
+    const items = stagedItems ?? a.vocabItems;
+    if (!items?.length) return;
+    const answers: VocabAnswer[] = items.map(item => ({
       vocabularyItemId: item.vocabularyItemId,
       answer: this.vocabAnswers[item.vocabularyItemId] ?? '',
     }));

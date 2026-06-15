@@ -161,14 +161,16 @@ public sealed class VocabularyPracticeEvaluator
             var content = JsonSerializer.Deserialize<VocabPracticeContent>(contentJson,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return content?.Items?
+            var items = content?.Items ?? content?.PracticeContent?.ExerciseData?.Items;
+
+            return items?
                 .Where(i => i.VocabularyItemId != Guid.Empty
-                         && !string.IsNullOrWhiteSpace(i.ExpectedAnswer))
+                         && (!string.IsNullOrWhiteSpace(i.ExpectedAnswer) || !string.IsNullOrWhiteSpace(i.CorrectAnswer)))
                 .Select(i => new ExpectedItem(
                     i.VocabularyItemId,
                     i.Term ?? string.Empty,
-                    i.ExpectedAnswer!,
-                    i.Explanation ?? string.Empty))
+                    i.ExpectedAnswer ?? i.CorrectAnswer!,
+                    i.Explanation ?? i.Meaning ?? string.Empty))
                 .ToList()
                 ?? [];
         }
@@ -187,6 +189,19 @@ public sealed class VocabularyPracticeEvaluator
     {
         [JsonPropertyName("items")]
         public List<VocabPracticeItemContent>? Items { get; set; }
+
+        [JsonPropertyName("practiceContent")]
+        public VocabPracticeContentPractice? PracticeContent { get; set; }
+    }
+
+    private sealed class VocabPracticeContentPractice
+    {
+        [JsonPropertyName("exerciseData")] public VocabPracticeExerciseData? ExerciseData { get; set; }
+    }
+
+    private sealed class VocabPracticeExerciseData
+    {
+        [JsonPropertyName("items")] public List<VocabPracticeItemContent>? Items { get; set; }
     }
 
     private sealed class VocabPracticeItemContent
@@ -194,6 +209,8 @@ public sealed class VocabularyPracticeEvaluator
         [JsonPropertyName("vocabularyItemId")] public Guid VocabularyItemId { get; set; }
         [JsonPropertyName("term")] public string? Term { get; set; }
         [JsonPropertyName("expectedAnswer")] public string? ExpectedAnswer { get; set; }
+        [JsonPropertyName("correctAnswer")] public string? CorrectAnswer { get; set; }
+        [JsonPropertyName("meaning")] public string? Meaning { get; set; }
         [JsonPropertyName("explanation")] public string? Explanation { get; set; }
     }
 }

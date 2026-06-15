@@ -314,4 +314,85 @@ public sealed class ActivityGetHandlerStageContentTests
         learnJson.Should().NotContainAny("recordingControls", "startRecording", "submitLabel", "exerciseData", "audioScript");
     }
 
+
+    private const string LegacyVocabularyJson = """
+    {
+      "title": "Vocabulary practice",
+      "instructions": "Fill in the blank.",
+      "practiceMode": "fill_blank",
+      "items": [{"vocabularyItemId": "11111111-1111-1111-1111-111111111111", "term": "follow up", "prompt": "I will _____ tomorrow.", "expectedAnswer": "follow up", "hint": "Check again later.", "explanation": "To contact someone again later."}]
+    }
+    """;
+
+    private const string StagedVocabularyJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Vocabulary practice",
+      "moduleGoal": "Use workplace vocabulary accurately.",
+      "primarySkill": "vocabulary",
+      "secondarySkills": ["reading", "writing"],
+      "exerciseType": "vocabulary_practice",
+      "learnContent": {
+        "teachingTitle": "Learn workplace phrases",
+        "explanation": "Learn meaning and usage before practice.",
+        "keyPoints": ["Meaning", "Word form", "Tone"],
+        "examples": [{"phrase": "follow up", "meaning": "check again later", "note": "verb phrase"}],
+        "strategy": "Read the context first.",
+        "commonMistakes": ["Wrong spelling"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Fill in the blank.",
+        "scenario": "Workplace vocabulary review",
+        "task": "Type the missing phrase.",
+        "exerciseData": {
+          "items": [{"vocabularyItemId": "11111111-1111-1111-1111-111111111111", "term": "follow up", "meaning": "check again later", "example": "I will _____ tomorrow.", "correctAnswer": "follow up"}],
+          "practiceMode": "fill_blank"
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Meaning accuracy"],
+        "rubric": [],
+        "feedbackFocus": "Vocabulary feedback",
+        "successCriteria": []
+      }
+    }
+    """;
+
+    [Fact]
+    public void BuildStageContent_WithLegacyVocabularyJson_ReturnsLegacyAdaptedVocabularyContent()
+    {
+        var result = ActivityGetHandler.BuildStageContent(LegacyVocabularyJson, "Vocabulary practice");
+
+        result.Should().NotBeNull();
+        result!.SchemaVersion.Should().Be(ModuleStageSchema.LegacyAdaptedVersion);
+        result.PrimarySkill.Should().Be("vocabulary");
+        result.SecondarySkills.Should().BeEquivalentTo(["reading", "writing"]);
+        result.ExerciseType.Should().Be("vocabulary_practice");
+        result.Learn.Examples.Should().ContainSingle(e => e.Phrase == "follow up");
+
+        var learnJson = JsonSerializer.Serialize(result.Learn);
+        learnJson.Should().NotContainAny("practiceMode", "correctAnswer", "answerControls");
+
+        using var exerciseData = JsonDocument.Parse(result.Practice.ExerciseData.GetRawText());
+        exerciseData.RootElement.GetProperty("items").GetArrayLength().Should().Be(1);
+        exerciseData.RootElement.GetProperty("practiceMode").GetString().Should().Be("fill_blank");
+    }
+
+    [Fact]
+    public void BuildStageContent_WithStagedVocabularyJson_MapsVocabularyMetadata()
+    {
+        var result = ActivityGetHandler.BuildStageContent(StagedVocabularyJson, "Vocabulary practice");
+
+        result.Should().NotBeNull();
+        result!.SchemaVersion.Should().Be(ModuleStageSchema.Version);
+        result.PrimarySkill.Should().Be("vocabulary");
+        result.SecondarySkills.Should().BeEquivalentTo(["reading", "writing"]);
+        result.ExerciseType.Should().Be("vocabulary_practice");
+
+        using var exerciseData = JsonDocument.Parse(result.Practice.ExerciseData.GetRawText());
+        exerciseData.RootElement.GetProperty("items").GetArrayLength().Should().Be(1);
+        exerciseData.RootElement.GetProperty("practiceMode").GetString().Should().Be("fill_blank");
+    }
+
 }

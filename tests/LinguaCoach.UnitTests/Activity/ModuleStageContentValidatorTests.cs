@@ -440,4 +440,119 @@ public sealed class ModuleStageContentValidatorTests
         }
         return System.Text.Encoding.UTF8.GetString(ms.ToArray());
     }
+
+    private const string ValidVocabularyJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Vocabulary practice",
+      "moduleGoal": "Use workplace vocabulary accurately.",
+      "primarySkill": "vocabulary",
+      "secondarySkills": ["reading", "writing"],
+      "exerciseType": "vocabulary_practice",
+      "learnContent": {
+        "teachingTitle": "Learn workplace phrases",
+        "explanation": "Learn the meaning and usage before practice.",
+        "keyPoints": ["Meaning", "Word form", "Tone"],
+        "examples": [{"phrase": "follow up", "meaning": "check again later", "note": "verb phrase"}],
+        "strategy": "Read the context first.",
+        "commonMistakes": ["Wrong spelling"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Fill in the blank.",
+        "scenario": "Workplace vocabulary review",
+        "task": "Type the missing phrase.",
+        "exerciseData": {
+          "items": [{"term": "follow up", "meaning": "check again later", "example": "I will _____ tomorrow.", "correctAnswer": "follow up"}],
+          "practiceMode": "fill_blank",
+          "successChecklist": ["Choose the correct meaning"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Meaning accuracy", "Context use", "Word form", "Spelling", "Collocation"],
+        "rubric": [],
+        "feedbackFocus": "Vocabulary feedback",
+        "successCriteria": ["The student identifies the correct meaning."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_WithValidVocabularyPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(Parse(ValidVocabularyJson), ActivityType.VocabularyPractice);
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("learnContent")]
+    [InlineData("practiceContent")]
+    [InlineData("feedbackPlan")]
+    public void Validate_Vocabulary_WithMissingTopLevelSection_Fails(string propertyToRemove)
+    {
+        var json = RemoveProperty(Parse(ValidVocabularyJson), propertyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.VocabularyPractice);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().NotBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("items")]
+    [InlineData("practiceMode")]
+    public void Validate_Vocabulary_WithMissingRequiredExerciseDataKey_Fails(string requiredKey)
+    {
+        using var doc = JsonDocument.Parse(ValidVocabularyJson);
+        using var ms = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(ms))
+        {
+            writer.WriteStartObject();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (prop.NameEquals("practiceContent"))
+                {
+                    writer.WritePropertyName("practiceContent");
+                    writer.WriteStartObject();
+                    foreach (var pcProp in prop.Value.EnumerateObject())
+                    {
+                        if (pcProp.NameEquals("exerciseData"))
+                        {
+                            writer.WritePropertyName("exerciseData");
+                            writer.WriteStartObject();
+                            foreach (var edProp in pcProp.Value.EnumerateObject())
+                                if (!edProp.NameEquals(requiredKey)) edProp.WriteTo(writer);
+                            writer.WriteEndObject();
+                        }
+                        else pcProp.WriteTo(writer);
+                    }
+                    writer.WriteEndObject();
+                }
+                else prop.WriteTo(writer);
+            }
+            writer.WriteEndObject();
+        }
+
+        var result = ModuleStageContentValidator.Validate(Parse(System.Text.Encoding.UTF8.GetString(ms.ToArray())), ActivityType.VocabularyPractice);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(requiredKey));
+    }
+
+    [Theory]
+    [InlineData("practiceMode")]
+    [InlineData("correctAnswer")]
+    [InlineData("answerControls")]
+    public void Validate_Vocabulary_WithPracticeOnlyLearnKey_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidVocabularyJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.VocabularyPractice);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

@@ -606,11 +606,16 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
         if (activity.ActivityType == ActivityType.VocabularyPractice)
         {
+            var stageContent = BuildStageContent(activity.AiGeneratedContentJson, activity.Title);
+
             VocabPracticeContent? vpc = null;
             try
             {
+                var vocabJson = stageContent is not null && stageContent.Practice.ExerciseData.ValueKind == JsonValueKind.Object
+                    ? stageContent.Practice.ExerciseData.GetRawText()
+                    : activity.AiGeneratedContentJson;
                 vpc = JsonSerializer.Deserialize<VocabPracticeContent>(
-                    activity.AiGeneratedContentJson,
+                    vocabJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch { /* safe defaults */ }
@@ -618,9 +623,9 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             var vocabItems = vpc?.Items?.Select(i => new VocabPracticeItemDto(
                 VocabularyItemId: i.VocabularyItemId,
                 Term: i.Term ?? string.Empty,
-                Prompt: i.Prompt ?? string.Empty,
+                Prompt: i.Prompt ?? i.Example ?? string.Empty,
                 Hint: i.Hint ?? string.Empty,
-                Explanation: i.Explanation ?? string.Empty)).ToList()
+                Explanation: i.Explanation ?? i.Meaning ?? string.Empty)).ToList()
                 as IReadOnlyList<VocabPracticeItemDto> ?? [];
 
             return new ActivityDto(
@@ -636,12 +641,13 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 ExampleText: null,
                 CommonMistakeToAvoid: null,
                 InstructionInSourceLanguage: null,
-                Instructions: vpc?.Instructions,
+                Instructions: stageContent?.Practice.Instructions ?? vpc?.Instructions,
                 PracticeMode: vpc?.PracticeMode,
                 VocabItems: vocabItems,
                 InteractionMode: interactionMode,
                 ExercisePatternKey: patternKey,
-                ContentJson: rendererContentJson);
+                ContentJson: rendererContentJson,
+                StageContent: stageContent);
         }
 
         if (activity.ActivityType == ActivityType.ListeningComprehension)
@@ -826,6 +832,9 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         if (LooksLikeLegacyWriting(root))
             return AdaptLegacyWriting(root, activityTitle);
 
+        if (LooksLikeLegacyVocabulary(root))
+            return AdaptLegacyVocabulary(root, activityTitle);
+
         return AdaptLegacyListening(root, activityTitle);
     }
 
@@ -858,6 +867,50 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, "listening", [], "listening_comprehension", learn, practice, feedbackPlan);
     }
 
+
+    private static bool LooksLikeLegacyVocabulary(JsonElement root) =>
+        root.ValueKind == JsonValueKind.Object
+        && (root.TryGetProperty("practiceMode", out _)
+            || root.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array && !root.TryGetProperty("audioScript", out _));
+
+    private static StageContentDto AdaptLegacyVocabulary(JsonElement root, string activityTitle)
+    {
+        var instructions = root.TryGetProperty("instructions", out var instr) ? instr.GetString() ?? "Practise the vocabulary items." : "Practise the vocabulary items.";
+        var practiceMode = root.TryGetProperty("practiceMode", out var pm) ? pm.GetString() ?? "fill_blank" : "fill_blank";
+        var examples = new List<LearnExampleDto>();
+        if (root.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in items.EnumerateArray().Take(5))
+            {
+                var term = item.TryGetProperty("term", out var termEl) ? termEl.GetString() ?? string.Empty : string.Empty;
+                var meaning = item.TryGetProperty("explanation", out var expEl) ? expEl.GetString() ?? string.Empty : string.Empty;
+                if (string.IsNullOrWhiteSpace(meaning) && item.TryGetProperty("meaning", out var meaningEl))
+                    meaning = meaningEl.GetString() ?? string.Empty;
+                var note = item.TryGetProperty("hint", out var hintEl) ? hintEl.GetString() : null;
+                if (!string.IsNullOrWhiteSpace(term))
+                    examples.Add(new LearnExampleDto(term, meaning, note));
+            }
+        }
+
+        var learn = new LearnContentDto(
+            TeachingTitle: activityTitle,
+            Explanation: "This module teaches the target vocabulary before practice. Focus on meaning, usage, spelling, and natural workplace context.",
+            KeyPoints: ["Understand the meaning before answering.", "Notice spelling and word form.", "Use each phrase in a professional context."],
+            Examples: examples,
+            Strategy: "Read the example sentence, recall the meaning, then practise using the word from context.",
+            CommonMistakes: ["Choosing a similar word with the wrong meaning.", "Using the correct word with incorrect spelling."],
+            SourceLanguageSupport: null);
+
+        var practice = new PracticeContentDto(instructions, null, "Complete the vocabulary task.", root.Clone());
+
+        var feedbackPlan = new FeedbackPlanDto(
+            EvaluationCriteria: ["Meaning accuracy", "Context use", "Word form", "Spelling", "Collocation"],
+            Rubric: [],
+            FeedbackFocus: "Help the student remember meaning, usage, spelling, and natural collocations.",
+            SuccessCriteria: ["The student identifies the correct meaning.", "The student uses the word in a suitable context."]);
+
+        return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, "vocabulary", ["reading", "writing"], "vocabulary_practice", learn, practice, feedbackPlan);
+    }
 
     private static bool LooksLikeLegacySpeaking(JsonElement root) =>
         root.ValueKind == JsonValueKind.Object
@@ -1028,8 +1081,11 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         public string? Term { get; set; }
         public string? Prompt { get; set; }
         public string? ExpectedAnswer { get; set; }
+        public string? CorrectAnswer { get; set; }
         public string? Hint { get; set; }
         public string? Explanation { get; set; }
+        public string? Meaning { get; set; }
+        public string? Example { get; set; }
     }
 
     private sealed class ListeningContent

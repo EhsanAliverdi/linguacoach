@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivityDto, ListeningAnswer, ListeningExerciseData, VocabAnswer, WritingExerciseData } from '../../../core/models/activity.models';
+import { ActivityDto, ListeningAnswer, ListeningExerciseData, VocabAnswer, VocabPracticeItem, VocabularyExerciseData, WritingExerciseData } from '../../../core/models/activity.models';
 import { ExerciseAnswerPayload, ExerciseRendererComponent } from '../exercise-renderer/exercise-renderer.component';
 import { PracticeViewModel } from '../presenters/activity-page-presenter';
 
@@ -47,8 +47,22 @@ export class ActivityPracticePageComponent {
   @Output() reRecord = new EventEmitter<void>();
   @Output() backToDashboard = new EventEmitter<void>();
 
+  get vocabularyExerciseData(): VocabularyExerciseData | null {
+    return (this.activity.stageContent?.practice?.exerciseData as VocabularyExerciseData) ?? null;
+  }
+
+  get vocabularyPracticeItems(): VocabPracticeItem[] {
+    return this.vocabularyExerciseData?.items ?? this.activity.vocabItems ?? [];
+  }
+
+  get vocabularyPracticeMode(): string | null {
+    return this.vocabularyExerciseData?.practiceMode ?? this.activity.practiceMode;
+  }
+
   vocabItemsFilled(): boolean {
-    const items = this.activity.vocabItems ?? [];
+    const items = this.vocabularyPracticeItems;
+    const mode = this.vocabularyPracticeMode;
+    if (mode === 'review') return items.length > 0;
     return items.length > 0 && items.every(i => (this.vocabAnswers[i.vocabularyItemId] ?? '').trim().length > 0);
   }
 

@@ -172,7 +172,16 @@
 @if ((state === 'writing' || state === 'submitting') && practice.block === 'vocabPractice') {
   <div style="display:flex;flex-direction:column;gap:16px">
     <h2 style="font-size:17px;font-weight:800;color:var(--sp-ink);margin:0">{{ activity.title }}</h2>
-    <p style="font-size:13px;color:var(--sp-muted)">{{ activity.instructions }}</p>
+    <p style="font-size:13px;color:var(--sp-muted)">{{ activity.stageContent?.practice?.instructions ?? activity.instructions }}</p>
+    @if (activity.stageContent?.practice?.scenario) {
+      <div class="sp-card" style="padding:14px 16px;background:var(--sp-canvas2)">
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Context</p>
+        <p style="font-size:13px;color:var(--sp-text);line-height:1.5;margin:0">{{ activity.stageContent?.practice?.scenario }}</p>
+      </div>
+    }
+    @if (vocabularyPracticeMode) {
+      <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin:0">Mode: {{ vocabularyPracticeMode }}</p>
+    }
 
     @if (attemptCount > 0) {
       <div style="background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--sp-text)">
@@ -180,9 +189,12 @@
       </div>
     }
 
-    @for (item of activity.vocabItems!; track item.vocabularyItemId) {
+    @for (item of vocabularyPracticeItems; track item.vocabularyItemId) {
       <div class="sp-card" style="padding:16px">
-        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin-bottom:10px">{{ item.prompt }}</p>
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin-bottom:10px">{{ item.prompt || item.example || item.term }}</p>
+        @if (item.explanation || item.meaning) {
+          <p style="font-size:12.5px;color:var(--sp-muted);line-height:1.5;margin:-4px 0 10px">{{ item.explanation || item.meaning }}</p>
+        }
         <input
           type="text"
           [attr.aria-label]="'Answer for ' + item.term"

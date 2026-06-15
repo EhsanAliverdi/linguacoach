@@ -63,18 +63,82 @@ public sealed class VocabularyPracticeGenerator
 
         var contentJson = System.Text.Json.JsonSerializer.Serialize(new
         {
+            schemaVersion = ModuleStageSchema.Version,
             title,
-            instructions = "Fill in the blank with the most professional phrase.",
-            practiceMode = "fill_blank",
-            items = practiceItems.Select(i => new
+            moduleGoal = "Understand and use these workplace words and phrases accurately in context.",
+            primarySkill = "vocabulary",
+            secondarySkills = new[] { "reading", "writing" },
+            exerciseType = "vocabulary_practice",
+            learnContent = new
             {
-                vocabularyItemId = i.VocabularyItemId,
-                term = i.Term,
-                prompt = i.Prompt,
-                expectedAnswer = i.ExpectedAnswer,
-                hint = i.Hint,
-                explanation = i.Explanation,
-            }),
+                teachingTitle = title.Replace("Practise", "Learn"),
+                explanation = "These words and phrases help you sound clearer and more professional at work. Read the meaning, example, and usage note before you practise spelling and context.",
+                keyPoints = new[]
+                {
+                    "Check the meaning before choosing the word.",
+                    "Notice the word form and common phrase pattern.",
+                    "Use the phrase in a workplace context and professional tone."
+                },
+                examples = practiceItems.Select(i => new
+                {
+                    phrase = i.Term,
+                    meaning = i.Explanation,
+                    note = i.Hint
+                }),
+                strategy = "Say the full example sentence aloud, then cover the word and recall it from the workplace context.",
+                commonMistakes = new[]
+                {
+                    "Choosing a word with a similar meaning but the wrong workplace tone.",
+                    "Using the right word with the wrong spelling or phrase pattern."
+                },
+                sourceLanguageSupport = (string?)null
+            },
+            practiceContent = new
+            {
+                instructions = "Fill in the blank with the most professional phrase.",
+                scenario = "Workplace vocabulary review",
+                task = "Type the missing word or phrase for each sentence.",
+                exerciseData = new
+                {
+                    items = practiceItems.Select(i => new
+                    {
+                        vocabularyItemId = i.VocabularyItemId,
+                        term = i.Term,
+                        meaning = i.Explanation,
+                        example = i.Prompt,
+                        prompt = i.Prompt,
+                        correctAnswer = i.ExpectedAnswer,
+                        expectedAnswer = i.ExpectedAnswer,
+                        hint = i.Hint,
+                        explanation = i.Explanation,
+                    }),
+                    practiceMode = "fill_blank",
+                    successChecklist = new[]
+                    {
+                        "Identify the correct meaning.",
+                        "Type the word or phrase accurately.",
+                        "Use the phrase in a suitable workplace context."
+                    }
+                }
+            },
+            feedbackPlan = new
+            {
+                evaluationCriteria = new[] { "Meaning accuracy", "Context use", "Word form", "Spelling", "Collocation" },
+                rubric = new[]
+                {
+                    new { criterion = "Meaning accuracy", description = "The student understands the meaning of the target vocabulary.", weight = 0.35 },
+                    new { criterion = "Context use", description = "The student can use the word or phrase in an appropriate context.", weight = 0.25 },
+                    new { criterion = "Word form and spelling", description = "The student uses the correct form and spelling.", weight = 0.25 },
+                    new { criterion = "Collocation", description = "The student recognises common word partnerships or phrase patterns.", weight = 0.15 }
+                },
+                feedbackFocus = "Help the student remember meaning, usage, spelling, and natural collocations.",
+                successCriteria = new[]
+                {
+                    "The student identifies the correct meaning.",
+                    "The student uses the word in a suitable context.",
+                    "The student recognises common collocations or phrase patterns."
+                }
+            }
         });
 
         _logger.LogInformation(
