@@ -294,9 +294,43 @@ Old flat WritingScenario JSON remains supported. The API adapts it to
 `legacy_adapted_v1` so old activities and history continue rendering and
 evaluating.
 
+### SpeakingRolePlay staged content
+
+New `SpeakingRolePlay` generation uses prompt key
+`activity_generate_speaking_roleplay` and returns
+`exerciseType: "speaking_roleplay"`. The Learn stage teaches speaking strategy,
+key phrases, common mistakes, and scenario framing only. It must not include
+recording controls, microphone instructions, `startRecording`, `stopRecording`,
+or the final task prompt.
+
+The Practice stage owns the speaking task. Its `practiceContent.exerciseData`
+contains:
+
+* `role` — student's role in the scenario
+* `partnerRole` — the AI/partner role (required)
+* `situation` — context for the conversation
+* `prompt` — the speaking task instruction (required)
+* optional `expectedResponseLength`
+* optional `tone`
+* optional `requiredPhrases`
+* optional `targetVocabulary`
+* optional `successChecklist`
+
+Old flat SpeakingRolePlay JSON (fields: `studentRole`, `listenerRole`,
+`speakingGoal`, `prompt`) remains supported. The API adapts it to
+`legacy_adapted_v1`. Field mapping: `studentRole` → `role`,
+`listenerRole` → `partnerRole`.
+
+The prompt token budget increased from 900 to 1600 input tokens and from 800 to
+1200 output tokens in `DefaultAiSeeder` to accommodate the larger staged prompt.
+
+`SpeakingRolePlayEvaluator` exposes `ExtractExerciseDataJson` to feed only
+`practiceContent.exerciseData` into the evaluation prompt, mirroring the Writing
+evaluator pattern.
+
 Future phases still own Practice Gym pre-generation pools, Today background
 generation, MinIO/audio lifecycle, new listening exercise types, ModuleRun
-persistence, and staged migrations for Speaking, Vocabulary, and patterns.
+persistence, and staged migrations for Vocabulary and patterns.
 
 ## Pattern Evaluation Engine — evaluation flow
 
@@ -469,6 +503,8 @@ are unchanged.
 | Activity type | `StageContent` populated? |
 |---|---|
 | `ListeningComprehension` | Yes (`module_stage_v1` for new rows, `legacy_adapted_v1` for old rows) |
+| `WritingScenario` | Yes (`module_stage_v1` for new rows, `legacy_adapted_v1` for old rows) |
+| `SpeakingRolePlay` | Yes (`module_stage_v1` for new rows, `legacy_adapted_v1` for old rows) |
 | All other types/patterns | No (`null`) — see `docs/sprints/2026-06-15-staged-activity-content-migration-sprint.md` for the follow-up plan |
 
 ---

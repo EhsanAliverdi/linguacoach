@@ -1,14 +1,24 @@
-import { ActivityFeedbackDto } from '../../../core/models/activity.models';
+import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
 import {
   ActivityPagePresenter, defaultFeedbackLayout, FeedbackLayout,
-  PracticeViewModel, TeachViewModel,
+  PracticeViewModel, SkillBadge, TeachViewModel,
 } from './activity-page-presenter';
 
-const SPEAKING_BADGE = { label: 'Speaking', background: '#fef3c7', color: '#92400e', icon: 'speaking' as const };
+const SPEAKING_BADGE: SkillBadge = { label: 'Speaking', background: '#fef3c7', color: '#92400e', icon: 'speaking' as const };
 
-/** Bridges the legacy SpeakingRolePlay shape until it migrates to `speaking_roleplay_turn`. */
+/** Bridges the legacy SpeakingRolePlay shape and staged module_stage_v1 content. */
 export class LegacySpeakingPresenter implements ActivityPagePresenter {
-  teachContent(): TeachViewModel {
+  teachContent(activity: ActivityDto): TeachViewModel {
+    if (activity.stageContent?.learn) {
+      return {
+        block: 'stagedLearning',
+        skillBadge: SPEAKING_BADGE,
+        ctaLabel: 'Start practice',
+        ctaAction: 'startPractice',
+        learn: activity.stageContent.learn,
+      };
+    }
+
     return {
       block: 'speakingScenario',
       skillBadge: SPEAKING_BADGE,

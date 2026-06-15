@@ -600,6 +600,72 @@ see `docs/reviews/2026-06-15-t44-exercise-type-catalog-migration-fix.md`. The
 Regenerated the migration pair; verified via integration tests that run
 `Database.Migrate()`.
 
+## Phase 5 — SpeakingRolePlay staged migration, completed
+
+Migrates `SpeakingRolePlay` to `module_stage_v1`. Follows the same PR1/PR2 recipe.
+
+Completed work:
+
+1. `DefaultAiSeeder.ActivityGenerateSpeakingRolePlayContent` rewritten to produce
+   `module_stage_v1` JSON with `primarySkill`, `secondarySkills`, `exerciseType`,
+   `learnContent`, `practiceContent`, `feedbackPlan`. Prompt key unchanged.
+   Token limit raised from 900 to 1600 input / 1200 output for the larger staged prompt.
+2. `DefaultAiSeeder.ActivityEvaluateSpeakingRolePlayContent` updated to evaluate
+   against `practiceContent.exerciseData` (role, partnerRole, situation, prompt,
+   successChecklist) and `feedbackPlan.rubric` when staged; legacy flat fallback retained.
+3. `ModuleStageContentValidator.RequiredPracticeKeysByType` — added
+   `SpeakingRolePlay` entry: `["prompt", "role", "partnerRole", "situation"]`.
+4. `ModuleStageContentValidator.ForbiddenLearnContentKeys` — extended with
+   speaking-specific forbidden keys: `recordingControls`, `microphoneInstructions`,
+   `startRecording`, `stopRecording`.
+5. `AiActivityGeneratorHandler.GenerateActivityContentAsync` — `SpeakingRolePlay`
+   now routes through the same `ValidateStagedContent` / retry-once path used by
+   Listening and Writing. Removed the old `ValidateSpeakingRolePlayJson` flat-check.
+6. `AiActivityGeneratorHandler.EvaluateAttemptAsync` — added
+   `BuildSpeakingEvaluationContent` helper; passes staged `practiceContent`,
+   `feedbackPlan`, `learnContent` to the evaluator (same pattern as Writing).
+7. `SpeakingRolePlayEvaluator.ExtractExerciseDataJson` — new public static method
+   that unwraps `practiceContent.exerciseData` from staged JSON; falls back to
+   full JSON for legacy flat content.
+8. `ActivityGetHandler.MapToDto` — SpeakingRolePlay branch now calls
+   `BuildStageContent` and includes `StageContent` in the DTO. Legacy flat fields
+   (`SpeakingScenario`, `StudentRole`, etc.) still populated from exerciseData or
+   root-level JSON for backward compatibility.
+9. `ActivityGetHandler.AdaptLegacySpeaking` — new legacy adapter for old flat
+   SpeakingRolePlay JSON; maps to `legacy_adapted_v1` with generic learnContent
+   and preserves all roleplay fields in `practiceContent.exerciseData`.
+10. `ActivityGetHandler.LooksLikeLegacySpeaking` — detection predicate for old
+    speaking JSON shape.
+11. `ActivityGetHandler.SpeakingContent` — extended with staged exerciseData fields
+    (`Role`, `PartnerRole`, `Situation`, `Tone`, `RequiredPhrases`, `SuccessChecklist`).
+12. `LegacySpeakingPresenter.teachContent(activity)` — returns `stagedLearning`
+    view model when `stageContent.learn` is present; falls back to `speakingScenario`
+    for legacy activities.
+13. `ActivityTestFactory.FakeAiProvider` — added `role` and `partnerRole` to the
+    shared fake `exerciseData` so the staged validator passes for SpeakingRolePlay.
+14. Backend tests added:
+    * `ModuleStageContentValidatorTests` — valid staged speaking payload, missing
+      top-level sections, missing required practice keys (prompt/role/partnerRole/
+      situation), forbidden speaking keys in learnContent.
+    * `ActivityGetHandlerStageContentTests` — legacy flat speaking maps to
+      `legacy_adapted_v1`, learnContent clean, staged speaking maps fields correctly.
+15. Frontend tests updated:
+    * `legacy-speaking.presenter.spec.ts` — staged path returns `stagedLearning`,
+      learn VM comes from `stageContent.learn`, no recording controls in staged
+      learn block, legacy path still returns `speakingScenario`.
+
+Verification:
+* `dotnet build` clean (0 errors, 6 pre-existing warnings)
+* 520/520 backend unit tests pass (+15 new)
+* 472/472 integration tests pass
+* 96/96 Angular unit tests pass (+4 new)
+* Angular production build clean
+
+Out of scope for this PR (unchanged): Practice Gym pre-generation changes,
+Today pre-generation, MinIO/audio lifecycle, new PTE renderers/evaluators
+(`read_aloud`, `repeat_sentence`, `describe_image`, etc. remain planned/non-runnable),
+Vocabulary and pattern-backed exercise migration.
+
 ## Acceptance criteria for follow-up architecture
 
 * Staged schema is compatible with pre-generated modules.

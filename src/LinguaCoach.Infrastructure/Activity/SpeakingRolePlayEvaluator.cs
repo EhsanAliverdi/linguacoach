@@ -101,6 +101,28 @@ public sealed class SpeakingRolePlayEvaluator
             SuggestedImprovedResponse: payload?.SuggestedImprovedResponse);
     }
 
+    /// <summary>
+    /// Extracts practiceContent.exerciseData from a staged module_stage_v1 JSON.
+    /// Falls back to the full JSON for legacy flat content.
+    /// </summary>
+    public static string ExtractExerciseDataJson(string contentJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("schemaVersion", out var sv)
+                && sv.GetString() is ModuleStageSchema.Version or ModuleStageSchema.LegacyAdaptedVersion
+                && root.TryGetProperty("practiceContent", out var pc)
+                && pc.TryGetProperty("exerciseData", out var ed))
+            {
+                return ed.GetRawText();
+            }
+        }
+        catch { /* fall through */ }
+        return contentJson;
+    }
+
     private static string CleanJson(string raw)
     {
         var cleaned = raw.Trim();

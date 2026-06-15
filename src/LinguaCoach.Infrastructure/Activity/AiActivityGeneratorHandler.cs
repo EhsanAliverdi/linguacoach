@@ -81,6 +81,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         {
             case ActivityType.ListeningComprehension:
             case ActivityType.WritingScenario:
+            case ActivityType.SpeakingRolePlay:
             {
                 ValidateIsJson(cleaned);
                 var check = ValidateStagedContent(cleaned, context.ActivityType);
@@ -100,9 +101,6 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             case ActivityType.VocabularyPractice when isPatternDriven:
                 // Pattern-specific shapes vary — only validate parseable JSON.
                 ValidateIsJson(cleaned);
-                break;
-            case ActivityType.SpeakingRolePlay:
-                ValidateSpeakingRolePlayJson(cleaned);
                 break;
             default:
                 ValidateWritingActivityJson(cleaned);
@@ -124,7 +122,9 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         {
             ["activityContent"] = context.ActivityType == ActivityType.WritingScenario
                 ? BuildWritingEvaluationContent(context.ActivityContentJson)
-                : context.ActivityContentJson,
+                : context.ActivityType == ActivityType.SpeakingRolePlay
+                    ? BuildSpeakingEvaluationContent(context.ActivityContentJson)
+                    : context.ActivityContentJson,
             ["studentSubmission"] = context.StudentSubmission,
             ["cefrLevel"] = context.CefrLevel,
             ["careerContext"] = context.CareerContext,
@@ -209,13 +209,35 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 "AI writing activity response missing required fields (situation, learningGoal).");
     }
 
-    private static void ValidateSpeakingRolePlayJson(string json)
+    private static string BuildSpeakingEvaluationContent(string contentJson)
     {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        if (!root.TryGetProperty("scenario", out _) && !root.TryGetProperty("speakingGoal", out _))
-            throw new AiResponseValidationException(
-                "AI speaking activity response missing required fields (scenario, speakingGoal).");
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("schemaVersion", out var sv)
+                || sv.GetString() != ModuleStageSchema.Version)
+                return contentJson;
+
+            var payload = new
+            {
+                schemaVersion = ModuleStageSchema.Version,
+                practiceContent = root.TryGetProperty("practiceContent", out var practice)
+                    ? JsonSerializer.Deserialize<object>(practice.GetRawText())
+                    : null,
+                feedbackPlan = root.TryGetProperty("feedbackPlan", out var feedbackPlan)
+                    ? JsonSerializer.Deserialize<object>(feedbackPlan.GetRawText())
+                    : null,
+                learnContent = root.TryGetProperty("learnContent", out var learn)
+                    ? JsonSerializer.Deserialize<object>(learn.GetRawText())
+                    : null,
+            };
+            return JsonSerializer.Serialize(payload);
+        }
+        catch
+        {
+            return contentJson;
+        }
     }
 
     private static ValidationResult ValidateStagedContent(string json, ActivityType activityType)

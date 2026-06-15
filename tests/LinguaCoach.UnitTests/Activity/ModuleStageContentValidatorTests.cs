@@ -87,6 +87,48 @@ public sealed class ModuleStageContentValidatorTests
     }
     """;
 
+    private const string ValidSpeakingJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Explain a project delay to your manager",
+      "moduleGoal": "Explain a delay clearly and professionally in 30-60 seconds.",
+      "primarySkill": "speaking",
+      "secondarySkills": ["listening", "vocabulary"],
+      "exerciseType": "speaking_roleplay",
+      "learnContent": {
+        "teachingTitle": "Explaining delays professionally",
+        "explanation": "When explaining a delay, state the problem, the reason, and the next step. Keep it short and direct.",
+        "keyPoints": ["State the issue first.", "Give one clear reason.", "Offer a next step."],
+        "examples": [{"phrase": "I wanted to update you on the timeline", "meaning": "Opens a status update politely", "note": "Use a professional tone"}],
+        "strategy": "Before recording, decide: what happened, why, and what you will do next.",
+        "commonMistakes": ["Giving too much background before the main point.", "Using an overly informal tone."],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Record a 30-60 second response for this workplace situation.",
+        "scenario": "Your manager asks you about a delayed report.",
+        "task": "Explain the delay and give your next step.",
+        "exerciseData": {
+          "role": "Document Controller",
+          "partnerRole": "Manager",
+          "situation": "Your manager just asked why the report is late.",
+          "prompt": "Record a short response explaining the delay and your next step.",
+          "expectedResponseLength": "30-60 seconds",
+          "tone": "professional and direct",
+          "requiredPhrases": ["I wanted to update you"],
+          "targetVocabulary": ["delay", "update"],
+          "successChecklist": ["Mentions the delay", "Gives a reason", "States a next step"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Fluency", "Pronunciation clarity", "Tone", "Grammar and vocabulary"],
+        "rubric": [{"criterion": "Task completion", "description": "Addresses the delay and next step", "weight": 0.3}],
+        "feedbackFocus": "Task completion, fluency, and tone",
+        "successCriteria": ["The response is clear and relevant.", "The tone fits the situation."]
+      }
+    }
+    """;
+
     private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
 
     [Fact]
@@ -291,6 +333,96 @@ public sealed class ModuleStageContentValidatorTests
             writer.WriteEndObject();
         }
         return System.Text.Encoding.UTF8.GetString(ms.ToArray());
+    }
+
+    [Fact]
+    public void Validate_WithValidSpeakingPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(Parse(ValidSpeakingJson), ActivityType.SpeakingRolePlay);
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("learnContent")]
+    [InlineData("practiceContent")]
+    [InlineData("feedbackPlan")]
+    public void Validate_Speaking_WithMissingTopLevelSection_Fails(string propertyToRemove)
+    {
+        var json = RemoveProperty(Parse(ValidSpeakingJson), propertyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.SpeakingRolePlay);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().NotBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("prompt")]
+    [InlineData("role")]
+    [InlineData("partnerRole")]
+    [InlineData("situation")]
+    public void Validate_Speaking_WithMissingRequiredExerciseDataKey_Fails(string requiredKey)
+    {
+        using var doc = JsonDocument.Parse(ValidSpeakingJson);
+        using var ms = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(ms))
+        {
+            writer.WriteStartObject();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (prop.NameEquals("practiceContent"))
+                {
+                    writer.WritePropertyName("practiceContent");
+                    writer.WriteStartObject();
+                    foreach (var pcProp in prop.Value.EnumerateObject())
+                    {
+                        if (pcProp.NameEquals("exerciseData"))
+                        {
+                            writer.WritePropertyName("exerciseData");
+                            writer.WriteStartObject();
+                            foreach (var edProp in pcProp.Value.EnumerateObject())
+                            {
+                                if (!edProp.NameEquals(requiredKey))
+                                    edProp.WriteTo(writer);
+                            }
+                            writer.WriteEndObject();
+                        }
+                        else
+                        {
+                            pcProp.WriteTo(writer);
+                        }
+                    }
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    prop.WriteTo(writer);
+                }
+            }
+            writer.WriteEndObject();
+        }
+
+        var json = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.SpeakingRolePlay);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(requiredKey));
+    }
+
+    [Theory]
+    [InlineData("recordingControls")]
+    [InlineData("startRecording")]
+    [InlineData("microphoneInstructions")]
+    public void Validate_Speaking_WithForbiddenSpeakingKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidSpeakingJson), forbiddenKey, "should not be here");
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.SpeakingRolePlay);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
     private static string RemoveProperty(JsonElement root, string propertyToRemove)

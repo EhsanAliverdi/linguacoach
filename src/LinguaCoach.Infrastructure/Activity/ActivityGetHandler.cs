@@ -713,12 +713,25 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
         if (activity.ActivityType == ActivityType.SpeakingRolePlay)
         {
+            var speakingStageContent = BuildStageContent(activity.AiGeneratedContentJson, activity.Title);
+
             SpeakingContent? sc = null;
             try
             {
+                // For staged content, pull legacy-compatible fields from exerciseData; for flat JSON use root directly.
+                var speakingJson = speakingStageContent is not null
+                    && speakingStageContent.Practice.ExerciseData.ValueKind == JsonValueKind.Object
+                    ? speakingStageContent.Practice.ExerciseData.GetRawText()
+                    : activity.AiGeneratedContentJson;
                 sc = JsonSerializer.Deserialize<SpeakingContent>(
-                    activity.AiGeneratedContentJson,
+                    speakingJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                // For staged content, pull scenario from practiceContent.scenario if available.
+                if (speakingStageContent is not null && sc is not null)
+                {
+                    sc.Scenario ??= speakingStageContent.Practice.Scenario;
+                }
             }
             catch { /* safe defaults */ }
 
@@ -736,16 +749,17 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 CommonMistakeToAvoid: null,
                 InstructionInSourceLanguage: null,
                 SpeakingScenario: sc?.Scenario,
-                StudentRole: sc?.StudentRole,
-                SpeakingListenerRole: sc?.ListenerRole,
+                StudentRole: sc?.StudentRole ?? sc?.Role,
+                SpeakingListenerRole: sc?.ListenerRole ?? sc?.PartnerRole,
                 SpeakingGoal: sc?.SpeakingGoal,
                 SpeakingPrompt: sc?.Prompt,
-                ExpectedPoints: sc?.ExpectedPoints?.AsReadOnly(),
-                SuggestedPhrases: sc?.SuggestedPhrases?.AsReadOnly(),
-                MaxDurationSeconds: sc?.MaxDurationSeconds,
+                ExpectedPoints: sc?.ExpectedPoints?.AsReadOnly() ?? sc?.SuccessChecklist?.AsReadOnly(),
+                SuggestedPhrases: sc?.SuggestedPhrases?.AsReadOnly() ?? sc?.RequiredPhrases?.AsReadOnly(),
+                MaxDurationSeconds: sc?.MaxDurationSeconds ?? 60,
                 InteractionMode: interactionMode,
                 ExercisePatternKey: patternKey,
-                ContentJson: rendererContentJson);
+                ContentJson: rendererContentJson,
+                StageContent: speakingStageContent);
         }
 
         WritingContent? wc = null;
@@ -806,6 +820,9 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
     private static StageContentDto AdaptLegacy(JsonElement root, string activityTitle)
     {
+        if (LooksLikeLegacySpeaking(root))
+            return AdaptLegacySpeaking(root, activityTitle);
+
         if (LooksLikeLegacyWriting(root))
             return AdaptLegacyWriting(root, activityTitle);
 
@@ -841,6 +858,60 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, "listening", [], "listening_comprehension", learn, practice, feedbackPlan);
     }
 
+
+    private static bool LooksLikeLegacySpeaking(JsonElement root) =>
+        root.ValueKind == JsonValueKind.Object
+        && (root.TryGetProperty("speakingGoal", out _)
+            || root.TryGetProperty("studentRole", out _)
+            || (root.TryGetProperty("prompt", out _) && root.TryGetProperty("listenerRole", out _)));
+
+    private static StageContentDto AdaptLegacySpeaking(JsonElement root, string activityTitle)
+    {
+        var scenario = root.TryGetProperty("scenario", out var scn) ? scn.GetString() : null;
+        var studentRole = root.TryGetProperty("studentRole", out var sr) ? sr.GetString() : null;
+        var listenerRole = root.TryGetProperty("listenerRole", out var lr) ? lr.GetString() : null;
+        var speakingGoal = root.TryGetProperty("speakingGoal", out var sg) ? sg.GetString() : null;
+        var prompt = root.TryGetProperty("prompt", out var pr) ? pr.GetString() : null;
+        var maxDuration = root.TryGetProperty("maxDurationSeconds", out var md) && md.TryGetInt32(out var mdv) ? mdv : 60;
+
+        var suggestedPhrases = ReadStringArray(root, "suggestedPhrases");
+        var expectedPoints = ReadStringArray(root, "expectedPoints");
+
+        var learn = new LearnContentDto(
+            TeachingTitle: activityTitle,
+            Explanation: $"This module practises spoken workplace English. {(speakingGoal is not null ? speakingGoal : "Focus on clarity, professional tone, and a direct structure.")}",
+            KeyPoints: ["State your purpose clearly.", "Match the tone to the listener.", "Keep the message short and direct."],
+            Examples: suggestedPhrases.Take(3).Select(p => new LearnExampleDto(p, "Useful spoken phrase for this situation.", null)).ToList(),
+            Strategy: "Before recording, decide your opening sentence, the key point, and a short closing.",
+            CommonMistakes: ["Giving too much background.", "Using an informal tone in a professional setting."],
+            SourceLanguageSupport: null);
+
+        var practiceEnvelope = new
+        {
+            role = studentRole,
+            partnerRole = listenerRole,
+            situation = scenario,
+            prompt = prompt ?? speakingGoal ?? "Record a short spoken response for this workplace situation.",
+            expectedResponseLength = $"{maxDuration} seconds",
+            tone = "professional",
+            requiredPhrases = suggestedPhrases,
+            successChecklist = expectedPoints.Length > 0 ? expectedPoints : ["Address the situation.", "Use a professional tone.", "Speak clearly."]
+        };
+        using var practiceDoc = JsonDocument.Parse(JsonSerializer.Serialize(practiceEnvelope));
+        var practice = new PracticeContentDto(
+            Instructions: "Record a short spoken response for this workplace situation.",
+            Scenario: scenario,
+            Task: speakingGoal,
+            ExerciseData: practiceDoc.RootElement.Clone());
+
+        var feedbackPlan = new FeedbackPlanDto(
+            EvaluationCriteria: ["Task completion", "Fluency", "Pronunciation clarity", "Tone", "Grammar and vocabulary"],
+            Rubric: [],
+            FeedbackFocus: "Help the student improve fluency, pronunciation clarity, tone, and task completion.",
+            SuccessCriteria: ["The response is clear and relevant.", "The tone fits the situation.", "The response can be understood by the listener."]);
+
+        return new StageContentDto(ModuleStageSchema.LegacyAdaptedVersion, "speaking", ["listening", "vocabulary"], "speaking_roleplay", learn, practice, feedbackPlan);
+    }
 
     private static bool LooksLikeLegacyWriting(JsonElement root) =>
         root.ValueKind == JsonValueKind.Object
@@ -989,6 +1060,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
 
     private sealed class SpeakingContent
     {
+        // Legacy flat fields
         public string? Scenario { get; set; }
         public string? StudentRole { get; set; }
         public string? ListenerRole { get; set; }
@@ -997,6 +1069,13 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         public List<string>? ExpectedPoints { get; set; }
         public List<string>? SuggestedPhrases { get; set; }
         public int? MaxDurationSeconds { get; set; }
+        // Staged exerciseData fields
+        public string? Role { get; set; }
+        public string? PartnerRole { get; set; }
+        public string? Situation { get; set; }
+        public string? Tone { get; set; }
+        public List<string>? RequiredPhrases { get; set; }
+        public List<string>? SuccessChecklist { get; set; }
     }
 
 }

@@ -201,6 +201,8 @@ internal sealed class FakeAiProvider : IAiProvider
                 "exerciseData": {
                   "speakerRole": "Manager",
                   "listenerRole": "Document Controller",
+                  "role": "Document Controller",
+                  "partnerRole": "Manager",
                   "audioScript": "Hi, this is a test workplace voice message. Please note the meeting has been moved to Thursday.",
                   "transcriptAvailableAfterSubmit": true,
                   "prompt": "Reply to confirm you received the message.",

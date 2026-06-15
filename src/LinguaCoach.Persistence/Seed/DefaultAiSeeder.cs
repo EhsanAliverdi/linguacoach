@@ -250,45 +250,118 @@ Critical rules:
 """;
 
     private const string ActivityGenerateSpeakingRolePlayContent = """
-You are an expert English workplace communication coach creating a speaking role-play activity for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English workplace communication coach creating a staged speaking role-play module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to consider: {{recentMistakes}}
 
-Create a realistic, short workplace speaking task where the student records a 30–60 second spoken response.
+The module has three stages: Learn, Practice, and Feedback.
 
-Return ONLY valid JSON (no markdown) matching this exact structure:
+Learn teaches speaking strategy, useful phrases, pronunciation/fluency tips, and roleplay preparation.
+Practice contains the actual speaking roleplay task with recording controls.
+Feedback evaluates the spoken response.
+
+STRICT RULE: learnContent must NOT contain any of these: recording controls, microphone instructions as an action, the final roleplay task/prompt as an action, submit button labels, answer keys, or anything that tells the student to perform the recording now.
+learnContent MUST contain: speaking strategy, pronunciation tips, fluency tips, useful spoken phrases, short examples, common mistakes.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object):
 
 {
-  "activityType": "SpeakingRolePlay",
+  "schemaVersion": "module_stage_v1",
   "title": "<short descriptive title, 5-10 words>",
-  "scenario": "<2-3 sentences describing the realistic workplace situation the student is responding to>",
-  "studentRole": "<the student's role, e.g. 'Project Planner', 'Document Controller'>",
-  "listenerRole": "<who the student is speaking to, e.g. 'Manager', 'Colleague', 'Client'>",
-  "difficulty": "{{cefrLevel}}",
-  "speakingGoal": "<one sentence describing the communication goal>",
-  "prompt": "<1-2 sentences telling the student exactly what to say in their recording>",
-  "expectedPoints": [
-    "<key point the response should include>",
-    "<key point the response should include>",
-    "<key point the response should include>"
-  ],
-  "suggestedPhrases": [
-    "<useful opening or linking phrase>",
-    "<useful phrase for this scenario>",
-    "<useful closing phrase>"
-  ],
-  "maxDurationSeconds": 60
+  "moduleGoal": "<one sentence: what the student will be able to say after this module>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["listening", "vocabulary"],
+  "exerciseType": "speaking_roleplay",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading>",
+    "explanation": "<2-4 sentences teaching the speaking strategy for this type of workplace situation>",
+    "keyPoints": [
+      "<fluency or pronunciation point>",
+      "<conversation structure point>",
+      "<useful language point>"
+    ],
+    "examples": [
+      {
+        "phrase": "<useful spoken phrase>",
+        "meaning": "<when or why to use it>",
+        "note": "<pronunciation, tone, or register note>"
+      }
+    ],
+    "strategy": "<how to prepare and respond during this type of roleplay>",
+    "commonMistakes": [
+      "<common speaking mistake for this situation>",
+      "<common fluency or tone mistake>"
+    ],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "<clear roleplay instruction telling the student what to do in Practice>",
+    "scenario": "<workplace or real-life speaking situation, 2-3 sentences>",
+    "task": "<what the student must say or do>",
+    "exerciseData": {
+      "role": "<student role, e.g. 'Document Controller', 'Project Planner'>",
+      "partnerRole": "<other speaker or persona, e.g. 'Manager', 'Client', 'Colleague'>",
+      "situation": "<context for the speaking task, 1-2 sentences>",
+      "prompt": "<1-2 sentences telling the student exactly what to say in their recording>",
+      "expectedResponseLength": "30-60 seconds",
+      "tone": "<tone requirement, e.g. 'professional and direct'>",
+      "requiredPhrases": ["<optional useful phrase>"],
+      "targetVocabulary": ["<optional vocabulary word>"],
+      "successChecklist": [
+        "<key point the response should include>",
+        "<key point the response should include>",
+        "<key point the response should include>"
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Task completion",
+      "Fluency",
+      "Pronunciation clarity",
+      "Tone",
+      "Grammar and vocabulary"
+    ],
+    "rubric": [
+      {
+        "criterion": "Task completion",
+        "description": "The response addresses the roleplay situation and includes the required information.",
+        "weight": 0.3
+      },
+      {
+        "criterion": "Fluency",
+        "description": "The response is spoken smoothly enough to be understood.",
+        "weight": 0.25
+      },
+      {
+        "criterion": "Pronunciation clarity",
+        "description": "The words are clear enough for the listener to understand.",
+        "weight": 0.2
+      },
+      {
+        "criterion": "Grammar and vocabulary",
+        "description": "The response uses suitable grammar and vocabulary for the situation.",
+        "weight": 0.25
+      }
+    ],
+    "feedbackFocus": "Help the student improve fluency, pronunciation clarity, tone, and task completion.",
+    "successCriteria": [
+      "The response is clear and relevant.",
+      "The tone fits the situation.",
+      "The speaker uses useful phrases naturally.",
+      "The response can be understood by the listener."
+    ]
+  }
 }
 
 Rules:
-- The scenario must be specific and believable for {{careerContext}} professionals.
-- Keep the speaking task short — 30–60 seconds maximum.
-- expectedPoints are what the AI will evaluate the transcript against.
-- suggestedPhrases help the student know what language to use.
-- Do not ask for long speeches or presentations.
+- The scenario and situation must be specific and believable for {{careerContext}} professionals.
+- Keep the speaking task short: 30-60 seconds.
+- successChecklist items are what the evaluator checks.
+- requiredPhrases and targetVocabulary are optional coaching aids — keep them short.
 - Do not use real company names, real person names, phone numbers, or sensitive content.
 - B1 tasks should be simple and direct; B2 tasks may require more structure.
 - Do not include any text outside the JSON object.
@@ -303,16 +376,24 @@ Career context: {{careerContext}}
 Activity content:
 {{activityContent}}
 
-If activityContent uses schemaVersion module_stage_v1, evaluate the submission against practiceContent.exerciseData, especially prompt, situation, audience, tone, and expectedLength. Use feedbackPlan as the rubric. Use learnContent only as teaching context for coaching.
+If activityContent uses schemaVersion module_stage_v1:
+- Evaluate the submission against practiceContent.exerciseData: role, partnerRole, situation, prompt, tone, successChecklist, requiredPhrases.
+- Use feedbackPlan.rubric as the scoring rubric (task completion, fluency, pronunciation clarity, grammar and vocabulary).
+- Use feedbackPlan.feedbackFocus as the coaching focus.
+- Use learnContent only as teaching context for coaching suggestions.
+- Do NOT evaluate pronunciation accuracy or accent. Evaluate pronunciation clarity only (can the listener understand the words?).
+- missingExpectedPoints should reference items from successChecklist that were not addressed.
+
+If activityContent is legacy flat JSON (no schemaVersion), evaluate against scenario, speakingGoal, expectedPoints, and suggestedPhrases.
 
 Student's transcript (from their recording):
 ---
 {{transcript}}
 ---
 
-Evaluate this transcript as a spoken workplace English response. Do NOT evaluate pronunciation or accent.
-Focus on: clarity of message, professional tone, workplace appropriateness, structure, and vocabulary.
-Check whether the student covered the expected points.
+Evaluate this transcript as a spoken workplace English response.
+Focus on: task completion, fluency, clarity of message, professional tone, workplace appropriateness, structure, and vocabulary.
+Check whether the student covered the expected points or successChecklist items.
 
 Return ONLY valid JSON (no markdown, no text outside the JSON):
 
@@ -1339,7 +1420,7 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRolePlayKey, ActivityGenerateSpeakingRolePlayContent,
-            maxInputTokens: 900, maxOutputTokens: 800, ct);
+            maxInputTokens: 1600, maxOutputTokens: 1200, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

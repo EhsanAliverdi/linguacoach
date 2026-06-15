@@ -197,4 +197,121 @@ public sealed class ActivityGetHandlerStageContentTests
         exerciseData.RootElement.GetProperty("tone").GetString().Should().Be("polite");
     }
 
+    private const string LegacySpeakingJson = """
+    {
+      "activityType": "SpeakingRolePlay",
+      "title": "Explain a delay to your manager",
+      "scenario": "Your manager asks about a delayed report.",
+      "studentRole": "Document Controller",
+      "listenerRole": "Manager",
+      "speakingGoal": "Explain the delay clearly and offer a next step.",
+      "prompt": "Record a short response explaining the delay.",
+      "expectedPoints": ["mention the delay", "give a reason", "state next step"],
+      "suggestedPhrases": ["I wanted to update you", "The reason for the delay is"],
+      "maxDurationSeconds": 60
+    }
+    """;
+
+    private const string StagedSpeakingJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Explain a project delay to your manager",
+      "moduleGoal": "Explain a delay clearly and professionally in 30-60 seconds.",
+      "primarySkill": "speaking",
+      "secondarySkills": ["listening", "vocabulary"],
+      "exerciseType": "speaking_roleplay",
+      "learnContent": {
+        "teachingTitle": "Explaining delays professionally",
+        "explanation": "When explaining a delay, state the problem, the reason, and the next step.",
+        "keyPoints": ["State the issue first.", "Give one clear reason."],
+        "examples": [{"phrase": "I wanted to update you", "meaning": "Opens a status update politely", "note": "Use a professional tone"}],
+        "strategy": "Before recording, decide: what happened, why, and what you will do next.",
+        "commonMistakes": ["Giving too much background."],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Record a 30-60 second response.",
+        "scenario": "Your manager asks why the report is late.",
+        "task": "Explain the delay and give your next step.",
+        "exerciseData": {
+          "role": "Document Controller",
+          "partnerRole": "Manager",
+          "situation": "Your manager asked why the report is late.",
+          "prompt": "Record a short response explaining the delay.",
+          "expectedResponseLength": "30-60 seconds",
+          "tone": "professional and direct",
+          "requiredPhrases": ["I wanted to update you"],
+          "targetVocabulary": ["delay"],
+          "successChecklist": ["Mentions the delay", "Gives a reason", "States a next step"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Fluency", "Tone"],
+        "rubric": [{"criterion": "Task completion", "description": "Addresses the delay", "weight": 0.3}],
+        "feedbackFocus": "Task completion and fluency",
+        "successCriteria": ["The response is clear.", "The tone fits the situation."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void BuildStageContent_WithLegacySpeakingJson_ReturnsLegacyAdaptedWithGenericLearnContent()
+    {
+        var result = ActivityGetHandler.BuildStageContent(LegacySpeakingJson, "Explain a delay");
+
+        result.Should().NotBeNull();
+        result!.SchemaVersion.Should().Be(ModuleStageSchema.LegacyAdaptedVersion);
+        result.PrimarySkill.Should().Be("speaking");
+        result.ExerciseType.Should().Be("speaking_roleplay");
+        result.Learn.TeachingTitle.Should().Be("Explain a delay");
+        result.Learn.Strategy.Should().NotBeNullOrWhiteSpace();
+
+        using var exerciseData = JsonDocument.Parse(result.Practice.ExerciseData.GetRawText());
+        exerciseData.RootElement.GetProperty("prompt").GetString().Should().NotBeNullOrWhiteSpace();
+        exerciseData.RootElement.GetProperty("role").GetString().Should().Be("Document Controller");
+        exerciseData.RootElement.GetProperty("partnerRole").GetString().Should().Be("Manager");
+        exerciseData.RootElement.GetProperty("situation").GetString().Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void BuildStageContent_WithLegacySpeakingJson_LearnContentDoesNotContainRecordingControls()
+    {
+        var result = ActivityGetHandler.BuildStageContent(LegacySpeakingJson, "Explain a delay");
+
+        result.Should().NotBeNull();
+        var learnJson = System.Text.Json.JsonSerializer.Serialize(result!.Learn);
+        learnJson.Should().NotContainAny("recordingControls", "startRecording", "microphone", "submitLabel");
+    }
+
+    [Fact]
+    public void BuildStageContent_WithStagedSpeakingJson_MapsSpeakingMetadata()
+    {
+        var result = ActivityGetHandler.BuildStageContent(StagedSpeakingJson, "Explain a delay");
+
+        result.Should().NotBeNull();
+        result!.SchemaVersion.Should().Be(ModuleStageSchema.Version);
+        result.PrimarySkill.Should().Be("speaking");
+        result.SecondarySkills.Should().BeEquivalentTo(["listening", "vocabulary"]);
+        result.ExerciseType.Should().Be("speaking_roleplay");
+
+        result.Learn.TeachingTitle.Should().Be("Explaining delays professionally");
+        result.Learn.Strategy.Should().Contain("what happened");
+
+        using var exerciseData = JsonDocument.Parse(result.Practice.ExerciseData.GetRawText());
+        exerciseData.RootElement.GetProperty("role").GetString().Should().Be("Document Controller");
+        exerciseData.RootElement.GetProperty("partnerRole").GetString().Should().Be("Manager");
+        exerciseData.RootElement.GetProperty("situation").GetString().Should().Contain("manager");
+        exerciseData.RootElement.GetProperty("prompt").GetString().Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void BuildStageContent_WithStagedSpeakingJson_LearnContentDoesNotContainPracticeOnlyFields()
+    {
+        var result = ActivityGetHandler.BuildStageContent(StagedSpeakingJson, "Explain a delay");
+
+        result.Should().NotBeNull();
+        var learnJson = System.Text.Json.JsonSerializer.Serialize(result!.Learn);
+        learnJson.Should().NotContainAny("recordingControls", "startRecording", "submitLabel", "exerciseData", "audioScript");
+    }
+
 }

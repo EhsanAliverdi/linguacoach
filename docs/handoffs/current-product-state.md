@@ -302,3 +302,35 @@ The backend now has an `IExerciseTypeRegistry` backed by the persisted exercise 
 `GET /api/activity/next?exerciseType=<key>` is supported for ready runnable types. Existing `/activity?type=...` and `/activity?pattern=...` links still work. Practice Gym now routes implemented cards with `exerciseType` where safe. Today session generation validates deterministic pattern keys through the registry before creating steps.
 
 Planned PTE-style exercise types remain visible in Admin. They are not generation-eligible or routable to student activity flows until implementation status is `ready`.
+
+## SpeakingRolePlay staged migration (Phase 5 — 2026-06-15)
+
+`SpeakingRolePlay` now generates and serves `module_stage_v1` staged content,
+matching the pattern established by `WritingScenario` and `ListeningComprehension`.
+
+**What changed:**
+
+- Generation prompt (`activity_generate_speaking_roleplay`) rewritten to produce
+  `module_stage_v1` with `learnContent`, `practiceContent`, and `feedbackPlan`.
+  Token budget increased: `maxInputTokens` 900 → 1600, `maxOutputTokens` 800 → 1200.
+- `learnContent` explicitly forbids recording controls, microphone instructions,
+  `startRecording`, and `stopRecording`.
+- `practiceContent.exerciseData` requires: `role`, `partnerRole`, `situation`, `prompt`.
+- `AiActivityGeneratorHandler` validates `SpeakingRolePlay` as staged (retry-once-then-fail).
+- `ActivityGetHandler` detects legacy flat speaking JSON and adapts it to `legacy_adapted_v1`
+  via `AdaptLegacySpeaking`. Old student data and history continue working unchanged.
+- `SpeakingRolePlayEvaluator.ExtractExerciseDataJson` feeds only `practiceContent.exerciseData`
+  into the evaluation prompt.
+- Frontend `LegacySpeakingPresenter` returns `stagedLearning` block when `stageContent.learn`
+  exists; falls back to legacy `speakingScenario` block for old rows.
+
+**What was NOT changed:**
+
+- No PTE speaking rows made runnable.
+- No Practice Gym pre-generation changes.
+- No Today pre-generation changes.
+- No MinIO / audio lifecycle changes.
+- No new PTE renderer or evaluator.
+- `/activity` endpoint and old compatibility params remain.
+
+**Remaining staged migrations:** `VocabularyPractice`, pattern-backed activities.
