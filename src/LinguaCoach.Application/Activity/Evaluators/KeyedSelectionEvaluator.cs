@@ -88,13 +88,38 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
 
     // ── parsing ────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// If the content JSON is module_stage_v1, extracts practiceContent.exerciseData for evaluation.
+    /// Falls back to the original JSON for legacy flat activities.
+    /// </summary>
+    private static string UnwrapStagedContent(string contentJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("schemaVersion", out var sv)
+                && sv.GetString() == "module_stage_v1"
+                && root.TryGetProperty("practiceContent", out var pc)
+                && pc.ValueKind == JsonValueKind.Object
+                && pc.TryGetProperty("exerciseData", out var ed)
+                && ed.ValueKind == JsonValueKind.Object)
+            {
+                return ed.GetRawText();
+            }
+        }
+        catch { /* fall through */ }
+        return contentJson;
+    }
+
     private static Dictionary<string, string> ParseExpectedPairs(string contentJson)
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
 
         try
         {
-            var content = JsonSerializer.Deserialize<PhraseMatchContent>(contentJson, JsonOptions);
+            var json = UnwrapStagedContent(contentJson);
+            var content = JsonSerializer.Deserialize<PhraseMatchContent>(json, JsonOptions);
             if (content?.Pairs is null) return result;
 
             for (var i = 0; i < content.Pairs.Count; i++)

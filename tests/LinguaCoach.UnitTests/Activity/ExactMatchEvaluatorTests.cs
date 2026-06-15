@@ -222,6 +222,65 @@ public sealed class ExactMatchEvaluatorTests
         result.Should().NotBeNull();
     }
 
+    // ── staged module_stage_v1 unwrapping ─────────────────────────────────────
+
+    private static string StagedGapFillContent(params string[] answers)
+    {
+        var items = answers.Select((a, i) => new { sentence = $"Sentence {i + 1} ___", answer = a, distractors = Array.Empty<string>(), hint = (string?)null }).ToArray();
+        var staged = new
+        {
+            schemaVersion = "module_stage_v1",
+            title = "Test",
+            learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+            practiceContent = new
+            {
+                instructions = "Fill in the blanks.",
+                scenario = (string?)null,
+                task = "Complete.",
+                exerciseData = new { items }
+            },
+            feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+        };
+        return JsonSerializer.Serialize(staged, JsonOptions);
+    }
+
+    [Fact]
+    public async Task StagedContent_AllCorrect_ReturnsFullScore()
+    {
+        var content = StagedGapFillContent("confirm", "schedule");
+        var submitted = Submitted(("gap_1", "confirm"), ("gap_2", "schedule"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(2);
+        result.Passed.Should().BeTrue();
+        result.ItemResults.Should().AllSatisfy(r => r.IsCorrect.Should().BeTrue());
+    }
+
+    [Fact]
+    public async Task StagedContent_OneWrong_ReturnsPartialScore()
+    {
+        var content = StagedGapFillContent("confirm", "schedule");
+        var submitted = Submitted(("gap_1", "confirm"), ("gap_2", "postpone"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LegacyFlatContent_StillEvaluatesCorrectly()
+    {
+        var content = GapFillContent("confirm");
+        var submitted = Submitted(("gap_1", "confirm"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.Passed.Should().BeTrue();
+    }
+
     // ── normalization unit tests ───────────────────────────────────────────────
 
     [Theory]

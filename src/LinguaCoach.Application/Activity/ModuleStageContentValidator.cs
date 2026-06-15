@@ -35,7 +35,15 @@ public static class ModuleStageContentValidator
         [ActivityType.VocabularyPractice] = ["items", "practiceMode"],
     };
 
-    public static ValidationResult Validate(JsonElement root, ActivityType activityType)
+    // Pattern-key-based required keys take precedence over ActivityType-based keys.
+    // Used for pattern-backed staged activities where ActivityType alone is ambiguous.
+    private static readonly Dictionary<string, string[]> RequiredPracticeKeysByPatternKey = new(StringComparer.Ordinal)
+    {
+        ["phrase_match"]              = ["pairs"],
+        ["gap_fill_workplace_phrase"] = ["items"],
+    };
+
+    public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)
     {
         var errors = new List<string>();
 
@@ -64,17 +72,25 @@ public static class ModuleStageContentValidator
             }
         }
 
-        if (practiceContent.ValueKind == JsonValueKind.Object
-            && RequiredPracticeKeysByType.TryGetValue(activityType, out var requiredKeys))
+        if (practiceContent.ValueKind == JsonValueKind.Object)
         {
-            var exerciseData = practiceContent.TryGetProperty("exerciseData", out var ed) && ed.ValueKind == JsonValueKind.Object
-                ? ed
-                : practiceContent;
+            string[]? requiredKeys = null;
+            if (exercisePatternKey is not null && RequiredPracticeKeysByPatternKey.TryGetValue(exercisePatternKey, out var patternKeys))
+                requiredKeys = patternKeys;
+            else
+                RequiredPracticeKeysByType.TryGetValue(activityType, out requiredKeys);
 
-            foreach (var requiredKey in requiredKeys)
+            if (requiredKeys is not null)
             {
-                if (!HasPropertyIgnoreCase(exerciseData, requiredKey))
-                    errors.Add($"practiceContent.exerciseData is missing required field \"{requiredKey}\".");
+                var exerciseData = practiceContent.TryGetProperty("exerciseData", out var ed) && ed.ValueKind == JsonValueKind.Object
+                    ? ed
+                    : practiceContent;
+
+                foreach (var requiredKey in requiredKeys)
+                {
+                    if (!HasPropertyIgnoreCase(exerciseData, requiredKey))
+                        errors.Add($"practiceContent.exerciseData is missing required field \"{requiredKey}\".");
+                }
             }
         }
 

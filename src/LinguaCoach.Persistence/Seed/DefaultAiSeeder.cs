@@ -568,67 +568,125 @@ Rules:
     // ── Pattern-specific generation prompts ───────────────────────────────────
 
     private const string ActivityGeneratePhraseMatchContent = """
-You are an expert English language teacher creating a vocabulary lesson plus phrase-matching practice for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English language teacher creating a staged vocabulary module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 
-Create 6-8 workplace words or phrases. Teach the meaning first, then let the student match each item to its meaning. Return ONLY valid JSON:
+Create a three-stage module: Learn (teaching only), Practice (matching task), FeedbackPlan.
+The Learn stage must NOT contain the matching pairs as a task to complete, answer keys, or any interactive controls.
+The Practice stage contains the actual matching exercise with 6-8 workplace phrase pairs.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON):
 
 {
-  "title": "<short title for this activity>",
-  "learningGoal": "<one sentence explaining the vocabulary skill practised>",
-  "instructions": "Study the words and meanings, then match each item to its correct meaning.",
-  "pairs": [
-    {
-      "phrase": "<workplace word or phrase>",
-      "meaning": "<plain-English meaning at the student's level>",
-      "context": "<one realistic workplace sentence using the phrase>"
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what phrase meanings the student will understand>",
+  "primarySkill": "vocabulary",
+  "secondarySkills": ["reading"],
+  "exerciseType": "phrase_match",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading>",
+    "explanation": "<2-3 sentences teaching the vocabulary concept and workplace usage — do NOT list the pairs as a task>",
+    "keyPoints": ["<usage tip>", "<meaning tip>", "<context tip>"],
+    "examples": [
+      { "phrase": "<one example phrase>", "meaning": "<plain meaning>", "note": "<when to use it at work>" }
+    ],
+    "strategy": "<one sentence: how to recognise phrase meaning from workplace context>",
+    "commonMistakes": ["<one common vocabulary mistake>"],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "Match each phrase to its correct meaning.",
+    "scenario": "<optional: one sentence workplace context, or null>",
+    "task": "Match each workplace phrase to its meaning.",
+    "exerciseData": {
+      "pairs": [
+        { "phrase": "<workplace word or phrase>", "meaning": "<plain-English meaning>", "context": "<one realistic workplace sentence>" }
+      ]
     }
-  ],
-  "teachingNote": "<one sentence teaching how these words are used at work>"
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Meaning accuracy", "Context recognition"],
+    "rubric": [],
+    "feedbackFocus": "Help the student understand phrase meaning and workplace usage.",
+    "successCriteria": ["Correctly match all phrases to their meanings."]
+  }
 }
 
-Rules:
-- Items must be useful workplace English for {{careerContext}}.
+Critical Learn-stage rules:
+- learnContent must not list the pairs as a matching task.
+- learnContent must not contain answer keys, selected answers, gaps, or interactive controls.
+- learnContent may contain meaning, usage notes, one teaching example, strategy, and common mistakes.
+- practiceContent.exerciseData.pairs must have 6-8 items.
 - Meanings must be clear and unambiguous.
-- Include a mix of single words and short phrases.
-- Do not create an email, chat, or writing task.
-- This activity must follow: teach vocabulary, practise matching, then AI feedback after submit.
+- Items must be useful workplace English for {{careerContext}}.
 - Do not include any text outside the JSON object.
 """;
 
     private const string ActivityGenerateGapFillContent = """
-You are an expert English language teacher creating a short language lesson plus gap-fill practice for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+You are an expert English language teacher creating a staged vocabulary/grammar module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
 
-Teach one small vocabulary or grammar point. Then create 5-6 workplace sentences each with one blank to fill. Return ONLY valid JSON:
+Create a three-stage module: Learn (teaching only), Practice (gap-fill task), FeedbackPlan.
+The Learn stage must NOT contain any blanks, gaps, or the actual sentences the student must complete.
+The Practice stage contains 5-6 workplace gap-fill sentences.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON):
 
 {
-  "title": "<short title for this activity>",
-  "learningGoal": "<one sentence explaining the language point>",
-  "instructions": "Fill in each blank with the correct workplace word or phrase.",
-  "items": [
-    {
-      "sentence": "<sentence with ___ for the blank>",
-      "answer": "<correct answer>",
-      "distractors": ["<wrong option 1>", "<wrong option 2>"],
-      "hint": "<optional one-word hint>"
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what workplace phrase or grammar pattern the student will practise>",
+  "primarySkill": "vocabulary",
+  "secondarySkills": ["reading"],
+  "exerciseType": "gap_fill_workplace_phrase",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading>",
+    "explanation": "<2-3 sentences teaching the vocabulary or grammar concept — do NOT include the gap-fill sentences>",
+    "keyPoints": ["<usage tip>", "<grammar or vocabulary point>", "<context tip>"],
+    "examples": [
+      { "phrase": "<a short example phrase or sentence>", "meaning": "<what it means>", "note": "<grammar or usage note>" }
+    ],
+    "strategy": "<one sentence: how to use context to choose the missing word>",
+    "commonMistakes": ["<one common mistake for this language point>"],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "Fill in each blank with the correct workplace word or phrase.",
+    "scenario": "<optional: one sentence workplace context, or null>",
+    "task": "Complete the missing words in each sentence.",
+    "exerciseData": {
+      "items": [
+        {
+          "sentence": "<workplace sentence with ___ for the blank>",
+          "answer": "<correct answer>",
+          "distractors": ["<plausible wrong option 1>", "<plausible wrong option 2>"],
+          "hint": "<optional one-word hint or null>"
+        }
+      ]
     }
-  ],
-  "teachingNote": "<one sentence about the language pattern practised>"
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Correct word choice", "Grammar accuracy", "Context understanding"],
+    "rubric": [],
+    "feedbackFocus": "Help the student choose words based on grammar and workplace context.",
+    "successCriteria": ["Fill all missing words correctly."]
+  }
 }
 
-Rules:
+Critical Learn-stage rules:
+- learnContent must not contain gaps, blanks, or the actual gap-fill sentences the student must complete.
+- learnContent must not contain answer keys, submit labels, or interactive controls.
+- learnContent may contain explanation, key points, one or two teaching examples, strategy, and common mistakes.
+- practiceContent.exerciseData.items must have 5-6 items.
 - Sentences must be realistic {{careerContext}} workplace contexts.
-- Each blank tests a specific workplace phrase or vocabulary item.
-- Distractors should be plausible but clearly wrong.
-- Do not create a long writing task.
-- This activity must follow: teach the language point, practise gap filling, then AI feedback after submit.
+- Distractors must be plausible but clearly wrong.
 - Do not include any text outside the JSON object.
 """;
 

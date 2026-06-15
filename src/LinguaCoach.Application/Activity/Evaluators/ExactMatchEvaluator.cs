@@ -62,14 +62,39 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
 
     // ── parsing ────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// If the content JSON is module_stage_v1, extracts practiceContent.exerciseData for evaluation.
+    /// Falls back to the original JSON for legacy flat activities.
+    /// </summary>
+    private static string UnwrapStagedContent(string contentJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("schemaVersion", out var sv)
+                && sv.GetString() == "module_stage_v1"
+                && root.TryGetProperty("practiceContent", out var pc)
+                && pc.ValueKind == JsonValueKind.Object
+                && pc.TryGetProperty("exerciseData", out var ed)
+                && ed.ValueKind == JsonValueKind.Object)
+            {
+                return ed.GetRawText();
+            }
+        }
+        catch { /* fall through */ }
+        return contentJson;
+    }
+
     private static List<(string Key, IReadOnlyList<string> Accepted)> ParseExpectedItems(
         string contentJson, string? patternKey)
     {
         var result = new List<(string, IReadOnlyList<string>)>();
+        var json = UnwrapStagedContent(contentJson);
 
         if (patternKey == "listen_and_gap_fill")
         {
-            var content = JsonSerializer.Deserialize<ListenAndGapFillContent>(contentJson, JsonOptions);
+            var content = JsonSerializer.Deserialize<ListenAndGapFillContent>(json, JsonOptions);
             if (content?.Gaps is null) return result;
             foreach (var gap in content.Gaps)
             {
@@ -81,7 +106,7 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         else
         {
             // gap_fill_workplace_phrase (and fallback)
-            var content = JsonSerializer.Deserialize<GapFillWorkplacePhraseContent>(contentJson, JsonOptions);
+            var content = JsonSerializer.Deserialize<GapFillWorkplacePhraseContent>(json, JsonOptions);
             if (content?.Items is null) return result;
             for (var i = 0; i < content.Items.Count; i++)
             {

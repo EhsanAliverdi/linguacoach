@@ -1,7 +1,7 @@
 import { ActivityDto, ActivityFeedbackDto } from '../../../core/models/activity.models';
 import {
   ActivityPagePresenter, defaultFeedbackLayout, FeedbackLayout,
-  PracticeViewModel, SkillBadge, TeachViewModel,
+  PracticeViewModel, SkillBadge, StagedLearningViewModel, TeachViewModel,
 } from './activity-page-presenter';
 import { parsePatternContent, stringArray, stringValue } from './pattern-content.util';
 
@@ -10,9 +10,23 @@ import { parsePatternContent, stringArray, stringValue } from './pattern-content
  * Pattern Engine (`activity.interactionMode` set, or a migrated
  * `exercisePatternKey`). Works for all current and future pattern keys
  * without per-pattern presenter classes.
+ *
+ * For staged (module_stage_v1) activities, `stageContent` is populated by the
+ * backend. `teachContent` returns a `stagedLearning` block so the Learn page
+ * renders the structured teaching content without interactive exercise controls.
  */
 export class PatternBackedPresenter implements ActivityPagePresenter {
   teachContent(activity: ActivityDto): TeachViewModel {
+    if (activity.stageContent?.learn) {
+      return {
+        block: 'stagedLearning',
+        skillBadge: this.skillBadge(activity),
+        ctaLabel: 'Start practice',
+        ctaAction: 'startPractice',
+        learn: activity.stageContent.learn,
+      } satisfies StagedLearningViewModel;
+    }
+
     const raw = parsePatternContent(activity);
     return {
       block: 'patternLearning',

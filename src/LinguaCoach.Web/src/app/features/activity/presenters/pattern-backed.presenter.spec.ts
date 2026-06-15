@@ -1,5 +1,5 @@
 import { PatternBackedPresenter } from './pattern-backed.presenter';
-import { makeActivity, makeFeedback } from './test-helpers';
+import { makeActivity, makeFeedback, makeStageContent } from './test-helpers';
 
 describe('PatternBackedPresenter', () => {
   const presenter = new PatternBackedPresenter();
@@ -93,5 +93,85 @@ describe('PatternBackedPresenter', () => {
   it('derives feedback layout from patternEvaluation', () => {
     expect(presenter.feedbackLayout(makeFeedback())).toBe('legacy');
     expect(presenter.feedbackLayout(makeFeedback({ patternEvaluation: {} as any }))).toBe('pattern');
+  });
+
+  // ── staged module_stage_v1 activities ─────────────────────────────────────
+
+  it('returns stagedLearning block when stageContent is present', () => {
+    const activity = makeActivity({
+      interactionMode: 'matchingPairs',
+      exercisePatternKey: 'phrase_match',
+      stageContent: makeStageContent(),
+    });
+    const teach = presenter.teachContent(activity);
+    expect(teach.block).toBe('stagedLearning');
+  });
+
+  it('stagedLearning block carries the learn content from stageContent', () => {
+    const activity = makeActivity({
+      interactionMode: 'matchingPairs',
+      exercisePatternKey: 'phrase_match',
+      stageContent: makeStageContent({
+        learn: {
+          teachingTitle: 'Workplace Phrases',
+          explanation: 'These phrases are used at work.',
+          keyPoints: ['Notice the context'],
+          examples: [{ phrase: 'action item', meaning: 'a task', note: 'meeting term' }],
+          strategy: 'Look for the most natural meaning.',
+          commonMistakes: ['Confusing register'],
+          sourceLanguageSupport: null,
+        },
+      }),
+    });
+    const teach = presenter.teachContent(activity);
+    expect(teach.block).toBe('stagedLearning');
+    if (teach.block === 'stagedLearning') {
+      expect(teach.learn.teachingTitle).toBe('Workplace Phrases');
+      expect(teach.learn.explanation).toContain('at work');
+      expect(teach.ctaLabel).toBe('Start practice');
+      expect(teach.ctaAction).toBe('startPractice');
+    }
+  });
+
+  it('stagedLearning does not carry answer controls or matching pairs', () => {
+    const activity = makeActivity({
+      interactionMode: 'matchingPairs',
+      exercisePatternKey: 'phrase_match',
+      stageContent: makeStageContent(),
+    });
+    const teach = presenter.teachContent(activity);
+    expect((teach as any).pairs).toBeUndefined();
+    expect((teach as any).exerciseData).toBeUndefined();
+    expect((teach as any).submitLabel).toBeUndefined();
+    expect((teach as any).checkLabel).toBeUndefined();
+  });
+
+  it('falls back to patternLearning block when stageContent is absent', () => {
+    const activity = makeActivity({
+      interactionMode: 'matchingPairs',
+      exercisePatternKey: 'phrase_match',
+      stageContent: null,
+      contentJson: JSON.stringify({ title: 'Fallback', learningGoal: 'Legacy goal' }),
+    });
+    const teach = presenter.teachContent(activity);
+    expect(teach.block).toBe('patternLearning');
+  });
+
+  it('practice block is exerciseRenderer for staged phrase_match', () => {
+    const activity = makeActivity({
+      interactionMode: 'matchingPairs',
+      exercisePatternKey: 'phrase_match',
+      stageContent: makeStageContent(),
+    });
+    expect(presenter.practiceContent(activity).block).toBe('exerciseRenderer');
+  });
+
+  it('practice block is exerciseRenderer for staged gap_fill_workplace_phrase', () => {
+    const activity = makeActivity({
+      interactionMode: 'gapFill',
+      exercisePatternKey: 'gap_fill_workplace_phrase',
+      stageContent: makeStageContent(),
+    });
+    expect(presenter.practiceContent(activity).block).toBe('exerciseRenderer');
   });
 });

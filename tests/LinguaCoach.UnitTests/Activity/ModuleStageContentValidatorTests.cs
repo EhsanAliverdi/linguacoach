@@ -555,4 +555,170 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── phrase_match pattern key tests ─────────────────────────────────────────
+
+    private const string ValidPhraseMatchJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Workplace Phrase Match",
+      "moduleGoal": "Match workplace phrases to their meanings.",
+      "primarySkill": "vocabulary",
+      "secondarySkills": ["reading"],
+      "exerciseType": "phrase_match",
+      "learnContent": {
+        "teachingTitle": "Key workplace phrases",
+        "explanation": "These phrases are used in professional workplace communication.",
+        "keyPoints": ["Notice the context", "Check the tone"],
+        "examples": [{"phrase": "action item", "meaning": "a task assigned to someone", "note": "used in meetings"}],
+        "strategy": "Look for the most natural workplace meaning.",
+        "commonMistakes": ["Confusing formal and informal register"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Match each phrase to its correct meaning.",
+        "scenario": null,
+        "task": "Match each workplace phrase to its meaning.",
+        "exerciseData": {
+          "pairs": [
+            {"phrase": "action item", "meaning": "a task assigned to someone", "context": "We have three action items from today's meeting."},
+            {"phrase": "follow up", "meaning": "check on progress later", "context": "I will follow up with the team tomorrow."}
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Meaning accuracy", "Context recognition"],
+        "rubric": [],
+        "feedbackFocus": "Help the student understand phrase meaning and workplace usage.",
+        "successCriteria": ["Correctly match all phrases to their meanings."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_PhraseMatch_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidPhraseMatchJson), ActivityType.VocabularyPractice, "phrase_match");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_PhraseMatch_MissingPairs_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "title": "T",
+          "learnContent": {"teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [], "strategy": "S", "commonMistakes": [], "sourceLanguageSupport": null},
+          "practiceContent": {"instructions": "I", "scenario": null, "task": "T", "exerciseData": {}},
+          "feedbackPlan": {"evaluationCriteria": [], "rubric": [], "feedbackFocus": "F", "successCriteria": []}
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, "phrase_match");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("pairs"));
+    }
+
+    [Theory]
+    [InlineData("pairs")]
+    [InlineData("answerKey")]
+    [InlineData("selectedAnswers")]
+    public void Validate_PhraseMatch_WithPracticeOnlyKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidPhraseMatchJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, "phrase_match");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
+    // ── gap_fill_workplace_phrase pattern key tests ────────────────────────────
+
+    private const string ValidGapFillJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Workplace Gap Fill",
+      "moduleGoal": "Practise workplace vocabulary in context.",
+      "primarySkill": "vocabulary",
+      "secondarySkills": ["reading"],
+      "exerciseType": "gap_fill_workplace_phrase",
+      "learnContent": {
+        "teachingTitle": "Polite requests",
+        "explanation": "Use polite modal verbs to soften workplace requests.",
+        "keyPoints": ["Use 'could' for polite requests", "Avoid direct imperatives"],
+        "examples": [{"phrase": "Could you send me the report?", "meaning": "polite request", "note": "less direct than 'Send me the report'"}],
+        "strategy": "Look for the context to identify the missing word.",
+        "commonMistakes": ["Using informal language in formal contexts"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Fill in each blank with the correct workplace word or phrase.",
+        "scenario": null,
+        "task": "Complete the missing words in each sentence.",
+        "exerciseData": {
+          "items": [
+            {"sentence": "Could you ___ me the report by Friday?", "answer": "send", "distractors": ["give", "bring"], "hint": "verb"}
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Correct word choice", "Grammar accuracy"],
+        "rubric": [],
+        "feedbackFocus": "Help the student choose words based on grammar and context.",
+        "successCriteria": ["Fill all missing words correctly."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_GapFill_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidGapFillJson), ActivityType.VocabularyPractice, "gap_fill_workplace_phrase");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_GapFill_MissingItems_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "title": "T",
+          "learnContent": {"teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [], "strategy": "S", "commonMistakes": [], "sourceLanguageSupport": null},
+          "practiceContent": {"instructions": "I", "scenario": null, "task": "T", "exerciseData": {}},
+          "feedbackPlan": {"evaluationCriteria": [], "rubric": [], "feedbackFocus": "F", "successCriteria": []}
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, "gap_fill_workplace_phrase");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("items"));
+    }
+
+    [Theory]
+    [InlineData("gaps")]
+    [InlineData("answerKey")]
+    public void Validate_GapFill_WithPracticeOnlyKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidGapFillJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, "gap_fill_workplace_phrase");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

@@ -695,3 +695,47 @@ Completed staged migrations:
 - `VocabularyPractice`
 
 Remaining staged migrations are pattern-backed activities. Planned future exercise formats remain planned and non-runnable unless implemented end-to-end. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase. No new planned future exercise renderer or evaluator was implemented in Phase 6.
+
+## Phase 7A — Pattern-backed staged migration foundation, completed
+
+Migrates the first two deterministic/local pattern-backed activities to `module_stage_v1`:
+`phrase_match` and `gap_fill_workplace_phrase`.
+
+Both patterns are AI-generated but deterministically evaluated (no AI call at evaluation time).
+
+### Completed work
+
+1. **`DefaultAiSeeder.ActivityGeneratePhraseMatchContent`** rewritten to produce `module_stage_v1` JSON with `primarySkill: vocabulary`, `secondarySkills: ["reading"]`, `exerciseType: phrase_match`. Learn stage teaches phrase meanings without listing the matching pairs as a task. Practice stage contains `exerciseData.pairs` in the existing `phrase`/`meaning` shape. Prompt key unchanged: `activity_generate_phrase_match`.
+
+2. **`DefaultAiSeeder.ActivityGenerateGapFillContent`** rewritten to produce `module_stage_v1` JSON with `primarySkill: vocabulary`, `secondarySkills: ["reading"]`, `exerciseType: gap_fill_workplace_phrase`. Learn stage teaches the vocabulary/grammar concept without including the gap-fill sentences. Practice stage contains `exerciseData.items` in the existing `sentence`/`answer`/`distractors`/`hint` shape. Prompt key unchanged: `activity_generate_gap_fill_workplace_phrase`.
+
+3. **`ModuleStageContentValidator`** — added `RequiredPracticeKeysByPatternKey` dict (keyed by exercise pattern key, takes precedence over `RequiredPracticeKeysByType`). Entries: `phrase_match` requires `pairs`; `gap_fill_workplace_phrase` requires `items`. `Validate()` now accepts optional `exercisePatternKey` parameter.
+
+4. **`AiActivityGeneratorHandler`** — added `StagedPatternKeys` set (`phrase_match`, `gap_fill_workplace_phrase`). Pattern-driven `VocabularyPractice` activities whose `ExercisePatternKey` is in `StagedPatternKeys` now route through the same `ValidateStagedContent` / retry-once path used by Listening, Writing, and Speaking. `ValidateStagedContent` updated to accept optional `exercisePatternKey` and passes it to the validator.
+
+5. **`KeyedSelectionEvaluator`** — added `UnwrapStagedContent` helper: detects `schemaVersion: "module_stage_v1"`, extracts `practiceContent.exerciseData`, returns raw JSON for evaluation. `ParseExpectedPairs` uses the unwrapped JSON. Legacy flat `phrase_match` content still evaluates unchanged.
+
+6. **`ExactMatchEvaluator`** — added `UnwrapStagedContent` helper (same pattern). `ParseExpectedItems` uses the unwrapped JSON for both `listen_and_gap_fill` and `gap_fill_workplace_phrase`. Legacy flat content still evaluates unchanged.
+
+7. **`PatternBackedPresenter`** — `teachContent` returns `stagedLearning` view model when `activity.stageContent?.learn` is present. Falls back to `patternLearning` block for legacy flat activities. `practiceContent` unchanged (returns `exerciseRenderer` block for both staged and legacy).
+
+8. **Tests added:**
+   - `ModuleStageContentValidatorTests`: valid staged `phrase_match` passes; valid staged `gap_fill_workplace_phrase` passes; missing `pairs` fails; missing `items` fails; forbidden keys in learnContent (`pairs`, `gaps`, `answerKey`, `selectedAnswers`) fail.
+   - `KeyedSelectionEvaluatorTests`: staged `phrase_match` all-correct returns full score; staged all-wrong still completes; legacy flat format still evaluates correctly.
+   - `ExactMatchEvaluatorTests`: staged `gap_fill_workplace_phrase` all-correct returns full score; staged partial returns partial score; legacy flat format still evaluates correctly.
+   - `pattern-backed.presenter.spec.ts`: staged path returns `stagedLearning` block; `learn` VM comes from `stageContent.learn`; no answer controls in staged learn block; legacy fallback still returns `patternLearning`; practice block is `exerciseRenderer` for both patterns.
+
+### Verification
+
+- `dotnet build` clean (0 errors)
+- 546/546 backend unit tests pass
+- 16/16 presenter unit tests pass (7 new)
+- Angular dev build clean
+
+### Still out of scope
+
+- Remaining pattern-backed activities: `listen_and_answer`, `listen_and_gap_fill`, `email_reply`, `teams_chat_simulation`, `spoken_response_from_prompt`, `open_writing_task`, `speaking_roleplay_turn`, `lesson_reflection`
+- Today pre-generation
+- MinIO/audio lifecycle
+- Planned future exercise format renderers/evaluators remain planned and non-runnable
+- Practice Gym pool changes (existing compatibility unchanged)

@@ -159,4 +159,66 @@ public sealed class KeyedSelectionEvaluatorTests
 
         result.Should().NotBeNull();
     }
+
+    // ── staged module_stage_v1 unwrapping ─────────────────────────────────────
+
+    private static string StagedPhraseContent(int pairCount)
+    {
+        var pairs = Enumerable.Range(0, pairCount)
+            .Select(i => new { phrase = $"Phrase{i}", meaning = $"Meaning{i}", context = $"Context{i}" })
+            .ToArray();
+        var staged = new
+        {
+            schemaVersion = "module_stage_v1",
+            title = "Test",
+            learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+            practiceContent = new
+            {
+                instructions = "Match each phrase.",
+                scenario = (string?)null,
+                task = "Match.",
+                exerciseData = new { pairs }
+            },
+            feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+        };
+        return JsonSerializer.Serialize(staged, JsonOptions);
+    }
+
+    [Fact]
+    public async Task StagedContent_AllCorrect_ReturnsFullScore()
+    {
+        var content = StagedPhraseContent(3);
+        var submitted = Submitted((0, 0), (1, 1), (2, 2));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(3);
+        result.Passed.Should().BeTrue();
+        result.ItemResults.Should().AllSatisfy(r => r.IsCorrect.Should().BeTrue());
+    }
+
+    [Fact]
+    public async Task StagedContent_AllWrong_ReturnsZeroScore()
+    {
+        var content = StagedPhraseContent(2);
+        var submitted = Submitted((0, 1), (1, 0));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LegacyFlatContent_StillEvaluatesCorrectly()
+    {
+        // Ensure old flat-format activities continue to work after staged unwrapping was added.
+        var content = PhraseContent(2);
+        var submitted = Submitted((0, 0), (1, 1));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted), default);
+
+        result.Score.Should().Be(2);
+        result.Passed.Should().BeTrue();
+    }
 }

@@ -13,6 +13,12 @@ namespace LinguaCoach.Infrastructure.Activity;
 /// </summary>
 public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 {
+    private static readonly HashSet<string> StagedPatternKeys = new(StringComparer.Ordinal)
+    {
+        "phrase_match",
+        "gap_fill_workplace_phrase",
+    };
+
     private const string GenerateWritingPromptKey = "activity_generate_writing";
     private const string GenerateListeningPromptKey = "activity_generate_listening";
     private const string GenerateSpeakingRolePlayPromptKey = "activity_generate_speaking_roleplay";
@@ -99,8 +105,22 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 break;
             }
             case ActivityType.VocabularyPractice when isPatternDriven:
-                // Pattern-specific shapes vary — only validate parseable JSON.
                 ValidateIsJson(cleaned);
+                if (StagedPatternKeys.Contains(context.ExercisePatternKey ?? string.Empty))
+                {
+                    var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
+                    if (!check.IsValid)
+                    {
+                        var retryResponse = await _aiExecution.ExecuteAsync(
+                            promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
+                        cleaned = CleanJson(retryResponse);
+                        ValidateIsJson(cleaned);
+                        var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
+                        if (!retryCheck.IsValid)
+                            throw new AiResponseValidationException(
+                                $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
+                    }
+                }
                 break;
             default:
                 ValidateWritingActivityJson(cleaned);
@@ -240,9 +260,9 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         }
     }
 
-    private static ValidationResult ValidateStagedContent(string json, ActivityType activityType)
+    private static ValidationResult ValidateStagedContent(string json, ActivityType activityType, string? exercisePatternKey = null)
     {
         using var doc = JsonDocument.Parse(json);
-        return ModuleStageContentValidator.Validate(doc.RootElement, activityType);
+        return ModuleStageContentValidator.Validate(doc.RootElement, activityType, exercisePatternKey);
     }
 }
