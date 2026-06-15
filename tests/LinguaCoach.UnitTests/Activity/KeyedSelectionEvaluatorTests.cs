@@ -529,4 +529,118 @@ public sealed class KeyedSelectionEvaluatorTests
         result.Completed.Should().BeTrue();
         result.Score.Should().Be(0);
     }
+
+    // ── listening_multiple_choice_multi ───────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeListeningMultiRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "listening_multiple_choice_multi",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.MultipleChoiceMulti,
+            ActivityType: ActivityType.ListeningComprehension,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedListeningMultiContent(string[] correctOptionIds) => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test listening multi",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Listen and choose all correct answers.",
+            scenario = "Project update",
+            task = "Select all supported answers.",
+            exerciseData = new
+            {
+                audioScript = "The deadline moved to next Friday, and we're adding two more developers. The budget remains unchanged.",
+                audioUrl = (string?)null,
+                question = "Which changes were announced?",
+                options = new[]
+                {
+                    new { id = "A", text = "The deadline moved to next Friday" },
+                    new { id = "B", text = "Two more developers were added" },
+                    new { id = "C", text = "The budget was increased" },
+                    new { id = "D", text = "The project was cancelled" },
+                },
+                correctOptionIds,
+                explanation = "The deadline moved and developers were added, while the budget stayed the same.",
+                optionExplanations = new Dictionary<string, string>
+                {
+                    ["A"] = "Correct — the deadline moved to next Friday.",
+                    ["B"] = "Correct — two more developers were added.",
+                    ["C"] = "Incorrect — the budget remains unchanged.",
+                    ["D"] = "Incorrect — the project was not cancelled.",
+                },
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    [Fact]
+    public async Task ListeningMultiChoiceMulti_ExactCorrectSet_ReturnsFullScore()
+    {
+        var content = StagedListeningMultiContent(["A", "B"]);
+        var submitted = SelectedOptions("A", "B");
+
+        var result = await _sut.EvaluateAsync(MakeListeningMultiRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ListeningMultiChoiceMulti_MissingOneCorrect_ReturnsIncorrect()
+    {
+        var content = StagedListeningMultiContent(["A", "B"]);
+        var submitted = SelectedOptions("A");  // missed B
+
+        var result = await _sut.EvaluateAsync(MakeListeningMultiRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("missed");
+    }
+
+    [Fact]
+    public async Task ListeningMultiChoiceMulti_FalsePositive_ReturnsIncorrect()
+    {
+        var content = StagedListeningMultiContent(["A", "B"]);
+        var submitted = SelectedOptions("A", "B", "C");  // C is wrong
+
+        var result = await _sut.EvaluateAsync(MakeListeningMultiRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.ItemResults.Single().Feedback.Should().Contain("C");
+    }
+
+    [Fact]
+    public async Task ListeningMultiChoiceMulti_NoSelection_ReturnsIncorrect_StillCompleted()
+    {
+        var content = StagedListeningMultiContent(["A", "B"]);
+
+        var result = await _sut.EvaluateAsync(MakeListeningMultiRequest(content, ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ListeningMultiChoiceMulti_InvalidJson_HandledSafely()
+    {
+        var content = StagedListeningMultiContent(["A", "B"]);
+
+        var result = await _sut.EvaluateAsync(MakeListeningMultiRequest(content, "not-json"), default);
+
+        result.Completed.Should().BeTrue();
+        result.Score.Should().Be(0);
+    }
 }

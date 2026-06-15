@@ -21,7 +21,8 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             || request.ExercisePatternKey == "listening_multiple_choice_single")
             return EvaluateReadingMultipleChoiceSingleAsync(request);
 
-        if (request.ExercisePatternKey == "reading_multiple_choice_multi")
+        if (request.ExercisePatternKey == "reading_multiple_choice_multi"
+            || request.ExercisePatternKey == "listening_multiple_choice_multi")
             return EvaluateReadingMultipleChoiceMultiAsync(request);
 
         var expectedMap = ParseExpectedPairs(request.ContentJson);
@@ -211,7 +212,7 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             feedback += " " + string.Join(" | ", optionDetails);
 
         var itemResult = new PatternEvaluationItemResult(
-            ItemKey: "reading_multiple_choice_multi",
+            ItemKey: request.ExercisePatternKey ?? "reading_multiple_choice_multi",
             StudentAnswer: selectedSet.Count > 0 ? string.Join(",", selectedSet.OrderBy(x => x)) : null,
             CorrectAnswer: string.Join(",", correctIds.OrderBy(x => x)),
             AcceptedAnswers: [string.Join(",", correctIds.OrderBy(x => x))],
@@ -220,11 +221,12 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             MaxScore: maxScore,
             Feedback: feedback);
 
+        var sourceNoun = request.ExercisePatternKey == "listening_multiple_choice_multi" ? "audio" : "passage";
         var coachSummary = isCorrect
-            ? "Correct — you selected all answers supported by the passage."
+            ? $"Correct — you selected all answers supported by the {sourceNoun}."
             : missed.Count > 0 && falsePositives.Count == 0
-                ? "You found some correct answers but missed others — review the passage for all supported options."
-                : "Not quite — check which options are directly supported by the passage and avoid unsupported ones.";
+                ? $"You found some correct answers but missed others — review the {sourceNoun} for all supported options."
+                : $"Not quite — check which options are directly supported by the {sourceNoun} and avoid unsupported ones.";
 
         var result = PatternEvaluationResult.Create(
             score: score,

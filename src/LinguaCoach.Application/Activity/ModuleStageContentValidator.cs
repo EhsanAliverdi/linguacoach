@@ -64,6 +64,7 @@ public static class ModuleStageContentValidator
         ["summarize_written_text"]               = ["sourceText", "prompt"],
         ["write_essay"]                           = ["prompt", "topic"],
         ["listening_multiple_choice_single"]     = ["audioScript", "question", "options", "correctOptionId"],
+        ["listening_multiple_choice_multi"]      = ["audioScript", "question", "options", "correctOptionIds"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)

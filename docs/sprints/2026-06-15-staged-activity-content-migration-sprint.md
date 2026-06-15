@@ -1178,3 +1178,23 @@ Practice Gym: `listening_multiple_choice_single` appears under the Listening ski
 Tests: 684 unit / 483 integration / 118 Angular — all green. Angular dev and production builds succeed.
 
 See [Phase 8H review](../reviews/2026-06-15-phase-8h-listening-multiple-choice-single-implementation.md).
+
+### Phase 8I — `listening_multiple_choice_multi` — COMPLETE 2026-06-16
+
+`listening_multiple_choice_multi` — second runnable listening-primary format. Student listens to a short audio script and selects ALL correct answers (at least two) from 4 options. Primary skill: listening; secondary: none. `InteractionMode.MultipleChoiceMulti` reused (already used by `reading_multiple_choice_multi`, no new enum value), `MarkingMode.KeyedSelection`. New `ExercisePatternKey.ListeningMultipleChoiceMulti = "listening_multiple_choice_multi"`. Pattern metadata: `ActivityType.ListeningComprehension`, `compatibleKindsJson: [2]` (ListeningInput), `requiresAudio: false`, estimated 5 minutes. `ExerciseTypeDefinitionSeeder` entry promoted from `Planned` to `Ready` (SupportsPracticeGym=true, SupportsTodayLesson=false).
+
+`ModuleStageContentValidator`: required practice keys `["audioScript","question","options","correctOptionIds"]`. No new forbidden learnContent keys needed — all required keys (audioScript, transcript, question, options, correctOptionIds, optionExplanations, answerKey, correctAnswer, selectedAnswer/selectedAnswers, checkAnswer/submitButton/checkButton) were already forbidden from prior phases.
+
+`AiActivityGeneratorHandler.StagedPatternKeys` includes `listening_multiple_choice_multi`. Deterministic evaluation only — no AI call. `KeyedSelectionEvaluator` dispatch for `reading_multiple_choice_multi` extended to also handle `listening_multiple_choice_multi` via the same pattern-agnostic evaluator: compares the submitted set of `selectedOptionIds` against `correctOptionIds` as a set (exact match required), reports missed correct options and false positives, with a "passage" vs "audio" wording switch based on pattern key. `ReadingMultipleChoiceMultiExerciseData`/`ReadingMultipleChoiceMultiSubmittedAnswer` DTOs reused as-is — JSON deserialization tolerates the extra `audioScript`/`audioUrl` fields in the listening exerciseData shape.
+
+AI prompt seeded: `activity_generate_listening_multiple_choice_multi` (maxInput:900, maxOutput:1000) — generates `audioScript` (30-80 words natural spoken English), `question`, 4 `options`, `correctOptionIds` (at least 2), `explanation`, `optionExplanations` for all 4 options, `audioUrl: null`. No evaluate-prompt seeded (deterministic evaluation).
+
+**Audio/TTS reuse note**: identical pattern to Phase 8H — `audioUrl` is always `null`; frontend falls back to showing `audioScript` as text with an "Audio is temporarily unavailable" notice. No MinIO, new storage, or background TTS jobs introduced.
+
+Frontend: reused `ReadingMultipleChoiceMultiComponent`/`reading-multiple-choice-multi.component.html` — added optional `audioScript`/`audioUrl`/`scenario` fields to `ReadingMultipleChoiceMultiContent`, made `passage` optional, added the same "Context" scenario block and "Audio" section (audio player when `audioUrl` set, text fallback otherwise) as 8H. `exercise-renderer.component.ts` `readingMultipleChoiceMultiContent` getter fixed to read from `stagedExerciseData` (practiceContent.exerciseData) with fallback to `raw`, fixing the same latent bug class as 8H, now affecting both `reading_multiple_choice_multi` and this new format under module_stage_v1 staged content.
+
+Practice Gym: `listening_multiple_choice_multi` appears under the Listening skill, pool-first with on-demand fallback, same as other ready formats. All other listening formats (`listen_and_answer`, `listen_and_gap_fill` already ready from MVP; remaining planned listening formats `listening_fill_in_blanks`, `highlight_correct_summary`, `select_missing_word`, `highlight_incorrect_words`, `write_from_dictation`, `summarize_spoken_text`) remain planned/non-runnable.
+
+Tests: 699 unit / 484 integration / 120 Angular — all green. Angular dev and production builds succeed.
+
+See [Phase 8I review](../reviews/2026-06-16-phase-8i-listening-multiple-choice-multi-implementation.md).

@@ -43,6 +43,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateSummarizeWrittenTextKey             = "activity_generate_summarize_written_text";
     public const string ActivityGenerateWriteEssayKey                       = "activity_generate_write_essay";
     public const string ActivityGenerateListeningMultipleChoiceSingleKey    = "activity_generate_listening_multiple_choice_single";
+    public const string ActivityGenerateListeningMultipleChoiceMultiKey     = "activity_generate_listening_multiple_choice_multi";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1468,6 +1469,89 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateListeningMultipleChoiceMultiContent = """
+You are an expert English language teacher creating a listening comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": [],
+  "exerciseType": "listening_multiple_choice_multi",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Listening for multiple details'>",
+    "explanation": "<2-4 sentences: a general listening strategy for multiple-answer questions — no reference to the specific audio below>",
+    "keyPoints": [
+      "<how to listen for multiple key details>",
+      "<how to avoid distractors>",
+      "<how to track who/what/when/why details>"
+    ],
+    "examples": [
+      { "phrase": "<short listening phrase or signal expression>", "meaning": "<what it usually signals>", "note": "<listening strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen and choose all supported answers>",
+    "commonMistakes": [
+      "<choosing based on isolated familiar words>",
+      "<missing one correct detail>",
+      "<selecting an unsupported distractor>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about multiple-answer listening strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio, then choose ALL correct answers to the question.",
+    "scenario": "<1 sentence describing the workplace context of the audio>",
+    "task": "Listen and select every option that is supported by the audio.",
+    "exerciseData": {
+      "audioScript": "<a short, natural spoken-English script, 30-80 words, realistic for {{careerContext}} professionals>",
+      "audioUrl": null,
+      "question": "<a multiple-answer comprehension question about the audio>",
+      "options": [
+        { "id": "A", "text": "<option A text>" },
+        { "id": "B", "text": "<option B text>" },
+        { "id": "C", "text": "<option C text>" },
+        { "id": "D", "text": "<option D text>" }
+      ],
+      "correctOptionIds": ["<id of first correct option>", "<id of second correct option>"],
+      "explanation": "<1-2 sentences explaining why the correct options are right, referring to the audio>",
+      "optionExplanations": {
+        "A": "<why this option is correct or incorrect, with reference to the audio>",
+        "B": "<why this option is correct or incorrect, with reference to the audio>",
+        "C": "<why this option is correct or incorrect, with reference to the audio>",
+        "D": "<why this option is correct or incorrect, with reference to the audio>"
+      },
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Complete answer selection", "Distractor elimination"],
+    "rubric": [],
+    "feedbackFocus": "Help the student listen for all supported details and avoid unsupported distractors.",
+    "successCriteria": [
+      "All selected options are supported by the audio.",
+      "No correct options are missed.",
+      "Unsupported distractors are avoided."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the audioScript, transcript, question, options, correctOptionIds, optionExplanations, or any reference to this specific exercise's content. It teaches general listening strategy only.
+- practiceContent.exerciseData.audioScript must be short (30-80 words), natural spoken English, and realistic for {{careerContext}} professionals and topic area {{topicHint}}.
+- practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
+- practiceContent.exerciseData.options must contain exactly 4 options with ids "A", "B", "C", "D".
+- correctOptionIds must contain AT LEAST TWO correct option ids (this is a multiple-answer exercise, not a single-answer exercise).
+- optionExplanations must contain an entry for every option id ("A", "B", "C", "D").
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateReadingMultipleChoiceMultiContent = """
 You are an expert English language teacher creating a reading comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -2727,6 +2811,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningMultipleChoiceSingleKey, ActivityGenerateListeningMultipleChoiceSingleContent,
             maxInputTokens: 900, maxOutputTokens: 900, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateListeningMultipleChoiceMultiKey, ActivityGenerateListeningMultipleChoiceMultiContent,
+            maxInputTokens: 900, maxOutputTokens: 1000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,

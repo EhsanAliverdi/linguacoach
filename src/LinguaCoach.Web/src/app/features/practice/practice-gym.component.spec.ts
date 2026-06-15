@@ -67,6 +67,13 @@ const readyListeningMultipleChoiceSingle: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readyListeningMultipleChoiceMulti: any = {
+  key: 'listening_multiple_choice_multi', displayName: 'Listening Multiple Choice Multiple', primarySkill: 'listening', secondarySkills: [],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'listening_multiple_choice_multi', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_listening_multiple_choice_multi',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -75,7 +82,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -342,6 +349,30 @@ describe('PracticeGymComponent', () => {
     expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-lmcs-1', returnTo: '/practice' },
+    });
+  });
+
+  it('listening_multiple_choice_multi is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('listening_multiple_choice_multi')).toBeTrue();
+    expect(component.statusText('listening_multiple_choice_multi')).toBe('Available');
+  });
+
+  it('clicking Listening can return listening_multiple_choice_multi and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-lmcm-1',
+      exerciseType: 'listening_multiple_choice_multi',
+      primarySkill: 'listening',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('listening');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-lmcm-1', returnTo: '/practice' },
     });
   });
 });

@@ -46,7 +46,8 @@ public static class ExerciseTypeDefinitionSeeder
         // reorder_paragraphs promoted to Ready above
         // reading_fill_in_blanks promoted to Ready above
         Planned("summarize_spoken_text", "Summarize Spoken Text", "Write a summary of spoken audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),
-        Planned("listening_multiple_choice_multi", "Listening Multiple Choice Multiple", "Choose multiple answers from audio.", "listening", "[]", "Planned listening format", true, false, requiresAudio: true),
+        Ready(ExercisePatternKey.ListeningMultipleChoiceMulti, "Listening Multiple Choice Multiple", "Listen to a short audio script and choose all correct answers.", "listening", "[]", "Pattern", "listening_multiple_choice_multi", "keyed_selection", "activity_generate_listening_multiple_choice_multi", ActivityType.ListeningComprehension, ExercisePatternKey.ListeningMultipleChoiceMulti, 5, false, false, true, false),
+        // listening_multiple_choice_multi promoted to Ready above
         Planned("listening_fill_in_blanks", "Listening Fill in Blanks", "Fill missing words from audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),
         Planned("highlight_correct_summary", "Highlight Correct Summary", "Choose the correct audio summary.", "listening", "[\"reading\"]", "Planned listening format", true, false, requiresAudio: true),
         Ready(ExercisePatternKey.ListeningMultipleChoiceSingle, "Listening Multiple Choice Single", "Listen to a short audio script and choose one answer.", "listening", "[]", "Pattern", "listening_multiple_choice_single", "keyed_selection", "activity_generate_listening_multiple_choice_single", ActivityType.ListeningComprehension, ExercisePatternKey.ListeningMultipleChoiceSingle, 5, false, false, true, false),

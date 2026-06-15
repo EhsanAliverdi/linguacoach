@@ -309,6 +309,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening for the main idea and choosing the best-supported answer",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.ListeningMultipleChoiceMulti,
+            name: "Listening Multiple Choice Multiple",
+            primarySkill: "Listening",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.MultipleChoiceMulti,
+            markingMode: MarkingMode.KeyedSelection,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_listening_multiple_choice_multi",
+            aiEvaluatePromptKey: "activity_evaluate_listening_multiple_choice_multi",
+            teachingPurpose: "Practise listening for multiple supported details and avoiding distractors",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

@@ -285,7 +285,8 @@ export class ExerciseRendererComponent {
 
   get readingMultipleChoiceMultiContent(): ReadingMultipleChoiceMultiContent {
     const raw = this.raw;
-    const options = this.arrayValue(raw['options']).map((opt, index) => {
+    const ed = this.stagedExerciseData;
+    const options = this.arrayValue(ed['options'] ?? raw['options']).map((opt, index) => {
       const obj = this.objectValue(opt) ?? {};
       return {
         id: this.stringValue(obj['id']) ?? String.fromCharCode(65 + index),
@@ -293,7 +294,7 @@ export class ExerciseRendererComponent {
       };
     });
 
-    const optionExplanationsObj = this.objectValue(raw['optionExplanations']);
+    const optionExplanationsObj = this.objectValue(ed['optionExplanations'] ?? raw['optionExplanations']);
     const optionExplanations = optionExplanationsObj
       ? Object.fromEntries(
           Object.entries(optionExplanationsObj)
@@ -302,17 +303,22 @@ export class ExerciseRendererComponent {
         )
       : null;
 
-    const correctOptionIds = this.stringArray(raw['correctOptionIds']) ?? null;
+    const correctOptionIds = this.stringArray(ed['correctOptionIds'] ?? raw['correctOptionIds']) ?? null;
 
     return {
       learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
-      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
-      passage: this.stringValue(raw['passage']) ?? '',
-      question: this.stringValue(raw['question']) ?? '',
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      passage: this.stringValue(ed['passage'] ?? raw['passage']),
+      question: this.stringValue(ed['question'] ?? raw['question']) ?? '',
       options,
       correctOptionIds,
-      explanation: this.stringValue(raw['explanation']),
+      explanation: this.stringValue(ed['explanation'] ?? raw['explanation']),
       optionExplanations,
+      audioScript: this.stringValue(ed['audioScript']),
+      audioUrl: this.stringValue(ed['audioUrl']),
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
     };
   }
 

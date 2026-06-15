@@ -41,4 +41,5 @@ public static class ExercisePatternKey
 
     // ── Listening ────────────────────────────────────────────────────────────
     public const string ListeningMultipleChoiceSingle = "listening_multiple_choice_single";
+    public const string ListeningMultipleChoiceMulti  = "listening_multiple_choice_multi";
 }

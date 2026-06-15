@@ -30,6 +30,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "summarize_written_text",
         "write_essay",
         "listening_multiple_choice_single",
+        "listening_multiple_choice_multi",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";
