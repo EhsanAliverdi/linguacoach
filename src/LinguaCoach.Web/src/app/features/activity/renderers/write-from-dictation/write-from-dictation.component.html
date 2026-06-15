@@ -1,0 +1,49 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="write-from-dictation-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  @for (item of content.items; track item.id; let i = $index) {
+    <div class="sp-card" style="padding:16px" [attr.data-testid]="'wfd-item-' + item.id">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Clip {{ i + 1 }}</p>
+
+      @if (item.audioUrl) {
+        <audio controls [src]="item.audioUrl" style="width:100%;display:block" [attr.data-testid]="'wfd-audio-' + item.id"></audio>
+        <p style="font-size:12px;color:var(--sp-muted);margin-top:8px">Listen, then type exactly what you hear.</p>
+      } @else {
+        <div class="sp-alert-info" style="font-size:13px" [attr.data-testid]="'wfd-audio-fallback-' + item.id">
+          Audio is temporarily unavailable. Read the sentence below, then type it.
+        </div>
+        <p style="font-size:14px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap;margin-top:8px" [attr.data-testid]="'wfd-script-' + item.id">{{ item.audioScript }}</p>
+      }
+
+      <input
+        type="text"
+        [disabled]="disabled"
+        [ngModel]="valueFor(item.id)"
+        (ngModelChange)="onInput(item.id, $event)"
+        placeholder="Type what you hear…"
+        [attr.data-testid]="'wfd-input-' + item.id"
+        class="sp-input"
+        style="width:100%;margin-top:10px" />
+    </div>
+  }
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="write-from-dictation-submit-btn">
+    @if (disabled) { Checking answer… } @else { Check answer }
+  </button>
+</div>

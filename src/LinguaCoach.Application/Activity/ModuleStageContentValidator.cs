@@ -84,6 +84,13 @@ public static class ModuleStageContentValidator
         ["select_missing_word"]                  = ["audioScript", "incompleteText", "options", "correctOptionId"],
         ["highlight_correct_summary"]            = ["audioScript", "options", "correctOptionId"],
         ["highlight_incorrect_words"]            = ["audioScript", "displayTranscript", "tokens", "incorrectTokenIds"],
+        ["write_from_dictation"]                 = ["items"],
+    };
+
+    // Per-item field requirements for item-array formats: pattern key => required item fields.
+    private static readonly Dictionary<string, string[]> RequiredItemFieldsByPatternKey = new(StringComparer.Ordinal)
+    {
+        ["write_from_dictation"] = ["id", "audioScript", "answer"],
     };
 
     public static ValidationResult Validate(
@@ -139,6 +146,10 @@ public static class ModuleStageContentValidator
                         errors.Add($"practiceContent.exerciseData is missing required field \"{requiredKey}\".");
                 }
 
+                if (exercisePatternKey is not null
+                    && RequiredItemFieldsByPatternKey.TryGetValue(exercisePatternKey, out var itemFields))
+                    ValidateItemFields(exerciseData, itemFields, errors);
+
                 if (countSettings is not null && exercisePatternKey is not null)
                     EnforceCounts(exerciseData, exercisePatternKey, countSettings, errors);
             }
@@ -155,7 +166,41 @@ public static class ModuleStageContentValidator
         ["listening_fill_in_blanks"]       = "gaps",
         ["reorder_paragraphs"]             = "items",
         ["highlight_incorrect_words"]      = "incorrectTokenIds",
+        ["write_from_dictation"]           = "items",
     };
+
+    private static void ValidateItemFields(JsonElement exerciseData, string[] requiredItemFields, List<string> errors)
+    {
+        JsonElement itemsArray = default;
+        var found = false;
+        foreach (var prop in exerciseData.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, "items", StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == JsonValueKind.Array)
+            {
+                itemsArray = prop.Value;
+                found = true;
+                break;
+            }
+        }
+        if (!found) return;
+
+        var index = 0;
+        foreach (var item in itemsArray.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                errors.Add($"practiceContent.exerciseData.items[{index}] must be an object.");
+                index++;
+                continue;
+            }
+            foreach (var field in requiredItemFields)
+            {
+                if (!HasPropertyIgnoreCase(item, field))
+                    errors.Add($"practiceContent.exerciseData.items[{index}] is missing required field \"{field}\".");
+            }
+            index++;
+        }
+    }
 
     // Option-count formats: pattern key => exerciseData array field whose length is the option count.
     private static readonly Dictionary<string, string> OptionCountArrayByPattern = new(StringComparer.Ordinal)

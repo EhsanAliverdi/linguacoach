@@ -389,6 +389,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening closely and spotting transcript words that differ from a spoken passage",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.WriteFromDictation,
+            name: "Write From Dictation",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Writing"]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.WriteFromDictation,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_write_from_dictation",
+            aiEvaluatePromptKey: "activity_evaluate_write_from_dictation",
+            teachingPurpose: "Practise listening to short clips and writing exactly what is heard",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

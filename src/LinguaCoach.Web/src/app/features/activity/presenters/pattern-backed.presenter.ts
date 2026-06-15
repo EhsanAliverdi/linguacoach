@@ -75,6 +75,7 @@ export class PatternBackedPresenter implements ActivityPagePresenter {
       case 'listeningFillInBlanks':
       case 'highlightCorrectSummary':
       case 'highlightIncorrectWords':
+      case 'writeFromDictation':
         return { label: 'Listening', background: '#e0f2fe', color: '#0369a1', icon: 'listening' };
       case 'readOnly':
         return { label: 'Reflection', background: 'var(--sp-writing-soft)', color: 'var(--sp-writing-ink)', icon: 'writing' };

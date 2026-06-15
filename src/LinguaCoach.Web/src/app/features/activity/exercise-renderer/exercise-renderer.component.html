@@ -97,6 +97,13 @@
       (submitted)="onHighlightIncorrectWordsSubmitted($event)"
     />
   }
+  @case ('writeFromDictation') {
+    <app-write-from-dictation
+      [content]="writeFromDictationContent"
+      [disabled]="disabled"
+      (submitted)="onWriteFromDictationSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

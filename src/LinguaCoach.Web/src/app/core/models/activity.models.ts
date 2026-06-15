@@ -27,7 +27,8 @@ export type InteractionMode =
   | 'readingWritingFillInBlanks'
   | 'listeningFillInBlanks'
   | 'highlightCorrectSummary'
-  | 'highlightIncorrectWords';
+  | 'highlightIncorrectWords'
+  | 'writeFromDictation';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

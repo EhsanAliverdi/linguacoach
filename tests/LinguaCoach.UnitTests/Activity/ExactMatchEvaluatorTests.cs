@@ -601,4 +601,112 @@ public sealed class ExactMatchEvaluatorTests
 
         result.ItemResults.Single().IsCorrect.Should().BeTrue();
     }
+
+    // ── write_from_dictation ──────────────────────────────────────────────────
+
+    private static string DictationContent(params (string id, string answer, string[]? accepted)[] items)
+    {
+        var content = new WriteFromDictationContent
+        {
+            Items = items.Select(i => new WriteFromDictationItem
+            {
+                Id = i.id,
+                AudioScript = i.answer,
+                AudioUrl = null,
+                Answer = i.answer,
+                AcceptedAnswers = i.accepted?.ToList(),
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    private static string DictationSubmitted(params (string itemId, string? text)[] items)
+    {
+        var dto = new WriteFromDictationSubmittedAnswer
+        {
+            Items = items.Select(i => new WriteFromDictationSubmittedItem { ItemId = i.itemId, SubmittedText = i.text }).ToList()
+        };
+        return JsonSerializer.Serialize(dto, JsonOptions);
+    }
+
+    [Fact]
+    public async Task Dictation_AllCorrect_ReturnsFullScoreAndPassed()
+    {
+        var content = DictationContent(
+            ("item1", "The meeting starts at nine.", null),
+            ("item2", "Please send the report.", null));
+        var submitted = DictationSubmitted(
+            ("item1", "The meeting starts at nine."),
+            ("item2", "Please send the report."));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "write_from_dictation"), default);
+
+        result.Score.Should().Be(2);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeTrue();
+        result.ItemResults.Should().OnlyContain(r => r.IsCorrect);
+    }
+
+    [Fact]
+    public async Task Dictation_OneWrong_ReturnsPerItemDetail()
+    {
+        var content = DictationContent(
+            ("item1", "The meeting starts at nine.", null),
+            ("item2", "Please send the report.", null));
+        var submitted = DictationSubmitted(
+            ("item1", "The meeting starts at nine."),
+            ("item2", "Please send the email."));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "write_from_dictation"), default);
+
+        result.Score.Should().Be(1);
+        var wrong = result.ItemResults.Single(r => r.ItemKey == "item2");
+        wrong.IsCorrect.Should().BeFalse();
+        wrong.CorrectAnswer.Should().Be("Please send the report.");
+    }
+
+    [Fact]
+    public async Task Dictation_CaseInsensitiveAndTrimmed_Matches()
+    {
+        var content = DictationContent(("item1", "The Meeting Starts At Nine.", null));
+        var submitted = DictationSubmitted(("item1", "  the meeting starts at nine  "));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "write_from_dictation"), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Dictation_AcceptedAlternative_Matches()
+    {
+        var content = DictationContent(("item1", "We will meet at 9.", ["We will meet at nine.", "We will meet at 9."]));
+        var submitted = DictationSubmitted(("item1", "we will meet at nine"));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "write_from_dictation"), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Dictation_MissingSubmission_IsIncorrectNotError()
+    {
+        var content = DictationContent(("item1", "Hello team.", null), ("item2", "Goodbye.", null));
+        var submitted = DictationSubmitted(("item1", "Hello team."));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "write_from_dictation"), default);
+
+        result.Score.Should().Be(1);
+        result.ItemResults.Single(r => r.ItemKey == "item2").IsCorrect.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Dictation_EmptyText_IsIncorrect()
+    {
+        var content = DictationContent(("item1", "Hello team.", null));
+        var submitted = DictationSubmitted(("item1", "   "));
+
+        var result = await _sut.EvaluateAsync(MakeRequest(content, submitted, "write_from_dictation"), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeFalse();
+    }
 }

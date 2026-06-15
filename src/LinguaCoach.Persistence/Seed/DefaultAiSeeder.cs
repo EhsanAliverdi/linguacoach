@@ -48,6 +48,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateSelectMissingWordKey                = "activity_generate_select_missing_word";
     public const string ActivityGenerateHighlightCorrectSummaryKey          = "activity_generate_highlight_correct_summary";
     public const string ActivityGenerateHighlightIncorrectWordsKey          = "activity_generate_highlight_incorrect_words";
+    public const string ActivityGenerateWriteFromDictationKey               = "activity_generate_write_from_dictation";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1719,6 +1720,84 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateWriteFromDictationContent = """
+You are an expert English language teacher creating a write-from-dictation listening exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Generate exactly {{defaultItemsPerPractice}} dictation items in the practice stage.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what dictation/listening-and-writing skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["writing"],
+  "exerciseType": "write_from_dictation",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Writing exactly what you hear'>",
+    "explanation": "<2-4 sentences teaching how to listen for every word and write it accurately — no reference to the specific sentences below>",
+    "keyPoints": [
+      "<how to hold a short sentence in memory>",
+      "<how to listen for word endings and small words>",
+      "<how to check spelling and punctuation>"
+    ],
+    "examples": [
+      { "phrase": "<short signal phrase>", "meaning": "<what to listen for>", "note": "<dictation strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen, hold, and write a short sentence accurately>",
+    "commonMistakes": [
+      "<dropping small words like articles or prepositions>",
+      "<misspelling a heard word>",
+      "<missing word endings such as plural or past tense>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about dictation strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to each clip, then type exactly what you hear.",
+    "scenario": "<1 sentence describing the workplace context of these clips>",
+    "task": "Listen to each clip and write the sentence exactly.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "item1",
+          "audioScript": "<a short, natural spoken-English sentence, 6-12 words, realistic for {{careerContext}} professionals>",
+          "audioUrl": null,
+          "answer": "<the exact sentence text the student should type, matching audioScript>",
+          "acceptedAnswers": ["<the same sentence>", "<an equally-correct minor variant, optional>"],
+          "explanation": "<1 short sentence noting the tricky word or punctuation in this clip>"
+        }
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Listening accuracy", "Spelling", "Completeness"],
+    "rubric": [],
+    "feedbackFocus": "Help the student write each spoken sentence accurately, word for word.",
+    "successCriteria": [
+      "The student writes every word that was spoken.",
+      "Spelling and word endings are correct.",
+      "No words are added or dropped."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain audioScript, transcript, items, answer, acceptedAnswers, answerKey, or any sentence the student must transcribe. It teaches general dictation strategy only.
+- practiceContent.exerciseData.items must contain exactly {{defaultItemsPerPractice}} items.
+- Each item id must be unique (item1, item2, ...).
+- Each audioScript must be a short natural spoken-English sentence (6-12 words) realistic for {{careerContext}} professionals and topic area {{topicHint}}.
+- Each item's answer must be the exact text of its audioScript.
+- audioUrl must be null — audio is not pre-generated for this format.
+- acceptedAnswers must include the exact answer; add at most one plausible minor variant.
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateListeningMultipleChoiceMultiContent = """
 You are an expert English language teacher creating a listening comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -3180,6 +3259,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateHighlightIncorrectWordsKey, ActivityGenerateHighlightIncorrectWordsContent,
             maxInputTokens: 1400, maxOutputTokens: 1500, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateWriteFromDictationKey, ActivityGenerateWriteFromDictationContent,
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,

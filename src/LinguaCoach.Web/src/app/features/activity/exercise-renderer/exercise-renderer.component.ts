@@ -17,6 +17,7 @@ import { ReadingWritingFillInBlanksComponent, ReadingWritingFillInBlanksContent 
 import { ListeningFillInBlanksComponent, ListeningFillInBlanksContent } from '../renderers/listening-fill-in-blanks/listening-fill-in-blanks.component';
 import { HighlightCorrectSummaryComponent, HighlightCorrectSummaryContent } from '../renderers/highlight-correct-summary/highlight-correct-summary.component';
 import { HighlightIncorrectWordsComponent, HighlightIncorrectWordsContent } from '../renderers/highlight-incorrect-words/highlight-incorrect-words.component';
+import { WriteFromDictationComponent, WriteFromDictationContent } from '../renderers/write-from-dictation/write-from-dictation.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -33,7 +34,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'readingWritingFillInBlanks'; answers: Record<string, string> }
   | { kind: 'listeningFillInBlanks'; answers: Record<string, string> }
   | { kind: 'highlightCorrectSummary'; selectedOptionId: string }
-  | { kind: 'highlightIncorrectWords'; selectedTokenIds: string[] };
+  | { kind: 'highlightIncorrectWords'; selectedTokenIds: string[] }
+  | { kind: 'writeFromDictation'; items: { itemId: string; submittedText: string }[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -56,6 +58,7 @@ export type ExerciseAnswerPayload =
     ListeningFillInBlanksComponent,
     HighlightCorrectSummaryComponent,
     HighlightIncorrectWordsComponent,
+    WriteFromDictationComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -474,6 +477,32 @@ export class ExerciseRendererComponent {
 
   onHighlightIncorrectWordsSubmitted(answer: { selectedTokenIds: string[] }): void {
     this.answerSubmitted.emit({ kind: 'highlightIncorrectWords', selectedTokenIds: answer.selectedTokenIds });
+  }
+
+  get writeFromDictationContent(): WriteFromDictationContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const items = this.arrayValue(ed['items'] ?? raw['items']).map((item, index) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? `item${index + 1}`,
+        audioScript: this.stringValue(obj['audioScript']),
+        audioUrl: this.stringValue(obj['audioUrl']),
+      };
+    });
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      items,
+    };
+  }
+
+  onWriteFromDictationSubmitted(answer: { items: { itemId: string; submittedText: string }[] }): void {
+    this.answerSubmitted.emit({ kind: 'writeFromDictation', items: answer.items });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

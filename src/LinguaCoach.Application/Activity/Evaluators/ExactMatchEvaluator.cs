@@ -22,6 +22,9 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         if (request.ExercisePatternKey == "reorder_paragraphs")
             return EvaluateReorderParagraphsAsync(request);
 
+        if (request.ExercisePatternKey == "write_from_dictation")
+            return EvaluateWriteFromDictationAsync(request);
+
         var expectedItems = ParseExpectedItems(request.ContentJson, request.ExercisePatternKey);
         var submittedMap = ParseSubmittedAnswers(request.SubmittedAnswerJson);
 
@@ -278,6 +281,126 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         return Task.FromResult(result);
     }
 
+    // ── write_from_dictation ─────────────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateWriteFromDictationAsync(
+        PatternEvaluationRequest request)
+    {
+        var json = UnwrapStagedContent(request.ContentJson);
+        WriteFromDictationContent? content = null;
+        try { content = JsonSerializer.Deserialize<WriteFromDictationContent>(json, JsonOptions); }
+        catch (JsonException) { /* leave null */ }
+
+        var items = content?.Items ?? [];
+
+        // Map submitted text by item id.
+        var submittedByItem = new Dictionary<string, string?>(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(request.SubmittedAnswerJson))
+        {
+            try
+            {
+                var dto = JsonSerializer.Deserialize<WriteFromDictationSubmittedAnswer>(request.SubmittedAnswerJson, JsonOptions);
+                if (dto?.Items is not null)
+                {
+                    foreach (var s in dto.Items)
+                    {
+                        if (!string.IsNullOrWhiteSpace(s.ItemId))
+                            submittedByItem[s.ItemId] = s.SubmittedText;
+                    }
+                }
+            }
+            catch (JsonException) { /* leave empty */ }
+        }
+
+        var itemResults = new List<PatternEvaluationItemResult>();
+        double totalScore = 0;
+        double totalMax = items.Count;
+
+        var usedKeys = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var key = item.Id ?? $"item_{i + 1}";
+            usedKeys.Add(key);
+
+            var accepted = new List<string>();
+            if (!string.IsNullOrWhiteSpace(item.Answer)) accepted.Add(item.Answer);
+            if (item.AcceptedAnswers is not null)
+                accepted.AddRange(item.AcceptedAnswers.Where(a => !string.IsNullOrWhiteSpace(a)));
+
+            submittedByItem.TryGetValue(key, out var submitted);
+            var normalized = Normalize(submitted);
+            var isCorrect = !string.IsNullOrEmpty(normalized)
+                && accepted.Any(a => string.Equals(Normalize(a), normalized, StringComparison.Ordinal));
+            var score = isCorrect ? 1.0 : 0.0;
+            totalScore += score;
+
+            string feedback;
+            if (string.IsNullOrWhiteSpace(submitted))
+                feedback = $"No answer typed — the correct sentence is \"{item.Answer}\".";
+            else if (isCorrect)
+                feedback = string.IsNullOrWhiteSpace(item.Explanation) ? "Correct." : item.Explanation!;
+            else
+            {
+                feedback = $"Incorrect — the correct sentence is \"{item.Answer}\".";
+                if (!string.IsNullOrWhiteSpace(item.Explanation))
+                    feedback += $" {item.Explanation}";
+            }
+
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: key,
+                StudentAnswer: submitted,
+                CorrectAnswer: item.Answer,
+                AcceptedAnswers: accepted.Count > 0 ? accepted : (item.Answer is null ? [] : [item.Answer]),
+                IsCorrect: isCorrect,
+                Score: score,
+                MaxScore: 1,
+                Feedback: feedback));
+        }
+
+        // Extra submissions for unknown item ids — reported but not scored.
+        foreach (var (submittedId, submittedText) in submittedByItem)
+        {
+            if (usedKeys.Contains(submittedId)) continue;
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: submittedId,
+                StudentAnswer: submittedText,
+                CorrectAnswer: null,
+                AcceptedAnswers: [],
+                IsCorrect: false,
+                Score: 0,
+                MaxScore: 0,
+                Feedback: $"Unexpected item \"{submittedId}\" — not part of this exercise."));
+        }
+
+        var percentage = PatternEvaluationResult.CalculatePercentage(totalScore, totalMax);
+        var passed = totalMax == 0 || percentage >= 60;
+        var allCorrect = totalMax > 0 && totalScore == totalMax;
+
+        var correct = itemResults.Count(r => r.MaxScore > 0 && r.IsCorrect);
+        var total = items.Count;
+        string coachSummary;
+        if (total == 0)
+            coachSummary = "Activity completed.";
+        else if (allCorrect)
+            coachSummary = "Excellent — you transcribed every clip correctly!";
+        else if (correct == 0)
+            coachSummary = "Listen again carefully and write each sentence word for word.";
+        else
+            coachSummary = $"You transcribed {correct} of {total} clips correctly. Review the highlighted items.";
+
+        var result = PatternEvaluationResult.Create(
+            score: totalScore,
+            maxScore: totalMax,
+            passed: passed,
+            completed: true,
+            itemResults: itemResults,
+            coachSummary: coachSummary);
+
+        return Task.FromResult(result);
+    }
+
     // ── coach summary ──────────────────────────────────────────────────────────
 
     private static string BuildCoachSummary(List<PatternEvaluationItemResult> items)
@@ -306,4 +429,36 @@ public sealed class GapFillSubmittedAnswer
 public sealed class ReorderParagraphsSubmittedAnswer
 {
     public List<string> OrderedIds { get; set; } = [];
+}
+
+/// <summary>
+/// practiceContent.exerciseData shape for write_from_dictation.
+/// </summary>
+public sealed class WriteFromDictationContent
+{
+    public List<WriteFromDictationItem> Items { get; set; } = [];
+}
+
+public sealed class WriteFromDictationItem
+{
+    public string? Id { get; set; }
+    public string? AudioScript { get; set; }
+    public string? AudioUrl { get; set; }
+    public string? Answer { get; set; }
+    public List<string>? AcceptedAnswers { get; set; }
+    public string? Explanation { get; set; }
+}
+
+/// <summary>
+/// Submitted answer shape for write_from_dictation.
+/// </summary>
+public sealed class WriteFromDictationSubmittedAnswer
+{
+    public List<WriteFromDictationSubmittedItem> Items { get; set; } = [];
+}
+
+public sealed class WriteFromDictationSubmittedItem
+{
+    public string? ItemId { get; set; }
+    public string? SubmittedText { get; set; }
 }

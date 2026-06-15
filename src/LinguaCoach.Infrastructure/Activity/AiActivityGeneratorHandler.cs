@@ -36,6 +36,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "select_missing_word",
         "highlight_correct_summary",
         "highlight_incorrect_words",
+        "write_from_dictation",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

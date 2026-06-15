@@ -101,7 +101,8 @@ public static class ExerciseTypeDefinitionSeeder
         // select_missing_word promoted to Ready above
         Ready(ExercisePatternKey.HighlightIncorrectWords, "Highlight Incorrect Words", "Listen to a short audio script and select the transcript words that differ from it.", "listening", "[\"reading\"]", "Pattern", "highlight_incorrect_words", "keyed_selection", "activity_generate_highlight_incorrect_words", ActivityType.ListeningComprehension, ExercisePatternKey.HighlightIncorrectWords, 5, false, false, true, false),
         // highlight_incorrect_words promoted to Ready above
-        Planned("write_from_dictation", "Write From Dictation", "Write the sentence you hear.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true)
+        Ready(ExercisePatternKey.WriteFromDictation, "Write From Dictation", "Listen to short audio clips and type exactly what you hear.", "listening", "[\"writing\"]", "Pattern", "write_from_dictation", "exact_match", "activity_generate_write_from_dictation", ActivityType.ListeningComprehension, ExercisePatternKey.WriteFromDictation, 5, false, false, true, false)
+        // write_from_dictation promoted to Ready above
     ];
 
     public static async Task SeedAsync(LinguaCoachDbContext db, ILogger logger, CancellationToken ct = default)

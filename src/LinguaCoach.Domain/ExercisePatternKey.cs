@@ -46,4 +46,5 @@ public static class ExercisePatternKey
     public const string SelectMissingWord              = "select_missing_word";
     public const string HighlightCorrectSummary        = "highlight_correct_summary";
     public const string HighlightIncorrectWords        = "highlight_incorrect_words";
+    public const string WriteFromDictation             = "write_from_dictation";
 }
