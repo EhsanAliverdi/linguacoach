@@ -58,3 +58,4 @@ node_modules/
 src/LinguaCoach.Web/dist/
 .gstack/
 src/LinguaCoach.Web/playwright-report/
+graphify-out/*
