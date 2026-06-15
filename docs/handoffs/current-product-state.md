@@ -348,4 +348,4 @@ Completed staged migrations:
 - `SpeakingRolePlay`
 - `VocabularyPractice`
 
-Remaining staged migrations are pattern-backed activities. Four planned future exercise formats have been made runnable: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), and `reorder_paragraphs` (Phase 8D). All other planned future exercise formats remain planned and non-runnable. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase.
+Remaining staged migrations are pattern-backed activities. Planned future exercise formats made runnable so far: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), `reorder_paragraphs` (Phase 8D), `reading_writing_fill_in_blanks` (Phase 8E), `summarize_written_text` (Phase 8F), and `write_essay` (Phase 8G). All other planned future exercise formats remain planned and non-runnable. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase.

@@ -8,7 +8,7 @@ export interface FreeTextEntryContent {
   targetPhrases?: string[];
   exampleText?: string | null;
   coachNote?: string | null;
-  wordCountTarget?: number | null;
+  wordCountTarget?: string | null;
 }
 
 export interface FreeTextAnswer {

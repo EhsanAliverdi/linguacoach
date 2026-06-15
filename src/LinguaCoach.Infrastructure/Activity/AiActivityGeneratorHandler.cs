@@ -28,6 +28,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "reorder_paragraphs",
         "reading_writing_fill_in_blanks",
         "summarize_written_text",
+        "write_essay",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

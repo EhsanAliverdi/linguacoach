@@ -1834,16 +1834,89 @@ public sealed class ModuleStageContentValidatorTests
     [InlineData("sourceText")]
     [InlineData("prompt")]
     [InlineData("expectedSummary")]
-    [InlineData("keyPoints")]
     [InlineData("answerKey")]
     [InlineData("textarea")]
-    [InlineData("submit")]
     public void Validate_SummarizeWrittenText_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
     {
         var json = AddLearnProperty(Parse(ValidSummarizeWrittenTextJson), forbiddenKey, "not allowed");
 
         var result = ModuleStageContentValidator.Validate(
             Parse(json), ActivityType.WritingScenario, "summarize_written_text");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
+    // ── write_essay pattern key tests ───────────────────────────────────────────
+
+    private const string ValidWriteEssayJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Write an Opinion Essay",
+      "moduleGoal": "Practise planning and writing a structured essay that answers a prompt.",
+      "primarySkill": "writing",
+      "secondarySkills": [],
+      "exerciseType": "write_essay",
+      "learnContent": {
+        "teachingTitle": "How to plan and structure an essay",
+        "explanation": "Answer the prompt directly, organise your ideas into an introduction, body, and conclusion, and support each point with an example."
+      },
+      "practiceContent": {
+        "instructions": "Read the essay prompt below and write a structured essay response.",
+        "exerciseData": {
+          "prompt": "Some companies now allow employees to work from home permanently. Discuss the advantages and disadvantages of this approach.",
+          "topic": "Remote work policies",
+          "essayType": "advantage-disadvantage",
+          "requirements": {
+            "targetWordCount": "180-250 words",
+            "minimumParagraphs": 3,
+            "mustAddress": ["advantages of remote work", "disadvantages of remote work"],
+            "avoid": ["off-topic personal anecdotes"]
+          }
+        }
+      },
+      "feedbackPlan": {
+        "feedbackFocus": "Help the student write a clear, structured essay with supported ideas."
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_WriteEssay_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidWriteEssayJson), ActivityType.WritingScenario, "write_essay");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("prompt")]
+    [InlineData("topic")]
+    public void Validate_WriteEssay_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidWriteEssayJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "write_essay");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("prompt")]
+    [InlineData("modelEssay")]
+    [InlineData("expectedAnswer")]
+    [InlineData("answerKey")]
+    [InlineData("textarea")]
+    public void Validate_WriteEssay_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidWriteEssayJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "write_essay");
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));

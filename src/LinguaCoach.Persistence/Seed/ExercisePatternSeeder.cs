@@ -247,6 +247,22 @@ public static class ExercisePatternSeeder
             workplaceContext: true),
 
         new(
+            key: ExercisePatternKey.WriteEssay,
+            name: "Write Essay",
+            primarySkill: "Writing",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[4]""",           // WritingTask
+            activityType: ActivityType.WritingScenario,
+            interactionMode: InteractionMode.FreeTextEntry,
+            markingMode: MarkingMode.AiStructured,
+            estimatedMinutes: 10,
+            aiGeneratePromptKey: "activity_generate_write_essay",
+            aiEvaluatePromptKey: "activity_evaluate_write_essay",
+            teachingPurpose: "Practise planning and writing a structured essay that directly answers a prompt",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
             key: ExercisePatternKey.ReadingWritingFillInBlanks,
             name: "Reading and Writing Fill in Blanks",
             primarySkill: "Reading",

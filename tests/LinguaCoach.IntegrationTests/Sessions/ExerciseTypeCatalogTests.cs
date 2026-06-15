@@ -66,7 +66,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        Assert.DoesNotContain(eligible, e => e.Key == "write_essay");
+        Assert.DoesNotContain(eligible, e => e.Key == "read_aloud");
         Assert.Contains(eligible, e => e.Key == "email_reply");
     }
 
@@ -161,15 +161,42 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task WriteEssay_RemainsPlanned()
+    public async Task WriteEssay_IsReadyAndEligible()
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_essay");
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        Assert.Equal("planned", type.ImplementationStatus);
-        Assert.False(type.IsAvailableForGeneration);
-        Assert.DoesNotContain(eligible, e => e.Key == "write_essay");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("writing", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "write_essay");
+    }
+
+    [Fact]
+    public async Task OtherPlannedFormats_RemainNonRunnable()
+    {
+        var stillPlanned = new[]
+        {
+            "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
+            "retell_lecture", "summarize_group_discussion", "answer_short_question",
+            "summarize_spoken_text", "listening_multiple_choice_multi", "listening_fill_in_blanks",
+            "highlight_correct_summary", "listening_multiple_choice_single", "select_missing_word",
+            "highlight_incorrect_words", "write_from_dictation",
+        };
+
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        foreach (var key in stillPlanned)
+        {
+            var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+            Assert.Equal("planned", type.ImplementationStatus);
+            Assert.False(type.IsAvailableForGeneration);
+            Assert.DoesNotContain(eligible, e => e.Key == key);
+        }
     }
 
     [Fact]

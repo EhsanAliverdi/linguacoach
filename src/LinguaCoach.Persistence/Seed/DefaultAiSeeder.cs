@@ -41,6 +41,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateReorderParagraphsKey                = "activity_generate_reorder_paragraphs";
     public const string ActivityGenerateReadingWritingFillInBlanksKey       = "activity_generate_reading_writing_fill_in_blanks";
     public const string ActivityGenerateSummarizeWrittenTextKey             = "activity_generate_summarize_written_text";
+    public const string ActivityGenerateWriteEssayKey                       = "activity_generate_write_essay";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -54,6 +55,7 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateOpenWritingTaskKey    = "activity_evaluate_open_writing_task";
     public const string ActivityEvaluateSpeakingRoleplayTurnKey = "activity_evaluate_speaking_roleplay_turn";
     public const string ActivityEvaluateSummarizeWrittenTextKey = "activity_evaluate_summarize_written_text";
+    public const string ActivityEvaluateWriteEssayKey = "activity_evaluate_write_essay";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English workplace writing coach creating a staged WritingScenario module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -1885,6 +1887,150 @@ If the student's summary is empty or too short to evaluate, set overallScore to 
 Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateWriteEssayContent = """
+You are an expert English language teacher creating a write-essay exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read an essay prompt and write a structured essay response (introduction, body paragraphs, conclusion).
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what essay-writing skill this practises>",
+  "primarySkill": "writing",
+  "secondarySkills": [],
+  "exerciseType": "write_essay",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to plan and structure an essay'>",
+    "explanation": "<2-4 sentences teaching general essay strategy: answering the prompt directly, organising ideas, and supporting them with examples. No reference to the specific prompt or topic below.>",
+    "keyPoints": [
+      "<how to answer the question directly>",
+      "<how to organise introduction/body/conclusion>",
+      "<how to support ideas with examples>"
+    ],
+    "examples": [
+      { "phrase": "<useful essay phrase or structure>", "meaning": "<when to use it>", "note": "<writing strategy note>" }
+    ],
+    "strategy": "<one sentence: how to plan, structure, and write the essay>",
+    "commonMistakes": [
+      "not answering the prompt directly",
+      "weak paragraph structure",
+      "unsupported ideas"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about essay-writing strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the essay prompt below and write a structured essay response.",
+    "scenario": "<optional 1 sentence describing the academic/workplace context>",
+    "task": "Write an essay responding to the prompt below.",
+    "exerciseData": {
+      "prompt": "<a clear essay prompt/question relevant to {{careerContext}} and {{topicHint}}>",
+      "topic": "<short topic label for the essay>",
+      "essayType": "<opinion|discussion|problem-solution|advantage-disadvantage>",
+      "requirements": {
+        "targetWordCount": "180-250 words",
+        "minimumParagraphs": 3,
+        "mustAddress": ["<required point 1>", "<required point 2>"],
+        "avoid": ["<common issue to avoid>"]
+      },
+      "planningHints": [
+        "<optional planning hint>",
+        "<optional planning hint>"
+      ],
+      "successChecklist": [
+        "The essay answers the prompt.",
+        "The essay has a clear introduction, body, and conclusion.",
+        "The essay supports ideas with examples and clear language."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Task response",
+      "Organisation",
+      "Idea development",
+      "Coherence and cohesion",
+      "Grammar",
+      "Vocabulary",
+      "Tone and register"
+    ],
+    "rubric": [
+      { "criterion": "Task response", "description": "Answers the prompt directly and fully." },
+      { "criterion": "Structure", "description": "Uses clear paragraph organisation and logical flow." },
+      { "criterion": "Language", "description": "Uses accurate grammar, vocabulary, and sentence structure." }
+    ],
+    "feedbackFocus": "Help the student write a clear, structured essay with supported ideas.",
+    "successCriteria": [
+      "The essay answers the prompt.",
+      "The essay has a clear introduction, body, and conclusion.",
+      "The essay supports ideas with examples and clear language."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual essay prompt, topic, model essay, expected answer, or any reference to the specific exercise content. It teaches general essay-writing strategy only.
+- practiceContent.exerciseData.prompt must be a clear, answerable essay question.
+- requirements.mustAddress items must be derivable from the prompt — not generic.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateWriteEssayContent = """
+You are an expert English language teacher evaluating a student's essay.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (essay prompt and requirements):
+{{activityContent}}
+
+Student essay:
+{{studentSubmission}}
+
+Evaluate the essay against the rubric criteria and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentence warm but honest feedback: did the student answer the prompt? Is the essay well organised? Any key gaps?>",
+  "focusFirst": false,
+  "changes": [
+    {
+      "type": "grammar|vocabulary|structure|content|tone",
+      "original": "<phrase or issue from student's essay>",
+      "suggested": "<improved version>",
+      "reason": "<brief explanation>",
+      "category": "<grammar|vocabulary|structure|content|tone>",
+      "severity": "low|medium|high"
+    }
+  ],
+  "whatYouDidWell": ["<specific positive: answered the prompt>", "<specific positive: clear structure>"],
+  "mainMistakes": ["<key content, structure, or language issue if any>"],
+  "grammarIssues": ["<grammar issue if any>"],
+  "vocabularyIssues": ["<vocabulary issue if any>"],
+  "toneIssues": ["<tone/register issue if any>"],
+  "miniLesson": "<one sentence teaching moment about essay structure or language use>",
+  "improvedVersion": "<a short model paragraph or outline that demonstrates what a strong response looks like>",
+  "nextImprovementStep": "<one specific action for the student to practise next>",
+  "feedbackInSourceLanguage": "<1-2 sentences of encouragement in {{sourceLanguageName}}>"
+}
+
+Scoring guide:
+- 90-100: Fully answers the prompt + clear introduction/body/conclusion + well-supported ideas + clean language
+- 75-89: Answers the prompt + mostly clear structure + mostly supported ideas + minor language issues
+- 60-74: Partially answers the prompt or structure/support is incomplete
+- 40-59: Weak response to the prompt, unclear structure, or significant language issues
+- 0-39: Does not address the prompt, missing structure, or essay is far too short
+
+If the student's essay is empty or too short to evaluate, set overallScore to 0 and explain in coachSummary.
+Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -2518,6 +2664,10 @@ Rules:
             ActivityGenerateSummarizeWrittenTextKey, ActivityGenerateSummarizeWrittenTextContent,
             maxInputTokens: 1000, maxOutputTokens: 1400, ct);
 
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateWriteEssayKey, ActivityGenerateWriteEssayContent,
+            maxInputTokens: 1000, maxOutputTokens: 1600, ct);
+
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluatePhraseMatchKey, ActivityEvaluatePhraseMatchContent,
@@ -2562,6 +2712,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateSummarizeWrittenTextKey, ActivityEvaluateSummarizeWrittenTextContent,
             maxInputTokens: 2000, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateWriteEssayKey, ActivityEvaluateWriteEssayContent,
+            maxInputTokens: 2000, maxOutputTokens: 1400, ct);
 
         // AI Config Categories — category-level provider routing.
         // llm.default acts as the catch-all for all LLM features.

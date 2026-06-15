@@ -37,4 +37,5 @@ public static class ExercisePatternKey
 
     // ── Reading / Writing ────────────────────────────────────────────────────
     public const string SummarizeWrittenText        = "summarize_written_text";
+    public const string WriteEssay                  = "write_essay";
 }

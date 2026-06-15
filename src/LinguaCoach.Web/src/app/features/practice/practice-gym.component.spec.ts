@@ -53,6 +53,13 @@ const readySummarizeWrittenText: any = {
   estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readyWriteEssay: any = {
+  key: 'write_essay', displayName: 'Write Essay', primarySkill: 'writing', secondarySkills: [],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'free_text_entry', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_write_essay',
+  estimatedDurationMinutes: 10, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -61,7 +68,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -280,6 +287,30 @@ describe('PracticeGymComponent', () => {
     expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'writing' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-swt-1', returnTo: '/practice' },
+    });
+  });
+
+  it('write_essay is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('write_essay')).toBeTrue();
+    expect(component.statusText('write_essay')).toBe('Available');
+  });
+
+  it('clicking Writing can return write_essay and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-we-1',
+      exerciseType: 'write_essay',
+      primarySkill: 'writing',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('writing');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'writing' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-we-1', returnTo: '/practice' },
     });
   });
 });

@@ -38,7 +38,8 @@ public static class ExerciseTypeDefinitionSeeder
         Planned("answer_short_question", "Answer Short Question", "Answer a short spoken question.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),
         Ready(ExercisePatternKey.SummarizeWrittenText, "Summarize Written Text", "Read a passage and write a concise summary in your own words.", "writing", "[\"reading\"]", "Pattern", "free_text_entry", "ai_structured", "activity_generate_summarize_written_text", ActivityType.WritingScenario, ExercisePatternKey.SummarizeWrittenText, 7, false, false, true, false),
         // summarize_written_text promoted to Ready above
-        Planned("write_essay", "Write Essay", "Write a structured essay.", "writing", "[]", "Planned reading/writing format", true, false),
+        Ready(ExercisePatternKey.WriteEssay, "Write Essay", "Read an essay prompt and write a structured essay response.", "writing", "[]", "Pattern", "free_text_entry", "ai_structured", "activity_generate_write_essay", ActivityType.WritingScenario, ExercisePatternKey.WriteEssay, 10, false, false, true, false),
+        // write_essay promoted to Ready above
         Ready(ExercisePatternKey.ReadingWritingFillInBlanks, "Reading and Writing Fill in Blanks", "Choose the correct word for each blank in a reading passage.", "reading", "[\"writing\"]", "Pattern", "reading_writing_fill_in_blanks", "exact_match", "activity_generate_reading_writing_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingWritingFillInBlanks, 5, false, false, true, false),
         // reading_writing_fill_in_blanks promoted to Ready above
         // reading_multiple_choice_multi promoted to Ready above

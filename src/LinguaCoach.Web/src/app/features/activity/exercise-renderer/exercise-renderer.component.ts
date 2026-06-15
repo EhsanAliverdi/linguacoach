@@ -110,13 +110,18 @@ export class ExerciseRendererComponent {
       ?? this.activity.speakingPrompt
       ?? this.activity.learningGoal;
 
+    const requirements = this.objectValue(ed['requirements']);
+
     return {
       situation: this.stringValue(ed['sourceText'])
+        ?? this.stringValue(ed['topic'])
         ?? this.stringValue(raw['situation'])
         ?? this.activity.situation
         ?? this.activity.speakingScenario
         ?? emailBody,
       prompt,
+      wordCountTarget: this.stringValue(requirements?.['targetWordCount'])
+        ?? null,
       targetPhrases: this.stringArray(raw['targetPhrases'])
         ?? this.activity.targetPhrases
         ?? this.activity.suggestedPhrases
@@ -127,7 +132,6 @@ export class ExerciseRendererComponent {
         ?? this.activity.learningGoal
         ?? this.stringValue(raw['speakingGoal'])
         ?? this.activity.speakingGoal,
-      wordCountTarget: this.numberValue(raw['wordLimit']),
     };
   }
 

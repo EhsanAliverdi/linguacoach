@@ -58,7 +58,12 @@
       style="resize:vertical;min-height:160px;line-height:1.7"
       data-testid="free-text-input"
     ></textarea>
-    <span style="display:block;text-align:right;font-size:12px;color:var(--sp-faint);margin-top:4px">{{ wordCount }} words</span>
+    <span style="display:block;text-align:right;font-size:12px;color:var(--sp-faint);margin-top:4px">
+      {{ wordCount }} words
+      @if (content.wordCountTarget) {
+        <span> · target: {{ content.wordCountTarget }}</span>
+      }
+    </span>
   </div>
 
   <button (click)="submit()"
