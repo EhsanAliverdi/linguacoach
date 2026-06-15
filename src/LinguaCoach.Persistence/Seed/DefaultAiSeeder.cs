@@ -44,6 +44,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateWriteEssayKey                       = "activity_generate_write_essay";
     public const string ActivityGenerateListeningMultipleChoiceSingleKey    = "activity_generate_listening_multiple_choice_single";
     public const string ActivityGenerateListeningMultipleChoiceMultiKey     = "activity_generate_listening_multiple_choice_multi";
+    public const string ActivityGenerateListeningFillInBlanksKey            = "activity_generate_listening_fill_in_blanks";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1552,6 +1553,105 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateListeningFillInBlanksContent = """
+You are an expert English language teacher creating a listening fill-in-the-blanks exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening/word-recognition skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["writing"],
+  "exerciseType": "listening_fill_in_blanks",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Listening for missing words'>",
+    "explanation": "<2-4 sentences: a general listening strategy for word recognition and spelling — no reference to the specific audio below>",
+    "keyPoints": [
+      "<how to listen for grammar and context clues>",
+      "<how to predict word form before listening>",
+      "<how to check spelling and agreement>"
+    ],
+    "examples": [
+      { "phrase": "<short signal phrase or example>", "meaning": "<what it helps the student notice>", "note": "<listening/writing strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen, predict, and complete missing words>",
+    "commonMistakes": [
+      "<missing unstressed words>",
+      "<writing the wrong word form>",
+      "<spelling errors>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about listening/word-recognition strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio and complete the missing words in the transcript.",
+    "scenario": "<1 sentence describing the workplace context of the audio>",
+    "task": "Listen to the audio and choose the correct word for each blank.",
+    "exerciseData": {
+      "audioScript": "<a short, natural spoken-English script, 40-90 words, realistic for {{careerContext}} professionals>",
+      "audioUrl": null,
+      "passageWithBlanks": "<the same script with {{gap1}}, {{gap2}}, etc. replacing the missing words>",
+      "gaps": [
+        {
+          "id": "gap1",
+          "answer": "<the correct word>",
+          "acceptedAnswers": ["<optional accepted alternative spelling or form>"],
+          "options": ["<correct word>", "<distractor 1>", "<distractor 2>", "<distractor 3>"],
+          "explanation": "<why this word fits, with reference to grammar or context>"
+        },
+        {
+          "id": "gap2",
+          "answer": "<the correct word>",
+          "acceptedAnswers": ["<optional accepted alternative>"],
+          "options": ["<correct word>", "<distractor 1>", "<distractor 2>", "<distractor 3>"],
+          "explanation": "<why this word fits>"
+        },
+        {
+          "id": "gap3",
+          "answer": "<the correct word>",
+          "acceptedAnswers": ["<optional accepted alternative>"],
+          "options": ["<correct word>", "<distractor 1>", "<distractor 2>", "<distractor 3>"],
+          "explanation": "<why this word fits>"
+        },
+        {
+          "id": "gap4",
+          "answer": "<the correct word>",
+          "acceptedAnswers": ["<optional accepted alternative>"],
+          "options": ["<correct word>", "<distractor 1>", "<distractor 2>", "<distractor 3>"],
+          "explanation": "<why this word fits>"
+        }
+      ],
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Listening accuracy", "Context understanding", "Correct word choice", "Word form", "Spelling accuracy"],
+    "rubric": [],
+    "feedbackFocus": "Help the student listen for missing words using context, grammar, and sound clues.",
+    "successCriteria": [
+      "Each answer matches the audio.",
+      "Each answer fits the grammar and context.",
+      "Spelling is accurate."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the audioScript, passageWithBlanks, gaps, gap ids, options, answers, acceptedAnswers, or any reference to this specific exercise's content. It teaches general listening/word-recognition strategy only.
+- practiceContent.exerciseData.audioScript must be short (40-90 words), natural spoken English, and realistic for {{careerContext}} professionals and topic area {{topicHint}}.
+- practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
+- practiceContent.exerciseData.passageWithBlanks must be a verbatim copy of audioScript with each missing word replaced by {{gap1}}, {{gap2}}, etc. matching the gap ids.
+- Include exactly 4 gaps; select key workplace vocabulary, not filler words.
+- Each gap's options must contain exactly 4 choices including the correct answer, in random order.
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateReadingMultipleChoiceMultiContent = """
 You are an expert English language teacher creating a reading comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -2815,6 +2915,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningMultipleChoiceMultiKey, ActivityGenerateListeningMultipleChoiceMultiContent,
             maxInputTokens: 900, maxOutputTokens: 1000, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateListeningFillInBlanksKey, ActivityGenerateListeningFillInBlanksContent,
+            maxInputTokens: 900, maxOutputTokens: 1300, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,

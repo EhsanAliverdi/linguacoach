@@ -200,6 +200,26 @@ public sealed class ReadingFillInBlanksGapDto
     public string? Explanation { get; set; }
 }
 
+// ── listening_fill_in_blanks ──────────────────────────────────────────────────
+
+public sealed class ListeningFillInBlanksContent
+{
+    public string? AudioScript { get; set; }
+    public string? AudioUrl { get; set; }
+    public string? PassageWithBlanks { get; set; }
+    public List<ListeningFillInBlanksGapDto>? Gaps { get; set; }
+    public List<string>? SuccessChecklist { get; set; }
+}
+
+public sealed class ListeningFillInBlanksGapDto
+{
+    public string? Id { get; set; }
+    public string? Answer { get; set; }
+    public List<string>? AcceptedAnswers { get; set; }
+    public List<string>? Options { get; set; }
+    public string? Explanation { get; set; }
+}
+
 // ── reorder_paragraphs ───────────────────────────────────────────────────────
 
 public sealed class ReorderParagraphsContent

@@ -325,6 +325,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening for multiple supported details and avoiding distractors",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.ListeningFillInBlanks,
+            name: "Listening Fill in Blanks",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Writing"]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.ListeningFillInBlanks,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_listening_fill_in_blanks",
+            aiEvaluatePromptKey: "activity_evaluate_listening_fill_in_blanks",
+            teachingPurpose: "Practise listening for missing words using context, grammar, and sound clues",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

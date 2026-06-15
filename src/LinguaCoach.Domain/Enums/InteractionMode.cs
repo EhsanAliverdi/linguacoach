@@ -23,4 +23,5 @@ public enum InteractionMode
     ReadingFillInBlanks   = 13, // Reading passage with per-gap dropdown option selection
     ReorderParagraphs          = 14, // Move paragraph/sentence blocks into correct logical order
     ReadingWritingFillInBlanks = 15, // Reading passage with per-gap dropdown — reading + writing skills
+    ListeningFillInBlanks      = 16, // Audio script with transcript gaps — per-gap dropdown, listening + writing skills
 }

@@ -1198,3 +1198,21 @@ Practice Gym: `listening_multiple_choice_multi` appears under the Listening skil
 Tests: 699 unit / 484 integration / 120 Angular — all green. Angular dev and production builds succeed.
 
 See [Phase 8I review](../reviews/2026-06-16-phase-8i-listening-multiple-choice-multi-implementation.md).
+
+### Phase 8J — `listening_fill_in_blanks` — COMPLETE 2026-06-16
+
+`listening_fill_in_blanks` — third runnable listening-primary format, first runnable listening+writing format. Student listens to a short audio script and fills in 4 missing words in a transcript passage by choosing from per-gap dropdown options. Primary skill: listening; secondary: writing. New `InteractionMode.ListeningFillInBlanks = 16` (append-only enum value, distinct from `ReadingFillInBlanks=13` and `AudioAndGapFill=9` since neither matches the per-gap dropdown + `{{gapN}}` passage + audio fallback shape). `MarkingMode.ExactMatch`. New `ExercisePatternKey.ListeningFillInBlanks = "listening_fill_in_blanks"`. Pattern metadata: `ActivityType.ListeningComprehension`, `compatibleKindsJson: [2]` (ListeningInput), `requiresAudio: false`, estimated 5 minutes. `ExerciseTypeDefinitionSeeder` entry promoted from `Planned` to `Ready` (SupportsPracticeGym=true, SupportsTodayLesson=false, PrimarySkill=listening, SecondarySkills=["writing"]).
+
+`AiActivityGeneratorHandler.StagedPatternKeys` includes `listening_fill_in_blanks`. Deterministic evaluation only — no AI call. `ExactMatchEvaluator.ParseExpectedItems` gained a new `listening_fill_in_blanks` branch deserializing new `ListeningFillInBlanksContent`/`ListeningFillInBlanksGapDto` DTOs (separate from `ReadingFillInBlanksContent` to avoid affecting `reading_fill_in_blanks`/`reading_writing_fill_in_blanks`), keyed by gap `id`, comparing submitted `GapFillSubmittedAnswer.Answers` against `acceptedAnswers` (falling back to `BuildAcceptedList(answer)`), using the existing `Normalize()` for case/whitespace-insensitive matching.
+
+AI prompt seeded: `activity_generate_listening_fill_in_blanks` (maxInput:900, maxOutput:1300) — generates `audioScript` (40-90 words natural spoken English), `audioUrl: null`, `passageWithBlanks` with `{{gap1}}`-`{{gap4}}` tokens, exactly 4 `gaps` each with `id`/`answer`/`acceptedAnswers`/`options` (4 choices)/`explanation`, `successChecklist`. `ModuleStageContentValidator.RequiredPracticeKeysByPatternKey["listening_fill_in_blanks"] = ["audioScript", "passageWithBlanks", "gaps"]`; `ForbiddenLearnContentKeys` extended with `answer`, `answers`, `acceptedAnswers`, `submit` (audioScript/transcript/passageWithBlanks/gaps/options already covered).
+
+**Audio/TTS reuse note**: identical pattern to Phase 8H/8I — `audioUrl` is always `null`; frontend falls back to showing `audioScript` as text with an "Audio is temporarily unavailable" notice. No MinIO, new storage, or background TTS jobs introduced.
+
+Frontend: new `ListeningFillInBlanksComponent`/`listening-fill-in-blanks.component.html` (new renderer, reusing the 8H/8I audio-fallback section and the `reading_fill_in_blanks`/`{{gapN}}`-token + per-gap `<select>` dropdown pattern from 8C/8E). `exercise-renderer.component.ts` adds `listeningFillInBlanksContent` getter (reads from `stagedExerciseData` with `raw` fallback) and `onListeningFillInBlanksSubmitted` handler; new `@case ('listeningFillInBlanks')` in the renderer template; `ExerciseAnswerPayload` union extended with `{ kind: 'listeningFillInBlanks'; answers: Record<string, string> }`; `activity-lesson.component.ts` serializes submission as `{ answers: {...} }` keyed by gap id; `InteractionMode` type union in `activity.models.ts` extended with `'listeningFillInBlanks'`.
+
+Practice Gym: `listening_fill_in_blanks` appears under the Listening skill, pool-first with on-demand fallback, same as other ready formats. All other listening formats (`listen_and_answer`, `listen_and_gap_fill` already ready from MVP; remaining planned listening formats `highlight_correct_summary`, `select_missing_word`, `highlight_incorrect_words`, `write_from_dictation`, `summarize_spoken_text`) remain planned/non-runnable. No Today pre-generation, MinIO, or audio lifecycle changes.
+
+Tests: 717 unit / 485 integration / 122 Angular — all green. Angular dev and production builds succeed.
+
+See [Phase 8J review](../reviews/2026-06-16-phase-8j-listening-fill-in-blanks-implementation.md).

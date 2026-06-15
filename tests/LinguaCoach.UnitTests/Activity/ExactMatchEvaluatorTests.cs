@@ -366,6 +366,100 @@ public sealed class ExactMatchEvaluatorTests
         result.ItemResults.Single().IsCorrect.Should().BeTrue();
     }
 
+    // ── listening_fill_in_blanks ──────────────────────────────────────────────
+
+    private static string ListeningFillInBlanksContent(params (string id, string answer, string[] accepted, string[] options)[] gaps)
+    {
+        var gapDtos = gaps.Select(g => new ListeningFillInBlanksGapDto
+        {
+            Id = g.id,
+            Answer = g.answer,
+            AcceptedAnswers = g.accepted.ToList(),
+            Options = g.options.ToList(),
+        }).ToList();
+        var content = new LinguaCoach.Application.Activity.ListeningFillInBlanksContent
+        {
+            AudioScript = "The forklift needs a battery swap.",
+            AudioUrl = null,
+            PassageWithBlanks = "The forklift needs a battery {{gap1}}.",
+            Gaps = gapDtos,
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    [Fact]
+    public async Task ListeningFillInBlanks_AllCorrect_ReturnsFullScore()
+    {
+        var content = ListeningFillInBlanksContent(
+            ("gap1", "swap", ["swap"], ["swap", "charge", "check", "test"]),
+            ("gap2", "delayed", ["delayed"], ["delayed", "cancelled", "delivered", "returned"]));
+        var submitted = FillBlanksSubmitted(("gap1", "swap"), ("gap2", "delayed"));
+
+        var request = MakeRequest(content, submitted, "listening_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.Score.Should().Be(2);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeTrue();
+        result.ItemResults.Should().AllSatisfy(i => i.IsCorrect.Should().BeTrue());
+    }
+
+    [Fact]
+    public async Task ListeningFillInBlanks_OneWrong_ReturnsPartialScore()
+    {
+        var content = ListeningFillInBlanksContent(
+            ("gap1", "swap", ["swap"], ["swap", "charge", "check", "test"]),
+            ("gap2", "delayed", ["delayed"], ["delayed", "cancelled", "delivered", "returned"]));
+        var submitted = FillBlanksSubmitted(("gap1", "charge"), ("gap2", "delayed"));
+
+        var request = MakeRequest(content, submitted, "listening_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeFalse();
+        result.ItemResults.Should().ContainSingle(i => i.IsCorrect);
+    }
+
+    [Fact]
+    public async Task ListeningFillInBlanks_AcceptsAlternativeAnswer()
+    {
+        var content = ListeningFillInBlanksContent(
+            ("gap1", "swap", ["swap", "replacement"], ["swap", "charge", "check", "test"]));
+        var submitted = FillBlanksSubmitted(("gap1", "replacement"));
+
+        var request = MakeRequest(content, submitted, "listening_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ListeningFillInBlanks_NormalizesCaseAndWhitespace()
+    {
+        var content = ListeningFillInBlanksContent(("gap1", "Swap", ["Swap"], ["Swap", "Charge"]));
+        var submitted = FillBlanksSubmitted(("gap1", "  swap  "));
+
+        var request = MakeRequest(content, submitted, "listening_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ListeningFillInBlanks_MissingAnswer_HandledSafely()
+    {
+        var content = ListeningFillInBlanksContent(("gap1", "swap", ["swap"], ["swap", "charge"]));
+        var submitted = FillBlanksSubmitted();
+
+        var request = MakeRequest(content, submitted, "listening_fill_in_blanks");
+        var result = await _sut.EvaluateAsync(request, default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeFalse();
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(1);
+    }
+
     // ── reorder_paragraphs ────────────────────────────────────────────────────
 
     private static string ReorderParagraphsContent(

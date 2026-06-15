@@ -2113,4 +2113,94 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── listening_fill_in_blanks pattern key tests ────────────────────────────
+
+    private const string ValidListeningFillInBlanksJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Listening fill in the blanks: shift handover",
+      "moduleGoal": "Practise listening for missing words using context, grammar, and sound clues.",
+      "primarySkill": "listening",
+      "secondarySkills": ["writing"],
+      "exerciseType": "listening_fill_in_blanks",
+      "learnContent": {
+        "teachingTitle": "Filling in missing words while listening",
+        "explanation": "Listen carefully and use context and grammar clues to predict the missing words.",
+        "keyPoints": ["Use context to predict word type", "Listen for word endings and sounds"],
+        "examples": [{ "phrase": "in addition", "meaning": "signals an extra point", "note": "often introduces another detail" }],
+        "strategy": "Read the surrounding text first, then listen for the missing words.",
+        "commonMistakes": ["Guessing without listening", "Ignoring grammar clues"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen to the audio, then choose the correct word for each blank.",
+        "scenario": "A short shift handover between two warehouse workers.",
+        "task": "Listen and complete the transcript by selecting the correct word for each gap.",
+        "exerciseData": {
+          "audioScript": "Hi, before you go, just a quick handover. The forklift in bay three needs a battery swap, so please don't use it until that's done. Also, the afternoon delivery has been delayed until four o'clock. Can you let the supervisor know when it arrives?",
+          "audioUrl": null,
+          "passageWithBlanks": "The forklift in bay three needs a battery {{gap1}}, so please don't use it until that's done. Also, the afternoon delivery has been {{gap2}} until four o'clock. Can you let the {{gap3}} know when it {{gap4}}?",
+          "gaps": [
+            { "id": "gap1", "answer": "swap", "acceptedAnswers": ["swap"], "options": ["swap", "charge", "check", "test"], "explanation": "The audio says the forklift needs a battery swap." },
+            { "id": "gap2", "answer": "delayed", "acceptedAnswers": ["delayed"], "options": ["delayed", "cancelled", "delivered", "returned"], "explanation": "The audio says the delivery has been delayed." },
+            { "id": "gap3", "answer": "supervisor", "acceptedAnswers": ["supervisor"], "options": ["supervisor", "driver", "customer", "manager"], "explanation": "The audio asks to let the supervisor know." },
+            { "id": "gap4", "answer": "arrives", "acceptedAnswers": ["arrives"], "options": ["arrives", "leaves", "departs", "stops"], "explanation": "The audio asks to be told when it arrives." }
+          ],
+          "successChecklist": ["Used context and grammar to predict missing words", "Checked each answer against the audio"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Detail recognition", "Vocabulary in context", "Grammar awareness"],
+        "rubric": [],
+        "feedbackFocus": "Help the student use context and grammar clues to fill in missing words while listening.",
+        "successCriteria": ["All gaps are filled with words supported by the audio.", "Grammar and context clues are used correctly."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ListeningFillInBlanks_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidListeningFillInBlanksJson), ActivityType.ListeningComprehension, "listening_fill_in_blanks");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("passageWithBlanks")]
+    [InlineData("gaps")]
+    public void Validate_ListeningFillInBlanks_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidListeningFillInBlanksJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listening_fill_in_blanks");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("transcript")]
+    [InlineData("passageWithBlanks")]
+    [InlineData("gaps")]
+    [InlineData("options")]
+    [InlineData("answer")]
+    [InlineData("answers")]
+    [InlineData("acceptedAnswers")]
+    public void Validate_ListeningFillInBlanks_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidListeningFillInBlanksJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "listening_fill_in_blanks");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }
