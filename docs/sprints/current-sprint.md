@@ -1,18 +1,30 @@
 ---
 status: current
-lastUpdated: 2026-06-13 00:00
-owner: product
+lastUpdated: 2026-06-15 00:00
+owner: engineering
 supersedes:
 supersededBy:
 ---
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-13
+Last updated: 2026-06-15
 
 ---
 
 ## Most recently completed sprint
+
+**CI/CD stabilization (post Phase 7A-7D)** — complete (2026-06-15)
+
+Fixed all 27 failing integration tests (token budget regressions from
+module_stage_v1 prompt growth + FakeAiProvider fixture missing
+pattern-specific exerciseData keys) and the empty
+`LinguaCoach.ArchitectureTests` project (added real NetArchTest layer-boundary
+tests). Backend: 472/472 integration+unit tests passing, 3/3 architecture
+tests passing. Angular: 103/103 unit tests passing, dev/prod builds succeed.
+See `docs/reviews/2026-06-15-ci-cd-stabilization-review.md`.
+
+## Previously completed sprint
 
 **Activity 3-page restructure (Teach / Practice / Feedback), full-stack** — complete (2026-06-13)
 

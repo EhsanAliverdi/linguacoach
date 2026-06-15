@@ -213,7 +213,25 @@ internal sealed class FakeAiProvider : IAiProvider
                     { "id": "q1", "question": "When was the meeting moved to?", "expectedAnswer": "Thursday", "type": "short_answer" },
                     { "id": "q2", "question": "What should you do before the meeting?", "expectedAnswer": "Check the latest delivery schedule", "type": "short_answer" }
                   ],
-                  "responseTask": { "prompt": "Reply to confirm you received the message.", "expectedFocus": "acknowledgement" }
+                  "responseTask": { "prompt": "Reply to confirm you received the message.", "expectedFocus": "acknowledgement" },
+                  "pairs": [
+                    { "left": "could you please", "right": "polite request" },
+                    { "left": "at your earliest convenience", "right": "formal timing" }
+                  ],
+                  "incomingMessage": "Hi, could you send the updated drawing register by end of day? Thanks, Manager",
+                  "chatHistory": [
+                    { "sender": "Manager", "message": "Hi, can you confirm the delivery date?" }
+                  ],
+                  "partnerTurn": "Hi, can you give me a quick update on the project status?",
+                  "gaps": [
+                    { "id": "g1", "answer": "could you please", "options": ["could you please", "can you"] }
+                  ],
+                  "items": [
+                    { "vocabularyItemId": "00000000-0000-0000-0000-000000000001", "term": "could you please", "prompt": "___ send the report?", "hint": "polite request", "explanation": "Used to make polite requests." },
+                    { "vocabularyItemId": "00000000-0000-0000-0000-000000000002", "term": "at your earliest convenience", "prompt": "Please respond ___.", "hint": "formal timing", "explanation": "Used to politely request a prompt response." },
+                    { "vocabularyItemId": "00000000-0000-0000-0000-000000000003", "term": "please find attached", "prompt": "___ the updated document.", "hint": "email attachment phrase", "explanation": "Used to introduce an attachment in an email." }
+                  ],
+                  "practiceMode": "fill_blank"
                 }
               },
               "feedbackPlan": {

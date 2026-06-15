@@ -1873,15 +1873,15 @@ Rules:
         // Exercise Pattern Engine — pattern-specific generation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGeneratePhraseMatchKey, ActivityGeneratePhraseMatchContent,
-            maxInputTokens: 600, maxOutputTokens: 700, ct);
+            maxInputTokens: 800, maxOutputTokens: 700, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateGapFillKey, ActivityGenerateGapFillContent,
-            maxInputTokens: 600, maxOutputTokens: 700, ct);
+            maxInputTokens: 900, maxOutputTokens: 700, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListenAndAnswerKey, ActivityGenerateListenAndAnswerContent,
-            maxInputTokens: 800, maxOutputTokens: 900, ct);
+            maxInputTokens: 1000, maxOutputTokens: 900, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListenAndGapFillKey, ActivityGenerateListenAndGapFillContent,
@@ -1889,11 +1889,11 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateEmailReplyKey, ActivityGenerateEmailReplyContent,
-            maxInputTokens: 900, maxOutputTokens: 1100, ct);
+            maxInputTokens: 1300, maxOutputTokens: 1100, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateTeamsChatKey, ActivityGenerateTeamsChatContent,
-            maxInputTokens: 700, maxOutputTokens: 800, ct);
+            maxInputTokens: 1300, maxOutputTokens: 800, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpokenResponseKey, ActivityGenerateSpokenResponseContent,
@@ -1905,7 +1905,7 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateOpenWritingTaskKey, ActivityGenerateOpenWritingTaskContent,
-            maxInputTokens: 900, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1200, maxOutputTokens: 1200, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRoleplayTurnKey, ActivityGenerateSpeakingRoleplayTurnContent,
