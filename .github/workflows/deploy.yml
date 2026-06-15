@@ -53,6 +53,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pre-pull .NET base images
+        run: |
+          docker pull mcr.microsoft.com/dotnet/sdk:10.0
+          docker pull mcr.microsoft.com/dotnet/aspnet:10.0
+
       - name: Set short SHA tag
         id: tag
         run: echo "sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
