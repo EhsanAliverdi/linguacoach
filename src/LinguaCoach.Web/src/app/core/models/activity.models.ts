@@ -28,6 +28,11 @@ export interface VocabPracticeItem {
   prompt: string;
   hint: string;
   explanation: string;
+  meaning?: string | null;
+  example?: string | null;
+  partOfSpeech?: string | null;
+  correctAnswer?: string | null;
+  options?: string[] | null;
 }
 
 export interface ActivityDto {
@@ -94,6 +99,12 @@ export interface LearnContentVm {
   strategy: string | null;
   commonMistakes: string[];
   sourceLanguageSupport: string | null;
+}
+
+export interface VocabularyExerciseData {
+  items: VocabPracticeItem[];
+  practiceMode: 'matching' | 'multiple_choice' | 'fill_blank' | 'type_answer' | 'review' | string;
+  successChecklist?: string[] | null;
 }
 
 export interface WritingExerciseData {

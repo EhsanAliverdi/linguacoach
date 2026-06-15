@@ -1,6 +1,6 @@
 ---
 status: in-progress
-lastUpdated: 2026-06-15
+lastUpdated: 2026-06-15 13:10
 owner: architecture
 relatedArchitecture: docs/architecture/learning-activity-engine.md#staged-activity-content-module_stage_v1
 relatedReview: docs/reviews/2026-06-15-learn-practice-feedback-structure-investigation.md
@@ -588,7 +588,7 @@ Completed work:
      skill cards now assert `/activity?activityId=...` routing.
 
 Out of scope for this PR (unchanged): Today pre-generation, MinIO/audio asset
-lifecycle, new PTE renderers/evaluators, background pool-fill job changes.
+lifecycle, new planned future exercise renderers/evaluators, background pool-fill job changes.
 
 ## Additional fix landed alongside this PR — T44 migration Designer.cs
 
@@ -662,9 +662,9 @@ Verification:
 * Angular production build clean
 
 Out of scope for this PR (unchanged): Practice Gym pre-generation changes,
-Today pre-generation, MinIO/audio lifecycle, new PTE renderers/evaluators
+Today pre-generation, MinIO/audio lifecycle, new planned future exercise renderers/evaluators
 (`read_aloud`, `repeat_sentence`, `describe_image`, etc. remain planned/non-runnable),
-Vocabulary and pattern-backed exercise migration.
+Pattern-backed exercise migration.
 
 ## Acceptance criteria for follow-up architecture
 
@@ -680,3 +680,18 @@ Vocabulary and pattern-backed exercise migration.
 * Renderer selection is based on `exerciseType`.
 * Evaluators understand multi-skill exercises.
 * Docs clearly state `/activity?type=...` direct generation is not the desired long-term Gym/Today flow.
+
+## Phase 6 — VocabularyPractice staged migration, completed
+
+`VocabularyPractice` now uses `module_stage_v1` for newly generated deterministic vocabulary activities. The migration keeps the existing seeded vocabulary source. It does not add broad AI vocabulary generation.
+
+The staged vocabulary module has exactly three pages: Learn, Practice, and Feedback. Learn teaches vocabulary meaning, usage, word form, example context, memory strategy, and common mistakes. Practice contains the fill-blank vocabulary task through `practiceContent.exerciseData`. Feedback uses the existing deterministic vocabulary evaluator with staged `practiceContent.exerciseData` support and legacy flat JSON fallback.
+
+Completed staged migrations:
+
+- `ListeningComprehension`
+- `WritingScenario`
+- `SpeakingRolePlay`
+- `VocabularyPractice`
+
+Remaining staged migrations are pattern-backed activities. Planned future exercise formats remain planned and non-runnable unless implemented end-to-end. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase. No new planned future exercise renderer or evaluator was implemented in Phase 6.

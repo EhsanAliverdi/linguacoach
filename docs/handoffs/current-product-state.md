@@ -1,6 +1,6 @@
-﻿---
+---
 status: current
-lastUpdated: 2026-06-15 10:40
+lastUpdated: 2026-06-15 13:10
 owner: product
 supersedes:
 supersededBy:
@@ -96,7 +96,7 @@ longer means one fixed activity type. The selected skill resolves to an enabled,
 ready, generation-eligible, Practice Gym-supported exercise type with the same
 `primarySkill`, then routes through canonical `exerciseType=<key>`. If no
 eligible row exists, the frontend shows a safe unavailable message and does not
-start broken generation. Planned PTE-style rows remain blocked. This is not the
+start broken generation. Planned future exercise format rows remain blocked. This is not the
 final Practice Gym pre-generation pool; the future pool should reuse the same
 registry selection rules.
 
@@ -291,7 +291,7 @@ Admins can list and enable or disable exercise types from Admin Exercise Types.
 Disable affects future Today and Practice Gym generation only. Existing activities,
 attempts, and history remain readable.
 
-Future PTE-style exercise types are visible in the catalog as planned entries.
+Planned future exercise formats are visible in the catalog as planned entries.
 They are not generation-eligible until implementation status becomes ready, even
 if an admin enables them.
 
@@ -301,7 +301,7 @@ The backend now has an `IExerciseTypeRegistry` backed by the persisted exercise 
 
 `GET /api/activity/next?exerciseType=<key>` is supported for ready runnable types. Existing `/activity?type=...` and `/activity?pattern=...` links still work. Practice Gym now routes implemented cards with `exerciseType` where safe. Today session generation validates deterministic pattern keys through the registry before creating steps.
 
-Planned PTE-style exercise types remain visible in Admin. They are not generation-eligible or routable to student activity flows until implementation status is `ready`.
+Planned future exercise formats remain visible in Admin. They are not generation-eligible or routable to student activity flows until implementation status is `ready`.
 
 ## SpeakingRolePlay staged migration (Phase 5 — 2026-06-15)
 
@@ -326,11 +326,26 @@ matching the pattern established by `WritingScenario` and `ListeningComprehensio
 
 **What was NOT changed:**
 
-- No PTE speaking rows made runnable.
+- No planned speaking format rows made runnable.
 - No Practice Gym pre-generation changes.
 - No Today pre-generation changes.
 - No MinIO / audio lifecycle changes.
-- No new PTE renderer or evaluator.
+- No new planned future exercise renderer or evaluator.
 - `/activity` endpoint and old compatibility params remain.
 
-**Remaining staged migrations:** `VocabularyPractice`, pattern-backed activities.
+**Remaining staged migrations:** pattern-backed activities.
+
+## Phase 6 — VocabularyPractice staged migration, completed
+
+`VocabularyPractice` now uses `module_stage_v1` for newly generated deterministic vocabulary activities. The migration keeps the existing seeded vocabulary source. It does not add broad AI vocabulary generation.
+
+The staged vocabulary module has exactly three pages: Learn, Practice, and Feedback. Learn teaches vocabulary meaning, usage, word form, example context, memory strategy, and common mistakes. Practice contains the fill-blank vocabulary task through `practiceContent.exerciseData`. Feedback uses the existing deterministic vocabulary evaluator with staged `practiceContent.exerciseData` support and legacy flat JSON fallback.
+
+Completed staged migrations:
+
+- `ListeningComprehension`
+- `WritingScenario`
+- `SpeakingRolePlay`
+- `VocabularyPractice`
+
+Remaining staged migrations are pattern-backed activities. Planned future exercise formats remain planned and non-runnable unless implemented end-to-end. Today pre-generation remains a future phase. MinIO/audio lifecycle remains a future phase. No new planned future exercise renderer or evaluator was implemented in Phase 6.

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-15 10:40
+lastUpdated: 2026-06-15 13:10
 owner: architecture
 supersedes:
 supersededBy:
@@ -330,7 +330,7 @@ evaluator pattern.
 
 Future phases still own Practice Gym pre-generation pools, Today background
 generation, MinIO/audio lifecycle, new listening exercise types, ModuleRun
-persistence, and staged migrations for Vocabulary and patterns.
+persistence, and staged migrations for pattern-backed activities.
 
 ## Pattern Evaluation Engine — evaluation flow
 
@@ -544,7 +544,7 @@ Admin enable or disable affects future generation only. Existing `LearningActivi
 and `ActivityAttempt` records still load through legacy `/activity` compatibility,
 even if their exercise type is later disabled.
 
-Future PTE-style exercise types are seeded as catalog rows with
+Planned future exercise formats are seeded as catalog rows with
 `ImplementationStatus = "planned"`. Admins can see them, but enabling them does not
 make them runnable until their renderer, evaluator, prompt, and safe generation path
 are marked ready.
@@ -566,7 +566,7 @@ or broad `ActivityType` alone.
 
 New planning and generation code should choose by `exerciseType` first. `ActivityType` remains the persistence and legacy compatibility bucket. `ExercisePatternKey` remains the pattern-engine compatibility mapping for current renderers and evaluators.
 
-The `/api/activity/next` endpoint now accepts `exerciseType=<key>` for ready implemented types. Existing `type=` and `pattern=` query parameters remain supported. Planned PTE-style catalog rows are visible in Admin but are not generation-eligible, Practice Gym-routable, or Today-routable until their implementation status becomes `ready`.
+The `/api/activity/next` endpoint now accepts `exerciseType=<key>` for ready implemented types. Existing `type=` and `pattern=` query parameters remain supported. Planned planned future exercise format catalog rows are visible in Admin but are not generation-eligible, Practice Gym-routable, or Today-routable until their implementation status becomes `ready`.
 
 Skill selection should map to eligible exercise types. It must not assume one fixed legacy activity class per skill. The registry exposes skill helpers for Practice Gym, Today, pre-generation jobs, and future adaptive planning.
 
@@ -585,7 +585,7 @@ frontend does not route to activity generation.
 
 This means skill cards no longer represent one fixed activity type. Listening
 can resolve to any ready Practice Gym-supported listening exercise type. Planned
-PTE-style rows remain catalog-visible but blocked. They are not generated,
+Planned future exercise format rows remain catalog-visible but blocked. They are not generated,
 routed, rendered, or evaluated until future implementation work makes them ready.
 
 The current strategy is deterministic and picks the first eligible registry row
@@ -651,7 +651,21 @@ disabled types is needed; they simply stop being selectable.
 
 * Today lesson pre-generation (`/api/sessions/*` is unaffected).
 * MinIO/object-storage audio asset lifecycle changes.
-* New PTE renderers or evaluators.
+* New planned future exercise renderers or evaluators.
 * Background pool-fill changes — `PracticeGymGenerationJob` /
   `PracticeGymBufferRefillJob` already populate `PracticeActivityCache` via the
   same registry eligibility rules and are unchanged.
+
+### VocabularyPractice staged content
+
+`VocabularyPractice` now supports `module_stage_v1` content for new deterministic vocabulary activities. The generator remains database-seeded and deterministic. It selects existing `StudentVocabularyItem` rows and stages them into Learn, Practice, and Feedback sections.
+
+The Learn section contains teaching only: meanings, usage notes, example contexts, memory strategy, and common mistakes. It must not contain answer controls, selected answers, answer keys, matching pairs, blank tasks, or submit/check labels.
+
+The Practice section contains the actual vocabulary task under `practiceContent.exerciseData`. Required practice data is `items` and `practiceMode`. Optional fields such as `options`, `partOfSpeech`, `correctAnswer`, and `example` are not over-constrained.
+
+Old flat vocabulary JSON is adapted to `legacy_adapted_v1`. The adapter teaches from available terms and explanations, while preserving the original vocabulary practice fields inside `practiceContent.exerciseData` so existing student history and attempts continue to render.
+
+`VocabularyPracticeEvaluator` reads expected answers from staged `practiceContent.exerciseData.items` and still falls back to old flat `items`. Feedback shape remains compatible with the legacy vocabulary review UI.
+
+Completed staged migrations: `ListeningComprehension`, `WritingScenario`, `SpeakingRolePlay`, and `VocabularyPractice`. Remaining pattern-backed activities are pending. Planned future exercise formats remain planned and non-runnable unless implemented end-to-end. Today pre-generation and MinIO/audio lifecycle remain future phases.

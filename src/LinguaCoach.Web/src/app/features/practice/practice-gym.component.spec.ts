@@ -13,7 +13,7 @@ const readyListening: any = {
 
 const plannedReading: any = {
   key: 'reading_multiple_choice_single', displayName: 'Reading Multiple Choice Single', primarySkill: 'reading', secondarySkills: [],
-  category: 'PTE Reading', isEnabled: true, implementationStatus: 'planned', isAvailableForGeneration: false,
+  category: 'Planned reading/writing format', isEnabled: true, implementationStatus: 'planned', isAvailableForGeneration: false,
   rendererKey: 'reading_multiple_choice_single', evaluatorKey: 'reading_multiple_choice_single', generationPromptKey: 'activity_generate_reading_multiple_choice_single',
   estimatedDurationMinutes: 8, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
