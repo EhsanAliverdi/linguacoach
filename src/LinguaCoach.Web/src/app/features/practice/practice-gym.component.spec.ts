@@ -46,6 +46,13 @@ const readyReadingWritingFillInBlanks: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readySummarizeWrittenText: any = {
+  key: 'summarize_written_text', displayName: 'Summarize Written Text', primarySkill: 'writing', secondarySkills: ['reading'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'free_text_entry', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_summarize_written_text',
+  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -54,7 +61,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -249,6 +256,30 @@ describe('PracticeGymComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-rwfib-1', returnTo: '/practice' },
+    });
+  });
+
+  it('summarize_written_text is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('summarize_written_text')).toBeTrue();
+    expect(component.statusText('summarize_written_text')).toBe('Available');
+  });
+
+  it('clicking Writing can return summarize_written_text and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-swt-1',
+      exerciseType: 'summarize_written_text',
+      primarySkill: 'writing',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('writing');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'writing' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-swt-1', returnTo: '/practice' },
     });
   });
 });

@@ -83,6 +83,7 @@ public sealed class AiStructuredEvaluator : IPatternEvaluator
         ExercisePatternKey.ListenAndAnswer      => "activity_evaluate_listen_and_answer",
         ExercisePatternKey.EmailReply           => "activity_evaluate_email_reply",
         ExercisePatternKey.TeamsChatSimulation  => "activity_evaluate_teams_chat_simulation",
+        ExercisePatternKey.SummarizeWrittenText => "activity_evaluate_summarize_written_text",
         _                                       => "activity_evaluate_writing", // safe fallback
     };
 

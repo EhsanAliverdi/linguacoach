@@ -86,17 +86,33 @@ export class ExerciseRendererComponent {
     };
   }
 
+  // Unwraps practiceContent.exerciseData for module_stage_v1 activities.
+  private get stagedExerciseData(): Record<string, unknown> {
+    const raw = this.raw;
+    if (this.stringValue(raw['schemaVersion']) === 'module_stage_v1') {
+      const pc = this.objectValue(raw['practiceContent']);
+      if (pc) {
+        const ed = this.objectValue(pc['exerciseData']);
+        if (ed) return ed;
+      }
+    }
+    return {};
+  }
+
   get freeTextContent(): FreeTextEntryContent {
     const raw = this.raw;
+    const ed = this.stagedExerciseData;
     const incomingEmail = this.objectValue(raw['incomingEmail']);
     const emailBody = this.stringValue(incomingEmail?.['body']);
-    const prompt = this.stringValue(raw['taskDescription'])
+    const prompt = this.stringValue(ed['prompt'])
+      ?? this.stringValue(raw['taskDescription'])
       ?? this.stringValue(raw['prompt'])
       ?? this.activity.speakingPrompt
       ?? this.activity.learningGoal;
 
     return {
-      situation: this.stringValue(raw['situation'])
+      situation: this.stringValue(ed['sourceText'])
+        ?? this.stringValue(raw['situation'])
         ?? this.activity.situation
         ?? this.activity.speakingScenario
         ?? emailBody,

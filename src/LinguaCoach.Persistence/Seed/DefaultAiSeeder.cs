@@ -40,6 +40,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateReadingFillInBlanksKey         = "activity_generate_reading_fill_in_blanks";
     public const string ActivityGenerateReorderParagraphsKey                = "activity_generate_reorder_paragraphs";
     public const string ActivityGenerateReadingWritingFillInBlanksKey       = "activity_generate_reading_writing_fill_in_blanks";
+    public const string ActivityGenerateSummarizeWrittenTextKey             = "activity_generate_summarize_written_text";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -52,6 +53,7 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateLessonReflectionKey   = "activity_evaluate_lesson_reflection";
     public const string ActivityEvaluateOpenWritingTaskKey    = "activity_evaluate_open_writing_task";
     public const string ActivityEvaluateSpeakingRoleplayTurnKey = "activity_evaluate_speaking_roleplay_turn";
+    public const string ActivityEvaluateSummarizeWrittenTextKey = "activity_evaluate_summarize_written_text";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English workplace writing coach creating a staged WritingScenario module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -1735,6 +1737,154 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateSummarizeWrittenTextContent = """
+You are an expert English language teacher creating a summarize-written-text exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read a workplace passage and write a concise summary in their own words. This exercises reading comprehension AND writing concision/paraphrasing.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what reading-and-summarising skill this practises>",
+  "primarySkill": "writing",
+  "secondarySkills": ["reading"],
+  "exerciseType": "summarize_written_text",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to write a concise summary'>",
+    "explanation": "<2-4 sentences: general strategy for identifying the main idea, selecting key details, avoiding minor points, and paraphrasing. No reference to the specific passage below.>",
+    "keyPoints": [
+      "<e.g. 'Read the whole text first before writing'>",
+      "<e.g. 'Identify the topic sentence and 2-3 supporting points'>",
+      "<e.g. 'Use your own words — avoid copying phrases from the text'>",
+      "<e.g. 'Keep it concise: aim for 30-50 words unless told otherwise'>"
+    ],
+    "examples": [
+      { "phrase": "<useful summary phrase>", "meaning": "<when/how to use it>", "note": "<paraphrasing or concision strategy note>" }
+    ],
+    "strategy": "<one sentence: how to read, identify key points, and write a concise summary>",
+    "commonMistakes": [
+      "<copying full sentences from the source>",
+      "<including too many minor details>",
+      "<writing too much or too little>",
+      "<missing the main idea>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about summarising strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the passage below and write a concise summary in your own words.",
+    "scenario": "<1 sentence describing the workplace/professional context>",
+    "task": "Write a concise summary of the passage. Use your own words and include the main idea and key points.",
+    "exerciseData": {
+      "sourceText": "<A workplace passage of 100-150 words, clearly written, with a main idea and 2-3 supporting points. Relevant to {{careerContext}} and {{topicHint}}.>",
+      "prompt": "Write a summary of approximately 30-50 words. Include the main idea and key supporting points. Use your own words.",
+      "summaryRequirements": {
+        "targetWordCount": "30-50 words",
+        "maxSentences": 3,
+        "mustInclude": ["<key idea from the passage>", "<key idea from the passage>"],
+        "avoid": ["<minor detail>", "copying exact phrases from the source"]
+      },
+      "keyPoints": [
+        "<expected key point 1>",
+        "<expected key point 2>",
+        "<expected key point 3>"
+      ],
+      "successChecklist": [
+        "The summary captures the main idea.",
+        "Key supporting points are included.",
+        "The summary is concise (30-50 words).",
+        "The student has paraphrased rather than copied."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Main idea coverage",
+      "Key detail selection",
+      "Concision",
+      "Paraphrasing",
+      "Grammar and vocabulary",
+      "Coherence"
+    ],
+    "rubric": [
+      { "criterion": "Content", "description": "Covers the main idea and key supporting points accurately." },
+      { "criterion": "Concision", "description": "Keeps the summary focused and appropriately brief." },
+      { "criterion": "Language", "description": "Uses clear grammar, vocabulary, and sentence structure." },
+      { "criterion": "Paraphrasing", "description": "Avoids copying and expresses ideas in own words." }
+    ],
+    "feedbackFocus": "Help the student summarise the main idea clearly, concisely, and in their own words.",
+    "successCriteria": [
+      "The summary captures the main idea.",
+      "The summary includes key points and avoids minor details.",
+      "The summary is concise and written in the student's own words."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual sourceText, the actual prompt, expected summary, keyPoints from the exercise, or any reference to the specific passage content. It teaches general summarising strategy only.
+- practiceContent.exerciseData.sourceText must be a realistic, clearly structured workplace text of 100-150 words.
+- keyPoints must reflect what a good summary of THIS specific text should include.
+- summaryRequirements.mustInclude items must be derivable from the sourceText — not generic.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateSummarizeWrittenTextContent = """
+You are an expert English language teacher evaluating a student's written summary.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (source text and requirements):
+{{activityContent}}
+
+Student summary:
+{{studentSubmission}}
+
+Evaluate the summary against the rubric criteria and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentence warm but honest feedback: did the student capture the main idea? Is it concise? Any key gaps?>",
+  "focusFirst": false,
+  "changes": [
+    {
+      "type": "grammar|vocabulary|content|concision|paraphrasing",
+      "original": "<phrase or issue from student's summary>",
+      "suggested": "<improved version>",
+      "reason": "<brief explanation>",
+      "category": "<grammar|vocabulary|content|concision|paraphrasing>",
+      "severity": "low|medium|high"
+    }
+  ],
+  "whatYouDidWell": ["<specific positive: main idea captured>", "<specific positive: concise>"],
+  "mainMistakes": ["<key content gap or language issue if any>"],
+  "grammarIssues": ["<grammar issue if any>"],
+  "vocabularyIssues": ["<vocabulary issue if any>"],
+  "toneIssues": [],
+  "miniLesson": "<one sentence teaching moment about summarising or language use>",
+  "improvedVersion": "<a model summary of 30-50 words that demonstrates what a good answer looks like>",
+  "nextImprovementStep": "<one specific action for the student to practise next>",
+  "feedbackInSourceLanguage": "<1-2 sentences of encouragement in {{sourceLanguageName}}>"
+}
+
+Scoring guide:
+- 90-100: Main idea + all key points + concise + own words + clean language
+- 75-89: Main idea + most key points + mostly own words + minor language issues
+- 60-74: Main idea present but key points missing or copied wording
+- 40-59: Main idea unclear or significantly incomplete
+- 0-39: Missing main idea, off-topic, or just copied the source
+
+If the student's summary is empty or too short to evaluate, set overallScore to 0 and explain in coachSummary.
+Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -2364,6 +2514,10 @@ Rules:
             ActivityGenerateReadingWritingFillInBlanksKey, ActivityGenerateReadingWritingFillInBlanksContent,
             maxInputTokens: 900, maxOutputTokens: 1200, ct);
 
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSummarizeWrittenTextKey, ActivityGenerateSummarizeWrittenTextContent,
+            maxInputTokens: 1000, maxOutputTokens: 1400, ct);
+
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluatePhraseMatchKey, ActivityEvaluatePhraseMatchContent,
@@ -2404,6 +2558,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateSpeakingRoleplayTurnKey, ActivityEvaluateSpeakingRoleplayTurnContent,
             maxInputTokens: 1500, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateSummarizeWrittenTextKey, ActivityEvaluateSummarizeWrittenTextContent,
+            maxInputTokens: 2000, maxOutputTokens: 1200, ct);
 
         // AI Config Categories — category-level provider routing.
         // llm.default acts as the catch-all for all LLM features.

@@ -1146,3 +1146,7 @@ Evaluated deterministically — no AI evaluation call required.
 ### Phase 8E — COMPLETE 2026-06-15
 
 `reading_writing_fill_in_blanks` — same `{{gapN}}`/dropdown UI as `reading_fill_in_blanks`, secondary skill `["writing"]`, `InteractionMode.ReadingWritingFillInBlanks = 15`, `ExactMatchEvaluator` reuses the `reading_fill_in_blanks` branch (patternKey OR condition). All reading-primary exercise types are now Ready. Tests: 655 unit / 479 integration / 3 arch / 112 Angular — all green.
+
+### Phase 8F — COMPLETE 2026-06-15
+
+`summarize_written_text` — student reads a 100-150 word passage and writes a concise summary. Primary skill: writing; secondary: reading. `InteractionMode.FreeTextEntry` reused (no new enum value). `MarkingMode.AiStructured` — rubric-based AI evaluation via `AiStructuredEvaluator`. Frontend: `FreeTextEntryComponent` reused; `stagedExerciseData` getter added to `exercise-renderer` unwraps `practiceContent.exerciseData` and maps `sourceText`→`situation`, `prompt`→`prompt`. AI prompts seeded: `activity_generate_summarize_written_text` (maxInput:1000, maxOutput:1400) and `activity_evaluate_summarize_written_text` (maxInput:2000, maxOutput:1200). All other planned formats remain non-runnable. Tests: 655 unit / 479 integration / 3 arch / 114 Angular — all green.

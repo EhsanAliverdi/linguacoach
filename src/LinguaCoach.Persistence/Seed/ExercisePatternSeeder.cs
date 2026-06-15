@@ -231,6 +231,22 @@ public static class ExercisePatternSeeder
             workplaceContext: true),
 
         new(
+            key: ExercisePatternKey.SummarizeWrittenText,
+            name: "Summarize Written Text",
+            primarySkill: "Writing",
+            secondarySkillsJson: """["Reading"]""",
+            compatibleKindsJson: """[4]""",           // WritingTask
+            activityType: ActivityType.WritingScenario,
+            interactionMode: InteractionMode.FreeTextEntry,
+            markingMode: MarkingMode.AiStructured,
+            estimatedMinutes: 7,
+            aiGeneratePromptKey: "activity_generate_summarize_written_text",
+            aiEvaluatePromptKey: "activity_evaluate_summarize_written_text",
+            teachingPurpose: "Practise identifying main ideas and writing a concise summary in the student's own words",
+            requiresAudio: false,
+            workplaceContext: true),
+
+        new(
             key: ExercisePatternKey.ReadingWritingFillInBlanks,
             name: "Reading and Writing Fill in Blanks",
             primarySkill: "Reading",

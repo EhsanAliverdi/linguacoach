@@ -146,6 +146,33 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task SummarizeWrittenText_IsReadyAndEligible()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_written_text");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("writing", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "summarize_written_text");
+    }
+
+    [Fact]
+    public async Task WriteEssay_RemainsPlanned()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_essay");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("planned", type.ImplementationStatus);
+        Assert.False(type.IsAvailableForGeneration);
+        Assert.DoesNotContain(eligible, e => e.Key == "write_essay");
+    }
+
+    [Fact]
     public async Task AllReadingPrimaryTypes_AreNowReady()
     {
         // All reading-primary exercise types have been promoted to Ready in Phases 8A-8E.

@@ -34,4 +34,7 @@ public static class ExercisePatternKey
     public const string ReadingFillInBlanks         = "reading_fill_in_blanks";
     public const string ReorderParagraphs           = "reorder_paragraphs";
     public const string ReadingWritingFillInBlanks  = "reading_writing_fill_in_blanks";
+
+    // ── Reading / Writing ────────────────────────────────────────────────────
+    public const string SummarizeWrittenText        = "summarize_written_text";
 }

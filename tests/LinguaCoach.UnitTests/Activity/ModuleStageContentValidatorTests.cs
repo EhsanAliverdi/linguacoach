@@ -1779,4 +1779,74 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── summarize_written_text pattern key tests ───────────────────────────────
+
+    private const string ValidSummarizeWrittenTextJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Summarise a Meeting Update",
+      "moduleGoal": "Practise identifying main ideas and writing a concise summary.",
+      "primarySkill": "writing",
+      "secondarySkills": ["reading"],
+      "exerciseType": "summarize_written_text",
+      "learnContent": {
+        "teachingTitle": "How to write a concise summary",
+        "explanation": "Read the whole text first, identify the main idea, then select the key supporting points."
+      },
+      "practiceContent": {
+        "instructions": "Read the passage and write a concise summary in your own words.",
+        "exerciseData": {
+          "sourceText": "The company held its quarterly all-hands meeting last Friday. The CEO announced that revenue had grown by 12% compared to the previous quarter, driven mainly by increased demand in the Asia-Pacific region. The leadership team also revealed plans to hire 50 new engineers over the next six months to support product development. Employees were encouraged to submit their ideas for improving workplace efficiency through the internal suggestion portal.",
+          "prompt": "Write a summary of approximately 30-50 words. Include the main idea and key supporting points. Use your own words."
+        }
+      },
+      "feedbackPlan": {
+        "feedbackFocus": "Help the student summarise the main idea clearly and concisely."
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_SummarizeWrittenText_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidSummarizeWrittenTextJson), ActivityType.WritingScenario, "summarize_written_text");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("sourceText")]
+    [InlineData("prompt")]
+    public void Validate_SummarizeWrittenText_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidSummarizeWrittenTextJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "summarize_written_text");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("sourceText")]
+    [InlineData("prompt")]
+    [InlineData("expectedSummary")]
+    [InlineData("keyPoints")]
+    [InlineData("answerKey")]
+    [InlineData("textarea")]
+    [InlineData("submit")]
+    public void Validate_SummarizeWrittenText_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidSummarizeWrittenTextJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "summarize_written_text");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }
