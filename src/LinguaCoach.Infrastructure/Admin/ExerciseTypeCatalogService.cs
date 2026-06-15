@@ -54,6 +54,22 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
 
         if (command.IsEnabled.HasValue) item.SetEnabled(command.IsEnabled.Value);
         item.UpdateSafeSurfaceFlags(command.SupportsPracticeGym, command.SupportsTodayLesson);
+
+        var hasCountUpdate = command.MinItemsPerPractice.HasValue || command.DefaultItemsPerPractice.HasValue
+            || command.MaxItemsPerPractice.HasValue || command.MinOptionsPerItem.HasValue
+            || command.DefaultOptionsPerItem.HasValue || command.MaxOptionsPerItem.HasValue;
+        if (hasCountUpdate)
+        {
+            // Counts only. ImplementationStatus and runnable flags are never touched here.
+            item.UpdateItemCounts(
+                command.MinItemsPerPractice ?? item.MinItemsPerPractice,
+                command.DefaultItemsPerPractice ?? item.DefaultItemsPerPractice,
+                command.MaxItemsPerPractice ?? item.MaxItemsPerPractice,
+                command.MinOptionsPerItem ?? item.MinOptionsPerItem,
+                command.DefaultOptionsPerItem ?? item.DefaultOptionsPerItem,
+                command.MaxOptionsPerItem ?? item.MaxOptionsPerItem);
+        }
+
         await _db.SaveChangesAsync(ct);
         return ToDto(item);
     }
@@ -77,7 +93,13 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
         e.RequiresAudio,
         e.RequiresImage,
         e.SupportsPracticeGym,
-        e.SupportsTodayLesson);
+        e.SupportsTodayLesson,
+        e.MinItemsPerPractice,
+        e.DefaultItemsPerPractice,
+        e.MaxItemsPerPractice,
+        e.MinOptionsPerItem,
+        e.DefaultOptionsPerItem,
+        e.MaxOptionsPerItem);
 
     public static IReadOnlyList<string> ParseSkillsForRegistry(string json)
     {

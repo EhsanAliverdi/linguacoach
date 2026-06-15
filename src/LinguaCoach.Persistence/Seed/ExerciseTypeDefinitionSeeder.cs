@@ -8,7 +8,50 @@ namespace LinguaCoach.Persistence.Seed;
 
 public static class ExerciseTypeDefinitionSeeder
 {
-    public static IReadOnlyList<ExerciseTypeDefinition> CreateDefinitions() =>
+    // Per-key practice/option counts: key => (minItems, defaultItems, maxItems, minOptions, defaultOptions, maxOptions).
+    // Counts are configuration only. They never affect readiness or runnable status.
+    private static readonly Dictionary<string, (int MinItems, int DefItems, int MaxItems, int MinOpts, int DefOpts, int MaxOpts)> CountOverrides = new(StringComparer.Ordinal)
+    {
+        // Reading
+        ["reading_multiple_choice_single"] = (1, 1, 1, 3, 4, 5),
+        ["reading_multiple_choice_multi"] = (1, 1, 1, 4, 4, 6),
+        ["reading_fill_in_blanks"] = (3, 4, 6, 3, 4, 5),
+        ["reading_writing_fill_in_blanks"] = (3, 4, 6, 3, 4, 5),
+        ["reorder_paragraphs"] = (4, 4, 5, 0, 0, 0),
+        // Writing
+        ["summarize_written_text"] = (1, 1, 1, 0, 0, 0),
+        ["write_essay"] = (1, 1, 1, 0, 0, 0),
+        // Listening
+        ["listening_multiple_choice_single"] = (1, 1, 1, 3, 4, 5),
+        ["listening_multiple_choice_multi"] = (1, 1, 1, 4, 4, 6),
+        ["listening_fill_in_blanks"] = (3, 4, 6, 3, 4, 5),
+        ["select_missing_word"] = (1, 1, 1, 3, 4, 5),
+        ["highlight_correct_summary"] = (1, 1, 1, 3, 4, 5),
+        ["highlight_incorrect_words"] = (2, 3, 4, 0, 0, 0),
+        ["write_from_dictation"] = (2, 3, 5, 0, 0, 0),
+        ["summarize_spoken_text"] = (1, 1, 1, 0, 0, 0),
+        // Speaking (planned, non-runnable)
+        ["answer_short_question"] = (3, 5, 8, 0, 0, 0),
+        ["repeat_sentence"] = (3, 5, 6, 0, 0, 0),
+        ["read_aloud"] = (1, 2, 3, 0, 0, 0),
+        ["describe_image"] = (1, 1, 1, 0, 0, 0),
+        ["respond_to_situation"] = (1, 1, 2, 0, 0, 0),
+        ["retell_lecture"] = (1, 1, 1, 0, 0, 0),
+        ["summarize_group_discussion"] = (1, 1, 1, 0, 0, 0),
+    };
+
+    public static IReadOnlyList<ExerciseTypeDefinition> CreateDefinitions()
+    {
+        var definitions = BuildBaseDefinitions();
+        foreach (var def in definitions)
+        {
+            if (CountOverrides.TryGetValue(def.Key, out var c))
+                def.UpdateItemCounts(c.MinItems, c.DefItems, c.MaxItems, c.MinOpts, c.DefOpts, c.MaxOpts);
+        }
+        return definitions;
+    }
+
+    private static IReadOnlyList<ExerciseTypeDefinition> BuildBaseDefinitions() =>
     [
         Ready("listening_comprehension", "Listening Comprehension", "Legacy listening activity with workplace audio and questions.", "listening", "[]", "Legacy", "listening", "listening_comprehension", "activity_generate_listening", ActivityType.ListeningComprehension, null, 8, true, false, false, true),
         Ready("writing_scenario", "Writing Scenario", "Legacy workplace writing activity.", "writing", "[]", "Legacy", "writing", "writing_scenario", "activity_generate_writing", ActivityType.WritingScenario, null, 8, false, false, true, true),

@@ -196,10 +196,22 @@ export interface ExerciseTypeDefinition {
   requiresImage: boolean;
   supportsPracticeGym: boolean;
   supportsTodayLesson: boolean;
+  minItemsPerPractice: number;
+  defaultItemsPerPractice: number;
+  maxItemsPerPractice: number;
+  minOptionsPerItem: number;
+  defaultOptionsPerItem: number;
+  maxOptionsPerItem: number;
 }
 
 export interface UpdateExerciseTypeRequest {
   isEnabled?: boolean;
   supportsPracticeGym?: boolean;
   supportsTodayLesson?: boolean;
+  minItemsPerPractice?: number;
+  defaultItemsPerPractice?: number;
+  maxItemsPerPractice?: number;
+  minOptionsPerItem?: number;
+  defaultOptionsPerItem?: number;
+  maxOptionsPerItem?: number;
 }

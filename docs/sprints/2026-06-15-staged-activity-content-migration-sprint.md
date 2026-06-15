@@ -1270,3 +1270,23 @@ Practice Gym: `highlight_incorrect_words` appears under the Listening skill, poo
 Next phase: 8N — `write_from_dictation` (the last simpler listening format before `summarize_spoken_text`).
 
 See [Phase 8M review](../reviews/2026-06-16-phase-8m-highlight-incorrect-words-review.md).
+
+### Phase 8N — Configurable Practice Item Counts Foundation — COMPLETE 2026-06-16
+
+Architecture/configuration phase, not a new exercise format. No exercise format was made runnable. `write_from_dictation`, `summarize_spoken_text`, and all speaking formats remain planned/non-runnable.
+
+Added six configurable count fields to `ExerciseTypeDefinition`: `MinItemsPerPractice`, `DefaultItemsPerPractice`, `MaxItemsPerPractice`, `MinOptionsPerItem`, `DefaultOptionsPerItem`, `MaxOptionsPerItem`. Non-nullable ints with column defaults (1/1/1 items, 0/0/0 options). Entity ctor and a new `UpdateItemCounts` method enforce `min <= default <= max` and non-negativity. `SyncCatalogMetadata` now syncs counts so reseeding refreshes them. EF migration `AddPracticeItemCounts` adds six integer columns with defaults; snapshot updated.
+
+Seeder seeds explicit per-key counts for all ready and planned types via a `CountOverrides` table applied after base construction (e.g. reading_fill_in_blanks 3/4/6 items 3/4/5 options; reorder_paragraphs 4/4/5 items; highlight_incorrect_words 2/3/4 items; write_from_dictation 2/3/5 items; speaking answer_short_question 3/5/8 items). No readiness/status changes.
+
+Registry: `ExerciseTypeRegistryEntry` and `ExerciseTypeDefinitionDto` gained the six count fields (mapped in `ToEntry`/`ToDto`). `UpdateExerciseTypeDefinitionCommand` and the admin `UpdateExerciseTypeRequest` gained optional count params; `ExerciseTypeCatalogService.UpdateAsync` applies counts via `UpdateItemCounts` without touching status or surface flags. Admin PATCH `exercise-types/{key}` returns `400` for invalid ranges/negatives, `404` for unknown keys.
+
+Admin UI (`admin-exercise-types.component`): two new columns with numeric inputs for item and option counts, inline validation (`countError`: non-negative + min<=default<=max), and a Save counts button wired through the existing PATCH flow. Enable/disable unchanged.
+
+Generation: `AiActivityGeneratorHandler` looks up the type by pattern key and injects `minItemsPerPractice`/`defaultItemsPerPractice`/`maxItemsPerPractice`/`minOptionsPerItem`/`defaultOptionsPerItem`/`maxOptionsPerItem` into prompt variable context. Validation: `ModuleStageContentValidator.Validate` gained an optional `PracticeCountSettings`; when present it enforces item-count ranges for fill-in-blanks/reorder/highlight-incorrect-words and option-count ranges for MCQ/select-missing-word/highlight-correct-summary. Omitting settings skips enforcement (back-compat). The shared `highlight_incorrect_words` test fixture was updated from 1 to 2 incorrect tokens to satisfy its seeded min of 2.
+
+No MinIO/audio lifecycle, no Today pre-generation. Tests: 777 unit / 503 integration / 3 architecture / 132 Angular — all green. Angular dev and production builds succeed.
+
+Next phase: 8O — `write_from_dictation` (item-count foundation now in place).
+
+See [Phase 8N review](../reviews/2026-06-16-phase-8n-configurable-item-counts-review.md).

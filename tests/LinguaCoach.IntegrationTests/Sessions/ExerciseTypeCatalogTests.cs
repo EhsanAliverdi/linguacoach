@@ -342,6 +342,92 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.False(type.IsAvailableForGeneration);
         Assert.DoesNotContain(eligible, e => e.Key == "email_reply");
     }
+
+    // ── Phase 8N: configurable practice item counts ──────────────────────────
+
+    [Theory]
+    [InlineData("reading_multiple_choice_single", 1, 1, 1, 3, 4, 5)]
+    [InlineData("reading_fill_in_blanks", 3, 4, 6, 3, 4, 5)]
+    [InlineData("reorder_paragraphs", 4, 4, 5, 0, 0, 0)]
+    [InlineData("highlight_incorrect_words", 2, 3, 4, 0, 0, 0)]
+    [InlineData("write_from_dictation", 2, 3, 5, 0, 0, 0)]
+    [InlineData("answer_short_question", 3, 5, 8, 0, 0, 0)]
+    public async Task Seeder_SeedsCountFields(string key, int minI, int defI, int maxI, int minO, int defO, int maxO)
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+
+        Assert.Equal(minI, type.MinItemsPerPractice);
+        Assert.Equal(defI, type.DefaultItemsPerPractice);
+        Assert.Equal(maxI, type.MaxItemsPerPractice);
+        Assert.Equal(minO, type.MinOptionsPerItem);
+        Assert.Equal(defO, type.DefaultOptionsPerItem);
+        Assert.Equal(maxO, type.MaxOptionsPerItem);
+    }
+
+    [Fact]
+    public async Task AllTypes_HaveValidCountRanges()
+    {
+        var all = await _db.ExerciseTypeDefinitions.ToListAsync();
+
+        Assert.All(all, e =>
+        {
+            Assert.True(e.MinItemsPerPractice >= 0);
+            Assert.True(e.MinItemsPerPractice <= e.DefaultItemsPerPractice);
+            Assert.True(e.DefaultItemsPerPractice <= e.MaxItemsPerPractice);
+            Assert.True(e.MinOptionsPerItem >= 0);
+            Assert.True(e.MinOptionsPerItem <= e.DefaultOptionsPerItem);
+            Assert.True(e.DefaultOptionsPerItem <= e.MaxOptionsPerItem);
+        });
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ValidCountRange_Succeeds()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+
+        var updated = await service.UpdateAsync(new("reading_fill_in_blanks", null, null, null,
+            MinItemsPerPractice: 2, DefaultItemsPerPractice: 3, MaxItemsPerPractice: 5,
+            MinOptionsPerItem: 2, DefaultOptionsPerItem: 3, MaxOptionsPerItem: 4));
+
+        Assert.Equal(2, updated.MinItemsPerPractice);
+        Assert.Equal(5, updated.MaxItemsPerPractice);
+        Assert.Equal(4, updated.MaxOptionsPerItem);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_InvalidRange_MinAboveMax_Throws()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => service.UpdateAsync(
+            new("reading_fill_in_blanks", null, null, null,
+                MinItemsPerPractice: 6, DefaultItemsPerPractice: 6, MaxItemsPerPractice: 3)));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NegativeValue_Throws()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => service.UpdateAsync(
+            new("reading_fill_in_blanks", null, null, null,
+                MinItemsPerPractice: -1, DefaultItemsPerPractice: 0, MaxItemsPerPractice: 1)));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CountUpdate_DoesNotChangeImplementationStatus()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var before = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_from_dictation");
+        var statusBefore = before.ImplementationStatus;
+
+        var updated = await service.UpdateAsync(new("write_from_dictation", null, null, null,
+            MinItemsPerPractice: 1, DefaultItemsPerPractice: 2, MaxItemsPerPractice: 4));
+
+        Assert.Equal(statusBefore, updated.ImplementationStatus);
+        Assert.Equal("planned", updated.ImplementationStatus);
+        Assert.False(updated.IsAvailableForGeneration);
+    }
 }
 
 public sealed class ExerciseTypeRegistryTests : IDisposable
@@ -475,5 +561,21 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         Assert.Contains(listening, e => e.Key == "listen_and_gap_fill");
         Assert.DoesNotContain(listening, e => e.Key == "summarize_spoken_text");
         Assert.All(writing, e => Assert.Equal("writing", e.PrimarySkill));
+    }
+
+    [Fact]
+    public async Task Registry_Entry_IncludesCountFields()
+    {
+        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
+
+        var entry = await registry.GetByKeyAsync("reading_fill_in_blanks");
+
+        Assert.NotNull(entry);
+        Assert.Equal(3, entry!.MinItemsPerPractice);
+        Assert.Equal(4, entry.DefaultItemsPerPractice);
+        Assert.Equal(6, entry.MaxItemsPerPractice);
+        Assert.Equal(3, entry.MinOptionsPerItem);
+        Assert.Equal(4, entry.DefaultOptionsPerItem);
+        Assert.Equal(5, entry.MaxOptionsPerItem);
     }
 }

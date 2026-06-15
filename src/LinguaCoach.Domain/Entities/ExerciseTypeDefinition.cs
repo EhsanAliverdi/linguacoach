@@ -23,6 +23,12 @@ public sealed class ExerciseTypeDefinition : BaseEntity
     public bool RequiresImage { get; private set; }
     public bool SupportsPracticeGym { get; private set; }
     public bool SupportsTodayLesson { get; private set; }
+    public int MinItemsPerPractice { get; private set; }
+    public int DefaultItemsPerPractice { get; private set; }
+    public int MaxItemsPerPractice { get; private set; }
+    public int MinOptionsPerItem { get; private set; }
+    public int DefaultOptionsPerItem { get; private set; }
+    public int MaxOptionsPerItem { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
     public bool IsAvailableForGeneration =>
@@ -40,6 +46,12 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         RendererKey = string.Empty;
         EvaluatorKey = string.Empty;
         GenerationPromptKey = string.Empty;
+        MinItemsPerPractice = 1;
+        DefaultItemsPerPractice = 1;
+        MaxItemsPerPractice = 1;
+        MinOptionsPerItem = 0;
+        DefaultOptionsPerItem = 0;
+        MaxOptionsPerItem = 0;
     }
 
     public ExerciseTypeDefinition(
@@ -60,7 +72,13 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         bool requiresAudio,
         bool requiresImage,
         bool supportsPracticeGym,
-        bool supportsTodayLesson)
+        bool supportsTodayLesson,
+        int minItemsPerPractice = 1,
+        int defaultItemsPerPractice = 1,
+        int maxItemsPerPractice = 1,
+        int minOptionsPerItem = 0,
+        int defaultOptionsPerItem = 0,
+        int maxOptionsPerItem = 0)
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key is required.", nameof(key));
         if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("DisplayName is required.", nameof(displayName));
@@ -86,6 +104,39 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         RequiresImage = requiresImage;
         SupportsPracticeGym = supportsPracticeGym;
         SupportsTodayLesson = supportsTodayLesson;
+        ValidateCounts(minItemsPerPractice, defaultItemsPerPractice, maxItemsPerPractice, minOptionsPerItem, defaultOptionsPerItem, maxOptionsPerItem);
+        MinItemsPerPractice = minItemsPerPractice;
+        DefaultItemsPerPractice = defaultItemsPerPractice;
+        MaxItemsPerPractice = maxItemsPerPractice;
+        MinOptionsPerItem = minOptionsPerItem;
+        DefaultOptionsPerItem = defaultOptionsPerItem;
+        MaxOptionsPerItem = maxOptionsPerItem;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static void ValidateCounts(int minItems, int defaultItems, int maxItems, int minOptions, int defaultOptions, int maxOptions)
+    {
+        if (minItems < 0 || defaultItems < 0 || maxItems < 0 || minOptions < 0 || defaultOptions < 0 || maxOptions < 0)
+            throw new ArgumentOutOfRangeException(nameof(minItems), "Count values must not be negative.");
+        if (!(minItems <= defaultItems && defaultItems <= maxItems))
+            throw new ArgumentException("Items must satisfy min <= default <= max.");
+        if (!(minOptions <= defaultOptions && defaultOptions <= maxOptions))
+            throw new ArgumentException("Options must satisfy min <= default <= max.");
+    }
+
+    /// <summary>
+    /// Updates only the configurable practice/option count settings.
+    /// Never changes ImplementationStatus, IsEnabled, or runnable surface flags.
+    /// </summary>
+    public void UpdateItemCounts(int minItems, int defaultItems, int maxItems, int minOptions, int defaultOptions, int maxOptions)
+    {
+        ValidateCounts(minItems, defaultItems, maxItems, minOptions, defaultOptions, maxOptions);
+        MinItemsPerPractice = minItems;
+        DefaultItemsPerPractice = defaultItems;
+        MaxItemsPerPractice = maxItems;
+        MinOptionsPerItem = minOptions;
+        DefaultOptionsPerItem = defaultOptions;
+        MaxOptionsPerItem = maxOptions;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -123,6 +174,12 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         EstimatedDurationMinutes = source.EstimatedDurationMinutes;
         RequiresAudio = source.RequiresAudio;
         RequiresImage = source.RequiresImage;
+        MinItemsPerPractice = source.MinItemsPerPractice;
+        DefaultItemsPerPractice = source.DefaultItemsPerPractice;
+        MaxItemsPerPractice = source.MaxItemsPerPractice;
+        MinOptionsPerItem = source.MinOptionsPerItem;
+        DefaultOptionsPerItem = source.DefaultOptionsPerItem;
+        MaxOptionsPerItem = source.MaxOptionsPerItem;
         UpdatedAt = DateTime.UtcNow;
     }
 }

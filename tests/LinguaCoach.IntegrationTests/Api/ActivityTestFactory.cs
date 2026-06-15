@@ -260,9 +260,9 @@ internal sealed class FakeAiProvider : IAiProvider
                     { "id": "t15", "text": "to", "position": 15 },
                     { "id": "t16", "text": "Friday.", "position": 16 }
                   ],
-                  "incorrectTokenIds": ["t16"],
-                  "corrections": { "t16": "Thursday." },
-                  "tokenExplanations": { "t16": "The audio says Thursday, not Friday." },
+                  "incorrectTokenIds": ["t14", "t16"],
+                  "corrections": { "t14": "rescheduled", "t16": "Thursday." },
+                  "tokenExplanations": { "t14": "The audio says rescheduled, not moved.", "t16": "The audio says Thursday, not Friday." },
                   "items": [
                     { "vocabularyItemId": "00000000-0000-0000-0000-000000000001", "term": "could you please", "prompt": "___ send the report?", "hint": "polite request", "explanation": "Used to make polite requests." },
                     { "vocabularyItemId": "00000000-0000-0000-0000-000000000002", "term": "at your earliest convenience", "prompt": "Please respond ___.", "hint": "formal timing", "explanation": "Used to politely request a prompt response." },

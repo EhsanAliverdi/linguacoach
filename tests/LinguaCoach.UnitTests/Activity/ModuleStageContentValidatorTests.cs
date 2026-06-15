@@ -2504,4 +2504,65 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── Phase 8N: configurable count enforcement ──────────────────────────────
+
+    private static string FillInBlanksJson(int gapCount)
+    {
+        var gaps = string.Join(",", Enumerable.Range(1, gapCount)
+            .Select(i => $$"""{ "id": "g{{i}}", "answer": "word{{i}}" }"""));
+        return $$"""
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "explanation": "x" },
+          "practiceContent": {
+            "exerciseData": {
+              "passageWithBlanks": "Some [[g1]] text.",
+              "gaps": [ {{gaps}} ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "x" }
+        }
+        """;
+    }
+
+    private static readonly PracticeCountSettings ReadingFillCounts = new(3, 6, 3, 5);
+
+    [Fact]
+    public void Validate_FillInBlanks_GapCountBelowMin_Fails()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(FillInBlanksJson(2)), ActivityType.ReadingTask, "reading_fill_in_blanks", ReadingFillCounts);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("gaps") && e.Contains("range"));
+    }
+
+    [Fact]
+    public void Validate_FillInBlanks_GapCountAboveMax_Fails()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(FillInBlanksJson(7)), ActivityType.ReadingTask, "reading_fill_in_blanks", ReadingFillCounts);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("gaps") && e.Contains("range"));
+    }
+
+    [Fact]
+    public void Validate_FillInBlanks_GapCountWithinRange_Passes()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(FillInBlanksJson(4)), ActivityType.ReadingTask, "reading_fill_in_blanks", ReadingFillCounts);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_FillInBlanks_WithoutCountSettings_SkipsCountEnforcement()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(FillInBlanksJson(2)), ActivityType.ReadingTask, "reading_fill_in_blanks");
+
+        result.IsValid.Should().BeTrue();
+    }
+
 }

@@ -22,7 +22,13 @@ public sealed record ExerciseTypeRegistryEntry(
     bool RequiresAudio,
     bool RequiresImage,
     bool SupportsPracticeGym,
-    bool SupportsTodayLesson);
+    bool SupportsTodayLesson,
+    int MinItemsPerPractice = 1,
+    int DefaultItemsPerPractice = 1,
+    int MaxItemsPerPractice = 1,
+    int MinOptionsPerItem = 0,
+    int DefaultOptionsPerItem = 0,
+    int MaxOptionsPerItem = 0);
 
 public enum ExerciseTypeSupportContext
 {

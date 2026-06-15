@@ -54,10 +54,17 @@ public sealed class AdminController : ControllerBase
                     key,
                     request.IsEnabled,
                     request.SupportsPracticeGym,
-                    request.SupportsTodayLesson),
+                    request.SupportsTodayLesson,
+                    request.MinItemsPerPractice,
+                    request.DefaultItemsPerPractice,
+                    request.MaxItemsPerPractice,
+                    request.MinOptionsPerItem,
+                    request.DefaultOptionsPerItem,
+                    request.MaxOptionsPerItem),
                 ct));
         }
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (Exception ex) when (ex is ArgumentException or ArgumentOutOfRangeException) { return BadRequest(new { error = ex.Message }); }
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -432,4 +439,13 @@ public sealed record AddProviderModelRequest(string ModelName);
 public sealed record TestProviderModelRequest(string ModelName);
 public sealed record UpdateAiCategoryRequest(string? ProviderName, string? ModelName, string? VoiceName = null);
 
-public sealed record UpdateExerciseTypeRequest(bool? IsEnabled, bool? SupportsPracticeGym, bool? SupportsTodayLesson);
+public sealed record UpdateExerciseTypeRequest(
+    bool? IsEnabled,
+    bool? SupportsPracticeGym,
+    bool? SupportsTodayLesson,
+    int? MinItemsPerPractice = null,
+    int? DefaultItemsPerPractice = null,
+    int? MaxItemsPerPractice = null,
+    int? MinOptionsPerItem = null,
+    int? DefaultOptionsPerItem = null,
+    int? MaxOptionsPerItem = null);

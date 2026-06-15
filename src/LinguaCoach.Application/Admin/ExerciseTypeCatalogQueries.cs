@@ -19,13 +19,25 @@ public sealed record ExerciseTypeDefinitionDto(
     bool RequiresAudio,
     bool RequiresImage,
     bool SupportsPracticeGym,
-    bool SupportsTodayLesson);
+    bool SupportsTodayLesson,
+    int MinItemsPerPractice = 1,
+    int DefaultItemsPerPractice = 1,
+    int MaxItemsPerPractice = 1,
+    int MinOptionsPerItem = 0,
+    int DefaultOptionsPerItem = 0,
+    int MaxOptionsPerItem = 0);
 
 public sealed record UpdateExerciseTypeDefinitionCommand(
     string Key,
     bool? IsEnabled,
     bool? SupportsPracticeGym,
-    bool? SupportsTodayLesson);
+    bool? SupportsTodayLesson,
+    int? MinItemsPerPractice = null,
+    int? DefaultItemsPerPractice = null,
+    int? MaxItemsPerPractice = null,
+    int? MinOptionsPerItem = null,
+    int? DefaultOptionsPerItem = null,
+    int? MaxOptionsPerItem = null);
 
 public interface IExerciseTypeCatalogService
 {

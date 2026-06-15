@@ -115,7 +115,13 @@ public sealed class ExerciseTypeRegistry : IExerciseTypeRegistry
         e.RequiresAudio,
         e.RequiresImage,
         e.SupportsPracticeGym,
-        e.SupportsTodayLesson);
+        e.SupportsTodayLesson,
+        e.MinItemsPerPractice,
+        e.DefaultItemsPerPractice,
+        e.MaxItemsPerPractice,
+        e.MinOptionsPerItem,
+        e.DefaultOptionsPerItem,
+        e.MaxOptionsPerItem);
 
     private static async Task<IReadOnlyList<ExerciseTypeRegistryEntry>> ToEntriesAsync(
         IQueryable<ExerciseTypeDefinition> query,

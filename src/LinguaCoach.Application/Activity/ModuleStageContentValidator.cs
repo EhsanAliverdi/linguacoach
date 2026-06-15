@@ -10,6 +10,16 @@ public sealed record ValidationResult(bool IsValid, IReadOnlyList<string> Errors
 }
 
 /// <summary>
+/// Optional per-format count bounds used to enforce item/option counts.
+/// When null, count enforcement is skipped (callers without registry access).
+/// </summary>
+public sealed record PracticeCountSettings(
+    int MinItemsPerPractice,
+    int MaxItemsPerPractice,
+    int MinOptionsPerItem,
+    int MaxOptionsPerItem);
+
+/// <summary>
 /// Validates AI-generated activity JSON against the module_stage_v1 contract:
 /// schemaVersion + learnContent/practiceContent/feedbackPlan sections, with
 /// learnContent forbidden from carrying any practice/exercise data.
@@ -76,7 +86,11 @@ public static class ModuleStageContentValidator
         ["highlight_incorrect_words"]            = ["audioScript", "displayTranscript", "tokens", "incorrectTokenIds"],
     };
 
-    public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)
+    public static ValidationResult Validate(
+        JsonElement root,
+        ActivityType activityType,
+        string? exercisePatternKey = null,
+        PracticeCountSettings? countSettings = null)
     {
         var errors = new List<string>();
 
@@ -124,10 +138,65 @@ public static class ModuleStageContentValidator
                     if (!HasPropertyIgnoreCase(exerciseData, requiredKey))
                         errors.Add($"practiceContent.exerciseData is missing required field \"{requiredKey}\".");
                 }
+
+                if (countSettings is not null && exercisePatternKey is not null)
+                    EnforceCounts(exerciseData, exercisePatternKey, countSettings, errors);
             }
         }
 
         return errors.Count == 0 ? ValidationResult.Ok() : ValidationResult.Fail(errors);
+    }
+
+    // Item-count formats: pattern key => exerciseData array field whose length is the item count.
+    private static readonly Dictionary<string, string> ItemCountArrayByPattern = new(StringComparer.Ordinal)
+    {
+        ["reading_fill_in_blanks"]         = "gaps",
+        ["reading_writing_fill_in_blanks"] = "gaps",
+        ["listening_fill_in_blanks"]       = "gaps",
+        ["reorder_paragraphs"]             = "items",
+        ["highlight_incorrect_words"]      = "incorrectTokenIds",
+    };
+
+    // Option-count formats: pattern key => exerciseData array field whose length is the option count.
+    private static readonly Dictionary<string, string> OptionCountArrayByPattern = new(StringComparer.Ordinal)
+    {
+        ["reading_multiple_choice_single"]   = "options",
+        ["reading_multiple_choice_multi"]    = "options",
+        ["listening_multiple_choice_single"] = "options",
+        ["listening_multiple_choice_multi"]  = "options",
+        ["select_missing_word"]              = "options",
+        ["highlight_correct_summary"]        = "options",
+    };
+
+    private static void EnforceCounts(JsonElement exerciseData, string patternKey, PracticeCountSettings counts, List<string> errors)
+    {
+        if (ItemCountArrayByPattern.TryGetValue(patternKey, out var itemField)
+            && TryGetArrayLength(exerciseData, itemField, out var itemCount))
+        {
+            if (itemCount < counts.MinItemsPerPractice || itemCount > counts.MaxItemsPerPractice)
+                errors.Add($"practiceContent.exerciseData.{itemField} count {itemCount} is outside allowed range [{counts.MinItemsPerPractice}, {counts.MaxItemsPerPractice}].");
+        }
+
+        if (OptionCountArrayByPattern.TryGetValue(patternKey, out var optField)
+            && TryGetArrayLength(exerciseData, optField, out var optCount))
+        {
+            if (optCount < counts.MinOptionsPerItem || optCount > counts.MaxOptionsPerItem)
+                errors.Add($"practiceContent.exerciseData.{optField} count {optCount} is outside allowed range [{counts.MinOptionsPerItem}, {counts.MaxOptionsPerItem}].");
+        }
+    }
+
+    private static bool TryGetArrayLength(JsonElement obj, string name, out int length)
+    {
+        length = 0;
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == JsonValueKind.Array)
+            {
+                length = prop.Value.GetArrayLength();
+                return true;
+            }
+        }
+        return false;
     }
 
     private static bool HasPropertyIgnoreCase(JsonElement obj, string name)

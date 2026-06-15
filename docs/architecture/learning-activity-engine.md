@@ -693,6 +693,20 @@ or speaking) into a runnable one. It uses `ActivityType.ReadingTask` and
 `MarkingMode.KeyedSelection` with a deterministic, non-AI evaluator branch
 (no new MarkingMode or evaluator class).
 
+**Phase 8N (2026-06-16):** Configurable practice item counts foundation (not a
+new format). `ExerciseTypeDefinition` gained six count fields —
+`MinItemsPerPractice`, `DefaultItemsPerPractice`, `MaxItemsPerPractice`,
+`MinOptionsPerItem`, `DefaultOptionsPerItem`, `MaxOptionsPerItem` — with
+`min <= default <= max` and non-negative invariants enforced in the entity and
+on admin update. Seeded per-key for all ready and planned types; exposed on the
+registry entry and admin DTO; editable via admin PATCH and the admin UI.
+`AiActivityGeneratorHandler` injects the counts as prompt variables, and
+`ModuleStageContentValidator.Validate` accepts an optional `PracticeCountSettings`
+to enforce item-count ranges (fill-in-blanks, reorder, highlight-incorrect-words)
+and option-count ranges (MCQ, select-missing-word, highlight-correct-summary).
+Counts are configuration only and never change readiness/runnable status. See
+[practice-item-sets.md](practice-item-sets.md).
+
 The recipe to repeat for the next planned future exercise format:
 
 1. Add an `ExercisePatternKey` constant and a full `ExercisePatternDefinition`

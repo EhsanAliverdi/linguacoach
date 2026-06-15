@@ -32,6 +32,12 @@ internal sealed class ExerciseTypeDefinitionConfiguration : IEntityTypeConfigura
         builder.Property(e => e.RequiresImage).HasColumnName("requires_image").IsRequired();
         builder.Property(e => e.SupportsPracticeGym).HasColumnName("supports_practice_gym").IsRequired();
         builder.Property(e => e.SupportsTodayLesson).HasColumnName("supports_today_lesson").IsRequired();
+        builder.Property(e => e.MinItemsPerPractice).HasColumnName("min_items_per_practice").IsRequired().HasDefaultValue(1);
+        builder.Property(e => e.DefaultItemsPerPractice).HasColumnName("default_items_per_practice").IsRequired().HasDefaultValue(1);
+        builder.Property(e => e.MaxItemsPerPractice).HasColumnName("max_items_per_practice").IsRequired().HasDefaultValue(1);
+        builder.Property(e => e.MinOptionsPerItem).HasColumnName("min_options_per_item").IsRequired().HasDefaultValue(0);
+        builder.Property(e => e.DefaultOptionsPerItem).HasColumnName("default_options_per_item").IsRequired().HasDefaultValue(0);
+        builder.Property(e => e.MaxOptionsPerItem).HasColumnName("max_options_per_item").IsRequired().HasDefaultValue(0);
         builder.Ignore(e => e.IsAvailableForGeneration);
         builder.HasIndex(e => new { e.PrimarySkill, e.IsEnabled }).HasDatabaseName("ix_exercise_type_definitions_skill_enabled");
     }

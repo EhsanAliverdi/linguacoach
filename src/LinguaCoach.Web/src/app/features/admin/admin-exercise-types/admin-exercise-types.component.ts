@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Component, OnInit, signal } from '@angular/core';
 import { AdminService } from '../../../core/services/admin.service';
 import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
@@ -6,7 +7,7 @@ import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
 @Component({
   selector: 'app-admin-exercise-types',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <section class="sp-admin-page">
       <div class="sp-admin-page-header">
@@ -33,6 +34,8 @@ import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
               <th style="padding:12px">Surfaces</th>
               <th style="padding:12px">Needs</th>
               <th style="padding:12px">Generation</th>
+              <th style="padding:12px">Item counts (min/def/max)</th>
+              <th style="padding:12px">Option counts (min/def/max)</th>
               <th style="padding:12px">Action</th>
             </tr>
           </thead>
@@ -70,9 +73,25 @@ import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
                     {{ type.isAvailableForGeneration ? 'Available' : 'Blocked' }}
                   </span>
                 </td>
-                <td style="padding:12px">
+                <td style="padding:12px;white-space:nowrap">
+                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.minItemsPerPractice" aria-label="min items" />
+                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.defaultItemsPerPractice" aria-label="default items" />
+                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.maxItemsPerPractice" aria-label="max items" />
+                </td>
+                <td style="padding:12px;white-space:nowrap">
+                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.minOptionsPerItem" aria-label="min options" />
+                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.defaultOptionsPerItem" aria-label="default options" />
+                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.maxOptionsPerItem" aria-label="max options" />
+                  @if (countError(type)) {
+                    <div style="color:#991b1b;font-size:11px">{{ countError(type) }}</div>
+                  }
+                </td>
+                <td style="padding:12px;white-space:nowrap">
                   <button class="sp-btn sp-btn-secondary" type="button" (click)="toggle(type)" [disabled]="savingKey() === type.key">
                     {{ type.isEnabled ? 'Disable' : 'Enable' }}
+                  </button>
+                  <button class="sp-btn sp-btn-secondary" type="button" (click)="saveCounts(type)" [disabled]="savingKey() === type.key || !!countError(type)">
+                    Save counts
                   </button>
                 </td>
               </tr>
@@ -98,6 +117,47 @@ export class AdminExerciseTypesComponent implements OnInit {
     this.admin.listExerciseTypes().subscribe({
       next: items => this.exerciseTypes.set(items),
       error: () => this.error.set('Could not load exercise types.'),
+    });
+  }
+
+  countError(type: ExerciseTypeDefinition): string | null {
+    const vals = [
+      type.minItemsPerPractice, type.defaultItemsPerPractice, type.maxItemsPerPractice,
+      type.minOptionsPerItem, type.defaultOptionsPerItem, type.maxOptionsPerItem,
+    ];
+    if (vals.some(v => v == null || v < 0)) {
+      return 'No negative values.';
+    }
+    if (!(type.minItemsPerPractice <= type.defaultItemsPerPractice && type.defaultItemsPerPractice <= type.maxItemsPerPractice)) {
+      return 'Items: min <= default <= max.';
+    }
+    if (!(type.minOptionsPerItem <= type.defaultOptionsPerItem && type.defaultOptionsPerItem <= type.maxOptionsPerItem)) {
+      return 'Options: min <= default <= max.';
+    }
+    return null;
+  }
+
+  saveCounts(type: ExerciseTypeDefinition): void {
+    if (this.countError(type)) {
+      return;
+    }
+    this.savingKey.set(type.key);
+    this.admin.updateExerciseType(type.key, {
+      minItemsPerPractice: type.minItemsPerPractice,
+      defaultItemsPerPractice: type.defaultItemsPerPractice,
+      maxItemsPerPractice: type.maxItemsPerPractice,
+      minOptionsPerItem: type.minOptionsPerItem,
+      defaultOptionsPerItem: type.defaultOptionsPerItem,
+      maxOptionsPerItem: type.maxOptionsPerItem,
+    }).subscribe({
+      next: updated => {
+        this.exerciseTypes.update(items => items.map(item => item.key === updated.key ? updated : item));
+        this.savingKey.set(null);
+      },
+      error: () => {
+        this.error.set('Could not update exercise type counts.');
+        this.savingKey.set(null);
+      },
     });
   }
 

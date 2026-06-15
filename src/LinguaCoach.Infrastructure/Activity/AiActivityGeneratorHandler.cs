@@ -4,6 +4,7 @@ using LinguaCoach.Application.Ai;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Activity;
@@ -85,6 +86,19 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["topicHint"] = context.TopicHint ?? "workplace communication",
         };
 
+        // Phase 8N: configurable per-format item/option counts.
+        // Looked up by pattern key so prompts can reference target counts.
+        var countSettings = await LoadCountSettingsAsync(context.ExercisePatternKey, ct);
+        if (countSettings is not null)
+        {
+            variables["minItemsPerPractice"] = countSettings.Value.MinItems.ToString();
+            variables["defaultItemsPerPractice"] = countSettings.Value.DefItems.ToString();
+            variables["maxItemsPerPractice"] = countSettings.Value.MaxItems.ToString();
+            variables["minOptionsPerItem"] = countSettings.Value.MinOpts.ToString();
+            variables["defaultOptionsPerItem"] = countSettings.Value.DefOpts.ToString();
+            variables["maxOptionsPerItem"] = countSettings.Value.MaxOpts.ToString();
+        }
+
         // Pattern-aware: use the override prompt key from the ExercisePatternDefinition if provided.
         // Fall back to legacy broad ActivityType routing otherwise.
         var promptKey = !string.IsNullOrWhiteSpace(context.OverridePromptKey)
@@ -110,14 +124,14 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             case ActivityType.ReadingTask:
             {
                 ValidateIsJson(cleaned);
-                var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
+                var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                 if (!check.IsValid)
                 {
                     var retryResponse = await _aiExecution.ExecuteAsync(
                         promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
                     cleaned = CleanJson(retryResponse);
                     ValidateIsJson(cleaned);
-                    var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
+                    var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!retryCheck.IsValid)
                         throw new AiResponseValidationException(
                             $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
@@ -128,14 +142,14 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 ValidateIsJson(cleaned);
                 if (StagedPatternKeys.Contains(context.ExercisePatternKey ?? string.Empty))
                 {
-                    var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
+                    var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!check.IsValid)
                     {
                         var retryResponse = await _aiExecution.ExecuteAsync(
                             promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
                         cleaned = CleanJson(retryResponse);
                         ValidateIsJson(cleaned);
-                        var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);
+                        var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                         if (!retryCheck.IsValid)
                             throw new AiResponseValidationException(
                                 $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
@@ -280,9 +294,31 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         }
     }
 
-    private static ValidationResult ValidateStagedContent(string json, ActivityType activityType, string? exercisePatternKey = null)
+    private async Task<(int MinItems, int DefItems, int MaxItems, int MinOpts, int DefOpts, int MaxOpts)?> LoadCountSettingsAsync(
+        string? exercisePatternKey, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(exercisePatternKey))
+            return null;
+        var def = await _db.ExerciseTypeDefinitions
+            .AsNoTracking()
+            .Where(e => e.ExercisePatternKey == exercisePatternKey)
+            .Select(e => new { e.MinItemsPerPractice, e.DefaultItemsPerPractice, e.MaxItemsPerPractice, e.MinOptionsPerItem, e.DefaultOptionsPerItem, e.MaxOptionsPerItem })
+            .FirstOrDefaultAsync(ct);
+        return def is null
+            ? null
+            : (def.MinItemsPerPractice, def.DefaultItemsPerPractice, def.MaxItemsPerPractice, def.MinOptionsPerItem, def.DefaultOptionsPerItem, def.MaxOptionsPerItem);
+    }
+
+    private static ValidationResult ValidateStagedContent(
+        string json,
+        ActivityType activityType,
+        string? exercisePatternKey = null,
+        (int MinItems, int DefItems, int MaxItems, int MinOpts, int DefOpts, int MaxOpts)? counts = null)
     {
         using var doc = JsonDocument.Parse(json);
-        return ModuleStageContentValidator.Validate(doc.RootElement, activityType, exercisePatternKey);
+        var countSettings = counts is null
+            ? null
+            : new PracticeCountSettings(counts.Value.MinItems, counts.Value.MaxItems, counts.Value.MinOpts, counts.Value.MaxOpts);
+        return ModuleStageContentValidator.Validate(doc.RootElement, activityType, exercisePatternKey, countSettings);
     }
 }
