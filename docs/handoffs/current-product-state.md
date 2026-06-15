@@ -75,14 +75,14 @@ and route to `/activity?activityId=<id>&returnTo=/practice`.
 |---|---|---|
 | Vocabulary class | `/activity?exerciseType=phrase_match&returnTo=/practice` (module link, unaffected) | functional word-card lesson + matching practice |
 | Listening | pool-aware skill selection | functional |
-| Reading | - | Coming soon |
+| Reading | pool-aware skill selection (`reading_multiple_choice_single`) | functional |
 | Writing | pool-aware skill selection | functional |
 | Speaking | pool-aware skill selection | functional recorded prompt, no pronunciation claim |
 | Matching | `/activity?exerciseType=phrase_match&returnTo=/practice` (module link, unaffected) | functional |
 | Fill in the blanks | `/activity?exerciseType=gap_fill_workplace_phrase&returnTo=/practice` (module link, unaffected) | functional |
 | Email | `/activity?exerciseType=email_reply&returnTo=/practice` (module link, unaffected) | functional |
 | Workplace Chat | `/activity?exerciseType=teams_chat_simulation&returnTo=/practice` (module link, unaffected) | functional |
-| Multiple choice | - | Coming soon |
+| Multiple choice | covered by Reading (`reading_multiple_choice_single`) | functional |
 | Sentence transformation | - | Coming soon |
 | Error correction | - | Coming soon |
 | Word formation | - | Coming soon |

@@ -181,6 +181,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Consolidation and session closing; metacognitive awareness",
             requiresAudio: false,
             workplaceContext: false),
+
+        new(
+            key: ExercisePatternKey.ReadingMultipleChoiceSingle,
+            name: "Reading Multiple Choice Single",
+            primarySkill: "Reading",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[3]""",           // ReadingInput
+            activityType: ActivityType.ReadingTask,
+            interactionMode: InteractionMode.MultipleChoice,
+            markingMode: MarkingMode.KeyedSelection,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_reading_multiple_choice_single",
+            aiEvaluatePromptKey: "activity_evaluate_reading_multiple_choice_single",
+            teachingPurpose: "Practise careful reading and choosing the best-supported answer",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

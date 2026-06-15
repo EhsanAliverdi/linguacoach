@@ -669,3 +669,38 @@ Old flat vocabulary JSON is adapted to `legacy_adapted_v1`. The adapter teaches 
 `VocabularyPracticeEvaluator` reads expected answers from staged `practiceContent.exerciseData.items` and still falls back to old flat `items`. Feedback shape remains compatible with the legacy vocabulary review UI.
 
 Completed staged migrations: `ListeningComprehension`, `WritingScenario`, `SpeakingRolePlay`, and `VocabularyPractice`. Remaining pattern-backed activities are pending. Planned future exercise formats remain planned and non-runnable unless implemented end-to-end. Today pre-generation and MinIO/audio lifecycle remain future phases.
+
+## Reference implementation — first runnable planned future exercise format
+
+`reading_multiple_choice_single` (Phase 8A) is the reference implementation
+for converting a planned future exercise format (reading, writing, listening,
+or speaking) into a runnable one. It uses `ActivityType.ReadingTask` and
+`InteractionMode.MultipleChoice` — both pre-existing, unused enum values — and
+`MarkingMode.KeyedSelection` with a deterministic, non-AI evaluator branch
+(no new MarkingMode or evaluator class).
+
+The recipe to repeat for the next planned future exercise format:
+
+1. Add an `ExercisePatternKey` constant and a full `ExercisePatternDefinition`
+   row (not just a catalog row) — pool reservation in
+   `PracticeGymPoolService` requires a non-empty `ExercisePatternKey`.
+2. Convert the existing `Planned` row in `ExerciseTypeDefinitionSeeder` to
+   `Ready`, keeping the total catalog row count unchanged.
+3. Add a `RequiredPracticeKeysByPatternKey` entry (and forbidden Learn-content
+   keys) in `ModuleStageContentValidator` — pattern-key entries take
+   precedence over `ActivityType`-level requirements.
+4. Allow the new `ActivityType` past the generator's unsupported-type guard
+   and add it to the staged-validation switch in
+   `AiActivityGeneratorHandler`.
+5. Add a deterministic branch to the existing evaluator for the chosen
+   `MarkingMode` (e.g. `KeyedSelectionEvaluator`, `ExactMatchEvaluator`) keyed
+   on `ExercisePatternKey` — avoid new MarkingModes/evaluator classes for
+   simple keyed/exact-match shapes.
+6. Add a `module_stage_v1` generation prompt in `DefaultAiSeeder` with strict
+   Learn-stage exclusion rules for answer-bearing fields.
+7. Add a standalone Angular renderer and wire it into
+   `exercise-renderer.component`, `activity-lesson.component`, and
+   `PatternBackedPresenter.skillBadge`.
+
+Only the single converted format becomes runnable; all other planned rows for
+that skill remain `planned` and non-generation-eligible.

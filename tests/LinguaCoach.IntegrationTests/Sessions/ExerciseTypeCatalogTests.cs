@@ -71,6 +71,33 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task ReadingMultipleChoiceSingle_IsReadyAndEligible()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_multiple_choice_single");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reading_multiple_choice_single");
+    }
+
+    [Fact]
+    public async Task OtherPlannedReadingTypes_RemainUnchanged()
+    {
+        var planned = await _db.ExerciseTypeDefinitions
+            .Where(e => e.PrimarySkill == "reading" && e.Key != "reading_multiple_choice_single")
+            .ToListAsync();
+
+        Assert.NotEmpty(planned);
+        Assert.All(planned, e => Assert.Equal("planned", e.ImplementationStatus));
+        Assert.All(planned, e => Assert.False(e.IsAvailableForGeneration));
+    }
+
+    [Fact]
     public async Task AdminToggle_DisablesFutureGenerationWithoutDeletingActivities()
     {
         var service = new ExerciseTypeCatalogService(_db);

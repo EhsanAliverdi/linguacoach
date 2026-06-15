@@ -75,6 +75,8 @@ export class PatternBackedPresenter implements ActivityPagePresenter {
         return { label: 'Listening', background: '#e0f2fe', color: '#0369a1', icon: 'listening' };
       case 'readOnly':
         return { label: 'Reflection', background: 'var(--sp-writing-soft)', color: 'var(--sp-writing-ink)', icon: 'writing' };
+      case 'multipleChoice':
+        return { label: 'Reading', background: '#dcfce7', color: '#15803d', icon: 'reading' };
       case 'chatReply':
       case 'freeTextEntry':
       default:

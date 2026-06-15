@@ -35,6 +35,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateLessonReflectionKey   = "activity_generate_lesson_reflection";
     public const string ActivityGenerateOpenWritingTaskKey    = "activity_generate_open_writing_task";
     public const string ActivityGenerateSpeakingRoleplayTurnKey = "activity_generate_speaking_roleplay_turn";
+    public const string ActivityGenerateReadingMultipleChoiceSingleKey = "activity_generate_reading_multiple_choice_single";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1302,6 +1303,83 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateReadingMultipleChoiceSingleContent = """
+You are an expert English language teacher creating a reading comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what reading skill this practises>",
+  "primarySkill": "reading",
+  "secondarySkills": [],
+  "exerciseType": "reading_multiple_choice_single",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Finding the main idea in a workplace text'>",
+    "explanation": "<2-3 sentences: a general reading strategy for this kind of question — no reference to the specific passage below>",
+    "keyPoints": [
+      "<reading strategy point 1, e.g. 'Skim for the main idea before reading in detail'>",
+      "<reading strategy point 2, e.g. 'Watch for signal words that suggest contrast or cause and effect'>",
+      "<reading strategy point 3, e.g. 'Eliminate options that are only partly true'>"
+    ],
+    "examples": [
+      { "phrase": "<example signal word or phrase>", "meaning": "<what it signals in a text>", "note": "<how to use it when reading>" }
+    ],
+    "strategy": "<one sentence: how to approach a single-answer reading question>",
+    "commonMistakes": [
+      "<common mistake, e.g. 'Choosing an option that is true but does not answer the question'>",
+      "<second common mistake, e.g. 'Picking the first plausible-looking option without checking the others'>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about reading strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the passage, then choose the one best answer to the question.",
+    "scenario": "<1 sentence describing the workplace context of the passage>",
+    "task": "Read the passage and choose the option that best answers the question.",
+    "exerciseData": {
+      "passage": "<a realistic workplace reading passage, 80-160 words>",
+      "question": "<a single-answer comprehension question about the passage>",
+      "options": [
+        { "id": "A", "text": "<option A text>" },
+        { "id": "B", "text": "<option B text>" },
+        { "id": "C", "text": "<option C text>" },
+        { "id": "D", "text": "<option D text>" }
+      ],
+      "correctOptionId": "<id of the correct option, e.g. 'A'>",
+      "explanation": "<1-2 sentences explaining why the correct option is right, referring to the passage>",
+      "distractorExplanations": {
+        "<id of an incorrect option>": "<why this option is wrong>",
+        "<id of another incorrect option>": "<why this option is wrong>",
+        "<id of the remaining incorrect option>": "<why this option is wrong>"
+      },
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Inference", "Distractor elimination"],
+    "rubric": [],
+    "feedbackFocus": "Help the student read carefully and choose the best supported answer.",
+    "successCriteria": [
+      "The selected option is supported by the passage.",
+      "The student can explain why the distractors are weaker."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the passage, question, options, correctOptionId, explanation, distractorExplanations, or any reference to this specific exercise's content. It teaches general reading strategy only.
+- practiceContent.exerciseData.passage must be realistic for {{careerContext}} professionals and relevant to topic area {{topicHint}}.
+- practiceContent.exerciseData.options must contain exactly 4 options with ids "A", "B", "C", "D", with exactly one correct option.
+- distractorExplanations must contain an entry for each of the 3 incorrect option ids.
+- Do not include any text outside the JSON object.
+""";
+
     // ── Pattern-specific evaluation prompts ───────────────────────────────────
 
     private const string ActivityEvaluatePhraseMatchContent = """
@@ -1910,6 +1988,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRoleplayTurnKey, ActivityGenerateSpeakingRoleplayTurnContent,
             maxInputTokens: 700, maxOutputTokens: 700, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateReadingMultipleChoiceSingleKey, ActivityGenerateReadingMultipleChoiceSingleContent,
+            maxInputTokens: 900, maxOutputTokens: 900, ct);
 
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

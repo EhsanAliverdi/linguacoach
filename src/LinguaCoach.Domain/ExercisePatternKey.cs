@@ -27,4 +27,7 @@ public static class ExercisePatternKey
 
     // ── Review / Reflection ──────────────────────────────────────────────────
     public const string LessonReflection          = "lesson_reflection";
+
+    // ── Reading ──────────────────────────────────────────────────────────────
+    public const string ReadingMultipleChoiceSingle = "reading_multiple_choice_single";
 }

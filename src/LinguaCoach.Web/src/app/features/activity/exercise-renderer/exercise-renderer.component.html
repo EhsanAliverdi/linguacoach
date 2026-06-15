@@ -41,6 +41,13 @@
       (submitted)="onChatReplySubmitted($event)"
     />
   }
+  @case ('multipleChoice') {
+    <app-reading-multiple-choice
+      [content]="readingMultipleChoiceContent"
+      [disabled]="disabled"
+      (submitted)="onReadingMultipleChoiceSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

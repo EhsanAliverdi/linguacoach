@@ -22,6 +22,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "spoken_response_from_prompt",
         "speaking_roleplay_turn",
         "lesson_reflection",
+        "reading_multiple_choice_single",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";
@@ -57,6 +58,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         if (context.ActivityType is not ActivityType.WritingScenario
             and not ActivityType.ListeningComprehension
             and not ActivityType.SpeakingRolePlay
+            and not ActivityType.ReadingTask
             && !(context.ActivityType == ActivityType.VocabularyPractice && isPatternDriven))
             throw new NotSupportedException(
                 $"AI generation for {context.ActivityType} is not yet implemented.");
@@ -93,6 +95,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             case ActivityType.ListeningComprehension:
             case ActivityType.WritingScenario:
             case ActivityType.SpeakingRolePlay:
+            case ActivityType.ReadingTask:
             {
                 ValidateIsJson(cleaned);
                 var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey);

@@ -11,11 +11,11 @@ const readyListening: any = {
   estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true,
 };
 
-const plannedReading: any = {
+const readyReading: any = {
   key: 'reading_multiple_choice_single', displayName: 'Reading Multiple Choice Single', primarySkill: 'reading', secondarySkills: [],
-  category: 'Planned reading/writing format', isEnabled: true, implementationStatus: 'planned', isAvailableForGeneration: false,
-  rendererKey: 'reading_multiple_choice_single', evaluatorKey: 'reading_multiple_choice_single', generationPromptKey: 'activity_generate_reading_multiple_choice_single',
-  estimatedDurationMinutes: 8, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'reading_multiple_choice_single', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_reading_multiple_choice_single',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
 describe('PracticeGymComponent', () => {
@@ -26,7 +26,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, plannedReading]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -106,8 +106,29 @@ describe('PracticeGymComponent', () => {
     expect(component.selectionMessage()).toContain('temporarily unavailable');
   });
 
-  it('planned exercise type card remains unavailable', () => {
-    expect(component.hasSkillAvailable('reading')).toBeFalse();
-    expect(component.skillStatusText('reading')).toBe('Coming soon');
+  it('reading_multiple_choice_single is ready and available in Practice Gym', () => {
+    expect(component.hasSkillAvailable('reading')).toBeTrue();
+    expect(component.skillStatusText('reading')).toBe('Available');
+    expect(component.isAvailable('reading_multiple_choice_single')).toBeTrue();
+    expect(component.statusText('reading_multiple_choice_single')).toBe('Available');
+  });
+
+  it('clicking Reading calls the pool-aware start flow and opens the returned activity', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-789',
+      exerciseType: 'reading_multiple_choice_single',
+      primarySkill: 'reading',
+      source: 'pool',
+      poolItemId: 'pool-2',
+      reason: null,
+    }));
+
+    component.selectSkill('reading');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'reading' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-789', returnTo: '/practice' },
+    });
   });
 });

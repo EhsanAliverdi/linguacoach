@@ -976,3 +976,110 @@ All pattern-backed activities now produce `module_stage_v1`:
 - Planned future exercise format renderers/evaluators (future phase, non-runnable)
 - Practice Gym dynamic skill selection — existing, unchanged
 - Practice Gym pool health/monitoring — future phase
+
+---
+
+## Phase 8A — `reading_multiple_choice_single` becomes first runnable planned future exercise format
+
+**Status:** complete
+**Date:** 2026-06-15
+
+### Goal
+
+Make `reading_multiple_choice_single` the first "planned future exercise format"
+to become fully runnable, following the Phase 7B recipe (pattern key,
+catalog row, deterministic non-AI evaluator). Only this one format changes
+status. All other planned reading/writing/listening/speaking formats remain
+planned and non-runnable.
+
+### New pattern
+
+`reading_multiple_choice_single` — primarySkill `reading`, secondarySkills `[]`,
+`ActivityType.ReadingTask`, `InteractionMode.MultipleChoice`,
+`MarkingMode.KeyedSelection`. Both `ActivityType.ReadingTask` and
+`InteractionMode.MultipleChoice` existed but were unused before this phase.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `src/LinguaCoach.Domain/ExercisePatternKey.cs` | Added `ReadingMultipleChoiceSingle` constant |
+| `src/LinguaCoach.Persistence/Seed/ExercisePatternSeeder.cs` | Added new pattern row (11th pattern) |
+| `src/LinguaCoach.Persistence/Seed/ExerciseTypeDefinitionSeeder.cs` | Converted `reading_multiple_choice_single` catalog row from `Planned` to `Ready`; total catalog rows unchanged at 36 |
+| `src/LinguaCoach.Application/Activity/ModuleStageContentValidator.cs` | Added `passage`, `question`, `correctOptionId`, `distractorExplanations` to `ForbiddenLearnContentKeys`; added `reading_multiple_choice_single` → `["passage", "question", "options", "correctOptionId"]` to `RequiredPracticeKeysByPatternKey` |
+| `src/LinguaCoach.Infrastructure/Activity/AiActivityGeneratorHandler.cs` | Added pattern to `StagedPatternKeys`; allowed `ActivityType.ReadingTask` past the unsupported-type guard; added `ReadingTask` to the staged-validation switch |
+| `src/LinguaCoach.Application/Activity/Evaluators/KeyedSelectionEvaluator.cs` | New deterministic, non-AI evaluation path for `reading_multiple_choice_single` — compares submitted `selectedOptionId` to `correctOptionId`, returns explanation/distractor feedback |
+| `src/LinguaCoach.Persistence/Seed/DefaultAiSeeder.cs` | New `activity_generate_reading_multiple_choice_single` prompt producing `module_stage_v1` with `passage`, `question`, 4 options A–D, `correctOptionId`, `explanation`, `distractorExplanations`, `successChecklist` |
+| `src/LinguaCoach.Web/.../renderers/reading-multiple-choice/reading-multiple-choice.component.{ts,html}` | New standalone Angular renderer (Learn + Practice) |
+| `src/LinguaCoach.Web/.../exercise-renderer/exercise-renderer.component.{ts,html}` | Wired new renderer, new `ExerciseAnswerPayload` variant `multipleChoiceSingle` |
+| `src/LinguaCoach.Web/.../activity-lesson/activity-lesson.component.ts` | Maps `multipleChoiceSingle` payload to `{ selectedOptionId }` |
+| `src/LinguaCoach.Web/.../presenters/pattern-backed.presenter.ts` | Added `multipleChoice` skill badge case (Reading) |
+| `src/LinguaCoach.Web/.../practice-gym.component.spec.ts` | Replaced planned-reading fixture with ready `reading_multiple_choice_single`; added pool-flow tests |
+
+### Validation
+
+`RequiredPracticeKeysByPatternKey` entry takes precedence over
+`RequiredPracticeKeysByType` for `ActivityType.ReadingTask`, so no change
+to the type-level map was needed.
+
+### Evaluator
+
+`KeyedSelectionEvaluator` now branches on `ExercisePatternKey ==
+"reading_multiple_choice_single"` before its existing phrase-match path.
+Score is 1.0 for a correct `selectedOptionId`, 0.0 otherwise. Feedback uses
+`explanation` on correct answers and `distractorExplanations[selectedOptionId]`
+plus `explanation` on incorrect answers. No-selection is scored 0 but still
+`Completed: true`.
+
+### Pool infrastructure
+
+`reading_multiple_choice_single` has a non-empty `ExercisePatternKey`, so
+`PracticeGymPoolService` pool reservation works for it like any other
+pattern-backed activity (this is why a full `ExercisePatternDefinition` row
+was added, not just a catalog-only entry).
+
+### Tests added
+
+- `tests/LinguaCoach.IntegrationTests/Sessions/ExerciseTypeCatalogTests.cs`:
+  `ReadingMultipleChoiceSingle_IsReadyAndEligible`,
+  `OtherPlannedReadingTypes_RemainUnchanged`
+- `tests/LinguaCoach.IntegrationTests/Sessions/ExercisePatternPhase1Tests.cs`:
+  pattern-count assertions updated 10 → 11 (active count 9 → 10 after one
+  deactivation in the existing test)
+- `tests/LinguaCoach.UnitTests/Activity/ModuleStageContentValidatorTests.cs`:
+  valid payload, missing-required-key theory, forbidden-learn-key theory
+- `tests/LinguaCoach.UnitTests/Activity/KeyedSelectionEvaluatorTests.cs`:
+  correct selection, incorrect selection with distractor explanation,
+  no-selection
+
+### Verification
+
+- `dotnet build --configuration Release`: 0 errors, 6 pre-existing unrelated
+  CS0618 warnings
+- `dotnet test --configuration Release`:
+  - Architecture: 3/3 (unchanged)
+  - Unit: 603/603 (baseline 589 + 14 new)
+  - Integration: 474/474 (baseline 472 + 2 new)
+- Angular unit tests / dev build / production build / Playwright e2e: not
+  run — `node_modules` not installed in this worktree (pre-existing
+  environment gap, not introduced by this phase); per instructions, no
+  package install was performed
+
+### Constraints confirmed
+
+- Only `reading_multiple_choice_single` became runnable; all other planned
+  rows untouched (`OtherPlannedReadingTypes_RemainUnchanged` test)
+- No audio formats, Today pre-generation, MinIO, or new
+  speaking/listening formats touched
+- `/activity` `exerciseType=`/`type=`/`pattern=` query compatibility
+  preserved (no changes to those code paths)
+- No student data, activity history, or pool behavior changes beyond
+  adding one new pattern-backed activity type
+- "PTE" terminology not used anywhere in code, comments, tests, or docs
+
+### Phase 8B candidate
+
+Pick the next planned reading or writing format with a similarly simple,
+deterministic, keyed-selection or exact-match shape (e.g. another
+single-answer reading format) and repeat this recipe: pattern definition →
+catalog row → validator keys → evaluator branch → prompt → renderer.

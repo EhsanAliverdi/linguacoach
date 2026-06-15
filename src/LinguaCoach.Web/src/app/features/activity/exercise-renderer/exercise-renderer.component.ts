@@ -9,6 +9,7 @@ import { AudioAndFreeTextComponent, AudioAndFreeTextContent } from '../renderers
 import { AudioAndGapFillComponent, AudioAndGapFillContent, AudioGapItem } from '../renderers/audio-and-gap-fill/audio-and-gap-fill.component';
 import { ChatReplyComponent, ChatReplyContent } from '../renderers/chat-reply/chat-reply.component';
 import { EmailReplyComponent, EmailReplyContent } from '../renderers/email-reply/email-reply.component';
+import { ReadingMultipleChoiceComponent, ReadingMultipleChoiceContent } from '../renderers/reading-multiple-choice/reading-multiple-choice.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -17,7 +18,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'audioFreeText'; answers: { questionId: string; answer: string }[]; responseText: string }
   | { kind: 'audioGapFill'; answers: { questionId: string; answer: string }[] }
   | { kind: 'chatReply'; replyText: string }
-  | { kind: 'emailReply'; subject: string; body: string };
+  | { kind: 'emailReply'; subject: string; body: string }
+  | { kind: 'multipleChoiceSingle'; selectedOptionId: string };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -32,6 +34,7 @@ export type ExerciseAnswerPayload =
     AudioAndGapFillComponent,
     ChatReplyComponent,
     EmailReplyComponent,
+    ReadingMultipleChoiceComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -209,6 +212,41 @@ export class ExerciseRendererComponent {
       coachNote: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
       wordCountTarget: this.numberValue(raw['wordLimit']),
     };
+  }
+
+  get readingMultipleChoiceContent(): ReadingMultipleChoiceContent {
+    const raw = this.raw;
+    const options = this.arrayValue(raw['options']).map((opt, index) => {
+      const obj = this.objectValue(opt) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? String.fromCharCode(65 + index),
+        text: this.stringValue(obj['text']) ?? '',
+      };
+    });
+
+    const distractorExplanationsObj = this.objectValue(raw['distractorExplanations']);
+    const distractorExplanations = distractorExplanationsObj
+      ? Object.fromEntries(
+          Object.entries(distractorExplanationsObj)
+            .map(([key, value]) => [key, this.stringValue(value) ?? ''])
+            .filter(([, value]) => value),
+        )
+      : null;
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
+      passage: this.stringValue(raw['passage']) ?? '',
+      question: this.stringValue(raw['question']) ?? '',
+      options,
+      correctOptionId: this.stringValue(raw['correctOptionId']),
+      explanation: this.stringValue(raw['explanation']),
+      distractorExplanations,
+    };
+  }
+
+  onReadingMultipleChoiceSubmitted(answer: { selectedOptionId: string }): void {
+    this.answerSubmitted.emit({ kind: 'multipleChoiceSingle', selectedOptionId: answer.selectedOptionId });
   }
 
   onFreeTextSubmitted(answer: { text: string }): void {

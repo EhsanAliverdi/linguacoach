@@ -24,6 +24,7 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.OpenWritingTask, "Open Writing Task", "Open workplace writing with coaching feedback.", "writing", "[]", "Pattern", "free_text_entry", "ai_open_ended", "activity_generate_open_writing_task", ActivityType.WritingScenario, ExercisePatternKey.OpenWritingTask, 7, false, false, true, true),
         Ready(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn", "Record one spoken workplace roleplay turn.", "speaking", "[]", "Pattern", "audio_response", "ai_open_ended", "activity_generate_speaking_roleplay_turn", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpeakingRoleplayTurn, 5, false, false, true, true),
         Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false, false, true),
+        Ready(ExercisePatternKey.ReadingMultipleChoiceSingle, "Reading Multiple Choice Single", "Choose one answer from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_single", "keyed_selection", "activity_generate_reading_multiple_choice_single", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceSingle, 5, false, false, true, false),
 
         Planned("read_aloud", "Read Aloud", "Read text aloud clearly.", "speaking", "[\"reading\"]", "Planned speaking format", true, false),
         Planned("repeat_sentence", "Repeat Sentence", "Repeat an audio sentence accurately.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),
@@ -38,7 +39,6 @@ public static class ExerciseTypeDefinitionSeeder
         Planned("reading_multiple_choice_multi", "Reading Multiple Choice Multiple", "Choose multiple answers from reading.", "reading", "[]", "Planned reading/writing format", true, false),
         Planned("reorder_paragraphs", "Reorder Paragraphs", "Put paragraphs in logical order.", "reading", "[]", "Planned reading/writing format", true, false),
         Planned("reading_fill_in_blanks", "Reading Fill in Blanks", "Fill blanks in a reading passage.", "reading", "[]", "Planned reading/writing format", true, false),
-        Planned("reading_multiple_choice_single", "Reading Multiple Choice Single", "Choose one answer from reading.", "reading", "[]", "Planned reading/writing format", true, false),
         Planned("summarize_spoken_text", "Summarize Spoken Text", "Write a summary of spoken audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),
         Planned("listening_multiple_choice_multi", "Listening Multiple Choice Multiple", "Choose multiple answers from audio.", "listening", "[]", "Planned listening format", true, false, requiresAudio: true),
         Planned("listening_fill_in_blanks", "Listening Fill in Blanks", "Fill missing words from audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),

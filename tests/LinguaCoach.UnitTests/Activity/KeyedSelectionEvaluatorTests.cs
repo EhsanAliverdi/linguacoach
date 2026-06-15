@@ -221,4 +221,101 @@ public sealed class KeyedSelectionEvaluatorTests
         result.Score.Should().Be(2);
         result.Passed.Should().BeTrue();
     }
+
+    // ── reading_multiple_choice_single ────────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeReadingRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "reading_multiple_choice_single",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.MultipleChoice,
+            ActivityType: ActivityType.ReadingTask,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedReadingContent(string correctOptionId = "B") => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test reading",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Read and choose.",
+            scenario = "Workplace email",
+            task = "Choose the best answer.",
+            exerciseData = new
+            {
+                passage = "The launch was delayed because of testing.",
+                question = "Why was the launch delayed?",
+                options = new[]
+                {
+                    new { id = "A", text = "Budget issues" },
+                    new { id = "B", text = "Additional testing needed" },
+                    new { id = "C", text = "Staff holiday" },
+                    new { id = "D", text = "Office relocation" },
+                },
+                correctOptionId,
+                explanation = "The passage says testing caused the delay.",
+                distractorExplanations = new Dictionary<string, string>
+                {
+                    ["A"] = "Budget is not mentioned.",
+                    ["C"] = "Holidays are not mentioned.",
+                    ["D"] = "Relocation is not mentioned.",
+                },
+                successChecklist = new[] { "Selected the supported option" },
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    private static string SelectedOption(string optionId) =>
+        JsonSerializer.Serialize(new ReadingMultipleChoiceSubmittedAnswer { SelectedOptionId = optionId }, JsonOptions);
+
+    [Fact]
+    public async Task ReadingMultipleChoice_CorrectSelection_ReturnsFullScore()
+    {
+        var content = StagedReadingContent(correctOptionId: "B");
+        var submitted = SelectedOption("B");
+
+        var result = await _sut.EvaluateAsync(MakeReadingRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("testing");
+    }
+
+    [Fact]
+    public async Task ReadingMultipleChoice_IncorrectSelection_ReturnsZeroScore_WithDistractorExplanation()
+    {
+        var content = StagedReadingContent(correctOptionId: "B");
+        var submitted = SelectedOption("A");
+
+        var result = await _sut.EvaluateAsync(MakeReadingRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        var item = result.ItemResults.Single();
+        item.IsCorrect.Should().BeFalse();
+        item.CorrectAnswer.Should().Be("B");
+        item.Feedback.Should().Contain("Budget is not mentioned");
+    }
+
+    [Fact]
+    public async Task ReadingMultipleChoice_NoSelection_ReturnsZeroScore_AndIsStillCompleted()
+    {
+        var content = StagedReadingContent(correctOptionId: "B");
+
+        var result = await _sut.EvaluateAsync(MakeReadingRequest(content, submittedJson: ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
 }

@@ -1377,4 +1377,99 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── reading_multiple_choice_single pattern key tests ──────────────────────
+
+    private const string ValidReadingMultipleChoiceSingleJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Reading for the main idea: project updates",
+      "moduleGoal": "Practise identifying the main idea of a workplace email.",
+      "primarySkill": "reading",
+      "secondarySkills": [],
+      "exerciseType": "reading_multiple_choice_single",
+      "learnContent": {
+        "teachingTitle": "Finding the main idea in a workplace text",
+        "explanation": "Skimming a text for its main idea before reading in detail helps you answer comprehension questions quickly and accurately.",
+        "keyPoints": ["Skim for the main idea before reading in detail", "Watch for signal words that suggest contrast or cause and effect"],
+        "examples": [{ "phrase": "however", "meaning": "signals contrast", "note": "the sentence after 'however' often contains the key point" }],
+        "strategy": "Read the question first, then scan the passage for the relevant section.",
+        "commonMistakes": ["Choosing an option that is true but does not answer the question"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the passage, then choose the one best answer to the question.",
+        "scenario": "An email about a project status update.",
+        "task": "Read the passage and choose the option that best answers the question.",
+        "exerciseData": {
+          "passage": "The marketing team completed the website redesign ahead of schedule. However, the launch has been delayed by two weeks because the new analytics integration needs additional testing. The team lead asked everyone to focus on bug fixes this week.",
+          "question": "Why has the launch been delayed?",
+          "options": [
+            { "id": "A", "text": "The website redesign was not finished." },
+            { "id": "B", "text": "The analytics integration needs more testing." },
+            { "id": "C", "text": "The marketing team is on holiday." },
+            { "id": "D", "text": "The budget was not approved." }
+          ],
+          "correctOptionId": "B",
+          "explanation": "The passage says the launch was delayed because the analytics integration needs additional testing.",
+          "distractorExplanations": {
+            "A": "The redesign was completed ahead of schedule, not unfinished.",
+            "C": "There is no mention of the team being on holiday.",
+            "D": "Budget approval is not mentioned in the passage."
+          },
+          "successChecklist": ["Selected the option supported by the passage", "Can explain why the other options are wrong"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Main idea understanding", "Detail recognition", "Inference", "Distractor elimination"],
+        "rubric": [],
+        "feedbackFocus": "Help the student read carefully and choose the best supported answer.",
+        "successCriteria": ["The selected option is supported by the passage.", "The student can explain why distractors are weaker."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_ReadingMultipleChoiceSingle_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidReadingMultipleChoiceSingleJson), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("passage")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    public void Validate_ReadingMultipleChoiceSingle_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidReadingMultipleChoiceSingleJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("passage")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    [InlineData("answerKey")]
+    [InlineData("selectedAnswer")]
+    public void Validate_ReadingMultipleChoiceSingle_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidReadingMultipleChoiceSingleJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

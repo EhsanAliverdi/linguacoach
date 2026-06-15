@@ -50,7 +50,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     public async Task Seeder_Seeds_AllTenMvpPatterns()
     {
         var count = await _db.ExercisePatterns.CountAsync();
-        Assert.Equal(10, count);
+        Assert.Equal(11, count);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     {
         await ExercisePatternSeeder.SeedAsync(_db, NullLogger.Instance);
         var count = await _db.ExercisePatterns.CountAsync();
-        Assert.Equal(10, count);
+        Assert.Equal(11, count);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     {
         var repo = new ExercisePatternRepository(_db);
         var all = await repo.GetAllActiveAsync();
-        Assert.Equal(10, all.Count);
+        Assert.Equal(11, all.Count);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
 
         var repo = new ExercisePatternRepository(_db);
         var all = await repo.GetAllActiveAsync();
-        Assert.Equal(9, all.Count);
+        Assert.Equal(10, all.Count);
         Assert.DoesNotContain(all, p => p.Key == ExercisePatternKey.PhraseMatch);
     }
 

@@ -17,6 +17,9 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
         PatternEvaluationRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.ExercisePatternKey == "reading_multiple_choice_single")
+            return EvaluateReadingMultipleChoiceSingleAsync(request);
+
         var expectedMap = ParseExpectedPairs(request.ContentJson);
         var submittedMap = ParseSubmittedPairs(request.SubmittedAnswerJson);
 
@@ -84,6 +87,96 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             coachSummary: coachSummary);
 
         return Task.FromResult(result);
+    }
+
+    // ── reading_multiple_choice_single ───────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateReadingMultipleChoiceSingleAsync(
+        PatternEvaluationRequest request)
+    {
+        var exerciseData = ParseReadingExerciseData(request.ContentJson);
+        var selectedOptionId = ParseSelectedOptionId(request.SubmittedAnswerJson);
+
+        var correctOptionId = exerciseData?.CorrectOptionId;
+        var isCorrect = selectedOptionId is not null
+            && correctOptionId is not null
+            && string.Equals(selectedOptionId, correctOptionId, StringComparison.Ordinal);
+
+        var score = isCorrect ? 1.0 : 0.0;
+        const double maxScore = 1.0;
+
+        string feedback;
+        if (selectedOptionId is null)
+            feedback = $"No answer selected — the correct answer is \"{correctOptionId}\".";
+        else if (isCorrect)
+            feedback = exerciseData?.Explanation ?? "Correct.";
+        else
+        {
+            var distractorNote = exerciseData?.DistractorExplanations is not null
+                && exerciseData.DistractorExplanations.TryGetValue(selectedOptionId, out var note)
+                && !string.IsNullOrWhiteSpace(note)
+                ? note
+                : null;
+
+            feedback = distractorNote is not null
+                ? $"Incorrect — the correct answer is \"{correctOptionId}\". {distractorNote}"
+                : $"Incorrect — the correct answer is \"{correctOptionId}\".";
+
+            if (!string.IsNullOrWhiteSpace(exerciseData?.Explanation))
+                feedback += $" {exerciseData.Explanation}";
+        }
+
+        var itemResult = new PatternEvaluationItemResult(
+            ItemKey: "reading_multiple_choice_single",
+            StudentAnswer: selectedOptionId,
+            CorrectAnswer: correctOptionId,
+            AcceptedAnswers: correctOptionId is null ? [] : [correctOptionId],
+            IsCorrect: isCorrect,
+            Score: score,
+            MaxScore: maxScore,
+            Feedback: feedback);
+
+        var coachSummary = isCorrect
+            ? "Correct — you selected the best-supported answer."
+            : "Not quite — review the passage and the explanation to see why another option fits best.";
+
+        var result = PatternEvaluationResult.Create(
+            score: score,
+            maxScore: maxScore,
+            passed: isCorrect,
+            completed: true,
+            itemResults: [itemResult],
+            coachSummary: coachSummary);
+
+        return Task.FromResult(result);
+    }
+
+    private static ReadingMultipleChoiceExerciseData? ParseReadingExerciseData(string contentJson)
+    {
+        try
+        {
+            var json = UnwrapStagedContent(contentJson);
+            return JsonSerializer.Deserialize<ReadingMultipleChoiceExerciseData>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string? ParseSelectedOptionId(string submittedAnswerJson)
+    {
+        if (string.IsNullOrWhiteSpace(submittedAnswerJson)) return null;
+
+        try
+        {
+            var dto = JsonSerializer.Deserialize<ReadingMultipleChoiceSubmittedAnswer>(submittedAnswerJson, JsonOptions);
+            return string.IsNullOrWhiteSpace(dto?.SelectedOptionId) ? null : dto.SelectedOptionId;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     // ── parsing ────────────────────────────────────────────────────────────────
@@ -170,4 +263,22 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
 public sealed class PhraseMatchSubmittedAnswer
 {
     public Dictionary<string, string?> Pairs { get; set; } = new(StringComparer.Ordinal);
+}
+
+/// <summary>
+/// practiceContent.exerciseData shape for reading_multiple_choice_single.
+/// </summary>
+public sealed class ReadingMultipleChoiceExerciseData
+{
+    public string? CorrectOptionId { get; set; }
+    public string? Explanation { get; set; }
+    public Dictionary<string, string>? DistractorExplanations { get; set; }
+}
+
+/// <summary>
+/// Submitted answer shape for reading_multiple_choice_single.
+/// </summary>
+public sealed class ReadingMultipleChoiceSubmittedAnswer
+{
+    public string? SelectedOptionId { get; set; }
 }
