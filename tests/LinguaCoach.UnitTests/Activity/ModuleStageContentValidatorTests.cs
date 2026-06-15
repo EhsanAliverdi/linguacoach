@@ -867,6 +867,240 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    // ── email_reply pattern key tests ─────────────────────────────────────────
+
+    private const string ValidEmailReplyJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Reply to a leave request",
+      "moduleGoal": "Practise writing a professional email reply.",
+      "primarySkill": "writing",
+      "secondarySkills": ["reading", "vocabulary"],
+      "exerciseType": "email_reply",
+      "learnContent": {
+        "teachingTitle": "Writing a professional email reply",
+        "explanation": "A good professional email reply opens with a clear acknowledgement, provides the required information, and closes with a next step.",
+        "keyPoints": ["Acknowledge the message first", "Be clear and direct", "Close with a next step"],
+        "examples": [{ "phrase": "Thank you for your email.", "meaning": "polite acknowledgement opener", "note": "standard semi-formal opener" }],
+        "strategy": "Plan your reply: acknowledge, inform, close.",
+        "commonMistakes": ["Starting with 'I' instead of acknowledging the message"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the email below and write a professional reply.",
+        "scenario": "Your colleague has sent you a message about a project update.",
+        "task": "Write a professional email reply.",
+        "exerciseData": {
+          "incomingMessage": "Hi, could you please send me the project status report by end of day? I need it for the client meeting tomorrow.",
+          "recipient": "your colleague",
+          "relationship": "colleague",
+          "tone": "semi-formal",
+          "prompt": "Read the email above and write a professional reply.",
+          "requiredInformation": ["Acknowledge the request", "Confirm when you will send it"],
+          "requiredPhrases": ["Thank you for your email"],
+          "targetVocabulary": ["status report", "confirm"],
+          "expectedLength": "3-5 sentences",
+          "suggestedSubject": "Re: Project Status Report",
+          "successChecklist": ["Acknowledges the request", "Confirms the deadline"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Tone", "Clarity"],
+        "rubric": [],
+        "feedbackFocus": "Clear, professional email reply.",
+        "successCriteria": ["The reply addresses the request clearly."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_EmailReply_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidEmailReplyJson), ActivityType.WritingScenario, "email_reply");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("prompt")]
+    [InlineData("incomingMessage")]
+    public void Validate_EmailReply_MissingRequiredKey_Fails(string missingKey)
+    {
+        var json = RemoveExerciseDataKey(ValidEmailReplyJson, missingKey);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "email_reply");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(missingKey));
+    }
+
+    [Theory]
+    [InlineData("answerKey")]
+    [InlineData("submitLabel")]
+    [InlineData("textarea")]
+    public void Validate_EmailReply_WithPracticeControlInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidEmailReplyJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "email_reply");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
+    // ── teams_chat_simulation pattern key tests ────────────────────────────────
+
+    private const string ValidTeamsChatJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Respond to a chat request",
+      "moduleGoal": "Practise writing concise professional chat replies.",
+      "primarySkill": "writing",
+      "secondarySkills": ["reading", "communication"],
+      "exerciseType": "teams_chat_simulation",
+      "learnContent": {
+        "teachingTitle": "Writing effective workplace chat messages",
+        "explanation": "Good workplace chat messages are clear, concise, and friendly without being too casual.",
+        "keyPoints": ["Get to the point immediately", "Keep it to 1-3 sentences", "Match the tone of the conversation"],
+        "examples": [{ "phrase": "Sure, I can do that.", "meaning": "simple, direct confirmation", "note": "natural chat tone" }],
+        "strategy": "Read the message, identify what is needed, reply directly.",
+        "commonMistakes": ["Writing too formally — like an email"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the chat thread and write the next message.",
+        "scenario": "A colleague messages you about a task.",
+        "task": "Write your next message in the chat.",
+        "exerciseData": {
+          "chatHistory": [
+            { "sender": "Amir", "role": "Project Manager", "message": "Hi! Can you confirm you received the updated brief?" }
+          ],
+          "speakerRole": "Team Member",
+          "recipientRole": "Project Manager",
+          "tone": "friendly but professional",
+          "prompt": "Write your reply to the chat above.",
+          "requiredInformation": ["Confirm receipt of the brief"],
+          "requiredPhrases": ["Got it"],
+          "targetVocabulary": ["confirm", "brief"],
+          "successChecklist": ["Confirms receipt", "Is brief and direct"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Tone", "Clarity"],
+        "rubric": [],
+        "feedbackFocus": "Clear, natural workplace chat reply.",
+        "successCriteria": ["The reply is direct and professional."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_TeamsChat_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidTeamsChatJson), ActivityType.WritingScenario, "teams_chat_simulation");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("prompt")]
+    [InlineData("chatHistory")]
+    public void Validate_TeamsChat_MissingRequiredKey_Fails(string missingKey)
+    {
+        var json = RemoveExerciseDataKey(ValidTeamsChatJson, missingKey);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "teams_chat_simulation");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(missingKey));
+    }
+
+    // ── open_writing_task pattern key tests ────────────────────────────────────
+
+    private const string ValidOpenWritingJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Write a project status update",
+      "moduleGoal": "Practise writing a clear, professional status update.",
+      "primarySkill": "writing",
+      "secondarySkills": ["grammar", "vocabulary"],
+      "exerciseType": "open_writing_task",
+      "learnContent": {
+        "teachingTitle": "Writing a clear status update",
+        "explanation": "A good status update tells the reader what has happened, what is in progress, and what comes next — in plain, direct language.",
+        "keyPoints": ["Lead with the most important information", "Be specific about progress and blockers", "Keep sentences short"],
+        "examples": [{ "phrase": "The project is on track to meet the deadline.", "meaning": "clear progress statement", "note": "direct, professional tone" }],
+        "strategy": "Plan three things: what is done, what is in progress, what is next.",
+        "commonMistakes": ["Writing too vaguely — readers need specific details"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the situation and write your response.",
+        "scenario": "You are a project coordinator and need to send a status update to your manager.",
+        "task": "Write a clear, professional status update.",
+        "exerciseData": {
+          "prompt": "Write a short status update for your manager about the website redesign project.",
+          "tone": "professional and direct",
+          "expectedLength": "60-80 words",
+          "requiredInformation": ["Current progress", "Any blockers", "Next step"],
+          "requiredPhrases": ["is on track", "the next step"],
+          "targetVocabulary": ["milestone", "blocker", "deliverable"],
+          "successChecklist": ["Covers progress, blockers, and next steps", "Uses professional tone", "Is appropriately concise"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Clarity", "Grammar"],
+        "rubric": [],
+        "feedbackFocus": "Clear, structured workplace writing.",
+        "successCriteria": ["The update is complete and easy to follow."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_OpenWritingTask_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidOpenWritingJson), ActivityType.WritingScenario, "open_writing_task");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_OpenWritingTask_MissingPrompt_Fails()
+    {
+        var json = RemoveExerciseDataKey(ValidOpenWritingJson, "prompt");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "open_writing_task");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("prompt"));
+    }
+
+    [Theory]
+    [InlineData("submitLabel")]
+    [InlineData("checkLabel")]
+    [InlineData("textarea")]
+    public void Validate_OpenWritingTask_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidOpenWritingJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "open_writing_task");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
     private static string RemoveExerciseDataKey(string originalJson, string keyToRemove)
     {
         using var doc = JsonDocument.Parse(originalJson);

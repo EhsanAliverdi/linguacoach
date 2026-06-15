@@ -851,29 +851,74 @@ Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to address: {{recentMistakes}}
 
-Create a realistic workplace email the student must reply to. Return ONLY valid JSON:
+Create a realistic workplace email the student must reply to. Return ONLY valid JSON in this exact format:
 
 {
+  "schemaVersion": "module_stage_v1",
   "title": "<short descriptive title, 5-10 words>",
-  "taskType": "<one of: workplace-email | follow-up | request | update | apology | clarification | complaint-response | meeting-follow-up>",
-  "situation": "<2-3 sentences describing the email the student received and what they must reply to>",
-  "audience": "<who the student is writing to, e.g. 'your line manager'>",
-  "tone": "<formal | semi-formal | polite>",
-  "expectedLength": "<e.g. '3-5 sentences' or '1 short paragraph'>",
-  "learningGoal": "<one sentence: what communication skill this practises>",
-  "skillFocus": "<one key skill, e.g. 'polite requests' or 'professional apology'>",
-  "targetPhrases": ["<phrase 1>", "<phrase 2>", "<phrase 3>", "<phrase 4>"],
-  "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
-  "exampleText": "<a complete polished example reply the student can study>",
-  "commonMistakeToAvoid": "<one sentence on the most common mistake {{sourceLanguageName}} speakers make in this type of email>",
-  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} explaining what to write>",
-  "suggestedSubject": "<a short, appropriate subject line for this reply, e.g. 'Re: Project deadline'>"
+  "moduleGoal": "<one sentence: what email writing skill this practises>",
+  "primarySkill": "writing",
+  "secondarySkills": ["reading", "vocabulary"],
+  "exerciseType": "email_reply",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Writing a polite request email'>",
+    "explanation": "<2-3 sentences: what makes this type of professional email effective. Teach structure and tone — no reference to the specific email below>",
+    "keyPoints": [
+      "<email structure point, e.g. 'Open with a clear purpose statement'>",
+      "<tone point, e.g. 'Use semi-formal language with your manager'>",
+      "<closing point, e.g. 'End with a clear next step or call to action'>"
+    ],
+    "examples": [
+      { "phrase": "<useful email opener phrase>", "meaning": "<when to use it>", "note": "<tone/register note>" },
+      { "phrase": "<useful mid-email phrase>", "meaning": "<when to use it>", "note": "<tone/register note>" }
+    ],
+    "strategy": "<one sentence: how to plan and structure a good reply — general advice, not task-specific>",
+    "commonMistakes": [
+      "<common email writing mistake {{sourceLanguageName}} speakers make>",
+      "<second common mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about this type of email, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the email below and write a professional reply.",
+    "scenario": "<1-2 sentences describing the workplace context>",
+    "task": "Write a professional email reply.",
+    "exerciseData": {
+      "incomingMessage": "<the full email the student received and must reply to — realistic workplace email, 60-120 words>",
+      "recipient": "<who the student is writing to, e.g. 'your line manager'>",
+      "relationship": "<e.g. 'manager' | 'colleague' | 'client'>",
+      "tone": "<formal | semi-formal | polite>",
+      "prompt": "Read the email above and write a professional reply.",
+      "requiredInformation": ["<key point the reply must address>", "<second key point>"],
+      "requiredPhrases": ["<phrase 1>", "<phrase 2>"],
+      "targetVocabulary": ["<word 1>", "<word 2>"],
+      "expectedLength": "<e.g. '3-5 sentences' or '1 short paragraph'>",
+      "suggestedSubject": "<appropriate subject line for the reply, e.g. 'Re: Project deadline'>",
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Task completion", "Tone", "Clarity", "Email structure", "Grammar and vocabulary"],
+    "rubric": [
+      { "criterion": "Task completion", "weight": 0.35 },
+      { "criterion": "Tone and register", "weight": 0.25 },
+      { "criterion": "Clarity and structure", "weight": 0.25 },
+      { "criterion": "Grammar and vocabulary", "weight": 0.15 }
+    ],
+    "feedbackFocus": "Help the student write a clear, professional email reply with appropriate tone and structure.",
+    "successCriteria": [
+      "The reply answers the email clearly and completely.",
+      "The tone is appropriate for the relationship.",
+      "The email has a clear opening, body, and close."
+    ]
+  }
 }
 
 Rules:
-- The situation must be specific and realistic for {{careerContext}} professionals.
-- exampleText must be a complete, professional email reply (not a fragment).
-- instructionInSourceLanguage must be written entirely in {{sourceLanguageName}}.
+- learnContent must NEVER contain the actual incoming email, the specific writing task, expected answer, or any prompt asking the student to complete the task. It teaches general email writing strategy only.
+- practiceContent.exerciseData.incomingMessage must be the full realistic workplace email the student reads and replies to.
+- practiceContent.exerciseData.prompt must be a short instruction telling the student to write a reply.
+- The incoming email must be specific and realistic for {{careerContext}} professionals.
 - Do not include any text outside the JSON object.
 """;
 
@@ -883,28 +928,77 @@ You are an expert English language teacher creating a Teams/Slack chat simulatio
 Student level: {{cefrLevel}}
 Career context: {{careerContext}}
 Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
 
-Create a realistic chat exchange where the student must write a professional reply. Return ONLY valid JSON:
+Create a realistic chat exchange where the student must write a professional reply. Return ONLY valid JSON in this exact format:
 
 {
+  "schemaVersion": "module_stage_v1",
   "title": "<short title>",
-  "scenario": "<2-3 sentences describing the chat context and what the student must do>",
-  "colleagueName": "<first name of the colleague sending the message>",
-  "colleagueRole": "<colleague's role>",
-  "studentRole": "<student's role>",
-  "learningGoal": "<what this practises>",
-  "expectedLength": "<e.g. '2-3 sentences' or '1-2 chat messages'>",
-  "targetPhrases": ["<phrase 1>", "<phrase 2>", "<phrase 3>"],
-  "targetVocabulary": ["<word 1>", "<word 2>"],
-  "exampleReply": "<a polished example chat reply>",
-  "toneGuidance": "<brief note on register: e.g. 'friendly but professional, no emoji'>",
-  "instructionInSourceLanguage": "<1-2 sentences in {{sourceLanguageName}} explaining the task>"
+  "moduleGoal": "<one sentence: what workplace chat communication skill this practises>",
+  "primarySkill": "writing",
+  "secondarySkills": ["reading", "communication"],
+  "exerciseType": "teams_chat_simulation",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Writing clear, concise workplace chat messages'>",
+    "explanation": "<2-3 sentences: what makes workplace chat communication effective — general advice about clarity, brevity, and professional tone. No reference to the specific scenario below>",
+    "keyPoints": [
+      "<chat clarity point, e.g. 'Get to the point in the first sentence'>",
+      "<tone point, e.g. 'Keep a friendly but professional tone'>",
+      "<length point, e.g. 'Keep replies short — 1-3 sentences is enough'>"
+    ],
+    "examples": [
+      { "phrase": "<useful chat opener phrase>", "meaning": "<when to use it>", "note": "<tone/register note>" },
+      { "phrase": "<useful confirmation or response phrase>", "meaning": "<when to use it>", "note": "<tone/register note>" }
+    ],
+    "strategy": "<one sentence: how to craft a clear, relevant chat reply in a professional context — general advice>",
+    "commonMistakes": [
+      "<common chat writing mistake {{sourceLanguageName}} speakers make, e.g. writing too formally>",
+      "<second common mistake, e.g. being too brief without enough information>"
+    ],
+    "sourceLanguageSupport": null
+  },
+  "practiceContent": {
+    "instructions": "Read the chat thread and write the next message.",
+    "scenario": "<1-2 sentences describing the workplace chat context>",
+    "task": "Write your next message in the chat.",
+    "exerciseData": {
+      "chatHistory": [
+        { "sender": "<colleague name>", "role": "<colleague role>", "message": "<their chat message 1>" },
+        { "sender": "<colleague name>", "role": "<colleague role>", "message": "<their chat message 2 if needed, or omit>" }
+      ],
+      "speakerRole": "<student's role>",
+      "recipientRole": "<colleague's role>",
+      "tone": "<e.g. 'friendly but professional'>",
+      "prompt": "Write your reply to the chat above.",
+      "requiredInformation": ["<key point the reply must include>"],
+      "requiredPhrases": ["<useful phrase 1>", "<useful phrase 2>"],
+      "targetVocabulary": ["<word 1>", "<word 2>"],
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Task completion", "Tone", "Clarity", "Natural chat language", "Grammar and vocabulary"],
+    "rubric": [
+      { "criterion": "Task completion", "weight": 0.35 },
+      { "criterion": "Tone and register", "weight": 0.25 },
+      { "criterion": "Clarity and brevity", "weight": 0.25 },
+      { "criterion": "Grammar and vocabulary", "weight": 0.15 }
+    ],
+    "feedbackFocus": "Help the student write concise, natural workplace chat replies with appropriate tone.",
+    "successCriteria": [
+      "The reply is clear and directly addresses the chat.",
+      "The tone is friendly and professional.",
+      "The message is appropriately brief."
+    ]
+  }
 }
 
 Rules:
-- Chat messages should be concise, as real chat messages are.
-- targetPhrases must be natural chat expressions, not formal email language.
-- exampleReply must show correct length and tone.
+- learnContent must NEVER contain the actual chat messages, the specific writing task, or any prompt asking the student to complete the task. It teaches general professional chat communication strategy only.
+- practiceContent.exerciseData.chatHistory must be a realistic workplace chat thread (1-3 messages) that the student reads and responds to.
+- practiceContent.exerciseData.prompt must be a short instruction telling the student to write their reply.
+- Chat messages must be concise, as real workplace chat messages are (1-3 sentences each).
 - Do not include any text outside the JSON object.
 """;
 
@@ -976,26 +1070,69 @@ Create a realistic, free-form workplace writing task (e.g. a short report sectio
 proposal paragraph, a status update, a reflective note) that the student writes from
 scratch in an open text box — not a reply to an incoming message.
 
-Return ONLY valid JSON (no markdown) matching this exact structure:
+Return ONLY valid JSON in this exact format:
 
 {
+  "schemaVersion": "module_stage_v1",
   "title": "<short descriptive title for this activity, 5-10 words>",
-  "situation": "<2-3 sentences describing the realistic workplace situation>",
-  "prompt": "<the specific writing task, e.g. 'Write a short paragraph explaining the project delay to your manager'>",
-  "learningGoal": "<one sentence stating what writing skill this activity practises>",
-  "targetPhrases": ["<useful phrase 1>", "<useful phrase 2>", "<useful phrase 3>"],
-  "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
-  "exampleText": "<a complete, polished example response the student can study>",
-  "commonMistakeToAvoid": "<one sentence describing a common mistake {{sourceLanguageName}} speakers make in this type of writing, and how to avoid it>",
-  "instructionInSourceLanguage": "<2-3 sentences in {{sourceLanguageName}} telling the student what to write and why>",
-  "wordLimit": <suggested word count, e.g. 60>
+  "moduleGoal": "<one sentence: what open writing skill this practises>",
+  "primarySkill": "writing",
+  "secondarySkills": ["grammar", "vocabulary"],
+  "exerciseType": "open_writing_task",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Writing a clear status update'>",
+    "explanation": "<2-3 sentences: what makes this type of workplace writing effective — general advice about structure, purpose, and tone. No reference to the specific task below>",
+    "keyPoints": [
+      "<planning point, e.g. 'Identify your reader and purpose before writing'>",
+      "<structure point, e.g. 'Open with the main point, then add details'>",
+      "<clarity point, e.g. 'Keep sentences short and direct'>"
+    ],
+    "examples": [
+      { "phrase": "<useful writing phrase>", "meaning": "<when to use it>", "note": "<usage note>" },
+      { "phrase": "<second useful phrase>", "meaning": "<when to use it>", "note": "<usage note>" }
+    ],
+    "strategy": "<one sentence: how to plan and write the response well — general advice, not task-specific>",
+    "commonMistakes": [
+      "<common open writing mistake {{sourceLanguageName}} speakers make>",
+      "<second common mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about this type of writing, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the situation and write your response.",
+    "scenario": "<2-3 sentences describing the realistic workplace situation>",
+    "task": "Write a clear, professional response for this workplace situation.",
+    "exerciseData": {
+      "prompt": "<the specific writing task, e.g. 'Write a short paragraph explaining the project delay to your manager'>",
+      "tone": "<e.g. 'professional and direct' or 'formal'>",
+      "expectedLength": "<e.g. '60-80 words' or '2-3 short paragraphs'>",
+      "requiredInformation": ["<key point the response must include>", "<second key point>"],
+      "requiredPhrases": ["<useful phrase 1>", "<useful phrase 2>"],
+      "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
+      "successChecklist": ["<criterion 1>", "<criterion 2>", "<criterion 3>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Task completion", "Clarity", "Structure", "Grammar", "Vocabulary"],
+    "rubric": [
+      { "criterion": "Task completion", "weight": 0.35 },
+      { "criterion": "Clarity and structure", "weight": 0.30 },
+      { "criterion": "Grammar accuracy", "weight": 0.20 },
+      { "criterion": "Vocabulary use", "weight": 0.15 }
+    ],
+    "feedbackFocus": "Help the student improve clear, accurate, well-structured written workplace communication.",
+    "successCriteria": [
+      "The response is complete and addresses the situation.",
+      "The writing is clear and easy to follow.",
+      "The tone is appropriate for the workplace context."
+    ]
+  }
 }
 
 Rules:
+- learnContent must NEVER contain the specific writing prompt, expected answer, target phrases as a task, or any instruction asking the student to complete the writing. It teaches general workplace writing strategy only.
+- practiceContent.exerciseData.prompt must be the specific task instruction shown to the student in Practice.
 - The situation and prompt must be specific and believable for {{careerContext}} professionals.
-- targetPhrases must be phrases the student should actively try to use.
-- The example must be a complete, professional piece of writing matching the prompt.
-- instructionInSourceLanguage must be written entirely in {{sourceLanguageName}}.
 - Do not include any text outside the JSON object.
 """;
 

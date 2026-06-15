@@ -160,9 +160,32 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
         return s;
     }
 
-    private static string CompactContent(string contentJson)
+    // For staged activities pass only practiceContent.exerciseData + feedbackPlan to the evaluator.
+    // Marked internal for unit testing.
+    internal static string CompactContent(string contentJson)
     {
         if (string.IsNullOrWhiteSpace(contentJson) || contentJson == "{}") return "{}";
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("schemaVersion", out var sv)
+                && sv.GetString() == "module_stage_v1"
+                && root.TryGetProperty("practiceContent", out var pc)
+                && pc.TryGetProperty("exerciseData", out var ed))
+            {
+                var payload = new
+                {
+                    exerciseData = JsonSerializer.Deserialize<object>(ed.GetRawText(), JsonOptions),
+                    feedbackPlan = root.TryGetProperty("feedbackPlan", out var fp)
+                        ? JsonSerializer.Deserialize<object>(fp.GetRawText(), JsonOptions)
+                        : null,
+                };
+                var serialized = JsonSerializer.Serialize(payload, JsonOptions);
+                return serialized.Length > 3000 ? serialized[..3000] : serialized;
+            }
+        }
+        catch { /* fall through to legacy path */ }
         return contentJson.Length > 2000 ? contentJson[..2000] : contentJson;
     }
 }

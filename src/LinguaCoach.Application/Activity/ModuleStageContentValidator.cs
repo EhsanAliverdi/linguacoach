@@ -43,6 +43,9 @@ public static class ModuleStageContentValidator
         ["gap_fill_workplace_phrase"] = ["items"],
         ["listen_and_answer"]         = ["audioScript", "questions"],
         ["listen_and_gap_fill"]       = ["audioScript", "gaps"],
+        ["email_reply"]               = ["prompt", "incomingMessage"],
+        ["teams_chat_simulation"]     = ["prompt", "chatHistory"],
+        ["open_writing_task"]         = ["prompt"],
     };
 
     public static ValidationResult Validate(JsonElement root, ActivityType activityType, string? exercisePatternKey = null)

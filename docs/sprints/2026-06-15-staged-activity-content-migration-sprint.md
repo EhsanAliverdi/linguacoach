@@ -805,4 +805,85 @@ Migrate the two listening pattern-backed activities to `module_stage_v1`. Same r
 - Today pre-generation
 - MinIO/audio lifecycle
 - Planned future exercise format renderers/evaluators remain planned and non-runnable
+
+---
+
+## Phase 7C — migrate `email_reply`, `teams_chat_simulation`, and `open_writing_task` to `module_stage_v1`
+
+**Date:** 2026-06-15
+**Commit:** pending
+**Status:** complete
+
+### Goals
+
+Migrate the three writing/chat pattern-backed activities to `module_stage_v1`. Same recipe as Phase 7A/7B. No MinIO/audio lifecycle, no Today pre-generation, no speaking/reflection patterns.
+
+### Root cause fixed
+
+All three patterns have `ActivityType.WritingScenario`. The `AiActivityGeneratorHandler.GenerateActivityContentAsync` `WritingScenario` branch always calls `ValidateStagedContent`. Their flat prompts would fail that validation, causing on-demand generation to throw `AiResponseValidationException`. Pre-generated pool activities were unaffected (seeded before staged validation was enforced). Phase 7C fixes generation for all three patterns by producing `module_stage_v1`.
+
+### Files changed
+
+1. **`src/LinguaCoach.Application/Activity/ModuleStageContentValidator.cs`**
+   - Added `email_reply` → `["prompt", "incomingMessage"]` to `RequiredPracticeKeysByPatternKey`.
+   - Added `teams_chat_simulation` → `["prompt", "chatHistory"]` to `RequiredPracticeKeysByPatternKey`.
+   - Added `open_writing_task` → `["prompt"]` to `RequiredPracticeKeysByPatternKey`.
+   - Pattern-key lookup takes precedence over `ActivityType.WritingScenario` (which requires `["prompt", "situation", "audience", "tone"]`).
+
+2. **`src/LinguaCoach.Infrastructure/Activity/Evaluators/AiOpenEndedEvaluator.cs`**
+   - `CompactContent` now detects `module_stage_v1` and returns only `practiceContent.exerciseData` + `feedbackPlan` — excludes `learnContent`. Same pattern as `AiStructuredEvaluator.CompactContent` (Phase 7B). Marked `internal static` for unit testing.
+   - `AiStructuredEvaluator.CompactContent` (Phase 7B) already handles `email_reply` and `teams_chat_simulation` staged content correctly — no further changes needed.
+
+3. **`src/LinguaCoach.Persistence/Seed/DefaultAiSeeder.cs`**
+   - `ActivityGenerateEmailReplyContent`: Rewritten to produce `module_stage_v1`. `learnContent` teaches general email reply strategy (structure, tone, opener phrases). `practiceContent.exerciseData` carries `incomingMessage` (the email to reply to), `recipient`, `relationship`, `tone`, `prompt`, `requiredInformation`, `requiredPhrases`, `targetVocabulary`, `expectedLength`, `suggestedSubject`, `successChecklist`.
+   - `ActivityGenerateTeamsChatContent`: Rewritten to produce `module_stage_v1`. `learnContent` teaches general workplace chat communication (conciseness, tone, clarity). `practiceContent.exerciseData` carries `chatHistory` (array of message objects), `speakerRole`, `recipientRole`, `tone`, `prompt`, `requiredInformation`, `requiredPhrases`, `targetVocabulary`, `successChecklist`.
+   - `ActivityGenerateOpenWritingTaskContent`: Rewritten to produce `module_stage_v1`. `learnContent` teaches general workplace writing strategy (planning, structure, clarity). `practiceContent.exerciseData` carries `prompt`, `tone`, `expectedLength`, `requiredInformation`, `requiredPhrases`, `targetVocabulary`, `successChecklist`.
+   - All three prompts include strict Learn-stage rules: `learnContent` must not contain the actual writing task, incoming message/chat, expected answer, or any practice controls.
+
+4. **`tests/LinguaCoach.UnitTests/Activity/ModuleStageContentValidatorTests.cs`**
+   - `Validate_EmailReply_WithValidPayload_ReturnsValid` — valid staged `email_reply` passes.
+   - `Validate_EmailReply_MissingRequiredKey_Fails` (Theory: `prompt`, `incomingMessage`) — missing either required key fails.
+   - `Validate_EmailReply_WithPracticeControlInLearnContent_Fails` (Theory: `answerKey`, `submitLabel`, `textarea`) — practice controls forbidden in learnContent.
+   - `Validate_TeamsChat_WithValidPayload_ReturnsValid` — valid staged `teams_chat_simulation` passes.
+   - `Validate_TeamsChat_MissingRequiredKey_Fails` (Theory: `prompt`, `chatHistory`) — missing either required key fails.
+   - `Validate_OpenWritingTask_WithValidPayload_ReturnsValid` — valid staged `open_writing_task` passes.
+   - `Validate_OpenWritingTask_MissingPrompt_Fails` — missing `prompt` fails.
+   - `Validate_OpenWritingTask_WithControlKeyInLearnContent_Fails` (Theory: `submitLabel`, `checkLabel`, `textarea`) — control keys forbidden in learnContent.
+   - `RemoveExerciseDataKey` helper (added in Phase 7B) reused.
+
+5. **`tests/LinguaCoach.UnitTests/Activity/AiOpenEndedEvaluatorTests.cs`**
+   - `CompactContent_StagedContent_ExcludesLearnContentAndReturnsExerciseData` — staged JSON: result contains `prompt`, `feedbackFocus`; does not contain `learnContent` or teaching title.
+   - `CompactContent_LegacyFlatContent_ReturnedAsIs` — legacy flat JSON passes through.
+   - `CompactContent_EmptyJson_ReturnsEmptyObject` — `{}` returns `{}`.
+
+### No generator handler changes needed
+
+`AiActivityGeneratorHandler` `WritingScenario` branch already passes `context.ExercisePatternKey` to `ValidateStagedContent` (Phase 7B). No `StagedPatternKeys` additions needed — all WritingScenario activities go through staged validation unconditionally.
+
+### No `ActivityGetHandler` changes needed
+
+`BuildStageContent` detects `module_stage_v1` generically and passes through `primarySkill`, `secondarySkills`, and `exerciseType` from the JSON. Old flat activities in the pool are still handled by `AdaptLegacyWriting`. No changes needed.
+
+### No frontend changes needed
+
+`PatternBackedPresenter.teachContent` already returns `stagedLearning` for any pattern with `stageContent`. The email/chat/writing renderers in Practice are driven by `InteractionMode` (`EmailReply`, `ChatReply`, `FreeTextEntry`) — they already read `practiceContent.exerciseData` via `stageContent.practice.exerciseData`. No presenter or page changes required.
+
+### Evaluator routing unchanged
+
+- `email_reply` → `AiStructuredEvaluator` (MarkingMode.AiStructured) — `CompactContent` from Phase 7B already strips learnContent.
+- `teams_chat_simulation` → `AiStructuredEvaluator` (MarkingMode.AiStructured) — same.
+- `open_writing_task` → `AiOpenEndedEvaluator` (MarkingMode.AiOpenEnded) — `CompactContent` updated in this phase.
+
+### Verification
+
+- `dotnet build` clean (0 errors, 6 pre-existing warnings)
+- 574/574 backend unit tests pass (+17 from Phase 7C)
+- Angular build unchanged (no frontend changes in this phase)
+
+### Still out of scope
+
+- `spoken_response_from_prompt`, `speaking_roleplay_turn`, `lesson_reflection` — speaking/reflection patterns, deferred to Phase 7D
+- Today pre-generation
+- MinIO/audio lifecycle
+- Planned future exercise format renderers/evaluators remain planned and non-runnable
 - Practice Gym pool changes (existing compatibility unchanged)

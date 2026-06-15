@@ -188,4 +188,51 @@ public sealed class AiOpenEndedEvaluatorTests
 
         result.Score.Should().Be(66);
     }
+
+    // ── CompactContent — staged unwrapping ────────────────────────────────────
+
+    [Fact]
+    public void CompactContent_StagedContent_ExcludesLearnContentAndReturnsExerciseData()
+    {
+        var staged = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "title": "Write a status update",
+          "learnContent": { "teachingTitle": "SHOULD NOT APPEAR", "explanation": "hidden strategy" },
+          "practiceContent": {
+            "instructions": "Write a response.",
+            "exerciseData": {
+              "prompt": "Write a short status update for your manager.",
+              "tone": "professional",
+              "expectedLength": "60-80 words"
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": ["Task completion"], "feedbackFocus": "clarity" }
+        }
+        """;
+
+        var result = AiOpenEndedEvaluator.CompactContent(staged);
+
+        result.Should().Contain("prompt");
+        result.Should().Contain("feedbackFocus");
+        result.Should().NotContain("SHOULD NOT APPEAR");
+        result.Should().NotContain("learnContent");
+    }
+
+    [Fact]
+    public void CompactContent_LegacyFlatContent_ReturnedAsIs()
+    {
+        var legacy = """{"prompt":"Write a short update.","situation":"Your manager needs an update."}""";
+
+        var result = AiOpenEndedEvaluator.CompactContent(legacy);
+
+        result.Should().Contain("prompt");
+        result.Should().Contain("situation");
+    }
+
+    [Fact]
+    public void CompactContent_EmptyJson_ReturnsEmptyObject()
+    {
+        AiOpenEndedEvaluator.CompactContent("{}").Should().Be("{}");
+    }
 }
