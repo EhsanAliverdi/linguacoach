@@ -1,6 +1,6 @@
 import { ActivityDto, ActivityFeedbackDto, LearnContentVm } from '../../../core/models/activity.models';
 
-export type SkillIcon = 'speaking' | 'vocab' | 'listening' | 'writing';
+export type SkillIcon = 'speaking' | 'vocab' | 'listening' | 'writing' | 'reading';
 
 export interface SkillBadge {
   label: string;
