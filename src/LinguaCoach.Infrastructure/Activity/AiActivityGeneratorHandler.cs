@@ -19,6 +19,9 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "gap_fill_workplace_phrase",
         "listen_and_answer",
         "listen_and_gap_fill",
+        "spoken_response_from_prompt",
+        "speaking_roleplay_turn",
+        "lesson_reflection",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

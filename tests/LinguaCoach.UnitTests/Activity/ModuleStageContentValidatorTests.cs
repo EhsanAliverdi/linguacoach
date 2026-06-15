@@ -1135,4 +1135,246 @@ public sealed class ModuleStageContentValidatorTests
         return System.Text.Encoding.UTF8.GetString(ms.ToArray());
     }
 
+    // ── spoken_response_from_prompt pattern key tests ─────────────────────────
+
+    private const string ValidSpokenResponseJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Project delay update",
+      "moduleGoal": "Practise giving a clear spoken status update.",
+      "primarySkill": "speaking",
+      "secondarySkills": ["listening"],
+      "exerciseType": "spoken_response_from_prompt",
+      "learnContent": {
+        "teachingTitle": "Giving a clear spoken update",
+        "explanation": "A good spoken update leads with the main point, then adds a brief reason and next step. Keep your tone calm and professional.",
+        "keyPoints": ["Lead with the main point", "Speak at a steady pace"],
+        "examples": [{ "phrase": "I wanted to let you know that", "meaning": "signals an update", "note": "polite opener" }],
+        "strategy": "Plan three things before speaking: what happened, why, and what comes next.",
+        "commonMistakes": ["Speaking too fast when nervous"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the situation and record your spoken response.",
+        "scenario": "Your project is delayed. Your manager needs an update.",
+        "task": "Record a clear, professional spoken response.",
+        "exerciseData": {
+          "prompt": "Record a 30-second update for your manager explaining the project delay and your next step.",
+          "expectedResponseLength": "30-45 seconds",
+          "tone": "professional and direct",
+          "requiredInformation": ["Explain the delay", "Give next step"],
+          "requiredPhrases": ["I wanted to let you know"],
+          "targetVocabulary": ["delay", "update", "next step"],
+          "successChecklist": ["Explains delay clearly", "States next step", "Appropriate tone"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Fluency", "Clarity", "Tone", "Grammar and vocabulary"],
+        "rubric": [],
+        "feedbackFocus": "Clear, natural professional spoken updates.",
+        "successCriteria": ["The response addresses the situation clearly."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_SpokenResponse_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidSpokenResponseJson), ActivityType.SpeakingRolePlay, "spoken_response_from_prompt");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_SpokenResponse_MissingPrompt_Fails()
+    {
+        var json = RemoveExerciseDataKey(ValidSpokenResponseJson, "prompt");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "spoken_response_from_prompt");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("prompt"));
+    }
+
+    [Theory]
+    [InlineData("recordingControls")]
+    [InlineData("startRecording")]
+    [InlineData("microphoneInstructions")]
+    public void Validate_SpokenResponse_WithRecordingControlInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidSpokenResponseJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "spoken_response_from_prompt");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
+    // ── speaking_roleplay_turn pattern key tests ───────────────────────────────
+
+    private const string ValidSpeakingRoleplayTurnJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Handle a client complaint",
+      "moduleGoal": "Practise responding clearly to a client in a roleplay.",
+      "primarySkill": "speaking",
+      "secondarySkills": ["listening"],
+      "exerciseType": "speaking_roleplay_turn",
+      "learnContent": {
+        "teachingTitle": "Responding naturally in a roleplay",
+        "explanation": "A good roleplay response acknowledges what the other person said before making your point. Match your register to the situation.",
+        "keyPoints": ["Acknowledge before responding", "Match your register to the relationship"],
+        "examples": [{ "phrase": "I understand your concern", "meaning": "acknowledges the complaint", "note": "empathetic opener" }],
+        "strategy": "Listen for the key issue in the partner's turn, then respond to it directly.",
+        "commonMistakes": ["Ignoring what the partner said and just giving your own point"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Read the roleplay situation and record your spoken response.",
+        "scenario": "A client has contacted you about a delayed delivery.",
+        "task": "Record your spoken response to the client's turn.",
+        "exerciseData": {
+          "role": "Account Manager",
+          "partnerRole": "Client",
+          "partnerTurn": "I was expecting the delivery last Friday. Can you explain what happened?",
+          "prompt": "Respond to the client and explain the delay professionally.",
+          "expectedResponseLength": "30-45 seconds",
+          "tone": "professional and empathetic",
+          "requiredInformation": ["Acknowledge the delay", "Give a reason", "Provide next step"],
+          "requiredPhrases": ["I understand your concern"],
+          "targetVocabulary": ["delay", "apologise", "resolve"],
+          "successChecklist": ["Acknowledges delay", "Gives reason", "States next step"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Task completion", "Fluency", "Roleplay relevance", "Tone", "Grammar and vocabulary"],
+        "rubric": [],
+        "feedbackFocus": "Natural, clear roleplay response.",
+        "successCriteria": ["The response fits the partner's turn and is understandable."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_SpeakingRoleplayTurn_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidSpeakingRoleplayTurnJson), ActivityType.SpeakingRolePlay, "speaking_roleplay_turn");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("prompt")]
+    [InlineData("partnerTurn")]
+    public void Validate_SpeakingRoleplayTurn_MissingRequiredKey_Fails(string missingKey)
+    {
+        var json = RemoveExerciseDataKey(ValidSpeakingRoleplayTurnJson, missingKey);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "speaking_roleplay_turn");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(missingKey));
+    }
+
+    [Theory]
+    [InlineData("recordingControls")]
+    [InlineData("microphoneInstructions")]
+    public void Validate_SpeakingRoleplayTurn_WithRecordingControlInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidSpeakingRoleplayTurnJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "speaking_roleplay_turn");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
+    // ── lesson_reflection pattern key tests ───────────────────────────────────
+
+    private const string ValidLessonReflectionJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Lesson reflection: workplace emails",
+      "moduleGoal": "Reflect on today's email writing practice and identify a next improvement step.",
+      "primarySkill": "reflection",
+      "secondarySkills": ["writing"],
+      "exerciseType": "lesson_reflection",
+      "learnContent": {
+        "teachingTitle": "How to reflect on your learning",
+        "explanation": "Reflection helps you notice what you have improved and decide what to focus on next. Being specific about what you practised makes reflection more useful.",
+        "keyPoints": ["Be specific — name the exact phrase or skill you used", "Identify one thing you want to improve next time"],
+        "examples": [{ "phrase": "Today I practised writing clearer subject lines.", "meaning": "specific observation", "note": "good reflection is concrete" }],
+        "strategy": "Write one strength, one challenge, and one next step.",
+        "commonMistakes": ["Writing only vague comments like 'it was good'"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Take a moment to reflect on what you practised today.",
+        "scenario": "You have been practising professional email writing.",
+        "task": "Write a short reflection on today's practice.",
+        "exerciseData": {
+          "prompt": "What was the most useful phrase you used today? What would you do differently next time?",
+          "reflectionFocus": "email tone and workplace vocabulary",
+          "expectedLength": "3-5 sentences",
+          "successChecklist": [
+            "Identifies one specific strength from today",
+            "Names one thing to improve",
+            "Gives a concrete next step"
+          ]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Self-awareness", "Specificity", "Improvement plan", "Clarity"],
+        "rubric": [],
+        "feedbackFocus": "Help the student notice progress and choose a next improvement step.",
+        "successCriteria": ["The reflection identifies one strength, one challenge, and one next step."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_LessonReflection_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidLessonReflectionJson), ActivityType.WritingScenario, "lesson_reflection");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_LessonReflection_MissingPrompt_Fails()
+    {
+        var json = RemoveExerciseDataKey(ValidLessonReflectionJson, "prompt");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "lesson_reflection");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("prompt"));
+    }
+
+    [Theory]
+    [InlineData("textarea")]
+    [InlineData("submitLabel")]
+    [InlineData("answerKey")]
+    public void Validate_LessonReflection_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidLessonReflectionJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, "lesson_reflection");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

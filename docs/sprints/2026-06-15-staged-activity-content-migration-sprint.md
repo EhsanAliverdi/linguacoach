@@ -887,3 +887,92 @@ All three patterns have `ActivityType.WritingScenario`. The `AiActivityGenerator
 - MinIO/audio lifecycle
 - Planned future exercise format renderers/evaluators remain planned and non-runnable
 - Practice Gym pool changes (existing compatibility unchanged)
+
+---
+
+## Phase 7D — Speaking/reflection pattern-backed staged migration
+
+**Status:** complete
+**Date:** 2026-06-15
+
+### Patterns migrated
+
+- `spoken_response_from_prompt`
+- `speaking_roleplay_turn`
+- `lesson_reflection`
+
+This completes the pattern-backed staged migration. All pattern-backed activities now produce `module_stage_v1`.
+
+### ActivityType mapping
+
+| Pattern | ActivityType |
+|---|---|
+| `spoken_response_from_prompt` | `SpeakingRolePlay` |
+| `speaking_roleplay_turn` | `SpeakingRolePlay` |
+| `lesson_reflection` | `WritingScenario` |
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `src/LinguaCoach.Application/Activity/ModuleStageContentValidator.cs` | Added `spoken_response_from_prompt` (`prompt`), `speaking_roleplay_turn` (`prompt`, `partnerTurn`), `lesson_reflection` (`prompt`) to `RequiredPracticeKeysByPatternKey` |
+| `src/LinguaCoach.Infrastructure/Activity/AiActivityGeneratorHandler.cs` | Added three patterns to `StagedPatternKeys` (belt-and-suspenders; these ActivityTypes already validate staged unconditionally) |
+| `src/LinguaCoach.Persistence/Seed/DefaultAiSeeder.cs` | Rewrote all three generation prompts to produce `module_stage_v1` |
+| `tests/LinguaCoach.UnitTests/Activity/ModuleStageContentValidatorTests.cs` | +14 tests for all three patterns |
+
+### Generation — all AI-generated
+
+All three patterns are AI-generated on-demand via their registered `aiGeneratePromptKey`. No deterministic seed path.
+
+### Validation routing
+
+`spoken_response_from_prompt` and `speaking_roleplay_turn` use `ActivityType.SpeakingRolePlay` — the generator's top `case` block already calls `ValidateStagedContent` unconditionally for `SpeakingRolePlay`. The `StagedPatternKeys` additions are harmless redundancy.
+
+`lesson_reflection` uses `ActivityType.WritingScenario` — same: `WritingScenario` always validates staged.
+
+### Evaluator routing — unchanged
+
+- `spoken_response_from_prompt` → `AiOpenEndedEvaluator` (MarkingMode.AiOpenEnded) — `CompactContent` from Phase 7C already strips `learnContent` for staged activities.
+- `speaking_roleplay_turn` → `AiOpenEndedEvaluator` (MarkingMode.AiOpenEnded) — same.
+- `lesson_reflection` → `AiStructuredEvaluator` (MarkingMode.AiStructured) — `CompactContent` from Phase 7B already strips `learnContent`.
+
+### No frontend changes needed
+
+`PatternBackedPresenter` already returns `stagedLearning` for any pattern with `stageContent.learn`. Practice renderers read `stageContent.practice.exerciseData`. Old flat pool activities still handled by legacy adapters.
+
+### Learn-stage rules enforced
+
+`learnContent` for all three patterns must not contain recording controls, the final speaking/reflection prompt, expected answer, or any practice/submission controls. These are already in `ForbiddenLearnContentKeys`. Validator tests confirm enforcement.
+
+### Verification
+
+- `dotnet build` clean
+- All backend unit tests pass (+14 from Phase 7D)
+- Angular build unchanged (no frontend changes)
+
+### Constraints confirmed
+
+- Today pre-generation: not implemented
+- MinIO/audio lifecycle: not implemented
+- Planned future exercise format renderers/evaluators: remain planned and non-runnable
+- `/activity`, `exerciseType=`, `type=`, `pattern=` compatibility: preserved
+- Old student data: not deleted or broken
+
+### Pattern-backed staged migration complete
+
+All pattern-backed activities now produce `module_stage_v1`:
+
+| Phase | Patterns |
+|---|---|
+| 7A | `phrase_match`, `gap_fill_workplace_phrase` |
+| 7B | `listen_and_answer`, `listen_and_gap_fill` |
+| 7C | `email_reply`, `teams_chat_simulation`, `open_writing_task` |
+| 7D | `spoken_response_from_prompt`, `speaking_roleplay_turn`, `lesson_reflection` |
+
+### Remaining non-pattern architecture items
+
+- Today pre-generation (future phase)
+- MinIO/audio lifecycle (future phase)
+- Planned future exercise format renderers/evaluators (future phase, non-runnable)
+- Practice Gym dynamic skill selection — existing, unchanged
+- Practice Gym pool health/monitoring — future phase

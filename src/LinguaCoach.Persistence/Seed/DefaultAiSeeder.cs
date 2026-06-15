@@ -1010,24 +1010,68 @@ Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to address: {{recentMistakes}}
 
-Create a workplace speaking prompt. Return ONLY valid JSON:
+Return ONLY valid JSON in this exact format:
 
 {
-  "title": "<short title>",
-  "scenario": "<2-3 sentences describing the workplace situation>",
-  "studentRole": "<student's role>",
-  "listenerRole": "<who the student is speaking to>",
-  "speakingGoal": "<what the student must communicate>",
-  "prompt": "<the specific spoken task, e.g. 'Record a 30-second update for your team about the project delay'>",
-  "expectedPoints": ["<key point 1 the answer should cover>", "<key point 2>", "<key point 3>"],
-  "suggestedPhrases": ["<helpful phrase 1>", "<helpful phrase 2>", "<helpful phrase 3>"],
-  "maxDurationSeconds": 60
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what spoken response skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["listening"],
+  "exerciseType": "spoken_response_from_prompt",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Giving a clear spoken update'>",
+    "explanation": "<2-3 sentences: what makes this type of spoken workplace response effective — general advice about structure, tone, and clarity. No reference to the specific task below>",
+    "keyPoints": [
+      "<response structure point, e.g. 'Open with the main point, then give a brief reason'>",
+      "<fluency point, e.g. 'Speak at a steady pace and use pauses deliberately'>"
+    ],
+    "examples": [
+      { "phrase": "<useful spoken phrase>", "meaning": "<when to use it>", "note": "<tone/pronunciation note>" },
+      { "phrase": "<second useful phrase>", "meaning": "<when to use it>", "note": "<tone/pronunciation note>" }
+    ],
+    "strategy": "<one sentence: how to prepare and deliver the response clearly — general advice, not task-specific>",
+    "commonMistakes": [
+      "<common spoken response mistake {{sourceLanguageName}} speakers make>",
+      "<second common mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about this type of spoken response, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the situation and record your spoken response.",
+    "scenario": "<2-3 sentences describing the realistic workplace situation>",
+    "task": "Record a clear, professional spoken response for this workplace situation.",
+    "exerciseData": {
+      "prompt": "<the specific spoken task shown to the student in Practice, e.g. 'Record a 30-second update for your manager about the project delay'>",
+      "expectedResponseLength": "<e.g. '30-60 seconds' or '3-5 sentences spoken aloud'>",
+      "tone": "<e.g. 'professional and direct'>",
+      "requiredInformation": ["<key point the response must include>", "<second key point>"],
+      "requiredPhrases": ["<useful phrase 1>", "<useful phrase 2>"],
+      "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
+      "successChecklist": ["<criterion 1>", "<criterion 2>", "<criterion 3>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Task completion", "Fluency", "Clarity", "Tone", "Grammar and vocabulary"],
+    "rubric": [
+      { "criterion": "Task completion", "weight": 0.35 },
+      { "criterion": "Fluency and clarity", "weight": 0.30 },
+      { "criterion": "Grammar accuracy", "weight": 0.20 },
+      { "criterion": "Vocabulary and tone", "weight": 0.15 }
+    ],
+    "feedbackFocus": "Help the student give clear, natural, professional spoken responses.",
+    "successCriteria": [
+      "The response addresses the situation clearly.",
+      "The tone is appropriate for the workplace context.",
+      "The student speaks fluently and is easy to understand."
+    ]
+  }
 }
 
 Rules:
-- The scenario must be realistic for {{careerContext}} professionals.
-- expectedPoints should be specific and verifiable from a spoken response.
-- suggestedPhrases should be professional and at the right level for {{cefrLevel}}.
+- learnContent must NEVER contain the specific speaking prompt, expected answer, scenario details, recording controls, or any instruction asking the student to complete the speaking task. It teaches general spoken response strategy only.
+- practiceContent.exerciseData.prompt must be the specific spoken task instruction shown to the student in Practice.
+- The scenario and prompt must be specific and believable for {{careerContext}} professionals.
 - Do not include any text outside the JSON object.
 """;
 
@@ -1037,24 +1081,69 @@ You are an English language teacher creating a session-closing reflection activi
 Student level: {{cefrLevel}}
 Topic area: {{topicHint}}
 
-Create a brief, encouraging lesson reflection. Return ONLY valid JSON:
+Return ONLY valid JSON in this exact format:
 
 {
-  "title": "Lesson reflection",
-  "instructions": "Take a moment to reflect on what you practised today.",
-  "reflectionPrompts": [
-    "<thoughtful reflection question 1 relevant to today's topic>",
-    "<reflection question 2>",
-    "<reflection question 3>"
-  ],
-  "keyPhrase": "<one key phrase from today's lesson worth remembering>",
-  "lessonSummary": "<1-2 sentences summarising what was practised today>"
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, e.g. 'Lesson reflection: workplace emails'>",
+  "moduleGoal": "<one sentence: what reflection skill or self-awareness this practises>",
+  "primarySkill": "reflection",
+  "secondarySkills": ["writing"],
+  "exerciseType": "lesson_reflection",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'How to reflect on your learning'>",
+    "explanation": "<2-3 sentences: why reflection helps language learning and how to notice genuine progress — general advice. No reference to the specific reflection task below>",
+    "keyPoints": [
+      "<reflection strategy point, e.g. 'Be specific: name the exact phrase or skill you practised'>",
+      "<self-correction point, e.g. 'Identify one thing you want to improve next time'>"
+    ],
+    "examples": [
+      { "phrase": "<useful reflection phrase>", "meaning": "<when to use it>", "note": "<usage note>" },
+      { "phrase": "<second useful reflection phrase>", "meaning": "<when to use it>", "note": "<usage note>" }
+    ],
+    "strategy": "<one sentence: how to write a useful reflection — general advice, not task-specific>",
+    "commonMistakes": [
+      "<common reflection mistake, e.g. 'Writing only vague comments like \"it was good\"'>",
+      "<second common mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about reflecting on English learning, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Take a moment to reflect on what you practised today.",
+    "scenario": "<1-2 sentences describing today's topic area, e.g. 'You have been practising workplace email writing.'>",
+    "task": "Write a short reflection on today's practice.",
+    "exerciseData": {
+      "prompt": "<the specific reflection prompt shown to the student in Practice, e.g. 'What was the most useful phrase you used today? What would you do differently next time?'>",
+      "reflectionFocus": "<what the student should focus on, e.g. 'email tone and workplace vocabulary'>",
+      "expectedLength": "<e.g. '3-5 sentences'>",
+      "successChecklist": [
+        "The reflection identifies one specific strength from today.",
+        "The reflection names one thing to improve.",
+        "The student gives a concrete next step."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Self-awareness", "Specificity", "Improvement plan", "Clarity"],
+    "rubric": [
+      { "criterion": "Self-awareness", "weight": 0.35 },
+      { "criterion": "Specificity", "weight": 0.30 },
+      { "criterion": "Improvement plan", "weight": 0.20 },
+      { "criterion": "Clarity", "weight": 0.15 }
+    ],
+    "feedbackFocus": "Help the student notice progress and choose a concrete next improvement step.",
+    "successCriteria": [
+      "The reflection identifies one strength, one challenge, and one next step.",
+      "The student is specific about what they practised today."
+    ]
+  }
 }
 
 Rules:
-- Reflection prompts must be specific to the topic studied, not generic.
+- learnContent must NEVER contain the specific reflection prompt, expected answer, or any instruction asking the student to complete the reflection task. It teaches general reflection strategy only.
+- practiceContent.exerciseData.prompt must be the specific reflection question shown to the student in Practice.
 - Keep the tone warm and encouraging.
-- lessonSummary should mention the workplace skill practised.
+- The reflection topic must be specific to {{topicHint}} — not generic.
 - Do not include any text outside the JSON object.
 """;
 
@@ -1144,25 +1233,72 @@ Career context: {{careerContext}}
 Topic area: {{topicHint}}
 Recent mistakes to address: {{recentMistakes}}
 
-Create a workplace roleplay scenario where the student records one spoken turn.
-Return ONLY valid JSON:
+Return ONLY valid JSON in this exact format:
 
 {
-  "title": "<short title>",
-  "scenario": "<2-3 sentences describing the workplace roleplay situation>",
-  "studentRole": "<student's role in the roleplay>",
-  "listenerRole": "<who the student is speaking to>",
-  "speakingGoal": "<what the student must communicate>",
-  "prompt": "<the specific spoken task, e.g. 'Record a 30-second response explaining the delay to your manager'>",
-  "expectedPoints": ["<key point 1 the answer should cover>", "<key point 2>", "<key point 3>"],
-  "suggestedPhrases": ["<helpful phrase 1>", "<helpful phrase 2>", "<helpful phrase 3>"],
-  "maxDurationSeconds": 60
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what roleplay speaking skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["listening"],
+  "exerciseType": "speaking_roleplay_turn",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Responding naturally in a workplace conversation'>",
+    "explanation": "<2-3 sentences: what makes a good spoken roleplay response — general advice about listening, responding clearly, and matching register. No reference to the specific roleplay task below>",
+    "keyPoints": [
+      "<roleplay response point, e.g. 'Acknowledge what the other person said before giving your response'>",
+      "<tone/fluency point, e.g. 'Match your register to the situation — formal with a manager, warmer with a peer'>"
+    ],
+    "examples": [
+      { "phrase": "<useful roleplay phrase>", "meaning": "<when to use it>", "note": "<tone/pronunciation note>" },
+      { "phrase": "<second useful roleplay phrase>", "meaning": "<when to use it>", "note": "<tone/pronunciation note>" }
+    ],
+    "strategy": "<one sentence: how to listen carefully and respond naturally in a roleplay — general advice, not task-specific>",
+    "commonMistakes": [
+      "<common roleplay mistake {{sourceLanguageName}} speakers make>",
+      "<second common mistake>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about spoken workplace roleplay, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the roleplay situation and record your spoken response.",
+    "scenario": "<2-3 sentences describing the realistic workplace roleplay situation>",
+    "task": "Record your spoken response to your partner's turn.",
+    "exerciseData": {
+      "role": "<student's role in the roleplay, e.g. 'Project coordinator'>",
+      "partnerRole": "<other speaker's role, e.g. 'Your manager'>",
+      "partnerTurn": "<exactly what the partner says to start the roleplay turn>",
+      "prompt": "<the specific spoken task shown to the student in Practice, e.g. 'Respond to your manager and explain the delay clearly'>",
+      "expectedResponseLength": "<e.g. '30-60 seconds' or '3-5 sentences spoken aloud'>",
+      "tone": "<e.g. 'professional and respectful'>",
+      "requiredInformation": ["<key point the response must include>", "<second key point>"],
+      "requiredPhrases": ["<useful phrase 1>", "<useful phrase 2>"],
+      "targetVocabulary": ["<word 1>", "<word 2>", "<word 3>"],
+      "successChecklist": ["<criterion 1>", "<criterion 2>", "<criterion 3>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Task completion", "Fluency", "Roleplay relevance", "Tone", "Grammar and vocabulary"],
+    "rubric": [
+      { "criterion": "Task completion", "weight": 0.35 },
+      { "criterion": "Fluency and relevance", "weight": 0.30 },
+      { "criterion": "Grammar accuracy", "weight": 0.20 },
+      { "criterion": "Vocabulary and tone", "weight": 0.15 }
+    ],
+    "feedbackFocus": "Help the student respond naturally and clearly to a partner's spoken turn.",
+    "successCriteria": [
+      "The response fits the partner's turn and addresses the situation.",
+      "The tone is appropriate for the workplace and role.",
+      "The student speaks fluently and is easy to understand."
+    ]
+  }
 }
 
 Rules:
+- learnContent must NEVER contain the partnerTurn, prompt, expected answer, recording controls, or any instruction asking the student to complete the roleplay task. It teaches general roleplay response strategy only.
+- practiceContent.exerciseData.partnerTurn must be the exact words the partner says.
+- practiceContent.exerciseData.prompt must be the specific spoken task instruction shown to the student in Practice.
 - The scenario must be realistic for {{careerContext}} professionals.
-- expectedPoints should be specific and verifiable from a spoken response.
-- suggestedPhrases should be professional and at the right level for {{cefrLevel}}.
 - Do not include any text outside the JSON object.
 """;
 
