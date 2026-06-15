@@ -25,6 +25,16 @@ export interface ExerciseTypeSelectionResponse {
   reason?: string | null;
 }
 
+export interface PracticeGymNextResponse {
+  hasActivity: boolean;
+  activityId?: string | null;
+  exerciseType?: string | null;
+  primarySkill?: string | null;
+  source?: 'pool' | 'onDemandFallback' | null;
+  poolItemId?: string | null;
+  reason?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ActivityService {
   private readonly base = `${environment.apiUrl}/activity`;
@@ -39,6 +49,13 @@ export class ActivityService {
     return this.http.get<ExerciseTypeSelectionResponse>(`${this.base}/exercise-types/select`, {
       params: { skill, context: 'practiceGym' },
     });
+  }
+
+  getPracticeGymNext(options: { skill?: string; exerciseType?: string }): Observable<PracticeGymNextResponse> {
+    const params: Record<string, string> = {};
+    if (options.exerciseType) params['exerciseType'] = options.exerciseType;
+    if (options.skill) params['skill'] = options.skill;
+    return this.http.get<PracticeGymNextResponse>(`${this.base}/practice-gym/next`, { params });
   }
 
   getNext(type?: ActivityType, patternKey?: string): Observable<ActivityDto> {

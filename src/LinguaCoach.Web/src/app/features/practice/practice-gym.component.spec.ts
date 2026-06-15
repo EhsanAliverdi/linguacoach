@@ -25,7 +25,7 @@ describe('PracticeGymComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'selectPracticeGymExerciseType']);
+    activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
     activityService.getExerciseTypes.and.returnValue(of([readyListening, plannedReading]));
 
     await TestBed.configureTestingModule({
@@ -43,28 +43,51 @@ describe('PracticeGymComponent', () => {
     fixture.detectChanges();
   });
 
-  it('clicking Listening calls selection flow and routes with exerciseType', () => {
-    activityService.selectPracticeGymExerciseType.and.returnValue(of({
-      hasSelection: true,
-      selectedExerciseType: {
-        key: 'listen_and_answer', displayName: 'Listen and Answer', primarySkill: 'listening', secondarySkills: [],
-        rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', isAvailableForGeneration: true,
-      },
+  it('clicking Listening calls the pool-aware start flow and opens the returned activity', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-123',
+      exerciseType: 'listen_and_answer',
+      primarySkill: 'listening',
+      source: 'pool',
+      poolItemId: 'pool-1',
       reason: null,
     }));
 
     component.selectSkill('listening');
 
-    expect(activityService.selectPracticeGymExerciseType).toHaveBeenCalledWith('listening');
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
-      queryParams: { exerciseType: 'listen_and_answer', returnTo: '/practice' },
+      queryParams: { activityId: 'activity-123', returnTo: '/practice' },
+    });
+  });
+
+  it('on-demand fallback source still opens the returned activity', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-456',
+      exerciseType: 'listen_and_answer',
+      primarySkill: 'listening',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('listening');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-456', returnTo: '/practice' },
     });
   });
 
   it('no eligible result does not route and shows a safe message', () => {
-    activityService.selectPracticeGymExerciseType.and.returnValue(of({
-      hasSelection: false,
-      selectedExerciseType: null,
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: false,
+      activityId: null,
+      exerciseType: null,
+      primarySkill: null,
+      source: null,
+      poolItemId: null,
       reason: 'No ready Practice Gym exercise is available for reading yet.',
     }));
 
@@ -75,7 +98,7 @@ describe('PracticeGymComponent', () => {
   });
 
   it('selection failure does not route', () => {
-    activityService.selectPracticeGymExerciseType.and.returnValue(throwError(() => new Error('offline')));
+    activityService.getPracticeGymNext.and.returnValue(throwError(() => new Error('offline')));
 
     component.selectSkill('listening');
 

@@ -561,6 +561,45 @@ Future progress records should support:
 * feedback viewed
 * retry count
 
+## PR — Practice Gym pre-generation pool foundation (Phase 4), completed
+
+Implements item 3 of "Required follow-up architecture" above, scoped as a
+foundation only (the acceptance criteria below remain the long-term target).
+
+Completed work:
+
+1. `PracticeCacheStatus.Failed` added; `PracticeActivityCache.MarkFailed()`.
+2. `IPracticeGymPoolService` (`FindReadyForExerciseTypeAsync`,
+   `FindReadyForSkillAsync`, `MarkConsumedAsync`, `MarkFailedAsync`) and
+   `PracticeGymPoolService` implementation, reusing `PracticeActivityCache` —
+   see `docs/architecture/learning-activity-engine.md#practice-gym-pre-generation-pool-foundation`.
+3. `GET /api/activity/practice-gym/next?skill=<skill>|exerciseType=<key>` —
+   pool-first, on-demand-fallback endpoint returning `source: pool|onDemandFallback`.
+4. Frontend `practice-gym.component.ts` skill-card click flow rewritten to call
+   `getPracticeGymNext` and route to `/activity?activityId=<id>&returnTo=/practice`.
+5. Tests:
+   * `practice-gym.component.spec.ts` — pool source, on-demand fallback source,
+     no-eligible-result, and request-failure cases.
+   * `PracticeGymNextEndpointTests` (integration) — pool hit by exact type and
+     by skill, on-demand fallback, disabled type, planned type, empty
+     request, unauthenticated, plus regression checks for
+     `/api/activity/next?exerciseType=`, `?pattern=`, `?type=`.
+   * `e2e/practice-gym.spec.ts` — updated mocks for `practice-gym/next`,
+     skill cards now assert `/activity?activityId=...` routing.
+
+Out of scope for this PR (unchanged): Today pre-generation, MinIO/audio asset
+lifecycle, new PTE renderers/evaluators, background pool-fill job changes.
+
+## Additional fix landed alongside this PR — T44 migration Designer.cs
+
+Unrelated production bug fixed in the same change per explicit instruction:
+see `docs/reviews/2026-06-15-t44-exercise-type-catalog-migration-fix.md`. The
+`T44_ExerciseTypeCatalog` migration was missing its `*.Designer.cs`, so
+`exercise_type_definitions` was never created by `Database.Migrate()` and
+`ExerciseTypeDefinitionSeeder.SeedAsync` crashed the API container on startup.
+Regenerated the migration pair; verified via integration tests that run
+`Database.Migrate()`.
+
 ## Acceptance criteria for follow-up architecture
 
 * Staged schema is compatible with pre-generated modules.

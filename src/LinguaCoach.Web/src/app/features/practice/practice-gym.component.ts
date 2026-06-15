@@ -33,17 +33,16 @@ export class PracticeGymComponent implements OnInit {
     this.selectionMessage.set(null);
     this.selectingSkill.set(skill);
 
-    this.activityService.selectPracticeGymExerciseType(skill).subscribe({
+    this.activityService.getPracticeGymNext({ skill }).subscribe({
       next: result => {
         this.selectingSkill.set(null);
-        const selected = result.selectedExerciseType;
-        if (!result.hasSelection || !selected?.key) {
+        if (!result.hasActivity || !result.activityId) {
           this.selectionMessage.set(result.reason ?? 'This skill is not ready in Practice Gym yet.');
           return;
         }
 
         this.router.navigate(['/activity'], {
-          queryParams: { exerciseType: selected.key, returnTo: '/practice' },
+          queryParams: { activityId: result.activityId, returnTo: '/practice' },
         });
       },
       error: () => {

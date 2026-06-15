@@ -7,5 +7,6 @@ public enum PracticeCacheStatus
     Ready = 1,
     Assigned = 2,
     Completed = 3,
-    Expired = 4
+    Expired = 4,
+    Failed = 5
 }

@@ -557,3 +557,65 @@ by stable ordering. Future Practice Gym pre-generation should reuse these
 eligibility rules before selecting from a ready pool. Adaptive selection can then
 consider weak skills, recent attempts, variety, spaced repetition, admin
 priority, and Today/Gym pool availability.
+
+## Practice Gym pre-generation pool (foundation)
+
+`GET /api/activity/practice-gym/next` is the pool-aware entry point for both
+Practice Gym skill cards and exact exercise type cards. It replaces direct
+`/activity?exerciseType=...&returnTo=/practice` routing as the click-to-start
+flow, while `/api/activity/next` (`exerciseType=`, `type=`, `pattern=`) remains
+unchanged for backward compatibility and as the fallback generation path.
+
+Flow:
+
+1. Resolve eligible exercise type(s) via `IExerciseTypeRegistry`
+   (`IsEnabled && ImplementationStatus == "ready" && SupportsPracticeGym`),
+   either the exact requested `exerciseType` or all types matching the
+   requested `primarySkill`.
+2. `IPracticeGymPoolService.FindReadyForExerciseTypeAsync` /
+   `FindReadyForSkillAsync` look for a `PracticeActivityCache` row for that
+   student with `Status == Ready`, a linked `LearningActivity`, and not
+   expired. If found, the row is marked `Assigned` (reserved) and its
+   `LearningActivityId` is returned with `source: "pool"`.
+3. If no ready pool row exists, the endpoint falls back to the existing
+   on-demand path (`GetNextActivityQuery` → `ActivityGetHandler`), returning
+   `source: "onDemandFallback"`.
+4. If neither a skill nor an exercise type is provided, or no eligible/ready
+   exercise type exists for the request, the endpoint returns
+   `hasActivity: false` with a `reason` string and does not route.
+
+### Design decision — reuse `PracticeActivityCache`, no new pool table
+
+The pool is implemented as a lookup over the existing `practice_activity_cache`
+table rather than a new `PracticeGymPoolItem` entity. `PatternKey` doubles as
+the exercise type key for pattern-backed exercise types. `PracticeCacheStatus`
+gained a `Failed` value (alongside `Pending/Ready/Assigned/Completed/Expired`)
+for pool items that could not be served; `Assigned` is the reservation state
+(no separate `Reserved` status was introduced). This is an additive enum value
+stored as `int`, requiring no schema migration.
+
+Reservation (`ReserveReadyItemAsync`) mirrors
+`ActivityGetHandler.TryAssignReadyPracticeCacheAsync`: it selects the oldest
+`Ready` row for `(StudentProfileId, PatternKey)`, verifies the linked
+`LearningActivity` is still active (else `MarkExpired` and retry), then calls
+`MarkAssigned()` with a `DbUpdateConcurrencyException` retry loop. Because both
+paths mark rows `Assigned` before returning them, a row can never be served to
+two requests concurrently — if the pool service reserves the only `Ready` row,
+the on-demand fallback's own cache lookup finds nothing and proceeds to AI
+generation.
+
+### Admin-disable behaviour
+
+Both pool lookup methods filter through `IExerciseTypeRegistry`, so disabled or
+`planned` exercise types are never returned from the pool or used for fallback
+generation — no separate expiry of existing `PracticeActivityCache` rows for
+disabled types is needed; they simply stop being selectable.
+
+### Explicitly out of scope for this foundation
+
+* Today lesson pre-generation (`/api/sessions/*` is unaffected).
+* MinIO/object-storage audio asset lifecycle changes.
+* New PTE renderers or evaluators.
+* Background pool-fill changes — `PracticeGymGenerationJob` /
+  `PracticeGymBufferRefillJob` already populate `PracticeActivityCache` via the
+  same registry eligibility rules and are unchanged.

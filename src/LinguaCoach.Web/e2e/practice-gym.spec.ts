@@ -50,7 +50,7 @@ async function mockPracticeRoute(page: Page) {
     });
   });
 
-  await page.route('**/api/activity/exercise-types/select?**', async route => {
+  await page.route('**/api/activity/practice-gym/next?**', async route => {
     const url = new URL(route.request().url());
     const skill = url.searchParams.get('skill');
     const key = skill === 'listening' ? 'listen_and_answer' : skill === 'writing' ? 'open_writing_task' : skill === 'speaking' ? 'speaking_roleplay_turn' : skill === 'vocabulary' ? 'phrase_match' : null;
@@ -58,8 +58,8 @@ async function mockPracticeRoute(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(key
-        ? { hasSelection: true, selectedExerciseType: { key, displayName: key, primarySkill: skill, secondarySkills: [], rendererKey: 'test', evaluatorKey: 'test', isAvailableForGeneration: true }, reason: null }
-        : { hasSelection: false, selectedExerciseType: null, reason: 'No ready Practice Gym exercise is available.' }),
+        ? { hasActivity: true, activityId: `activity-${key}`, exerciseType: key, primarySkill: skill, source: 'pool', poolItemId: 'pool-1', reason: null }
+        : { hasActivity: false, activityId: null, exerciseType: null, primarySkill: null, source: null, poolItemId: null, reason: 'No ready Practice Gym exercise is available.' }),
     });
   });
 
@@ -180,28 +180,28 @@ test('Vocabulary (Word cards) card links to /module/gym-phrase_match', async ({ 
   await expect(card).toHaveAttribute('href', '/module/gym-phrase_match');
 });
 
-test('Listening skill card selects an exerciseType and opens activity', async ({ page }) => {
+test('Listening skill card opens a pool-backed activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await page.getByTestId('practice-card-listening').click();
-  await expect(page).toHaveURL(/\/activity\?exerciseType=listen_and_answer/);
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-listen_and_answer/);
 });
 
-test('Writing skill card selects an exerciseType and opens activity', async ({ page }) => {
+test('Writing skill card opens a pool-backed activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await page.getByTestId('practice-card-writing').click();
-  await expect(page).toHaveURL(/\/activity\?exerciseType=open_writing_task/);
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-open_writing_task/);
 });
 
-test('Speaking skill card selects an exerciseType and opens activity', async ({ page }) => {
+test('Speaking skill card opens a pool-backed activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
   await page.getByTestId('speaking-card').click();
-  await expect(page).toHaveURL(/\/activity\?exerciseType=speaking_roleplay_turn/);
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-speaking_roleplay_turn/);
 });
 
 // ── Coming soon cards have no navigable links ──────────────────────────────────

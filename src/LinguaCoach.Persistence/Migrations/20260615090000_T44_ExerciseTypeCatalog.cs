@@ -34,8 +34,8 @@ namespace LinguaCoach.Persistence.Migrations
                     requires_image = table.Column<bool>(type: "boolean", nullable: false),
                     supports_practice_gym = table.Column<bool>(type: "boolean", nullable: false),
                     supports_today_lesson = table.Column<bool>(type: "boolean", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -57,7 +57,8 @@ namespace LinguaCoach.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "exercise_type_definitions");
+            migrationBuilder.DropTable(
+                name: "exercise_type_definitions");
         }
     }
 }

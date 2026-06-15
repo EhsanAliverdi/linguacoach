@@ -63,19 +63,25 @@ All four activity types use the unified `/activity` path.
 
 ## Practice Gym - activated pattern cards
 
-`GET /api/activity/next` accepts canonical `?exerciseType=<key>` plus legacy `?pattern=<key>` and `?type=` query parameters.
+Skill cards call `GET /api/activity/practice-gym/next?skill=<skill>`. Exact
+exercise type cards call `GET /api/activity/practice-gym/next?exerciseType=<key>`.
+Both serve a ready pre-generated activity from the pool (`source: "pool"`) when
+available, or fall back to on-demand generation (`source: "onDemandFallback"`)
+and route to `/activity?activityId=<id>&returnTo=/practice`.
 
-| Practice Gym card | Route | Status |
+`GET /api/activity/next` still accepts canonical `?exerciseType=<key>` plus legacy `?pattern=<key>` and `?type=` query parameters, unchanged, as the underlying fallback/compatibility path.
+
+| Practice Gym card | Selection | Status |
 |---|---|---|
-| Vocabulary class | `/activity?exerciseType=phrase_match&returnTo=/practice` | functional word-card lesson + matching practice |
-| Listening | dynamic registry selection → `/activity?exerciseType=<key>&returnTo=/practice` | functional |
+| Vocabulary class | `/activity?exerciseType=phrase_match&returnTo=/practice` (module link, unaffected) | functional word-card lesson + matching practice |
+| Listening | pool-aware skill selection | functional |
 | Reading | - | Coming soon |
-| Writing | dynamic registry selection → `/activity?exerciseType=<key>&returnTo=/practice` | functional |
-| Speaking | dynamic registry selection → `/activity?exerciseType=<key>&returnTo=/practice` | functional recorded prompt, no pronunciation claim |
-| Matching | `/activity?exerciseType=phrase_match&returnTo=/practice` | functional |
-| Fill in the blanks | `/activity?exerciseType=gap_fill_workplace_phrase&returnTo=/practice` | functional |
-| Email | `/activity?exerciseType=email_reply&returnTo=/practice` | functional |
-| Workplace Chat | `/activity?exerciseType=teams_chat_simulation&returnTo=/practice` | functional |
+| Writing | pool-aware skill selection | functional |
+| Speaking | pool-aware skill selection | functional recorded prompt, no pronunciation claim |
+| Matching | `/activity?exerciseType=phrase_match&returnTo=/practice` (module link, unaffected) | functional |
+| Fill in the blanks | `/activity?exerciseType=gap_fill_workplace_phrase&returnTo=/practice` (module link, unaffected) | functional |
+| Email | `/activity?exerciseType=email_reply&returnTo=/practice` (module link, unaffected) | functional |
+| Workplace Chat | `/activity?exerciseType=teams_chat_simulation&returnTo=/practice` (module link, unaffected) | functional |
 | Multiple choice | - | Coming soon |
 | Sentence transformation | - | Coming soon |
 | Error correction | - | Coming soon |

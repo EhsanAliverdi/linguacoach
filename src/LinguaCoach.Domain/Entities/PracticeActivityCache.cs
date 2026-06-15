@@ -70,4 +70,5 @@ public sealed class PracticeActivityCache : BaseEntity
     public void MarkAssigned() => Status = PracticeCacheStatus.Assigned;
     public void MarkCompleted() => Status = PracticeCacheStatus.Completed;
     public void MarkExpired() => Status = PracticeCacheStatus.Expired;
+    public void MarkFailed() => Status = PracticeCacheStatus.Failed;
 }
