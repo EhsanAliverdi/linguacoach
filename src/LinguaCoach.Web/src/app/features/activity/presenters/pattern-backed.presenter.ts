@@ -72,6 +72,8 @@ export class PatternBackedPresenter implements ActivityPagePresenter {
         return { label: 'Vocabulary', background: '#ede9fe', color: '#6d28d9', icon: 'vocab' };
       case 'audioAndFreeText':
       case 'audioAndGapFill':
+      case 'listeningFillInBlanks':
+      case 'highlightCorrectSummary':
         return { label: 'Listening', background: '#e0f2fe', color: '#0369a1', icon: 'listening' };
       case 'readOnly':
         return { label: 'Reflection', background: 'var(--sp-writing-soft)', color: 'var(--sp-writing-ink)', icon: 'writing' };

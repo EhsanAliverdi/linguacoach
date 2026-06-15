@@ -2300,4 +2300,103 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── highlight_correct_summary pattern key tests ───────────────────────────
+
+    private const string ValidHighlightCorrectSummaryJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Choosing the best summary: project update",
+      "moduleGoal": "Practise choosing the summary that best matches a spoken passage.",
+      "primarySkill": "listening",
+      "secondarySkills": ["reading"],
+      "exerciseType": "highlight_correct_summary",
+      "learnContent": {
+        "teachingTitle": "Choosing the best summary",
+        "explanation": "Listen for the overall meaning of the whole passage, then compare each summary against it and reject any that add, distort, or omit a key fact.",
+        "keyPoints": ["Listen for the main idea, not single words", "Compare each summary against the whole passage", "Reject summaries that distort or omit key facts"],
+        "examples": [{ "phrase": "the main point is", "meaning": "signals the central idea", "note": "use it to anchor your summary choice" }],
+        "strategy": "Listen for the gist, then select the summary that most accurately reflects it.",
+        "commonMistakes": ["Matching one detail but missing the main point", "Choosing a summary that adds new information", "Choosing a summary that contradicts a key fact"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen to the audio, then choose the summary that best matches what you heard.",
+        "scenario": "A team lead gives a short project status update.",
+        "task": "Listen and choose the best summary.",
+        "exerciseData": {
+          "audioScript": "Thanks everyone. The redesign is on track and we'll ship the first release next Friday. We added one more reviewer to speed up testing, and the budget is unchanged.",
+          "audioUrl": null,
+          "question": "Which summary best matches the audio?",
+          "options": [
+            { "id": "A", "text": "The redesign is on track to ship next Friday, with an extra reviewer and no budget change." },
+            { "id": "B", "text": "The redesign is delayed and the budget has increased." },
+            { "id": "C", "text": "The redesign shipped last Friday and testing is finished." },
+            { "id": "D", "text": "The redesign was cancelled because of budget cuts." }
+          ],
+          "correctOptionId": "A",
+          "explanation": "The speaker says the redesign is on track to ship next Friday, an extra reviewer was added, and the budget is unchanged.",
+          "distractorExplanations": {
+            "B": "The audio says the work is on track and the budget is unchanged.",
+            "C": "The release is next Friday, not last Friday.",
+            "D": "Nothing was cancelled and the budget was not cut."
+          },
+          "successChecklist": ["Selected the summary supported by the audio", "Can explain why the other summaries are wrong"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Main-idea comprehension", "Summary accuracy", "Detail verification", "Distractor elimination"],
+        "rubric": [],
+        "feedbackFocus": "Help the student listen for the overall meaning and choose the most accurate summary.",
+        "successCriteria": ["The selected summary matches the main idea of the audio.", "The selected summary does not add or distort facts.", "The student avoids summaries that match only one detail."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_HighlightCorrectSummary_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidHighlightCorrectSummaryJson), ActivityType.ListeningComprehension, "highlight_correct_summary");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    public void Validate_HighlightCorrectSummary_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidHighlightCorrectSummaryJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "highlight_correct_summary");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("transcript")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    [InlineData("answerKey")]
+    [InlineData("correctAnswer")]
+    [InlineData("selectedAnswer")]
+    [InlineData("summaryOptions")]
+    [InlineData("submit")]
+    [InlineData("checkAnswer")]
+    public void Validate_HighlightCorrectSummary_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidHighlightCorrectSummaryJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "highlight_correct_summary");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

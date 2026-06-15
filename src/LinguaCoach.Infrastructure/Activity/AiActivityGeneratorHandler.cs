@@ -33,6 +33,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "listening_multiple_choice_multi",
         "listening_fill_in_blanks",
         "select_missing_word",
+        "highlight_correct_summary",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

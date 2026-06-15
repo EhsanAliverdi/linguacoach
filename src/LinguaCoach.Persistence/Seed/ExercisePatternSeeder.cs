@@ -357,6 +357,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise predicting a missing word from listening context, grammar, and meaning",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.HighlightCorrectSummary,
+            name: "Highlight Correct Summary",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Reading"]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.HighlightCorrectSummary,
+            markingMode: MarkingMode.KeyedSelection,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_highlight_correct_summary",
+            aiEvaluatePromptKey: "activity_evaluate_highlight_correct_summary",
+            teachingPurpose: "Practise choosing the summary that best matches the meaning of a spoken passage",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

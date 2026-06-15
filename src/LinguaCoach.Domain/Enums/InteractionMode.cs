@@ -24,4 +24,5 @@ public enum InteractionMode
     ReorderParagraphs          = 14, // Move paragraph/sentence blocks into correct logical order
     ReadingWritingFillInBlanks = 15, // Reading passage with per-gap dropdown — reading + writing skills
     ListeningFillInBlanks      = 16, // Audio script with transcript gaps — per-gap dropdown, listening + writing skills
+    HighlightCorrectSummary    = 17, // Audio script with summary option cards — choose the summary that best matches, listening + reading skills
 }

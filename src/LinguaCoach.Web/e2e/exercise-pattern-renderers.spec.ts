@@ -301,3 +301,59 @@ test('Legacy writing activity falls back to FreeTextEntry renderer when raw cont
   await page.getByTestId('free-text-submit-btn').click();
   await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
 });
+
+test('HighlightCorrectSummary shows audio fallback, question, options, and submits selection', async ({ page }) => {
+  await withAuth(page);
+
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Choosing the best summary',
+    interactionMode: 'highlightCorrectSummary',
+    exercisePatternKey: 'highlight_correct_summary',
+    audioUrl: null,
+    learningGoal: 'Choose the summary that best matches a spoken passage.',
+    contentJson: JSON.stringify({
+      learningGoal: 'Choose the summary that best matches a spoken passage.',
+      instructions: 'Listen to the audio, then choose the summary that best matches.',
+      scenario: 'A team lead gives a short project status update.',
+      audioScript: 'The redesign is on track and we will ship next Friday. The budget is unchanged.',
+      audioUrl: null,
+      question: 'Which summary best matches the audio?',
+      options: [
+        { id: 'A', text: 'The redesign is on track to ship next Friday with no budget change.' },
+        { id: 'B', text: 'The redesign is delayed and the budget increased.' },
+        { id: 'C', text: 'The redesign shipped last Friday.' },
+        { id: 'D', text: 'The redesign was cancelled.' },
+      ],
+      correctOptionId: 'A',
+      explanation: 'The speaker says the redesign is on track to ship next Friday with the budget unchanged.',
+      distractorExplanations: {
+        B: 'The work is on track and the budget is unchanged.',
+        C: 'The release is next Friday, not last Friday.',
+        D: 'Nothing was cancelled.',
+      },
+    }),
+  }));
+
+  await page.goto('/activity');
+
+  // Learn page shows teaching only — no audio script, options, or correct answer leaked.
+  await expect(page.getByTestId('teach-cta-btn')).toBeVisible();
+  await expect(page.getByTestId('audio-script-fallback')).toHaveCount(0);
+  await expect(page.getByTestId('summary-option-A')).toHaveCount(0);
+
+  await page.getByTestId('teach-cta-btn').click();
+
+  // Practice page: audio fallback, question, and options visible.
+  await expect(page.getByTestId('highlight-correct-summary-renderer')).toBeVisible();
+  await expect(page.getByTestId('audio-script-fallback')).toBeVisible();
+  await expect(page.getByTestId('summary-question')).toContainText('Which summary best matches the audio?');
+  await expect(page.getByTestId('summary-option-A')).toBeVisible();
+
+  // The correct summary is not revealed before submit.
+  await expect(page.getByText('The speaker says the redesign is on track')).toHaveCount(0);
+
+  await page.getByTestId('summary-option-A').click();
+  await page.getByTestId('highlight-correct-summary-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});

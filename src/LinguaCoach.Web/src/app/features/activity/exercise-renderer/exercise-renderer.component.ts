@@ -15,6 +15,7 @@ import { ReadingFillInBlanksComponent, ReadingFillInBlanksContent } from '../ren
 import { ReorderParagraphsComponent, ReorderParagraphsContent } from '../renderers/reorder-paragraphs/reorder-paragraphs.component';
 import { ReadingWritingFillInBlanksComponent, ReadingWritingFillInBlanksContent } from '../renderers/reading-writing-fill-in-blanks/reading-writing-fill-in-blanks.component';
 import { ListeningFillInBlanksComponent, ListeningFillInBlanksContent } from '../renderers/listening-fill-in-blanks/listening-fill-in-blanks.component';
+import { HighlightCorrectSummaryComponent, HighlightCorrectSummaryContent } from '../renderers/highlight-correct-summary/highlight-correct-summary.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -29,7 +30,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'readingFillInBlanks'; answers: Record<string, string> }
   | { kind: 'reorderParagraphs'; orderedIds: string[] }
   | { kind: 'readingWritingFillInBlanks'; answers: Record<string, string> }
-  | { kind: 'listeningFillInBlanks'; answers: Record<string, string> };
+  | { kind: 'listeningFillInBlanks'; answers: Record<string, string> }
+  | { kind: 'highlightCorrectSummary'; selectedOptionId: string };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -50,6 +52,7 @@ export type ExerciseAnswerPayload =
     ReorderParagraphsComponent,
     ReadingWritingFillInBlanksComponent,
     ListeningFillInBlanksComponent,
+    HighlightCorrectSummaryComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -396,6 +399,46 @@ export class ExerciseRendererComponent {
 
   onListeningFillInBlanksSubmitted(answer: { answers: Record<string, string> }): void {
     this.answerSubmitted.emit({ kind: 'listeningFillInBlanks', answers: answer.answers });
+  }
+
+  get highlightCorrectSummaryContent(): HighlightCorrectSummaryContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const options = this.arrayValue(ed['options'] ?? raw['options']).map((opt, index) => {
+      const obj = this.objectValue(opt) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? String.fromCharCode(65 + index),
+        text: this.stringValue(obj['text']) ?? '',
+      };
+    });
+
+    const distractorExplanationsObj = this.objectValue(ed['distractorExplanations'] ?? raw['distractorExplanations']);
+    const distractorExplanations = distractorExplanationsObj
+      ? Object.fromEntries(
+          Object.entries(distractorExplanationsObj)
+            .map(([key, value]) => [key, this.stringValue(value) ?? ''])
+            .filter(([, value]) => value),
+        )
+      : null;
+
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      audioScript: this.stringValue(ed['audioScript'] ?? raw['audioScript']),
+      audioUrl: this.stringValue(ed['audioUrl'] ?? raw['audioUrl']),
+      question: this.stringValue(ed['question'] ?? raw['question']) ?? '',
+      options,
+      correctOptionId: this.stringValue(ed['correctOptionId'] ?? raw['correctOptionId']),
+      explanation: this.stringValue(ed['explanation'] ?? raw['explanation']),
+      distractorExplanations,
+    };
+  }
+
+  onHighlightCorrectSummarySubmitted(answer: { selectedOptionId: string }): void {
+    this.answerSubmitted.emit({ kind: 'highlightCorrectSummary', selectedOptionId: answer.selectedOptionId });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

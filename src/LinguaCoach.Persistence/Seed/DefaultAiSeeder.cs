@@ -46,6 +46,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateListeningMultipleChoiceMultiKey     = "activity_generate_listening_multiple_choice_multi";
     public const string ActivityGenerateListeningFillInBlanksKey            = "activity_generate_listening_fill_in_blanks";
     public const string ActivityGenerateSelectMissingWordKey                = "activity_generate_select_missing_word";
+    public const string ActivityGenerateHighlightCorrectSummaryKey          = "activity_generate_highlight_correct_summary";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1554,6 +1555,87 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateHighlightCorrectSummaryContent = """
+You are an expert English language teacher creating a listening summary-selection exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening summary skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["reading"],
+  "exerciseType": "highlight_correct_summary",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Choosing the best summary'>",
+    "explanation": "<2-4 sentences teaching how to choose the summary that best matches a spoken passage — no reference to the specific audio below>",
+    "keyPoints": [
+      "<how to listen for the main idea, not just single words>",
+      "<how to compare each summary against the whole passage>",
+      "<how to reject summaries that add, distort, or omit key facts>"
+    ],
+    "examples": [
+      { "phrase": "<short signal phrase>", "meaning": "<what it tells you about the main idea>", "note": "<summary/listening strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen for the gist and select the most accurate summary>",
+    "commonMistakes": [
+      "<choosing a summary that matches one detail but misses the main point>",
+      "<choosing a summary that adds information not in the audio>",
+      "<choosing a summary that contradicts a key fact>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about summary-selection strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio, then choose the summary that best matches what you heard.",
+    "scenario": "<1 sentence describing the workplace context of the audio>",
+    "task": "Listen and choose the best summary.",
+    "exerciseData": {
+      "audioScript": "<a short, natural spoken-English script, 40-80 words, realistic for {{careerContext}} professionals>",
+      "audioUrl": null,
+      "question": "Which summary best matches the audio?",
+      "options": [
+        { "id": "A", "text": "<a one-sentence summary>" },
+        { "id": "B", "text": "<a one-sentence summary>" },
+        { "id": "C", "text": "<a one-sentence summary>" },
+        { "id": "D", "text": "<a one-sentence summary>" }
+      ],
+      "correctOptionId": "<id of the summary that best matches, e.g. 'B'>",
+      "explanation": "<1-2 sentences explaining why the correct summary best matches, referring to the audio>",
+      "distractorExplanations": {
+        "<id of an incorrect summary>": "<why this summary is wrong: adds, distorts, or omits a key fact>",
+        "<id of another incorrect summary>": "<why this summary is wrong>",
+        "<id of the remaining incorrect summary>": "<why this summary is wrong>"
+      },
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Main-idea comprehension", "Summary accuracy", "Detail verification", "Distractor elimination"],
+    "rubric": [],
+    "feedbackFocus": "Help the student listen for the overall meaning and choose the most accurate summary.",
+    "successCriteria": [
+      "The selected summary matches the main idea of the audio.",
+      "The selected summary does not add or distort facts.",
+      "The student avoids summaries that match only one detail."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the audioScript, transcript, question, options, correctOptionId, explanation, distractorExplanations, summaryOptions, or any reference to this specific exercise's content. It teaches general summary-selection strategy only.
+- practiceContent.exerciseData.audioScript must be short (40-80 words), natural spoken English, realistic for {{careerContext}} professionals and topic area {{topicHint}}.
+- practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
+- practiceContent.exerciseData.options must contain exactly 4 one-sentence summaries with ids "A", "B", "C", "D", with exactly one summary that best matches the audio.
+- distractorExplanations must contain an entry for each of the 3 incorrect option ids.
+- Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateListeningMultipleChoiceMultiContent = """
 You are an expert English language teacher creating a listening comprehension exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -3007,6 +3089,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSelectMissingWordKey, ActivityGenerateSelectMissingWordContent,
             maxInputTokens: 900, maxOutputTokens: 900, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateHighlightCorrectSummaryKey, ActivityGenerateHighlightCorrectSummaryContent,
+            maxInputTokens: 1400, maxOutputTokens: 1100, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,

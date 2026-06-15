@@ -510,6 +510,112 @@ public sealed class KeyedSelectionEvaluatorTests
         result.ItemResults.Single().StudentAnswer.Should().BeNull();
     }
 
+    // ── highlight_correct_summary ───────────────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeHighlightCorrectSummaryRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "highlight_correct_summary",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.HighlightCorrectSummary,
+            ActivityType: ActivityType.ListeningComprehension,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedHighlightCorrectSummaryContent(string correctOptionId = "A") => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test highlight correct summary",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Listen and choose the best summary.",
+            scenario = "Project status update",
+            task = "Listen and choose the best summary.",
+            exerciseData = new
+            {
+                audioScript = "The redesign is on track and we'll ship next Friday. The budget is unchanged.",
+                audioUrl = (string?)null,
+                question = "Which summary best matches the audio?",
+                options = new[]
+                {
+                    new { id = "A", text = "The redesign is on track to ship next Friday with no budget change." },
+                    new { id = "B", text = "The redesign is delayed and the budget increased." },
+                    new { id = "C", text = "The redesign shipped last Friday." },
+                    new { id = "D", text = "The redesign was cancelled." },
+                },
+                correctOptionId,
+                explanation = "The speaker says the redesign is on track to ship next Friday with the budget unchanged.",
+                distractorExplanations = new Dictionary<string, string>
+                {
+                    ["B"] = "The audio says the work is on track and the budget is unchanged.",
+                    ["C"] = "The release is next Friday, not last Friday.",
+                    ["D"] = "Nothing was cancelled in the audio.",
+                },
+                successChecklist = new[] { "Selected the supported summary" },
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    [Fact]
+    public async Task HighlightCorrectSummary_CorrectSelection_ReturnsFullScore()
+    {
+        var content = StagedHighlightCorrectSummaryContent(correctOptionId: "A");
+        var submitted = SelectedOption("A");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightCorrectSummaryRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("next Friday");
+    }
+
+    [Fact]
+    public async Task HighlightCorrectSummary_IncorrectSelection_ReturnsZeroScore_WithDistractorExplanation()
+    {
+        var content = StagedHighlightCorrectSummaryContent(correctOptionId: "A");
+        var submitted = SelectedOption("B");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightCorrectSummaryRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        var item = result.ItemResults.Single();
+        item.IsCorrect.Should().BeFalse();
+        item.CorrectAnswer.Should().Be("A");
+        item.Feedback.Should().Contain("the budget is unchanged");
+    }
+
+    [Fact]
+    public async Task HighlightCorrectSummary_NoSelection_ReturnsZeroScore_AndIsStillCompleted()
+    {
+        var content = StagedHighlightCorrectSummaryContent(correctOptionId: "A");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightCorrectSummaryRequest(content, submittedJson: ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task HighlightCorrectSummary_InvalidJson_HandledSafely()
+    {
+        var content = StagedHighlightCorrectSummaryContent(correctOptionId: "A");
+
+        var result = await _sut.EvaluateAsync(MakeHighlightCorrectSummaryRequest(content, "not-json"), default);
+
+        result.Completed.Should().BeTrue();
+        result.Score.Should().Be(0);
+    }
+
     // ── reading_multiple_choice_multi ─────────────────────────────────────────
 
     private static PatternEvaluationRequest MakeReadingMultiRequest(string contentJson, string submittedJson) =>

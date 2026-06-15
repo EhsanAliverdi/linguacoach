@@ -58,6 +58,7 @@ public class ActivityTestFactory : ApiTestFactory
             "activity_generate_lesson_reflection",
             "activity_generate_speaking_roleplay",
             "activity_generate_listening",
+            "activity_generate_highlight_correct_summary",
             // Pattern-keyed evaluation prompts
             "activity_evaluate_phrase_match",
             "activity_evaluate_gap_fill_workplace_phrase",
@@ -226,6 +227,18 @@ internal sealed class FakeAiProvider : IAiProvider
                   "gaps": [
                     { "id": "g1", "answer": "could you please", "options": ["could you please", "can you"] }
                   ],
+                  "options": [
+                    { "id": "A", "text": "The meeting was moved to Thursday." },
+                    { "id": "B", "text": "The meeting was cancelled." },
+                    { "id": "C", "text": "The meeting stays on Monday." },
+                    { "id": "D", "text": "The meeting moved to next month." }
+                  ],
+                  "correctOptionId": "A",
+                  "distractorExplanations": {
+                    "B": "The meeting was not cancelled.",
+                    "C": "The meeting did not stay on Monday.",
+                    "D": "The meeting did not move to next month."
+                  },
                   "items": [
                     { "vocabularyItemId": "00000000-0000-0000-0000-000000000001", "term": "could you please", "prompt": "___ send the report?", "hint": "polite request", "explanation": "Used to make polite requests." },
                     { "vocabularyItemId": "00000000-0000-0000-0000-000000000002", "term": "at your earliest convenience", "prompt": "Please respond ___.", "hint": "formal timing", "explanation": "Used to politely request a prompt response." },

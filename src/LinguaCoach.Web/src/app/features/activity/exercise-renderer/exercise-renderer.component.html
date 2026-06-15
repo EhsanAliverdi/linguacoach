@@ -83,6 +83,13 @@
       (submitted)="onListeningFillInBlanksSubmitted($event)"
     />
   }
+  @case ('highlightCorrectSummary') {
+    <app-highlight-correct-summary
+      [content]="highlightCorrectSummaryContent"
+      [disabled]="disabled"
+      (submitted)="onHighlightCorrectSummarySubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

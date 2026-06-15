@@ -205,6 +205,21 @@ public sealed class PracticeGymNextEndpointTests : IClassFixture<ActivityTestFac
     }
 
     [Fact]
+    public async Task GetNext_WithHighlightCorrectSummaryExerciseType_ReturnsOkWithStagedContent()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_hcs_{Guid.NewGuid():N}@test.com");
+
+        var response = await ClientWithToken(token).GetAsync("/api/activity/next?exerciseType=highlight_correct_summary");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(ExercisePatternKey.HighlightCorrectSummary, body.GetProperty("exercisePatternKey").GetString());
+        Assert.Equal("highlightCorrectSummary", body.GetProperty("interactionMode").GetString());
+        var content = body.GetProperty("contentJson").GetString();
+        Assert.Contains("module_stage_v1", content);
+    }
+
+    [Fact]
     public async Task ExistingGetNext_WithPatternQueryParam_StillWorks()
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_compat_pattern_{Guid.NewGuid():N}@test.com");
