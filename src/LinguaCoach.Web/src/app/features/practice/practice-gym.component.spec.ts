@@ -81,6 +81,13 @@ const readyListeningFillInBlanks: any = {
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
 };
 
+const readySelectMissingWord: any = {
+  key: 'select_missing_word', displayName: 'Select Missing Word', primarySkill: 'listening', secondarySkills: [],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'select_missing_word', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_select_missing_word',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+};
+
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
@@ -89,7 +96,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti, readyListeningFillInBlanks]));
+    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti, readyListeningFillInBlanks, readySelectMissingWord]));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -404,6 +411,30 @@ describe('PracticeGymComponent', () => {
     expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-lfib-1', returnTo: '/practice' },
+    });
+  });
+
+  it('select_missing_word is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('select_missing_word')).toBeTrue();
+    expect(component.statusText('select_missing_word')).toBe('Available');
+  });
+
+  it('clicking Listening can return select_missing_word and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true,
+      activityId: 'activity-smw-1',
+      exerciseType: 'select_missing_word',
+      primarySkill: 'listening',
+      source: 'onDemandFallback',
+      poolItemId: null,
+      reason: null,
+    }));
+
+    component.selectSkill('listening');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-smw-1', returnTo: '/practice' },
     });
   });
 });

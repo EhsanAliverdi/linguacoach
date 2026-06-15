@@ -414,6 +414,102 @@ public sealed class KeyedSelectionEvaluatorTests
         result.ItemResults.Single().StudentAnswer.Should().BeNull();
     }
 
+    // ── select_missing_word ────────────────────────────────────────────────────
+
+    private static PatternEvaluationRequest MakeSelectMissingWordRequest(string contentJson, string submittedJson) =>
+        new(
+            ActivityId: Guid.NewGuid(),
+            StudentProfileId: Guid.NewGuid(),
+            ExercisePatternKey: "select_missing_word",
+            MarkingMode: MarkingMode.KeyedSelection,
+            InteractionMode: InteractionMode.MultipleChoice,
+            ActivityType: ActivityType.ListeningComprehension,
+            ContentJson: contentJson,
+            SubmittedAnswerJson: submittedJson);
+
+    private static string StagedSelectMissingWordContent(string correctOptionId = "A") => JsonSerializer.Serialize(new
+    {
+        schemaVersion = "module_stage_v1",
+        title = "Test select missing word",
+        learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+        practiceContent = new
+        {
+            instructions = "Listen and choose the missing word.",
+            scenario = "Shift handover",
+            task = "Choose the missing word or phrase.",
+            exerciseData = new
+            {
+                audioScript = "Before you leave, please make sure the report is submitted by six o'clock.",
+                audioUrl = (string?)null,
+                incompleteText = "Before you leave, please make sure the report is {{missing}} by six o'clock.",
+                question = "Choose the missing word or phrase.",
+                options = new[]
+                {
+                    new { id = "A", text = "submitted" },
+                    new { id = "B", text = "ignored" },
+                    new { id = "C", text = "cancelled" },
+                    new { id = "D", text = "forgotten" },
+                },
+                correctOptionId,
+                explanation = "The audio says the report is 'submitted by six o'clock'.",
+                distractorExplanations = new Dictionary<string, string>
+                {
+                    ["B"] = "Ignoring the report does not match the instruction.",
+                    ["C"] = "The report is not cancelled in the audio.",
+                    ["D"] = "The supervisor reminds the team to submit, not forget.",
+                },
+                successChecklist = new[] { "Selected the supported option" },
+            },
+        },
+        feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+    }, JsonOptions);
+
+    [Fact]
+    public async Task SelectMissingWord_CorrectSelection_ReturnsFullScore()
+    {
+        var content = StagedSelectMissingWordContent(correctOptionId: "A");
+        var submitted = SelectedOption("A");
+
+        var result = await _sut.EvaluateAsync(MakeSelectMissingWordRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+        result.ItemResults.Single().Feedback.Should().Contain("submitted");
+    }
+
+    [Fact]
+    public async Task SelectMissingWord_IncorrectSelection_ReturnsZeroScore_WithDistractorExplanation()
+    {
+        var content = StagedSelectMissingWordContent(correctOptionId: "A");
+        var submitted = SelectedOption("B");
+
+        var result = await _sut.EvaluateAsync(MakeSelectMissingWordRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(1);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+        var item = result.ItemResults.Single();
+        item.IsCorrect.Should().BeFalse();
+        item.CorrectAnswer.Should().Be("A");
+        item.Feedback.Should().Contain("Ignoring the report does not match the instruction");
+    }
+
+    [Fact]
+    public async Task SelectMissingWord_NoSelection_ReturnsZeroScore_AndIsStillCompleted()
+    {
+        var content = StagedSelectMissingWordContent(correctOptionId: "A");
+
+        var result = await _sut.EvaluateAsync(MakeSelectMissingWordRequest(content, submittedJson: ""), default);
+
+        result.Score.Should().Be(0);
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Single().StudentAnswer.Should().BeNull();
+    }
+
     // ── reading_multiple_choice_multi ─────────────────────────────────────────
 
     private static PatternEvaluationRequest MakeReadingMultiRequest(string contentJson, string submittedJson) =>

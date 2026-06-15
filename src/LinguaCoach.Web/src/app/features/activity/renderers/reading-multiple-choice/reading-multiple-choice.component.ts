@@ -11,6 +11,7 @@ export interface ReadingMultipleChoiceContent {
   learningGoal?: string | null;
   instructions?: string | null;
   passage?: string | null;
+  incompleteText?: string | null;
   question: string;
   options: ReadingMultipleChoiceOption[];
   correctOptionId?: string | null;
@@ -41,6 +42,10 @@ export class ReadingMultipleChoiceComponent {
   selectOption(optionId: string): void {
     if (this.disabled) return;
     this.selectedOptionId = optionId;
+  }
+
+  get incompleteTextDisplay(): string {
+    return (this.content.incompleteText ?? '').replace(/\{\{missing\}\}/g, '_____');
   }
 
   get canSubmit(): boolean {

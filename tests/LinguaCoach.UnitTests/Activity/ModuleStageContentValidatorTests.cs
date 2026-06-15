@@ -2203,4 +2203,101 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── select_missing_word pattern key tests ─────────────────────────────────
+
+    private const string ValidSelectMissingWordJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Predicting the missing word: shift handover",
+      "moduleGoal": "Practise predicting a missing word from listening context and grammar clues.",
+      "primarySkill": "listening",
+      "secondarySkills": [],
+      "exerciseType": "select_missing_word",
+      "learnContent": {
+        "teachingTitle": "Predicting the missing word",
+        "explanation": "Listen to the words and grammar around a gap to predict what is likely to come next, and avoid options that only sound familiar.",
+        "keyPoints": ["Listen for context before the missing word", "Check the grammar that follows the blank", "Avoid distractors that sound plausible but do not fit"],
+        "examples": [{ "phrase": "as soon as possible", "meaning": "signals urgency", "note": "the missing word often relates to timing or action" }],
+        "strategy": "Listen for context clues, predict the grammar and meaning, then choose the best fit.",
+        "commonMistakes": ["Choosing based on familiar sound only", "Ignoring grammar after the blank", "Missing contrast or cause/effect cues"],
+        "sourceLanguageSupport": null
+      },
+      "practiceContent": {
+        "instructions": "Listen to the audio, then choose the word or phrase that correctly completes it.",
+        "scenario": "A warehouse supervisor gives an end-of-shift handover.",
+        "task": "Listen and choose the missing word or phrase.",
+        "exerciseData": {
+          "audioScript": "Before you leave, please make sure the loading dock is clear and the report is submitted by six o'clock.",
+          "audioUrl": null,
+          "incompleteText": "Before you leave, please make sure the loading dock is clear and the report is {{missing}} by six o'clock.",
+          "question": "Choose the missing word or phrase.",
+          "options": [
+            { "id": "A", "text": "submitted" },
+            { "id": "B", "text": "ignored" },
+            { "id": "C", "text": "cancelled" },
+            { "id": "D", "text": "forgotten" }
+          ],
+          "correctOptionId": "A",
+          "explanation": "The audio says the report is 'submitted by six o'clock', matching option A.",
+          "distractorExplanations": {
+            "B": "Ignoring the report does not match the instruction to complete it on time.",
+            "C": "The report is not cancelled in the audio.",
+            "D": "The supervisor reminds the team to submit, not forget, the report."
+          },
+          "successChecklist": ["Selected the option supported by the audio", "Can explain why the other options are wrong"]
+        }
+      },
+      "feedbackPlan": {
+        "evaluationCriteria": ["Listening context understanding", "Prediction from meaning", "Grammar fit", "Distractor elimination"],
+        "rubric": [],
+        "feedbackFocus": "Help the student use listening context and grammar clues to choose the best missing word.",
+        "successCriteria": ["The selected word or phrase fits the audio meaning.", "The selected option fits the grammar and context.", "The student avoids distractors based on sound or isolated words."]
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_SelectMissingWord_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidSelectMissingWordJson), ActivityType.ListeningComprehension, "select_missing_word");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("incompleteText")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    public void Validate_SelectMissingWord_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidSelectMissingWordJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "select_missing_word");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("transcript")]
+    [InlineData("incompleteText")]
+    [InlineData("question")]
+    [InlineData("options")]
+    [InlineData("correctOptionId")]
+    public void Validate_SelectMissingWord_WithControlKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidSelectMissingWordJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "select_missing_word");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
 }

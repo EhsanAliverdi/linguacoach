@@ -34,6 +34,12 @@
     </div>
   }
 
+  @if (content.incompleteText) {
+    <div class="sp-card" style="padding:16px" data-testid="incomplete-text">
+      <p style="font-size:14px;color:var(--sp-text);line-height:1.7;white-space:pre-wrap">{{ incompleteTextDisplay }}</p>
+    </div>
+  }
+
   <div style="font-size:15px;font-weight:700;color:var(--sp-text)" data-testid="reading-question">
     {{ content.question }}
   </div>

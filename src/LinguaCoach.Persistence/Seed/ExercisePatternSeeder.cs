@@ -341,6 +341,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening for missing words using context, grammar, and sound clues",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.SelectMissingWord,
+            name: "Select Missing Word",
+            primarySkill: "Listening",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.MultipleChoice,
+            markingMode: MarkingMode.KeyedSelection,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_select_missing_word",
+            aiEvaluatePromptKey: "activity_evaluate_select_missing_word",
+            teachingPurpose: "Practise predicting a missing word from listening context, grammar, and meaning",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

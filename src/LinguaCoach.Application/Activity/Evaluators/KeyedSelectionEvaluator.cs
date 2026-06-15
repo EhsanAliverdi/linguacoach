@@ -18,7 +18,8 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
         CancellationToken cancellationToken)
     {
         if (request.ExercisePatternKey == "reading_multiple_choice_single"
-            || request.ExercisePatternKey == "listening_multiple_choice_single")
+            || request.ExercisePatternKey == "listening_multiple_choice_single"
+            || request.ExercisePatternKey == "select_missing_word")
             return EvaluateReadingMultipleChoiceSingleAsync(request);
 
         if (request.ExercisePatternKey == "reading_multiple_choice_multi"
@@ -141,7 +142,7 @@ public sealed class KeyedSelectionEvaluator : IPatternEvaluator
             MaxScore: maxScore,
             Feedback: feedback);
 
-        var sourceNoun = request.ExercisePatternKey == "listening_multiple_choice_single" ? "audio" : "passage";
+        var sourceNoun = request.ExercisePatternKey is "listening_multiple_choice_single" or "select_missing_word" ? "audio" : "passage";
         var coachSummary = isCorrect
             ? "Correct — you selected the best-supported answer."
             : $"Not quite — review the {sourceNoun} and the explanation to see why another option fits best.";

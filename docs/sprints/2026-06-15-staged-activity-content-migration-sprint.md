@@ -1216,3 +1216,21 @@ Practice Gym: `listening_fill_in_blanks` appears under the Listening skill, pool
 Tests: 717 unit / 485 integration / 122 Angular — all green. Angular dev and production builds succeed.
 
 See [Phase 8J review](../reviews/2026-06-16-phase-8j-listening-fill-in-blanks-implementation.md).
+
+### Phase 8K — `select_missing_word` — COMPLETE 2026-06-16
+
+`select_missing_word` — fourth runnable listening-primary format. Student listens to a short audio script where the displayed text has the final word/phrase replaced by `{{missing}}`, then chooses the correct missing word/phrase from 4 options. Primary skill: listening; secondary skills: none. Reuses `InteractionMode.MultipleChoice = 3` and `MarkingMode.KeyedSelection` (same shape as `listening_multiple_choice_single` from Phase 8H) — no new enum value needed. New `ExercisePatternKey.SelectMissingWord = "select_missing_word"`. Pattern metadata: `ActivityType.ListeningComprehension`, `compatibleKindsJson: [2]` (ListeningInput), `requiresAudio: false`, estimated 5 minutes. `ExerciseTypeDefinitionSeeder` entry promoted from `Planned` to `Ready` (SupportsPracticeGym=true, SupportsTodayLesson=false, PrimarySkill=listening, SecondarySkills=[]).
+
+`AiActivityGeneratorHandler.StagedPatternKeys` includes `select_missing_word`. Deterministic evaluation only — no AI call. `KeyedSelectionEvaluator.EvaluateAsync` dispatch extended to route `select_missing_word` to the existing single-choice handler (`EvaluateReadingMultipleChoiceSingleAsync`), reusing `ReadingMultipleChoiceExerciseData`/`ReadingMultipleChoiceSubmittedAnswer` DTOs unchanged — comparing submitted `selectedOptionId` against `correctOptionId`, with `explanation`/`distractorExplanations` feedback. The "audio" vs "passage" wording in feedback/coach-summary now also applies to `select_missing_word`.
+
+AI prompt seeded: `activity_generate_select_missing_word` (maxInput:900, maxOutput:900) — generates `audioScript` (30-70 words natural spoken English including the correct missing word/phrase), `audioUrl: null`, `incompleteText` (same script with the missing word/phrase replaced by `{{missing}}`), `question`, exactly 4 `options` with `correctOptionId`, `explanation`, `distractorExplanations`, `successChecklist`. `ModuleStageContentValidator.RequiredPracticeKeysByPatternKey["select_missing_word"] = ["audioScript", "incompleteText", "options", "correctOptionId"]`; `ForbiddenLearnContentKeys` extended with `incompleteText`, `missingWord`, `missingPhrase` (audioScript/transcript/question/options/correctOptionId/distractorExplanations already covered).
+
+**Audio/TTS reuse note**: identical pattern to Phase 8H/8I/8J — `audioUrl` is always `null`; frontend falls back to showing `audioScript` as text with an "Audio is temporarily unavailable" notice. No MinIO, new storage, or background TTS jobs introduced.
+
+Frontend: no new renderer component — `select_missing_word` reuses the existing `app-reading-multiple-choice` component and `@case ('multipleChoice')` (same as `listening_multiple_choice_single`/`reading_multiple_choice_single`). `ReadingMultipleChoiceContent` gained a new optional `incompleteText` field, rendered as a card showing the script with `{{missing}}` replaced by `_____`. `exercise-renderer.component.ts`'s `readingMultipleChoiceContent` getter reads `incompleteText` from `stagedExerciseData`/`raw`. No new `ExerciseAnswerPayload` kind — reuses `'multipleChoiceSingle'`; no changes to `activity-lesson.component.ts` or `activity.models.ts`.
+
+Practice Gym: `select_missing_word` appears under the Listening skill, pool-first with on-demand fallback, same as other ready formats. All other listening formats (remaining planned listening formats `highlight_correct_summary`, `highlight_incorrect_words`, `write_from_dictation`, `summarize_spoken_text`) remain planned/non-runnable. No Today pre-generation, MinIO, or audio lifecycle changes.
+
+Tests: 731 unit / 486 integration / 124 Angular — all green. Angular dev and production builds succeed.
+
+See [Phase 8K review](../reviews/2026-06-16-phase-8k-select-missing-word-implementation.md).

@@ -221,6 +221,21 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task SelectMissingWord_IsReadyAndEligible()
+    {
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "select_missing_word");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.True(type.SupportsPracticeGym);
+        Assert.False(type.SupportsTodayLesson);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "select_missing_word");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
@@ -228,7 +243,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
             "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
             "retell_lecture", "summarize_group_discussion", "answer_short_question",
             "summarize_spoken_text",
-            "highlight_correct_summary", "select_missing_word",
+            "highlight_correct_summary",
             "highlight_incorrect_words", "write_from_dictation",
         };
 
@@ -380,6 +395,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         await catalog.UpdateAsync(new("listening_multiple_choice_single", false, null, null));
         await catalog.UpdateAsync(new("listening_multiple_choice_multi", false, null, null));
         await catalog.UpdateAsync(new("listening_fill_in_blanks", false, null, null));
+        await catalog.UpdateAsync(new("select_missing_word", false, null, null));
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var selected = await registry.SelectForPracticeGymSkillAsync("listening");

@@ -275,6 +275,7 @@ export class ExerciseRendererComponent {
         ?? this.stringValue(raw['instructions'])
         ?? this.activity.instructions,
       passage: this.stringValue(ed['passage'] ?? raw['passage']),
+      incompleteText: this.stringValue(ed['incompleteText'] ?? raw['incompleteText']),
       question: this.stringValue(ed['question'] ?? raw['question']) ?? '',
       options,
       correctOptionId: this.stringValue(ed['correctOptionId'] ?? raw['correctOptionId']),

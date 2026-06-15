@@ -45,6 +45,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateListeningMultipleChoiceSingleKey    = "activity_generate_listening_multiple_choice_single";
     public const string ActivityGenerateListeningMultipleChoiceMultiKey     = "activity_generate_listening_multiple_choice_multi";
     public const string ActivityGenerateListeningFillInBlanksKey            = "activity_generate_listening_fill_in_blanks";
+    public const string ActivityGenerateSelectMissingWordKey                = "activity_generate_select_missing_word";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -1466,6 +1467,89 @@ Rules:
 - practiceContent.exerciseData.audioScript must be short (30-70 words), natural spoken English, and realistic for {{careerContext}} professionals and topic area {{topicHint}}.
 - practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
 - practiceContent.exerciseData.options must contain exactly 4 options with ids "A", "B", "C", "D", with exactly one correct option.
+- distractorExplanations must contain an entry for each of the 3 incorrect option ids.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityGenerateSelectMissingWordContent = """
+You are an expert English language teacher creating a listening prediction exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening/prediction skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": [],
+  "exerciseType": "select_missing_word",
+  "learnContent": {
+    "teachingTitle": "<short teaching heading, e.g. 'Predicting the missing word'>",
+    "explanation": "<2-4 sentences teaching how to predict a missing word from listening context — no reference to the specific audio below>",
+    "keyPoints": [
+      "<how to listen for context before the missing word>",
+      "<how to predict grammar and meaning>",
+      "<how to avoid distractors that sound plausible but do not fit>"
+    ],
+    "examples": [
+      { "phrase": "<short example or signal phrase>", "meaning": "<what it helps the student predict>", "note": "<listening/context strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen, predict, and select the best missing word>",
+    "commonMistakes": [
+      "<choosing based on familiar sound only>",
+      "<ignoring grammar after the blank>",
+      "<missing contrast or cause/effect cues>"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about listening/prediction strategy, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio, then choose the word or phrase that correctly completes it.",
+    "scenario": "<1 sentence describing the workplace context of the audio>",
+    "task": "Listen and choose the missing word or phrase.",
+    "exerciseData": {
+      "audioScript": "<a short, natural spoken-English script, 30-70 words, realistic for {{careerContext}} professionals, including the correct missing word/phrase naturally>",
+      "audioUrl": null,
+      "incompleteText": "<the same script with the missing word/phrase replaced by {{missing}}>",
+      "question": "Choose the missing word or phrase.",
+      "options": [
+        { "id": "A", "text": "<option A text>" },
+        { "id": "B", "text": "<option B text>" },
+        { "id": "C", "text": "<option C text>" },
+        { "id": "D", "text": "<option D text>" }
+      ],
+      "correctOptionId": "<id of the correct option, e.g. 'A'>",
+      "explanation": "<1-2 sentences explaining why the correct missing word/phrase fits, referring to the audio>",
+      "distractorExplanations": {
+        "<id of an incorrect option>": "<why this option is wrong>",
+        "<id of another incorrect option>": "<why this option is wrong>",
+        "<id of the remaining incorrect option>": "<why this option is wrong>"
+      },
+      "successChecklist": ["<criterion 1>", "<criterion 2>"]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": ["Listening context understanding", "Prediction from meaning", "Grammar fit", "Distractor elimination"],
+    "rubric": [],
+    "feedbackFocus": "Help the student use listening context and grammar clues to choose the best missing word.",
+    "successCriteria": [
+      "The selected word or phrase fits the audio meaning.",
+      "The selected option fits the grammar and context.",
+      "The student avoids distractors based on sound or isolated words."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the audioScript, transcript, incompleteText, question, options, correctOptionId, explanation, distractorExplanations, or any reference to this specific exercise's content. It teaches general listening prediction strategy only.
+- practiceContent.exerciseData.audioScript must be short (30-70 words), natural spoken English, realistic for {{careerContext}} professionals and topic area {{topicHint}}, and must include the correct missing word/phrase naturally.
+- practiceContent.exerciseData.audioUrl must be null — audio is not pre-generated for this format.
+- practiceContent.exerciseData.incompleteText must be the audioScript text with the missing word/phrase replaced by the literal token {{missing}}.
+- practiceContent.exerciseData.options must contain exactly 4 options with ids "A", "B", "C", "D", with exactly one correct option matching the missing word/phrase.
 - distractorExplanations must contain an entry for each of the 3 incorrect option ids.
 - Do not include any text outside the JSON object.
 """;
@@ -2919,6 +3003,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningFillInBlanksKey, ActivityGenerateListeningFillInBlanksContent,
             maxInputTokens: 900, maxOutputTokens: 1300, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSelectMissingWordKey, ActivityGenerateSelectMissingWordContent,
+            maxInputTokens: 900, maxOutputTokens: 900, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,
