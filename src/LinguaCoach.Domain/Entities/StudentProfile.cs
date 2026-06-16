@@ -60,6 +60,18 @@ public sealed class StudentProfile : BaseEntity
     public string? LearningGoalDescription { get; private set; }
     public string? DifficultSituationsText { get; private set; }
 
+    // ── Student-editable learning preferences (T46 / Phase 10G) ─────────────
+    public string? PreferredName { get; private set; }
+    public string? SupportLanguageCode { get; private set; }
+    public string? SupportLanguageName { get; private set; }
+    public TranslationHelpPreference? TranslationHelpPreference { get; private set; }
+    public List<string> LearningGoals { get; private set; } = new();
+    public string? CustomLearningGoal { get; private set; }
+    public List<string> FocusAreas { get; private set; } = new();
+    public string? CustomFocusArea { get; private set; }
+    public DifficultyPreference? DifficultyPreference { get; private set; }
+    public DateTimeOffset? LearningPreferencesUpdatedAt { get; private set; }
+
     private StudentProfile() { }
 
     public StudentProfile(Guid userId)
@@ -262,6 +274,70 @@ public sealed class StudentProfile : BaseEntity
         LearningGoalDescription = null;
         DifficultSituationsText = null;
         LifecycleStage = StudentLifecycleStage.OnboardingRequired;
+    }
+
+    // ── Student-editable learning preferences (T46 / Phase 10G) ─────────────
+
+    /// <summary>
+    /// Updates only student-editable preference fields.
+    /// Never touches CefrLevel, prompts, admin fields, or onboarding state.
+    /// </summary>
+    public void UpdateLearningPreferences(
+        string? preferredName,
+        string? supportLanguageCode,
+        string? supportLanguageName,
+        TranslationHelpPreference? translationHelpPreference,
+        IReadOnlyList<string>? learningGoals,
+        string? customLearningGoal,
+        IReadOnlyList<string>? focusAreas,
+        string? customFocusArea,
+        DifficultyPreference? difficultyPreference,
+        int? preferredSessionDurationMinutes)
+    {
+        if (preferredName is not null && preferredName.Length > 100)
+            throw new ArgumentException("PreferredName must not exceed 100 characters.", nameof(preferredName));
+
+        if (supportLanguageCode is not null && supportLanguageCode.Length > 10)
+            throw new ArgumentException("SupportLanguageCode must not exceed 10 characters.", nameof(supportLanguageCode));
+
+        if (supportLanguageName is not null && supportLanguageName.Length > 100)
+            throw new ArgumentException("SupportLanguageName must not exceed 100 characters.", nameof(supportLanguageName));
+
+        if (customLearningGoal is not null && customLearningGoal.Length > 200)
+            throw new ArgumentException("CustomLearningGoal must not exceed 200 characters.", nameof(customLearningGoal));
+
+        if (customFocusArea is not null && customFocusArea.Length > 200)
+            throw new ArgumentException("CustomFocusArea must not exceed 200 characters.", nameof(customFocusArea));
+
+        if (learningGoals is not null)
+        {
+            if (learningGoals.Count > 10)
+                throw new ArgumentException("No more than 10 learning goals are allowed.", nameof(learningGoals));
+            if (learningGoals.Any(g => g.Length > 100))
+                throw new ArgumentException("Each learning goal must not exceed 100 characters.", nameof(learningGoals));
+        }
+
+        if (focusAreas is not null)
+        {
+            if (focusAreas.Count > 10)
+                throw new ArgumentException("No more than 10 focus areas are allowed.", nameof(focusAreas));
+            if (focusAreas.Any(f => f.Length > 100))
+                throw new ArgumentException("Each focus area must not exceed 100 characters.", nameof(focusAreas));
+        }
+
+        if (preferredSessionDurationMinutes.HasValue && preferredSessionDurationMinutes.Value > 0)
+            PreferredSessionDurationMinutes = preferredSessionDurationMinutes;
+
+        PreferredName = string.IsNullOrWhiteSpace(preferredName) ? null : preferredName.Trim();
+        SupportLanguageCode = string.IsNullOrWhiteSpace(supportLanguageCode) ? null : supportLanguageCode.Trim();
+        SupportLanguageName = string.IsNullOrWhiteSpace(supportLanguageName) ? null : supportLanguageName.Trim();
+        TranslationHelpPreference = translationHelpPreference;
+        LearningGoals = learningGoals is not null ? learningGoals.ToList() : LearningGoals;
+        CustomLearningGoal = string.IsNullOrWhiteSpace(customLearningGoal) ? null : customLearningGoal.Trim();
+        FocusAreas = focusAreas is not null ? focusAreas.ToList() : FocusAreas;
+        CustomFocusArea = string.IsNullOrWhiteSpace(customFocusArea) ? null : customFocusArea.Trim();
+        DifficultyPreference = difficultyPreference;
+        LearningPreferencesUpdatedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>Admin reset: clears placement results (CEFR level).</summary>

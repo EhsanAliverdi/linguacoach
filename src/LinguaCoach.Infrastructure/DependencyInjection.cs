@@ -34,7 +34,9 @@ using LinguaCoach.Application.Sessions;
 using LinguaCoach.Infrastructure.Placement;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
+using LinguaCoach.Application.Profile;
 using LinguaCoach.Application.Storage;
+using LinguaCoach.Infrastructure.Profile;
 using LinguaCoach.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -92,6 +94,10 @@ public static class DependencyInjection
         // Dashboard
         services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();
+
+        // Student Profile (Phase 10G)
+        services.AddScoped<IGetStudentProfileQueryHandler, ProfileQueryHandler>();
+        services.AddScoped<IUpdateLearningPreferencesCommandHandler, ProfileCommandHandler>();
 
         // Progress
         services.AddScoped<IGetProgressHandler, GetProgressHandler>();
