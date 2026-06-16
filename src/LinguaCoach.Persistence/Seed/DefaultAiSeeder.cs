@@ -4518,7 +4518,7 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListenAndGapFillKey, ActivityGenerateListenAndGapFillContent,
-            maxInputTokens: 700, maxOutputTokens: 800, ct);
+            maxInputTokens: 1000, maxOutputTokens: 800, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateEmailReplyKey, ActivityGenerateEmailReplyContent,
@@ -4530,11 +4530,11 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpokenResponseKey, ActivityGenerateSpokenResponseContent,
-            maxInputTokens: 700, maxOutputTokens: 700, ct);
+            maxInputTokens: 1200, maxOutputTokens: 700, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateLessonReflectionKey, ActivityGenerateLessonReflectionContent,
-            maxInputTokens: 500, maxOutputTokens: 400, ct);
+            maxInputTokens: 1200, maxOutputTokens: 400, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateOpenWritingTaskKey, ActivityGenerateOpenWritingTaskContent,
@@ -4542,27 +4542,27 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRoleplayTurnKey, ActivityGenerateSpeakingRoleplayTurnContent,
-            maxInputTokens: 700, maxOutputTokens: 700, ct);
+            maxInputTokens: 1300, maxOutputTokens: 700, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceSingleKey, ActivityGenerateReadingMultipleChoiceSingleContent,
-            maxInputTokens: 900, maxOutputTokens: 900, ct);
+            maxInputTokens: 1300, maxOutputTokens: 900, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningMultipleChoiceSingleKey, ActivityGenerateListeningMultipleChoiceSingleContent,
-            maxInputTokens: 900, maxOutputTokens: 900, ct);
+            maxInputTokens: 1200, maxOutputTokens: 900, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningMultipleChoiceMultiKey, ActivityGenerateListeningMultipleChoiceMultiContent,
-            maxInputTokens: 900, maxOutputTokens: 1000, ct);
+            maxInputTokens: 1300, maxOutputTokens: 1000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningFillInBlanksKey, ActivityGenerateListeningFillInBlanksContent,
-            maxInputTokens: 900, maxOutputTokens: 1300, ct);
+            maxInputTokens: 1500, maxOutputTokens: 1300, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSelectMissingWordKey, ActivityGenerateSelectMissingWordContent,
-            maxInputTokens: 900, maxOutputTokens: 900, ct);
+            maxInputTokens: 1400, maxOutputTokens: 900, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateHighlightCorrectSummaryKey, ActivityGenerateHighlightCorrectSummaryContent,
@@ -4578,27 +4578,27 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,
-            maxInputTokens: 900, maxOutputTokens: 1000, ct);
+            maxInputTokens: 1400, maxOutputTokens: 1000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingFillInBlanksKey, ActivityGenerateReadingFillInBlanksContent,
-            maxInputTokens: 900, maxOutputTokens: 1100, ct);
+            maxInputTokens: 1400, maxOutputTokens: 1100, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReorderParagraphsKey, ActivityGenerateReorderParagraphsContent,
-            maxInputTokens: 900, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1300, maxOutputTokens: 1200, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingWritingFillInBlanksKey, ActivityGenerateReadingWritingFillInBlanksContent,
-            maxInputTokens: 900, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1500, maxOutputTokens: 1200, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSummarizeWrittenTextKey, ActivityGenerateSummarizeWrittenTextContent,
-            maxInputTokens: 1000, maxOutputTokens: 1400, ct);
+            maxInputTokens: 1500, maxOutputTokens: 1400, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWriteEssayKey, ActivityGenerateWriteEssayContent,
-            maxInputTokens: 1000, maxOutputTokens: 1600, ct);
+            maxInputTokens: 1300, maxOutputTokens: 1600, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSummarizeSpokenTextKey, ActivityGenerateSummarizeSpokenTextContent,
@@ -4606,7 +4606,7 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateAnswerShortQuestionKey, ActivityGenerateAnswerShortQuestionContent,
-            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
+            maxInputTokens: 1800, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateAnswerShortQuestionKey, ActivityEvaluateAnswerShortQuestionContent,
@@ -4614,31 +4614,31 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateRepeatSentenceKey, ActivityGenerateRepeatSentenceContent,
-            maxInputTokens: 1400, maxOutputTokens: 2200, ct);
+            maxInputTokens: 2000, maxOutputTokens: 2200, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateRepeatSentenceKey, ActivityEvaluateRepeatSentenceContent,
             maxInputTokens: 1800, maxOutputTokens: 1000, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateRespondToSituationKey, ActivityGenerateRespondToSituationContent,
-            maxInputTokens: 1400, maxOutputTokens: 2400, ct);
+            maxInputTokens: 2100, maxOutputTokens: 2400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateRespondToSituationKey, ActivityEvaluateRespondToSituationContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateDescribeImageKey, ActivityGenerateDescribeImageContent,
-            maxInputTokens: 1400, maxOutputTokens: 2400, ct);
+            maxInputTokens: 2000, maxOutputTokens: 2400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateDescribeImageKey, ActivityEvaluateDescribeImageContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateRetellLectureKey, ActivityGenerateRetellLectureContent,
-            maxInputTokens: 1400, maxOutputTokens: 2400, ct);
+            maxInputTokens: 2000, maxOutputTokens: 2400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateRetellLectureKey, ActivityEvaluateRetellLectureContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSummarizeGroupDiscussionKey, ActivityGenerateSummarizeGroupDiscussionContent,
-            maxInputTokens: 1400, maxOutputTokens: 2800, ct);
+            maxInputTokens: 2400, maxOutputTokens: 2800, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateSummarizeGroupDiscussionKey, ActivityEvaluateSummarizeGroupDiscussionContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
@@ -4739,10 +4739,13 @@ Rules:
             .Where(p => p.Key == key && p.IsActive)
             .FirstOrDefaultAsync(ct);
 
-        if (activePrompt is not null && ComputeHash(activePrompt.Content) == contentHash)
+        if (activePrompt is not null
+            && ComputeHash(activePrompt.Content) == contentHash
+            && activePrompt.MaxInputTokens == maxInputTokens
+            && activePrompt.MaxOutputTokens == maxOutputTokens)
             return; // Already up to date
 
-        // Deactivate old active version if content changed
+        // Deactivate old active version if content or token budget changed
         if (activePrompt is not null)
         {
             activePrompt.Deactivate();
