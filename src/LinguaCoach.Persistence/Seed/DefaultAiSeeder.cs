@@ -52,6 +52,8 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateSummarizeSpokenTextKey              = "activity_generate_summarize_spoken_text";
     public const string ActivityGenerateAnswerShortQuestionKey              = "activity_generate_answer_short_question";
     public const string ActivityEvaluateAnswerShortQuestionKey              = "activity_evaluate_answer_short_question";
+    public const string ActivityGenerateReadAloudKey                        = "activity_generate_read_aloud";
+    public const string ActivityEvaluateReadAloudKey                        = "activity_evaluate_read_aloud";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -2744,6 +2746,143 @@ Return ONLY valid JSON in this exact format:
 }
 """;
 
+    private const string ActivityGenerateReadAloudContent = """
+You are an expert English language teacher creating a read-aloud speaking exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read short workplace texts aloud and type what they read. This exercises reading fluency, pronunciation awareness, and natural pacing.
+
+Generate exactly 2 texts (DefaultItemsPerPractice=2). Each text should be 20-40 words — short enough to read in one breath, realistic for a workplace context.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what speaking/reading skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["pronunciation", "reading"],
+  "exerciseType": "read_aloud",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to read workplace texts aloud clearly'>",
+    "explanation": "<2-4 sentences: general strategy for reading aloud with clarity and natural pacing. No reference to the actual texts below.>",
+    "keyPoints": [
+      "<e.g. 'Read at a natural pace — not too fast, not too slow'>",
+      "<e.g. 'Pause at punctuation to help your listener follow'>",
+      "<e.g. 'Stress key words to convey the right meaning'>",
+      "<e.g. 'Preview the text before reading to avoid surprises'>"
+    ],
+    "examples": [
+      { "phrase": "<example of clear spoken phrasing>", "meaning": "<what makes it clear>", "note": "<strategy tip>" }
+    ],
+    "strategy": "<one sentence: how to approach reading workplace texts aloud for maximum clarity>",
+    "commonMistakes": [
+      "reading too fast without pausing",
+      "dropping word endings under pressure",
+      "losing eye contact with the text mid-sentence",
+      "monotone delivery without natural stress"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about reading aloud clearly, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read each text aloud, then type exactly what you read.",
+    "scenario": "<1 sentence describing the workplace context for these texts>",
+    "task": "Read each text aloud clearly and naturally, then type what you said.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "t1",
+          "text": "<20-40 word workplace text — a notice, announcement, instruction, or short message>",
+          "displayTitle": "<short label, e.g. 'Meeting Notice'>",
+          "difficulty": "<easy|medium|hard>",
+          "expectedText": "<exact same text as above — used for word-overlap scoring>",
+          "focusAreas": ["<e.g. 'sentence rhythm'>", "<e.g. 'word stress'>"],
+          "explanation": "<one sentence tip for reading this text well>"
+        },
+        {
+          "id": "t2",
+          "text": "<20-40 word workplace text>",
+          "displayTitle": "<short label>",
+          "difficulty": "<easy|medium|hard>",
+          "expectedText": "<exact same text as above>",
+          "focusAreas": ["<focus area>"],
+          "explanation": "<one sentence tip>"
+        }
+      ],
+      "successChecklist": [
+        "Each text is read clearly and at a natural pace.",
+        "Key words are stressed appropriately.",
+        "Punctuation is reflected in natural pauses."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Text accuracy",
+      "Word coverage",
+      "Natural pacing",
+      "Clarity"
+    ],
+    "rubric": [
+      { "criterion": "Accuracy", "description": "The typed transcript closely matches the original text." },
+      { "criterion": "Coverage", "description": "Most words from the text are present in the transcript." },
+      { "criterion": "Clarity", "description": "The reading sounds natural and well-paced based on the typed output." }
+    ],
+    "feedbackFocus": "Help the student read workplace texts aloud clearly, accurately, and with natural pacing.",
+    "successCriteria": [
+      "Word overlap with the original text is high.",
+      "The student captures the key content words.",
+      "The transcript reflects natural sentence structure."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual texts, expectedText values, item ids, or scoring details. It teaches general read-aloud strategy only.
+- Each item must have id, text, displayTitle, difficulty, expectedText (same as text), focusAreas (array), and explanation.
+- Texts must be 20-40 words, realistic workplace content (notices, instructions, announcements, short messages), appropriate for {{cefrLevel}}.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateReadAloudContent = """
+You are a warm, professional English speaking coach evaluating a student's read-aloud exercise.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (texts and expected transcripts):
+{{activityContent}}
+
+Student's submitted transcripts:
+{{submittedAnswer}}
+
+For each item, compare the student's typed transcript to the expectedText using word overlap. Count matched words, missing words, and extra words. Provide brief, encouraging per-item feedback about clarity, pacing, and word coverage.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0.0-1.0>,
+  "overallFeedback": "<2-3 sentences of overall feedback on reading clarity and accuracy>",
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true if word overlap >= 60%, false otherwise>,
+      "submittedAnswer": "<what the student typed>",
+      "expectedAnswer": "<the original text>",
+      "matchedWords": <count of matched words>,
+      "missingWords": ["<key words not captured>"],
+      "feedback": "<1 sentence of item-level feedback on clarity and coverage>"
+    }
+  ],
+  "coachingTip": "<one actionable tip for improving read-aloud clarity or pacing>",
+  "encouragement": "<one sentence of encouragement>"
+}
+""";
+
     private const string ActivityEvaluateSummarizeSpokenTextContent = """
 You are an expert English language teacher evaluating a student's summary of a spoken text.
 
@@ -3614,6 +3753,14 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateAnswerShortQuestionKey, ActivityEvaluateAnswerShortQuestionContent,
             maxInputTokens: 2000, maxOutputTokens: 1200, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,
+            maxInputTokens: 1200, maxOutputTokens: 1800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateReadAloudKey, ActivityEvaluateReadAloudContent,
+            maxInputTokens: 1800, maxOutputTokens: 1000, ct);
 
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

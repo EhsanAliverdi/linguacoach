@@ -51,4 +51,5 @@ public static class ExercisePatternKey
 
     // ── Speaking ─────────────────────────────────────────────────────────────
     public const string AnswerShortQuestion            = "answer_short_question";
+    public const string ReadAloud                      = "read_aloud";
 }

@@ -66,7 +66,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        Assert.DoesNotContain(eligible, e => e.Key == "read_aloud");
+        Assert.DoesNotContain(eligible, e => e.Key == "repeat_sentence");
         Assert.Contains(eligible, e => e.Key == "email_reply");
     }
 
@@ -302,11 +302,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task ReadAloud_IsNowRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "read_aloud");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "read_aloud");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
         {
-            "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
+            "repeat_sentence", "describe_image", "respond_to_situation",
             "retell_lecture", "summarize_group_discussion",
         };
 

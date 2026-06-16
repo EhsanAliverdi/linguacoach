@@ -28,6 +28,9 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         if (request.ExercisePatternKey == "answer_short_question")
             return EvaluateAnswerShortQuestionAsync(request);
 
+        if (request.ExercisePatternKey == "read_aloud")
+            return EvaluateReadAloudAsync(request);
+
         var expectedItems = ParseExpectedItems(request.ContentJson, request.ExercisePatternKey);
         var submittedMap = ParseSubmittedAnswers(request.SubmittedAnswerJson);
 
@@ -526,6 +529,134 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
             coachSummary: coachSummary));
     }
 
+    // ── read_aloud ─────────────────────────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateReadAloudAsync(
+        PatternEvaluationRequest request)
+    {
+        var json = UnwrapStagedContent(request.ContentJson);
+        ReadAloudContent? content = null;
+        try { content = JsonSerializer.Deserialize<ReadAloudContent>(json, JsonOptions); }
+        catch (JsonException) { /* leave null */ }
+
+        var items = content?.Items ?? [];
+
+        var submittedByItem = new Dictionary<string, string?>(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(request.SubmittedAnswerJson))
+        {
+            try
+            {
+                var dto = JsonSerializer.Deserialize<ReadAloudSubmittedAnswer>(request.SubmittedAnswerJson, JsonOptions);
+                if (dto?.Items is not null)
+                {
+                    foreach (var s in dto.Items)
+                    {
+                        if (!string.IsNullOrWhiteSpace(s.ItemId))
+                            submittedByItem[s.ItemId] = s.AnswerText;
+                    }
+                }
+            }
+            catch (JsonException) { /* leave empty */ }
+        }
+
+        var itemResults = new List<PatternEvaluationItemResult>();
+        double totalScore = 0;
+        double totalMax = items.Count;
+        var usedKeys = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var key = item.Id ?? $"t{i + 1}";
+            usedKeys.Add(key);
+
+            var expected = item.ExpectedText ?? item.Text ?? string.Empty;
+            submittedByItem.TryGetValue(key, out var submitted);
+
+            var overlap = CalculateWordOverlap(expected, submitted);
+            var isCorrect = overlap >= 0.60;
+            var score = Math.Round(overlap, 2);
+            totalScore += score;
+
+            string feedback;
+            if (string.IsNullOrWhiteSpace(submitted))
+                feedback = "No transcript given. Try reading the text aloud and typing what you said.";
+            else if (isCorrect)
+                feedback = $"Good coverage — you captured {(int)(overlap * 100)}% of the words. Keep practising your pacing.";
+            else
+                feedback = $"You captured {(int)(overlap * 100)}% of the words. Read more slowly and focus on each word.";
+
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: key,
+                StudentAnswer: submitted,
+                CorrectAnswer: expected,
+                AcceptedAnswers: [expected],
+                IsCorrect: isCorrect,
+                Score: score,
+                MaxScore: 1,
+                Feedback: feedback));
+        }
+
+        foreach (var (submittedId, submittedText) in submittedByItem)
+        {
+            if (usedKeys.Contains(submittedId)) continue;
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: submittedId,
+                StudentAnswer: submittedText,
+                CorrectAnswer: null,
+                AcceptedAnswers: [],
+                IsCorrect: false,
+                Score: 0,
+                MaxScore: 0,
+                Feedback: $"Unexpected item \"{submittedId}\" — not part of this exercise."));
+        }
+
+        var percentage = PatternEvaluationResult.CalculatePercentage(totalScore, totalMax);
+        var passed = totalMax == 0 || percentage >= 60;
+        var correct = itemResults.Count(r => r.MaxScore > 0 && r.IsCorrect);
+        var total = items.Count;
+
+        string coachSummary;
+        if (total == 0)
+            coachSummary = "Activity completed.";
+        else if (correct == total)
+            coachSummary = "Excellent — great word coverage on all texts!";
+        else if (correct == 0)
+            coachSummary = "Try reading more slowly and focus on capturing every word clearly.";
+        else
+            coachSummary = $"You achieved good coverage on {correct} of {total} texts. Review any highlighted texts and try again.";
+
+        return Task.FromResult(PatternEvaluationResult.Create(
+            score: totalScore,
+            maxScore: totalMax,
+            passed: passed,
+            completed: true,
+            itemResults: itemResults,
+            coachSummary: coachSummary));
+    }
+
+    // Calculates the fraction of expected words present in the submitted transcript.
+    private static double CalculateWordOverlap(string expected, string? submitted)
+    {
+        if (string.IsNullOrWhiteSpace(expected)) return 0;
+        if (string.IsNullOrWhiteSpace(submitted)) return 0;
+
+        var expectedWords = TokenizeWords(expected);
+        if (expectedWords.Count == 0) return 0;
+
+        var submittedWords = new HashSet<string>(TokenizeWords(submitted), StringComparer.Ordinal);
+        var matched = expectedWords.Count(w => submittedWords.Contains(w));
+        return (double)matched / expectedWords.Count;
+    }
+
+    private static List<string> TokenizeWords(string text)
+    {
+        return Regex.Matches(text.ToLowerInvariant(), @"[a-z']+")
+            .Select(m => m.Value.Trim('\''))
+            .Where(w => w.Length > 0)
+            .ToList();
+    }
+
     // ── coach summary ──────────────────────────────────────────────────────────
 
     private static string BuildCoachSummary(List<PatternEvaluationItemResult> items)
@@ -612,6 +743,35 @@ public sealed class AnswerShortQuestionSubmittedAnswer
 }
 
 public sealed class AnswerShortQuestionSubmittedItem
+{
+    public string? ItemId { get; set; }
+    public string? AnswerText { get; set; }
+}
+
+/// <summary>practiceContent.exerciseData shape for read_aloud.</summary>
+public sealed class ReadAloudContent
+{
+    public List<ReadAloudItem> Items { get; set; } = [];
+}
+
+public sealed class ReadAloudItem
+{
+    public string? Id { get; set; }
+    public string? Text { get; set; }
+    public string? DisplayTitle { get; set; }
+    public string? Difficulty { get; set; }
+    public string? ExpectedText { get; set; }
+    public List<string>? FocusAreas { get; set; }
+    public string? Explanation { get; set; }
+}
+
+/// <summary>Submitted answer shape for read_aloud.</summary>
+public sealed class ReadAloudSubmittedAnswer
+{
+    public List<ReadAloudSubmittedItem> Items { get; set; } = [];
+}
+
+public sealed class ReadAloudSubmittedItem
 {
     public string? ItemId { get; set; }
     public string? AnswerText { get; set; }

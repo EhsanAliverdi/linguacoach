@@ -497,6 +497,8 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
       submittedContent = JSON.stringify({ summaryText: payload.summaryText });
     } else if (payload.kind === 'answerShortQuestion') {
       submittedContent = JSON.stringify({ items: payload.items });
+    } else if (payload.kind === 'readAloud') {
+      submittedContent = JSON.stringify({ items: payload.items });
     } else {
       submittedContent = JSON.stringify(payload);
     }

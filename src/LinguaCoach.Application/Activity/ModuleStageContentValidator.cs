@@ -98,6 +98,7 @@ public static class ModuleStageContentValidator
         ["write_from_dictation"]                 = ["items"],
         ["summarize_spoken_text"]                = ["audioScript", "prompt"],
         ["answer_short_question"]                = ["items"],
+        ["read_aloud"]                           = ["items"],
     };
 
     // Per-item field requirements for item-array formats: pattern key => required item fields.
@@ -105,6 +106,7 @@ public static class ModuleStageContentValidator
     {
         ["write_from_dictation"]    = ["id", "audioScript", "answer"],
         ["answer_short_question"]   = ["id", "question"],
+        ["read_aloud"]              = ["id", "text"],
     };
 
     public static ValidationResult Validate(

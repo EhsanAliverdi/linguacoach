@@ -437,6 +437,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise answering short spoken workplace questions briefly and clearly",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.ReadAloud,
+            name: "Read Aloud",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """["Pronunciation", "Reading"]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.ReadAloud,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_read_aloud",
+            aiEvaluatePromptKey: "activity_evaluate_read_aloud",
+            teachingPurpose: "Practise reading workplace texts aloud with clarity and natural pacing",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

@@ -50,7 +50,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     public async Task Seeder_Seeds_AllTenMvpPatterns()
     {
         var count = await _db.ExercisePatterns.CountAsync();
-        Assert.Equal(26, count);
+        Assert.Equal(27, count);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     {
         await ExercisePatternSeeder.SeedAsync(_db, NullLogger.Instance);
         var count = await _db.ExercisePatterns.CountAsync();
-        Assert.Equal(26, count);
+        Assert.Equal(27, count);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     {
         var repo = new ExercisePatternRepository(_db);
         var all = await repo.GetAllActiveAsync();
-        Assert.Equal(26, all.Count);
+        Assert.Equal(27, all.Count);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
 
         var repo = new ExercisePatternRepository(_db);
         var all = await repo.GetAllActiveAsync();
-        Assert.Equal(25, all.Count);
+        Assert.Equal(26, all.Count);
         Assert.DoesNotContain(all, p => p.Key == ExercisePatternKey.PhraseMatch);
     }
 
@@ -206,10 +206,11 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
         var repo = new ExercisePatternRepository(_db);
         var results = await repo.GetByKindAsync(ExerciseKind.SpeakingTask);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.SpokenResponseFromPrompt);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.SpeakingRoleplayTurn);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.AnswerShortQuestion);
+        Assert.Contains(results, p => p.Key == ExercisePatternKey.ReadAloud);
     }
 
     // ── LearningActivity.ExercisePatternKey persistence ───────────────────────

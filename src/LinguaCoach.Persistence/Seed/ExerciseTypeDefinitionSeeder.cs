@@ -72,7 +72,8 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.ReadingFillInBlanks, "Reading Fill in Blanks", "Fill blanks in a reading passage.", "reading", "[]", "Pattern", "reading_fill_in_blanks", "exact_match", "activity_generate_reading_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingFillInBlanks, 5, false, false, true, false),
         Ready(ExercisePatternKey.ReorderParagraphs, "Reorder Paragraphs", "Put paragraphs in the correct logical order.", "reading", "[]", "Pattern", "reorder_paragraphs", "exact_match", "activity_generate_reorder_paragraphs", ActivityType.ReadingTask, ExercisePatternKey.ReorderParagraphs, 5, false, false, true, false),
 
-        Planned("read_aloud", "Read Aloud", "Read text aloud clearly.", "speaking", "[\"reading\"]", "Planned speaking format", true, false),
+        Ready(ExercisePatternKey.ReadAloud, "Read Aloud", "Read a short workplace text aloud as clearly and naturally as possible.", "speaking", "[\"pronunciation\", \"reading\"]", "Pattern", "read_aloud", "exact_match", "activity_generate_read_aloud", ActivityType.SpeakingRolePlay, ExercisePatternKey.ReadAloud, 5, false, false, true, false),
+        // read_aloud promoted to Ready above
         Planned("repeat_sentence", "Repeat Sentence", "Repeat an audio sentence accurately.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),
         Planned("describe_image", "Describe Image", "Describe an image aloud.", "speaking", "[]", "Planned speaking format", true, false, requiresImage: true),
         Planned("respond_to_situation", "Respond to Situation", "Speak a response to a workplace situation.", "speaking", "[]", "Planned speaking format", true, false),

@@ -743,6 +743,38 @@ public sealed class ExactMatchEvaluatorTests
     private static PatternEvaluationRequest AsqRequest(string contentJson, string submittedJson) =>
         MakeRequest(contentJson, submittedJson, "answer_short_question");
 
+    // ── read_aloud helpers ────────────────────────────────────────────────────
+
+    private static string RaContent(params (string id, string text)[] items)
+    {
+        var content = new ReadAloudContent
+        {
+            Items = items.Select(i => new ReadAloudItem
+            {
+                Id = i.id,
+                Text = i.text,
+                ExpectedText = i.text,
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    private static string RaSubmitted(params (string itemId, string? answerText)[] items)
+    {
+        var dto = new ReadAloudSubmittedAnswer
+        {
+            Items = items.Select(i => new ReadAloudSubmittedItem
+            {
+                ItemId = i.itemId,
+                AnswerText = i.answerText,
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(dto, JsonOptions);
+    }
+
+    private static PatternEvaluationRequest RaRequest(string contentJson, string submittedJson) =>
+        MakeRequest(contentJson, submittedJson, "read_aloud");
+
     [Fact]
     public async Task AnswerShortQuestion_AllCorrect_ReturnsFullScore()
     {
@@ -919,5 +951,155 @@ public sealed class ExactMatchEvaluatorTests
 
         pass.Passed.Should().BeTrue();
         fail.Passed.Should().BeFalse();
+    }
+
+    // ── ReadAloud tests ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ReadAloud_PerfectTranscript_IsCorrect()
+    {
+        var text = "Please send the updated report by end of day.";
+        var content = RaContent(("t1", text));
+        var submitted = RaSubmitted(("t1", text));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+        result.Score.Should().BeGreaterThanOrEqualTo(0.9);
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadAloud_HighWordOverlap_IsCorrect()
+    {
+        var content = RaContent(("t1", "Please send the updated report by end of day."));
+        // Missing "updated" and "end" — still >60% overlap
+        var submitted = RaSubmitted(("t1", "Please send the report by of day."));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadAloud_LowWordOverlap_IsIncorrect()
+    {
+        var content = RaContent(("t1", "The quarterly budget meeting has been postponed until Thursday."));
+        // Very different words — well below 60%
+        var submitted = RaSubmitted(("t1", "hello world"));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReadAloud_EmptyAnswer_IsIncorrect()
+    {
+        var content = RaContent(("t1", "All staff must complete the training by Friday."));
+        var submitted = RaSubmitted(("t1", ""));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeFalse();
+        result.ItemResults[0].Score.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ReadAloud_MissingAnswer_IsIncorrectNotError()
+    {
+        var content = RaContent(("t1", "Please confirm your attendance."));
+        var submitted = RaSubmitted();
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.Completed.Should().BeTrue();
+        result.ItemResults[0].IsCorrect.Should().BeFalse();
+        result.ItemResults[0].Score.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ReadAloud_MultipleItems_ScoresSeparately()
+    {
+        var content = RaContent(
+            ("t1", "Please send the report by Friday."),
+            ("t2", "The meeting has been rescheduled to Tuesday."));
+        // t1: good overlap, t2: no overlap
+        var submitted = RaSubmitted(
+            ("t1", "Please send the report by Friday."),
+            ("t2", "hello world goodbye"));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.ItemResults.Should().HaveCount(2);
+        result.ItemResults.First(r => r.ItemKey == "t1").IsCorrect.Should().BeTrue();
+        result.ItemResults.First(r => r.ItemKey == "t2").IsCorrect.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReadAloud_CaseInsensitive_Matches()
+    {
+        var content = RaContent(("t1", "Please Submit The Form Today."));
+        var submitted = RaSubmitted(("t1", "please submit the form today."));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.ItemResults[0].IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadAloud_StagedContent_IsUnwrappedCorrectly()
+    {
+        var innerContent = new ReadAloudContent
+        {
+            Items = [new ReadAloudItem { Id = "t1", Text = "Send the report.", ExpectedText = "Send the report." }]
+        };
+        var staged = new
+        {
+            schemaVersion = "module_stage_v1",
+            learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+            practiceContent = new { instructions = "I", scenario = (string?)null, task = "T", exerciseData = innerContent },
+            feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+        };
+        var contentJson = JsonSerializer.Serialize(staged, JsonOptions);
+        var submitted = RaSubmitted(("t1", "Send the report."));
+
+        var result = await _sut.EvaluateAsync(RaRequest(contentJson, submitted), default);
+
+        result.Score.Should().BeGreaterThanOrEqualTo(0.9);
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadAloud_60PercentThreshold_PassFail()
+    {
+        // 2 items: need both ≥60% overlap individually, and overall ≥60%
+        var content = RaContent(
+            ("t1", "Please send the updated report by end of day."),
+            ("t2", "The quarterly budget meeting has been postponed."));
+        // t1 good, t2 poor → average may be below 60
+        var submitted = RaSubmitted(
+            ("t1", "Please send the updated report by end of day."),
+            ("t2", "hello world"));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        // t1 passes, t2 fails — 1/2 correct = 50% → not passed overall
+        result.Passed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReadAloud_UnknownItem_NotScoredAndReported()
+    {
+        var content = RaContent(("t1", "Send the report."));
+        var submitted = RaSubmitted(("t1", "Send the report."), ("t99", "extra text"));
+
+        var result = await _sut.EvaluateAsync(RaRequest(content, submitted), default);
+
+        result.MaxScore.Should().Be(1);
+        var extra = result.ItemResults.FirstOrDefault(r => r.ItemKey == "t99");
+        extra.Should().NotBeNull();
+        extra!.MaxScore.Should().Be(0);
     }
 }

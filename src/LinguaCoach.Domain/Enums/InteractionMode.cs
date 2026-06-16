@@ -29,4 +29,5 @@ public enum InteractionMode
     WriteFromDictation         = 19, // Multiple short audio clips — student types what they hear, listening + writing skills
     SummarizeSpokenText        = 20, // Spoken text audio — student writes a concise summary, AI-evaluated, listening + writing skills
     AnswerShortQuestion        = 21, // Multiple short spoken questions — student types answers for each, speaking + listening skills
+    ReadAloud                  = 22, // Read a short workplace text aloud — student types transcript, speaking + pronunciation skills
 }

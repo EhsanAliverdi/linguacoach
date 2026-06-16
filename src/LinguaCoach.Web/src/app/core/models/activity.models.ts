@@ -30,7 +30,8 @@ export type InteractionMode =
   | 'highlightIncorrectWords'
   | 'writeFromDictation'
   | 'summarizeSpokenText'
-  | 'answerShortQuestion';
+  | 'answerShortQuestion'
+  | 'readAloud';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

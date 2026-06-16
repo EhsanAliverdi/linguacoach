@@ -39,6 +39,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "write_from_dictation",
         "summarize_spoken_text",
         "answer_short_question",
+        "read_aloud",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

@@ -118,6 +118,13 @@
       (submitted)="onAnswerShortQuestionSubmitted($event)"
     />
   }
+  @case ('readAloud') {
+    <app-read-aloud
+      [content]="readAloudContent"
+      [disabled]="disabled"
+      (submitted)="onReadAloudSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"
