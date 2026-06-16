@@ -389,6 +389,264 @@ public sealed class DynamicPatternSelectorTests
         act().Reason.Should().NotContain("goal-context");
     }
 
+    // ── Ledger signals — 10C ──────────────────────────────────────────────────
+
+    private static LedgerSignals EmptyLedger() =>
+        new(RecentPatternKeys: [], WeakPatternKeys: [], MasteredPatternKeys: [], LedgerGoalContext: null);
+
+    private static PatternSelectionInput InputWithLedger(
+        string[] candidates,
+        string slotSkill,
+        LedgerSignals ledger,
+        IReadOnlyList<PatternCatalogEntry>? catalog = null,
+        IReadOnlyDictionary<string, int>? skillScores = null,
+        IReadOnlyList<string>? recent = null,
+        string? goal = null) => new(
+            CefrLevel: null,
+            SkillScores: skillScores ?? new Dictionary<string, int>(),
+            LearningGoalContext: goal,
+            RecentPatternKeys: recent ?? [],
+            CandidatePatternKeys: candidates,
+            SlotPrimarySkill: slotSkill,
+            AvailableCatalog: catalog ?? candidates.Select(k => ReadyCatalogEntry(k, slotSkill)).ToList(),
+            Ledger: ledger);
+
+    [Fact]
+    public void NoLedgerEvents_FallsBackTo10ABehaviour()
+    {
+        // Empty ledger — should behave identically to no-ledger 10A path.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("writing_response", "writing"),
+            ReadyCatalogEntry("email_reply", "writing")
+        };
+        var withLedger = InputWithLedger(
+            ["writing_response", "email_reply"], "writing",
+            EmptyLedger(), catalog: catalog);
+        var withoutLedger = BasicInput(
+            ["writing_response", "email_reply"], "writing", catalog: catalog);
+
+        var r1 = DynamicPatternSelector.Select(withLedger);
+        var r2 = DynamicPatternSelector.Select(withoutLedger);
+
+        r1.SelectedPatternKey.Should().Be(r2.SelectedPatternKey);
+        r1.IsFallback.Should().BeFalse();
+    }
+
+    [Fact]
+    public void WeakLedgerEvent_BoostsPattern()
+    {
+        // email_reply is weak in the ledger → should be boosted over writing_response.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing"),
+            ReadyCatalogEntry("writing_response", "writing")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: ["writing_response"],
+            WeakPatternKeys: ["email_reply"],
+            MasteredPatternKeys: [],
+            LedgerGoalContext: null);
+
+        var input = InputWithLedger(
+            ["email_reply", "writing_response"], "writing",
+            ledger, catalog: catalog);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.SelectedPatternKey.Should().Be("email_reply");
+        result.Reason.Should().Contain("ledger=weak-boosted");
+        result.IsFallback.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Last3LedgerPatterns_AreAvoided_WhenAlternativeExists()
+    {
+        // email_reply was in the last 3 ledger events → penalised → writing_response preferred.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing"),
+            ReadyCatalogEntry("writing_response", "writing")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: ["email_reply", "email_reply", "email_reply"],
+            WeakPatternKeys: [],
+            MasteredPatternKeys: [],
+            LedgerGoalContext: null);
+
+        var input = InputWithLedger(
+            ["email_reply", "writing_response"], "writing",
+            ledger, catalog: catalog);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.SelectedPatternKey.Should().Be("writing_response");
+        result.IsFallback.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MasteredPattern_IsDeprioritised_WhenAlternativeExists()
+    {
+        // email_reply is mastered → -5 penalty → writing_response preferred when otherwise equal.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing"),
+            ReadyCatalogEntry("writing_response", "writing")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: [],
+            WeakPatternKeys: [],
+            MasteredPatternKeys: ["email_reply"],
+            LedgerGoalContext: null);
+
+        var input = InputWithLedger(
+            ["email_reply", "writing_response"], "writing",
+            ledger, catalog: catalog);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        // writing_response: +10 (not recent) = 10; email_reply: +10 (not recent) - 5 (mastered) = 5.
+        result.SelectedPatternKey.Should().Be("writing_response");
+        result.IsFallback.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MasteredPattern_IsNotExcluded_WhenNoAlternative()
+    {
+        // Only one candidate — even if mastered, it must still be selected.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: [],
+            WeakPatternKeys: [],
+            MasteredPatternKeys: ["email_reply"],
+            LedgerGoalContext: null);
+
+        var input = InputWithLedger(
+            ["email_reply"], "writing",
+            ledger, catalog: catalog);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.SelectedPatternKey.Should().Be("email_reply");
+        result.IsFallback.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FailedLedgerEvent_BoostedSameAsNeedsReview()
+    {
+        // Weak events include failed pattern — it should be boosted.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("spoken_response_from_prompt", "speaking"),
+            ReadyCatalogEntry("answer_short_question", "speaking")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: [],
+            WeakPatternKeys: ["spoken_response_from_prompt"],
+            MasteredPatternKeys: [],
+            LedgerGoalContext: null);
+
+        var input = InputWithLedger(
+            ["spoken_response_from_prompt", "answer_short_question"], "speaking",
+            ledger, catalog: catalog);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.SelectedPatternKey.Should().Be("spoken_response_from_prompt");
+        result.Reason.Should().Contain("ledger=weak-boosted");
+    }
+
+    [Fact]
+    public void NullLedger_DoesNotCrash_And_BehavesLike10A()
+    {
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing")
+        };
+        var input = new PatternSelectionInput(
+            CefrLevel: null,
+            SkillScores: new Dictionary<string, int>(),
+            LearningGoalContext: null,
+            RecentPatternKeys: [],
+            CandidatePatternKeys: ["email_reply"],
+            SlotPrimarySkill: "writing",
+            AvailableCatalog: catalog,
+            Ledger: null);
+
+        var act = () => DynamicPatternSelector.Select(input);
+
+        act.Should().NotThrow();
+        act().SelectedPatternKey.Should().Be("email_reply");
+    }
+
+    [Fact]
+    public void LedgerGoalContext_AppearsInReason_WhenProfileGoalIsNull()
+    {
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: [],
+            WeakPatternKeys: [],
+            MasteredPatternKeys: [],
+            LedgerGoalContext: "travel English");
+
+        var input = InputWithLedger(
+            ["email_reply"], "writing",
+            ledger, catalog: catalog,
+            goal: null);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.Reason.Should().Contain("travel English");
+    }
+
+    [Fact]
+    public void ExplicitProfileGoal_TakesPrecedenceOverLedgerGoalContext()
+    {
+        // Profile-level goal should win over ledger-derived goal in the reason string.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing")
+        };
+        var ledger = new LedgerSignals(
+            RecentPatternKeys: [],
+            WeakPatternKeys: [],
+            MasteredPatternKeys: [],
+            LedgerGoalContext: "travel English");
+
+        var input = InputWithLedger(
+            ["email_reply"], "writing",
+            ledger, catalog: catalog,
+            goal: "workplace English");
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.Reason.Should().Contain("workplace English");
+        result.Reason.Should().NotContain("travel English");
+    }
+
+    [Fact]
+    public void LearningGoalContext_NeverDefaultsToWorkplace()
+    {
+        // No goal set anywhere — reason must not mention "workplace" as a default.
+        var catalog = new List<PatternCatalogEntry>
+        {
+            ReadyCatalogEntry("email_reply", "writing")
+        };
+        var ledger = EmptyLedger();
+        var input = InputWithLedger(
+            ["email_reply"], "writing", ledger, catalog: catalog, goal: null);
+
+        var result = DynamicPatternSelector.Select(input);
+
+        result.Reason.Should().NotContain("goal-context");
+    }
+
     // ── SessionDurationTemplates pool invariants ──────────────────────────────
 
     [Theory]

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.LearningPath;
+using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -29,17 +30,20 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
     private readonly LinguaCoachDbContext _db;
     private readonly ILearningPathGenerator _pathGenerator;
     private readonly IExerciseTypeRegistry _exerciseTypes;
+    private readonly IStudentLearningLedger _ledger;
     private readonly ILogger<SessionGeneratorService> _logger;
 
     public SessionGeneratorService(
         LinguaCoachDbContext db,
         ILearningPathGenerator pathGenerator,
         IExerciseTypeRegistry exerciseTypes,
+        IStudentLearningLedger ledger,
         ILogger<SessionGeneratorService> logger)
     {
         _db = db;
         _pathGenerator = pathGenerator;
         _exerciseTypes = exerciseTypes;
+        _ledger = ledger;
         _logger = logger;
     }
 
@@ -124,10 +128,14 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
                 SupportsTodayLesson: e.SupportsTodayLesson))
             .ToList();
 
+        // ── 6b. Fetch ledger signals for the selector ─────────────────────────
+        var ledgerSignals = await BuildLedgerSignalsAsync(studentProfileId, ct);
+
         // ── 7. Apply dynamic pattern selection per slot ───────────────────────
         var steps = ApplyDynamicPatternSelection(
             template, skillScores, recentPatternKeys, catalogEntries,
-            profile.LearningGoalDescription ?? profile.LearningGoal, profile.SkillFocus);
+            profile.LearningGoalDescription ?? profile.LearningGoal, profile.SkillFocus,
+            ledgerSignals);
 
         // Filter any step whose chosen key is still not in the ready catalog.
         steps = await FilterUnavailableExerciseTypesAsync(steps, ct);
@@ -286,7 +294,8 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         IReadOnlyList<string> recentPatternKeys,
         IReadOnlyList<PatternCatalogEntry> catalogEntries,
         string? learningGoalContext,
-        SkillFocus? skillFocus)
+        SkillFocus? skillFocus,
+        LedgerSignals? ledgerSignals = null)
     {
         // Augment skill scores with skill-focus signal when profile is sparse.
         var effectiveScores = skillScores.Count > 0
@@ -310,7 +319,8 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
                 RecentPatternKeys: recentPatternKeys,
                 CandidatePatternKeys: step.GetCandidates(),
                 SlotPrimarySkill: step.PrimarySkill,
-                AvailableCatalog: catalogEntries);
+                AvailableCatalog: catalogEntries,
+                Ledger: ledgerSignals);
 
             var result = DynamicPatternSelector.Select(input);
 
@@ -391,6 +401,61 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         catch
         {
             // Memory snapshot is advisory — never block session creation.
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Fetches ledger-derived signals used by DynamicPatternSelector.
+    /// Best-effort — returns null on any error so session generation is never blocked.
+    /// When the ledger has no events for this student, returns empty-list signals
+    /// (not null) so the selector still gets a non-null LedgerSignals and can
+    /// fall back to 10A behaviour gracefully.
+    /// </summary>
+    private async Task<LedgerSignals?> BuildLedgerSignalsAsync(Guid studentProfileId, CancellationToken ct)
+    {
+        try
+        {
+            // Fetch recent pattern keys from the ledger (replaces the ad-hoc
+            // SessionExercise history query for repetition avoidance).
+            var recentKeys = await _ledger.GetRecentPatternKeysAsync(studentProfileId, limit: 20, ct);
+
+            // Fetch weak events (NeedsReview / Failed outcomes).
+            var weakEvents = await _ledger.GetWeakEventsAsync(studentProfileId, limit: 20, ct);
+            var weakPatternKeys = weakEvents
+                .Where(e => !string.IsNullOrWhiteSpace(e.PatternKey))
+                .Select(e => e.PatternKey!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // Fetch recent events to identify mastered patterns and goal context.
+            var recentEvents = await _ledger.GetRecentAsync(studentProfileId, limit: 20, ct);
+            var masteredPatternKeys = recentEvents
+                .Where(e => e.Outcome == LearningEventOutcome.Mastered
+                            && !string.IsNullOrWhiteSpace(e.PatternKey))
+                .Select(e => e.PatternKey!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // Derive goal context from the most recent event that had one set.
+            // Never defaults to "workplace" — stays null if unset.
+            var ledgerGoalContext = recentEvents
+                .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e.LearningGoalContext))
+                ?.LearningGoalContext;
+
+            _logger.LogDebug(
+                "LedgerSignals for {StudentProfileId}: recentKeys={R} weakKeys={W} masteredKeys={M} goalContext={G}",
+                studentProfileId, recentKeys.Count, weakPatternKeys.Count, masteredPatternKeys.Count, ledgerGoalContext ?? "null");
+
+            return new LedgerSignals(
+                RecentPatternKeys: recentKeys,
+                WeakPatternKeys: weakPatternKeys,
+                MasteredPatternKeys: masteredPatternKeys,
+                LedgerGoalContext: ledgerGoalContext);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to build ledger signals for student {StudentProfileId}; falling back to no-ledger selection.", studentProfileId);
             return null;
         }
     }

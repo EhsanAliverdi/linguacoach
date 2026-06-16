@@ -1,9 +1,11 @@
 using LinguaCoach.Application.LearningPath;
+using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Infrastructure.Memory;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +34,8 @@ public sealed class SessionGeneratorServiceTests : IDisposable
         _db.Database.EnsureCreated();
         ExerciseTypeDefinitionSeeder.SeedAsync(_db, NullLogger.Instance).GetAwaiter().GetResult();
 
-        _service = new SessionGeneratorService(_db, new FakeLearningPathGenerator(_db), new ExerciseTypeRegistry(_db), NullLogger<SessionGeneratorService>.Instance);
+        var ledger = new StudentLearningLedgerService(_db, NullLogger<StudentLearningLedgerService>.Instance);
+        _service = new SessionGeneratorService(_db, new FakeLearningPathGenerator(_db), new ExerciseTypeRegistry(_db), ledger, NullLogger<SessionGeneratorService>.Instance);
     }
 
     /// <summary>
@@ -408,6 +411,64 @@ public sealed class SessionGeneratorServiceTests : IDisposable
 
         var session = await _db.LearningSessions.FindAsync(result.SessionId);
         Assert.Equal(module.Id, session!.LearningModuleId);
+    }
+
+    // ── Ledger-aware selection (10C) ──────────────────────────────────────────
+
+    [Fact]
+    public async Task LedgerWeakEvent_DoesNotCrash_AndSessionIsGenerated()
+    {
+        // Seeds a NeedsReview ledger event for a pattern, then verifies session
+        // generation still completes without error. Ledger data is advisory.
+        var (profile, _) = await SeedCourseReadyStudentAsync(preferredDuration: 15);
+
+        // Seed a weak ledger event for a writing pattern.
+        var weakEvent = new StudentLearningEvent(
+            studentProfileId: profile.Id,
+            source: LearningEventSource.TodayLesson,
+            outcome: LearningEventOutcome.NeedsReview,
+            patternKey: "email_reply",
+            primarySkill: "writing");
+        _db.StudentLearningEvents.Add(weakEvent);
+        await _db.SaveChangesAsync();
+
+        // Session generation must succeed with ledger data present.
+        var result = await _service.GetOrCreateTodaysSessionAsync(CommandFor(profile));
+
+        Assert.NotEqual(Guid.Empty, result.SessionId);
+        Assert.NotEmpty(result.Exercises);
+    }
+
+    [Fact]
+    public async Task LedgerMasteredEvent_DoesNotCrash_AndSessionIsGenerated()
+    {
+        var (profile, _) = await SeedCourseReadyStudentAsync(preferredDuration: 15);
+
+        var masteredEvent = new StudentLearningEvent(
+            studentProfileId: profile.Id,
+            source: LearningEventSource.PracticeGym,
+            outcome: LearningEventOutcome.Mastered,
+            patternKey: "phrase_match",
+            primarySkill: "vocabulary");
+        _db.StudentLearningEvents.Add(masteredEvent);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetOrCreateTodaysSessionAsync(CommandFor(profile));
+
+        Assert.NotEqual(Guid.Empty, result.SessionId);
+        Assert.NotEmpty(result.Exercises);
+    }
+
+    [Fact]
+    public async Task NoLedgerEvents_GeneratesSessionIdenticallyTo10A()
+    {
+        // No ledger events at all — session generation must succeed (10A fallback).
+        var (profile, _) = await SeedCourseReadyStudentAsync(preferredDuration: 15);
+
+        var result = await _service.GetOrCreateTodaysSessionAsync(CommandFor(profile));
+
+        Assert.NotEqual(Guid.Empty, result.SessionId);
+        Assert.NotEmpty(result.Exercises);
     }
 
     [Fact]

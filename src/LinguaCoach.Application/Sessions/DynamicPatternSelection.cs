@@ -1,5 +1,37 @@
 namespace LinguaCoach.Application.Sessions;
 
+// ── Ledger-derived signals ─────────────────────────────────────────────────────
+
+/// <summary>
+/// Compact, pre-fetched signals derived from the StudentLearningEvent ledger.
+/// Built once per session by SessionGeneratorService and passed to the selector.
+/// Null = no ledger data available; selector falls back to 10A behaviour.
+/// </summary>
+public sealed record LedgerSignals(
+    /// <summary>
+    /// Pattern keys from recent ledger events, newest-first. Used for repetition avoidance.
+    /// Replaces the ad-hoc SessionExercise history query where ledger data is available.
+    /// </summary>
+    IReadOnlyList<string> RecentPatternKeys,
+
+    /// <summary>
+    /// Pattern keys tagged NeedsReview or Failed in recent events, newest-first.
+    /// Selector boosts these to surface weak-area review.
+    /// </summary>
+    IReadOnlyList<string> WeakPatternKeys,
+
+    /// <summary>
+    /// Pattern keys where outcome was Mastered, newest-first.
+    /// Selector deprioritises these unless no alternative exists.
+    /// </summary>
+    IReadOnlyList<string> MasteredPatternKeys,
+
+    /// <summary>
+    /// Learning goal context sourced from the most recent ledger event that had one set.
+    /// Null when no event carried a goal context.
+    /// </summary>
+    string? LedgerGoalContext);
+
 // ── Selector input ─────────────────────────────────────────────────────────────
 
 /// <summary>
@@ -29,7 +61,12 @@ public sealed record PatternSelectionInput(
     string SlotPrimarySkill,
 
     /// <summary>Available catalog entries (Ready + enabled + SupportsTodayLesson).</summary>
-    IReadOnlyList<PatternCatalogEntry> AvailableCatalog);
+    IReadOnlyList<PatternCatalogEntry> AvailableCatalog,
+
+    /// <summary>
+    /// Pre-fetched ledger signals. Null = no ledger data; selector degrades to 10A behaviour.
+    /// </summary>
+    LedgerSignals? Ledger = null);
 
 /// <summary>
 /// Lightweight catalog entry passed to the selector — derived from ExerciseTypeRegistryEntry.
