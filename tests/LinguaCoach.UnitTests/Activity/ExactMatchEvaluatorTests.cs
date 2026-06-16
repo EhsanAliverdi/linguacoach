@@ -709,4 +709,215 @@ public sealed class ExactMatchEvaluatorTests
 
         result.ItemResults.Single().IsCorrect.Should().BeFalse();
     }
+
+    // ── answer_short_question ─────────────────────────────────────────────────
+
+    private static string AsqContent(params (string id, string question, string expected, string[]? accepted)[] items)
+    {
+        var content = new AnswerShortQuestionContent
+        {
+            Items = items.Select(i => new AnswerShortQuestionItem
+            {
+                Id = i.id,
+                Question = i.question,
+                ExpectedAnswer = i.expected,
+                AcceptedAnswers = i.accepted?.ToList(),
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    private static string AsqSubmitted(params (string itemId, string? answerText)[] items)
+    {
+        var dto = new AnswerShortQuestionSubmittedAnswer
+        {
+            Items = items.Select(i => new AnswerShortQuestionSubmittedItem
+            {
+                ItemId = i.itemId,
+                AnswerText = i.answerText,
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(dto, JsonOptions);
+    }
+
+    private static PatternEvaluationRequest AsqRequest(string contentJson, string submittedJson) =>
+        MakeRequest(contentJson, submittedJson, "answer_short_question");
+
+    [Fact]
+    public async Task AnswerShortQuestion_AllCorrect_ReturnsFullScore()
+    {
+        var content = AsqContent(
+            ("q1", "Where is the meeting?", "room 3", null),
+            ("q2", "Who is presenting?", "Sarah", null));
+        var submitted = AsqSubmitted(("q1", "room 3"), ("q2", "Sarah"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.Score.Should().Be(2);
+        result.MaxScore.Should().Be(2);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.ItemResults.Should().OnlyContain(r => r.IsCorrect);
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_ContainsMatch_IsAccepted()
+    {
+        // Student says "in room 3" — expected "room 3" — contains match should pass
+        var content = AsqContent(("q1", "Where is the meeting?", "room 3", null));
+        var submitted = AsqSubmitted(("q1", "in room 3"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_AcceptedAlternative_IsAccepted()
+    {
+        var content = AsqContent(("q1", "Who leads it?", "Sarah", ["Sarah", "Ms Smith"]));
+        var submitted = AsqSubmitted(("q1", "Ms Smith"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_CaseInsensitive_Matches()
+    {
+        var content = AsqContent(("q1", "When is it?", "Monday", null));
+        var submitted = AsqSubmitted(("q1", "MONDAY"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_OneWrong_ReturnsPartialScore()
+    {
+        var content = AsqContent(
+            ("q1", "Where is the meeting?", "room 3", null),
+            ("q2", "Who is presenting?", "Sarah", null));
+        var submitted = AsqSubmitted(("q1", "room 3"), ("q2", "James"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(2);
+        result.ItemResults.Single(r => r.ItemKey == "q2").IsCorrect.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_EmptyAnswer_IsIncorrect()
+    {
+        var content = AsqContent(("q1", "Where is the meeting?", "room 3", null));
+        var submitted = AsqSubmitted(("q1", "   "));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeFalse();
+        result.Score.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_MissingAnswer_IsIncorrectNotError()
+    {
+        var content = AsqContent(
+            ("q1", "Where?", "room 3", null),
+            ("q2", "Who?", "Sarah", null));
+        var submitted = AsqSubmitted(("q1", "room 3")); // q2 missing
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.ItemResults.Single(r => r.ItemKey == "q2").IsCorrect.Should().BeFalse();
+        result.ItemResults.Single(r => r.ItemKey == "q2").StudentAnswer.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_AllWrong_IsCompletedNotPassed()
+    {
+        var content = AsqContent(
+            ("q1", "Where?", "room 3", null),
+            ("q2", "Who?", "Sarah", null),
+            ("q3", "When?", "Monday", null));
+        var submitted = AsqSubmitted(("q1", "wrong"), ("q2", "wrong"), ("q3", "wrong"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.Score.Should().Be(0);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_UnknownItem_NotScoredAndReported()
+    {
+        var content = AsqContent(("q1", "Where?", "room 3", null));
+        var submitted = AsqSubmitted(("q1", "room 3"), ("q99", "extra"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.MaxScore.Should().Be(1);
+        // q99 extra item has MaxScore=0 so doesn't affect score
+        var extra = result.ItemResults.FirstOrDefault(r => r.ItemKey == "q99");
+        extra.Should().NotBeNull();
+        extra!.MaxScore.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_EmptySubmissionJson_ReturnsZeroScore()
+    {
+        var content = AsqContent(("q1", "Where?", "room 3", null));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(content, ""), default);
+
+        result.Score.Should().Be(0);
+        result.MaxScore.Should().Be(1);
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_StagedContent_IsUnwrappedCorrectly()
+    {
+        var innerContent = new AnswerShortQuestionContent
+        {
+            Items = [new AnswerShortQuestionItem { Id = "q1", Question = "Where?", ExpectedAnswer = "room 3" }]
+        };
+        var staged = new
+        {
+            schemaVersion = "module_stage_v1",
+            learnContent = new { teachingTitle = "T", explanation = "E", keyPoints = Array.Empty<string>(), examples = Array.Empty<object>(), strategy = "S", commonMistakes = Array.Empty<string>(), sourceLanguageSupport = (string?)null },
+            practiceContent = new { instructions = "I", scenario = (string?)null, task = "T", exerciseData = innerContent },
+            feedbackPlan = new { evaluationCriteria = Array.Empty<string>(), rubric = Array.Empty<object>(), feedbackFocus = "F", successCriteria = Array.Empty<string>() },
+        };
+        var contentJson = JsonSerializer.Serialize(staged, JsonOptions);
+        var submitted = AsqSubmitted(("q1", "room 3"));
+
+        var result = await _sut.EvaluateAsync(AsqRequest(contentJson, submitted), default);
+
+        result.Score.Should().Be(1);
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnswerShortQuestion_60PercentThreshold_PassFail()
+    {
+        // 3 items: need ≥2 correct to pass (66.7% ≥ 60%)
+        var content = AsqContent(
+            ("q1", "A?", "yes", null),
+            ("q2", "B?", "no", null),
+            ("q3", "C?", "maybe", null));
+        var twoCorrect = AsqSubmitted(("q1", "yes"), ("q2", "no"), ("q3", "wrong"));
+        var oneCorrect = AsqSubmitted(("q1", "yes"), ("q2", "wrong"), ("q3", "wrong"));
+
+        var pass = await _sut.EvaluateAsync(AsqRequest(content, twoCorrect), default);
+        var fail = await _sut.EvaluateAsync(AsqRequest(content, oneCorrect), default);
+
+        pass.Passed.Should().BeTrue();
+        fail.Passed.Should().BeFalse();
+    }
 }

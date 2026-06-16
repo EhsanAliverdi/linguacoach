@@ -212,6 +212,75 @@
   </div>
 }
 
+<!-- ── F. Answer Short Question result ────────────────────────────────────── -->
+@if (isAnswerShortQuestion && result.itemResults.length) {
+  <div data-testid="pattern-answer-short-question-result" class="sp-card" style="padding:18px">
+    <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px">
+      Your answers
+    </p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      @for (item of result.itemResults; track item.itemKey; let i = $index) {
+        @if (item.maxScore > 0) {
+          <div style="border-left:3px solid;padding-left:12px"
+            [style.border-color]="item.isCorrect ? 'var(--sp-success)' : 'var(--sp-warn)'">
+            <div style="font-size:11px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">
+              Question {{ i + 1 }}
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              @if (item.isCorrect) {
+                <svg width="13" height="13" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              } @else {
+                <svg width="13" height="13" fill="none" stroke="var(--sp-warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              }
+              <span style="font-size:12px;font-weight:700;color:var(--sp-muted)">Your answer:</span>
+              <span style="font-size:12.5px;color:var(--sp-ink)">{{ item.studentAnswer || '(no answer)' }}</span>
+            </div>
+            @if (!item.isCorrect && item.correctAnswer) {
+              <p style="font-size:12px;color:var(--sp-muted);margin:3px 0">
+                Expected: <span style="font-weight:700;color:var(--sp-text)">{{ item.correctAnswer }}</span>
+              </p>
+            }
+            @if (item.feedback && !item.isCorrect) {
+              <p style="font-size:12px;color:var(--sp-muted);line-height:1.5;margin:3px 0 0">{{ item.feedback }}</p>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+}
+
+<!-- ── G. Generic per-item fallback (future speaking formats) ─────────────── -->
+@if (isGenericItemResult) {
+  <div data-testid="pattern-generic-item-result" class="sp-card" style="padding:18px">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      @for (item of result.itemResults; track item.itemKey) {
+        @if (item.maxScore > 0) {
+          <div style="border-left:3px solid;padding-left:12px"
+            [style.border-color]="item.isCorrect ? 'var(--sp-success)' : 'var(--sp-warn)'">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              @if (item.isCorrect) {
+                <svg width="13" height="13" fill="none" stroke="var(--sp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              } @else {
+                <svg width="13" height="13" fill="none" stroke="var(--sp-warn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              }
+              <span style="font-size:12.5px;color:var(--sp-ink)">{{ item.studentAnswer || '(no answer)' }}</span>
+            </div>
+            @if (!item.isCorrect && item.correctAnswer) {
+              <p style="font-size:12px;color:var(--sp-muted);margin:3px 0">
+                Expected: <span style="font-weight:700;color:var(--sp-text)">{{ item.correctAnswer }}</span>
+              </p>
+            }
+            @if (item.feedback) {
+              <p style="font-size:12px;color:var(--sp-muted);line-height:1.5;margin:3px 0 0">{{ item.feedback }}</p>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+}
+
 <!-- ── E. Spoken response result ──────────────────────────────────────────── -->
 @if (isSpokenResponse) {
   <div data-testid="pattern-spoken-result">

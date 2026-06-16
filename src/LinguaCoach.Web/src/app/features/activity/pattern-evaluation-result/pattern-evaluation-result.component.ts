@@ -33,6 +33,24 @@ export class PatternEvaluationResultComponent {
     return this.result.exercisePatternKey === 'spoken_response_from_prompt';
   }
 
+  get isAnswerShortQuestion(): boolean {
+    return this.result.exercisePatternKey === 'answer_short_question';
+  }
+
+  // True for any multi-item per-item-keyed result that isn't covered by a more
+  // specific block — used as a generic fallback for future speaking formats that
+  // share the same { itemKey, studentAnswer, correctAnswer, feedback } shape.
+  get isGenericItemResult(): boolean {
+    return !this.isMatchingPairs
+      && !this.isGapFill
+      && !this.isChatOrEmail
+      && !this.isListenAndAnswer
+      && !this.isSpokenResponse
+      && !this.isAnswerShortQuestion
+      && !this.isReadOnly
+      && this.result.itemResults.length > 0;
+  }
+
   get isReadOnly(): boolean {
     return this.result.exercisePatternKey === 'lesson_reflection';
   }
