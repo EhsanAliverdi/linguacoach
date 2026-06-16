@@ -4,246 +4,102 @@
     <p class="sp-eyebrow sp-practice-eyebrow">On-demand practice</p>
     <h1 data-testid="practice-gym-heading" class="sp-practice-title">Practice Gym</h1>
     <p class="sp-practice-subtitle">
-      Choose a classroom-style lesson. Each one teaches first, then gives practice and feedback.
+      Choose a format to practise. Each session teaches first, then gives you practice and personalised feedback.
     </p>
   </header>
 
-  <section class="sp-practice-section">
-    <p class="sp-eyebrow sp-practice-section-label">By skill</p>
+  @if (loadState() === 'loading') {
+    <div class="sp-practice-loading" data-testid="practice-loading" role="status" aria-live="polite">
+      <span class="sp-practice-loading-dot"></span>
+      <span class="sp-practice-loading-dot"></span>
+      <span class="sp-practice-loading-dot"></span>
+      <span class="sp-practice-loading-text">Loading practice formats&hellip;</span>
+    </div>
+  }
+
+  @if (loadState() === 'error') {
+    <div class="sp-practice-empty" data-testid="practice-error" role="alert">
+      <p class="sp-practice-empty-title">Could not load practice formats.</p>
+      <p class="sp-practice-empty-copy">Check your connection and refresh the page.</p>
+    </div>
+  }
+
+  @if (loadState() === 'ready') {
+
     @if (selectionMessage()) {
       <div class="sp-practice-alert" role="status" data-testid="practice-selection-message">
         {{ selectionMessage() }}
       </div>
     }
-    <div class="sp-skill-grid" data-testid="practice-skills-grid">
 
-      @if (hasSkillAvailable('listening')) {
-        <button type="button" (click)="selectSkill('listening')" data-testid="practice-card-listening"
-                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
-          <div class="sp-practice-card-mark">L</div>
-          <div class="sp-practice-card-title">Listening</div>
-          <div class="sp-practice-card-copy">{{ isSelecting('listening') ? 'Finding practice...' : 'Lesson, audio practice, feedback' }}</div>
-        </button>
-      } @else {
-        <div data-testid="practice-card-listening" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">L</div>
-          <div class="sp-practice-card-title">Listening</div>
-          <div class="sp-practice-card-muted">{{ skillStatusText('listening') }}</div>
-        </div>
-      }
-
-      @if (hasSkillAvailable('reading')) {
-        <button type="button" (click)="selectSkill('reading')" data-testid="practice-card-reading"
-                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
-          <div class="sp-practice-card-mark">R</div>
-          <div class="sp-practice-card-title">Reading</div>
-          <div class="sp-practice-card-copy">{{ isSelecting('reading') ? 'Finding practice...' : 'Reading practice and feedback' }}</div>
-        </button>
-      } @else {
-        <div data-testid="practice-card-reading" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">R</div>
-          <div class="sp-practice-card-title">Reading</div>
-          <div class="sp-practice-card-muted">{{ skillStatusText('reading') }}</div>
-        </div>
-      }
-
-      @if (hasSkillAvailable('speaking')) {
-        <button type="button" (click)="selectSkill('speaking')" data-testid="speaking-card"
-                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
-          <div class="sp-practice-card-mark">S</div>
-          <div class="sp-practice-card-title">Speaking</div>
-          <div class="sp-practice-card-copy">{{ isSelecting('speaking') ? 'Finding practice...' : 'Prompt, recording, feedback' }}</div>
-        </button>
-      } @else {
-        <div data-testid="speaking-card" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">S</div>
-          <div class="sp-practice-card-title">Speaking</div>
-          <div class="sp-practice-card-muted">{{ skillStatusText('speaking') }}</div>
-        </div>
-      }
-
-      @if (hasSkillAvailable('writing')) {
-        <button type="button" (click)="selectSkill('writing')" data-testid="practice-card-writing"
-                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
-          <div class="sp-practice-card-mark">W</div>
-          <div class="sp-practice-card-title">Writing</div>
-          <div class="sp-practice-card-copy">{{ isSelecting('writing') ? 'Finding practice...' : 'Model, draft, feedback' }}</div>
-        </button>
-      } @else {
-        <div data-testid="practice-card-writing" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">W</div>
-          <div class="sp-practice-card-title">Writing</div>
-          <div class="sp-practice-card-muted">{{ skillStatusText('writing') }}</div>
-        </div>
-      }
-
-      @if (hasSkillAvailable('vocabulary')) {
-        <button type="button" (click)="selectSkill('vocabulary')" data-testid="practice-card-vocabulary-skill"
-                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
-          <div class="sp-practice-card-mark">V</div>
-          <div class="sp-practice-card-title">Vocabulary</div>
-          <div class="sp-practice-card-copy">{{ isSelecting('vocabulary') ? 'Finding practice...' : 'Words, meaning, practice' }}</div>
-        </button>
-      } @else {
-        <div data-testid="practice-card-vocabulary-skill" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">V</div>
-          <div class="sp-practice-card-title">Vocabulary</div>
-          <div class="sp-practice-card-muted">{{ skillStatusText('vocabulary') }}</div>
-        </div>
-      }
-
-      @if (hasSkillAvailable('grammar')) {
-        <button type="button" (click)="selectSkill('grammar')" data-testid="practice-card-grammar"
-                class="sp-card sp-card-hover sp-practice-card sp-practice-button" [disabled]="selectingSkill() !== null">
-          <div class="sp-practice-card-mark">G</div>
-          <div class="sp-practice-card-title">Grammar</div>
-          <div class="sp-practice-card-copy">{{ isSelecting('grammar') ? 'Finding practice...' : 'Grammar practice and feedback' }}</div>
-        </button>
-      } @else {
-        <div data-testid="practice-card-grammar" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">G</div>
-          <div class="sp-practice-card-title">Grammar</div>
-          <div class="sp-practice-card-muted">{{ skillStatusText('grammar') }}</div>
-        </div>
-      }
-
-    </div>
-  </section>
-
-  <section class="sp-practice-section">
-    <p class="sp-eyebrow sp-practice-section-label">Vocabulary class</p>
-    <div class="sp-skill-grid" data-testid="practice-vocabulary-grid">
-
-      @if (isAvailable('phrase_match')) {
-        <a routerLink="/module/gym-phrase_match" data-testid="practice-card-vocabulary"
-           class="sp-card sp-card-hover sp-practice-card">
-          <div class="sp-practice-card-mark">V</div>
-          <div class="sp-practice-card-title">Word cards</div>
-          <div class="sp-practice-card-copy">Meaning, example, then match</div>
-        </a>
-      } @else {
-        <div data-testid="practice-card-vocabulary" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">V</div>
-          <div class="sp-practice-card-title">Word cards</div>
-          <div class="sp-practice-card-muted">{{ statusText('phrase_match') }}</div>
-        </div>
-      }
-
-      <div data-testid="practice-card-vocabulary-queue" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">Q</div>
-        <div class="sp-practice-card-title">Vocabulary queue</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
+    @if (skillGroups().length === 0) {
+      <div class="sp-practice-empty" data-testid="practice-empty" role="status">
+        <p class="sp-practice-empty-title">No practice formats available yet.</p>
+        <p class="sp-practice-empty-copy">Check back soon as more formats are added.</p>
       </div>
+    }
 
-    </div>
-  </section>
+    @for (group of skillGroups(); track group.skill) {
+      <section class="sp-practice-section" [attr.data-testid]="'practice-skill-section-' + group.skill">
+        <p class="sp-eyebrow sp-practice-section-label">{{ group.label }}</p>
+        <div class="sp-format-grid" [attr.data-testid]="'practice-format-grid-' + group.skill">
 
-  <section class="sp-practice-section">
-    <p class="sp-eyebrow sp-practice-section-label">By exercise type</p>
-    <div class="sp-skill-grid" data-testid="practice-exercises-grid">
+          @for (card of group.cards; track card.key) {
+            @if (card.runnable) {
+              <button
+                type="button"
+                class="sp-card sp-card-hover sp-format-card sp-format-button"
+                [attr.data-testid]="'practice-format-' + card.key"
+                [disabled]="activeSkill() !== null"
+                (click)="startFormat(card)"
+              >
+                <div class="sp-format-card-top">
+                  <span class="sp-format-card-icon">{{ card.icon }}</span>
+                  @if (isStarting(card.key)) {
+                    <span class="sp-format-card-status sp-format-card-status--loading">Finding practice&hellip;</span>
+                  } @else {
+                    <span class="sp-format-card-status sp-format-card-status--ready">Ready</span>
+                  }
+                </div>
+                <div class="sp-format-card-name">{{ card.displayName }}</div>
+                <div class="sp-format-card-desc">{{ card.description }}</div>
+                @if (card.secondarySkills.length > 0) {
+                  <div class="sp-format-card-chips" [attr.data-testid]="'format-chips-' + card.key">
+                    @for (s of card.secondarySkills; track s) {
+                      <span class="sp-chip">{{ s }}</span>
+                    }
+                  </div>
+                }
+                <div class="sp-format-card-meta">
+                  @if (cardItemLabel(card)) {
+                    <span class="sp-format-card-count" [attr.data-testid]="'format-count-' + card.key">{{ cardItemLabel(card) }}</span>
+                  }
+                  @if (card.estimatedMinutes > 0) {
+                    <span class="sp-format-card-time">~{{ card.estimatedMinutes }} min</span>
+                  }
+                </div>
+                <div class="sp-format-card-cta">Start practice</div>
+              </button>
+            } @else {
+              <div
+                class="sp-card sp-format-card sp-format-card-locked"
+                [attr.data-testid]="'practice-format-' + card.key"
+                aria-disabled="true"
+              >
+                <div class="sp-format-card-top">
+                  <span class="sp-format-card-icon sp-format-card-icon--muted">{{ card.icon }}</span>
+                  <span class="sp-format-card-status sp-format-card-status--soon">Coming soon</span>
+                </div>
+                <div class="sp-format-card-name sp-format-card-name--muted">{{ card.displayName }}</div>
+                <div class="sp-format-card-desc sp-format-card-desc--muted">{{ card.description }}</div>
+              </div>
+            }
+          }
 
-      @if (isAvailable('gap_fill_workplace_phrase')) {
-        <a routerLink="/module/gym-gap_fill_workplace_phrase"
-           data-testid="practice-card-gap-fill" class="sp-card sp-card-hover sp-practice-card">
-          <div class="sp-practice-card-mark">F</div>
-          <div class="sp-practice-card-title">Fill in the blanks</div>
-          <div class="sp-practice-card-copy">Missing words in sentences</div>
-        </a>
-      } @else {
-        <div data-testid="practice-card-gap-fill" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">F</div>
-          <div class="sp-practice-card-title">Fill in the blanks</div>
-          <div class="sp-practice-card-muted">{{ statusText('gap_fill_workplace_phrase') }}</div>
         </div>
-      }
+      </section>
+    }
 
-      @if (isAvailable('phrase_match')) {
-        <a routerLink="/module/gym-phrase_match"
-           data-testid="practice-card-phrase-match" class="sp-card sp-card-hover sp-practice-card">
-          <div class="sp-practice-card-mark">M</div>
-          <div class="sp-practice-card-title">Matching</div>
-          <div class="sp-practice-card-copy">Words, meanings, phrases</div>
-        </a>
-      } @else {
-        <div data-testid="practice-card-phrase-match" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">M</div>
-          <div class="sp-practice-card-title">Matching</div>
-          <div class="sp-practice-card-muted">{{ statusText('phrase_match') }}</div>
-        </div>
-      }
-
-      @if (isAvailable('email_reply')) {
-        <a routerLink="/module/gym-email_reply"
-           data-testid="practice-card-email" class="sp-card sp-card-hover sp-practice-card">
-          <div class="sp-practice-card-mark">E</div>
-          <div class="sp-practice-card-title">Email</div>
-          <div class="sp-practice-card-copy">Workplace email replies</div>
-        </a>
-      } @else {
-        <div data-testid="practice-card-email" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">E</div>
-          <div class="sp-practice-card-title">Email</div>
-          <div class="sp-practice-card-muted">{{ statusText('email_reply') }}</div>
-        </div>
-      }
-
-      @if (isAvailable('teams_chat_simulation')) {
-        <a routerLink="/module/gym-teams_chat_simulation"
-           data-testid="practice-card-workplace-chat" class="sp-card sp-card-hover sp-practice-card">
-          <div class="sp-practice-card-mark">C</div>
-          <div class="sp-practice-card-title">Workplace chat</div>
-          <div class="sp-practice-card-copy">Teams-style messages</div>
-        </a>
-      } @else {
-        <div data-testid="practice-card-workplace-chat" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-          <div class="sp-practice-card-mark">C</div>
-          <div class="sp-practice-card-title">Workplace chat</div>
-          <div class="sp-practice-card-muted">{{ statusText('teams_chat_simulation') }}</div>
-        </div>
-      }
-
-      <div data-testid="practice-card-multiple-choice" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">A</div>
-        <div class="sp-practice-card-title">Multiple choice</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
-
-      <div data-testid="practice-card-sentence-transformation" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">T</div>
-        <div class="sp-practice-card-title">Sentence transformation</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
-
-      <div data-testid="practice-card-error-correction" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">X</div>
-        <div class="sp-practice-card-title">Error correction</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
-
-      <div data-testid="practice-card-word-formation" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">N</div>
-        <div class="sp-practice-card-title">Word formation</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
-
-      <div data-testid="practice-card-unscrambling" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">U</div>
-        <div class="sp-practice-card-title">Unscrambling</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
-
-    </div>
-  </section>
-
-  <section>
-    <p class="sp-eyebrow sp-practice-section-label">Live practice</p>
-    <div class="sp-skill-grid" data-testid="practice-live-grid">
-      <div data-testid="practice-card-ai-role-play" class="sp-card sp-practice-card sp-practice-card-disabled" aria-disabled="true">
-        <div class="sp-practice-card-mark">AI</div>
-        <div class="sp-practice-card-title">AI role play</div>
-        <div class="sp-practice-card-muted">Coming soon</div>
-      </div>
-    </div>
-  </section>
+  }
 
 </div>

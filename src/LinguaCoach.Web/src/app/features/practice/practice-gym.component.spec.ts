@@ -9,6 +9,7 @@ const readyListening: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer',
   estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true,
+  defaultItemsPerPractice: 3, minItemsPerPractice: 2, maxItemsPerPractice: 5,
 };
 
 const readyReading: any = {
@@ -16,6 +17,7 @@ const readyReading: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_multiple_choice_single', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_reading_multiple_choice_single',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
 const readyReadingMulti: any = {
@@ -23,6 +25,7 @@ const readyReadingMulti: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_multiple_choice_multi', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_reading_multiple_choice_multi',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
 const readyReadingFillInBlanks: any = {
@@ -30,6 +33,7 @@ const readyReadingFillInBlanks: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reading_fill_in_blanks',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
 const readyReorderParagraphs: any = {
@@ -37,6 +41,7 @@ const readyReorderParagraphs: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reorder_paragraphs', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reorder_paragraphs',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
 const readyReadingWritingFillInBlanks: any = {
@@ -44,6 +49,7 @@ const readyReadingWritingFillInBlanks: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_writing_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reading_writing_fill_in_blanks',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
 const readySummarizeWrittenText: any = {
@@ -51,6 +57,7 @@ const readySummarizeWrittenText: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'free_text_entry', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_summarize_written_text',
   estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
 const readyWriteEssay: any = {
@@ -58,6 +65,7 @@ const readyWriteEssay: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'free_text_entry', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_write_essay',
   estimatedDurationMinutes: 10, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
 const readyListeningMultipleChoiceSingle: any = {
@@ -65,6 +73,7 @@ const readyListeningMultipleChoiceSingle: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'listening_multiple_choice_single', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_listening_multiple_choice_single',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
 const readyListeningMultipleChoiceMulti: any = {
@@ -72,6 +81,7 @@ const readyListeningMultipleChoiceMulti: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'listening_multiple_choice_multi', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_listening_multiple_choice_multi',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
 const readyListeningFillInBlanks: any = {
@@ -79,6 +89,7 @@ const readyListeningFillInBlanks: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'listening_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_listening_fill_in_blanks',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
 const readySelectMissingWord: any = {
@@ -86,6 +97,7 @@ const readySelectMissingWord: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'select_missing_word', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_select_missing_word',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
 const readyHighlightCorrectSummary: any = {
@@ -93,6 +105,7 @@ const readyHighlightCorrectSummary: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'highlight_correct_summary', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_highlight_correct_summary',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 3, minItemsPerPractice: 2, maxItemsPerPractice: 5,
 };
 
 const readyHighlightIncorrectWords: any = {
@@ -100,7 +113,32 @@ const readyHighlightIncorrectWords: any = {
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'highlight_incorrect_words', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_highlight_incorrect_words',
   estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 3, minItemsPerPractice: 2, maxItemsPerPractice: 5,
 };
+
+const readyAnswerShortQuestion: any = {
+  key: 'answer_short_question', displayName: 'Answer Short Question', primarySkill: 'speaking', secondarySkills: ['listening'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'answer_short_question', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_answer_short_question',
+  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 8,
+};
+
+const plannedFormat: any = {
+  key: 'read_aloud', displayName: 'Read Aloud', primarySkill: 'speaking', secondarySkills: [],
+  category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
+  rendererKey: '', evaluatorKey: '', generationPromptKey: '',
+  estimatedDurationMinutes: 0, requiresAudio: false, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
+  defaultItemsPerPractice: 0, minItemsPerPractice: 0, maxItemsPerPractice: 0,
+};
+
+const ALL_READY = [
+  readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks,
+  readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText,
+  readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti,
+  readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary,
+  readyHighlightIncorrectWords, readyAnswerShortQuestion,
+];
 
 describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
@@ -110,7 +148,7 @@ describe('PracticeGymComponent', () => {
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
-    activityService.getExerciseTypes.and.returnValue(of([readyListening, readyReading, readyReadingMulti, readyReadingFillInBlanks, readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText, readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti, readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary, readyHighlightIncorrectWords]));
+    activityService.getExerciseTypes.and.returnValue(of(ALL_READY));
 
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
@@ -127,15 +165,147 @@ describe('PracticeGymComponent', () => {
     fixture.detectChanges();
   });
 
+  // ── Catalog-driven card grid ───────────────────────────────────────────────
+
+  it('shows the practice heading', () => {
+    const el = fixture.nativeElement.querySelector('[data-testid="practice-gym-heading"]');
+    expect(el).toBeTruthy();
+    expect(el.textContent).toContain('Practice Gym');
+  });
+
+  it('renders a skill section for each skill present in the catalog', () => {
+    const sections = fixture.nativeElement.querySelectorAll('[data-testid^="practice-skill-section-"]');
+    expect(sections.length).toBeGreaterThanOrEqual(4); // listening, reading, writing, speaking
+  });
+
+  it('renders a runnable card for answer_short_question', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-answer_short_question"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('planned format is shown as locked (not a button)', async () => {
+    activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
+    const newFixture = TestBed.createComponent(PracticeGymComponent);
+    newFixture.detectChanges();
+    await newFixture.whenStable();
+    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-read_aloud"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).not.toBe('button');
+  });
+
+  it('shows item count for answer_short_question', () => {
+    const countEl = fixture.nativeElement.querySelector('[data-testid="format-count-answer_short_question"]');
+    expect(countEl).toBeTruthy();
+    expect(countEl.textContent).toContain('5');
+  });
+
+  it('shows secondary skill chips for listening_fill_in_blanks', () => {
+    const chips = fixture.nativeElement.querySelector('[data-testid="format-chips-listening_fill_in_blanks"]');
+    expect(chips).toBeTruthy();
+  });
+
+  it('shows secondary skill chips for reading_writing_fill_in_blanks', () => {
+    const chips = fixture.nativeElement.querySelector('[data-testid="format-chips-reading_writing_fill_in_blanks"]');
+    expect(chips).toBeTruthy();
+  });
+
+  it('shows loading state before catalog arrives', async () => {
+    const loadingFixture = TestBed.createComponent(PracticeGymComponent);
+    // Do not call detectChanges so ngOnInit has not resolved
+    expect(loadingFixture.componentInstance.loadState()).toBe('loading');
+  });
+
+  it('shows error state when catalog load fails', async () => {
+    activityService.getExerciseTypes.and.returnValue(throwError(() => new Error('net')));
+    const errFixture = TestBed.createComponent(PracticeGymComponent);
+    errFixture.detectChanges();
+    await errFixture.whenStable();
+    expect(errFixture.componentInstance.loadState()).toBe('error');
+    const el = errFixture.nativeElement.querySelector('[data-testid="practice-error"]');
+    expect(el).toBeTruthy();
+  });
+
+  it('shows empty state when catalog is empty', async () => {
+    activityService.getExerciseTypes.and.returnValue(of([]));
+    const emptyFixture = TestBed.createComponent(PracticeGymComponent);
+    emptyFixture.detectChanges();
+    await emptyFixture.whenStable();
+    const el = emptyFixture.nativeElement.querySelector('[data-testid="practice-empty"]');
+    expect(el).toBeTruthy();
+  });
+
+  it('startFormat navigates to /activity with the returned activityId', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true, activityId: 'act-asq-1', exerciseType: 'answer_short_question',
+      primarySkill: 'speaking', source: 'onDemandFallback', poolItemId: null, reason: null,
+    }));
+
+    const card = component.skillGroups()
+      .flatMap(g => g.cards)
+      .find(c => c.key === 'answer_short_question')!;
+    component.startFormat(card);
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'speaking', exerciseType: 'answer_short_question' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'act-asq-1', returnTo: '/practice' },
+    });
+  });
+
+  it('startFormat shows message when no activity available', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: false, activityId: null, exerciseType: null,
+      primarySkill: null, source: null, poolItemId: null,
+      reason: 'No ready exercise available.',
+    }));
+
+    const card = component.skillGroups().flatMap(g => g.cards).find(c => c.key === 'answer_short_question')!;
+    component.startFormat(card);
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component.selectionMessage()).toContain('No ready exercise');
+  });
+
+  it('startFormat shows fallback message on API error', () => {
+    activityService.getPracticeGymNext.and.returnValue(throwError(() => new Error('fail')));
+
+    const card = component.skillGroups().flatMap(g => g.cards).find(c => c.key === 'listen_and_answer')!;
+    component.startFormat(card);
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component.selectionMessage()).toContain('temporarily unavailable');
+  });
+
+  it('startFormat is a no-op for a locked/planned card', () => {
+    activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
+    const newFixture = TestBed.createComponent(PracticeGymComponent);
+    newFixture.detectChanges();
+    const comp = newFixture.componentInstance;
+
+    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'read_aloud');
+    if (lockedCard) comp.startFormat(lockedCard);
+
+    expect(activityService.getPracticeGymNext).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('skillGroups are ordered: listening before reading before writing before speaking', () => {
+    const skills = component.skillGroups().map(g => g.skill);
+    const li = skills.indexOf('listening');
+    const re = skills.indexOf('reading');
+    const wr = skills.indexOf('writing');
+    const sp = skills.indexOf('speaking');
+    expect(li).toBeLessThan(re);
+    expect(re).toBeLessThan(wr);
+    expect(wr).toBeLessThan(sp);
+  });
+
+  // ── Backward-compat: selectSkill / hasSkillAvailable / isAvailable ────────
+
   it('clicking Listening calls the pool-aware start flow and opens the returned activity', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-123',
-      exerciseType: 'listen_and_answer',
-      primarySkill: 'listening',
-      source: 'pool',
-      poolItemId: 'pool-1',
-      reason: null,
+      hasActivity: true, activityId: 'activity-123', exerciseType: 'listen_and_answer',
+      primarySkill: 'listening', source: 'pool', poolItemId: 'pool-1', reason: null,
     }));
 
     component.selectSkill('listening');
@@ -148,13 +318,8 @@ describe('PracticeGymComponent', () => {
 
   it('on-demand fallback source still opens the returned activity', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-456',
-      exerciseType: 'listen_and_answer',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-456', exerciseType: 'listen_and_answer',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -166,13 +331,8 @@ describe('PracticeGymComponent', () => {
 
   it('no eligible result does not route and shows a safe message', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: false,
-      activityId: null,
-      exerciseType: null,
-      primarySkill: null,
-      source: null,
-      poolItemId: null,
-      reason: 'No ready Practice Gym exercise is available for reading yet.',
+      hasActivity: false, activityId: null, exerciseType: null, primarySkill: null,
+      source: null, poolItemId: null, reason: 'No ready Practice Gym exercise is available for reading yet.',
     }));
 
     component.selectSkill('reading');
@@ -199,13 +359,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Reading calls the pool-aware start flow and opens the returned activity', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-789',
-      exerciseType: 'reading_multiple_choice_single',
-      primarySkill: 'reading',
-      source: 'pool',
-      poolItemId: 'pool-2',
-      reason: null,
+      hasActivity: true, activityId: 'activity-789', exerciseType: 'reading_multiple_choice_single',
+      primarySkill: 'reading', source: 'pool', poolItemId: 'pool-2', reason: null,
     }));
 
     component.selectSkill('reading');
@@ -223,13 +378,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Reading can return reading_multiple_choice_multi and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-multi-1',
-      exerciseType: 'reading_multiple_choice_multi',
-      primarySkill: 'reading',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-multi-1', exerciseType: 'reading_multiple_choice_multi',
+      primarySkill: 'reading', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('reading');
@@ -246,13 +396,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Reading can return reading_fill_in_blanks and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-fib-1',
-      exerciseType: 'reading_fill_in_blanks',
-      primarySkill: 'reading',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-fib-1', exerciseType: 'reading_fill_in_blanks',
+      primarySkill: 'reading', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('reading');
@@ -269,13 +414,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Reading can return reorder_paragraphs and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-rp-1',
-      exerciseType: 'reorder_paragraphs',
-      primarySkill: 'reading',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-rp-1', exerciseType: 'reorder_paragraphs',
+      primarySkill: 'reading', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('reading');
@@ -292,13 +432,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Reading can return reading_writing_fill_in_blanks and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-rwfib-1',
-      exerciseType: 'reading_writing_fill_in_blanks',
-      primarySkill: 'reading',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-rwfib-1', exerciseType: 'reading_writing_fill_in_blanks',
+      primarySkill: 'reading', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('reading');
@@ -315,13 +450,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Writing can return summarize_written_text and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-swt-1',
-      exerciseType: 'summarize_written_text',
-      primarySkill: 'writing',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-swt-1', exerciseType: 'summarize_written_text',
+      primarySkill: 'writing', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('writing');
@@ -339,13 +469,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Writing can return write_essay and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-we-1',
-      exerciseType: 'write_essay',
-      primarySkill: 'writing',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-we-1', exerciseType: 'write_essay',
+      primarySkill: 'writing', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('writing');
@@ -363,13 +488,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Listening can return listening_multiple_choice_single and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-lmcs-1',
-      exerciseType: 'listening_multiple_choice_single',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-lmcs-1', exerciseType: 'listening_multiple_choice_single',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -387,13 +507,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Listening can return listening_multiple_choice_multi and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-lmcm-1',
-      exerciseType: 'listening_multiple_choice_multi',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-lmcm-1', exerciseType: 'listening_multiple_choice_multi',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -411,13 +526,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Listening can return listening_fill_in_blanks and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-lfib-1',
-      exerciseType: 'listening_fill_in_blanks',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-lfib-1', exerciseType: 'listening_fill_in_blanks',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -435,13 +545,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Listening can return select_missing_word and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-smw-1',
-      exerciseType: 'select_missing_word',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-smw-1', exerciseType: 'select_missing_word',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -464,13 +569,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Listening can return highlight_incorrect_words and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-hiw-1',
-      exerciseType: 'highlight_incorrect_words',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-hiw-1', exerciseType: 'highlight_incorrect_words',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -483,13 +583,8 @@ describe('PracticeGymComponent', () => {
 
   it('clicking Listening can return highlight_correct_summary and routes correctly', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
-      hasActivity: true,
-      activityId: 'activity-hcs-1',
-      exerciseType: 'highlight_correct_summary',
-      primarySkill: 'listening',
-      source: 'onDemandFallback',
-      poolItemId: null,
-      reason: null,
+      hasActivity: true, activityId: 'activity-hcs-1', exerciseType: 'highlight_correct_summary',
+      primarySkill: 'listening', source: 'onDemandFallback', poolItemId: null, reason: null,
     }));
 
     component.selectSkill('listening');
@@ -497,6 +592,28 @@ describe('PracticeGymComponent', () => {
     expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'listening' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-hcs-1', returnTo: '/practice' },
+    });
+  });
+
+  // ── answer_short_question ─────────────────────────────────────────────────
+
+  it('answer_short_question is ready and available in Practice Gym', () => {
+    expect(component.isAvailable('answer_short_question')).toBeTrue();
+    expect(component.statusText('answer_short_question')).toBe('Available');
+    expect(component.hasSkillAvailable('speaking')).toBeTrue();
+  });
+
+  it('clicking Speaking can return answer_short_question and routes correctly', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true, activityId: 'activity-asq-1', exerciseType: 'answer_short_question',
+      primarySkill: 'speaking', source: 'onDemandFallback', poolItemId: null, reason: null,
+    }));
+
+    component.selectSkill('speaking');
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'speaking' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'activity-asq-1', returnTo: '/practice' },
     });
   });
 });
