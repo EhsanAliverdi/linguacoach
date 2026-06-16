@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LinguaCoach.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -41,6 +42,28 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         // T31 — student-set onboarding goal fields
         builder.Property(sp => sp.LearningGoalDescription).HasColumnName("learning_goal_description").HasMaxLength(1000);
         builder.Property(sp => sp.DifficultSituationsText).HasColumnName("difficult_situations_text").HasMaxLength(1000);
+
+        // T46 — student-editable learning preferences (Phase 10G)
+        builder.Property(sp => sp.PreferredName).HasColumnName("preferred_name").HasMaxLength(100);
+        builder.Property(sp => sp.SupportLanguageCode).HasColumnName("support_language_code").HasMaxLength(10);
+        builder.Property(sp => sp.SupportLanguageName).HasColumnName("support_language_name").HasMaxLength(100);
+        builder.Property(sp => sp.TranslationHelpPreference).HasColumnName("translation_help_preference");
+        builder.Property(sp => sp.LearningGoals)
+            .HasColumnName("learning_goals")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>());
+        builder.Property(sp => sp.CustomLearningGoal).HasColumnName("custom_learning_goal").HasMaxLength(200);
+        builder.Property(sp => sp.FocusAreas)
+            .HasColumnName("focus_areas")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>());
+        builder.Property(sp => sp.CustomFocusArea).HasColumnName("custom_focus_area").HasMaxLength(200);
+        builder.Property(sp => sp.DifficultyPreference).HasColumnName("difficulty_preference");
+        builder.Property(sp => sp.LearningPreferencesUpdatedAt).HasColumnName("learning_preferences_updated_at");
 
         builder.HasOne(sp => sp.LanguagePair)
             .WithMany()

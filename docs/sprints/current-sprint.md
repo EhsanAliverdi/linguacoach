@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 08:30
+lastUpdated: 2026-06-17 18:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,35 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10G — Student Profile & Learning Preferences v2** — complete (2026-06-17)
+
+Extended student profile with editable learning preferences: preferred name, support language, translation help, learning goals (multi-select + custom), focus areas (multi-select + custom), difficulty preference. New API endpoints `GET /api/profile` and `PUT /api/profile/preferences`. Angular profile page redesigned with 6 sections. CEFR remains read-only.
+
+### What was added
+
+- `TranslationHelpPreference` and `DifficultyPreference` enums (Domain)
+- `UpdateLearningPreferences` method on `StudentProfile` — student-editable only, validates constraints
+- EF migration T46 — 10 new columns on `student_profiles`, JSON columns for lists
+- `GetStudentProfileQuery` + handler (Application + Infrastructure)
+- `UpdateLearningPreferencesCommand` + handler (Application + Infrastructure)
+- `ProfileController` with `GET /api/profile` and `PUT /api/profile/preferences`
+- `ProfileService` in Angular with `getProfile()` and `updatePreferences()`
+- Profile page rewritten: 6 sections (Account, Level, Goals, Focus, Support language, Preferences)
+- CEFR shown read-only with per-level explanation text
+
+### Final test counts
+
+- Backend unit: 996 (was 985)
+- Backend integration: 539 (was 534)
+- Architecture: 3
+- Angular unit: 243 (was 229)
+
+See: `docs/reviews/2026-06-17-phase-10g-student-profile-learning-preferences-v2.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10D — Activity Quality / Workload Validation** — complete (2026-06-17)
 
