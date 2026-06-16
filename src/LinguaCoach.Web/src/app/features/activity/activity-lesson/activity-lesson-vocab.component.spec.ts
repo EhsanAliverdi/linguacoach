@@ -47,6 +47,7 @@ const vocabActivity: ActivityDto = {
   audioContentType: null,
   audioDurationSeconds: null,
   audioUnavailableMessage: null,
+  audioStatus: null,
   speakingScenario: null,
   studentRole: null,
   speakingListenerRole: null,

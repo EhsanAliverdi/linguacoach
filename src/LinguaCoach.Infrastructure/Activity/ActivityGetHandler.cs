@@ -233,7 +233,11 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             .FirstOrDefaultAsync(a => a.Id == query.ActivityId && a.IsActive, ct)
             ?? throw new InvalidOperationException($"Activity {query.ActivityId} not found.");
 
-        if (activity.ActivityType == ActivityType.ListeningComprehension)
+        var isListeningById = activity.ActivityType == ActivityType.ListeningComprehension
+            || (!string.IsNullOrWhiteSpace(activity.ExercisePatternKey)
+                && ListeningPatternKeys.Contains(activity.ExercisePatternKey));
+
+        if (isListeningById)
         {
             await _listeningAudio.EnsureAudioAsync(
                 activity, "en", ct); // language code is already embedded in audio record
@@ -617,11 +621,39 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         return $"{src}-{tgt}";
     }
 
+    /// <summary>
+    /// Returns the content JSON with the top-level "audio" block removed.
+    /// The audio fields are surfaced via dedicated ActivityDto properties (audioUrl, audioStatus etc.)
+    /// and must not be exposed raw in ContentJson to avoid leaking storage keys.
+    /// </summary>
+    private static string? StripAudioFromContentJson(string? contentJson)
+    {
+        if (contentJson is null) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(contentJson);
+            if (!doc.RootElement.TryGetProperty("audio", out _))
+                return contentJson; // nothing to strip
+
+            var dict = new Dictionary<string, JsonElement>();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (!prop.Name.Equals("audio", StringComparison.OrdinalIgnoreCase))
+                    dict[prop.Name] = prop.Value.Clone();
+            }
+            return JsonSerializer.Serialize(dict, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        }
+        catch
+        {
+            return contentJson;
+        }
+    }
+
     private static ActivityDto MapToDto(Domain.Entities.LearningActivity activity, InteractionMode? interactionMode)
     {
         var patternKey = string.IsNullOrWhiteSpace(activity.ExercisePatternKey) ? null : activity.ExercisePatternKey;
         var contentJson = string.IsNullOrWhiteSpace(activity.AiGeneratedContentJson) ? null : activity.AiGeneratedContentJson;
-        var rendererContentJson = patternKey is null ? null : contentJson;
+        var rendererContentJson = patternKey is null ? null : StripAudioFromContentJson(contentJson);
 
         if (activity.ActivityType == ActivityType.VocabularyPractice)
         {

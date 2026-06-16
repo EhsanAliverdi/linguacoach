@@ -27,9 +27,27 @@ public sealed class ListeningAudioService
         _logger = logger;
     }
 
+    private static readonly HashSet<string> ListeningPatternKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        Domain.ExercisePatternKey.ListenAndAnswer,
+        Domain.ExercisePatternKey.ListenAndGapFill,
+        Domain.ExercisePatternKey.ListeningMultipleChoiceSingle,
+        Domain.ExercisePatternKey.ListeningMultipleChoiceMulti,
+        Domain.ExercisePatternKey.ListeningFillInBlanks,
+        Domain.ExercisePatternKey.SelectMissingWord,
+        Domain.ExercisePatternKey.HighlightCorrectSummary,
+        Domain.ExercisePatternKey.HighlightIncorrectWords,
+        Domain.ExercisePatternKey.WriteFromDictation,
+    };
+
     public async Task EnsureAudioAsync(LearningActivity activity, string targetLanguageCode, CancellationToken ct)
     {
-        if (activity.ActivityType != ActivityType.ListeningComprehension)
+        // Skip non-listening legacy types and non-listening pattern-keyed activities.
+        var isLegacyListening = activity.ActivityType == ActivityType.ListeningComprehension
+            && string.IsNullOrWhiteSpace(activity.ExercisePatternKey);
+        var isListeningPatternKeyed = !string.IsNullOrWhiteSpace(activity.ExercisePatternKey)
+            && ListeningPatternKeys.Contains(activity.ExercisePatternKey);
+        if (!isLegacyListening && !isListeningPatternKeyed)
             return;
 
         var content = Parse(activity.AiGeneratedContentJson);
