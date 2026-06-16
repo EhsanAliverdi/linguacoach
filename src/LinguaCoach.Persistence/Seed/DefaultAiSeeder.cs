@@ -4462,15 +4462,15 @@ Rules:
         // Activity generation prompt
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWritingKey, ActivityGenerateWritingContent,
-            maxInputTokens: 1100, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1100, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningKey, ActivityGenerateListeningContent,
-            maxInputTokens: 1200, maxOutputTokens: 1600, ct);
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRolePlayKey, ActivityGenerateSpeakingRolePlayContent,
-            maxInputTokens: 1600, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1600, maxOutputTokens: 2000, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
@@ -4506,71 +4506,71 @@ Rules:
         // Exercise Pattern Engine — pattern-specific generation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGeneratePhraseMatchKey, ActivityGeneratePhraseMatchContent,
-            maxInputTokens: 800, maxOutputTokens: 700, ct);
+            maxInputTokens: 800, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateGapFillKey, ActivityGenerateGapFillContent,
-            maxInputTokens: 900, maxOutputTokens: 700, ct);
+            maxInputTokens: 900, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListenAndAnswerKey, ActivityGenerateListenAndAnswerContent,
-            maxInputTokens: 1000, maxOutputTokens: 900, ct);
+            maxInputTokens: 1000, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListenAndGapFillKey, ActivityGenerateListenAndGapFillContent,
-            maxInputTokens: 1000, maxOutputTokens: 800, ct);
+            maxInputTokens: 1000, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateEmailReplyKey, ActivityGenerateEmailReplyContent,
-            maxInputTokens: 1300, maxOutputTokens: 1100, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateTeamsChatKey, ActivityGenerateTeamsChatContent,
-            maxInputTokens: 1300, maxOutputTokens: 800, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpokenResponseKey, ActivityGenerateSpokenResponseContent,
-            maxInputTokens: 1200, maxOutputTokens: 700, ct);
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateLessonReflectionKey, ActivityGenerateLessonReflectionContent,
-            maxInputTokens: 1200, maxOutputTokens: 400, ct);
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateOpenWritingTaskKey, ActivityGenerateOpenWritingTaskContent,
-            maxInputTokens: 1200, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRoleplayTurnKey, ActivityGenerateSpeakingRoleplayTurnContent,
-            maxInputTokens: 1300, maxOutputTokens: 700, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceSingleKey, ActivityGenerateReadingMultipleChoiceSingleContent,
-            maxInputTokens: 1300, maxOutputTokens: 900, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningMultipleChoiceSingleKey, ActivityGenerateListeningMultipleChoiceSingleContent,
-            maxInputTokens: 1200, maxOutputTokens: 900, ct);
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningMultipleChoiceMultiKey, ActivityGenerateListeningMultipleChoiceMultiContent,
-            maxInputTokens: 1300, maxOutputTokens: 1000, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningFillInBlanksKey, ActivityGenerateListeningFillInBlanksContent,
-            maxInputTokens: 1500, maxOutputTokens: 1300, ct);
+            maxInputTokens: 1500, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSelectMissingWordKey, ActivityGenerateSelectMissingWordContent,
-            maxInputTokens: 1400, maxOutputTokens: 900, ct);
+            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateHighlightCorrectSummaryKey, ActivityGenerateHighlightCorrectSummaryContent,
-            maxInputTokens: 1400, maxOutputTokens: 1100, ct);
+            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateHighlightIncorrectWordsKey, ActivityGenerateHighlightIncorrectWordsContent,
-            maxInputTokens: 1400, maxOutputTokens: 1500, ct);
+            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWriteFromDictationKey, ActivityGenerateWriteFromDictationContent,
@@ -4578,31 +4578,31 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingMultipleChoiceMultiKey, ActivityGenerateReadingMultipleChoiceMultiContent,
-            maxInputTokens: 1400, maxOutputTokens: 1000, ct);
+            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingFillInBlanksKey, ActivityGenerateReadingFillInBlanksContent,
-            maxInputTokens: 1400, maxOutputTokens: 1100, ct);
+            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReorderParagraphsKey, ActivityGenerateReorderParagraphsContent,
-            maxInputTokens: 1300, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadingWritingFillInBlanksKey, ActivityGenerateReadingWritingFillInBlanksContent,
-            maxInputTokens: 1500, maxOutputTokens: 1200, ct);
+            maxInputTokens: 1500, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSummarizeWrittenTextKey, ActivityGenerateSummarizeWrittenTextContent,
-            maxInputTokens: 1500, maxOutputTokens: 1400, ct);
+            maxInputTokens: 1500, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWriteEssayKey, ActivityGenerateWriteEssayContent,
-            maxInputTokens: 1300, maxOutputTokens: 1600, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSummarizeSpokenTextKey, ActivityGenerateSummarizeSpokenTextContent,
-            maxInputTokens: 1600, maxOutputTokens: 1800, ct);
+            maxInputTokens: 1600, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateAnswerShortQuestionKey, ActivityGenerateAnswerShortQuestionContent,
@@ -4644,7 +4644,7 @@ Rules:
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,
-            maxInputTokens: 1200, maxOutputTokens: 1800, ct);
+            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateReadAloudKey, ActivityEvaluateReadAloudContent,

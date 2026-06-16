@@ -700,7 +700,7 @@ public sealed class ActivityController : ControllerBase
                 teachingTitle = dto.StageContent.Learn.TeachingTitle,
                 explanation = dto.StageContent.Learn.Explanation,
                 keyPoints = dto.StageContent.Learn.KeyPoints,
-                examples = dto.StageContent.Learn.Examples.Select(e => new
+                examples = dto.StageContent.Learn.Examples?.Select(e => new
                 {
                     phrase = e.Phrase,
                     meaning = e.Meaning,
@@ -720,7 +720,7 @@ public sealed class ActivityController : ControllerBase
             feedbackPlan = new
             {
                 evaluationCriteria = dto.StageContent.FeedbackPlan.EvaluationCriteria,
-                rubric = dto.StageContent.FeedbackPlan.Rubric.Select(r => new
+                rubric = dto.StageContent.FeedbackPlan.Rubric?.Select(r => new
                 {
                     criterion = r.Criterion,
                     description = r.Description,
