@@ -4490,7 +4490,7 @@ Rules:
         // Activity generation prompt
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWritingKey, ActivityGenerateWritingContent,
-            maxInputTokens: 1100, maxOutputTokens: 2000, ct);
+            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningKey, ActivityGenerateListeningContent,
