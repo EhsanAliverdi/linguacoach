@@ -429,4 +429,73 @@ public sealed class AiOpenEndedEvaluatorTests
         result.Should().NotContain("HIDDEN");
         result.Should().NotContain("learnContent");
     }
+
+    // ── summarize_group_discussion — evaluation response parsing ──────────────
+
+    [Fact]
+    public void ParseAndNormalise_SummarizeGroupDiscussion_HighScore_Passes()
+    {
+        var json = """
+            {
+              "overallScore": 78,
+              "coachSummary": "You identified the main topic and captured most speaker viewpoints clearly.",
+              "strengths": ["Main topic identified", "Speaker viewpoints captured"],
+              "improvements": ["Could mention the final outcome more explicitly"],
+              "missingExpectedPoints": []
+            }
+            """;
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(78);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.CoachSummary.Should().Contain("main topic");
+    }
+
+    [Fact]
+    public void ParseAndNormalise_SummarizeGroupDiscussion_LowScore_Fails()
+    {
+        var json = """{"overallScore":35,"coachSummary":"Summary missed most speaker viewpoints and the discussion outcome."}""";
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(35);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CompactContent_SummarizeGroupDiscussionStaged_ExcludesLearnContent()
+    {
+        var staged = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "HIDDEN", "strategy": "listen for speaker turns" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                {
+                  "id": "disc1",
+                  "discussionTitle": "Team project planning",
+                  "audioScript": "Alice: I think we should start with research. Bob: Agreed, then prototype.",
+                  "speakers": [
+                    { "name": "Alice", "role": "Lead", "viewpoint": "research first" },
+                    { "name": "Bob", "role": "Dev", "viewpoint": "prototype after research" }
+                  ]
+                }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "speaker views and outcomes" }
+        }
+        """;
+
+        var result = AiOpenEndedEvaluator.CompactContent(staged);
+
+        result.Should().Contain("disc1");
+        result.Should().Contain("feedbackFocus");
+        result.Should().NotContain("HIDDEN");
+        result.Should().NotContain("learnContent");
+    }
 }

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-15 00:00
+lastUpdated: 2026-06-16 00:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,35 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ---
 
 ## Most recently completed sprint
+
+**Phase 9J — Speaking/Listening Family QA & Hardening** — complete (2026-06-16)
+
+Performed end-to-end QA and hardening across all speaking/listening formats from Phases 9A–9I.
+
+### What was fixed
+- **P0 bug:** `summarize_group_discussion` submission serialization was missing from `activity-lesson.component.ts`. The `else` fallback was serializing the entire payload object instead of `{ items: [...] }`, causing malformed `SubmittedAnswerJson` to reach the evaluator.
+- **Stale comment** in `ExerciseTypeDefinitionSeeder.CountOverrides` incorrectly labelled Phase 9 speaking formats as "planned, non-runnable". Updated to "Speaking (Ready)".
+
+### Tests added
+- 3 backend unit tests: `summarize_group_discussion` AiOpenEnded evaluator coverage (high score, low score, compactContent exclusion).
+- 23 Angular unit tests: new `exercise-renderer.component.spec.ts` covering renderer dispatch, content extraction, submission payload shape, and audioScript fallback for all 7 Phase 9 formats.
+
+### Final test counts
+- Backend unit: 907 (was 904)
+- Backend integration: 517
+- Architecture: 3
+- Angular: 204 (was 181)
+
+See: `docs/reviews/2026-06-16-phase-9j-speaking-listening-family-hardening.md`
+
+---
+
+## Previously most recently completed sprint
 
 **CI/CD stabilization (post Phase 7A-7D)** — complete (2026-06-15)
 

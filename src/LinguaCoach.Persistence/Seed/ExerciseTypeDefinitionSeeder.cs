@@ -30,7 +30,7 @@ public static class ExerciseTypeDefinitionSeeder
         ["highlight_incorrect_words"] = (2, 3, 4, 0, 0, 0),
         ["write_from_dictation"] = (2, 3, 5, 0, 0, 0),
         ["summarize_spoken_text"] = (1, 1, 1, 0, 0, 0),
-        // Speaking (planned, non-runnable)
+        // Speaking (Ready)
         ["answer_short_question"] = (3, 5, 8, 0, 0, 0),
         ["repeat_sentence"] = (3, 5, 6, 0, 0, 0),
         ["read_aloud"] = (1, 2, 3, 0, 0, 0),
