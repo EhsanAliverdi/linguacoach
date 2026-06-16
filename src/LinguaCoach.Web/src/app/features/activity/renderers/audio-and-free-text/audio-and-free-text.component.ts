@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
+import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 
 export interface AudioQuestion {
   id: string;
@@ -27,7 +28,7 @@ export interface AudioAndFreeTextAnswer {
 @Component({
   selector: 'app-audio-and-free-text',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent],
+  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent, AudioPlayerComponent],
   templateUrl: './audio-and-free-text.component.html',
 })
 export class AudioAndFreeTextComponent {

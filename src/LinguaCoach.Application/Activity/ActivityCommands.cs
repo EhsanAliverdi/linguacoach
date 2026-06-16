@@ -44,6 +44,7 @@ public sealed record ActivityDto(
     string? AudioContentType = null,
     double? AudioDurationSeconds = null,
     string? AudioUnavailableMessage = null,
+    string? AudioStatus = null,
     // SpeakingRolePlay fields — null for other activity types
     string? SpeakingScenario = null,
     string? StudentRole = null,

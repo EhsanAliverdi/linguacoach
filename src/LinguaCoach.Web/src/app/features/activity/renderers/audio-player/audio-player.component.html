@@ -1,0 +1,18 @@
+@if (showPlayer) {
+  <div class="sp-card" style="padding:14px" data-testid="audio-player-section">
+    <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">{{ label }}</p>
+    <audio controls [src]="audioUrl!" style="width:100%;display:block" data-testid="audio-player"></audio>
+    @if (helpText) {
+      <p style="font-size:12px;color:var(--sp-muted);margin-top:8px">{{ helpText }}</p>
+    }
+  </div>
+} @else {
+  <div class="sp-alert-info" style="font-size:13px" data-testid="audio-unavailable">
+    @if (audioScript) {
+      <p style="margin-bottom:8px">{{ statusMessage }}</p>
+      <p style="font-style:italic;color:var(--sp-muted)">{{ audioScript }}</p>
+    } @else {
+      {{ statusMessage }}
+    }
+  </div>
+}

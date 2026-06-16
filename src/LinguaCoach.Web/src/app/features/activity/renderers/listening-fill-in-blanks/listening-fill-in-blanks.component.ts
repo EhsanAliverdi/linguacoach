@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
+import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 
 export interface ListeningFillInBlanksGap {
   id: string;
@@ -25,7 +26,7 @@ export interface ListeningFillInBlanksAnswer {
 @Component({
   selector: 'app-listening-fill-in-blanks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent],
+  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent, AudioPlayerComponent],
   templateUrl: './listening-fill-in-blanks.component.html',
 })
 export class ListeningFillInBlanksComponent {

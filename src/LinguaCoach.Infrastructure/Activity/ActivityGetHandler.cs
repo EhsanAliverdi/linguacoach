@@ -21,6 +21,19 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private const int VocabPracticeIntervalAttempts = 4; // every 4th activity
     private const int ListeningIntervalAttempts = 5; // every 5th activity
 
+    private static readonly HashSet<string> ListeningPatternKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        Domain.ExercisePatternKey.ListenAndAnswer,
+        Domain.ExercisePatternKey.ListenAndGapFill,
+        Domain.ExercisePatternKey.ListeningMultipleChoiceSingle,
+        Domain.ExercisePatternKey.ListeningMultipleChoiceMulti,
+        Domain.ExercisePatternKey.ListeningFillInBlanks,
+        Domain.ExercisePatternKey.SelectMissingWord,
+        Domain.ExercisePatternKey.HighlightCorrectSummary,
+        Domain.ExercisePatternKey.HighlightIncorrectWords,
+        Domain.ExercisePatternKey.WriteFromDictation,
+    };
+
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
     private readonly ILearningPathGenerator _pathGenerator;
@@ -316,6 +329,12 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         _logger.LogInformation(
             "Pattern-keyed activity created ActivityId={ActivityId} PatternKey={PatternKey}",
             activity.Id, patternKey);
+
+        if (ListeningPatternKeys.Contains(patternKey))
+        {
+            await _listeningAudio.EnsureAudioAsync(activity, profile.LanguagePair?.TargetLanguage?.Code ?? "en", ct);
+            await _db.SaveChangesAsync(ct);
+        }
 
         var patternDef = await _patternRepo.GetByKeyAsync(patternKey, ct);
         return MapToDto(activity, patternDef?.InteractionMode);
@@ -711,6 +730,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 AudioContentType: audio?.ContentType,
                 AudioDurationSeconds: audio?.DurationMs is > 0 ? Math.Round(audio.DurationMs.Value / 1000.0, 1) : null,
                 AudioUnavailableMessage: audio?.AudioAvailable == false ? audio.UnavailableMessage : null,
+                AudioStatus: audio == null ? "pending" : (audio.AudioAvailable ? "ready" : "unavailable"),
                 InteractionMode: interactionMode,
                 ExercisePatternKey: patternKey,
                 ContentJson: rendererContentJson,

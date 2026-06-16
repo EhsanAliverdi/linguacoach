@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
+import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 
 export interface HighlightIncorrectWordsToken {
   id: string;
@@ -31,7 +32,7 @@ export interface HighlightIncorrectWordsAnswer {
 @Component({
   selector: 'app-highlight-incorrect-words',
   standalone: true,
-  imports: [CommonModule, ExerciseLessonIntroComponent],
+  imports: [CommonModule, ExerciseLessonIntroComponent, AudioPlayerComponent],
   templateUrl: './highlight-incorrect-words.component.html',
 })
 export class HighlightIncorrectWordsComponent {

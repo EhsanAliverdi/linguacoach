@@ -73,6 +73,7 @@ export interface ActivityDto {
   audioContentType: string | null;
   audioDurationSeconds: number | null;
   audioUnavailableMessage: string | null;
+  audioStatus: string | null;
   // SpeakingRolePlay fields — null for other activity types
   speakingScenario: string | null;
   studentRole: string | null;
