@@ -506,6 +506,114 @@ public sealed class PatternEvaluationSubmitTests : IClassFixture<PatternEvaluati
         Assert.Equal(ExerciseStatus.Completed, updatedExercise.Status);
     }
 
+    // ── Phase 10B: learning ledger event recording ────────────────────────────
+
+    [Fact]
+    public async Task PatternSubmit_PracticeGym_WritesLearningEvent()
+    {
+        var (token, userId, activityId) = await _factory.CreatePatternActivityAsync(
+            "phrase_match", PhraseMatchContentJson(pairCount: 1));
+        var client = ClientWithToken(token);
+
+        await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
+            new { submittedContent = PhraseMatchSubmitted((0, 0)) });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var studentProfileId = db.StudentProfiles.Where(p => p.UserId == userId).Select(p => p.Id).First();
+
+        var evt = db.StudentLearningEvents.FirstOrDefault(e => e.StudentProfileId == studentProfileId);
+
+        Assert.NotNull(evt);
+        Assert.Equal(LearningEventSource.PracticeGym, evt.Source);
+        Assert.Equal("phrase_match", evt.PatternKey);
+        Assert.Equal(activityId, evt.ActivityId);
+        Assert.Null(evt.SessionId); // no session for Practice Gym
+    }
+
+    [Fact]
+    public async Task PatternSubmit_TodayLesson_WritesLearningEventWithSessionId()
+    {
+        var (token, userId, activityId) = await _factory.CreatePatternActivityAsync(
+            "phrase_match", PhraseMatchContentJson(pairCount: 1));
+
+        Guid sessionId;
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var setupDb = setupScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var session = await CreateSessionAsync(setupDb, userId);
+            await setupDb.SaveChangesAsync();
+            sessionId = session.Id;
+
+            var exercise = new SessionExercise(
+                session.Id, order: 1, exercisePatternKey: "phrase_match",
+                primarySkill: "Vocabulary", secondarySkillsJson: "[]",
+                estimatedMinutes: 5, instructions: "Match phrases.");
+            exercise.AssignActivity(activityId);
+            setupDb.SessionExercises.Add(exercise);
+            await setupDb.SaveChangesAsync();
+        }
+
+        var client = ClientWithToken(token);
+        await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
+            new { submittedContent = PhraseMatchSubmitted((0, 0)) });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var studentProfileId = db.StudentProfiles.Where(p => p.UserId == userId).Select(p => p.Id).First();
+
+        var evt = db.StudentLearningEvents.FirstOrDefault(e => e.StudentProfileId == studentProfileId);
+
+        Assert.NotNull(evt);
+        Assert.Equal(LearningEventSource.TodayLesson, evt.Source);
+        Assert.Equal(sessionId, evt.SessionId);
+    }
+
+    [Fact]
+    public async Task PatternSubmit_RecordsExerciseTypeAndPatternKey()
+    {
+        var (token, userId, activityId) = await _factory.CreatePatternActivityAsync(
+            "gap_fill_workplace_phrase", GapFillContentJson("confirm"));
+        var client = ClientWithToken(token);
+
+        await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
+            new { submittedContent = GapFillSubmitted(("gap_1", "confirm")) });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var studentProfileId = db.StudentProfiles.Where(p => p.UserId == userId).Select(p => p.Id).First();
+
+        var evt = db.StudentLearningEvents.FirstOrDefault(e => e.StudentProfileId == studentProfileId);
+
+        Assert.NotNull(evt);
+        Assert.Equal("gap_fill_workplace_phrase", evt.PatternKey);
+        Assert.NotNull(evt.ExerciseType);
+        Assert.NotNull(evt.Score);
+    }
+
+    [Fact]
+    public async Task PatternSubmit_ExistingSkillProfileUpdateStillWorks_AfterLedgerWrite()
+    {
+        // Regression: ledger write must not break StudentSkillProfile update.
+        var (token, userId, activityId) = await _factory.CreatePatternActivityAsync(
+            "phrase_match", PhraseMatchContentJson(pairCount: 1));
+        var client = ClientWithToken(token);
+
+        await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
+            new { submittedContent = PhraseMatchSubmitted((0, 0)) });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var studentProfileId = db.StudentProfiles.Where(p => p.UserId == userId).Select(p => p.Id).First();
+
+        var skill = db.StudentSkillProfiles.FirstOrDefault(s =>
+            s.StudentProfileId == studentProfileId && s.SkillKey == "workplace_vocabulary");
+
+        Assert.NotNull(skill); // skill profile still updated
+        var evt = db.StudentLearningEvents.FirstOrDefault(e => e.StudentProfileId == studentProfileId);
+        Assert.NotNull(evt); // ledger event also written
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private HttpClient ClientWithToken(string token)

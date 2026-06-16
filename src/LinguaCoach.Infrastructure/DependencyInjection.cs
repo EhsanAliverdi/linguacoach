@@ -134,6 +134,7 @@ public static class DependencyInjection
         services.AddScoped<IAdaptivePathGenerator, AdaptivePathGeneratorHandler>();
         services.AddScoped<IStudentMemoryService, StudentMemoryService>();
         services.AddScoped<IStudentMemoryQuery, StudentMemoryService>();
+        services.AddScoped<IStudentLearningLedger, StudentLearningLedgerService>();
         services.AddScoped<IAdminAiUsageHandler, AiUsageHandler>();
 
         // Activity (AI-first learning flow)

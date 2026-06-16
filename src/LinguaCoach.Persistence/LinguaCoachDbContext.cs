@@ -47,6 +47,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<GenerationBatch> GenerationBatches => Set<GenerationBatch>();
     public DbSet<GenerationJobItem> GenerationJobItems => Set<GenerationJobItem>();
     public DbSet<PracticeActivityCache> PracticeActivityCache => Set<PracticeActivityCache>();
+    public DbSet<StudentLearningEvent> StudentLearningEvents => Set<StudentLearningEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

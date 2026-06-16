@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 18:00
+lastUpdated: 2026-06-17 00:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -198,6 +198,52 @@ Subsequent memory updates build from there.
 **Known limitation:** No staleness flag, no retry queue, no alert on repeated memory update
 failures. If AI is down for hours, memory becomes stale but the app continues working.
 Add staleness detection to backlog.
+
+---
+
+---
+
+## Phase 10B: Structured Learning Ledger (added 2026-06-17)
+
+A second memory layer was added in Phase 10B: `StudentLearningEvent`.
+
+This is a queryable, structured, append-only table of learning events.
+It is NOT a replacement for `UserLearningSummary` or `ActivityAttempt`.
+It sits between the two: more structured than the AI summary, less granular than raw attempts.
+
+### Write path (Phase 10B)
+
+```
+ActivitySubmitHandler
+  │
+  ├── [existing] PatternSkillUpdateService.ApplyAsync()
+  │
+  ├── [NEW] StudentLearningLedgerService.RecordAsync()
+  │     ├── detect source: SessionExercise linked? → TodayLesson : PracticeGym
+  │     ├── derive outcome from score/passed
+  │     ├── capture patternKey, exerciseType, primarySkill, cefrLevel, mistakeTags
+  │     └── append StudentLearningEvent row (best-effort, swallowed on failure)
+  │
+  └── [existing] StudentMemoryService.UpdateMemoryAsync()
+```
+
+### Query helpers (IStudentLearningLedger)
+
+- `GetRecentAsync(studentProfileId, limit)` — newest events first
+- `GetRecentPatternKeysAsync(studentProfileId, limit)` — distinct recent pattern keys
+- `GetWeakEventsAsync(studentProfileId, limit)` — NeedsReview and Failed outcomes
+- `GetRecentByPatternKeysAsync(studentProfileId, keys, limit)` — filter by pattern
+
+These are ready for DynamicPatternSelector integration in Phase 10C.
+
+### Fields reserved for future phases
+
+- `learning_goal_context` — learner goal (day-to-day, travel, workplace, academic...)
+- `concepts_taught_json` / `concepts_practised_json` — curriculum engine
+- `secondary_skills_json` — multi-skill coverage
+- `metadata_json` — format-specific overflow
+
+All are null-safe. No fake data is written.
 
 ---
 

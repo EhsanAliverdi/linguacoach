@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-16 00:00
+lastUpdated: 2026-06-17 00:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,43 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-16
+Last updated: 2026-06-17
 
 ---
 
 ## Most recently completed sprint
+
+**Phase 10B — Student Learning Memory / Taught-Content Ledger** — complete (2026-06-17)
+
+New structured `StudentLearningEvent` ledger written after every activity submission from Today lessons and Practice Gym. Foundation for ledger-aware dynamic pattern selection.
+
+### What was added
+
+- `StudentLearningEvent` domain entity + `LearningEventSource` / `LearningEventOutcome` enums
+- EF migration `T45_StudentLearningEvents` (new `student_learning_events` table with 3 indexes)
+- `IStudentLearningLedger` application interface + `StudentLearningLedgerService` infrastructure implementation
+- Hooked into `ActivitySubmitHandler` at both pattern evaluation path and legacy AI path
+- Query helpers: `GetRecentAsync`, `GetRecentPatternKeysAsync`, `GetWeakEventsAsync`, `GetRecentByPatternKeysAsync`
+- Best-effort write — never blocks or fails student's activity submission
+- No workplace default forced when context is null
+
+### Tests added
+
+- 10 unit tests: `StudentLearningEventTests` (domain entity validation, field storage, no-workplace-default)
+- 9 integration tests: `StudentLearningLedgerServiceTests` (write/read/query/isolation)
+- 4 API integration tests: ledger event written from Practice Gym and Today lesson, exercise type/pattern key captured, skill profile update still works
+
+### Final test counts
+
+- Backend unit: 941 (was 931)
+- Backend integration: 531 (was 517)
+- Architecture: 3
+
+See: `docs/reviews/2026-06-17-phase-10b-student-learning-memory-ledger.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 9J — Speaking/Listening Family QA & Hardening** — complete (2026-06-16)
 

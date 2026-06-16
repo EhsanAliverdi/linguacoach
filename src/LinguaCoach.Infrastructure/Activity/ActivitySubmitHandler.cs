@@ -23,6 +23,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IPatternEvaluationRouter _patternRouter;
     private readonly IExercisePatternRepository _patternRepo;
     private readonly PatternSkillUpdateService _patternSkillUpdate;
+    private readonly IStudentLearningLedger _learningLedger;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -35,6 +36,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IPatternEvaluationRouter patternRouter,
         IExercisePatternRepository patternRepo,
         PatternSkillUpdateService patternSkillUpdate,
+        IStudentLearningLedger learningLedger,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -46,6 +48,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _patternRouter = patternRouter;
         _patternRepo = patternRepo;
         _patternSkillUpdate = patternSkillUpdate;
+        _learningLedger = learningLedger;
         _logger = logger;
     }
 
@@ -209,6 +212,37 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _logger.LogInformation("Attempt saved AttemptId={AttemptId} ActivityId={ActivityId} Score={Score}",
             attempt.Id, activity.Id, score);
 
+        var legacyLinkedExercise = await _db.SessionExercises
+            .Where(e => e.LearningActivityId == activity.Id)
+            .Select(e => new { ExerciseId = e.Id, SessionId = e.LearningSessionId })
+            .FirstOrDefaultAsync(ct);
+
+        var legacySource = legacyLinkedExercise is not null
+            ? LearningEventSource.TodayLesson
+            : LearningEventSource.PracticeGym;
+
+        var legacyOutcome = score >= 70
+            ? LearningEventOutcome.Practised
+            : score.HasValue
+                ? LearningEventOutcome.NeedsReview
+                : LearningEventOutcome.Practised;
+
+        var legacyEvent = new StudentLearningEvent(
+            studentProfileId: profile.Id,
+            source: legacySource,
+            outcome: legacyOutcome,
+            activityId: activity.Id,
+            sessionId: legacyLinkedExercise is not null ? (Guid?)legacyLinkedExercise.SessionId : null,
+            sessionExerciseId: legacyLinkedExercise is not null ? (Guid?)legacyLinkedExercise.ExerciseId : null,
+            activityAttemptId: attempt.Id,
+            exerciseType: activity.ActivityType.ToString(),
+            patternKey: activity.ExercisePatternKey,
+            cefrLevelAtEvent: profile.CefrLevel,
+            score: score.HasValue ? Math.Round(score.Value, 1) : null,
+            normalizedScore: score.HasValue ? Math.Round(score.Value / 100.0, 4) : null);
+
+        await _learningLedger.RecordAsync(legacyEvent, ct);
+
         await _memoryService.UpdateMemoryAsync(new ActivityMemoryUpdateRequest(
             profile,
             activity,
@@ -306,6 +340,47 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         // Best-effort post-submission updates — must not fail activity submission.
         await _patternSkillUpdate.ApplyAsync(profile.Id, evalResult, activity.ExercisePatternKey, ct);
+
+        // Determine whether this came from a Today lesson or Practice Gym.
+        // A linked SessionExercise means Today lesson; no link means Practice Gym.
+        var linkedExercise = await _db.SessionExercises
+            .Where(e => e.LearningActivityId == activity.Id)
+            .Select(e => new { ExerciseId = e.Id, SessionId = e.LearningSessionId })
+            .FirstOrDefaultAsync(ct);
+
+        var ledgerSource = linkedExercise is not null
+            ? LearningEventSource.TodayLesson
+            : LearningEventSource.PracticeGym;
+
+        var ledgerOutcome = evalResult.Passed == true
+            ? LearningEventOutcome.Mastered
+            : evalResult.Percentage >= 50
+                ? LearningEventOutcome.Practised
+                : LearningEventOutcome.NeedsReview;
+
+        var primarySkillKey = PatternSkillUpdateService.GetPrimarySkillKey(activity.ExercisePatternKey);
+        var mistakeTags = evalResult.Corrections.Count > 0
+            ? System.Text.Json.JsonSerializer.Serialize(
+                evalResult.Corrections.Take(5).Select(c => c.Category).Distinct())
+            : null;
+
+        var learningEvent = new StudentLearningEvent(
+            studentProfileId: profile.Id,
+            source: ledgerSource,
+            outcome: ledgerOutcome,
+            activityId: activity.Id,
+            sessionId: linkedExercise is not null ? (Guid?)linkedExercise.SessionId : null,
+            sessionExerciseId: linkedExercise is not null ? (Guid?)linkedExercise.ExerciseId : null,
+            activityAttemptId: attempt.Id,
+            exerciseType: activity.ActivityType.ToString(),
+            patternKey: activity.ExercisePatternKey,
+            primarySkill: primarySkillKey,
+            cefrLevelAtEvent: profile.CefrLevel,
+            score: Math.Round(evalResult.Percentage, 1),
+            normalizedScore: Math.Round(evalResult.Percentage / 100.0, 4),
+            mistakeTagsJson: mistakeTags);
+
+        await _learningLedger.RecordAsync(learningEvent, ct);
 
         var memoryRequest = BuildPatternMemoryUpdateRequest(profile, activity, module, attempt, evalResult);
         await _memoryService.UpdateMemoryAsync(memoryRequest, ct);
