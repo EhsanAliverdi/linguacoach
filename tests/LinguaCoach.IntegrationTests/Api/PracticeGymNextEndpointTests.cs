@@ -158,11 +158,11 @@ public sealed class PracticeGymNextEndpointTests : IClassFixture<ActivityTestFac
     }
 
     [Fact]
-    public async Task GetNext_WithPlannedExerciseType_ReturnsSafeNoActivity()
+    public async Task GetNext_WithUnknownExerciseType_ReturnsSafeNoActivity()
     {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_planned_{Guid.NewGuid():N}@test.com");
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_unknown_{Guid.NewGuid():N}@test.com");
 
-        var response = await ClientWithToken(token).GetAsync("/api/activity/practice-gym/next?exerciseType=summarize_group_discussion");
+        var response = await ClientWithToken(token).GetAsync("/api/activity/practice-gym/next?exerciseType=nonexistent_future_format");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

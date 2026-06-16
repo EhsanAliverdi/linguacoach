@@ -164,11 +164,19 @@ const readyRetellLecture: any = {
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
+const readySummarizeGroupDiscussion: any = {
+  key: 'summarize_group_discussion', displayName: 'Summarize Group Discussion', primarySkill: 'listening', secondarySkills: ['speaking', 'summarizing', 'communication'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'summarize_group_discussion', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_summarize_group_discussion',
+  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
+};
+
 const plannedFormat: any = {
-  key: 'summarize_group_discussion', displayName: 'Summarize Group Discussion', primarySkill: 'speaking', secondarySkills: ['listening'],
+  key: 'some_future_format', displayName: 'Some Future Format', primarySkill: 'speaking', secondarySkills: [],
   category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
   rendererKey: '', evaluatorKey: '', generationPromptKey: '',
-  estimatedDurationMinutes: 0, requiresAudio: true, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
+  estimatedDurationMinutes: 0, requiresAudio: false, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
   defaultItemsPerPractice: 0, minItemsPerPractice: 0, maxItemsPerPractice: 0,
 };
 
@@ -178,7 +186,7 @@ const ALL_READY = [
   readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti,
   readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary,
   readyHighlightIncorrectWords, readyAnswerShortQuestion, readyReadAloud, readyRepeatSentence,
-  readyRespondToSituation, readyDescribeImage, readyRetellLecture,
+  readyRespondToSituation, readyDescribeImage, readyRetellLecture, readySummarizeGroupDiscussion,
 ];
 
 describe('PracticeGymComponent', () => {
@@ -267,15 +275,16 @@ describe('PracticeGymComponent', () => {
     expect(countEl.textContent).toContain('1');
   });
 
-  it('summarize_group_discussion remains locked/non-runnable', async () => {
-    activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
-    const newFixture = TestBed.createComponent(PracticeGymComponent);
-    newFixture.detectChanges();
-    await newFixture.whenStable();
-    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-summarize_group_discussion"]');
-    if (card) {
-      expect(card.tagName.toLowerCase()).not.toBe('button');
-    }
+  it('summarize_group_discussion is ready and available in Practice Gym', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-summarize_group_discussion"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('shows item count for summarize_group_discussion', () => {
+    const countEl = fixture.nativeElement.querySelector('[data-testid="format-count-summarize_group_discussion"]');
+    expect(countEl).toBeTruthy();
+    expect(countEl.textContent).toContain('1');
   });
 
   it('planned format is shown as locked (not a button)', async () => {
@@ -283,7 +292,7 @@ describe('PracticeGymComponent', () => {
     const newFixture = TestBed.createComponent(PracticeGymComponent);
     newFixture.detectChanges();
     await newFixture.whenStable();
-    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-summarize_group_discussion"]');
+    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-some_future_format"]');
     expect(card).toBeTruthy();
     expect(card.tagName.toLowerCase()).not.toBe('button');
   });
@@ -422,7 +431,7 @@ describe('PracticeGymComponent', () => {
     newFixture.detectChanges();
     const comp = newFixture.componentInstance;
 
-    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'summarize_group_discussion');
+    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'some_future_format');
     if (lockedCard) comp.startFormat(lockedCard);
 
     expect(activityService.getPracticeGymNext).not.toHaveBeenCalled();

@@ -44,6 +44,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "respond_to_situation",
         "describe_image",
         "retell_lecture",
+        "summarize_group_discussion",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

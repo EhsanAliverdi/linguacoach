@@ -517,6 +517,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening comprehension and speaking by retelling the main ideas of a short lecture in your own words",
             requiresAudio: false,
             workplaceContext: false),
+
+        new(
+            key: ExercisePatternKey.SummarizeGroupDiscussion,
+            name: "Summarize Group Discussion",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Speaking", "Summarizing", "Communication"]""",
+            compatibleKindsJson: """[2, 5]""",        // ListeningInput, SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.SummarizeGroupDiscussion,
+            markingMode: MarkingMode.AiOpenEnded,
+            estimatedMinutes: 7,
+            aiGeneratePromptKey: "activity_generate_summarize_group_discussion",
+            aiEvaluatePromptKey: "activity_evaluate_summarize_group_discussion",
+            teachingPurpose: "Practise listening comprehension and communication by summarizing the main points, speaker views, agreements, and outcomes of a short group discussion",
+            requiresAudio: false,
+            workplaceContext: false),
     ];
 
     /// <summary>

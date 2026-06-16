@@ -56,4 +56,5 @@ public static class ExercisePatternKey
     public const string RespondToSituation             = "respond_to_situation";
     public const string DescribeImage                  = "describe_image";
     public const string RetellLecture                  = "retell_lecture";
+    public const string SummarizeGroupDiscussion       = "summarize_group_discussion";
 }

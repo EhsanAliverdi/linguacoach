@@ -35,7 +35,8 @@ export type InteractionMode =
   | 'repeatSentence'
   | 'respondToSituation'
   | 'describeImage'
-  | 'retellLecture';
+  | 'retellLecture'
+  | 'summarizeGroupDiscussion';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

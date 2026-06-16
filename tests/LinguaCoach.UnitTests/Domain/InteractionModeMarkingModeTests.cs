@@ -35,8 +35,9 @@ public sealed class InteractionModeMarkingModeTests
     [Fact] public void InteractionMode_RepeatSentence_IsTwentyThree()            => Assert.Equal(23, (int)InteractionMode.RepeatSentence);
     [Fact] public void InteractionMode_RespondToSituation_IsTwentyFour()        => Assert.Equal(24, (int)InteractionMode.RespondToSituation);
     [Fact] public void InteractionMode_DescribeImage_IsTwentyFive()             => Assert.Equal(25, (int)InteractionMode.DescribeImage);
-    [Fact] public void InteractionMode_RetellLecture_IsTwentySix()             => Assert.Equal(26, (int)InteractionMode.RetellLecture);
-    [Fact] public void InteractionMode_HasExactlyTwentySevenValues()           => Assert.Equal(27, Enum.GetValues<InteractionMode>().Length);
+    [Fact] public void InteractionMode_RetellLecture_IsTwentySix()              => Assert.Equal(26, (int)InteractionMode.RetellLecture);
+    [Fact] public void InteractionMode_SummarizeGroupDiscussion_IsTwentySeven() => Assert.Equal(27, (int)InteractionMode.SummarizeGroupDiscussion);
+    [Fact] public void InteractionMode_HasExactlyTwentyEightValues()            => Assert.Equal(28, Enum.GetValues<InteractionMode>().Length);
 
     // ── MarkingMode ───────────────────────────────────────────────────────────
     [Fact] public void MarkingMode_AiOpenEnded_IsZero()    => Assert.Equal(0, (int)MarkingMode.AiOpenEnded);

@@ -153,6 +153,13 @@
       (submitted)="onRetellLectureSubmitted($event)"
     />
   }
+  @case ('summarizeGroupDiscussion') {
+    <app-summarize-group-discussion
+      [content]="summarizeGroupDiscussionContent"
+      [disabled]="disabled"
+      (submitted)="onSummarizeGroupDiscussionSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

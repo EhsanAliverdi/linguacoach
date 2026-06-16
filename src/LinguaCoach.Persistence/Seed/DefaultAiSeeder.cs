@@ -62,6 +62,8 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateDescribeImageKey                     = "activity_evaluate_describe_image";
     public const string ActivityGenerateRetellLectureKey                     = "activity_generate_retell_lecture";
     public const string ActivityEvaluateRetellLectureKey                     = "activity_evaluate_retell_lecture";
+    public const string ActivityGenerateSummarizeGroupDiscussionKey          = "activity_generate_summarize_group_discussion";
+    public const string ActivityEvaluateSummarizeGroupDiscussionKey          = "activity_evaluate_summarize_group_discussion";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -3527,6 +3529,183 @@ Rules:
 - Keep feedback warm, specific, and actionable.
 """;
 
+    private const string ActivityGenerateSummarizeGroupDiscussionContent = """
+You are an expert English language teacher creating a summarize-group-discussion listening and speaking exercise for a {{sourceLanguageName}}-speaking learner of {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read or listen to a short multi-speaker discussion, then summarize the main points, speaker views, agreements, disagreements, and outcomes. This practises listening comprehension, summarising, and spoken communication. Content should suit the student's learning goals — which may include daily life, travel, study, social communication, migration, job interviews, workplace English, or other goals. Do not assume a workplace-only context unless {{careerContext}} indicates it.
+
+Generate exactly 1 discussion item (DefaultItemsPerPractice=1, max=1). The discussion script should be 80-160 words — a short, realistic multi-speaker exchange that the student can follow at {{cefrLevel}}.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening and summarising skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["speaking", "summarizing", "communication"],
+  "exerciseType": "summarize_group_discussion",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to summarize a group discussion clearly'>",
+    "explanation": "<2-4 sentences: general strategy for listening to a group discussion and summarizing it. Teach how to identify main points, note each speaker's position, and organise a spoken or written summary. No reference to the actual discussion below.>",
+    "keyPoints": [
+      "<e.g. 'Listen for the discussion topic stated early in the conversation'>",
+      "<e.g. 'Note each speaker's position or opinion separately'>",
+      "<e.g. 'Identify any agreements, disagreements, or decisions reached'>",
+      "<e.g. 'Use your own words — do not repeat every sentence from the discussion'>"
+    ],
+    "examples": [
+      { "phrase": "<example of a natural summary opener for a discussion>", "meaning": "<what makes it effective>", "note": "<when to use it>" }
+    ],
+    "strategy": "<one sentence: how to approach summarizing a group discussion>",
+    "commonMistakes": [
+      "summarizing only one speaker and ignoring the others",
+      "copying phrases directly from the discussion instead of paraphrasing",
+      "leaving out the outcome or decision if one was reached",
+      "translating directly from the first language instead of using natural English summary phrases"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about summarizing discussions in English, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the discussion below carefully. Then summarize the main points, each speaker's view, any agreements or disagreements, and the outcome if there is one. Type your response as if you were explaining it to someone who was not part of the discussion.",
+    "scenario": "<1 sentence describing the general topic and setting — may be everyday, travel, social, academic, interview, or workplace>",
+    "task": "Summarize the main points of the discussion, including each speaker's view and any agreements, disagreements, or outcomes.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "disc1",
+          "discussionTitle": "<short title for this discussion, e.g. 'Planning a Weekend Trip'>",
+          "discussionTopic": "<1 sentence describing the discussion topic>",
+          "audioScript": "<80-160 words: the discussion text. Write as a natural multi-speaker exchange with 2-3 named speakers. Include a clear topic, each speaker's position or contribution, and a resolution or outcome if appropriate. Suitable for {{cefrLevel}}.>",
+          "audioUrl": null,
+          "contextLabel": "<e.g. 'Social', 'Study', 'Travel', 'Daily life', 'Workplace', 'Health', 'Interview'>",
+          "speakers": [
+            { "name": "<speaker 1 name>", "role": "<optional role or relationship>", "viewpoint": null },
+            { "name": "<speaker 2 name>", "role": "<optional role or relationship>", "viewpoint": null }
+          ],
+          "keyPoints": [
+            "<main topic or issue discussed>",
+            "<speaker 1's main view or contribution>",
+            "<speaker 2's main view or contribution>",
+            "<agreement, disagreement, or outcome if present>"
+          ],
+          "agreements": ["<any agreement reached, or null>"],
+          "disagreements": ["<any disagreement noted, or null>"],
+          "decisionOrOutcome": "<decision or outcome if reached, or null>",
+          "importantVocabulary": [
+            { "word": "<key word or phrase from the discussion>", "meaning": "<brief meaning>" }
+          ],
+          "expectedSummaryGuidance": "<2-3 sentences describing what a good summary should cover — NOT a single correct answer. Should mention main points, speaker positions, and outcome if present.>",
+          "goodResponseExample": "<one example of a natural, clear summary of this discussion in 3-5 sentences>",
+          "focusAreas": ["<e.g. 'main points'>", "<e.g. 'speaker views'>", "<e.g. 'outcome'>", "<e.g. 'organisation'>"]
+        }
+      ],
+      "successChecklist": [
+        "The summary covers the main topic of the discussion.",
+        "At least one speaker's view or contribution is included.",
+        "Any agreement, disagreement, or outcome is mentioned if present.",
+        "The response is in the student's own words, not a direct copy."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Coverage of main discussion points",
+      "Recognition of speaker views or roles",
+      "Inclusion of agreements, disagreements, or outcome where present",
+      "Organisation and logical flow",
+      "Clarity",
+      "Vocabulary use",
+      "Grammar (secondary)"
+    ],
+    "rubric": [
+      { "criterion": "Main point coverage", "description": "The summary clearly states the main topic and key points of the discussion." },
+      { "criterion": "Speaker views", "description": "The student identifies at least one speaker's position or contribution." },
+      { "criterion": "Outcome", "description": "The student mentions any agreement, disagreement, or decision reached." },
+      { "criterion": "Own words", "description": "The student paraphrases rather than copying the discussion." }
+    ],
+    "feedbackFocus": "Help the student identify and summarize each speaker's contribution and any outcomes clearly and in their own words.",
+    "successCriteria": [
+      "The main topic is clearly stated.",
+      "Speaker views or contributions are included.",
+      "Any outcome or decision is mentioned.",
+      "The response is in the student's own words."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual discussion script, speaker viewpoints, key points, expected summary, or scoring rubric details. It teaches general summarising strategy only.
+- The item must have id, discussionTitle, discussionTopic, audioScript, audioUrl (null), contextLabel, speakers, keyPoints, importantVocabulary, expectedSummaryGuidance, goodResponseExample, and focusAreas.
+- audioUrl must always be null — no real audio URLs.
+- The discussion script should be realistic, clear, and appropriate for {{cefrLevel}}.
+- Discussion topics should reflect the learner's context — not hardcoded as workplace-only unless {{careerContext}} indicates a workplace focus.
+- Do NOT include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateSummarizeGroupDiscussionContent = """
+You are a warm, encouraging English speaking coach evaluating a student's summarize-group-discussion exercise.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+
+Activity content (discussion scripts and guidance):
+{{activityContent}}
+
+Student's submitted summaries:
+{{submittedAnswer}}
+
+For each item, evaluate the student's summary against the audioScript, keyPoints, speakers, agreements, disagreements, decisionOrOutcome, and expectedSummaryGuidance. Assess: coverage of main discussion points, recognition of speaker views or roles where relevant, inclusion of agreements/disagreements/outcome where present, organisation, clarity, vocabulary use. Grammar is a secondary consideration. Do NOT require an exact match — the student's summary is open-ended.
+
+This is NOT pronunciation scoring, fluency scoring, or audio analysis. You are evaluating the typed text only.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentences of overall feedback on coverage of main points, speaker views, and clarity of the summary>",
+  "strengths": [
+    "<one specific strength observed in the summary>",
+    "<another strength if present>"
+  ],
+  "improvements": [
+    "<one specific area for improvement>",
+    "<another if relevant>"
+  ],
+  "missingExpectedPoints": [
+    "<a key point, speaker view, or outcome from the discussion that the student omitted, if any>"
+  ],
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true if the summary covers the main topic and at least one speaker's contribution, false if clearly off-topic or empty>,
+      "score": <0-100 for this item>,
+      "studentResponse": "<what the student submitted>",
+      "feedback": "<2-3 sentences of item-level feedback covering main point coverage, speaker view recognition, outcome inclusion, organisation, and clarity>",
+      "missingPoints": ["<key point, speaker view, or outcome missed, if any>"],
+      "betterExample": "<one example of a stronger summary if useful, or null>"
+    }
+  ],
+  "suggestedImprovedResponse": "<one example of a fuller, well-organised summary if helpful, or null>",
+  "miniLesson": "<one actionable tip for improving summarising or discussion comprehension skills>",
+  "nextImprovementStep": "<one specific thing to practise next>"
+}
+
+Rules:
+- Do not require exact match. Assess whether the summary covers the main points and is clearly expressed.
+- Award full or near-full score if the student covers the main topic, at least one speaker's contribution, and the outcome (if present) in clear language.
+- If the student left a response blank or submitted only whitespace, isCorrect=false, score=0, feedback should note the response was not provided.
+- Do not penalise minor grammar errors unless they affect understanding.
+- Do not claim pronunciation, fluency, or audio-quality scoring — this evaluates only the typed text.
+- If the student copied the discussion word-for-word, note this and encourage paraphrasing, but still award partial credit for coverage.
+- Keep feedback warm, specific, and actionable.
+""";
+
     private const string ActivityEvaluateReadAloudContent = """
 You are a warm, professional English speaking coach evaluating a student's read-aloud exercise.
 
@@ -4456,6 +4635,12 @@ Rules:
             maxInputTokens: 1400, maxOutputTokens: 2400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateRetellLectureKey, ActivityEvaluateRetellLectureContent,
+            maxInputTokens: 2000, maxOutputTokens: 1400, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSummarizeGroupDiscussionKey, ActivityGenerateSummarizeGroupDiscussionContent,
+            maxInputTokens: 1400, maxOutputTokens: 2800, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateSummarizeGroupDiscussionKey, ActivityEvaluateSummarizeGroupDiscussionContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,

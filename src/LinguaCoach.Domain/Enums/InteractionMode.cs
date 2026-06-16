@@ -34,4 +34,5 @@ public enum InteractionMode
     RespondToSituation         = 24, // Read or hear a real-life situation and speak/type a response — speaking + communication skills
     DescribeImage              = 25, // View an image prompt and describe what you see — speaking + vocabulary skills
     RetellLecture              = 26, // Listen to or read a short lecture and retell the main ideas — listening + speaking skills
+    SummarizeGroupDiscussion   = 27, // Listen to or read a multi-speaker discussion and summarize main points, views, and outcomes — listening + speaking/writing skills
 }

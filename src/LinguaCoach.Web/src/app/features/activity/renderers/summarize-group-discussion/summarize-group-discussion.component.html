@@ -1,0 +1,112 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="summarize-group-discussion-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  @for (item of content.items; track item.id; let i = $index) {
+    <div class="sp-card" style="padding:16px" [attr.data-testid]="'sgd-item-' + item.id">
+
+      <!-- Title and context chip row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        <p style="font-size:14px;font-weight:700;color:var(--sp-text);margin:0"
+           [attr.data-testid]="'sgd-title-' + item.id">
+          {{ item.discussionTitle }}
+        </p>
+        @if (item.contextLabel) {
+          <span style="font-size:11px;font-weight:700;background:var(--sp-listening-light,#e0f2fe);color:var(--sp-listening,#0369a1);border-radius:4px;padding:2px 8px"
+                [attr.data-testid]="'sgd-context-label-' + item.id">
+            {{ item.contextLabel }}
+          </span>
+        }
+      </div>
+
+      @if (item.discussionTopic) {
+        <p style="font-size:13px;color:var(--sp-text-secondary);margin-bottom:10px"
+           [attr.data-testid]="'sgd-topic-' + item.id">
+          {{ item.discussionTopic }}
+        </p>
+      }
+
+      <!-- Speaker list if available -->
+      @if (item.speakers && item.speakers.length > 0) {
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"
+             [attr.data-testid]="'sgd-speakers-' + item.id">
+          @for (speaker of item.speakers; track speaker.name) {
+            <div style="background:var(--sp-surface-alt,#f5f5f5);border-radius:6px;padding:6px 10px;font-size:12px">
+              <span style="font-weight:700;color:var(--sp-text)">{{ speaker.name }}</span>
+              @if (speaker.role) {
+                <span style="color:var(--sp-text-secondary)"> · {{ speaker.role }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Audio player when audioUrl is available -->
+      @if (item.audioUrl) {
+        <div style="margin-bottom:14px" [attr.data-testid]="'sgd-audio-' + item.id">
+          <audio controls style="width:100%;border-radius:6px">
+            <source [src]="item.audioUrl" type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      }
+
+      <!-- audioScript fallback when no audioUrl -->
+      @if (!item.audioUrl) {
+        <div style="background:var(--sp-surface-alt,#f5f5f5);border-radius:8px;padding:16px 18px;margin-bottom:12px;border-left:4px solid var(--sp-listening,#0369a1)"
+             [attr.data-testid]="'sgd-audio-script-' + item.id">
+          <p class="sp-eyebrow" style="margin-bottom:6px;color:var(--sp-listening,#0369a1)">Discussion</p>
+          <p style="font-size:14px;font-weight:500;color:var(--sp-text);line-height:1.75;margin:0">
+            {{ item.audioScript }}
+          </p>
+        </div>
+      }
+
+      <!-- Focus area chips -->
+      @if (item.focusAreas && item.focusAreas.length > 0) {
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"
+             [attr.data-testid]="'sgd-focus-areas-' + item.id">
+          @for (area of item.focusAreas; track area) {
+            <span style="font-size:11px;font-weight:700;background:var(--sp-listening-light,#e0f2fe);color:var(--sp-listening,#0369a1);border-radius:4px;padding:2px 8px">
+              {{ area }}
+            </span>
+          }
+        </div>
+      }
+
+      <label [attr.for]="'sgd-input-' + item.id"
+             style="font-size:12px;font-weight:700;color:var(--sp-text-secondary);display:block;margin-bottom:6px">
+        Your summary
+      </label>
+      <textarea
+        [id]="'sgd-input-' + item.id"
+        [disabled]="disabled"
+        [ngModel]="valueFor(item.id)"
+        (ngModelChange)="onInput(item.id, $event)"
+        placeholder="Summarize the main points, speaker views, and any agreements or outcomes…"
+        [attr.data-testid]="'sgd-input-' + item.id"
+        class="sp-input"
+        rows="5"
+        style="width:100%;resize:vertical"></textarea>
+    </div>
+  }
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="summarize-group-discussion-submit-btn">
+    @if (disabled) { Checking… } @else { Submit }
+  </button>
+</div>

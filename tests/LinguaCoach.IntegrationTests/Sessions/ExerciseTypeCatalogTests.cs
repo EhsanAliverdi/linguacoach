@@ -361,23 +361,27 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task OtherPlannedFormats_RemainNonRunnable()
+    public async Task SummarizeGroupDiscussion_IsNowRunnable()
     {
-        var stillPlanned = new[]
-        {
-            "summarize_group_discussion",
-        };
-
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        foreach (var key in stillPlanned)
-        {
-            var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
-            Assert.Equal("planned", type.ImplementationStatus);
-            Assert.False(type.IsAvailableForGeneration);
-            Assert.DoesNotContain(eligible, e => e.Key == key);
-        }
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_group_discussion");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "summarize_group_discussion");
+    }
+
+    [Fact]
+    public async Task AllPlannedSpeakingListeningFormats_AreNowReady()
+    {
+        // Phases 9A–9I promoted all planned speaking/listening formats to Ready.
+        var speakingTypes = await _db.ExerciseTypeDefinitions
+            .Where(e => e.PrimarySkill == "listening" || e.PrimarySkill == "speaking")
+            .Where(e => e.ImplementationStatus == "planned")
+            .ToListAsync();
+
+        Assert.Empty(speakingTypes);
     }
 
     [Fact]
@@ -394,15 +398,15 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task OtherPlannedTypes_RemainUnchanged()
+    public async Task AllSpeakingAndListeningTypes_AreNowReady_NoPlannedRemain()
     {
+        // Phase 9I: summarize_group_discussion was the last planned speaking/listening format.
+        // All exercise types in the catalog are now Ready.
         var planned = await _db.ExerciseTypeDefinitions
             .Where(e => e.ImplementationStatus == "planned")
             .ToListAsync();
 
-        Assert.NotEmpty(planned);
-        Assert.All(planned, e => Assert.False(e.IsAvailableForGeneration));
-        Assert.DoesNotContain(planned, e => e.PrimarySkill == "reading");
+        Assert.Empty(planned);
     }
 
     [Fact]
@@ -433,6 +437,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("respond_to_situation", 1, 1, 2, 0, 0, 0)]
     [InlineData("describe_image", 1, 1, 1, 0, 0, 0)]
     [InlineData("retell_lecture", 1, 1, 1, 0, 0, 0)]
+    [InlineData("summarize_group_discussion", 1, 1, 1, 0, 0, 0)]
     public async Task Seeder_SeedsCountFields(string key, int minI, int defI, int maxI, int minO, int defO, int maxO)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
@@ -552,16 +557,16 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     }
 
     [Fact]
-    public async Task Registry_ReturnsPlannedDefinitions_ButExcludesThemFromGeneration()
+    public async Task Registry_SummarizeGroupDiscussion_IsNowEligible()
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
-        var planned = await registry.GetByKeyAsync("summarize_group_discussion");
+        var def = await registry.GetByKeyAsync("summarize_group_discussion");
         var eligible = await registry.GetGenerationEligibleAsync();
 
-        Assert.NotNull(planned);
-        Assert.Equal("planned", planned!.ImplementationStatus);
-        Assert.DoesNotContain(eligible, e => e.Key == "summarize_group_discussion");
+        Assert.NotNull(def);
+        Assert.Equal("ready", def!.ImplementationStatus);
+        Assert.Contains(eligible, e => e.Key == "summarize_group_discussion");
     }
 
     [Fact]
@@ -611,6 +616,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         await catalog.UpdateAsync(new("write_from_dictation", false, null, null));
         await catalog.UpdateAsync(new("summarize_spoken_text", false, null, null));
         await catalog.UpdateAsync(new("retell_lecture", false, null, null));
+        await catalog.UpdateAsync(new("summarize_group_discussion", false, null, null));
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var selected = await registry.SelectForPracticeGymSkillAsync("listening");

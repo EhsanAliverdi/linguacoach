@@ -2927,4 +2927,124 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    // ── summarize_group_discussion ───────────────────────────────────────────────
+
+    private static string SummarizeGroupDiscussionJson(int itemCount = 1) => $$"""
+    {
+      "schemaVersion": "module_stage_v1",
+      "learnContent": { "teachingTitle": "How to summarize a group discussion" },
+      "practiceContent": {
+        "exerciseData": {
+          "items": [
+            {{string.Join(",", Enumerable.Range(1, itemCount).Select(i => $$"""
+            { "id": "disc{{i}}", "discussionTitle": "Planning a Weekend Trip", "audioScript": "Ali: I think we should go to the mountains. Sara: I prefer the beach. Ali: OK, let's vote." }
+            """))}}
+          ]
+        }
+      },
+      "feedbackPlan": { "feedbackFocus": "main points and speaker views" }
+    }
+    """;
+
+    [Fact]
+    public void Validate_SummarizeGroupDiscussion_ValidContent_Passes()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(SummarizeGroupDiscussionJson()), ActivityType.SpeakingRolePlay, "summarize_group_discussion");
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_SummarizeGroupDiscussion_MissingItems_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "How to summarize a group discussion" },
+          "practiceContent": { "exerciseData": {} },
+          "feedbackPlan": { "feedbackFocus": "main points" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "summarize_group_discussion");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("items"));
+    }
+
+    [Fact]
+    public void Validate_SummarizeGroupDiscussion_ItemMissingAudioScript_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "How to summarize a group discussion" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [ { "id": "disc1", "discussionTitle": "Planning a Trip" } ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "main points" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "summarize_group_discussion");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("audioScript"));
+    }
+
+    [Fact]
+    public void Validate_SummarizeGroupDiscussion_ItemMissingDiscussionTitle_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "How to summarize a group discussion" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [ { "id": "disc1", "audioScript": "Ali: Let's go. Sara: OK." } ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "main points" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "summarize_group_discussion");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("discussionTitle"));
+    }
+
+    [Fact]
+    public void Validate_SummarizeGroupDiscussion_LearnContentDoesNotContainItems_Passes()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "How to summarize a group discussion clearly",
+            "explanation": "Listen for each speaker's main point and any agreements reached."
+          },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                { "id": "disc1", "discussionTitle": "Planning a Trip", "audioScript": "Ali: Mountains. Sara: Beach. Ali: Let's vote." }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "main points and speaker views" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "summarize_group_discussion");
+
+        result.IsValid.Should().BeTrue();
+    }
+
 }
