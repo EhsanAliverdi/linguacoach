@@ -76,7 +76,8 @@ public static class ExerciseTypeDefinitionSeeder
         // read_aloud promoted to Ready above
         Ready(ExercisePatternKey.RepeatSentence, "Repeat Sentence", "Hear or read a short sentence, then repeat it as accurately as you can.", "speaking", "[\"listening\", \"pronunciation\"]", "Pattern", "repeat_sentence", "exact_match", "activity_generate_repeat_sentence", ActivityType.SpeakingRolePlay, ExercisePatternKey.RepeatSentence, 5, false, false, true, false),
         // repeat_sentence promoted to Ready above
-        Planned("describe_image", "Describe Image", "Describe an image aloud.", "speaking", "[]", "Planned speaking format", true, false, requiresImage: true),
+        Ready(ExercisePatternKey.DescribeImage, "Describe Image", "Look at an image prompt and describe what you see as clearly and naturally as possible.", "speaking", "[\"vocabulary\", \"communication\"]", "Pattern", "describe_image", "ai_open_ended", "activity_generate_describe_image", ActivityType.SpeakingRolePlay, ExercisePatternKey.DescribeImage, 6, false, false, true, false),
+        // describe_image promoted to Ready above
         Ready(ExercisePatternKey.RespondToSituation, "Respond to Situation", "Read or hear a short real-life situation and speak an appropriate response.", "speaking", "[\"communication\", \"listening\"]", "Pattern", "respond_to_situation", "ai_open_ended", "activity_generate_respond_to_situation", ActivityType.SpeakingRolePlay, ExercisePatternKey.RespondToSituation, 6, false, false, true, false),
         // respond_to_situation promoted to Ready above
         Planned("retell_lecture", "Retell Lecture", "Retell an audio lecture in your own words.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),

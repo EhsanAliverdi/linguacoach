@@ -23,6 +23,7 @@ import { AnswerShortQuestionComponent, AnswerShortQuestionContent } from '../ren
 import { ReadAloudComponent, ReadAloudContent } from '../renderers/read-aloud/read-aloud.component';
 import { RepeatSentenceComponent, RepeatSentenceContent } from '../renderers/repeat-sentence/repeat-sentence.component';
 import { RespondToSituationComponent, RespondToSituationContent } from '../renderers/respond-to-situation/respond-to-situation.component';
+import { DescribeImageComponent, DescribeImageContent } from '../renderers/describe-image/describe-image.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -45,7 +46,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'answerShortQuestion'; items: { itemId: string; answerText: string }[] }
   | { kind: 'readAloud'; items: { itemId: string; answerText: string }[] }
   | { kind: 'repeatSentence'; items: { itemId: string; answerText: string }[] }
-  | { kind: 'respondToSituation'; items: { itemId: string; answerText: string }[] };
+  | { kind: 'respondToSituation'; items: { itemId: string; answerText: string }[] }
+  | { kind: 'describeImage'; items: { itemId: string; answerText: string }[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -74,6 +76,7 @@ export type ExerciseAnswerPayload =
     ReadAloudComponent,
     RepeatSentenceComponent,
     RespondToSituationComponent,
+    DescribeImageComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -654,6 +657,36 @@ export class ExerciseRendererComponent {
 
   onRespondToSituationSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
     this.answerSubmitted.emit({ kind: 'respondToSituation', items: answer.items });
+  }
+
+  get describeImageContent(): DescribeImageContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const items = this.arrayValue(ed['items'] ?? raw['items']).map((item, index) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? `img${index + 1}`,
+        imagePrompt: this.stringValue(obj['imagePrompt']) ?? '',
+        imageDescription: this.stringValue(obj['imageDescription']),
+        imageUrl: this.stringValue(obj['imageUrl']),
+        displayTitle: this.stringValue(obj['displayTitle']),
+        contextLabel: this.stringValue(obj['contextLabel']),
+        focusAreas: this.arrayValue(obj['focusAreas']).map(f => this.stringValue(f) ?? '').filter(f => f),
+        explanation: this.stringValue(obj['explanation']),
+      };
+    });
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      items,
+    };
+  }
+
+  onDescribeImageSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
+    this.answerSubmitted.emit({ kind: 'describeImage', items: answer.items });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

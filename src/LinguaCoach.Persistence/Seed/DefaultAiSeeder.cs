@@ -58,6 +58,8 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateRepeatSentenceKey                   = "activity_evaluate_repeat_sentence";
     public const string ActivityGenerateRespondToSituationKey               = "activity_generate_respond_to_situation";
     public const string ActivityEvaluateRespondToSituationKey               = "activity_evaluate_respond_to_situation";
+    public const string ActivityGenerateDescribeImageKey                     = "activity_generate_describe_image";
+    public const string ActivityEvaluateDescribeImageKey                     = "activity_evaluate_describe_image";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -3195,6 +3197,164 @@ Rules:
 - Keep feedback warm, specific, and actionable.
 """;
 
+    private const string ActivityGenerateDescribeImageContent = """
+You are an expert English language teacher creating a describe-image speaking exercise for a {{sourceLanguageName}}-speaking learner of {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read a descriptive image prompt and speak or type a description of what they imagine seeing. This practises descriptive vocabulary, sentence organisation, and natural spoken English. Content should suit the student's learning goals — which may include day-to-day English, travel, social conversation, academic English, job interviews, workplace English, or other goals. Do not assume a workplace-only context unless {{careerContext}} indicates it.
+
+Generate exactly 1 image prompt (DefaultItemsPerPractice=1, max=1). The image prompt should describe a scene clearly so the student can picture it.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what descriptive speaking skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["vocabulary", "communication"],
+  "exerciseType": "describe_image",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to describe what you see clearly'>",
+    "explanation": "<2-4 sentences: general strategy for describing images clearly in spoken English. Teach vocabulary organisation, detail selection, and structure. No reference to the actual image below.>",
+    "keyPoints": [
+      "<e.g. 'Start with the overall scene before describing specific details'>",
+      "<e.g. 'Use location words: in the foreground, in the background, on the left, at the top'>",
+      "<e.g. 'Describe colours, shapes, actions, and relationships between objects'>",
+      "<e.g. 'Use present tense for describing what you see right now'>"
+    ],
+    "examples": [
+      { "phrase": "<example of a natural description opener>", "meaning": "<what makes it clear>", "note": "<when to use it>" }
+    ],
+    "strategy": "<one sentence: how to approach describing an image in spoken English>",
+    "commonMistakes": [
+      "describing objects in a random order rather than left-to-right or background-to-foreground",
+      "using very general words instead of specific descriptive vocabulary",
+      "forgetting to describe the overall setting before individual details",
+      "translating directly from the first language instead of using English description patterns"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about describing images in English, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Look at the image prompt below. Describe what you see as clearly and naturally as possible. Speak or type your description.",
+    "scenario": "<1 sentence describing the general type of scene — may be everyday, travel, social, academic, interview, or workplace>",
+    "task": "Describe the image as fully and clearly as you can.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "img1",
+          "imagePrompt": "<3-5 sentences describing a realistic scene in enough detail for the student to picture it clearly. Describe what is in the scene: people, objects, setting, colours, actions. Do NOT use real brand names, copyrighted material, or sensitive content.>",
+          "imageDescription": "<1-2 sentence summary of the scene for accessibility>",
+          "imageUrl": null,
+          "displayTitle": "<short title for this image, e.g. 'A busy café'>",
+          "contextLabel": "<e.g. 'Daily life', 'Travel', 'Study', 'Workplace', 'Social', 'Nature', 'City'>",
+          "focusAreas": ["<e.g. 'describing people'>", "<e.g. 'location words'>", "<e.g. 'actions and movement'>"],
+          "expectedResponseGuidance": "<2-4 sentences describing what a good description should cover — NOT a single correct answer. Should mention key visible elements, use of location language, and descriptive vocabulary.>",
+          "goodResponseExamples": [
+            "<one example of a natural, clear description of this image>",
+            "<one alternative approach or focus>"
+          ],
+          "explanation": "<one sentence coaching tip for describing this type of image>"
+        }
+      ],
+      "successChecklist": [
+        "The description covers the main elements visible in the image.",
+        "Location words are used to organise the description.",
+        "Descriptive vocabulary (colours, shapes, actions) is included.",
+        "The description is clear and easy to follow."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Relevance to the image prompt",
+      "Detail and completeness",
+      "Organisation",
+      "Vocabulary range",
+      "Clarity",
+      "Grammar (secondary)"
+    ],
+    "rubric": [
+      { "criterion": "Relevance", "description": "The description addresses the main elements of the image." },
+      { "criterion": "Detail", "description": "The student describes specific details rather than only general impressions." },
+      { "criterion": "Organisation", "description": "The description follows a logical order using location language." },
+      { "criterion": "Vocabulary", "description": "The student uses descriptive vocabulary appropriate for the scene." }
+    ],
+    "feedbackFocus": "Help the student describe images clearly using organised structure and rich vocabulary.",
+    "successCriteria": [
+      "The description covers the key visible elements.",
+      "The structure is clear and logical.",
+      "Vocabulary is varied and descriptive."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual image prompt, expected descriptions, or scoring rubric details. It teaches general image-description strategy only.
+- The item must have id, imagePrompt, imageDescription, imageUrl (null), displayTitle, contextLabel, focusAreas, expectedResponseGuidance, goodResponseExamples, and explanation.
+- imageUrl must always be null — no real image URLs or external links.
+- Image prompts must be realistic, vivid, and appropriate for {{cefrLevel}}.
+- Image scenes should reflect the learner's context — not hardcoded as workplace-only unless {{careerContext}} indicates a workplace focus.
+- Do NOT include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateDescribeImageContent = """
+You are a warm, encouraging English speaking coach evaluating a student's describe-image exercise.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+
+Activity content (image prompts and guidance):
+{{activityContent}}
+
+Student's submitted descriptions:
+{{submittedAnswer}}
+
+For each item, evaluate the student's description against the imagePrompt and expectedResponseGuidance. Assess: relevance to the image, amount of detail, organisation, vocabulary range, clarity, and natural spoken style. Grammar is a secondary consideration. Do NOT require an exact match — the student's description is open-ended.
+
+This is NOT computer-vision scoring. You are evaluating the typed text only, not a real image.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentences of overall feedback on the quality and completeness of the description>",
+  "strengths": [
+    "<one specific strength observed in the description>",
+    "<another strength if present>"
+  ],
+  "improvements": [
+    "<one specific area for improvement>",
+    "<another if relevant>"
+  ],
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true if the description is relevant and covers key image elements, false if clearly off-topic or empty>,
+      "score": <0-100 for this item>,
+      "studentResponse": "<what the student submitted>",
+      "feedback": "<2-3 sentences of item-level feedback covering relevance, detail, organisation, vocabulary, and clarity>",
+      "betterExample": "<one example of a stronger, more complete description if useful, or null>"
+    }
+  ],
+  "suggestedImprovedResponse": "<one example of a fuller, well-organised description if helpful, or null>",
+  "miniLesson": "<one actionable tip for improving image descriptions>",
+  "nextImprovementStep": "<one specific thing to practise next>"
+}
+
+Rules:
+- Do not require exact match. Assess whether the description is relevant, detailed, and clearly expressed.
+- Award full or near-full score if the student describes the key elements clearly and uses appropriate vocabulary.
+- If the student left a response blank or submitted only whitespace, isCorrect=false, score=0, feedback should note the response was not provided.
+- Do not penalise minor grammar errors unless they affect understanding.
+- Do not claim pronunciation, fluency, or image-recognition scoring — this evaluates only the typed text.
+- Keep feedback warm, specific, and actionable.
+""";
+
     private const string ActivityEvaluateReadAloudContent = """
 You are a warm, professional English speaking coach evaluating a student's read-aloud exercise.
 
@@ -4112,6 +4272,12 @@ Rules:
             maxInputTokens: 1400, maxOutputTokens: 2400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateRespondToSituationKey, ActivityEvaluateRespondToSituationContent,
+            maxInputTokens: 2000, maxOutputTokens: 1400, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateDescribeImageKey, ActivityGenerateDescribeImageContent,
+            maxInputTokens: 1400, maxOutputTokens: 2400, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateDescribeImageKey, ActivityEvaluateDescribeImageContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,

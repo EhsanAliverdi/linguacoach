@@ -33,7 +33,8 @@ export type InteractionMode =
   | 'answerShortQuestion'
   | 'readAloud'
   | 'repeatSentence'
-  | 'respondToSituation';
+  | 'respondToSituation'
+  | 'describeImage';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

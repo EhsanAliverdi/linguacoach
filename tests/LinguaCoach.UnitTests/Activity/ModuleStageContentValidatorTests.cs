@@ -2733,4 +2733,101 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    // ── describe_image ─────────────────────────────────────────────────────────
+
+    private static string DescribeImageJson(int itemCount = 1) => $$"""
+    {
+      "schemaVersion": "module_stage_v1",
+      "learnContent": { "teachingTitle": "Describing images" },
+      "practiceContent": {
+        "exerciseData": {
+          "items": [
+            {{string.Join(",", Enumerable.Range(1, itemCount).Select(i => $$"""
+            { "id": "img{{i}}", "imagePrompt": "A busy street with colourful market stalls and people shopping." }
+            """))}}
+          ]
+        }
+      },
+      "feedbackPlan": { "feedbackFocus": "detail and vocabulary" }
+    }
+    """;
+
+    [Fact]
+    public void Validate_DescribeImage_ValidContent_Passes()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(DescribeImageJson()), ActivityType.SpeakingRolePlay, "describe_image");
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_DescribeImage_MissingItems_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Describing images" },
+          "practiceContent": { "exerciseData": {} },
+          "feedbackPlan": { "feedbackFocus": "detail" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "describe_image");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("items"));
+    }
+
+    [Fact]
+    public void Validate_DescribeImage_ItemMissingImagePromptField_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Describing images" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [ { "id": "img1" } ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "detail" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "describe_image");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("imagePrompt"));
+    }
+
+    [Fact]
+    public void Validate_DescribeImage_LearnContentDoesNotContainItems_Passes()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "How to describe images",
+            "explanation": "Use location words and descriptive vocabulary."
+          },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                { "id": "img1", "imagePrompt": "A park on a sunny day with children playing." }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "detail and vocabulary" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "describe_image");
+
+        result.IsValid.Should().BeTrue();
+    }
+
 }

@@ -148,11 +148,19 @@ const readyRespondToSituation: any = {
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 2,
 };
 
+const readyDescribeImage: any = {
+  key: 'describe_image', displayName: 'Describe Image', primarySkill: 'speaking', secondarySkills: ['vocabulary', 'communication'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'describe_image', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_describe_image',
+  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
+};
+
 const plannedFormat: any = {
-  key: 'describe_image', displayName: 'Describe Image', primarySkill: 'speaking', secondarySkills: [],
+  key: 'retell_lecture', displayName: 'Retell Lecture', primarySkill: 'speaking', secondarySkills: ['listening'],
   category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
   rendererKey: '', evaluatorKey: '', generationPromptKey: '',
-  estimatedDurationMinutes: 0, requiresAudio: false, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
+  estimatedDurationMinutes: 0, requiresAudio: true, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
   defaultItemsPerPractice: 0, minItemsPerPractice: 0, maxItemsPerPractice: 0,
 };
 
@@ -162,7 +170,7 @@ const ALL_READY = [
   readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti,
   readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary,
   readyHighlightIncorrectWords, readyAnswerShortQuestion, readyReadAloud, readyRepeatSentence,
-  readyRespondToSituation,
+  readyRespondToSituation, readyDescribeImage,
 ];
 
 describe('PracticeGymComponent', () => {
@@ -227,12 +235,24 @@ describe('PracticeGymComponent', () => {
     expect(countEl.textContent).toContain('5');
   });
 
+  it('describe_image is ready and available in Practice Gym', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-describe_image"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('shows item count for describe_image', () => {
+    const countEl = fixture.nativeElement.querySelector('[data-testid="format-count-describe_image"]');
+    expect(countEl).toBeTruthy();
+    expect(countEl.textContent).toContain('1');
+  });
+
   it('planned format is shown as locked (not a button)', async () => {
     activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
     const newFixture = TestBed.createComponent(PracticeGymComponent);
     newFixture.detectChanges();
     await newFixture.whenStable();
-    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-describe_image"]');
+    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-retell_lecture"]');
     expect(card).toBeTruthy();
     expect(card.tagName.toLowerCase()).not.toBe('button');
   });
@@ -371,7 +391,7 @@ describe('PracticeGymComponent', () => {
     newFixture.detectChanges();
     const comp = newFixture.componentInstance;
 
-    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'describe_image');
+    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'retell_lecture');
     if (lockedCard) comp.startFormat(lockedCard);
 
     expect(activityService.getPracticeGymNext).not.toHaveBeenCalled();

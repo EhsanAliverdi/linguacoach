@@ -299,4 +299,68 @@ public sealed class AiOpenEndedEvaluatorTests
         result.Should().NotContain("HIDDEN");
         result.Should().NotContain("learnContent");
     }
+
+    // ── describe_image — evaluation response parsing ──────────────────────────
+
+    [Fact]
+    public void ParseAndNormalise_DescribeImage_HighScore_Passes()
+    {
+        var json = """
+            {
+              "overallScore": 78,
+              "coachSummary": "Your description was clear and covered the main elements.",
+              "strengths": ["Good use of location words", "Varied vocabulary"],
+              "improvements": ["Could mention colours more specifically"]
+            }
+            """;
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(78);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.CoachSummary.Should().Contain("clear and covered");
+    }
+
+    [Fact]
+    public void ParseAndNormalise_DescribeImage_LowScore_Fails()
+    {
+        var json = """{"overallScore":35,"coachSummary":"Description did not address the image."}""";
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(35);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CompactContent_DescribeImageStaged_ExcludesLearnContent()
+    {
+        var staged = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "HIDDEN", "explanation": "description strategy" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                {
+                  "id": "img1",
+                  "imagePrompt": "A busy street market with colourful stalls.",
+                  "expectedResponseGuidance": "Describe the setting, people, and objects."
+                }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "detail and vocabulary" }
+        }
+        """;
+
+        var result = AiOpenEndedEvaluator.CompactContent(staged);
+
+        result.Should().Contain("img1");
+        result.Should().Contain("feedbackFocus");
+        result.Should().NotContain("HIDDEN");
+        result.Should().NotContain("learnContent");
+    }
 }

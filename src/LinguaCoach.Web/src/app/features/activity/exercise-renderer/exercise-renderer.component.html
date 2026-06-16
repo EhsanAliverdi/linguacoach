@@ -139,6 +139,13 @@
       (submitted)="onRespondToSituationSubmitted($event)"
     />
   }
+  @case ('describeImage') {
+    <app-describe-image
+      [content]="describeImageContent"
+      [disabled]="disabled"
+      (submitted)="onDescribeImageSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

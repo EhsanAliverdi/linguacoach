@@ -66,7 +66,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        Assert.DoesNotContain(eligible, e => e.Key == "describe_image");
         Assert.Contains(eligible, e => e.Key == "email_reply");
     }
 
@@ -338,11 +337,22 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task DescribeImage_IsNowRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "describe_image");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "describe_image");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
         {
-            "describe_image",
             "retell_lecture", "summarize_group_discussion",
         };
 
@@ -409,6 +419,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("answer_short_question", 3, 5, 8, 0, 0, 0)]
     [InlineData("repeat_sentence", 3, 5, 6, 0, 0, 0)]
     [InlineData("respond_to_situation", 1, 1, 2, 0, 0, 0)]
+    [InlineData("describe_image", 1, 1, 1, 0, 0, 0)]
     public async Task Seeder_SeedsCountFields(string key, int minI, int defI, int maxI, int minO, int defO, int maxO)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
@@ -532,12 +543,12 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
-        var planned = await registry.GetByKeyAsync("describe_image");
+        var planned = await registry.GetByKeyAsync("retell_lecture");
         var eligible = await registry.GetGenerationEligibleAsync();
 
         Assert.NotNull(planned);
         Assert.Equal("planned", planned!.ImplementationStatus);
-        Assert.DoesNotContain(eligible, e => e.Key == "describe_image");
+        Assert.DoesNotContain(eligible, e => e.Key == "retell_lecture");
     }
 
     [Fact]

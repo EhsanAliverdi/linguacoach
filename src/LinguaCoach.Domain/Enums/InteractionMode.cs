@@ -32,4 +32,5 @@ public enum InteractionMode
     ReadAloud                  = 22, // Read a short workplace text aloud — student types transcript, speaking + pronunciation skills
     RepeatSentence             = 23, // Hear or read a sentence and repeat it — student types transcript, speaking + listening skills
     RespondToSituation         = 24, // Read or hear a real-life situation and speak/type a response — speaking + communication skills
+    DescribeImage              = 25, // View an image prompt and describe what you see — speaking + vocabulary skills
 }

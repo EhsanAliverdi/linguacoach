@@ -485,6 +485,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise responding naturally and appropriately to real-life spoken situations",
             requiresAudio: false,
             workplaceContext: false),
+
+        new(
+            key: ExercisePatternKey.DescribeImage,
+            name: "Describe Image",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """["Vocabulary", "Communication"]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.DescribeImage,
+            markingMode: MarkingMode.AiOpenEnded,
+            estimatedMinutes: 6,
+            aiGeneratePromptKey: "activity_generate_describe_image",
+            aiEvaluatePromptKey: "activity_evaluate_describe_image",
+            teachingPurpose: "Practise describing what you see in an image using clear vocabulary and natural spoken language",
+            requiresAudio: false,
+            workplaceContext: false),
     ];
 
     public static async Task SeedAsync(

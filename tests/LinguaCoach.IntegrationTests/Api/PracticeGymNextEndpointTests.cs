@@ -162,7 +162,7 @@ public sealed class PracticeGymNextEndpointTests : IClassFixture<ActivityTestFac
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_planned_{Guid.NewGuid():N}@test.com");
 
-        var response = await ClientWithToken(token).GetAsync("/api/activity/practice-gym/next?exerciseType=describe_image");
+        var response = await ClientWithToken(token).GetAsync("/api/activity/practice-gym/next?exerciseType=retell_lecture");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
