@@ -249,6 +249,8 @@ public static class ModuleStageContentValidator
             }
         }
 
+        ValidateDurationMetadata(root, exercisePatternKey, countSettings, errors);
+
         return errors.Count == 0 ? ValidationResult.Ok() : ValidationResult.Fail(errors);
     }
 
@@ -361,6 +363,91 @@ public static class ModuleStageContentValidator
                 return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Validates optional duration metadata fields when present.
+    /// Old content without duration fields is always accepted (backward compatible).
+    /// New content with duration fields must have positive values and sane totals.
+    /// When estimatedPracticeMinutes is present for a multi-item format, the item count
+    /// must be proportionate to the claimed practice time.
+    /// </summary>
+    private static void ValidateDurationMetadata(
+        JsonElement root,
+        string? patternKey,
+        PracticeCountSettings? countSettings,
+        List<string> errors)
+    {
+        // All duration fields are optional — missing = backward compatible, no error.
+        var hasDuration = TryGetPositiveInt(root, "estimatedDurationMinutes", out var totalMinutes, errors);
+        var hasLearn    = TryGetPositiveInt(root, "estimatedLearnMinutes",    out var learnMinutes,    errors);
+        var hasPractice = TryGetPositiveInt(root, "estimatedPracticeMinutes", out var practiceMinutes, errors);
+        var hasFeedback = TryGetPositiveInt(root, "estimatedFeedbackMinutes", out var feedbackMinutes, errors);
+
+        // Total parts must not obviously exceed total duration.
+        if (hasDuration && (hasLearn || hasPractice || hasFeedback))
+        {
+            var partTotal = (hasLearn ? learnMinutes : 0)
+                          + (hasPractice ? practiceMinutes : 0)
+                          + (hasFeedback ? feedbackMinutes : 0);
+            // Allow 1-minute tolerance for rounding.
+            if (partTotal > totalMinutes + 1)
+                errors.Add(
+                    $"Duration parts total {partTotal} min exceeds estimatedDurationMinutes {totalMinutes} min.");
+        }
+
+        // Practice-time vs workload check: only meaningful for multi-item formats.
+        if (hasPractice && patternKey is not null && countSettings is not null
+            && !WorkloadModeRegistry.IsSingleSubstantialTask(patternKey)
+            && ItemCountArrayByPattern.TryGetValue(patternKey, out var itemField)
+            && root.TryGetProperty("practiceContent", out var practiceContent)
+            && practiceContent.ValueKind == JsonValueKind.Object)
+        {
+            // Look inside exerciseData if present, else practiceContent directly.
+            var exerciseData = practiceContent.TryGetProperty("exerciseData", out var ed) && ed.ValueKind == JsonValueKind.Object
+                ? ed
+                : practiceContent;
+
+            if (TryGetArrayLength(exerciseData, itemField, out var itemCount))
+            {
+                // Rough rule: each item takes ~30 seconds minimum.
+                // A 2-minute practice session should have at least 4 items for short-item formats,
+                // but we keep this conservative: require at least ceil(practiceMinutes * 1.0) items.
+                // This catches the obvious "5-minute session with 1 trivial item" case.
+                var minItemsForDuration = practiceMinutes; // 1 item per claimed minute, conservative
+                if (itemCount < minItemsForDuration && itemCount < countSettings.MinItemsPerPractice)
+                {
+                    errors.Add(
+                        $"Workload mismatch for \"{patternKey}\": " +
+                        $"estimatedPracticeMinutes is {practiceMinutes} but {itemField} has only {itemCount} item(s). " +
+                        $"Increase item count or reduce estimated practice time.");
+                }
+            }
+        }
+    }
+
+    private static bool TryGetPositiveInt(JsonElement root, string name, out int value, List<string> errors)
+    {
+        value = 0;
+        foreach (var prop in root.EnumerateObject())
+        {
+            if (!string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (prop.Value.ValueKind == JsonValueKind.Null)
+                return false; // null = not present, backward compatible
+            if (prop.Value.ValueKind != JsonValueKind.Number || !prop.Value.TryGetInt32(out value))
+            {
+                errors.Add($"\"{name}\" must be a positive integer when present.");
+                return false;
+            }
+            if (value <= 0)
+            {
+                errors.Add($"\"{name}\" must be positive (got {value}).");
+                return false;
+            }
+            return true;
+        }
+        return false; // not present = backward compatible
     }
 
     /// <summary>

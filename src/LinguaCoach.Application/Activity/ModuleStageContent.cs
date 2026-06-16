@@ -40,7 +40,11 @@ public sealed record StageContentDto(
     string? ExerciseType,
     LearnContentDto Learn,
     PracticeContentDto Practice,
-    FeedbackPlanDto FeedbackPlan);
+    FeedbackPlanDto FeedbackPlan,
+    int? EstimatedDurationMinutes = null,
+    int? EstimatedLearnMinutes = null,
+    int? EstimatedPracticeMinutes = null,
+    int? EstimatedFeedbackMinutes = null);
 
 /// <summary>Wire shape of a module_stage_v1 JSON document — property names match the AI-generated JSON.</summary>
 public sealed record ModuleStageWireDto(
@@ -50,4 +54,8 @@ public sealed record ModuleStageWireDto(
     string? ExerciseType,
     LearnContentDto LearnContent,
     PracticeContentDto PracticeContent,
-    FeedbackPlanDto FeedbackPlan);
+    FeedbackPlanDto FeedbackPlan,
+    int? EstimatedDurationMinutes = null,
+    int? EstimatedLearnMinutes = null,
+    int? EstimatedPracticeMinutes = null,
+    int? EstimatedFeedbackMinutes = null);

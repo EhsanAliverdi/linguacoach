@@ -100,6 +100,10 @@ Return ONLY valid JSON. No markdown. No text outside JSON.
   "primarySkill": "writing",
   "secondarySkills": ["grammar", "vocabulary"],
   "exerciseType": "writing_scenario",
+  "estimatedDurationMinutes": <total module time in minutes, e.g. 5>,
+  "estimatedLearnMinutes": <time to read and study the Learn stage, e.g. 1>,
+  "estimatedPracticeMinutes": <time for the student to complete the writing task, e.g. 3>,
+  "estimatedFeedbackMinutes": <time to review feedback, e.g. 1>,
   "learnContent": {
     "teachingTitle": "<short teaching heading>",
     "explanation": "<2-4 sentences teaching the writing concept, not the final task>",
@@ -145,6 +149,12 @@ Critical Learn-stage rules:
 - practiceContent.exerciseData must include prompt, situation, audience, and tone.
 - Keep all content appropriate for {{cefrLevel}} and {{careerContext}}.
 - Do not include real company names, secrets, phone numbers, or sensitive content.
+
+Duration rules:
+- estimatedDurationMinutes, estimatedLearnMinutes, estimatedPracticeMinutes, estimatedFeedbackMinutes must all be positive integers.
+- estimatedLearnMinutes + estimatedPracticeMinutes + estimatedFeedbackMinutes must not exceed estimatedDurationMinutes.
+- estimatedPracticeMinutes must reflect the actual time needed to complete the writing task. A single short writing task is typically 3-5 minutes. Do not claim 5+ minutes of practice for a trivial one-sentence prompt.
+- Do not pad learnContent to fill time while keeping practiceContent tiny.
 """;
 
     private const string ActivityEvaluateWritingContent = """
@@ -227,6 +237,10 @@ Return ONLY valid JSON (no markdown) matching this exact structure:
   "moduleGoal": "<one sentence: what the student should be able to do after this module>",
   "skillFocus": "listening",
   "exerciseType": "listening_comprehension",
+  "estimatedDurationMinutes": <total module time in minutes, e.g. 5>,
+  "estimatedLearnMinutes": <time to read the Learn stage, e.g. 1>,
+  "estimatedPracticeMinutes": <time to listen and answer, e.g. 3>,
+  "estimatedFeedbackMinutes": <time to review feedback, e.g. 1>,
   "learnContent": {
     "teachingTitle": "<short teaching heading>",
     "explanation": "<2-3 sentences: a GENERAL workplace-listening strategy. Do NOT reference this specific message or its content>",
@@ -279,6 +293,11 @@ Critical rules:
 - Do not use real company names, real person names, secrets, phone numbers, or sensitive content.
 - expectedAnswer is for backend evaluation only.
 - Do not include text outside the JSON object. No markdown fences.
+
+Duration rules:
+- estimatedDurationMinutes, estimatedLearnMinutes, estimatedPracticeMinutes, estimatedFeedbackMinutes must all be positive integers.
+- estimatedLearnMinutes + estimatedPracticeMinutes + estimatedFeedbackMinutes must not exceed estimatedDurationMinutes.
+- estimatedPracticeMinutes must reflect realistic time to listen and answer the questions. 2-4 questions from a short audio clip typically take 2-4 minutes. Do not claim 5+ practice minutes for a single 35-word audio clip with one question.
 """;
 
     private const string ActivityGenerateSpeakingRolePlayContent = """
@@ -307,6 +326,10 @@ Return ONLY valid JSON (no markdown, no text outside the JSON object):
   "primarySkill": "speaking",
   "secondarySkills": ["listening", "vocabulary"],
   "exerciseType": "speaking_roleplay",
+  "estimatedDurationMinutes": <total module time in minutes, e.g. 5>,
+  "estimatedLearnMinutes": <time to read the Learn stage, e.g. 1>,
+  "estimatedPracticeMinutes": <time to prepare and record the spoken response, e.g. 3>,
+  "estimatedFeedbackMinutes": <time to review feedback, e.g. 1>,
   "learnContent": {
     "teachingTitle": "<short teaching heading>",
     "explanation": "<2-4 sentences teaching the speaking strategy for this type of workplace situation>",
@@ -397,6 +420,11 @@ Rules:
 - Do not use real company names, real person names, phone numbers, or sensitive content.
 - B1 tasks should be simple and direct; B2 tasks may require more structure.
 - Do not include any text outside the JSON object.
+
+Duration rules:
+- estimatedDurationMinutes, estimatedLearnMinutes, estimatedPracticeMinutes, estimatedFeedbackMinutes must all be positive integers.
+- estimatedLearnMinutes + estimatedPracticeMinutes + estimatedFeedbackMinutes must not exceed estimatedDurationMinutes.
+- estimatedPracticeMinutes must reflect realistic time for the student to prepare and record the spoken response. A single 30-60 second speaking task typically requires 2-3 minutes of practice time including preparation. Do not claim 5+ minutes of practice for a single short prompt.
 """;
 
     private const string ActivityEvaluateSpeakingRolePlayContent = """

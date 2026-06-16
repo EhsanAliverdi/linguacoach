@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using FluentAssertions;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Domain.Enums;
@@ -3278,4 +3278,320 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue("general content without a pattern key must not be rejected by workplace-only rules");
     }
 
+
+    // ── Phase 10E: Duration metadata tests ───────────────────────────────────
+
+    [Fact]
+    public void Validate_WithNoDurationMetadata_AcceptsOldContent()
+    {
+        // Old stored content without any duration fields must remain valid (backward compatible).
+        var result = ModuleStageContentValidator.Validate(Parse(ValidWritingJson), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeTrue("old content without duration metadata must still pass");
+    }
+
+    [Fact]
+    public void Validate_WithValidDurationMetadata_Passes()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedDurationMinutes": 5,
+          "estimatedLearnMinutes": 1,
+          "estimatedPracticeMinutes": 3,
+          "estimatedFeedbackMinutes": 1,
+          "learnContent": {
+            "teachingTitle": "Status updates",
+            "explanation": "Keep updates short and direct.",
+            "keyPoints": ["State the main point first."],
+            "examples": [{"phrase": "I wanted to update you", "meaning": "Polite opener", "note": null}],
+            "strategy": "Plan before writing.",
+            "commonMistakes": ["Too much background."],
+            "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Write a short update.",
+            "scenario": "Your task is delayed.",
+            "task": "Write to your manager.",
+            "exerciseData": {
+              "situation": "Your task is delayed.",
+              "audience": "your manager",
+              "tone": "professional",
+              "prompt": "Write an update."
+            }
+          },
+          "feedbackPlan": {
+            "evaluationCriteria": ["Clarity"],
+            "rubric": [{"criterion": "Clarity", "description": "Clear.", "weight": 1.0}],
+            "feedbackFocus": "Clarity",
+            "successCriteria": ["Message is clear."]
+          }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_WithNullDurationFields_AcceptsAsNotPresent()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedDurationMinutes": null,
+          "estimatedPracticeMinutes": null,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": { "instructions": "I", "exerciseData": { "prompt": "P", "situation": "S", "audience": "A", "tone": "T" } },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeTrue("null duration fields are treated as absent");
+    }
+
+    [Fact]
+    public void Validate_WithZeroEstimatedDuration_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedDurationMinutes": 0,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": { "instructions": "I", "exerciseData": { "prompt": "P", "situation": "S", "audience": "A", "tone": "T" } },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("estimatedDurationMinutes") && e.Contains("positive"));
+    }
+
+    [Fact]
+    public void Validate_WithNegativeEstimatedPracticeMinutes_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedPracticeMinutes": -1,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": { "instructions": "I", "exerciseData": { "prompt": "P", "situation": "S", "audience": "A", "tone": "T" } },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("estimatedPracticeMinutes") && e.Contains("positive"));
+    }
+
+    [Fact]
+    public void Validate_WhenPartsTotalExceedsTotal_Fails()
+    {
+        // Learn(2) + Practice(3) + Feedback(2) = 7 > total(5)
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedDurationMinutes": 5,
+          "estimatedLearnMinutes": 2,
+          "estimatedPracticeMinutes": 3,
+          "estimatedFeedbackMinutes": 2,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "feedbackFocus": null, "sourceLanguageSupport": null
+          },
+          "practiceContent": { "instructions": "I", "exerciseData": { "prompt": "P", "situation": "S", "audience": "A", "tone": "T" } },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("exceeds estimatedDurationMinutes"));
+    }
+
+    [Fact]
+    public void Validate_WhenPartsTotalEqualsTotal_Passes()
+    {
+        // Learn(1) + Practice(3) + Feedback(1) = 5 == total(5)
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedDurationMinutes": 5,
+          "estimatedLearnMinutes": 1,
+          "estimatedPracticeMinutes": 3,
+          "estimatedFeedbackMinutes": 1,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": { "instructions": "I", "exerciseData": { "prompt": "P", "situation": "S", "audience": "A", "tone": "T" } },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario);
+
+        result.IsValid.Should().BeTrue("parts summing exactly to total must pass");
+    }
+
+    [Fact]
+    public void Validate_MultiItemFormat_WithEnoughItemsForDuration_Passes()
+    {
+        // gap_fill_workplace_phrase: 3 items, estimatedPracticeMinutes=3 -> 3 >= 3 -> passes
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedPracticeMinutes": 3,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Fill in the blanks.",
+            "exerciseData": {
+              "items": [
+                {"id": "1", "sentence": "Please __ the form.", "answer": "complete"},
+                {"id": "2", "sentence": "Please __ the meeting.", "answer": "attend"},
+                {"id": "3", "sentence": "Please __ the report.", "answer": "review"}
+              ]
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var counts = new PracticeCountSettings(MinItemsPerPractice: 2, MaxItemsPerPractice: 8, MinOptionsPerItem: 0, MaxOptionsPerItem: 0);
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario,
+            exercisePatternKey: "gap_fill_workplace_phrase", countSettings: counts);
+
+        result.IsValid.Should().BeTrue("3 items for 3 estimated practice minutes is proportionate");
+    }
+
+    [Fact]
+    public void Validate_MultiItemFormat_WithTooFewItemsForDuration_Fails()
+    {
+        // gap_fill_workplace_phrase: 1 item, estimatedPracticeMinutes=5, MinItemsPerPractice=2
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedPracticeMinutes": 5,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Fill in the blank.",
+            "exerciseData": {
+              "items": [
+                {"id": "1", "sentence": "Please __ the form.", "answer": "complete"}
+              ]
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var counts = new PracticeCountSettings(MinItemsPerPractice: 2, MaxItemsPerPractice: 8, MinOptionsPerItem: 0, MaxOptionsPerItem: 0);
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario,
+            exercisePatternKey: "gap_fill_workplace_phrase", countSettings: counts);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("Workload mismatch") && e.Contains("gap_fill_workplace_phrase"));
+    }
+
+    [Fact]
+    public void Validate_SingleSubstantialTaskFormat_WithOneMeaningfulItem_Passes()
+    {
+        // write_essay is SingleSubstantialTask: one prompt with long practice time is valid.
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedDurationMinutes": 10,
+          "estimatedPracticeMinutes": 8,
+          "learnContent": {
+            "teachingTitle": "Essay writing",
+            "explanation": "Organise your essay into three parts.",
+            "keyPoints": ["Introduction", "Body", "Conclusion"],
+            "examples": [],
+            "strategy": "Plan before you write.",
+            "commonMistakes": [],
+            "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Write a 150-word essay.",
+            "exerciseData": {
+              "prompt": "Describe the benefits of remote work.",
+              "topic": "Remote work"
+            }
+          },
+          "feedbackPlan": {
+            "evaluationCriteria": ["Task completion"],
+            "rubric": [{"criterion": "Task completion", "description": "Addresses the topic.", "weight": 1.0}],
+            "feedbackFocus": "Clarity and structure",
+            "successCriteria": ["Essay is complete."]
+          }
+        }
+        """;
+
+        var counts = new PracticeCountSettings(MinItemsPerPractice: 2, MaxItemsPerPractice: 8, MinOptionsPerItem: 0, MaxOptionsPerItem: 0);
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario,
+            exercisePatternKey: "write_essay", countSettings: counts);
+
+        result.IsValid.Should().BeTrue("write_essay is single-substantial-task; one task with long practice time is valid");
+    }
+
+    [Fact]
+    public void Validate_Phase10D_ItemCountValidation_StillWorks()
+    {
+        // 11 items exceeds MaxItemsPerPractice of 8 -> Phase 10D count check fires.
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "estimatedPracticeMinutes": 1,
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [],
+            "strategy": null, "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Fill in the blanks.",
+            "exerciseData": {
+              "items": [
+                {"id":"1","sentence":"a","answer":"b"},{"id":"2","sentence":"a","answer":"b"},
+                {"id":"3","sentence":"a","answer":"b"},{"id":"4","sentence":"a","answer":"b"},
+                {"id":"5","sentence":"a","answer":"b"},{"id":"6","sentence":"a","answer":"b"},
+                {"id":"7","sentence":"a","answer":"b"},{"id":"8","sentence":"a","answer":"b"},
+                {"id":"9","sentence":"a","answer":"b"},{"id":"10","sentence":"a","answer":"b"},
+                {"id":"11","sentence":"a","answer":"b"}
+              ]
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var counts = new PracticeCountSettings(MinItemsPerPractice: 2, MaxItemsPerPractice: 8, MinOptionsPerItem: 0, MaxOptionsPerItem: 0);
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario,
+            exercisePatternKey: "gap_fill_workplace_phrase", countSettings: counts);
+
+        result.IsValid.Should().BeFalse("Phase 10D count enforcement must still fire");
+        result.Errors.Should().Contain(e => e.Contains("outside allowed range"));
+    }
 }
