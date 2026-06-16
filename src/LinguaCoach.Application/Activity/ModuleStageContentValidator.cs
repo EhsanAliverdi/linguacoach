@@ -20,6 +20,61 @@ public sealed record PracticeCountSettings(
     int MaxOptionsPerItem);
 
 /// <summary>
+/// Classifies how workload sanity is applied to a format.
+/// SingleSubstantialTask: one item is valid because the task itself is substantial (essay, summary, lecture retell).
+/// MultiItem: multiple items are normally expected; one trivial item is considered under-workload.
+/// </summary>
+public enum WorkloadMode
+{
+    /// <summary>One item/task is the full expected workload for this format.</summary>
+    SingleSubstantialTask,
+    /// <summary>Multiple items are normally expected; one trivial item is a warning signal.</summary>
+    MultiItem
+}
+
+/// <summary>
+/// Centralised mapping from pattern key to workload mode.
+/// Formats not listed here default to MultiItem.
+/// </summary>
+public static class WorkloadModeRegistry
+{
+    // Single-substantial-task formats: one task IS the full exercise.
+    // Skipping workload enforcement for these prevents false failures.
+    private static readonly HashSet<string> SingleSubstantialTaskPatterns = new(StringComparer.Ordinal)
+    {
+        "write_essay",
+        "summarize_written_text",
+        "summarize_spoken_text",
+        "open_writing_task",
+        "spoken_response_from_prompt",
+        "speaking_roleplay_turn",
+        "email_reply",
+        "teams_chat_simulation",
+        "describe_image",
+        "retell_lecture",
+        "summarize_group_discussion",
+        "respond_to_situation",
+        // Reading: single passage + single question formats are valid one-item tasks
+        "reading_multiple_choice_single",
+        "reading_multiple_choice_multi",
+        "listening_multiple_choice_single",
+        "listening_multiple_choice_multi",
+        "select_missing_word",
+        "highlight_correct_summary",
+        "highlight_incorrect_words",
+        "lesson_reflection",
+    };
+
+    public static WorkloadMode GetMode(string? patternKey) =>
+        patternKey is not null && SingleSubstantialTaskPatterns.Contains(patternKey)
+            ? WorkloadMode.SingleSubstantialTask
+            : WorkloadMode.MultiItem;
+
+    public static bool IsSingleSubstantialTask(string? patternKey) =>
+        GetMode(patternKey) == WorkloadMode.SingleSubstantialTask;
+}
+
+/// <summary>
 /// Validates AI-generated activity JSON against the module_stage_v1 contract:
 /// schemaVersion + learnContent/practiceContent/feedbackPlan sections, with
 /// learnContent forbidden from carrying any practice/exercise data.
@@ -188,6 +243,9 @@ public static class ModuleStageContentValidator
 
                 if (countSettings is not null && exercisePatternKey is not null)
                     EnforceCounts(exerciseData, exercisePatternKey, countSettings, errors);
+
+                if (countSettings is not null && exercisePatternKey is not null)
+                    EnforceWorkloadSanity(exerciseData, exercisePatternKey, countSettings, errors);
             }
         }
 
@@ -195,21 +253,29 @@ public static class ModuleStageContentValidator
     }
 
     // Item-count formats: pattern key => exerciseData array field whose length is the item count.
+    // Also used by EnforceWorkloadSanity to locate the countable array for multi-item formats.
     private static readonly Dictionary<string, string> ItemCountArrayByPattern = new(StringComparer.Ordinal)
     {
+        // Pattern-backed multi-item formats
+        ["gap_fill_workplace_phrase"]      = "items",
+        ["listen_and_gap_fill"]            = "gaps",
+        ["listen_and_answer"]              = "questions",
+        ["phrase_match"]                   = "pairs",
+        // Reading fill/reorder
         ["reading_fill_in_blanks"]         = "gaps",
         ["reading_writing_fill_in_blanks"] = "gaps",
         ["listening_fill_in_blanks"]       = "gaps",
         ["reorder_paragraphs"]             = "items",
         ["highlight_incorrect_words"]      = "incorrectTokenIds",
+        // Listening/speaking multi-item
         ["write_from_dictation"]           = "items",
         ["answer_short_question"]          = "items",
         ["read_aloud"]                     = "items",
         ["repeat_sentence"]                = "items",
         ["respond_to_situation"]           = "items",
         ["describe_image"]                 = "items",
-        ["retell_lecture"]                       = "items",
-        ["summarize_group_discussion"]           = "items",
+        ["retell_lecture"]                 = "items",
+        ["summarize_group_discussion"]     = "items",
     };
 
     private static void ValidateItemFields(JsonElement exerciseData, string[] requiredItemFields, List<string> errors)
@@ -295,5 +361,39 @@ public static class ModuleStageContentValidator
                 return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Workload sanity check for multi-item formats.
+    /// SingleSubstantialTask formats (essay, summary, retell) are exempt — one task is the full exercise.
+    /// MultiItem formats must meet the configured MinItemsPerPractice; if MinItemsPerPractice is 2+
+    /// and only 1 item is present, the activity is considered under-workload.
+    /// </summary>
+    private static void EnforceWorkloadSanity(
+        JsonElement exerciseData,
+        string patternKey,
+        PracticeCountSettings counts,
+        List<string> errors)
+    {
+        // Single-substantial-task formats are always valid with one task.
+        if (WorkloadModeRegistry.IsSingleSubstantialTask(patternKey))
+            return;
+
+        // For multi-item formats: find the item count array and check it meets MinItemsPerPractice.
+        if (!ItemCountArrayByPattern.TryGetValue(patternKey, out var itemField))
+            return;
+
+        if (!TryGetArrayLength(exerciseData, itemField, out var itemCount))
+            return;
+
+        // EnforceCounts already reports out-of-range errors.
+        // EnforceWorkloadSanity adds a clearer semantic message when count < min.
+        if (itemCount < counts.MinItemsPerPractice)
+        {
+            errors.Add(
+                $"Workload too small for \"{patternKey}\": " +
+                $"{itemField} has {itemCount} item(s) but this format requires at least {counts.MinItemsPerPractice}. " +
+                $"The activity would not provide meaningful practice.");
+        }
     }
 }

@@ -61,16 +61,33 @@ export class PatternEvaluationResultComponent {
 
   scoreRingColour(): string {
     const p = this.result.percentage;
-    if (p >= 85) return 'var(--sp-success)';
+    if (p >= 90) return 'var(--sp-success)';
     if (p >= 70) return 'var(--sp-vocabulary)';
+    if (p >= 40) return 'var(--sp-warn)';
     return 'var(--sp-speaking)';
   }
 
   scoreBandLabel(): string {
     const p = this.result.percentage;
-    if (p >= 85) return 'Great work';
-    if (p >= 70) return 'Good effort';
-    return 'Keep going';
+    if (p >= 90) return 'Excellent';
+    if (p >= 70) return 'Good work';
+    if (p >= 40) return 'Keep going';
+    return 'Needs review';
+  }
+
+  // Score-aware instruction line shown below the band label.
+  // 100% must not say "Improve your answer" or "Review corrections".
+  scoreBandInstruction(): string {
+    const p = this.result.percentage;
+    if (p >= 90) return 'Ready for the next challenge.';
+    if (p >= 70) return 'Small improvements suggested below.';
+    if (p >= 40) return 'Review the corrections below and try again.';
+    return 'Retry recommended — check the corrections below.';
+  }
+
+  // True when score is below excellent threshold — drives the instruction line colour.
+  get showImprovementPrompt(): boolean {
+    return this.result.percentage < 90;
   }
 
   correctCount(): number {

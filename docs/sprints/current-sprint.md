@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 00:00
+lastUpdated: 2026-06-17 08:30
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,45 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10D — Activity Quality / Workload Validation** — complete (2026-06-17)
+
+Added quality and workload validation to ensure generated activities are meaningful and feedback wording matches the student's score.
+
+### What was added
+
+- `WorkloadModeRegistry` in `ModuleStageContentValidator` — classifies pattern keys as `SingleSubstantialTask` (one item is the full exercise) or `MultiItem` (multiple items expected).
+- `EnforceWorkloadSanity` method — fires when `countSettings` is provided; fails multi-item formats with item count below `MinItemsPerPractice`.
+- Extended `ItemCountArrayByPattern` — added `gap_fill_workplace_phrase`, `listen_and_gap_fill`, `listen_and_answer`, `phrase_match` entries.
+- `ExerciseTypeDefinitionSeeder.CountOverrides` — added `MinItemsPerPractice >= 2` for `phrase_match`, `gap_fill_workplace_phrase`, `listen_and_gap_fill`, `listen_and_answer`.
+- Score-aware feedback in `PatternEvaluationResultComponent`: four-tier `scoreBandLabel`, `scoreRingColour`, new `scoreBandInstruction()`, `showImprovementPrompt` getter.
+- 100% score no longer shows "Improve your answer" or "Review the corrections".
+
+### Tests added
+
+- 23 backend unit tests: workload validation, single-substantial-task exemptions, registry classification, item-count config enforcement, no-workplace-default check.
+- 25 Angular unit tests: score-aware labels at all four tiers, 100% wording contract, `showImprovementPrompt` logic, ring colour.
+
+### Final test counts
+
+- Backend unit: 974 (was 951)
+- Backend integration: 534
+- Architecture: 3
+- Angular unit: 229 (was 204)
+
+See: `docs/reviews/2026-06-17-phase-10d-activity-quality-workload-validation.md`
+
+---
+
+## Previously most recently completed sprint
+
+**Phase 10C — Ledger-aware Dynamic Pattern Selection** — complete (2026-06-17)
+
+See commit `e01680a`.
+
+---
+
+## Previously completed sprint
 
 **Phase 10B — Student Learning Memory / Taught-Content Ledger** — complete (2026-06-17)
 

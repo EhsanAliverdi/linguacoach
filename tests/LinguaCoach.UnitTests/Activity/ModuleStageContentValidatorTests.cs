@@ -3047,4 +3047,235 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    // ── Workload validation tests ──────────────────────────────────────────────
+
+    private static PracticeCountSettings CountsFor(int minItems, int maxItems, int minOpts = 0, int maxOpts = 0) =>
+        new(minItems, maxItems, minOpts, maxOpts);
+
+    [Theory]
+    [InlineData("gap_fill_workplace_phrase", "items", 1)]
+    [InlineData("listen_and_gap_fill", "gaps", 1)]
+    [InlineData("listen_and_answer", "questions", 1)]
+    [InlineData("answer_short_question", "items", 1)]
+    [InlineData("repeat_sentence", "items", 1)]
+    public void Validate_MultiItemFormat_WithTooFewItems_FailsWorkloadValidation(
+        string patternKey, string arrayField, int actualCount)
+    {
+        var items = string.Join(",", Enumerable.Range(0, actualCount).Select(i =>
+            patternKey == "gap_fill_workplace_phrase" ? $"{{\"id\":\"g{i}\",\"gapText\":\"word\",\"acceptedAnswers\":[\"x\"]}}" :
+            patternKey == "listen_and_gap_fill" ? $"{{\"id\":\"g{i}\",\"position\":{i},\"acceptedAnswers\":[\"x\"]}}" :
+            patternKey == "listen_and_answer" ? $"{{\"id\":\"q{i}\",\"question\":\"Q?\",\"expectedAnswer\":\"A\",\"type\":\"short_answer\"}}" :
+            patternKey == "answer_short_question" ? $"{{\"id\":\"q{i}\",\"question\":\"Q?\"}}" :
+            $"{{\"id\":\"s{i}\",\"sentence\":\"Say this.\"}}"));
+
+        var audioField = patternKey is "listen_and_gap_fill" or "listen_and_answer"
+            ? "\"audioScript\": \"Hello world.\"," : "";
+
+        var json = $$"""
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Learn" },
+          "practiceContent": {
+            "exerciseData": {
+              {{audioField}}
+              "{{arrayField}}": [{{items}}]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "accuracy" }
+        }
+        """;
+
+        // MinItems = 2 → 1 item should fail workload sanity
+        var counts = CountsFor(minItems: 2, maxItems: 8);
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, patternKey, counts);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("Workload too small"));
+    }
+
+    [Theory]
+    [InlineData("gap_fill_workplace_phrase", "items")]
+    [InlineData("listen_and_answer", "questions")]
+    [InlineData("answer_short_question", "items")]
+    [InlineData("repeat_sentence", "items")]
+    public void Validate_MultiItemFormat_WithSufficientItems_Passes(string patternKey, string arrayField)
+    {
+        var makeItem = (int i) => patternKey switch
+        {
+            "gap_fill_workplace_phrase" => $"{{\"id\":\"g{i}\",\"gapText\":\"word\",\"acceptedAnswers\":[\"x\"]}}",
+            "listen_and_answer" => $"{{\"id\":\"q{i}\",\"question\":\"Q?\",\"expectedAnswer\":\"A\",\"type\":\"short_answer\"}}",
+            "answer_short_question" => $"{{\"id\":\"q{i}\",\"question\":\"Q?\"}}",
+            _ => $"{{\"id\":\"s{i}\",\"sentence\":\"Say this.\"}}"
+        };
+        var items = string.Join(",", Enumerable.Range(0, 3).Select(makeItem));
+
+        var json = $$"""
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Learn" },
+          "practiceContent": {
+            "exerciseData": {
+              "{{arrayField}}": [{{items}}]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "accuracy" }
+        }
+        """;
+
+        var counts = CountsFor(minItems: 2, maxItems: 8);
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, patternKey, counts);
+
+        // No workload error — structure errors for missing required keys are acceptable here
+        result.Errors.Should().NotContain(e => e.Contains("Workload too small"));
+    }
+
+    [Theory]
+    [InlineData("write_essay")]
+    [InlineData("summarize_written_text")]
+    [InlineData("summarize_spoken_text")]
+    [InlineData("open_writing_task")]
+    [InlineData("email_reply")]
+    [InlineData("teams_chat_simulation")]
+    [InlineData("retell_lecture")]
+    [InlineData("summarize_group_discussion")]
+    [InlineData("describe_image")]
+    public void Validate_SingleSubstantialTaskFormat_WithOneItem_NoWorkloadError(string patternKey)
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Learn" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [{ "id": "i1", "text": "one item only" }]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "accuracy" }
+        }
+        """;
+
+        var counts = CountsFor(minItems: 1, maxItems: 1);
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, patternKey, counts);
+
+        result.Errors.Should().NotContain(e => e.Contains("Workload too small"),
+            $"single-substantial-task format \"{patternKey}\" must never fail workload validation");
+    }
+
+    [Fact]
+    public void WorkloadModeRegistry_KnownSingleSubstantialTaskPatterns_AreClassifiedCorrectly()
+    {
+        var singlePatterns = new[]
+        {
+            "write_essay", "summarize_written_text", "summarize_spoken_text",
+            "open_writing_task", "spoken_response_from_prompt", "speaking_roleplay_turn",
+            "email_reply", "teams_chat_simulation", "describe_image",
+            "retell_lecture", "summarize_group_discussion", "respond_to_situation"
+        };
+
+        foreach (var key in singlePatterns)
+            WorkloadModeRegistry.IsSingleSubstantialTask(key).Should().BeTrue(
+                $"\"{key}\" should be classified as SingleSubstantialTask");
+    }
+
+    [Fact]
+    public void WorkloadModeRegistry_KnownMultiItemPatterns_AreClassifiedAsMultiItem()
+    {
+        var multiPatterns = new[]
+        {
+            "gap_fill_workplace_phrase", "listen_and_gap_fill", "listen_and_answer",
+            "answer_short_question", "repeat_sentence", "reading_fill_in_blanks",
+            "reorder_paragraphs", "write_from_dictation", "listening_fill_in_blanks"
+        };
+
+        foreach (var key in multiPatterns)
+            WorkloadModeRegistry.IsSingleSubstantialTask(key).Should().BeFalse(
+                $"\"{key}\" should be classified as MultiItem");
+    }
+
+    [Fact]
+    public void Validate_SelectMissingWord_WithOneItem_NoWorkloadError()
+    {
+        // select_missing_word is single-substantial-task — one audio + one question is the full exercise.
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Listen for missing word" },
+          "practiceContent": {
+            "exerciseData": {
+              "audioScript": "The meeting is scheduled for ...",
+              "incompleteText": "The meeting is scheduled for [blank].",
+              "options": ["Monday", "Tuesday", "Wednesday"],
+              "correctOptionId": "opt_0"
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "accuracy" }
+        }
+        """;
+
+        var counts = CountsFor(minItems: 1, maxItems: 1, minOpts: 3, maxOpts: 5);
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "select_missing_word", counts);
+
+        result.Errors.Should().NotContain(e => e.Contains("Workload too small"));
+    }
+
+    [Fact]
+    public void Validate_ItemCountConfig_IsRespected_ByEnforceCounts()
+    {
+        // reading_fill_in_blanks with only 1 gap when min is 3 should fail EnforceCounts.
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Reading fill" },
+          "practiceContent": {
+            "exerciseData": {
+              "passageWithBlanks": "The [blank] report is ready.",
+              "gaps": [{ "id": "g1", "position": 1, "acceptedAnswers": ["quarterly"] }]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "accuracy" }
+        }
+        """;
+
+        // MinItems = 3 per seeder config
+        var counts = CountsFor(minItems: 3, maxItems: 6);
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ReadingTask, "reading_fill_in_blanks", counts);
+
+        result.IsValid.Should().BeFalse();
+        // Both EnforceCounts and workload sanity fire for multi-item formats
+        result.Errors.Should().Contain(e => e.Contains("gaps") && e.Contains("outside allowed range")
+            || e.Contains("Workload too small"));
+    }
+
+    [Fact]
+    public void Validate_NoWorkplaceDefaultIntroduced_WhenContextIsNull()
+    {
+        // Validate must not inject workplace-only defaults when exercisePatternKey is null.
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "General travel English lesson" },
+          "practiceContent": {
+            "exerciseData": {
+              "prompt": "Describe your travel experience.",
+              "situation": "At the airport",
+              "audience": "friend",
+              "tone": "casual"
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "fluency" }
+        }
+        """;
+
+        // No pattern key → no workplace-specific validation enforced
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.WritingScenario, exercisePatternKey: null, countSettings: null);
+
+        result.IsValid.Should().BeTrue("general content without a pattern key must not be rejected by workplace-only rules");
+    }
+
 }

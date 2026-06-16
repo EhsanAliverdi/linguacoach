@@ -10,18 +10,26 @@ public static class ExerciseTypeDefinitionSeeder
 {
     // Per-key practice/option counts: key => (minItems, defaultItems, maxItems, minOptions, defaultOptions, maxOptions).
     // Counts are configuration only. They never affect readiness or runnable status.
+    // WorkloadModeRegistry in ModuleStageContentValidator classifies each pattern as
+    // SingleSubstantialTask (one item is the full exercise) or MultiItem (multiple items expected).
+    // For MultiItem formats, MinItems >= 2 triggers workload sanity enforcement in the validator.
     private static readonly Dictionary<string, (int MinItems, int DefItems, int MaxItems, int MinOpts, int DefOpts, int MaxOpts)> CountOverrides = new(StringComparer.Ordinal)
     {
-        // Reading
+        // Pattern-backed multi-item formats (MinItems >= 2 → workload sanity enforced)
+        ["phrase_match"] = (2, 5, 8, 0, 0, 0),
+        ["gap_fill_workplace_phrase"] = (2, 5, 8, 0, 0, 0),
+        ["listen_and_gap_fill"] = (2, 4, 6, 0, 0, 0),
+        ["listen_and_answer"] = (2, 3, 5, 0, 0, 0),
+        // Reading (multi-item fill/reorder)
         ["reading_multiple_choice_single"] = (1, 1, 1, 3, 4, 5),
         ["reading_multiple_choice_multi"] = (1, 1, 1, 4, 4, 6),
         ["reading_fill_in_blanks"] = (3, 4, 6, 3, 4, 5),
         ["reading_writing_fill_in_blanks"] = (3, 4, 6, 3, 4, 5),
         ["reorder_paragraphs"] = (4, 4, 5, 0, 0, 0),
-        // Writing
+        // Writing — single-substantial-task (MinItems = 1 is correct, exempt from workload enforcement)
         ["summarize_written_text"] = (1, 1, 1, 0, 0, 0),
         ["write_essay"] = (1, 1, 1, 0, 0, 0),
-        // Listening
+        // Listening (single-task formats)
         ["listening_multiple_choice_single"] = (1, 1, 1, 3, 4, 5),
         ["listening_multiple_choice_multi"] = (1, 1, 1, 4, 4, 6),
         ["listening_fill_in_blanks"] = (3, 4, 6, 3, 4, 5),
@@ -30,9 +38,10 @@ public static class ExerciseTypeDefinitionSeeder
         ["highlight_incorrect_words"] = (2, 3, 4, 0, 0, 0),
         ["write_from_dictation"] = (2, 3, 5, 0, 0, 0),
         ["summarize_spoken_text"] = (1, 1, 1, 0, 0, 0),
-        // Speaking (Ready)
+        // Speaking (multi-item)
         ["answer_short_question"] = (3, 5, 8, 0, 0, 0),
         ["repeat_sentence"] = (3, 5, 6, 0, 0, 0),
+        // Speaking (single-substantial-task or small-batch)
         ["read_aloud"] = (1, 2, 3, 0, 0, 0),
         ["describe_image"] = (1, 1, 1, 0, 0, 0),
         ["respond_to_situation"] = (1, 1, 2, 0, 0, 0),
