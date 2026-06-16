@@ -405,6 +405,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening to short clips and writing exactly what is heard",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.SummarizeSpokenText,
+            name: "Summarize Spoken Text",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Writing"]""",
+            compatibleKindsJson: """[2]""",           // ListeningInput
+            activityType: ActivityType.ListeningComprehension,
+            interactionMode: InteractionMode.SummarizeSpokenText,
+            markingMode: MarkingMode.AiStructured,
+            estimatedMinutes: 6,
+            aiGeneratePromptKey: "activity_generate_summarize_spoken_text",
+            aiEvaluatePromptKey: "activity_evaluate_summarize_spoken_text",
+            teachingPurpose: "Practise listening for main ideas and writing a concise summary in the student's own words",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

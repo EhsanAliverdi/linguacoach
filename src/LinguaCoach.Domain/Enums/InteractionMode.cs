@@ -27,4 +27,5 @@ public enum InteractionMode
     HighlightCorrectSummary    = 17, // Audio script with summary option cards — choose the summary that best matches, listening + reading skills
     HighlightIncorrectWords    = 18, // Audio script with clickable transcript tokens — select words that differ from the audio, listening + reading skills
     WriteFromDictation         = 19, // Multiple short audio clips — student types what they hear, listening + writing skills
+    SummarizeSpokenText        = 20, // Spoken text audio — student writes a concise summary, AI-evaluated, listening + writing skills
 }

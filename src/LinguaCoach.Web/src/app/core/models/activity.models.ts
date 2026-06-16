@@ -28,7 +28,8 @@ export type InteractionMode =
   | 'listeningFillInBlanks'
   | 'highlightCorrectSummary'
   | 'highlightIncorrectWords'
-  | 'writeFromDictation';
+  | 'writeFromDictation'
+  | 'summarizeSpokenText';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

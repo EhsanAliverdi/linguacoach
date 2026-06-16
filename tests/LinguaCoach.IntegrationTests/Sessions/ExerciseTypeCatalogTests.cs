@@ -278,15 +278,15 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task SummarizeSpokenText_RemainsNonRunnable()
+    public async Task SummarizeSpokenText_IsNowRunnable()
     {
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_spoken_text");
-        Assert.Equal("planned", type.ImplementationStatus);
-        Assert.False(type.IsAvailableForGeneration);
-        Assert.DoesNotContain(eligible, e => e.Key == "summarize_spoken_text");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "summarize_spoken_text");
     }
 
     [Fact]
@@ -296,7 +296,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         {
             "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
             "retell_lecture", "summarize_group_discussion", "answer_short_question",
-            "summarize_spoken_text",
         };
 
         var service = new ExerciseTypeCatalogService(_db);
@@ -483,12 +482,12 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
-        var planned = await registry.GetByKeyAsync("summarize_spoken_text");
+        var planned = await registry.GetByKeyAsync("describe_image");
         var eligible = await registry.GetGenerationEligibleAsync();
 
         Assert.NotNull(planned);
         Assert.Equal("planned", planned!.ImplementationStatus);
-        Assert.DoesNotContain(eligible, e => e.Key == "summarize_spoken_text");
+        Assert.DoesNotContain(eligible, e => e.Key == "describe_image");
     }
 
     [Fact]
@@ -536,6 +535,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         await catalog.UpdateAsync(new("highlight_correct_summary", false, null, null));
         await catalog.UpdateAsync(new("highlight_incorrect_words", false, null, null));
         await catalog.UpdateAsync(new("write_from_dictation", false, null, null));
+        await catalog.UpdateAsync(new("summarize_spoken_text", false, null, null));
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var selected = await registry.SelectForPracticeGymSkillAsync("listening");
@@ -567,7 +567,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
 
         Assert.DoesNotContain(listening, e => e.Key == "listen_and_answer");
         Assert.Contains(listening, e => e.Key == "listen_and_gap_fill");
-        Assert.DoesNotContain(listening, e => e.Key == "summarize_spoken_text");
+        Assert.Contains(listening, e => e.Key == "summarize_spoken_text");
         Assert.All(writing, e => Assert.Equal("writing", e.PrimarySkill));
     }
 

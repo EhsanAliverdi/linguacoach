@@ -1,0 +1,57 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="summarize-spoken-text-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  <app-audio-player
+    [audioUrl]="content.audioUrl"
+    [audioScript]="content.audioScript"
+    [audioUnavailableMessage]="'Audio is temporarily unavailable. Read the text below, then write your summary.'"
+    [helpText]="content.audioUrl ? 'Listen carefully, then write your summary below.' : null"
+    data-testid="summarize-spoken-text-audio-player"
+  />
+
+  @if (content.prompt) {
+    <div class="sp-card" style="padding:14px 18px" data-testid="summarize-spoken-text-prompt">
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.prompt }}</p>
+    </div>
+  }
+
+  @if (content.summaryRequirements && content.summaryRequirements.length) {
+    <div class="sp-card" style="padding:14px 18px" data-testid="summarize-spoken-text-requirements">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Your summary should</p>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--sp-text)">
+        @for (req of content.summaryRequirements; track req) {
+          <li>{{ req }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  <textarea
+    [disabled]="disabled"
+    [(ngModel)]="summaryText"
+    placeholder="Write your summary here…"
+    data-testid="summarize-spoken-text-input"
+    class="sp-input"
+    rows="6"
+    style="width:100%;resize:vertical"></textarea>
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="summarize-spoken-text-submit-btn">
+    @if (disabled) { Checking summary… } @else { Submit summary }
+  </button>
+</div>

@@ -88,7 +88,8 @@ public static class ExerciseTypeDefinitionSeeder
         // reading_multiple_choice_multi promoted to Ready above
         // reorder_paragraphs promoted to Ready above
         // reading_fill_in_blanks promoted to Ready above
-        Planned("summarize_spoken_text", "Summarize Spoken Text", "Write a summary of spoken audio.", "listening", "[\"writing\"]", "Planned listening format", true, false, requiresAudio: true),
+        Ready(ExercisePatternKey.SummarizeSpokenText, "Summarize Spoken Text", "Listen to a short spoken text and write a concise summary in your own words.", "listening", "[\"writing\"]", "Pattern", "summarize_spoken_text", "ai_structured", "activity_generate_summarize_spoken_text", ActivityType.ListeningComprehension, ExercisePatternKey.SummarizeSpokenText, 6, true, false, true, false),
+        // summarize_spoken_text promoted to Ready above
         Ready(ExercisePatternKey.ListeningMultipleChoiceMulti, "Listening Multiple Choice Multiple", "Listen to a short audio script and choose all correct answers.", "listening", "[]", "Pattern", "listening_multiple_choice_multi", "keyed_selection", "activity_generate_listening_multiple_choice_multi", ActivityType.ListeningComprehension, ExercisePatternKey.ListeningMultipleChoiceMulti, 5, false, false, true, false),
         // listening_multiple_choice_multi promoted to Ready above
         Ready(ExercisePatternKey.ListeningFillInBlanks, "Listening Fill in Blanks", "Listen to a short audio script and fill in the missing words.", "listening", "[\"writing\"]", "Pattern", "listening_fill_in_blanks", "exact_match", "activity_generate_listening_fill_in_blanks", ActivityType.ListeningComprehension, ExercisePatternKey.ListeningFillInBlanks, 5, false, false, true, false),

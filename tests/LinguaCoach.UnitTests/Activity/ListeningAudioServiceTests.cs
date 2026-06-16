@@ -151,7 +151,7 @@ public sealed class ListeningAudioServiceTests
         dto.AudioStatus.Should().Be(status);
     }
 
-    // ── ListeningPatternKeys — all 9 patterns are ListeningComprehension ──────
+    // ── ListeningPatternKeys — all 10 patterns are ListeningComprehension ─────
 
     [Theory]
     [InlineData("listen_and_answer")]
@@ -163,6 +163,7 @@ public sealed class ListeningAudioServiceTests
     [InlineData("highlight_correct_summary")]
     [InlineData("highlight_incorrect_words")]
     [InlineData("write_from_dictation")]
+    [InlineData("summarize_spoken_text")]
     public async Task EnsureAudioAsync_ListeningPattern_MissingScript_SetsUnavailable(string patternKey)
     {
         var sut = CreateSut();

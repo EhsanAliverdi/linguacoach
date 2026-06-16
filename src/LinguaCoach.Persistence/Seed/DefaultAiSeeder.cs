@@ -49,6 +49,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateHighlightCorrectSummaryKey          = "activity_generate_highlight_correct_summary";
     public const string ActivityGenerateHighlightIncorrectWordsKey          = "activity_generate_highlight_incorrect_words";
     public const string ActivityGenerateWriteFromDictationKey               = "activity_generate_write_from_dictation";
+    public const string ActivityGenerateSummarizeSpokenTextKey              = "activity_generate_summarize_spoken_text";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -63,6 +64,7 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateSpeakingRoleplayTurnKey = "activity_evaluate_speaking_roleplay_turn";
     public const string ActivityEvaluateSummarizeWrittenTextKey = "activity_evaluate_summarize_written_text";
     public const string ActivityEvaluateWriteEssayKey = "activity_evaluate_write_essay";
+    public const string ActivityEvaluateSummarizeSpokenTextKey = "activity_evaluate_summarize_spoken_text";
 
     private const string ActivityGenerateWritingContent = """
 You are an expert English workplace writing coach creating a staged WritingScenario module for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
@@ -2479,6 +2481,154 @@ If the student's summary is empty or too short to evaluate, set overallScore to 
 Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateSummarizeSpokenTextContent = """
+You are an expert English language teacher creating a summarize-spoken-text exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will listen to a short spoken text of 60-90 seconds, then write a concise summary in their own words. This exercises listening comprehension AND writing concision/paraphrasing.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening-and-summarising skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["writing"],
+  "exerciseType": "summarize_spoken_text",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to summarise what you hear'>",
+    "explanation": "<2-4 sentences: general strategy for listening for the main idea, noting key supporting points, and paraphrasing concisely. No reference to the specific audio below.>",
+    "keyPoints": [
+      "<e.g. 'Listen for the overall topic before details'>",
+      "<e.g. 'Note 2-3 key supporting points'>",
+      "<e.g. 'Use your own words — do not try to transcribe'>",
+      "<e.g. 'Keep it concise: aim for the requested length'>"
+    ],
+    "examples": [
+      { "phrase": "<useful summary phrase>", "meaning": "<when/how to use it>", "note": "<listening or concision strategy note>" }
+    ],
+    "strategy": "<one sentence: how to listen, identify key points, and write a concise summary>",
+    "commonMistakes": [
+      "trying to write down every word",
+      "including too many minor details",
+      "missing the main idea",
+      "writing too much or too little"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about summarising spoken text, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to the audio, then write a concise summary in your own words.",
+    "scenario": "<1 sentence describing the workplace/professional context>",
+    "task": "Write a concise summary of the spoken text. Use your own words and include the main idea and key points.",
+    "exerciseData": {
+      "audioScript": "<A spoken-style workplace text of 130-200 words (about 60-90 seconds when read aloud), clearly structured, with a main idea and 2-3 supporting points. Relevant to {{careerContext}} and {{topicHint}}. Written as natural speech.>",
+      "audioUrl": null,
+      "prompt": "Listen to the audio and write a summary of 50-70 words. Include the main idea and key supporting points in your own words.",
+      "summaryRequirements": [
+        "Cover the main idea",
+        "Include key supporting points",
+        "Use your own words"
+      ],
+      "keyPoints": [
+        "<expected key point 1 from the audio>",
+        "<expected key point 2 from the audio>",
+        "<expected key point 3 from the audio>"
+      ],
+      "successChecklist": [
+        "The summary covers the main idea.",
+        "Key supporting points are included.",
+        "No unsupported details are added.",
+        "The student has paraphrased rather than transcribed."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Main idea coverage",
+      "Key point selection",
+      "Concision",
+      "Grammar and vocabulary",
+      "Coherence",
+      "Unsupported details"
+    ],
+    "rubric": [
+      { "criterion": "Content", "description": "Covers the main idea and key supporting points accurately." },
+      { "criterion": "Concision", "description": "Keeps the summary focused and appropriately brief." },
+      { "criterion": "Language", "description": "Uses clear grammar, vocabulary, and sentence structure." },
+      { "criterion": "Fidelity", "description": "Adds no details that were not in the audio." }
+    ],
+    "feedbackFocus": "Help the student summarise the spoken text clearly, concisely, and in their own words.",
+    "successCriteria": [
+      "The summary captures the main idea.",
+      "The summary includes key points and avoids unsupported details.",
+      "The summary is concise and written in the student's own words."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain audioScript, transcript, the actual prompt, expected summary, keyPoints, or any reference to the specific audio content. It teaches general summarising strategy only.
+- practiceContent.exerciseData.audioScript must be a realistic, clearly structured spoken workplace text of 130-200 words.
+- keyPoints must reflect what a good summary of THIS specific audio should include.
+- audioUrl must be null. The audio is generated separately from audioScript.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateSummarizeSpokenTextContent = """
+You are an expert English language teacher evaluating a student's summary of a spoken text.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (audio script and requirements):
+{{activityContent}}
+
+Student summary:
+{{studentSubmission}}
+
+Evaluate the summary against the rubric criteria and return ONLY valid JSON:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentence warm but honest feedback: did the student capture the main idea? Is it concise? Any key gaps or unsupported details?>",
+  "focusFirst": false,
+  "changes": [
+    {
+      "type": "grammar|vocabulary|content|concision|paraphrasing",
+      "original": "<phrase or issue from student's summary>",
+      "suggested": "<improved version>",
+      "reason": "<brief explanation>",
+      "category": "<grammar|vocabulary|content|concision|paraphrasing>",
+      "severity": "low|medium|high"
+    }
+  ],
+  "whatYouDidWell": ["<specific positive: main idea captured>", "<specific positive: concise>"],
+  "mainMistakes": ["<key content gap, unsupported detail, or language issue if any>"],
+  "grammarIssues": ["<grammar issue if any>"],
+  "vocabularyIssues": ["<vocabulary issue if any>"],
+  "toneIssues": [],
+  "miniLesson": "<one sentence teaching moment about summarising spoken text or language use>",
+  "improvedVersion": "<a model summary of 50-70 words that demonstrates what a good answer looks like>",
+  "nextImprovementStep": "<one specific action for the student to practise next>",
+  "feedbackInSourceLanguage": "<1-2 sentences of encouragement in {{sourceLanguageName}}>"
+}
+
+Scoring guide:
+- 90-100: Main idea + all key points + concise + own words + no unsupported details + clean language
+- 75-89: Main idea + most key points + mostly own words + minor language issues
+- 60-74: Main idea present but key points missing or some unsupported details
+- 40-59: Main idea unclear or significantly incomplete
+- 0-39: Missing main idea, off-topic, or invented content
+
+If the student's summary is empty or too short to evaluate, set overallScore to 0 and explain in coachSummary.
+Do not include any text outside the JSON object.
+""";
+
     private const string ActivityGenerateWriteEssayContent = """
 You are an expert English language teacher creating a write-essay exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
 
@@ -3288,6 +3438,10 @@ Rules:
             ActivityGenerateWriteEssayKey, ActivityGenerateWriteEssayContent,
             maxInputTokens: 1000, maxOutputTokens: 1600, ct);
 
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateSummarizeSpokenTextKey, ActivityGenerateSummarizeSpokenTextContent,
+            maxInputTokens: 1600, maxOutputTokens: 1800, ct);
+
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluatePhraseMatchKey, ActivityEvaluatePhraseMatchContent,
@@ -3335,6 +3489,10 @@ Rules:
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateWriteEssayKey, ActivityEvaluateWriteEssayContent,
+            maxInputTokens: 2000, maxOutputTokens: 1400, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateSummarizeSpokenTextKey, ActivityEvaluateSummarizeSpokenTextContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
 
         // AI Config Categories — category-level provider routing.

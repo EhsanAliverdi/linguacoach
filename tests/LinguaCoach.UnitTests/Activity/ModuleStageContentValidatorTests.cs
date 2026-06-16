@@ -1847,6 +1847,83 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
     }
 
+    // ── summarize_spoken_text pattern key tests ────────────────────────────────
+
+    private const string ValidSummarizeSpokenTextJson = """
+    {
+      "schemaVersion": "module_stage_v1",
+      "title": "Summarise a Spoken Update",
+      "moduleGoal": "Practise listening for main ideas and writing a concise summary.",
+      "primarySkill": "listening",
+      "secondarySkills": ["writing"],
+      "exerciseType": "summarize_spoken_text",
+      "learnContent": {
+        "teachingTitle": "How to summarise what you hear",
+        "explanation": "Listen for the main idea first, note key supporting points, then paraphrase concisely.",
+        "keyPoints": ["Listen for the topic before details", "Use your own words"]
+      },
+      "practiceContent": {
+        "instructions": "Listen to the audio, then write a concise summary in your own words.",
+        "exerciseData": {
+          "audioScript": "Good morning team. Our quarterly results are in and revenue grew twelve percent, led by strong demand in Asia-Pacific. We also plan to hire fifty new engineers over the next six months. Please share efficiency ideas through the suggestion portal.",
+          "audioUrl": null,
+          "prompt": "Listen to the audio and write a summary of 50-70 words in your own words.",
+          "summaryRequirements": ["Cover the main idea", "Include key supporting points", "Use your own words"],
+          "keyPoints": ["Revenue grew 12%", "Fifty new engineers will be hired"],
+          "successChecklist": ["Summary covers main idea", "No unsupported details added"]
+        }
+      },
+      "feedbackPlan": {
+        "feedbackFocus": "Help the student summarise the spoken text clearly and concisely."
+      }
+    }
+    """;
+
+    [Fact]
+    public void Validate_SummarizeSpokenText_WithValidPayload_ReturnsValid()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(ValidSummarizeSpokenTextJson), ActivityType.ListeningComprehension, "summarize_spoken_text");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("prompt")]
+    public void Validate_SummarizeSpokenText_MissingRequiredKey_Fails(string keyToRemove)
+    {
+        var json = RemoveExerciseDataKey(ValidSummarizeSpokenTextJson, keyToRemove);
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "summarize_spoken_text");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(keyToRemove));
+    }
+
+    [Theory]
+    [InlineData("audioScript")]
+    [InlineData("transcript")]
+    [InlineData("prompt")]
+    [InlineData("expectedSummary")]
+    [InlineData("modelSummary")]
+    [InlineData("answerKey")]
+    [InlineData("textarea")]
+    [InlineData("submit")]
+    [InlineData("checkAnswer")]
+    public void Validate_SummarizeSpokenText_WithForbiddenKeyInLearnContent_Fails(string forbiddenKey)
+    {
+        var json = AddLearnProperty(Parse(ValidSummarizeSpokenTextJson), forbiddenKey, "not allowed");
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.ListeningComprehension, "summarize_spoken_text");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains(forbiddenKey));
+    }
+
     // ── write_essay pattern key tests ───────────────────────────────────────────
 
     private const string ValidWriteEssayJson = """

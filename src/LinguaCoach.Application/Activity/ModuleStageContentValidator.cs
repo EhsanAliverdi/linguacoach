@@ -49,6 +49,17 @@ public static class ModuleStageContentValidator
         "tokenExplanations", "selectedTokenIds",
     ];
 
+    // Additional forbidden learnContent keys scoped to a specific pattern key.
+    // Reserved for keys that are legitimate teaching content for most formats but
+    // must be hidden for one specific format. Note: learnContent.keyPoints is the
+    // standard teaching-points array (LearnContentDto.KeyPoints) and is generic
+    // strategy, never the expected answer — the answer-bearing keyPoints live in
+    // practiceContent.exerciseData and are never surfaced to the Learn page or the
+    // renderer before submission.
+    private static readonly Dictionary<string, string[]> ForbiddenLearnContentKeysByPatternKey = new(StringComparer.Ordinal)
+    {
+    };
+
     private static readonly Dictionary<ActivityType, string[]> RequiredPracticeKeysByType = new()
     {
         [ActivityType.ListeningComprehension] = ["audioScript", "questions"],
@@ -85,6 +96,7 @@ public static class ModuleStageContentValidator
         ["highlight_correct_summary"]            = ["audioScript", "options", "correctOptionId"],
         ["highlight_incorrect_words"]            = ["audioScript", "displayTranscript", "tokens", "incorrectTokenIds"],
         ["write_from_dictation"]                 = ["items"],
+        ["summarize_spoken_text"]                = ["audioScript", "prompt"],
     };
 
     // Per-item field requirements for item-array formats: pattern key => required item fields.
@@ -123,6 +135,16 @@ public static class ModuleStageContentValidator
             {
                 if (HasPropertyIgnoreCase(learnContent, forbiddenKey))
                     errors.Add($"learnContent must not contain \"{forbiddenKey}\" (practice/exercise data).");
+            }
+
+            if (exercisePatternKey is not null
+                && ForbiddenLearnContentKeysByPatternKey.TryGetValue(exercisePatternKey, out var patternForbidden))
+            {
+                foreach (var forbiddenKey in patternForbidden)
+                {
+                    if (HasPropertyIgnoreCase(learnContent, forbiddenKey))
+                        errors.Add($"learnContent must not contain \"{forbiddenKey}\" (practice/exercise data).");
+                }
             }
         }
 

@@ -18,6 +18,7 @@ import { ListeningFillInBlanksComponent, ListeningFillInBlanksContent } from '..
 import { HighlightCorrectSummaryComponent, HighlightCorrectSummaryContent } from '../renderers/highlight-correct-summary/highlight-correct-summary.component';
 import { HighlightIncorrectWordsComponent, HighlightIncorrectWordsContent } from '../renderers/highlight-incorrect-words/highlight-incorrect-words.component';
 import { WriteFromDictationComponent, WriteFromDictationContent } from '../renderers/write-from-dictation/write-from-dictation.component';
+import { SummarizeSpokenTextComponent, SummarizeSpokenTextContent } from '../renderers/summarize-spoken-text/summarize-spoken-text.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -35,7 +36,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'listeningFillInBlanks'; answers: Record<string, string> }
   | { kind: 'highlightCorrectSummary'; selectedOptionId: string }
   | { kind: 'highlightIncorrectWords'; selectedTokenIds: string[] }
-  | { kind: 'writeFromDictation'; items: { itemId: string; submittedText: string }[] };
+  | { kind: 'writeFromDictation'; items: { itemId: string; submittedText: string }[] }
+  | { kind: 'summarizeSpokenText'; summaryText: string };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -59,6 +61,7 @@ export type ExerciseAnswerPayload =
     HighlightCorrectSummaryComponent,
     HighlightIncorrectWordsComponent,
     WriteFromDictationComponent,
+    SummarizeSpokenTextComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -503,6 +506,26 @@ export class ExerciseRendererComponent {
 
   onWriteFromDictationSubmitted(answer: { items: { itemId: string; submittedText: string }[] }): void {
     this.answerSubmitted.emit({ kind: 'writeFromDictation', items: answer.items });
+  }
+
+  get summarizeSpokenTextContent(): SummarizeSpokenTextContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      audioScript: this.stringValue(ed['audioScript'] ?? raw['audioScript']),
+      audioUrl: this.stringValue(ed['audioUrl'] ?? raw['audioUrl']) ?? this.activity.audioUrl,
+      prompt: this.stringValue(ed['prompt'] ?? raw['prompt']),
+      summaryRequirements: this.stringArray(ed['summaryRequirements'] ?? raw['summaryRequirements']) ?? [],
+    };
+  }
+
+  onSummarizeSpokenTextSubmitted(answer: { summaryText: string }): void {
+    this.answerSubmitted.emit({ kind: 'summarizeSpokenText', summaryText: answer.summaryText });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

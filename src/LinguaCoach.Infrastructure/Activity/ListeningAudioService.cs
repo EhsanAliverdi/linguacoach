@@ -38,6 +38,7 @@ public sealed class ListeningAudioService
         Domain.ExercisePatternKey.HighlightCorrectSummary,
         Domain.ExercisePatternKey.HighlightIncorrectWords,
         Domain.ExercisePatternKey.WriteFromDictation,
+        Domain.ExercisePatternKey.SummarizeSpokenText,
     };
 
     public async Task EnsureAudioAsync(LearningActivity activity, string targetLanguageCode, CancellationToken ct)

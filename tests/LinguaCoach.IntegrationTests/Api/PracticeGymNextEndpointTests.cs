@@ -162,7 +162,7 @@ public sealed class PracticeGymNextEndpointTests : IClassFixture<ActivityTestFac
     {
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_planned_{Guid.NewGuid():N}@test.com");
 
-        var response = await ClientWithToken(token).GetAsync("/api/activity/practice-gym/next?exerciseType=summarize_spoken_text");
+        var response = await ClientWithToken(token).GetAsync("/api/activity/practice-gym/next?exerciseType=describe_image");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -232,6 +232,23 @@ public sealed class PracticeGymNextEndpointTests : IClassFixture<ActivityTestFac
         Assert.Equal("highlightIncorrectWords", body.GetProperty("interactionMode").GetString());
         var content = body.GetProperty("contentJson").GetString();
         Assert.Contains("module_stage_v1", content);
+    }
+
+    [Fact]
+    public async Task GetNext_WithSummarizeSpokenTextExerciseType_ReturnsOkWithStagedAudioAndPrompt()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"pg_sst_{Guid.NewGuid():N}@test.com");
+
+        var response = await ClientWithToken(token).GetAsync("/api/activity/next?exerciseType=summarize_spoken_text");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(ExercisePatternKey.SummarizeSpokenText, body.GetProperty("exercisePatternKey").GetString());
+        Assert.Equal("summarizeSpokenText", body.GetProperty("interactionMode").GetString());
+        var content = body.GetProperty("contentJson").GetString();
+        Assert.Contains("module_stage_v1", content);
+        Assert.Contains("audioScript", content);
+        Assert.Contains("prompt", content);
     }
 
     [Fact]

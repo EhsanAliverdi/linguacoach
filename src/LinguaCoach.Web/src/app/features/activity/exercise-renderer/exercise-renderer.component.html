@@ -104,6 +104,13 @@
       (submitted)="onWriteFromDictationSubmitted($event)"
     />
   }
+  @case ('summarizeSpokenText') {
+    <app-summarize-spoken-text
+      [content]="summarizeSpokenTextContent"
+      [disabled]="disabled"
+      (submitted)="onSummarizeSpokenTextSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"
