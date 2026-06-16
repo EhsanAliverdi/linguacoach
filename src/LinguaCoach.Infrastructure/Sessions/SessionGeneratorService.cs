@@ -7,6 +7,7 @@ using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PatternCatalogEntry = LinguaCoach.Application.Sessions.PatternCatalogEntry;
 
 namespace LinguaCoach.Infrastructure.Sessions;
 
@@ -80,30 +81,65 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         // ── 2. Resolve current module ─────────────────────────────────────────
         var currentModule = await ResolveCurrentModuleAsync(profile.UserId, studentProfileId, ct);
 
-        // ── 3. Load student weak skills ───────────────────────────────────────
-        var weakSkills = await _db.StudentSkillProfiles
-            .Where(sp => sp.StudentProfileId == studentProfileId && sp.ScorePercent < StudentSkillProfile.WeakThreshold)
-            .Select(sp => sp.SkillKey)
-            .ToListAsync(ct);
-
-        var weakSkillSet = new HashSet<string>(weakSkills, StringComparer.OrdinalIgnoreCase);
+        // ── 3. Load full skill profile scores ─────────────────────────────────
+        var skillScores = await _db.StudentSkillProfiles
+            .Where(sp => sp.StudentProfileId == studentProfileId)
+            .Select(sp => new { sp.SkillKey, sp.ScorePercent })
+            .ToDictionaryAsync(sp => sp.SkillKey, sp => sp.ScorePercent, ct);
 
         // ── 4. Select duration template ───────────────────────────────────────
         var duration = SessionDurationTemplates.NormalizeDuration(profile.PreferredSessionDurationMinutes);
         var template = SessionDurationTemplates.GetTemplate(duration);
 
-        // ── 5. Apply weak-skill substitution ─────────────────────────────────
-        var steps = ApplyWeakSkillSubstitution(template, weakSkillSet, profile.SkillFocus);
+        // ── 5. Load recent pattern history (last 10 exercises across all sessions) ──
+        // Use a subquery on LearningModuleId via the student's path modules to avoid
+        // depending on the nullable LearningSession.StudentProfileId (only set for
+        // background-generated sessions).
+        var studentModuleIds = await _db.LearningPaths
+            .Where(p => p.StudentProfileId == studentProfileId && p.IsActive)
+            .SelectMany(p => p.Modules)
+            .Select(m => m.Id)
+            .ToListAsync(ct);
+
+        IReadOnlyList<string> recentPatternKeys = studentModuleIds.Count == 0
+            ? []
+            : await _db.SessionExercises
+                .Where(e => _db.LearningSessions
+                    .Where(s => studentModuleIds.Contains(s.LearningModuleId))
+                    .Select(s => s.Id)
+                    .Contains(e.LearningSessionId))
+                .OrderByDescending(e => e.CreatedAt)
+                .Take(10)
+                .Select(e => e.ExercisePatternKey)
+                .ToListAsync(ct);
+
+        // ── 6. Build catalog entries for the selector ─────────────────────────
+        var todayTypes = await _exerciseTypes.GetForTodayAsync(ct);
+        var catalogEntries = todayTypes
+            .Select(e => new PatternCatalogEntry(
+                PatternKey: e.ExercisePatternKey ?? e.Key,
+                PrimarySkill: e.PrimarySkill,
+                IsEnabled: e.IsEnabled,
+                IsReady: string.Equals(e.ImplementationStatus, "ready", StringComparison.OrdinalIgnoreCase),
+                SupportsTodayLesson: e.SupportsTodayLesson))
+            .ToList();
+
+        // ── 7. Apply dynamic pattern selection per slot ───────────────────────
+        var steps = ApplyDynamicPatternSelection(
+            template, skillScores, recentPatternKeys, catalogEntries,
+            profile.LearningGoalDescription ?? profile.LearningGoal, profile.SkillFocus);
+
+        // Filter any step whose chosen key is still not in the ready catalog.
         steps = await FilterUnavailableExerciseTypesAsync(steps, ct);
         if (steps.Count == 0)
             throw new InvalidOperationException("No enabled ready exercise types are available for today's lesson.");
 
-        // ── 6. Build session metadata ─────────────────────────────────────────
+        // ── 8. Build session metadata ─────────────────────────────────────────
         var (title, topic, goal, focusSkill) = BuildSessionMetadata(steps, currentModule, profile);
 
         var memorySnapshot = await BuildMemorySnapshotAsync(studentProfileId, ct);
 
-        // ── 7. Determine order within module ─────────────────────────────────
+        // ── 9. Determine order within module ─────────────────────────────────
         var existingSessionCount = currentModule is null ? 0
             : await _db.LearningSessions
                 .CountAsync(s => s.LearningModuleId == currentModule.Id, ct);
@@ -121,7 +157,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         _db.LearningSessions.Add(session);
         await _db.SaveChangesAsync(ct);
 
-        // ── 8. Create ordered SessionExercise rows ────────────────────────────
+        // ── 10. Create ordered SessionExercise rows ───────────────────────────
         foreach (var step in steps)
         {
             var exercise = new SessionExercise(
@@ -244,58 +280,71 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         return filtered;
     }
 
-    private static List<ExerciseStepTemplate> ApplyWeakSkillSubstitution(
+    private List<ExerciseStepTemplate> ApplyDynamicPatternSelection(
         IReadOnlyList<ExerciseStepTemplate> template,
-        HashSet<string> weakSkillKeys,
+        IReadOnlyDictionary<string, int> skillScores,
+        IReadOnlyList<string> recentPatternKeys,
+        IReadOnlyList<PatternCatalogEntry> catalogEntries,
+        string? learningGoalContext,
         SkillFocus? skillFocus)
     {
-        var steps = template.ToList();
+        // Augment skill scores with skill-focus signal when profile is sparse.
+        var effectiveScores = skillScores.Count > 0
+            ? skillScores
+            : BuildFallbackScores(skillFocus);
 
-        // Determine which skill is most in need of reinforcement.
-        // Priority: explicit weak skill > student skill focus > default (Writing)
-        var primaryWeakSkill = weakSkillKeys.Count > 0
-            ? NormalizeSkillLabel(weakSkillKeys.First())
-            : null;
-
-        var focusSkillLabel = skillFocus.HasValue ? SkillFocusToLabel(skillFocus.Value) : null;
-        var targetSkill = primaryWeakSkill ?? focusSkillLabel;
-
-        if (targetSkill is null)
-            return steps;
-
-        // Substitute the main task step's primarySkill when the target is Speaking.
-        // This promotes SpeakingTask over WritingTask in the main slot when Speaking is weak.
-        if (targetSkill.Equals("Speaking", StringComparison.OrdinalIgnoreCase))
+        var steps = new List<ExerciseStepTemplate>(template.Count);
+        foreach (var step in template)
         {
-            steps = steps
-                .Select(s => s.Kind == ExerciseKind.WritingTask
-                    ? s with
-                    {
-                        Kind = ExerciseKind.SpeakingTask,
-                        PatternKey = "spoken_response_from_prompt",
-                        PrimarySkill = "Speaking",
-                        Instructions = "Record a professional spoken response to the workplace situation."
-                    }
-                    : s)
-                .ToList();
-        }
+            // Review slots are fixed — no dynamic selection needed.
+            if (step.Kind == ExerciseKind.Review)
+            {
+                steps.Add(step);
+                continue;
+            }
 
-        // When Listening is the weak skill, ensure the context input step uses listening, not reading.
-        if (targetSkill.Equals("Listening", StringComparison.OrdinalIgnoreCase))
-        {
-            steps = steps
-                .Select(s => s.Kind == ExerciseKind.ContextInput
-                    ? s with
-                    {
-                        Kind = ExerciseKind.ListeningInput,
-                        PatternKey = "listen_and_answer",
-                        PrimarySkill = "Listening"
-                    }
-                    : s)
-                .ToList();
+            var input = new PatternSelectionInput(
+                CefrLevel: null,
+                SkillScores: effectiveScores,
+                LearningGoalContext: learningGoalContext,
+                RecentPatternKeys: recentPatternKeys,
+                CandidatePatternKeys: step.GetCandidates(),
+                SlotPrimarySkill: step.PrimarySkill,
+                AvailableCatalog: catalogEntries);
+
+            var result = DynamicPatternSelector.Select(input);
+
+            _logger.LogDebug(
+                "DynamicPatternSelector: slot={Kind} {Reason} fallback={IsFallback}",
+                step.Kind, result.Reason, result.IsFallback);
+
+            // Keep Kind aligned with the chosen pattern when it differs from the template default.
+            var resolvedKind = result.SelectedPatternKey != step.PatternKey
+                ? ResolveKind(result.SelectedPatternKey)
+                : step.Kind;
+
+            steps.Add(step with
+            {
+                Kind = resolvedKind,
+                PatternKey = result.SelectedPatternKey,
+                PrimarySkill = result.TargetSkill
+            });
         }
 
         return steps;
+    }
+
+    private static IReadOnlyDictionary<string, int> BuildFallbackScores(SkillFocus? skillFocus)
+    {
+        if (!skillFocus.HasValue)
+            return new Dictionary<string, int>();
+
+        var focusLabel = SkillFocusToLabel(skillFocus.Value);
+        return new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Score the focus skill low so the selector treats it as a priority.
+            [focusLabel] = StudentSkillProfile.WeakThreshold - 10
+        };
     }
 
     private static (string title, string topic, string goal, string focusSkill) BuildSessionMetadata(

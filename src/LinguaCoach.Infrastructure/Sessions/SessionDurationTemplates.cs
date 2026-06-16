@@ -49,14 +49,16 @@ public static class SessionDurationTemplates
         new(Order: 0, Kind: ExerciseKind.VocabularyWarmup,
             PatternKey: "phrase_match",
             PrimarySkill: "Vocabulary",
-            Instructions: "Match these workplace phrases to their meanings.",
-            EstimatedMinutes: 3),
+            Instructions: "Match these phrases to their meanings.",
+            EstimatedMinutes: 3,
+            CandidatePatternKeys: ["phrase_match", "gap_fill_workplace_phrase"]),
 
         new(Order: 1, Kind: ExerciseKind.WritingTask,
             PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a short professional email reply to the workplace situation.",
-            EstimatedMinutes: 5),
+            Instructions: "Write a short professional reply to the situation.",
+            EstimatedMinutes: 5,
+            CandidatePatternKeys: ["email_reply", "writing_response", "teams_chat_simulation", "spoken_response_from_prompt"]),
 
         new(Order: 2, Kind: ExerciseKind.Review,
             PatternKey: "lesson_reflection",
@@ -72,25 +74,28 @@ public static class SessionDurationTemplates
         new(Order: 0, Kind: ExerciseKind.VocabularyWarmup,
             PatternKey: "phrase_match",
             PrimarySkill: "Vocabulary",
-            Instructions: "Match these workplace phrases to their meanings.",
-            EstimatedMinutes: 2),
+            Instructions: "Match these phrases to their meanings.",
+            EstimatedMinutes: 2,
+            CandidatePatternKeys: ["phrase_match", "gap_fill_workplace_phrase"]),
 
         new(Order: 1, Kind: ExerciseKind.ContextInput,
             PatternKey: "listen_and_answer",
             PrimarySkill: "Listening",
-            Instructions: "Listen to the workplace message and answer the questions.",
-            EstimatedMinutes: 4),
+            Instructions: "Listen to the audio and answer the questions.",
+            EstimatedMinutes: 4,
+            CandidatePatternKeys: ["listen_and_answer", "listen_and_gap_fill"]),
 
         new(Order: 2, Kind: ExerciseKind.WritingTask,
             PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a professional email reply to the workplace situation.",
-            EstimatedMinutes: 7),
+            Instructions: "Write a professional reply to the situation.",
+            EstimatedMinutes: 7,
+            CandidatePatternKeys: ["email_reply", "writing_response", "teams_chat_simulation", "spoken_response_from_prompt"]),
 
         new(Order: 3, Kind: ExerciseKind.Review,
             PatternKey: "lesson_reflection",
             PrimarySkill: "Writing",
-            Instructions: "Review the lesson vocabulary and note one phrase to use at work.",
+            Instructions: "Review the lesson vocabulary and note one phrase to practise.",
             EstimatedMinutes: 2)
     ];
 
@@ -101,20 +106,23 @@ public static class SessionDurationTemplates
         new(Order: 0, Kind: ExerciseKind.VocabularyWarmup,
             PatternKey: "phrase_match",
             PrimarySkill: "Vocabulary",
-            Instructions: "Match these workplace phrases to their meanings.",
-            EstimatedMinutes: 3),
+            Instructions: "Match these phrases to their meanings.",
+            EstimatedMinutes: 3,
+            CandidatePatternKeys: ["phrase_match", "gap_fill_workplace_phrase"]),
 
         new(Order: 1, Kind: ExerciseKind.ListeningInput,
             PatternKey: "listen_and_gap_fill",
             PrimarySkill: "Listening",
             Instructions: "Listen and fill in the missing words.",
-            EstimatedMinutes: 5),
+            EstimatedMinutes: 5,
+            CandidatePatternKeys: ["listen_and_gap_fill", "listen_and_answer"]),
 
         new(Order: 2, Kind: ExerciseKind.WritingTask,
             PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a complete professional email reply to the workplace situation.",
-            EstimatedMinutes: 9),
+            Instructions: "Write a complete professional reply to the situation.",
+            EstimatedMinutes: 9,
+            CandidatePatternKeys: ["email_reply", "writing_response", "teams_chat_simulation", "spoken_response_from_prompt"]),
 
         new(Order: 3, Kind: ExerciseKind.Review,
             PatternKey: "lesson_reflection",
@@ -130,26 +138,35 @@ public static class SessionDurationTemplates
         new(Order: 0, Kind: ExerciseKind.VocabularyWarmup,
             PatternKey: "phrase_match",
             PrimarySkill: "Vocabulary",
-            Instructions: "Match these workplace phrases to their meanings.",
-            EstimatedMinutes: 4),
+            Instructions: "Match these phrases to their meanings.",
+            EstimatedMinutes: 4,
+            CandidatePatternKeys: ["phrase_match", "gap_fill_workplace_phrase"]),
 
         new(Order: 1, Kind: ExerciseKind.ListeningInput,
             PatternKey: "listen_and_answer",
             PrimarySkill: "Listening",
-            Instructions: "Listen to the workplace audio and answer comprehension questions.",
-            EstimatedMinutes: 6),
+            Instructions: "Listen to the audio and answer comprehension questions.",
+            EstimatedMinutes: 6,
+            CandidatePatternKeys: ["listen_and_answer", "listen_and_gap_fill"]),
 
         new(Order: 2, Kind: ExerciseKind.WritingTask,
             PatternKey: "email_reply",
             PrimarySkill: "Writing",
-            Instructions: "Write a full professional email reply to the workplace situation.",
-            EstimatedMinutes: 10),
+            Instructions: "Write a full professional reply to the situation.",
+            EstimatedMinutes: 10,
+            CandidatePatternKeys: ["email_reply", "writing_response", "teams_chat_simulation"]),
 
         new(Order: 3, Kind: ExerciseKind.SpeakingTask,
             PatternKey: "spoken_response_from_prompt",
             PrimarySkill: "Speaking",
-            Instructions: "Record a short spoken response to the same workplace situation.",
-            EstimatedMinutes: 7),
+            Instructions: "Record a short spoken response to the same situation.",
+            EstimatedMinutes: 7,
+            CandidatePatternKeys: [
+                "spoken_response_from_prompt",
+                "answer_short_question",
+                "read_aloud",
+                "repeat_sentence",
+                "respond_to_situation"]),
 
         new(Order: 4, Kind: ExerciseKind.Review,
             PatternKey: "lesson_reflection",
@@ -160,7 +177,8 @@ public static class SessionDurationTemplates
 }
 
 /// <summary>
-/// One step slot in a duration template. Mutable by the generator for weak-skill substitution.
+/// One step slot in a duration template. The PatternKey is the default; CandidatePatternKeys
+/// lists all alternatives the dynamic selector may choose from for this slot.
 /// </summary>
 public sealed record ExerciseStepTemplate(
     int Order,
@@ -168,4 +186,21 @@ public sealed record ExerciseStepTemplate(
     string PatternKey,
     string PrimarySkill,
     string Instructions,
-    int EstimatedMinutes);
+    int EstimatedMinutes,
+    IReadOnlyList<string>? CandidatePatternKeys = null)
+{
+    /// <summary>
+    /// Returns the candidate pool for this slot, always including the default PatternKey.
+    /// </summary>
+    public IReadOnlyList<string> GetCandidates()
+    {
+        if (CandidatePatternKeys is { Count: > 0 })
+        {
+            // Ensure the default is in the pool.
+            return CandidatePatternKeys.Contains(PatternKey, StringComparer.OrdinalIgnoreCase)
+                ? CandidatePatternKeys
+                : [PatternKey, .. CandidatePatternKeys];
+        }
+        return [PatternKey];
+    }
+}
