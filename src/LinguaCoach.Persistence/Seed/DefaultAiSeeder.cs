@@ -54,6 +54,8 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateAnswerShortQuestionKey              = "activity_evaluate_answer_short_question";
     public const string ActivityGenerateReadAloudKey                        = "activity_generate_read_aloud";
     public const string ActivityEvaluateReadAloudKey                        = "activity_evaluate_read_aloud";
+    public const string ActivityGenerateRepeatSentenceKey                   = "activity_generate_repeat_sentence";
+    public const string ActivityEvaluateRepeatSentenceKey                   = "activity_evaluate_repeat_sentence";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -2848,6 +2850,176 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateRepeatSentenceContent = """
+You are an expert English language teacher creating a repeat-sentence speaking and listening exercise for a {{sourceLanguageName}}-speaking learner of {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read or hear a short sentence, then repeat it as accurately as possible and type what they said. This practises listening accuracy, speaking fluency, and sentence rhythm. Content should suit the student's learning goals — which may include day-to-day English, travel, social conversation, academic English, job interviews, workplace English, or other goals. Do not assume a workplace-only context unless {{careerContext}} indicates it.
+
+Generate exactly 5 sentences (DefaultItemsPerPractice=5). Each sentence should be 8-20 words — short enough to hold in working memory and repeat in one breath.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening and speaking skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["listening", "pronunciation"],
+  "exerciseType": "repeat_sentence",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to listen and repeat accurately'>",
+    "explanation": "<2-4 sentences: general strategy for listening carefully and repeating sentences accurately. No reference to the actual sentences below.>",
+    "keyPoints": [
+      "<e.g. 'Listen for the key content words first'>",
+      "<e.g. 'Keep the sentence rhythm and stress pattern when you repeat'>",
+      "<e.g. 'If you miss a word, try to reconstruct from context'>",
+      "<e.g. 'Short sentences are easier to hold in memory — practise chunking longer ones'>"
+    ],
+    "examples": [
+      { "phrase": "<example of a sentence chunk>", "meaning": "<what it shows about rhythm or stress>", "note": "<strategy tip>" }
+    ],
+    "strategy": "<one sentence: how to approach listening and repeating sentences accurately>",
+    "commonMistakes": [
+      "changing word order when repeating",
+      "dropping function words like 'the', 'a', 'to'",
+      "replacing words with near-synonyms",
+      "repeating too quickly without fully hearing the sentence"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about listening and repeating accurately, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read each sentence carefully, then repeat it aloud and type exactly what you said.",
+    "scenario": "<1 sentence describing the context for these sentences — may be everyday, travel, social, academic, interview, or workplace>",
+    "task": "Repeat each sentence as accurately as you can, then type what you said.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "s1",
+          "sentence": "<8-20 word sentence appropriate for {{cefrLevel}} and the learning context>",
+          "audioScript": "<same as sentence — used as audio script fallback>",
+          "audioUrl": null,
+          "displayTitle": "<short label, e.g. 'Sentence 1'>",
+          "difficulty": "<easy|medium|hard>",
+          "focusAreas": ["<e.g. 'sentence rhythm'>", "<e.g. 'function words'>"],
+          "explanation": "<one sentence coaching tip for this specific sentence>"
+        },
+        {
+          "id": "s2",
+          "sentence": "<8-20 word sentence>",
+          "audioScript": "<same as sentence>",
+          "audioUrl": null,
+          "displayTitle": "<short label>",
+          "difficulty": "<easy|medium|hard>",
+          "focusAreas": ["<focus area>"],
+          "explanation": "<one sentence tip>"
+        },
+        {
+          "id": "s3",
+          "sentence": "<8-20 word sentence>",
+          "audioScript": "<same as sentence>",
+          "audioUrl": null,
+          "displayTitle": "<short label>",
+          "difficulty": "<easy|medium|hard>",
+          "focusAreas": ["<focus area>"],
+          "explanation": "<one sentence tip>"
+        },
+        {
+          "id": "s4",
+          "sentence": "<8-20 word sentence>",
+          "audioScript": "<same as sentence>",
+          "audioUrl": null,
+          "displayTitle": "<short label>",
+          "difficulty": "<easy|medium|hard>",
+          "focusAreas": ["<focus area>"],
+          "explanation": "<one sentence tip>"
+        },
+        {
+          "id": "s5",
+          "sentence": "<8-20 word sentence>",
+          "audioScript": "<same as sentence>",
+          "audioUrl": null,
+          "displayTitle": "<short label>",
+          "difficulty": "<easy|medium|hard>",
+          "focusAreas": ["<focus area>"],
+          "explanation": "<one sentence tip>"
+        }
+      ],
+      "successChecklist": [
+        "Each sentence is repeated with all key words present.",
+        "Word order matches the original sentence.",
+        "Function words are not dropped."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Transcript match",
+      "Repeat accuracy",
+      "Words matched / missing",
+      "Listening and speaking accuracy"
+    ],
+    "rubric": [
+      { "criterion": "Accuracy", "description": "The typed transcript closely matches the original sentence." },
+      { "criterion": "Word coverage", "description": "All key words from the sentence are present in the transcript." },
+      { "criterion": "Word order", "description": "The word order is preserved from the original sentence." }
+    ],
+    "feedbackFocus": "Help the student repeat sentences accurately with correct word order and no dropped words.",
+    "successCriteria": [
+      "Word overlap with the original sentence is high.",
+      "The student captures function words as well as content words.",
+      "The transcript reflects natural sentence structure."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual sentences, sentence ids, or scoring details. It teaches general listening-and-repeating strategy only.
+- Each item must have id, sentence, audioScript (same as sentence), audioUrl (null), displayTitle, difficulty, focusAreas (array), and explanation.
+- Sentences must be 8-20 words and appropriate for {{cefrLevel}}.
+- Sentences should reflect the learner's context — not hardcoded as workplace-only unless {{careerContext}} indicates a workplace focus.
+- Vary difficulty across the 5 items (at least one easy, one hard).
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateRepeatSentenceContent = """
+You are a warm English speaking coach evaluating a student's repeat-sentence exercise.
+
+Student level: {{cefrLevel}}
+
+Activity content (sentences and audio scripts):
+{{activityContent}}
+
+Student's submitted transcripts:
+{{submittedAnswer}}
+
+For each item, compare the student's typed transcript to the original sentence using word overlap. Identify matched words, missing words, and extra words. Provide brief, encouraging per-item feedback about listening accuracy and speaking accuracy.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0.0-1.0>,
+  "overallFeedback": "<2-3 sentences of overall feedback on repeat accuracy and listening>",
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true if word overlap >= 60%, false otherwise>,
+      "submittedAnswer": "<what the student typed>",
+      "expectedAnswer": "<the original sentence>",
+      "matchedWords": <count of matched words>,
+      "missingWords": ["<words not captured>"],
+      "feedback": "<1 sentence of item-level feedback on repeat accuracy>"
+    }
+  ],
+  "coachingTip": "<one actionable tip for improving listening and repeat accuracy>",
+  "encouragement": "<one sentence of encouragement>"
+}
+""";
+
     private const string ActivityEvaluateReadAloudContent = """
 You are a warm, professional English speaking coach evaluating a student's read-aloud exercise.
 
@@ -3754,6 +3926,12 @@ Rules:
             ActivityEvaluateAnswerShortQuestionKey, ActivityEvaluateAnswerShortQuestionContent,
             maxInputTokens: 2000, maxOutputTokens: 1200, ct);
 
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateRepeatSentenceKey, ActivityGenerateRepeatSentenceContent,
+            maxInputTokens: 1400, maxOutputTokens: 2200, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateRepeatSentenceKey, ActivityEvaluateRepeatSentenceContent,
+            maxInputTokens: 1800, maxOutputTokens: 1000, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,
             maxInputTokens: 1200, maxOutputTokens: 1800, ct);

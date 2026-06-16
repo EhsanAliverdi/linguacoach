@@ -74,7 +74,8 @@ public static class ExerciseTypeDefinitionSeeder
 
         Ready(ExercisePatternKey.ReadAloud, "Read Aloud", "Read a short workplace text aloud as clearly and naturally as possible.", "speaking", "[\"pronunciation\", \"reading\"]", "Pattern", "read_aloud", "exact_match", "activity_generate_read_aloud", ActivityType.SpeakingRolePlay, ExercisePatternKey.ReadAloud, 5, false, false, true, false),
         // read_aloud promoted to Ready above
-        Planned("repeat_sentence", "Repeat Sentence", "Repeat an audio sentence accurately.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),
+        Ready(ExercisePatternKey.RepeatSentence, "Repeat Sentence", "Hear or read a short sentence, then repeat it as accurately as you can.", "speaking", "[\"listening\", \"pronunciation\"]", "Pattern", "repeat_sentence", "exact_match", "activity_generate_repeat_sentence", ActivityType.SpeakingRolePlay, ExercisePatternKey.RepeatSentence, 5, false, false, true, false),
+        // repeat_sentence promoted to Ready above
         Planned("describe_image", "Describe Image", "Describe an image aloud.", "speaking", "[]", "Planned speaking format", true, false, requiresImage: true),
         Planned("respond_to_situation", "Respond to Situation", "Speak a response to a workplace situation.", "speaking", "[]", "Planned speaking format", true, false),
         Planned("retell_lecture", "Retell Lecture", "Retell an audio lecture in your own words.", "speaking", "[\"listening\"]", "Planned speaking format", true, false, requiresAudio: true),

@@ -124,8 +124,24 @@ const readyAnswerShortQuestion: any = {
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 8,
 };
 
+const readyReadAloud: any = {
+  key: 'read_aloud', displayName: 'Read Aloud', primarySkill: 'speaking', secondarySkills: ['pronunciation', 'reading'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'read_aloud', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_read_aloud',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 2, minItemsPerPractice: 1, maxItemsPerPractice: 3,
+};
+
+const readyRepeatSentence: any = {
+  key: 'repeat_sentence', displayName: 'Repeat Sentence', primarySkill: 'speaking', secondarySkills: ['listening', 'pronunciation'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'repeat_sentence', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_repeat_sentence',
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 6,
+};
+
 const plannedFormat: any = {
-  key: 'read_aloud', displayName: 'Read Aloud', primarySkill: 'speaking', secondarySkills: [],
+  key: 'describe_image', displayName: 'Describe Image', primarySkill: 'speaking', secondarySkills: [],
   category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
   rendererKey: '', evaluatorKey: '', generationPromptKey: '',
   estimatedDurationMinutes: 0, requiresAudio: false, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
@@ -137,7 +153,7 @@ const ALL_READY = [
   readyReorderParagraphs, readyReadingWritingFillInBlanks, readySummarizeWrittenText,
   readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti,
   readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary,
-  readyHighlightIncorrectWords, readyAnswerShortQuestion,
+  readyHighlightIncorrectWords, readyAnswerShortQuestion, readyReadAloud, readyRepeatSentence,
 ];
 
 describe('PracticeGymComponent', () => {
@@ -184,12 +200,30 @@ describe('PracticeGymComponent', () => {
     expect(card.tagName.toLowerCase()).toBe('button');
   });
 
+  it('renders a runnable card for read_aloud', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-read_aloud"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('repeat_sentence is ready and available in Practice Gym', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-repeat_sentence"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('shows item count for repeat_sentence', () => {
+    const countEl = fixture.nativeElement.querySelector('[data-testid="format-count-repeat_sentence"]');
+    expect(countEl).toBeTruthy();
+    expect(countEl.textContent).toContain('5');
+  });
+
   it('planned format is shown as locked (not a button)', async () => {
     activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
     const newFixture = TestBed.createComponent(PracticeGymComponent);
     newFixture.detectChanges();
     await newFixture.whenStable();
-    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-read_aloud"]');
+    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-describe_image"]');
     expect(card).toBeTruthy();
     expect(card.tagName.toLowerCase()).not.toBe('button');
   });
@@ -252,6 +286,23 @@ describe('PracticeGymComponent', () => {
     });
   });
 
+  it('clicking repeat_sentence navigates to /activity with the returned activityId', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true, activityId: 'act-rs-1', exerciseType: 'repeat_sentence',
+      primarySkill: 'speaking', source: 'onDemandFallback', poolItemId: null, reason: null,
+    }));
+
+    const card = component.skillGroups()
+      .flatMap(g => g.cards)
+      .find(c => c.key === 'repeat_sentence')!;
+    component.startFormat(card);
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'speaking', exerciseType: 'repeat_sentence' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'act-rs-1', returnTo: '/practice' },
+    });
+  });
+
   it('startFormat shows message when no activity available', () => {
     activityService.getPracticeGymNext.and.returnValue(of({
       hasActivity: false, activityId: null, exerciseType: null,
@@ -282,7 +333,7 @@ describe('PracticeGymComponent', () => {
     newFixture.detectChanges();
     const comp = newFixture.componentInstance;
 
-    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'read_aloud');
+    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'describe_image');
     if (lockedCard) comp.startFormat(lockedCard);
 
     expect(activityService.getPracticeGymNext).not.toHaveBeenCalled();

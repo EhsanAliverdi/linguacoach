@@ -125,6 +125,13 @@
       (submitted)="onReadAloudSubmitted($event)"
     />
   }
+  @case ('repeatSentence') {
+    <app-repeat-sentence
+      [content]="repeatSentenceContent"
+      [disabled]="disabled"
+      (submitted)="onRepeatSentenceSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

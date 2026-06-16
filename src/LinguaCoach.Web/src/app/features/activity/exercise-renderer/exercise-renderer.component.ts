@@ -21,6 +21,7 @@ import { WriteFromDictationComponent, WriteFromDictationContent } from '../rende
 import { SummarizeSpokenTextComponent, SummarizeSpokenTextContent } from '../renderers/summarize-spoken-text/summarize-spoken-text.component';
 import { AnswerShortQuestionComponent, AnswerShortQuestionContent } from '../renderers/answer-short-question/answer-short-question.component';
 import { ReadAloudComponent, ReadAloudContent } from '../renderers/read-aloud/read-aloud.component';
+import { RepeatSentenceComponent, RepeatSentenceContent } from '../renderers/repeat-sentence/repeat-sentence.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -41,7 +42,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'writeFromDictation'; items: { itemId: string; submittedText: string }[] }
   | { kind: 'summarizeSpokenText'; summaryText: string }
   | { kind: 'answerShortQuestion'; items: { itemId: string; answerText: string }[] }
-  | { kind: 'readAloud'; items: { itemId: string; answerText: string }[] };
+  | { kind: 'readAloud'; items: { itemId: string; answerText: string }[] }
+  | { kind: 'repeatSentence'; items: { itemId: string; answerText: string }[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -68,6 +70,7 @@ export type ExerciseAnswerPayload =
     SummarizeSpokenTextComponent,
     AnswerShortQuestionComponent,
     ReadAloudComponent,
+    RepeatSentenceComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -586,6 +589,36 @@ export class ExerciseRendererComponent {
 
   onReadAloudSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
     this.answerSubmitted.emit({ kind: 'readAloud', items: answer.items });
+  }
+
+  get repeatSentenceContent(): RepeatSentenceContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const items = this.arrayValue(ed['items'] ?? raw['items']).map((item, index) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? `s${index + 1}`,
+        sentence: this.stringValue(obj['sentence']),
+        audioScript: this.stringValue(obj['audioScript']),
+        audioUrl: this.stringValue(obj['audioUrl']),
+        displayTitle: this.stringValue(obj['displayTitle']),
+        difficulty: this.stringValue(obj['difficulty']),
+        focusAreas: this.arrayValue(obj['focusAreas']).map(f => this.stringValue(f) ?? '').filter(f => f),
+        explanation: this.stringValue(obj['explanation']),
+      };
+    });
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      items,
+    };
+  }
+
+  onRepeatSentenceSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
+    this.answerSubmitted.emit({ kind: 'repeatSentence', items: answer.items });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

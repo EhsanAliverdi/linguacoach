@@ -453,6 +453,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise reading workplace texts aloud with clarity and natural pacing",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.RepeatSentence,
+            name: "Repeat Sentence",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """["Listening", "Pronunciation"]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.RepeatSentence,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 5,
+            aiGeneratePromptKey: "activity_generate_repeat_sentence",
+            aiEvaluatePromptKey: "activity_evaluate_repeat_sentence",
+            teachingPurpose: "Practise listening to and accurately repeating short sentences",
+            requiresAudio: false,
+            workplaceContext: false),
     ];
 
     public static async Task SeedAsync(

@@ -99,6 +99,7 @@ public static class ModuleStageContentValidator
         ["summarize_spoken_text"]                = ["audioScript", "prompt"],
         ["answer_short_question"]                = ["items"],
         ["read_aloud"]                           = ["items"],
+        ["repeat_sentence"]                      = ["items"],
     };
 
     // Per-item field requirements for item-array formats: pattern key => required item fields.
@@ -107,6 +108,7 @@ public static class ModuleStageContentValidator
         ["write_from_dictation"]    = ["id", "audioScript", "answer"],
         ["answer_short_question"]   = ["id", "question"],
         ["read_aloud"]              = ["id", "text"],
+        ["repeat_sentence"]         = ["id", "sentence"],
     };
 
     public static ValidationResult Validate(
@@ -193,6 +195,9 @@ public static class ModuleStageContentValidator
         ["reorder_paragraphs"]             = "items",
         ["highlight_incorrect_words"]      = "incorrectTokenIds",
         ["write_from_dictation"]           = "items",
+        ["answer_short_question"]          = "items",
+        ["read_aloud"]                     = "items",
+        ["repeat_sentence"]                = "items",
     };
 
     private static void ValidateItemFields(JsonElement exerciseData, string[] requiredItemFields, List<string> errors)

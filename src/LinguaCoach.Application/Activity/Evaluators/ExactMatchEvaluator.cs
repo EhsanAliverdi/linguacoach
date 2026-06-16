@@ -31,6 +31,9 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         if (request.ExercisePatternKey == "read_aloud")
             return EvaluateReadAloudAsync(request);
 
+        if (request.ExercisePatternKey == "repeat_sentence")
+            return EvaluateRepeatSentenceAsync(request);
+
         var expectedItems = ParseExpectedItems(request.ContentJson, request.ExercisePatternKey);
         var submittedMap = ParseSubmittedAnswers(request.SubmittedAnswerJson);
 
@@ -668,6 +671,143 @@ public sealed class ExactMatchEvaluator : IPatternEvaluator
         if (correct == 0) return "Review the target phrases carefully and try again.";
         return $"You got {correct} out of {total} correct. Review the highlighted gaps to improve your score.";
     }
+
+    // ── repeat_sentence ────────────────────────────────────────────────────────
+
+    private static Task<PatternEvaluationResult> EvaluateRepeatSentenceAsync(
+        PatternEvaluationRequest request)
+    {
+        var json = UnwrapStagedContent(request.ContentJson);
+        RepeatSentenceContent? content = null;
+        try { content = JsonSerializer.Deserialize<RepeatSentenceContent>(json, JsonOptions); }
+        catch (JsonException) { /* leave null */ }
+
+        var items = content?.Items ?? [];
+
+        var submittedByItem = new Dictionary<string, string?>(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(request.SubmittedAnswerJson))
+        {
+            try
+            {
+                var dto = JsonSerializer.Deserialize<RepeatSentenceSubmittedAnswer>(request.SubmittedAnswerJson, JsonOptions);
+                if (dto?.Items is not null)
+                {
+                    foreach (var s in dto.Items)
+                    {
+                        if (!string.IsNullOrWhiteSpace(s.ItemId))
+                            submittedByItem[s.ItemId] = s.AnswerText;
+                    }
+                }
+            }
+            catch (JsonException) { /* leave empty */ }
+        }
+
+        var itemResults = new List<PatternEvaluationItemResult>();
+        double totalScore = 0;
+        double totalMax = items.Count;
+        var usedKeys = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var key = item.Id ?? $"s{i + 1}";
+            usedKeys.Add(key);
+
+            var expected = item.Sentence ?? string.Empty;
+            submittedByItem.TryGetValue(key, out var submitted);
+
+            var overlap = CalculateWordOverlap(expected, submitted);
+            var isCorrect = overlap >= 0.60;
+            var score = Math.Round(overlap, 2);
+            totalScore += score;
+
+            string feedback;
+            if (string.IsNullOrWhiteSpace(submitted))
+            {
+                feedback = "No transcript given. Try repeating the sentence and typing what you said.";
+            }
+            else if (isCorrect)
+            {
+                var matched = (int)(overlap * 100);
+                var missingWords = GetMissingWords(expected, submitted);
+                feedback = missingWords.Count == 0
+                    ? $"Good repeat accuracy — {matched}% of words matched."
+                    : $"Good repeat accuracy — {matched}% of words matched. Missing: {string.Join(", ", missingWords)}.";
+            }
+            else
+            {
+                var matched = (int)(overlap * 100);
+                var missingWords = GetMissingWords(expected, submitted);
+                var extraWords = GetExtraWords(expected, submitted);
+                var parts = new List<string> { $"Repeat accuracy: {matched}% of words matched." };
+                if (missingWords.Count > 0) parts.Add($"Missing: {string.Join(", ", missingWords)}.");
+                if (extraWords.Count > 0) parts.Add($"Extra words: {string.Join(", ", extraWords)}.");
+                parts.Add("Listen carefully and repeat more slowly.");
+                feedback = string.Join(" ", parts);
+            }
+
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: key,
+                StudentAnswer: submitted,
+                CorrectAnswer: expected,
+                AcceptedAnswers: [expected],
+                IsCorrect: isCorrect,
+                Score: score,
+                MaxScore: 1,
+                Feedback: feedback));
+        }
+
+        foreach (var (submittedId, submittedText) in submittedByItem)
+        {
+            if (usedKeys.Contains(submittedId)) continue;
+            itemResults.Add(new PatternEvaluationItemResult(
+                ItemKey: submittedId,
+                StudentAnswer: submittedText,
+                CorrectAnswer: null,
+                AcceptedAnswers: [],
+                IsCorrect: false,
+                Score: 0,
+                MaxScore: 0,
+                Feedback: $"Unexpected item \"{submittedId}\" — not part of this exercise."));
+        }
+
+        var percentage = PatternEvaluationResult.CalculatePercentage(totalScore, totalMax);
+        var passed = totalMax == 0 || percentage >= 60;
+        var correct = itemResults.Count(r => r.MaxScore > 0 && r.IsCorrect);
+        var total = items.Count;
+
+        string coachSummary;
+        if (total == 0)
+            coachSummary = "Activity completed.";
+        else if (correct == total)
+            coachSummary = "Excellent — great listening and speaking accuracy on all sentences!";
+        else if (correct == 0)
+            coachSummary = "Listen carefully to each sentence and try to repeat every word. Focus on rhythm and word order.";
+        else
+            coachSummary = $"You repeated {correct} of {total} sentences accurately. Review the highlighted items and listen again.";
+
+        return Task.FromResult(PatternEvaluationResult.Create(
+            score: totalScore,
+            maxScore: totalMax,
+            passed: passed,
+            completed: true,
+            itemResults: itemResults,
+            coachSummary: coachSummary));
+    }
+
+    private static List<string> GetMissingWords(string expected, string? submitted)
+    {
+        var expectedWords = TokenizeWords(expected);
+        var submittedSet = new HashSet<string>(TokenizeWords(submitted ?? string.Empty), StringComparer.Ordinal);
+        return expectedWords.Where(w => !submittedSet.Contains(w)).Distinct().ToList();
+    }
+
+    private static List<string> GetExtraWords(string expected, string? submitted)
+    {
+        var expectedSet = new HashSet<string>(TokenizeWords(expected), StringComparer.Ordinal);
+        var submittedWords = TokenizeWords(submitted ?? string.Empty);
+        return submittedWords.Where(w => !expectedSet.Contains(w)).Distinct().ToList();
+    }
 }
 
 /// <summary>
@@ -772,6 +912,36 @@ public sealed class ReadAloudSubmittedAnswer
 }
 
 public sealed class ReadAloudSubmittedItem
+{
+    public string? ItemId { get; set; }
+    public string? AnswerText { get; set; }
+}
+
+/// <summary>practiceContent.exerciseData shape for repeat_sentence.</summary>
+public sealed class RepeatSentenceContent
+{
+    public List<RepeatSentenceItem> Items { get; set; } = [];
+}
+
+public sealed class RepeatSentenceItem
+{
+    public string? Id { get; set; }
+    public string? Sentence { get; set; }
+    public string? AudioScript { get; set; }
+    public string? AudioUrl { get; set; }
+    public string? DisplayTitle { get; set; }
+    public string? Difficulty { get; set; }
+    public List<string>? FocusAreas { get; set; }
+    public string? Explanation { get; set; }
+}
+
+/// <summary>Submitted answer shape for repeat_sentence.</summary>
+public sealed class RepeatSentenceSubmittedAnswer
+{
+    public List<RepeatSentenceSubmittedItem> Items { get; set; } = [];
+}
+
+public sealed class RepeatSentenceSubmittedItem
 {
     public string? ItemId { get; set; }
     public string? AnswerText { get; set; }

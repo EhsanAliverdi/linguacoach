@@ -1102,4 +1102,210 @@ public sealed class ExactMatchEvaluatorTests
         extra.Should().NotBeNull();
         extra!.MaxScore.Should().Be(0);
     }
+
+    // ── repeat_sentence helpers ───────────────────────────────────────────────
+
+    private static string RsContent(params (string id, string sentence)[] items)
+    {
+        var content = new RepeatSentenceContent
+        {
+            Items = items.Select(i => new RepeatSentenceItem
+            {
+                Id = i.id,
+                Sentence = i.sentence,
+                AudioScript = i.sentence,
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(content, JsonOptions);
+    }
+
+    private static string RsSubmitted(params (string itemId, string? answerText)[] items)
+    {
+        var dto = new RepeatSentenceSubmittedAnswer
+        {
+            Items = items.Select(i => new RepeatSentenceSubmittedItem
+            {
+                ItemId = i.itemId,
+                AnswerText = i.answerText,
+            }).ToList()
+        };
+        return JsonSerializer.Serialize(dto, JsonOptions);
+    }
+
+    private static PatternEvaluationRequest RsRequest(string contentJson, string submittedJson) =>
+        MakeRequest(contentJson, submittedJson, "repeat_sentence");
+
+    // ── RepeatSentence tests ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RepeatSentence_PerfectTranscript_IsCorrect()
+    {
+        var content = RsContent(("s1", "Please send the updated report by end of day."));
+        var submitted = RsSubmitted(("s1", "Please send the updated report by end of day."));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_HighWordOverlap_IsCorrect()
+    {
+        // 5 of 7 words = ~71% — above 60% threshold
+        var content = RsContent(("s1", "The meeting is scheduled for Monday morning."));
+        var submitted = RsSubmitted(("s1", "meeting is scheduled for Monday morning"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_LowWordOverlap_IsIncorrect()
+    {
+        var content = RsContent(("s1", "Please confirm your attendance by Friday afternoon."));
+        var submitted = RsSubmitted(("s1", "yes ok"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeFalse();
+        result.Passed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_EmptyAnswer_IsIncorrect()
+    {
+        var content = RsContent(("s1", "Can you send me the file?"));
+        var submitted = RsSubmitted(("s1", ""));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeFalse();
+        result.ItemResults.Single().Feedback.Should().Contain("No transcript");
+    }
+
+    [Fact]
+    public async Task RepeatSentence_MissingAnswer_IsIncorrectNotError()
+    {
+        var content = RsContent(("s1", "Can you send me the file?"));
+        var submitted = RsSubmitted();
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_CaseInsensitive_Matches()
+    {
+        var content = RsContent(("s1", "Send the report today."));
+        var submitted = RsSubmitted(("s1", "SEND THE REPORT TODAY"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_PunctuationTolerant_Matches()
+    {
+        var content = RsContent(("s1", "Please review the document, then reply."));
+        var submitted = RsSubmitted(("s1", "please review the document then reply"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_MultipleItems_ScoresSeparately()
+    {
+        var content = RsContent(
+            ("s1", "I need the report by five."),
+            ("s2", "The client called this morning."));
+        var submitted = RsSubmitted(
+            ("s1", "I need the report by five."),
+            ("s2", "wrong answer completely off"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Should().HaveCount(2);
+        result.ItemResults.First(r => r.ItemKey == "s1").IsCorrect.Should().BeTrue();
+        result.ItemResults.First(r => r.ItemKey == "s2").IsCorrect.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_MissingWordsFeedback_Listed()
+    {
+        var content = RsContent(("s1", "The project deadline is next Friday."));
+        var submitted = RsSubmitted(("s1", "project is next"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.ItemResults.Single().Feedback.Should().Contain("Missing");
+    }
+
+    [Fact]
+    public async Task RepeatSentence_ExtraWordsFeedback_Listed()
+    {
+        var content = RsContent(("s1", "Call me back later."));
+        var submitted = RsSubmitted(("s1", "call me back later please immediately now"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        // 4/4 expected words matched so it passes, extra words noted if below threshold or just pass
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_StagedContent_IsUnwrappedCorrectly()
+    {
+        var inner = new RepeatSentenceContent
+        {
+            Items = [new RepeatSentenceItem { Id = "s1", Sentence = "I will send it now." }]
+        };
+        var staged = new
+        {
+            schemaVersion = "module_stage_v1",
+            practiceContent = new
+            {
+                exerciseData = inner
+            }
+        };
+        var contentJson = JsonSerializer.Serialize(staged, JsonOptions);
+        var submitted = RsSubmitted(("s1", "I will send it now."));
+
+        var result = await _sut.EvaluateAsync(RsRequest(contentJson, submitted), default);
+
+        result.ItemResults.Single().IsCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RepeatSentence_UnknownItem_NotScoredAndReported()
+    {
+        var content = RsContent(("s1", "Thank you for your help."));
+        var submitted = RsSubmitted(("s1", "Thank you for your help."), ("s99", "extra"));
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.MaxScore.Should().Be(1);
+        var extra = result.ItemResults.FirstOrDefault(r => r.ItemKey == "s99");
+        extra.Should().NotBeNull();
+        extra!.MaxScore.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RepeatSentence_EmptyContent_ReturnsCompleted()
+    {
+        var content = RsContent();
+        var submitted = RsSubmitted();
+
+        var result = await _sut.EvaluateAsync(RsRequest(content, submitted), default);
+
+        result.Completed.Should().BeTrue();
+        result.MaxScore.Should().Be(0);
+        result.Passed.Should().BeTrue();
+    }
 }

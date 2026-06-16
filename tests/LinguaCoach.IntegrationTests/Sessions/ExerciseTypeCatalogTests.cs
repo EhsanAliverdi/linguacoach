@@ -66,7 +66,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        Assert.DoesNotContain(eligible, e => e.Key == "repeat_sentence");
+        Assert.DoesNotContain(eligible, e => e.Key == "describe_image");
         Assert.Contains(eligible, e => e.Key == "email_reply");
     }
 
@@ -314,11 +314,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task RepeatSentence_IsNowRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "repeat_sentence");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "repeat_sentence");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
         {
-            "repeat_sentence", "describe_image", "respond_to_situation",
+            "describe_image", "respond_to_situation",
             "retell_lecture", "summarize_group_discussion",
         };
 
@@ -383,6 +395,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("highlight_incorrect_words", 2, 3, 4, 0, 0, 0)]
     [InlineData("write_from_dictation", 2, 3, 5, 0, 0, 0)]
     [InlineData("answer_short_question", 3, 5, 8, 0, 0, 0)]
+    [InlineData("repeat_sentence", 3, 5, 6, 0, 0, 0)]
     public async Task Seeder_SeedsCountFields(string key, int minI, int defI, int maxI, int minO, int defO, int maxO)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);

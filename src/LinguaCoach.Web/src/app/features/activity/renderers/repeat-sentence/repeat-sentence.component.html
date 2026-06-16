@@ -1,0 +1,75 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="repeat-sentence-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  @for (item of content.items; track item.id; let i = $index) {
+    <div class="sp-card" style="padding:16px" [attr.data-testid]="'rs-item-' + item.id">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">
+        {{ item.displayTitle ?? ('Sentence ' + (i + 1)) }}
+      </p>
+
+      <!-- Sentence prompt (audioScript fallback when audioUrl is not available) -->
+      <div style="background:var(--sp-surface-alt,#f5f5f5);border-radius:8px;padding:14px 16px;margin-bottom:12px"
+           [attr.data-testid]="'rs-sentence-' + item.id">
+        <p style="font-size:15px;font-weight:600;color:var(--sp-text);line-height:1.7;margin:0">
+          {{ sentenceOrFallback(item) }}
+        </p>
+        @if (!item.audioUrl && (item.audioScript || item.sentence)) {
+          <p style="font-size:11px;color:var(--sp-text-secondary);margin:6px 0 0">
+            Audio not available — read the sentence above, then repeat it aloud.
+          </p>
+        }
+      </div>
+
+      @if (item.focusAreas && item.focusAreas.length > 0) {
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+          @for (area of item.focusAreas; track area) {
+            <span style="font-size:11px;font-weight:700;background:var(--sp-speaking-light,#f0eaff);color:var(--sp-speaking);border-radius:4px;padding:2px 8px">
+              {{ area }}
+            </span>
+          }
+        </div>
+      }
+
+      @if (item.explanation) {
+        <p style="font-size:12px;color:var(--sp-text-secondary);margin-bottom:10px">
+          <strong>Tip:</strong> {{ item.explanation }}
+        </p>
+      }
+
+      <label [attr.for]="'rs-input-' + item.id"
+             style="font-size:12px;font-weight:700;color:var(--sp-text-secondary);display:block;margin-bottom:6px">
+        Type what you repeated
+      </label>
+      <textarea
+        [id]="'rs-input-' + item.id"
+        [disabled]="disabled"
+        [ngModel]="valueFor(item.id)"
+        (ngModelChange)="onInput(item.id, $event)"
+        placeholder="Type the sentence as you repeated it…"
+        [attr.data-testid]="'rs-input-' + item.id"
+        class="sp-input"
+        rows="2"
+        style="width:100%;resize:vertical"></textarea>
+    </div>
+  }
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="repeat-sentence-submit-btn">
+    @if (disabled) { Checking… } @else { Submit }
+  </button>
+</div>
