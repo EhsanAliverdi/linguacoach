@@ -90,7 +90,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["sourceLanguageName"] = context.SourceLanguageName,
             ["targetLanguageName"] = context.TargetLanguageName,
             ["recentMistakes"] = context.RecentMistakesSummary ?? "none",
-            ["topicHint"] = context.TopicHint ?? "workplace communication",
+            ["topicHint"] = context.TopicHint ?? "everyday real-life communication",
         };
 
         // Phase 8N: configurable per-format item/option counts.

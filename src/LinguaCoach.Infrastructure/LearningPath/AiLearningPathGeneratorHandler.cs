@@ -64,7 +64,7 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
         var cefrLevel = profile.CefrLevel ?? "B1";
         var sourceLang = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian";
         var targetLang = profile.LanguagePair?.TargetLanguage?.Name ?? "English";
-        var skillFocus = profile.SkillFocus?.ToString() ?? "workplace communication";
+        var skillFocus = profile.SkillFocus?.ToString() ?? "general communication";
 
         Domain.Entities.LearningPath path;
         List<LearningModule> modules;

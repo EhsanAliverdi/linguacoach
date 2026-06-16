@@ -36,12 +36,12 @@ import { RouterLink } from '@angular/router';
 
       <!-- Left: headline + CTA -->
       <div>
-        <p class="sp-eyebrow" style="margin-bottom:12px">Workplace communication practice</p>
+        <p class="sp-eyebrow" style="margin-bottom:12px">Real-life English communication practice</p>
         <h1 style="font-size:clamp(28px,4.5vw,46px);font-weight:800;color:var(--sp-ink);letter-spacing:-.03em;line-height:1.12;margin:0">
-          Practise the workplace message<br>before you send it.
+          Practise the conversation<br>before you need it.
         </h1>
         <p style="margin-top:18px;font-size:16px;font-weight:500;color:var(--sp-text);line-height:1.65;max-width:480px">
-          AI coaching for real workplace messages, personalised learning paths, and professional communication — built for immigrant professionals.
+          AI coaching for real-life messages and conversations, personalised learning paths, and practical English — built for people settling into a new life.
         </p>
         <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
           <a routerLink="/login" class="sp-button-primary">Sign in to SpeakPath</a>

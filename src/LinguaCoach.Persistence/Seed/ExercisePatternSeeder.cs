@@ -34,7 +34,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 3,
             aiGeneratePromptKey: "activity_generate_phrase_match",
             aiEvaluatePromptKey: "activity_evaluate_phrase_match",
-            teachingPurpose: "Introduce or review key workplace phrases before deeper use",
+            teachingPurpose: "Introduce or review key phrases before deeper use",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -50,7 +50,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 4,
             aiGeneratePromptKey: "activity_generate_gap_fill_workplace_phrase",
             aiEvaluatePromptKey: "activity_evaluate_gap_fill_workplace_phrase",
-            teachingPurpose: "Practise target phrases in a realistic workplace sentence context",
+            teachingPurpose: "Practise target phrases in a realistic sentence context",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -66,7 +66,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 4,
             aiGeneratePromptKey: "activity_generate_listen_and_answer",
             aiEvaluatePromptKey: "activity_evaluate_listen_and_answer",
-            teachingPurpose: "Check understanding of a workplace audio message",
+            teachingPurpose: "Check understanding of a spoken audio message",
             requiresAudio: true,
             workplaceContext: true),
 
@@ -82,7 +82,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 4,
             aiGeneratePromptKey: "activity_generate_listen_and_gap_fill",
             aiEvaluatePromptKey: "activity_evaluate_listen_and_gap_fill",
-            teachingPurpose: "Notice workplace phrases from audio; train active listening",
+            teachingPurpose: "Notice key phrases from audio; train active listening",
             requiresAudio: true,
             workplaceContext: true),
 
@@ -130,7 +130,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 5,
             aiGeneratePromptKey: "activity_generate_spoken_response_from_prompt",
             aiEvaluatePromptKey: "activity_evaluate_spoken_response_from_prompt",
-            teachingPurpose: "Practise clear, organised spoken workplace response",
+            teachingPurpose: "Practise clear, organised spoken response",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -146,7 +146,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 7,
             aiGeneratePromptKey: "activity_generate_open_writing_task",
             aiEvaluatePromptKey: "activity_evaluate_open_writing_task",
-            teachingPurpose: "Free-form workplace writing with open-ended AI coaching feedback",
+            teachingPurpose: "Free-form writing with open-ended AI coaching feedback",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -162,7 +162,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 5,
             aiGeneratePromptKey: "activity_generate_speaking_roleplay_turn",
             aiEvaluatePromptKey: "activity_evaluate_speaking_roleplay_turn",
-            teachingPurpose: "Practise a spoken workplace roleplay turn with recorded audio response",
+            teachingPurpose: "Practise a spoken roleplay turn with recorded audio response",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -434,7 +434,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 6,
             aiGeneratePromptKey: "activity_generate_answer_short_question",
             aiEvaluatePromptKey: "activity_evaluate_answer_short_question",
-            teachingPurpose: "Practise answering short spoken workplace questions briefly and clearly",
+            teachingPurpose: "Practise answering short spoken questions briefly and clearly",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -450,7 +450,7 @@ public static class ExercisePatternSeeder
             estimatedMinutes: 5,
             aiGeneratePromptKey: "activity_generate_read_aloud",
             aiEvaluatePromptKey: "activity_evaluate_read_aloud",
-            teachingPurpose: "Practise reading workplace texts aloud with clarity and natural pacing",
+            teachingPurpose: "Practise reading texts aloud with clarity and natural pacing",
             requiresAudio: false,
             workplaceContext: true),
 
@@ -502,6 +502,11 @@ public static class ExercisePatternSeeder
             requiresAudio: false,
             workplaceContext: false),
     ];
+
+    /// <summary>
+    /// Exposes definitions for testing. Same data as CreateDefinitions — no side effects.
+    /// </summary>
+    public static IReadOnlyList<ExercisePatternDefinition> CreateDefinitionsPublic() => CreateDefinitions();
 
     public static async Task SeedAsync(
         LinguaCoachDbContext db,

@@ -20,10 +20,10 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
     private static readonly Dictionary<string, string> SkillLabels = new(StringComparer.OrdinalIgnoreCase)
     {
         ["grammar_accuracy"] = "Grammar accuracy",
-        ["formal_tone"] = "Formal workplace tone",
+        ["formal_tone"] = "Formal tone",
         ["sentence_clarity"] = "Sentence clarity",
         ["message_structure"] = "Message structure",
-        ["workplace_vocabulary"] = "Workplace vocabulary",
+        ["workplace_vocabulary"] = "Useful vocabulary",
         ["concise_writing"] = "Concise writing",
         ["softening_language"] = "Softening language",
         ["summarising_information"] = "Summarising information",

@@ -10,11 +10,11 @@ public static class DefaultPathFactory
 {
     private static readonly (string Title, string Description)[] Modules =
     [
-        ("Professional email writing",        "Practice writing clear, polite workplace emails for common situations like follow-ups, requests, and status updates."),
-        ("Meetings and spoken communication", "Build confidence for participating in workplace meetings, asking questions, and summarising action items."),
-        ("Document control communication",   "Practice the specific language used in document control: transmittals, revision requests, approval follow-ups, and register updates."),
-        ("Formal requests and approvals",     "Learn how to write and respond to formal requests, approvals, and escalations in a professional tone."),
-        ("Workplace relationship building",   "Practice the everyday communication that builds professional relationships: greetings, small talk, and courteous follow-through."),
+        ("Everyday communication essentials",  "Practice clear, polite English for common real-life situations: requests, follow-ups, and giving information."),
+        ("Spoken clarity and confidence",      "Build confidence speaking English in conversations — asking questions, responding naturally, and summarising what you heard."),
+        ("Reading and understanding texts",    "Practice reading real-life texts like notices, messages, and short documents, and answering questions about them."),
+        ("Writing for real-life situations",   "Learn how to write short messages, requests, and updates clearly and with the right tone for your audience."),
+        ("Building communication fluency",     "Practice the everyday English that builds relationships and helps you communicate comfortably in any context."),
     ];
 
     public static global::LinguaCoach.Domain.Entities.LearningPath Create(
@@ -22,7 +22,7 @@ public static class DefaultPathFactory
         string careerContext,
         string cefrLevel)
     {
-        var title = $"Workplace English for {careerContext} — {cefrLevel}";
+        var title = $"English for {careerContext} — {cefrLevel}";
         var path = new global::LinguaCoach.Domain.Entities.LearningPath(
             studentProfileId,
             title,

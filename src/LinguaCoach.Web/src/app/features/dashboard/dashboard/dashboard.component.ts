@@ -28,9 +28,9 @@ export class DashboardComponent implements OnInit {
   sessionLoading = signal(false);
 
   readonly howItWorks = [
-    { n: 1, text: 'AI generates a realistic workplace scenario for your career and level.' },
-    { n: 2, text: 'You write your response in a safe, private space.' },
-    { n: 3, text: 'Get coaching feedback on grammar, tone, and professional phrasing.' },
+    { n: 1, text: 'AI generates a realistic scenario for your goals and level.' },
+    { n: 2, text: 'You write or speak your response in a safe, private space.' },
+    { n: 3, text: 'Get coaching feedback on grammar, tone, and natural phrasing.' },
   ];
 
   pathProgress = computed(() => {

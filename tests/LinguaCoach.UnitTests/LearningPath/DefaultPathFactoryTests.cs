@@ -57,4 +57,49 @@ public sealed class DefaultPathFactoryTests
 
         Assert.All(modules, m => Assert.Equal(path.Id, m.LearningPathId));
     }
+
+    // ── Phase 9K: context-flexibility tests ──────────────────────────────────
+
+    [Fact]
+    public void Create_PathTitle_DoesNotForceWorkplacePrefix()
+    {
+        // The fallback path title must NOT start with "Workplace English" unconditionally.
+        // It should include the careerContext but not hardcode "Workplace".
+        var path = DefaultPathFactory.Create(ProfileId, "General learner", "A2");
+
+        Assert.DoesNotContain("Workplace English for", path.Title);
+    }
+
+    [Fact]
+    public void Create_PathTitle_IncludesContextAndLevel()
+    {
+        var path = DefaultPathFactory.Create(ProfileId, "General learner", "A2");
+
+        Assert.Contains("General learner", path.Title);
+        Assert.Contains("A2", path.Title);
+    }
+
+    [Fact]
+    public void CreateModules_DefaultModules_AreNotWorkplaceOnly()
+    {
+        // Phase 9K: fallback modules must use general real-life communication topics,
+        // not workplace-specific titles like "Professional email writing".
+        var path = DefaultPathFactory.Create(ProfileId, "New arrival", "A2");
+        var modules = DefaultPathFactory.CreateModules(path.Id);
+
+        // None of the default module titles should contain the word "workplace"
+        Assert.All(modules, m =>
+            Assert.DoesNotContain("workplace", m.Title, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void CreateModules_WorkplaceContextStillSupported()
+    {
+        // When careerContext is workplace-specific, the path title still includes it.
+        // Workplace is one valid context — not the forced default.
+        var path = DefaultPathFactory.Create(ProfileId, "Document Controller", "B1");
+
+        Assert.Contains("Document Controller", path.Title);
+        Assert.Contains("B1", path.Title);
+    }
 }

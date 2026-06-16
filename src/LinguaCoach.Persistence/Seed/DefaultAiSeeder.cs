@@ -476,15 +476,15 @@ Design exactly {{moduleCount}} progressive learning modules for this student. Re
 
 Rules:
 - pathTitle must include the career context and CEFR level.
-- Each module must address a distinct workplace communication skill relevant to {{careerContext}}.
+- Each module must address a distinct real-life communication skill relevant to {{careerContext}} and {{skillFocus}}.
 - Modules must progress from foundational to more advanced communication.
-- Descriptions must be specific to {{careerContext}} work, not generic.
+- Descriptions must be specific to {{careerContext}}, not generic. If the context is a workplace role, use workplace situations. If the context is daily life, travel, study, or settlement, use those situations.
 - Return exactly {{moduleCount}} modules.
 - Do not include any text outside the JSON object.
 """;
 
     private const string StudentMemoryUpdateContent = """
-You update a compact learning memory for SpeakPath, a workplace English coach.
+You update a compact learning memory for SpeakPath, an English language coach.
 
 Input context:
 {{memoryUpdateContext}}
@@ -511,14 +511,14 @@ Rules:
 - Keep every array small: 0-3 items.
 - Do not include markdown.
 - Do not quote or store the student's full submitted text.
-- Focus on workplace communication coaching, not generic grammar.
+- Focus on real communication coaching relevant to the student's context, not generic grammar.
 - Main feedback is handled elsewhere; this is only compact memory.
 """;
 
     private const string VocabularyExtractFromAttemptContent = """
-You are a vocabulary coach for SpeakPath, a workplace English learning platform.
+You are a vocabulary coach for SpeakPath, an English learning platform.
 
-Extract 0-5 useful vocabulary items from this writing attempt to help the student improve their workplace English.
+Extract 0-5 useful vocabulary items from this writing attempt to help the student improve their English for real-life communication.
 
 Context:
 {{extractionContext}}
@@ -529,9 +529,9 @@ Return ONLY valid JSON (no markdown):
   "items": [
     {
       "term": "<the word or phrase to learn, lowercased>",
-      "suggestedPhrase": "<a complete workplace sentence showing this phrase in use>",
-      "meaningOrExplanation": "<1-2 sentences: what this means and why it matters in workplace English>",
-      "exampleSentence": "<another example sentence in a different workplace context>",
+      "suggestedPhrase": "<a complete real-life sentence showing this phrase in use>",
+      "meaningOrExplanation": "<1-2 sentences: what this means and why it matters in everyday English>",
+      "exampleSentence": "<another example sentence in a different real-life context>",
       "category": "<one of: workplace_phrase | polite_request | grammar_pattern | connector | tone_softener | project_vocabulary | common_mistake | useful_expression>",
       "reason": "<one sentence: why this item is useful for this student based on their submission>"
     }
@@ -552,7 +552,7 @@ Rules:
 """;
 
     private const string LearningPathGenerateAdaptiveContent = """
-You are designing the next 3-5 workplace writing modules for SpeakPath.
+You are designing the next 3-5 learning modules for SpeakPath.
 
 Adaptive context:
 {{adaptiveGenerationContext}}
@@ -565,7 +565,7 @@ Return ONLY valid JSON:
     {
       "order": 1,
       "title": "<3-7 word module title>",
-      "description": "<1-2 sentences describing the workplace practice>",
+      "description": "<1-2 sentences describing what the student will practise>",
       "focusSkill": "<one allowed skill key or short skill label>",
       "reason": "<why this is recommended from the memory>",
       "difficulty": "B1+",
@@ -586,7 +586,7 @@ Return ONLY valid JSON:
 Rules:
 - Generate 3-5 modules only.
 - Do not repeat an existing scenarioType + audience + communicationMode.
-- Reuse weak skills through new workplace situations.
+- Reuse weak skills through new real-life situations relevant to the student's context.
 - Progress difficulty gradually.
 - Keep modules relevant to the student's career context.
 - Do not generate a generic full 10-module path.

@@ -32,12 +32,12 @@ public sealed class PlacementService :
     private static readonly Dictionary<string, string> SkillLabels = new(StringComparer.OrdinalIgnoreCase)
     {
         ["grammar"] = "Grammar accuracy",
-        ["vocabulary"] = "Workplace vocabulary",
+        ["vocabulary"] = "Vocabulary",
         ["listening"] = "Listening comprehension",
         ["reading"] = "Reading comprehension",
         ["writing"] = "Writing",
         ["speaking"] = "Speaking",
-        ["workplaceTone"] = "Formal workplace tone",
+        ["workplaceTone"] = "Formal tone",
     };
 
     private readonly LinguaCoachDbContext _db;

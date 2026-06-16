@@ -13,7 +13,7 @@ import { RouterOutlet } from '@angular/router';
             <span class="sp-brand-mark">S</span>
             <span>SpeakPath</span>
           </div>
-          <p class="mt-3 text-sm leading-6 text-slate-600">Set up a workplace practice path that matches your role.</p>
+          <p class="mt-3 text-sm leading-6 text-slate-600">Set up a personalised practice path that matches your goals.</p>
         </div>
         <router-outlet />
       </div>
