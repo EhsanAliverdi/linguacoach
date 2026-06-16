@@ -41,6 +41,7 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         "answer_short_question",
         "read_aloud",
         "repeat_sentence",
+        "respond_to_situation",
     };
 
     private const string GenerateWritingPromptKey = "activity_generate_writing";

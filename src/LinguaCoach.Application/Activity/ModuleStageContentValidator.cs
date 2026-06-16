@@ -100,6 +100,7 @@ public static class ModuleStageContentValidator
         ["answer_short_question"]                = ["items"],
         ["read_aloud"]                           = ["items"],
         ["repeat_sentence"]                      = ["items"],
+        ["respond_to_situation"]                 = ["items"],
     };
 
     // Per-item field requirements for item-array formats: pattern key => required item fields.
@@ -109,6 +110,7 @@ public static class ModuleStageContentValidator
         ["answer_short_question"]   = ["id", "question"],
         ["read_aloud"]              = ["id", "text"],
         ["repeat_sentence"]         = ["id", "sentence"],
+        ["respond_to_situation"]    = ["id", "situation"],
     };
 
     public static ValidationResult Validate(
@@ -198,6 +200,7 @@ public static class ModuleStageContentValidator
         ["answer_short_question"]          = "items",
         ["read_aloud"]                     = "items",
         ["repeat_sentence"]                = "items",
+        ["respond_to_situation"]           = "items",
     };
 
     private static void ValidateItemFields(JsonElement exerciseData, string[] requiredItemFields, List<string> errors)

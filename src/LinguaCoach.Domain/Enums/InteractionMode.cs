@@ -31,4 +31,5 @@ public enum InteractionMode
     AnswerShortQuestion        = 21, // Multiple short spoken questions — student types answers for each, speaking + listening skills
     ReadAloud                  = 22, // Read a short workplace text aloud — student types transcript, speaking + pronunciation skills
     RepeatSentence             = 23, // Hear or read a sentence and repeat it — student types transcript, speaking + listening skills
+    RespondToSituation         = 24, // Read or hear a real-life situation and speak/type a response — speaking + communication skills
 }

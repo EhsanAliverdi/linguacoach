@@ -56,6 +56,8 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateReadAloudKey                        = "activity_evaluate_read_aloud";
     public const string ActivityGenerateRepeatSentenceKey                   = "activity_generate_repeat_sentence";
     public const string ActivityEvaluateRepeatSentenceKey                   = "activity_evaluate_repeat_sentence";
+    public const string ActivityGenerateRespondToSituationKey               = "activity_generate_respond_to_situation";
+    public const string ActivityEvaluateRespondToSituationKey               = "activity_evaluate_respond_to_situation";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -3020,6 +3022,179 @@ Return ONLY valid JSON in this exact format:
 }
 """;
 
+    private const string ActivityGenerateRespondToSituationContent = """
+You are an expert English language teacher creating a respond-to-situation speaking exercise for a {{sourceLanguageName}}-speaking learner of {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read a short real-life situation and speak or type an appropriate response. This practises real-world communication, social appropriateness, and spoken fluency. Content should suit the student's learning goals — which may include day-to-day English, travel, social conversation, academic English, job interviews, workplace English, or other goals. Do not assume a workplace-only context unless {{careerContext}} indicates it.
+
+Generate exactly 2 situations (DefaultItemsPerPractice=2, max=2). Each situation should be realistic and clear.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what speaking and communication skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["communication", "listening"],
+  "exerciseType": "respond_to_situation",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to respond naturally in everyday situations'>",
+    "explanation": "<2-4 sentences: general strategy for responding clearly and appropriately in spoken English. No reference to the actual situations below.>",
+    "keyPoints": [
+      "<e.g. 'Acknowledge what the other person said before giving your response'>",
+      "<e.g. 'Keep your response relevant and brief — 1-3 sentences is usually enough'>",
+      "<e.g. 'Match your tone to the situation — formal for professional, relaxed for social'>",
+      "<e.g. 'If you are unsure, it is fine to ask a polite clarifying question'>"
+    ],
+    "examples": [
+      { "phrase": "<example of a polite, clear response opener>", "meaning": "<what makes it natural>", "note": "<when to use it>" }
+    ],
+    "strategy": "<one sentence: how to approach responding to real-life situations in English>",
+    "commonMistakes": [
+      "responding too briefly without acknowledging the situation",
+      "using overly formal or stiff language in casual contexts",
+      "ignoring the tone or relationship implied in the situation",
+      "going off-topic instead of addressing what was asked"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about responding naturally in English, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read each situation below, then speak or type an appropriate response in English.",
+    "scenario": "<1 sentence describing the general context for these situations — may be everyday, travel, social, academic, interview, or workplace>",
+    "task": "Respond to each situation as naturally and clearly as you can.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "sit1",
+          "situation": "<2-4 sentences describing a real-life situation the student needs to respond to>",
+          "contextLabel": "<e.g. 'Daily life', 'Travel', 'Study', 'Workplace', 'Social', 'Interview'>",
+          "role": "<the student's role in the situation, e.g. 'customer', 'student', 'friend', 'job applicant'>",
+          "audience": "<who the student is speaking to, e.g. 'shop assistant', 'professor', 'colleague', 'interviewer'>",
+          "prompt": "<optional: a short direct question or cue to respond to, e.g. 'What do you say?'>",
+          "audioScript": null,
+          "audioUrl": null,
+          "expectedResponseGuidance": "<2-4 sentences describing what a good response should cover — NOT a single correct answer>",
+          "goodResponseExamples": [
+            "<one example of a natural, appropriate response>",
+            "<one alternative phrasing or approach>"
+          ],
+          "focusAreas": ["<e.g. 'politeness'>", "<e.g. 'clarity'>", "<e.g. 'relevance'>"],
+          "explanation": "<one sentence coaching tip for this specific situation>"
+        },
+        {
+          "id": "sit2",
+          "situation": "<2-4 sentences describing a different real-life situation>",
+          "contextLabel": "<context label>",
+          "role": "<student role>",
+          "audience": "<audience>",
+          "prompt": "<optional prompt>",
+          "audioScript": null,
+          "audioUrl": null,
+          "expectedResponseGuidance": "<2-4 sentences describing what a good response should cover>",
+          "goodResponseExamples": [
+            "<example response>",
+            "<alternative>"
+          ],
+          "focusAreas": ["<focus area>", "<focus area>"],
+          "explanation": "<one sentence tip>"
+        }
+      ],
+      "successChecklist": [
+        "The response is relevant to the situation described.",
+        "The tone matches the context (formal/informal as appropriate).",
+        "The response is clear and complete — not too brief or off-topic."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Relevance to the situation",
+      "Clarity and completeness",
+      "Natural phrasing",
+      "Tone and politeness",
+      "Grammar (secondary)"
+    ],
+    "rubric": [
+      { "criterion": "Relevance", "description": "The response directly addresses the situation and what is asked." },
+      { "criterion": "Clarity", "description": "The response is easy to understand and gets the point across." },
+      { "criterion": "Natural phrasing", "description": "The language sounds natural and appropriate for the context." },
+      { "criterion": "Tone", "description": "The tone matches the relationship and situation (formal/informal)." }
+    ],
+    "feedbackFocus": "Help the student respond naturally, relevantly, and appropriately to real-life situations.",
+    "successCriteria": [
+      "The response addresses the situation directly.",
+      "The tone is appropriate for the context.",
+      "The language is clear and natural."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual situations, expected answers, or scoring rubric details. It teaches general responding strategy only.
+- Each item must have id, situation, contextLabel, role, audience, audioScript (null), audioUrl (null), expectedResponseGuidance, goodResponseExamples, focusAreas, and explanation. prompt is optional.
+- Situations must be realistic, brief (2-4 sentences), and appropriate for {{cefrLevel}}.
+- Situations should reflect the learner's context — not hardcoded as workplace-only unless {{careerContext}} indicates a workplace focus.
+- Vary the context labels across the 2 items (e.g. one daily life, one travel; or one social, one interview).
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateRespondToSituationContent = """
+You are a warm, encouraging English speaking coach evaluating a student's respond-to-situation exercise.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+
+Activity content (situations and guidance):
+{{activityContent}}
+
+Student's submitted responses:
+{{submittedAnswer}}
+
+For each item, evaluate the student's response against the situation and expectedResponseGuidance. Assess relevance, clarity, natural phrasing, and tone. Do NOT require an exact match — the student's response is open-ended.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentences of overall feedback on how well the student responded to the situations>",
+  "strengths": [
+    "<one specific strength observed across the responses>",
+    "<another strength>"
+  ],
+  "improvements": [
+    "<one specific area for improvement>",
+    "<another if relevant>"
+  ],
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true if the response is relevant and appropriate, false if clearly off-topic or empty>,
+      "score": <0-100 for this item>,
+      "studentResponse": "<what the student submitted>",
+      "feedback": "<2-3 sentences of item-level feedback covering relevance, clarity, tone, and natural phrasing>",
+      "betterExample": "<one example of a natural, improved response if useful, or null>"
+    }
+  ],
+  "suggestedImprovedResponse": "<one example of a strong overall response approach if needed, or null>",
+  "miniLesson": "<one actionable tip for improving spoken responses to real-life situations>",
+  "nextImprovementStep": "<one specific thing to practise next>"
+}
+
+Rules:
+- Do not require exact match. Assess whether the response is appropriate, relevant, and natural.
+- Award full or near-full score if the response is clearly appropriate, even if phrasing differs from the example.
+- If the student left a response blank or submitted only whitespace, isCorrect=false, score=0, feedback should note the response was not provided.
+- Do not penalise minor grammar errors unless they affect understanding.
+- Do not claim pronunciation or fluency scoring — this evaluates only the typed text.
+- Keep feedback warm, specific, and actionable.
+""";
+
     private const string ActivityEvaluateReadAloudContent = """
 You are a warm, professional English speaking coach evaluating a student's read-aloud exercise.
 
@@ -3932,6 +4107,12 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateRepeatSentenceKey, ActivityEvaluateRepeatSentenceContent,
             maxInputTokens: 1800, maxOutputTokens: 1000, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateRespondToSituationKey, ActivityGenerateRespondToSituationContent,
+            maxInputTokens: 1400, maxOutputTokens: 2400, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateRespondToSituationKey, ActivityEvaluateRespondToSituationContent,
+            maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,
             maxInputTokens: 1200, maxOutputTokens: 1800, ct);

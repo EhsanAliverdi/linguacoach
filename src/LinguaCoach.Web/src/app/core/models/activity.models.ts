@@ -32,7 +32,8 @@ export type InteractionMode =
   | 'summarizeSpokenText'
   | 'answerShortQuestion'
   | 'readAloud'
-  | 'repeatSentence';
+  | 'repeatSentence'
+  | 'respondToSituation';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

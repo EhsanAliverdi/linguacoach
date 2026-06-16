@@ -140,6 +140,14 @@ const readyRepeatSentence: any = {
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
+const readyRespondToSituation: any = {
+  key: 'respond_to_situation', displayName: 'Respond to Situation', primarySkill: 'speaking', secondarySkills: ['communication', 'listening'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'respond_to_situation', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_respond_to_situation',
+  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 2,
+};
+
 const plannedFormat: any = {
   key: 'describe_image', displayName: 'Describe Image', primarySkill: 'speaking', secondarySkills: [],
   category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
@@ -154,6 +162,7 @@ const ALL_READY = [
   readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti,
   readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary,
   readyHighlightIncorrectWords, readyAnswerShortQuestion, readyReadAloud, readyRepeatSentence,
+  readyRespondToSituation,
 ];
 
 describe('PracticeGymComponent', () => {
@@ -283,6 +292,35 @@ describe('PracticeGymComponent', () => {
     expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'speaking', exerciseType: 'answer_short_question' });
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'act-asq-1', returnTo: '/practice' },
+    });
+  });
+
+  it('respond_to_situation is ready and available in Practice Gym', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-respond_to_situation"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('shows item count for respond_to_situation', () => {
+    const countEl = fixture.nativeElement.querySelector('[data-testid="format-count-respond_to_situation"]');
+    expect(countEl).toBeTruthy();
+    expect(countEl.textContent).toContain('1');
+  });
+
+  it('clicking respond_to_situation navigates to /activity with the returned activityId', () => {
+    activityService.getPracticeGymNext.and.returnValue(of({
+      hasActivity: true, activityId: 'act-rts-1', exerciseType: 'respond_to_situation',
+      primarySkill: 'speaking', source: 'onDemandFallback', poolItemId: null, reason: null,
+    }));
+
+    const card = component.skillGroups()
+      .flatMap(g => g.cards)
+      .find(c => c.key === 'respond_to_situation')!;
+    component.startFormat(card);
+
+    expect(activityService.getPracticeGymNext).toHaveBeenCalledWith({ skill: 'speaking', exerciseType: 'respond_to_situation' });
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'act-rts-1', returnTo: '/practice' },
     });
   });
 

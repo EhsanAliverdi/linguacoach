@@ -469,6 +469,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening to and accurately repeating short sentences",
             requiresAudio: false,
             workplaceContext: false),
+
+        new(
+            key: ExercisePatternKey.RespondToSituation,
+            name: "Respond to Situation",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """["Communication", "Listening"]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.RespondToSituation,
+            markingMode: MarkingMode.AiOpenEnded,
+            estimatedMinutes: 6,
+            aiGeneratePromptKey: "activity_generate_respond_to_situation",
+            aiEvaluatePromptKey: "activity_evaluate_respond_to_situation",
+            teachingPurpose: "Practise responding naturally and appropriately to real-life spoken situations",
+            requiresAudio: false,
+            workplaceContext: false),
     ];
 
     public static async Task SeedAsync(

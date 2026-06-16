@@ -326,11 +326,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task RespondToSituation_IsNowRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "respond_to_situation");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "respond_to_situation");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
         {
-            "describe_image", "respond_to_situation",
+            "describe_image",
             "retell_lecture", "summarize_group_discussion",
         };
 
@@ -396,6 +408,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("write_from_dictation", 2, 3, 5, 0, 0, 0)]
     [InlineData("answer_short_question", 3, 5, 8, 0, 0, 0)]
     [InlineData("repeat_sentence", 3, 5, 6, 0, 0, 0)]
+    [InlineData("respond_to_situation", 1, 1, 2, 0, 0, 0)]
     public async Task Seeder_SeedsCountFields(string key, int minI, int defI, int maxI, int minO, int defO, int maxO)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);

@@ -23,6 +23,7 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
     {
         ExercisePatternKey.OpenWritingTask      => "activity_evaluate_open_writing_task",
         ExercisePatternKey.SpeakingRoleplayTurn => "activity_evaluate_speaking_roleplay_turn",
+        ExercisePatternKey.RespondToSituation   => "activity_evaluate_respond_to_situation",
         _                                       => SpokenResponsePromptKey, // spoken_response_from_prompt fallback
     };
 

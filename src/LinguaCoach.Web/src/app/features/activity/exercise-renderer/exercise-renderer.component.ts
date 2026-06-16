@@ -22,6 +22,7 @@ import { SummarizeSpokenTextComponent, SummarizeSpokenTextContent } from '../ren
 import { AnswerShortQuestionComponent, AnswerShortQuestionContent } from '../renderers/answer-short-question/answer-short-question.component';
 import { ReadAloudComponent, ReadAloudContent } from '../renderers/read-aloud/read-aloud.component';
 import { RepeatSentenceComponent, RepeatSentenceContent } from '../renderers/repeat-sentence/repeat-sentence.component';
+import { RespondToSituationComponent, RespondToSituationContent } from '../renderers/respond-to-situation/respond-to-situation.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -43,7 +44,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'summarizeSpokenText'; summaryText: string }
   | { kind: 'answerShortQuestion'; items: { itemId: string; answerText: string }[] }
   | { kind: 'readAloud'; items: { itemId: string; answerText: string }[] }
-  | { kind: 'repeatSentence'; items: { itemId: string; answerText: string }[] };
+  | { kind: 'repeatSentence'; items: { itemId: string; answerText: string }[] }
+  | { kind: 'respondToSituation'; items: { itemId: string; answerText: string }[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -71,6 +73,7 @@ export type ExerciseAnswerPayload =
     AnswerShortQuestionComponent,
     ReadAloudComponent,
     RepeatSentenceComponent,
+    RespondToSituationComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -619,6 +622,38 @@ export class ExerciseRendererComponent {
 
   onRepeatSentenceSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
     this.answerSubmitted.emit({ kind: 'repeatSentence', items: answer.items });
+  }
+
+  get respondToSituationContent(): RespondToSituationContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const items = this.arrayValue(ed['items'] ?? raw['items']).map((item, index) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? `sit${index + 1}`,
+        situation: this.stringValue(obj['situation']) ?? '',
+        contextLabel: this.stringValue(obj['contextLabel']),
+        role: this.stringValue(obj['role']),
+        audience: this.stringValue(obj['audience']),
+        prompt: this.stringValue(obj['prompt']),
+        audioUrl: this.stringValue(obj['audioUrl']),
+        audioScript: this.stringValue(obj['audioScript']),
+        focusAreas: this.arrayValue(obj['focusAreas']).map(f => this.stringValue(f) ?? '').filter(f => f),
+        explanation: this.stringValue(obj['explanation']),
+      };
+    });
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      items,
+    };
+  }
+
+  onRespondToSituationSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
+    this.answerSubmitted.emit({ kind: 'respondToSituation', items: answer.items });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

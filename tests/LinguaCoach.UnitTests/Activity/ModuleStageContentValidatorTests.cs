@@ -2642,4 +2642,95 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    // ── respond_to_situation ───────────────────────────────────────────────────
+
+    private static string RespondToSituationJson(int itemCount = 2) => $$"""
+    {
+      "schemaVersion": "module_stage_v1",
+      "learnContent": { "teachingTitle": "How to respond", "explanation": "General strategy." },
+      "practiceContent": {
+        "exerciseData": {
+          "items": [
+            {{string.Join(",\n            ", Enumerable.Range(1, itemCount).Select(i => $$"""{"id":"sit{{i}}","situation":"You arrive at a hotel and the room is not ready. What do you say?"}"""))}}
+          ]
+        }
+      },
+      "feedbackPlan": { "feedbackFocus": "relevance and tone" }
+    }
+    """;
+
+    [Fact]
+    public void Validate_RespondToSituation_ValidContent_Passes()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(RespondToSituationJson()), ActivityType.SpeakingRolePlay, "respond_to_situation");
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_RespondToSituation_MissingItems_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Strategy" },
+          "practiceContent": { "exerciseData": {} },
+          "feedbackPlan": {}
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "respond_to_situation");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("items"));
+    }
+
+    [Fact]
+    public void Validate_RespondToSituation_ItemMissingSituationField_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "Strategy" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [{ "id": "sit1" }]
+            }
+          },
+          "feedbackPlan": {}
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "respond_to_situation");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("situation"));
+    }
+
+    [Fact]
+    public void Validate_RespondToSituation_LearnContentDoesNotContainItems_Passes()
+    {
+        // learnContent should never contain exercise items
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "How to respond in real-life situations", "explanation": "General strategy." },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [{ "id": "sit1", "situation": "You are at a hotel and the room is not ready." }]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "relevance" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "respond_to_situation");
+
+        result.IsValid.Should().BeTrue();
+    }
+
 }

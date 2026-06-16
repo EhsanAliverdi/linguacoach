@@ -53,4 +53,5 @@ public static class ExercisePatternKey
     public const string AnswerShortQuestion            = "answer_short_question";
     public const string ReadAloud                      = "read_aloud";
     public const string RepeatSentence                 = "repeat_sentence";
+    public const string RespondToSituation             = "respond_to_situation";
 }

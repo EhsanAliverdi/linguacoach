@@ -132,6 +132,13 @@
       (submitted)="onRepeatSentenceSubmitted($event)"
     />
   }
+  @case ('respondToSituation') {
+    <app-respond-to-situation
+      [content]="respondToSituationContent"
+      [disabled]="disabled"
+      (submitted)="onRespondToSituationSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

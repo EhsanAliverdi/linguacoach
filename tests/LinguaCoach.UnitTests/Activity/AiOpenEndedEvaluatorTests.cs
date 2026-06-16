@@ -235,4 +235,68 @@ public sealed class AiOpenEndedEvaluatorTests
     {
         AiOpenEndedEvaluator.CompactContent("{}").Should().Be("{}");
     }
+
+    // ── respond_to_situation — evaluation response parsing ────────────────────
+
+    [Fact]
+    public void ParseAndNormalise_RespondToSituation_HighScore_Passes()
+    {
+        var json = """
+            {
+              "overallScore": 82,
+              "coachSummary": "Your response was clear and appropriate for the situation.",
+              "strengths": ["Relevant", "Natural phrasing"],
+              "improvements": ["Could be slightly more formal"]
+            }
+            """;
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(82);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.CoachSummary.Should().Contain("clear and appropriate");
+    }
+
+    [Fact]
+    public void ParseAndNormalise_RespondToSituation_LowScore_Fails()
+    {
+        var json = """{"overallScore":45,"coachSummary":"Response was off-topic."}""";
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(45);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CompactContent_RespondToSituationStaged_ExcludesLearnContent()
+    {
+        var staged = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "HIDDEN", "explanation": "strategy here" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                {
+                  "id": "sit1",
+                  "situation": "You are at a hotel check-in and the room is not ready.",
+                  "expectedResponseGuidance": "Politely ask when the room will be ready."
+                }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "relevance and tone" }
+        }
+        """;
+
+        var result = AiOpenEndedEvaluator.CompactContent(staged);
+
+        result.Should().Contain("sit1");
+        result.Should().Contain("feedbackFocus");
+        result.Should().NotContain("HIDDEN");
+        result.Should().NotContain("learnContent");
+    }
 }
