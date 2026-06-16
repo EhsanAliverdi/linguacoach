@@ -291,7 +291,7 @@ export class ExerciseRendererComponent {
       explanation: this.stringValue(ed['explanation'] ?? raw['explanation']),
       distractorExplanations,
       audioScript: this.stringValue(ed['audioScript']),
-      audioUrl: this.stringValue(ed['audioUrl']),
+      audioUrl: this.stringValue(ed['audioUrl']) ?? this.activity.audioUrl,
       scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
     };
   }
@@ -330,7 +330,7 @@ export class ExerciseRendererComponent {
       explanation: this.stringValue(ed['explanation'] ?? raw['explanation']),
       optionExplanations,
       audioScript: this.stringValue(ed['audioScript']),
-      audioUrl: this.stringValue(ed['audioUrl']),
+      audioUrl: this.stringValue(ed['audioUrl']) ?? this.activity.audioUrl,
       scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
     };
   }
