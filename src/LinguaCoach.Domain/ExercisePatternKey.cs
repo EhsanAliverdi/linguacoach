@@ -48,4 +48,7 @@ public static class ExercisePatternKey
     public const string HighlightIncorrectWords        = "highlight_incorrect_words";
     public const string WriteFromDictation             = "write_from_dictation";
     public const string SummarizeSpokenText            = "summarize_spoken_text";
+
+    // ── Speaking ─────────────────────────────────────────────────────────────
+    public const string AnswerShortQuestion            = "answer_short_question";
 }

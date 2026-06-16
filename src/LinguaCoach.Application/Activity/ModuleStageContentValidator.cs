@@ -97,12 +97,14 @@ public static class ModuleStageContentValidator
         ["highlight_incorrect_words"]            = ["audioScript", "displayTranscript", "tokens", "incorrectTokenIds"],
         ["write_from_dictation"]                 = ["items"],
         ["summarize_spoken_text"]                = ["audioScript", "prompt"],
+        ["answer_short_question"]                = ["items"],
     };
 
     // Per-item field requirements for item-array formats: pattern key => required item fields.
     private static readonly Dictionary<string, string[]> RequiredItemFieldsByPatternKey = new(StringComparer.Ordinal)
     {
-        ["write_from_dictation"] = ["id", "audioScript", "answer"],
+        ["write_from_dictation"]    = ["id", "audioScript", "answer"],
+        ["answer_short_question"]   = ["id", "question"],
     };
 
     public static ValidationResult Validate(

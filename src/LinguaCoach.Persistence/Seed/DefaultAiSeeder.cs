@@ -50,6 +50,8 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateHighlightIncorrectWordsKey          = "activity_generate_highlight_incorrect_words";
     public const string ActivityGenerateWriteFromDictationKey               = "activity_generate_write_from_dictation";
     public const string ActivityGenerateSummarizeSpokenTextKey              = "activity_generate_summarize_spoken_text";
+    public const string ActivityGenerateAnswerShortQuestionKey              = "activity_generate_answer_short_question";
+    public const string ActivityEvaluateAnswerShortQuestionKey              = "activity_evaluate_answer_short_question";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -2579,6 +2581,169 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityGenerateAnswerShortQuestionContent = """
+You are an expert English language teacher creating an answer-short-question speaking exercise for a {{sourceLanguageName}}-speaking professional learning {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will listen to short spoken questions and answer each one briefly and clearly. This exercises speaking fluency, listening comprehension, and concise response formation.
+
+Generate exactly 5 short questions (DefaultItemsPerPractice=5). Each question should have a clear, short correct answer (typically 2-8 words).
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what speaking skill this practises>",
+  "primarySkill": "speaking",
+  "secondarySkills": ["listening"],
+  "exerciseType": "answer_short_question",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to answer short questions clearly'>",
+    "explanation": "<2-4 sentences: general strategy for listening carefully and responding briefly and clearly. No reference to the actual questions below.>",
+    "keyPoints": [
+      "<e.g. 'Listen for the key word in the question'>",
+      "<e.g. 'Answer directly — avoid long explanations'>",
+      "<e.g. 'Use a complete short phrase, not just one word'>",
+      "<e.g. 'Speak clearly and at a natural pace'>"
+    ],
+    "examples": [
+      { "phrase": "<example question type>", "meaning": "<what kind of answer it expects>", "note": "<strategy tip>" }
+    ],
+    "strategy": "<one sentence: how to listen, process the question, and answer concisely>",
+    "commonMistakes": [
+      "giving too long an answer",
+      "repeating the question back",
+      "pausing too long before answering",
+      "answering a different question than was asked"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about answering short questions, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Listen to each question and type your answer. Keep your answers short and clear.",
+    "scenario": "<1 sentence describing the workplace/professional context>",
+    "task": "Answer each short question clearly and concisely.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "q1",
+          "question": "<short workplace question, 5-12 words>",
+          "audioScript": "<same as question text>",
+          "audioUrl": null,
+          "expectedAnswer": "<short correct answer, 2-8 words>",
+          "acceptedAnswers": ["<exact expected answer>", "<common acceptable variation>"],
+          "explanation": "<why this is the correct answer>"
+        },
+        {
+          "id": "q2",
+          "question": "<short workplace question>",
+          "audioScript": "<same as question text>",
+          "audioUrl": null,
+          "expectedAnswer": "<short correct answer>",
+          "acceptedAnswers": ["<exact expected answer>", "<common acceptable variation>"],
+          "explanation": "<why this is the correct answer>"
+        },
+        {
+          "id": "q3",
+          "question": "<short workplace question>",
+          "audioScript": "<same as question text>",
+          "audioUrl": null,
+          "expectedAnswer": "<short correct answer>",
+          "acceptedAnswers": ["<exact expected answer>", "<common acceptable variation>"],
+          "explanation": "<why this is the correct answer>"
+        },
+        {
+          "id": "q4",
+          "question": "<short workplace question>",
+          "audioScript": "<same as question text>",
+          "audioUrl": null,
+          "expectedAnswer": "<short correct answer>",
+          "acceptedAnswers": ["<exact expected answer>", "<common acceptable variation>"],
+          "explanation": "<why this is the correct answer>"
+        },
+        {
+          "id": "q5",
+          "question": "<short workplace question>",
+          "audioScript": "<same as question text>",
+          "audioUrl": null,
+          "expectedAnswer": "<short correct answer>",
+          "acceptedAnswers": ["<exact expected answer>", "<common acceptable variation>"],
+          "explanation": "<why this is the correct answer>"
+        }
+      ],
+      "successChecklist": [
+        "Each answer is short and direct.",
+        "The student responds to the actual question asked.",
+        "Answers use natural spoken English."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Answer accuracy",
+      "Response concision",
+      "Language naturalness",
+      "Question comprehension"
+    ],
+    "rubric": [
+      { "criterion": "Accuracy", "description": "The answer matches the expected correct response." },
+      { "criterion": "Concision", "description": "The answer is brief and does not include unnecessary content." },
+      { "criterion": "Language", "description": "The answer uses natural English phrasing." }
+    ],
+    "feedbackFocus": "Help the student answer short questions clearly, accurately, and concisely.",
+    "successCriteria": [
+      "All or most answers are correct.",
+      "Answers are brief and direct.",
+      "The student demonstrates understanding of each question."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual questions, expected answers, acceptedAnswers, item ids, or any answer key. It teaches general short-answer strategy only.
+- Each item must have id, question, audioScript (same as question), audioUrl (null), expectedAnswer, acceptedAnswers (array), and explanation.
+- Questions must be short, clear, workplace-relevant, and appropriate for {{cefrLevel}}.
+- Expected answers must be short (2-8 words). Include common acceptable variations in acceptedAnswers.
+- Do not include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateAnswerShortQuestionContent = """
+You are a warm, professional English speaking coach evaluating a student's answers to short spoken questions.
+
+Student level: {{cefrLevel}}
+Career context: {{careerContext}}
+
+Activity content (questions and expected answers):
+{{activityContent}}
+
+Student's submitted answers:
+{{submittedAnswer}}
+
+Evaluate each answer. For each item, check if the submitted answer matches the expected answer or any accepted answer (case-insensitive, trimmed). Provide brief, encouraging per-item feedback.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0.0-1.0>,
+  "overallFeedback": "<2-3 sentences of overall feedback>",
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true/false>,
+      "submittedAnswer": "<what the student wrote>",
+      "expectedAnswer": "<the correct answer>",
+      "feedback": "<1 sentence of item-level feedback>"
+    }
+  ],
+  "coachingTip": "<one actionable tip for improvement>",
+  "encouragement": "<one sentence of encouragement>"
+}
+""";
+
     private const string ActivityEvaluateSummarizeSpokenTextContent = """
 You are an expert English language teacher evaluating a student's summary of a spoken text.
 
@@ -3441,6 +3606,14 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSummarizeSpokenTextKey, ActivityGenerateSummarizeSpokenTextContent,
             maxInputTokens: 1600, maxOutputTokens: 1800, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateAnswerShortQuestionKey, ActivityGenerateAnswerShortQuestionContent,
+            maxInputTokens: 1400, maxOutputTokens: 2000, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateAnswerShortQuestionKey, ActivityEvaluateAnswerShortQuestionContent,
+            maxInputTokens: 2000, maxOutputTokens: 1200, ct);
 
         // Exercise Pattern Engine — pattern-specific evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

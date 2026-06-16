@@ -1,0 +1,55 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="answer-short-question-renderer">
+
+  <app-exercise-lesson-intro [goal]="content.learningGoal ?? null" />
+
+  @if (content.instructions) {
+    <div class="sp-alert-info" style="font-size:13px">{{ content.instructions }}</div>
+  }
+
+  @if (content.scenario) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Context</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ content.scenario }}</p>
+    </div>
+  }
+
+  @for (item of content.items; track item.id; let i = $index) {
+    <div class="sp-card" style="padding:16px" [attr.data-testid]="'asq-item-' + item.id">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">Question {{ i + 1 }}</p>
+
+      @if (item.question) {
+        <p style="font-size:15px;font-weight:600;color:var(--sp-text);margin-bottom:10px" [attr.data-testid]="'asq-question-' + item.id">
+          {{ item.question }}
+        </p>
+      }
+
+      @if (item.audioScript || item.audioUrl) {
+        <app-audio-player
+          [audioUrl]="item.audioUrl"
+          [audioScript]="item.audioScript"
+          [audioUnavailableMessage]="'Audio is temporarily unavailable.'"
+          [helpText]="item.audioUrl ? 'Listen to the question.' : null"
+          [attr.data-testid]="'asq-audio-player-' + item.id"
+        />
+      }
+
+      <input
+        type="text"
+        [disabled]="disabled"
+        [ngModel]="valueFor(item.id)"
+        (ngModelChange)="onInput(item.id, $event)"
+        placeholder="Type your answer…"
+        [attr.data-testid]="'asq-input-' + item.id"
+        class="sp-input"
+        style="width:100%;margin-top:10px" />
+    </div>
+  }
+
+  <button (click)="submit()"
+    [disabled]="disabled || !canSubmit"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="answer-short-question-submit-btn">
+    @if (disabled) { Checking answers… } @else { Check answers }
+  </button>
+</div>

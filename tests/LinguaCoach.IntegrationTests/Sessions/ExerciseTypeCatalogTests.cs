@@ -290,12 +290,24 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task AnswerShortQuestion_IsNowRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "answer_short_question");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "answer_short_question");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
         {
             "read_aloud", "repeat_sentence", "describe_image", "respond_to_situation",
-            "retell_lecture", "summarize_group_discussion", "answer_short_question",
+            "retell_lecture", "summarize_group_discussion",
         };
 
         var service = new ExerciseTypeCatalogService(_db);

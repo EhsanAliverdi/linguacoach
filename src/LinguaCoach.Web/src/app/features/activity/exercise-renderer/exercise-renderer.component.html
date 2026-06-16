@@ -111,6 +111,13 @@
       (submitted)="onSummarizeSpokenTextSubmitted($event)"
     />
   }
+  @case ('answerShortQuestion') {
+    <app-answer-short-question
+      [content]="answerShortQuestionContent"
+      [disabled]="disabled"
+      (submitted)="onAnswerShortQuestionSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

@@ -421,6 +421,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening for main ideas and writing a concise summary in the student's own words",
             requiresAudio: false,
             workplaceContext: true),
+
+        new(
+            key: ExercisePatternKey.AnswerShortQuestion,
+            name: "Answer Short Question",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """["Listening"]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.AnswerShortQuestion,
+            markingMode: MarkingMode.ExactMatch,
+            estimatedMinutes: 6,
+            aiGeneratePromptKey: "activity_generate_answer_short_question",
+            aiEvaluatePromptKey: "activity_evaluate_answer_short_question",
+            teachingPurpose: "Practise answering short spoken workplace questions briefly and clearly",
+            requiresAudio: false,
+            workplaceContext: true),
     ];
 
     public static async Task SeedAsync(

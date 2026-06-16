@@ -29,7 +29,8 @@ export type InteractionMode =
   | 'highlightCorrectSummary'
   | 'highlightIncorrectWords'
   | 'writeFromDictation'
-  | 'summarizeSpokenText';
+  | 'summarizeSpokenText'
+  | 'answerShortQuestion';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

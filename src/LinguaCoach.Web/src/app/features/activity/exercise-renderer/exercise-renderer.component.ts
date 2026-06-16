@@ -19,6 +19,7 @@ import { HighlightCorrectSummaryComponent, HighlightCorrectSummaryContent } from
 import { HighlightIncorrectWordsComponent, HighlightIncorrectWordsContent } from '../renderers/highlight-incorrect-words/highlight-incorrect-words.component';
 import { WriteFromDictationComponent, WriteFromDictationContent } from '../renderers/write-from-dictation/write-from-dictation.component';
 import { SummarizeSpokenTextComponent, SummarizeSpokenTextContent } from '../renderers/summarize-spoken-text/summarize-spoken-text.component';
+import { AnswerShortQuestionComponent, AnswerShortQuestionContent } from '../renderers/answer-short-question/answer-short-question.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -37,7 +38,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'highlightCorrectSummary'; selectedOptionId: string }
   | { kind: 'highlightIncorrectWords'; selectedTokenIds: string[] }
   | { kind: 'writeFromDictation'; items: { itemId: string; submittedText: string }[] }
-  | { kind: 'summarizeSpokenText'; summaryText: string };
+  | { kind: 'summarizeSpokenText'; summaryText: string }
+  | { kind: 'answerShortQuestion'; items: { itemId: string; answerText: string }[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -62,6 +64,7 @@ export type ExerciseAnswerPayload =
     HighlightIncorrectWordsComponent,
     WriteFromDictationComponent,
     SummarizeSpokenTextComponent,
+    AnswerShortQuestionComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -526,6 +529,32 @@ export class ExerciseRendererComponent {
 
   onSummarizeSpokenTextSubmitted(answer: { summaryText: string }): void {
     this.answerSubmitted.emit({ kind: 'summarizeSpokenText', summaryText: answer.summaryText });
+  }
+
+  get answerShortQuestionContent(): AnswerShortQuestionContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const items = this.arrayValue(ed['items'] ?? raw['items']).map((item, index) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? `q${index + 1}`,
+        question: this.stringValue(obj['question']),
+        audioScript: this.stringValue(obj['audioScript']),
+        audioUrl: this.stringValue(obj['audioUrl']),
+      };
+    });
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      items,
+    };
+  }
+
+  onAnswerShortQuestionSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
+    this.answerSubmitted.emit({ kind: 'answerShortQuestion', items: answer.items });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {
