@@ -2830,4 +2830,101 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    // ── retell_lecture ──────────────────────────────────────────────────────────
+
+    private static string RetellLectureJson(int itemCount = 1) => $$"""
+    {
+      "schemaVersion": "module_stage_v1",
+      "learnContent": { "teachingTitle": "How to retell a lecture" },
+      "practiceContent": {
+        "exerciseData": {
+          "items": [
+            {{string.Join(",", Enumerable.Range(1, itemCount).Select(i => $$"""
+            { "id": "lec{{i}}", "lectureTitle": "How Sleep Affects Memory", "audioScript": "Sleep is essential for memory. During deep sleep the brain consolidates what you learned during the day." }
+            """))}}
+          ]
+        }
+      },
+      "feedbackPlan": { "feedbackFocus": "main ideas and key details" }
+    }
+    """;
+
+    [Fact]
+    public void Validate_RetellLecture_ValidContent_Passes()
+    {
+        var result = ModuleStageContentValidator.Validate(
+            Parse(RetellLectureJson()), ActivityType.SpeakingRolePlay, "retell_lecture");
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_RetellLecture_MissingItems_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "How to retell a lecture" },
+          "practiceContent": { "exerciseData": {} },
+          "feedbackPlan": { "feedbackFocus": "main ideas" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "retell_lecture");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("items"));
+    }
+
+    [Fact]
+    public void Validate_RetellLecture_ItemMissingAudioScript_Fails()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "How to retell a lecture" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [ { "id": "lec1", "lectureTitle": "Sleep and Memory" } ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "main ideas" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "retell_lecture");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("audioScript"));
+    }
+
+    [Fact]
+    public void Validate_RetellLecture_LearnContentDoesNotContainItems_Passes()
+    {
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "How to retell key ideas clearly",
+            "explanation": "Listen for the main topic first, then note key supporting details."
+          },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                { "id": "lec1", "lectureTitle": "Sleep and Memory", "audioScript": "Sleep is essential for memory consolidation." }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "main ideas and key details" }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.SpeakingRolePlay, "retell_lecture");
+
+        result.IsValid.Should().BeTrue();
+    }
+
 }

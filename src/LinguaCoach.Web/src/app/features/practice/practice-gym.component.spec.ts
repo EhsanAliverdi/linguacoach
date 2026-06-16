@@ -156,8 +156,16 @@ const readyDescribeImage: any = {
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
+const readyRetellLecture: any = {
+  key: 'retell_lecture', displayName: 'Retell Lecture', primarySkill: 'listening', secondarySkills: ['speaking', 'summarizing', 'communication'],
+  category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
+  rendererKey: 'retell_lecture', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_retell_lecture',
+  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
+};
+
 const plannedFormat: any = {
-  key: 'retell_lecture', displayName: 'Retell Lecture', primarySkill: 'speaking', secondarySkills: ['listening'],
+  key: 'summarize_group_discussion', displayName: 'Summarize Group Discussion', primarySkill: 'speaking', secondarySkills: ['listening'],
   category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
   rendererKey: '', evaluatorKey: '', generationPromptKey: '',
   estimatedDurationMinutes: 0, requiresAudio: true, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
@@ -170,7 +178,7 @@ const ALL_READY = [
   readyWriteEssay, readyListeningMultipleChoiceSingle, readyListeningMultipleChoiceMulti,
   readyListeningFillInBlanks, readySelectMissingWord, readyHighlightCorrectSummary,
   readyHighlightIncorrectWords, readyAnswerShortQuestion, readyReadAloud, readyRepeatSentence,
-  readyRespondToSituation, readyDescribeImage,
+  readyRespondToSituation, readyDescribeImage, readyRetellLecture,
 ];
 
 describe('PracticeGymComponent', () => {
@@ -247,12 +255,35 @@ describe('PracticeGymComponent', () => {
     expect(countEl.textContent).toContain('1');
   });
 
+  it('retell_lecture is ready and available in Practice Gym', () => {
+    const card = fixture.nativeElement.querySelector('[data-testid="practice-format-retell_lecture"]');
+    expect(card).toBeTruthy();
+    expect(card.tagName.toLowerCase()).toBe('button');
+  });
+
+  it('shows item count for retell_lecture', () => {
+    const countEl = fixture.nativeElement.querySelector('[data-testid="format-count-retell_lecture"]');
+    expect(countEl).toBeTruthy();
+    expect(countEl.textContent).toContain('1');
+  });
+
+  it('summarize_group_discussion remains locked/non-runnable', async () => {
+    activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
+    const newFixture = TestBed.createComponent(PracticeGymComponent);
+    newFixture.detectChanges();
+    await newFixture.whenStable();
+    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-summarize_group_discussion"]');
+    if (card) {
+      expect(card.tagName.toLowerCase()).not.toBe('button');
+    }
+  });
+
   it('planned format is shown as locked (not a button)', async () => {
     activityService.getExerciseTypes.and.returnValue(of([...ALL_READY, plannedFormat]));
     const newFixture = TestBed.createComponent(PracticeGymComponent);
     newFixture.detectChanges();
     await newFixture.whenStable();
-    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-retell_lecture"]');
+    const card = newFixture.nativeElement.querySelector('[data-testid="practice-format-summarize_group_discussion"]');
     expect(card).toBeTruthy();
     expect(card.tagName.toLowerCase()).not.toBe('button');
   });
@@ -391,7 +422,7 @@ describe('PracticeGymComponent', () => {
     newFixture.detectChanges();
     const comp = newFixture.componentInstance;
 
-    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'retell_lecture');
+    const lockedCard = comp.skillGroups().flatMap(g => g.cards).find(c => c.key === 'summarize_group_discussion');
     if (lockedCard) comp.startFormat(lockedCard);
 
     expect(activityService.getPracticeGymNext).not.toHaveBeenCalled();

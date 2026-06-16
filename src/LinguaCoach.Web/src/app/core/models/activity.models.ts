@@ -34,7 +34,8 @@ export type InteractionMode =
   | 'readAloud'
   | 'repeatSentence'
   | 'respondToSituation'
-  | 'describeImage';
+  | 'describeImage'
+  | 'retellLecture';
 
 export interface VocabPracticeItem {
   vocabularyItemId: string;

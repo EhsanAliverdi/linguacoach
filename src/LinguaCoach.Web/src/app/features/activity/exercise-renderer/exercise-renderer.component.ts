@@ -24,6 +24,7 @@ import { ReadAloudComponent, ReadAloudContent } from '../renderers/read-aloud/re
 import { RepeatSentenceComponent, RepeatSentenceContent } from '../renderers/repeat-sentence/repeat-sentence.component';
 import { RespondToSituationComponent, RespondToSituationContent } from '../renderers/respond-to-situation/respond-to-situation.component';
 import { DescribeImageComponent, DescribeImageContent } from '../renderers/describe-image/describe-image.component';
+import { RetellLectureComponent, RetellLectureContent } from '../renderers/retell-lecture/retell-lecture.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -47,7 +48,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'readAloud'; items: { itemId: string; answerText: string }[] }
   | { kind: 'repeatSentence'; items: { itemId: string; answerText: string }[] }
   | { kind: 'respondToSituation'; items: { itemId: string; answerText: string }[] }
-  | { kind: 'describeImage'; items: { itemId: string; answerText: string }[] };
+  | { kind: 'describeImage'; items: { itemId: string; answerText: string }[] }
+  | { kind: 'retellLecture'; items: { itemId: string; answerText: string }[] };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -77,6 +79,7 @@ export type ExerciseAnswerPayload =
     RepeatSentenceComponent,
     RespondToSituationComponent,
     DescribeImageComponent,
+    RetellLectureComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -687,6 +690,36 @@ export class ExerciseRendererComponent {
 
   onDescribeImageSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
     this.answerSubmitted.emit({ kind: 'describeImage', items: answer.items });
+  }
+
+  get retellLectureContent(): RetellLectureContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    const items = this.arrayValue(ed['items'] ?? raw['items']).map((item, index) => {
+      const obj = this.objectValue(item) ?? {};
+      return {
+        id: this.stringValue(obj['id']) ?? `lec${index + 1}`,
+        lectureTitle: this.stringValue(obj['lectureTitle']) ?? '',
+        lectureTopic: this.stringValue(obj['lectureTopic']),
+        audioScript: this.stringValue(obj['audioScript']) ?? '',
+        audioUrl: this.stringValue(obj['audioUrl']),
+        contextLabel: this.stringValue(obj['contextLabel']),
+        difficulty: this.stringValue(obj['difficulty']),
+        focusAreas: this.arrayValue(obj['focusAreas']).map(f => this.stringValue(f) ?? '').filter(f => f),
+      };
+    });
+    return {
+      learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
+      instructions: this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.stringValue(raw['instructions'])
+        ?? this.activity.instructions,
+      scenario: this.stringValue(this.objectValue(raw['practiceContent'])?.['scenario']),
+      items,
+    };
+  }
+
+  onRetellLectureSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
+    this.answerSubmitted.emit({ kind: 'retellLecture', items: answer.items });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

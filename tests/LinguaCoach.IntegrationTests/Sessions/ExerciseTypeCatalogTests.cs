@@ -349,11 +349,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task RetellLecture_IsNowRunnable()
+    {
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "retell_lecture");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Contains(eligible, e => e.Key == "retell_lecture");
+    }
+
+    [Fact]
     public async Task OtherPlannedFormats_RemainNonRunnable()
     {
         var stillPlanned = new[]
         {
-            "retell_lecture", "summarize_group_discussion",
+            "summarize_group_discussion",
         };
 
         var service = new ExerciseTypeCatalogService(_db);
@@ -420,6 +432,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("repeat_sentence", 3, 5, 6, 0, 0, 0)]
     [InlineData("respond_to_situation", 1, 1, 2, 0, 0, 0)]
     [InlineData("describe_image", 1, 1, 1, 0, 0, 0)]
+    [InlineData("retell_lecture", 1, 1, 1, 0, 0, 0)]
     public async Task Seeder_SeedsCountFields(string key, int minI, int defI, int maxI, int minO, int defO, int maxO)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
@@ -543,12 +556,12 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
-        var planned = await registry.GetByKeyAsync("retell_lecture");
+        var planned = await registry.GetByKeyAsync("summarize_group_discussion");
         var eligible = await registry.GetGenerationEligibleAsync();
 
         Assert.NotNull(planned);
         Assert.Equal("planned", planned!.ImplementationStatus);
-        Assert.DoesNotContain(eligible, e => e.Key == "retell_lecture");
+        Assert.DoesNotContain(eligible, e => e.Key == "summarize_group_discussion");
     }
 
     [Fact]
@@ -597,6 +610,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         await catalog.UpdateAsync(new("highlight_incorrect_words", false, null, null));
         await catalog.UpdateAsync(new("write_from_dictation", false, null, null));
         await catalog.UpdateAsync(new("summarize_spoken_text", false, null, null));
+        await catalog.UpdateAsync(new("retell_lecture", false, null, null));
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var selected = await registry.SelectForPracticeGymSkillAsync("listening");

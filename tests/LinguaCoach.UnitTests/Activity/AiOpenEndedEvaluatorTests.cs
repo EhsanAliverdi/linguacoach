@@ -363,4 +363,70 @@ public sealed class AiOpenEndedEvaluatorTests
         result.Should().NotContain("HIDDEN");
         result.Should().NotContain("learnContent");
     }
+
+    // ── retell_lecture — evaluation response parsing ──────────────────────────
+
+    [Fact]
+    public void ParseAndNormalise_RetellLecture_HighScore_Passes()
+    {
+        var json = """
+            {
+              "overallScore": 82,
+              "coachSummary": "Your retelling covered the main idea and included good supporting detail.",
+              "strengths": ["Main idea clearly stated", "Used own words"],
+              "improvements": ["Could include more specific supporting details"],
+              "missingExpectedPoints": []
+            }
+            """;
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(82);
+        result.Passed.Should().BeTrue();
+        result.Completed.Should().BeTrue();
+        result.CoachSummary.Should().Contain("main idea");
+    }
+
+    [Fact]
+    public void ParseAndNormalise_RetellLecture_LowScore_Fails()
+    {
+        var json = """{"overallScore":40,"coachSummary":"Retelling did not cover the main ideas of the lecture."}""";
+
+        var result = AiOpenEndedEvaluator.ParseAndNormalise(json);
+
+        result.Score.Should().Be(40);
+        result.Passed.Should().BeFalse();
+        result.Completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CompactContent_RetellLectureStaged_ExcludesLearnContent()
+    {
+        var staged = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": { "teachingTitle": "HIDDEN", "explanation": "retelling strategy" },
+          "practiceContent": {
+            "exerciseData": {
+              "items": [
+                {
+                  "id": "lec1",
+                  "lectureTitle": "Sleep and Memory",
+                  "audioScript": "Sleep is essential for memory consolidation during deep sleep.",
+                  "expectedSummaryGuidance": "Cover main idea and key sleep stages."
+                }
+              ]
+            }
+          },
+          "feedbackPlan": { "feedbackFocus": "main ideas and key details" }
+        }
+        """;
+
+        var result = AiOpenEndedEvaluator.CompactContent(staged);
+
+        result.Should().Contain("lec1");
+        result.Should().Contain("feedbackFocus");
+        result.Should().NotContain("HIDDEN");
+        result.Should().NotContain("learnContent");
+    }
 }

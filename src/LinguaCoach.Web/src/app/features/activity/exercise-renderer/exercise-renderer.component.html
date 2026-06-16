@@ -146,6 +146,13 @@
       (submitted)="onDescribeImageSubmitted($event)"
     />
   }
+  @case ('retellLecture') {
+    <app-retell-lecture
+      [content]="retellLectureContent"
+      [disabled]="disabled"
+      (submitted)="onRetellLectureSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

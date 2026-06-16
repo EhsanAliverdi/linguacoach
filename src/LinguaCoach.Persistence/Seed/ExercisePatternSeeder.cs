@@ -501,6 +501,22 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise describing what you see in an image using clear vocabulary and natural spoken language",
             requiresAudio: false,
             workplaceContext: false),
+
+        new(
+            key: ExercisePatternKey.RetellLecture,
+            name: "Retell Lecture",
+            primarySkill: "Listening",
+            secondarySkillsJson: """["Speaking", "Summarizing", "Communication"]""",
+            compatibleKindsJson: """[2, 5]""",        // ListeningInput, SpeakingTask
+            activityType: ActivityType.SpeakingRolePlay,
+            interactionMode: InteractionMode.RetellLecture,
+            markingMode: MarkingMode.AiOpenEnded,
+            estimatedMinutes: 7,
+            aiGeneratePromptKey: "activity_generate_retell_lecture",
+            aiEvaluatePromptKey: "activity_evaluate_retell_lecture",
+            teachingPurpose: "Practise listening comprehension and speaking by retelling the main ideas of a short lecture in your own words",
+            requiresAudio: false,
+            workplaceContext: false),
     ];
 
     /// <summary>

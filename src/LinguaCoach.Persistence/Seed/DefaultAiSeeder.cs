@@ -60,6 +60,8 @@ public static class DefaultAiSeeder
     public const string ActivityEvaluateRespondToSituationKey               = "activity_evaluate_respond_to_situation";
     public const string ActivityGenerateDescribeImageKey                     = "activity_generate_describe_image";
     public const string ActivityEvaluateDescribeImageKey                     = "activity_evaluate_describe_image";
+    public const string ActivityGenerateRetellLectureKey                     = "activity_generate_retell_lecture";
+    public const string ActivityEvaluateRetellLectureKey                     = "activity_evaluate_retell_lecture";
 
     // ── Exercise Pattern Engine — pattern-specific evaluation prompt keys ─────
     public const string ActivityEvaluatePhraseMatchKey        = "activity_evaluate_phrase_match";
@@ -3355,6 +3357,176 @@ Rules:
 - Keep feedback warm, specific, and actionable.
 """;
 
+    private const string ActivityGenerateRetellLectureContent = """
+You are an expert English language teacher creating a retell-lecture listening and speaking exercise for a {{sourceLanguageName}}-speaking learner of {{targetLanguageName}}.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+Topic area: {{topicHint}}
+Recent mistakes to address: {{recentMistakes}}
+
+The student will read or listen to a short lecture or talk, then retell the main ideas in their own words. This practises listening comprehension, summarising, and spoken communication. Content should suit the student's learning goals — which may include daily life, travel, study, social communication, migration, job interviews, workplace English, or other goals. Do not assume a workplace-only context unless {{careerContext}} indicates it.
+
+Generate exactly 1 lecture item (DefaultItemsPerPractice=1, max=1). The lecture script should be 80-150 words — a short, realistic talk or explanation that the student can follow at {{cefrLevel}}.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "schemaVersion": "module_stage_v1",
+  "title": "<short title, 5-8 words>",
+  "moduleGoal": "<one sentence: what listening and speaking skill this practises>",
+  "primarySkill": "listening",
+  "secondarySkills": ["speaking", "summarizing", "communication"],
+  "exerciseType": "retell_lecture",
+  "learnContent": {
+    "teachingTitle": "<short heading, e.g. 'How to retell key ideas clearly'>",
+    "explanation": "<2-4 sentences: general strategy for listening and retelling a talk. Teach how to identify main ideas, note supporting details, and organise a spoken summary. No reference to the actual lecture below.>",
+    "keyPoints": [
+      "<e.g. 'Listen for the main topic in the first sentence'>",
+      "<e.g. 'Note key supporting details — numbers, names, examples'>",
+      "<e.g. 'Use your own words — do not try to memorise every sentence'>",
+      "<e.g. 'Structure your retelling: first say the main idea, then add key details'>"
+    ],
+    "examples": [
+      { "phrase": "<example of a natural retelling opener>", "meaning": "<what makes it effective>", "note": "<when to use it>" }
+    ],
+    "strategy": "<one sentence: how to approach retelling a lecture in spoken English>",
+    "commonMistakes": [
+      "trying to repeat the lecture word-for-word instead of summarising",
+      "focusing on minor details and missing the main point",
+      "using very short responses without explanation or supporting ideas",
+      "translating directly from the first language instead of using natural English summary phrases"
+    ],
+    "sourceLanguageSupport": "<optional: 1-2 sentences in {{sourceLanguageName}} about retelling talks in English, or null>"
+  },
+  "practiceContent": {
+    "instructions": "Read the lecture below carefully. Then retell the main ideas in your own words. Type your response as if you were explaining it to someone who has not heard the lecture.",
+    "scenario": "<1 sentence describing the general topic and setting — may be everyday, travel, social, academic, interview, or workplace>",
+    "task": "Retell the main ideas of the lecture in your own words.",
+    "exerciseData": {
+      "items": [
+        {
+          "id": "lec1",
+          "lectureTitle": "<short title for this lecture, e.g. 'How Sleep Affects Memory'>",
+          "lectureTopic": "<1 sentence describing the lecture topic>",
+          "audioScript": "<80-150 words: the lecture text. Write in a natural spoken style. Include a clear main idea, 2-3 supporting points, and a brief conclusion. Suitable for {{cefrLevel}}.>",
+          "audioUrl": null,
+          "contextLabel": "<e.g. 'Health', 'Study', 'Travel', 'Daily life', 'Workplace', 'Science', 'Social', 'Interview'>",
+          "difficulty": "<e.g. 'intermediate' for B1-B2, 'upper-intermediate' for C1>",
+          "keyPoints": [
+            "<main idea of the lecture>",
+            "<key supporting detail 1>",
+            "<key supporting detail 2>"
+          ],
+          "importantVocabulary": [
+            { "word": "<key word or phrase>", "meaning": "<brief meaning>" }
+          ],
+          "expectedSummaryGuidance": "<2-3 sentences describing what a good retelling should cover — NOT a single correct answer. Should mention main ideas, key details, and appropriate organisation.>",
+          "goodResponseExample": "<one example of a natural, clear retelling of this lecture in 3-5 sentences>",
+          "focusAreas": ["<e.g. 'main ideas'>", "<e.g. 'key details'>", "<e.g. 'organisation'>", "<e.g. 'clarity'>"]
+        }
+      ],
+      "successChecklist": [
+        "The retelling covers the main idea of the lecture.",
+        "At least one key supporting detail is included.",
+        "The response is in the student's own words, not a direct copy.",
+        "The response is clear and logically organised."
+      ]
+    }
+  },
+  "feedbackPlan": {
+    "evaluationCriteria": [
+      "Coverage of main ideas",
+      "Inclusion of key supporting details",
+      "Use of own words (not direct copy)",
+      "Organisation and logical flow",
+      "Clarity",
+      "Vocabulary use",
+      "Grammar (secondary)"
+    ],
+    "rubric": [
+      { "criterion": "Main idea coverage", "description": "The retelling clearly states the main point of the lecture." },
+      { "criterion": "Detail inclusion", "description": "The student includes at least one important supporting detail." },
+      { "criterion": "Own words", "description": "The student paraphrases rather than copying the lecture." },
+      { "criterion": "Organisation", "description": "The retelling follows a logical order." }
+    ],
+    "feedbackFocus": "Help the student identify and retell the main ideas clearly and in their own words.",
+    "successCriteria": [
+      "The main idea is clearly stated.",
+      "Key supporting details are included.",
+      "The response is in the student's own words.",
+      "The structure is clear and logical."
+    ]
+  }
+}
+
+Rules:
+- learnContent must NEVER contain the actual lecture script, key points, expected summary, or scoring rubric details. It teaches general retelling strategy only.
+- The item must have id, lectureTitle, lectureTopic, audioScript, audioUrl (null), contextLabel, difficulty, keyPoints, importantVocabulary, expectedSummaryGuidance, goodResponseExample, and focusAreas.
+- audioUrl must always be null — no real audio URLs.
+- The lecture script should be realistic, clear, and appropriate for {{cefrLevel}}.
+- Lecture topics should reflect the learner's context — not hardcoded as workplace-only unless {{careerContext}} indicates a workplace focus.
+- Do NOT include any text outside the JSON object.
+""";
+
+    private const string ActivityEvaluateRetellLectureContent = """
+You are a warm, encouraging English speaking coach evaluating a student's retell-lecture exercise.
+
+Student level: {{cefrLevel}}
+Learning context: {{careerContext}}
+
+Activity content (lecture scripts and guidance):
+{{activityContent}}
+
+Student's submitted retellings:
+{{submittedAnswer}}
+
+For each item, evaluate the student's retelling against the audioScript, keyPoints, and expectedSummaryGuidance. Assess: coverage of main ideas, inclusion of supporting details, use of own words, organisation, clarity, and vocabulary. Grammar is a secondary consideration. Do NOT require an exact match — the student's retelling is open-ended.
+
+This is NOT pronunciation scoring, fluency scoring, or audio analysis. You are evaluating the typed text only.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "overallScore": <0-100>,
+  "coachSummary": "<2-3 sentences of overall feedback on coverage, clarity, and organisation of the retelling>",
+  "strengths": [
+    "<one specific strength observed in the retelling>",
+    "<another strength if present>"
+  ],
+  "improvements": [
+    "<one specific area for improvement>",
+    "<another if relevant>"
+  ],
+  "missingExpectedPoints": [
+    "<a key idea or detail from the lecture that the student omitted, if any>"
+  ],
+  "itemResults": [
+    {
+      "itemId": "<item id>",
+      "isCorrect": <true if the retelling covers the main idea and at least one supporting detail, false if clearly off-topic or empty>,
+      "score": <0-100 for this item>,
+      "studentResponse": "<what the student submitted>",
+      "feedback": "<2-3 sentences of item-level feedback covering main idea coverage, detail inclusion, organisation, and clarity>",
+      "missingPoints": ["<key idea or detail missed, if any>"],
+      "betterExample": "<one example of a stronger retelling if useful, or null>"
+    }
+  ],
+  "suggestedImprovedResponse": "<one example of a fuller, well-organised retelling if helpful, or null>",
+  "miniLesson": "<one actionable tip for improving retelling or summarising skills>",
+  "nextImprovementStep": "<one specific thing to practise next>"
+}
+
+Rules:
+- Do not require exact match. Assess whether the retelling covers the main ideas and is clearly expressed.
+- Award full or near-full score if the student covers the main idea and key details in clear language.
+- If the student left a response blank or submitted only whitespace, isCorrect=false, score=0, feedback should note the response was not provided.
+- Do not penalise minor grammar errors unless they affect understanding.
+- Do not claim pronunciation, fluency, or audio-quality scoring — this evaluates only the typed text.
+- If the student copied the lecture word-for-word, note this and encourage paraphrasing, but still award partial credit for coverage.
+- Keep feedback warm, specific, and actionable.
+""";
+
     private const string ActivityEvaluateReadAloudContent = """
 You are a warm, professional English speaking coach evaluating a student's read-aloud exercise.
 
@@ -4278,6 +4450,12 @@ Rules:
             maxInputTokens: 1400, maxOutputTokens: 2400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityEvaluateDescribeImageKey, ActivityEvaluateDescribeImageContent,
+            maxInputTokens: 2000, maxOutputTokens: 1400, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityGenerateRetellLectureKey, ActivityGenerateRetellLectureContent,
+            maxInputTokens: 1400, maxOutputTokens: 2400, ct);
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityEvaluateRetellLectureKey, ActivityEvaluateRetellLectureContent,
             maxInputTokens: 2000, maxOutputTokens: 1400, ct);
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateReadAloudKey, ActivityGenerateReadAloudContent,
