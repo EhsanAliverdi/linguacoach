@@ -1,6 +1,7 @@
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Curriculum;

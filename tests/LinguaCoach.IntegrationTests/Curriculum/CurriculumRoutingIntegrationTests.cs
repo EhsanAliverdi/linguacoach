@@ -1,6 +1,7 @@
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Domain.Constants;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.IntegrationTests.Api;
 using LinguaCoach.Persistence;
 using Microsoft.Extensions.DependencyInjection;

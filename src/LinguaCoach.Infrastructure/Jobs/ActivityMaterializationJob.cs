@@ -1,6 +1,7 @@
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -37,6 +38,7 @@ public sealed class ActivityMaterializationJob : IJob
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ICurriculumRoutingService _routing;
+    private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly ILogger<ActivityMaterializationJob> _logger;
 
     public ActivityMaterializationJob(
@@ -47,6 +49,7 @@ public sealed class ActivityMaterializationJob : IJob
         ISchedulerFactory schedulerFactory,
         ILearningGoalContextResolver goalContextResolver,
         ICurriculumRoutingService routing,
+        IStudentActivityReadinessPoolService readinessPool,
         ILogger<ActivityMaterializationJob> logger)
     {
         _db = db;
@@ -56,6 +59,7 @@ public sealed class ActivityMaterializationJob : IJob
         _schedulerFactory = schedulerFactory;
         _goalContextResolver = goalContextResolver;
         _routing = routing;
+        _readinessPool = readinessPool;
         _logger = logger;
     }
 
@@ -209,6 +213,22 @@ public sealed class ActivityMaterializationJob : IJob
 
         exercise.AssignActivity(activity.Id);
         await _db.SaveChangesAsync(ct);
+
+        // Link activity id to any readiness pool item already tracking this session.
+        var poolItem = await _db.StudentActivityReadinessItems
+            .Where(i => i.LearningSessionId == session.Id
+                     && i.LearningActivityId == null
+                     && i.Status == ReadinessPoolStatus.Ready)
+            .FirstOrDefaultAsync(ct);
+        if (poolItem is not null)
+        {
+            await _readinessPool.LinkMaterializedIdsAsync(
+                poolItem.Id,
+                learningSessionId: session.Id,
+                learningActivityId: activity.Id,
+                sessionExerciseId: exercise.Id,
+                ct);
+        }
     }
 
     private static ExerciseKind ResolveKind(string patternKey) => patternKey switch

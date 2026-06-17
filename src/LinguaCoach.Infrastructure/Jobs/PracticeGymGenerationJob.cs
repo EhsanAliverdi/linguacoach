@@ -1,6 +1,7 @@
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -32,6 +33,7 @@ public sealed class PracticeGymGenerationJob : IJob
     private readonly ListeningAudioService _listeningAudio;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ICurriculumRoutingService _routing;
+    private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly ILogger<PracticeGymGenerationJob> _logger;
 
     public PracticeGymGenerationJob(
@@ -42,6 +44,7 @@ public sealed class PracticeGymGenerationJob : IJob
         ListeningAudioService listeningAudio,
         ILearningGoalContextResolver goalContextResolver,
         ICurriculumRoutingService routing,
+        IStudentActivityReadinessPoolService readinessPool,
         ILogger<PracticeGymGenerationJob> logger)
     {
         _db = db;
@@ -51,6 +54,7 @@ public sealed class PracticeGymGenerationJob : IJob
         _listeningAudio = listeningAudio;
         _goalContextResolver = goalContextResolver;
         _routing = routing;
+        _readinessPool = readinessPool;
         _logger = logger;
     }
 
@@ -135,6 +139,22 @@ public sealed class PracticeGymGenerationJob : IJob
             allowReviewOrScaffold: false);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
+        // Record pool item with routing snapshot before generation.
+        var poolRequest = ReadinessItemRequestBuilder.FromRoutingRecommendation(
+            studentId: profile.Id,
+            source: ReadinessPoolSource.PracticeGym,
+            recommendation: routing,
+            originalCefrLevelSnapshot: profile.CefrLevel,
+            difficultyPreference: profile.DifficultyPreference?.ToString(),
+            supportLanguageCode: profile.LanguagePair?.SourceLanguage?.Code,
+            supportLanguageName: profile.LanguagePair?.SourceLanguage?.Name,
+            translationHelpPreference: profile.TranslationHelpPreference?.ToString(),
+            patternKey: pattern.Key,
+            activityType: pattern.ActivityType.ToString(),
+            generatedBy: "PracticeGymGenerationJob");
+        var poolItemId = await _readinessPool.CreateQueuedAsync(poolRequest, ct);
+        await _readinessPool.MarkGeneratingAsync(poolItemId, ct);
+
         var generationContext = new ActivityGenerationContext(
             ActivityType: pattern.ActivityType,
             CefrLevel: routing.TargetCefrLevel,
@@ -179,6 +199,8 @@ public sealed class PracticeGymGenerationJob : IJob
 
         cache.MarkReady(activity.Id);
         await _db.SaveChangesAsync(ct);
+
+        await _readinessPool.MarkReadyAsync(poolItemId, learningActivityId: activity.Id, ct: ct);
 
         _logger.LogInformation(
             "PracticeGymGenerationJob: cache row {CacheId} ready with ActivityId={ActivityId}.",

@@ -58,6 +58,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 10K — Curriculum syllabus foundation
     public DbSet<CurriculumObjective> CurriculumObjectives => Set<CurriculumObjective>();
 
+    // Phase 10M — Student activity readiness pool
+    public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -80,6 +83,13 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
                 .IsConcurrencyToken();
 
             modelBuilder.Entity<StudentOnboardingProgress>()
+                .Property<uint>("xmin")
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<StudentActivityReadinessItem>()
                 .Property<uint>("xmin")
                 .HasColumnName("xmin")
                 .HasColumnType("xid")

@@ -78,6 +78,7 @@ Current recommended next sprint: **Dynamic Pattern Selection** or **Practice Gym
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
 | [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; AI generation flow; how activity types share infrastructure |
 | [curriculum-syllabus-model.md](curriculum-syllabus-model.md) | `CurriculumObjective` entity; CEFR level constants; context tag / focus area taxonomy; seeder pattern; `ICurriculumSyllabusQuery` candidate query interface (Phase 10K) |
+| [readiness-pool.md](readiness-pool.md) | `StudentActivityReadinessItem` entity; `ReadinessPoolStatus` / `ReadinessPoolSource` enums; lifecycle transitions; routing snapshot; `IStudentActivityReadinessPoolService`; concurrency model (Phase 10M) |
 | [curriculum-routing.md](curriculum-routing.md) | `ICurriculumRoutingService`; `CurriculumRoutingRequest/Recommendation`; CEFR normalization; level/context/skill/difficulty routing rules; RoutingReason enum; integration points (Phase 10L) |
 
 ---

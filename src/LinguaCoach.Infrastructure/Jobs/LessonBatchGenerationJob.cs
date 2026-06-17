@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Domain.Entities;
@@ -34,6 +35,7 @@ public sealed class LessonBatchGenerationJob : IJob
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ICurriculumRoutingService _routing;
+    private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly ILogger<LessonBatchGenerationJob> _logger;
 
     public LessonBatchGenerationJob(
@@ -42,6 +44,7 @@ public sealed class LessonBatchGenerationJob : IJob
         ISchedulerFactory schedulerFactory,
         ILearningGoalContextResolver goalContextResolver,
         ICurriculumRoutingService routing,
+        IStudentActivityReadinessPoolService readinessPool,
         ILogger<LessonBatchGenerationJob> logger)
     {
         _db = db;
@@ -49,6 +52,7 @@ public sealed class LessonBatchGenerationJob : IJob
         _schedulerFactory = schedulerFactory;
         _goalContextResolver = goalContextResolver;
         _routing = routing;
+        _readinessPool = readinessPool;
         _logger = logger;
     }
 
@@ -99,7 +103,7 @@ public sealed class LessonBatchGenerationJob : IJob
             return;
         }
 
-        var summaryJson = await BuildCompactSummaryAsync(profile, ct);
+        var (summaryJson, batchRouting) = await BuildCompactSummaryAsync(profile, ct);
 
         var batch = new GenerationBatch(studentProfileId, reason, requestedCount, correlationId);
         _db.GenerationBatches.Add(batch);
@@ -155,7 +159,7 @@ public sealed class LessonBatchGenerationJob : IJob
 
         try
         {
-            var materialized = await MaterializeSessionsAsync(profile, batch, plans, summaryJson, ct);
+            var materialized = await MaterializeSessionsAsync(profile, batch, plans, summaryJson, batchRouting, ct);
             if (!materialized)
             {
                 _logger.LogInformation(
@@ -184,7 +188,8 @@ public sealed class LessonBatchGenerationJob : IJob
     }
 
     private async Task<bool> MaterializeSessionsAsync(
-        StudentProfile profile, GenerationBatch batch, List<SessionPlanDto> plans, string summaryJson, CancellationToken ct)
+        StudentProfile profile, GenerationBatch batch, List<SessionPlanDto> plans, string summaryJson,
+        CurriculumRoutingRecommendation batchRouting, CancellationToken ct)
     {
         var studentProfileId = profile.Id;
 
@@ -243,6 +248,22 @@ public sealed class LessonBatchGenerationJob : IJob
             sessionItem.SetTarget(session.Id);
             sessionItem.MarkCompleted();
             batch.IncrementCompleted();
+
+            // Record readiness pool item with routing snapshot for this planned session.
+            var poolRequest = ReadinessItemRequestBuilder.FromRoutingRecommendation(
+                studentId: profile.Id,
+                source: ReadinessPoolSource.LessonBatch,
+                recommendation: batchRouting,
+                originalCefrLevelSnapshot: profile.CefrLevel,
+                preferredSessionDurationMinutes: profile.PreferredSessionDurationMinutes,
+                difficultyPreference: profile.DifficultyPreference?.ToString(),
+                supportLanguageCode: profile.LanguagePair?.SourceLanguage?.Code,
+                supportLanguageName: profile.LanguagePair?.SourceLanguage?.Name,
+                translationHelpPreference: profile.TranslationHelpPreference?.ToString(),
+                generatedBy: "LessonBatchGenerationJob");
+            var poolItemId = await _readinessPool.CreateQueuedAsync(poolRequest, ct);
+            await _readinessPool.MarkGeneratingAsync(poolItemId, ct);
+            await _readinessPool.MarkReadyAsync(poolItemId, learningSessionId: session.Id, ct: ct);
 
             // Queue activity content materialization (not on page-load path).
             var activityItem = batch.AddItem(GenerationJobItemType.Activity, session.Id);
@@ -326,7 +347,7 @@ public sealed class LessonBatchGenerationJob : IJob
             .Replace("{{sessionCount}}", sessionCount.ToString());
     }
 
-    private async Task<string> BuildCompactSummaryAsync(StudentProfile profile, CancellationToken ct)
+    private async Task<(string summaryJson, CurriculumRoutingRecommendation routing)> BuildCompactSummaryAsync(StudentProfile profile, CancellationToken ct)
     {
         var completedSessions = await _db.LearningSessions
             .CountAsync(s => s.StudentProfileId == profile.Id && s.Status == SessionStatus.Completed, ct);
@@ -376,7 +397,7 @@ public sealed class LessonBatchGenerationJob : IJob
             avoidRepeating = coveredScenarios
         };
 
-        return JsonSerializer.Serialize(summary);
+        return (JsonSerializer.Serialize(summary), routing);
     }
 
     internal static List<SessionPlanDto> ParseAndValidatePlans(string responseJson, int expectedCount)

@@ -1,3 +1,5 @@
+using LinguaCoach.Domain.Enums;
+
 namespace LinguaCoach.Application.Curriculum;
 
 /// <summary>
@@ -75,13 +77,4 @@ public sealed class CurriculumRoutingRecommendation
 
         return string.Join(". ", parts);
     }
-}
-
-public enum RoutingReason
-{
-    Normal,
-    Review,
-    Scaffold,
-    Remediation,
-    Fallback
 }

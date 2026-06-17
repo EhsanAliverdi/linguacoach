@@ -14,6 +14,66 @@ Last updated: 2026-06-17
 
 ## Most recently completed sprint
 
+**Phase 10M — Student Activity Readiness Pool Foundation** - complete (2026-06-17)
+
+Phase 10M introduces the persisted lifecycle model for pre-generated Today lessons and Practice Gym activities. Activities are no longer treated as simple one-off outputs; every generated item is tracked in a student-specific readiness pool with lifecycle status, routing snapshot, and personalisation metadata.
+
+### What was built
+
+**Domain layer**
+- `ReadinessPoolStatus` enum: Queued, Generating, Ready, Reserved, Consumed, Expired, Failed, Stale, ReviewOnly.
+- `ReadinessPoolSource` enum: TodayLesson, PracticeGym, LessonBatch, Review, Remediation, OnDemand.
+- `RoutingReason` enum — moved from `Application.Curriculum` namespace to `Domain.Enums` so it can be used by the domain entity without a circular dependency.
+- `StudentActivityReadinessItem` entity with full lifecycle transition methods (MarkGenerating, MarkReady, MarkFailed, Reserve, MarkConsumed, Expire, MarkStale, MarkReviewOnly, LinkMaterializedIds).
+- Guard: `IsLowerLevelContent=true` requires a non-Normal RoutingReason. B2 students cannot silently receive B1 content as Normal.
+- `IsServableAsNormalContent` and `IsServableAsReview` helper properties.
+
+**Persistence layer**
+- `StudentActivityReadinessItemConfiguration` — EF table `student_activity_readiness_items`, snake_case columns, 4 indexes (student/status/source, student/status/priority, activity id, session id).
+- Optimistic concurrency token (PostgreSQL xmin) registered in `OnModelCreating`.
+- `DbSet<StudentActivityReadinessItem>` added to `LinguaCoachDbContext`.
+- EF migration `T51_StudentActivityReadinessPool`.
+
+**Application layer**
+- `IStudentActivityReadinessPoolService` — interface with full lifecycle + query methods.
+- `CreateReadinessItemRequest` DTO.
+- `ReadinessPoolSummary` / `ReadinessItemDto` — for admin inspection.
+- `ReadinessItemRequestBuilder.FromRoutingRecommendation` — helper to build pool item request from a `CurriculumRoutingRecommendation` + student context snapshot.
+
+**Infrastructure layer**
+- `StudentActivityReadinessPoolService` — implementation with optimistic concurrency retry loop on reservation.
+- Registered as `AddScoped<IStudentActivityReadinessPoolService, StudentActivityReadinessPoolService>()`.
+
+**Integration points**
+- `PracticeGymGenerationJob` — creates Queued→Generating→Ready pool item with routing snapshot per materialized cache row.
+- `LessonBatchGenerationJob` — creates Queued→Generating→Ready pool item per materialized session. `BuildCompactSummaryAsync` now returns `(summaryJson, routing)` tuple.
+- `ActivityMaterializationJob` — links generated `LearningActivityId` and `SessionExerciseId` to any matching pool item by `LearningSessionId`.
+
+**Admin endpoint**
+- `GET /api/admin/students/{studentId}/readiness-pool` — read-only pool inspection (Admin role only). No write endpoints.
+
+### Tests
+- 20 new unit tests in `ReadinessPool/StudentActivityReadinessItemTests.cs`.
+- 11 new integration tests in `ReadinessPool/ReadinessPoolIntegrationTests.cs`.
+- 1 existing integration test updated (`LessonBatchGenerationJobTests`) to pass pool service.
+- 1 existing unit test file updated (`CurriculumRoutingServiceTests`) and 1 integration test file (`CurriculumRoutingIntegrationTests`) to use `RoutingReason` from `Domain.Enums`.
+
+### Gates at completion
+- Architecture: 3 passed
+- Unit: 1144 passed (was 1124, +20)
+- Integration: 576 passed (was 565, +11)
+- Total: 1723 passed, 0 failed
+- Angular/Playwright: blocked by pre-existing Node 24 + path-with-space environment issue. No Angular source changed in this phase.
+
+### What is intentionally NOT in this phase
+Full background replenishment engine, Practice Gym suggested UI redesign, admin write endpoints for pool, `StudentProfile.CefrLevel` migration, plus-level persistence, full placement engine, full mastery engine, `AllowReviewOrScaffold=true` enabling in handlers. See TODOS.md.
+
+See: `docs/reviews/2026-06-17-phase-10m-student-activity-readiness-pool-review.md`
+
+---
+
+## Previously most recently completed sprint
+
 **Phase 10L — CEFR-Aware Activity Routing** - complete (2026-06-17)
 
 Phase 10L introduces a pure application-layer routing policy that selects suitable

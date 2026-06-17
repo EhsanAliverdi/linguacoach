@@ -38,6 +38,8 @@ using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Infrastructure.Curriculum;
+using LinguaCoach.Application.ReadinessPool;
+using LinguaCoach.Infrastructure.ReadinessPool;
 using LinguaCoach.Application.Profile;
 using LinguaCoach.Application.Storage;
 using LinguaCoach.Infrastructure.Profile;
@@ -211,6 +213,9 @@ public static class DependencyInjection
 
         // Curriculum routing (Phase 10L)
         services.AddScoped<ICurriculumRoutingService, CurriculumRoutingService>();
+
+        // Student activity readiness pool (Phase 10M)
+        services.AddScoped<IStudentActivityReadinessPoolService, StudentActivityReadinessPoolService>();
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();

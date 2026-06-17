@@ -2,6 +2,7 @@ using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Curriculum;
 using Microsoft.Extensions.Logging.Abstractions;
 
