@@ -166,7 +166,44 @@ A new step-5 collects professional context before placement:
 - Non-blocking: API failure still navigates to `/placement`; "Skip for now" skips without calling API
 - Existing completed students not broken â€” endpoint accepts any auth token regardless of onboarding state
 
-## Test suite baseline (as of tts-placement-today-sprint â€” 2026-06-11)
+## Onboarding v2 foundation (complete — 2026-06-17, Phase 10I)
+
+A configurable multi-step onboarding system (v2) runs in parallel with the existing v1 state machine. Existing students and v1 code are untouched.
+
+### New API endpoints
+
+- `GET /api/onboarding` — returns `OnboardingV2StatusDto`: current step, completed steps, percentage, preliminary CEFR level. Lazy-creates a `StudentOnboardingProgress` record on first call. Students who completed v1 onboarding are auto-marked complete.
+- `POST /api/onboarding/steps/{stepKey}` — submits an answer for one step. Validates answer against step type (max length, valid option keys, max selections). Applies typed `OnboardingAnswerMapping` to `StudentProfile.UpdateLearningPreferences()`. Idempotent — upserts `StudentOnboardingResponse`.
+- `POST /api/onboarding/complete` — validates all SystemRequired+enabled steps are done, scores assessment answers against server-side metadata, stores `PreliminaryCefrLevel` on progress, transitions `LifecycleStage` → `PlacementRequired`. Does **not** overwrite a real `CefrLevel` from PlacementAssessment.
+- `GET /api/admin/onboarding/flow` (Admin role) — read-only view of the active `OnboardingFlowDefinition` including steps and answer mappings. Never exposes `AssessmentMetadataJson`, correct answers, or scoring weights.
+
+### Architecture decisions
+
+- v2 is parallel — v1 `OnboardingStatus`/`OnboardingStep` fields on `StudentProfile` remain as legacy compatibility.
+- Single active flow enforced by PostgreSQL partial unique index (`WHERE is_active = true`).
+- Flow versions are immutable once students have progress; admin edits must create a new version.
+- `PreliminaryCefrLevel` stored on `StudentOnboardingProgress` only — never overwrites `StudentProfile.CefrLevel` unless it is null.
+- `AssessmentMetadataJson` (correct answers, scoring weights) is server-side only — never returned to student or admin APIs.
+- Percentage counts SystemRequired+IsEnabled steps only.
+- Post-onboarding lifecycle → `PlacementRequired` (no “OnboardingComplete” stage exists).
+- Unique `(progress_id, step_key)` constraint on `StudentOnboardingResponse`.
+
+### Angular route
+
+`/onboarding/v2` — standalone shell component with 11 step renderers (Welcome, PreferredName, SupportLanguage, LearningGoals, FocusAreas, DifficultyPreference, SingleChoice, MultipleChoice, FreeText, AssessmentQuestion, Summary).
+
+### Known limitations
+
+- No admin visual flow builder — flow is seeded via `OnboardingFlowSeeder`.
+- Preliminary CEFR is a simple weight-band calculation, not a full adaptive placement engine.
+- No curriculum routing or readiness pool based on v2 outcome.
+- No Playwright E2E spec for v2 flow (no test user seeded with v2 progress).
+
+### Migration
+
+T47_OnboardingV2 — adds `onboarding_flow_definitions`, `onboarding_step_definitions`, `student_onboarding_progress`, `student_onboarding_responses`.
+
+## Test suite baseline (as of tts-placement-today-sprint — 2026-06-11)
 
 ```
 dotnet test:     873 passed (451 unit + 422 integration)
