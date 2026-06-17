@@ -50,9 +50,7 @@ jobs:
           cache-dependency-path: src/LinguaCoach.Web/package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm install -g npm@latest
-          npm ci
+        run: npm install
         working-directory: src/LinguaCoach.Web
 
       - name: Test

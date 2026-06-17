@@ -31,8 +31,7 @@ jobs:
 
       - name: Frontend build check
         run: |
-          npm install -g npm@latest
-          npm ci
+          npm install
           npm run build -- --configuration production
         working-directory: src/LinguaCoach.Web
 
