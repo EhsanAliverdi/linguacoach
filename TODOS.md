@@ -106,6 +106,52 @@ Each item includes context, motivation, and the phase where it was deferred.
 **Why:** Divergence risk: adding a skill key to one service but not the other creates silent drops. A single registry (possibly seeded from DB) would eliminate this.
 **Deferred from:** Phase 10P, 2026-06-18.
 
+---
+
+## Usage Governance (Phase 10R foundation — deferred items)
+
+### TODO-018 — Workspace and cohort policy inheritance
+**What:** Implement `UsagePolicyScopeType.Workspace` and `UsagePolicyScopeType.Cohort` policy resolution layers between Global default and Student-specific assignment.
+**Why:** Phase 10R resolves policies as Global → Student only. Workspace/cohort inheritance is required for multi-tenant enterprise deployments where an org-level policy overrides the global default.
+**Context:** `UsagePolicyScopeType` enum and `ScopeType` DB column already exist. `GetEffectivePolicyAsync` has a TODO comment for the workspace/cohort check.
+**Deferred from:** Phase 10R, 2026-06-18.
+
+### TODO-019 — Provider pricing tables for accurate cost estimation
+**What:** Introduce a `ProviderPricingTable` that maps (provider, model) to (input cost per 1k tokens, output cost per 1k tokens). Auto-compute `EstimatedCost` in `RecordAsync` instead of relying on callers.
+**Why:** `EstimatedCost` is currently set by callers who may use stale or placeholder values. Cost estimates may diverge from real provider invoices. Required before any billing feature goes live.
+**Context:** All `UsageEvent` records have `Provider` and `Model` fields. A pricing table lookup at record time would give consistent cost tracking.
+**Deferred from:** Phase 10R, 2026-06-18.
+
+### TODO-020 — Monthly and weekly limit enforcement
+**What:** Implement `WeeklyLimit` and `MonthlyLimit` checks in `UsageQuotaService.CheckAsync`.
+**Why:** `UsagePolicyRule` stores `WeeklyLimit`, `MonthlyLimit`, and `MonthlyCostLimit` but only `DailyLimit` is enforced. Weekly/monthly enforcement is needed for production quota management.
+**Context:** The DB columns and rule properties are in place. `CheckAsync` needs additional aggregate queries for the current week/month window.
+**Deferred from:** Phase 10R, 2026-06-18.
+
+### TODO-021 — Student-facing usage widget
+**What:** Add a student-facing page or dashboard card showing remaining quota, usage this week/month, and which features are near limit.
+**Why:** Students have no visibility into their quota state until a 429 is returned. A proactive usage widget improves UX and reduces support load.
+**Context:** `GET /api/admin/students/{id}/usage` exists for admins. A student-facing equivalent under `/api/usage` would power the widget.
+**Deferred from:** Phase 10R, 2026-06-18.
+
+### TODO-022 — CSV export of usage data
+**What:** Admin endpoint to export `StudentUsageDaily` aggregates as CSV for a date range, optionally filtered by student or feature key.
+**Why:** Admins need cost reporting for billing reconciliation. The `UsageEvent` ledger is the source of truth but is not currently queryable from the UI.
+**Deferred from:** Phase 10R, 2026-06-18.
+
+### TODO-023 — Near-quota notification
+**What:** Send email/push notification when a student reaches 80% of a HardLimit quota. Use the `WarningThresholdPercent` field on `UsagePolicyRule`.
+**Why:** Students currently receive no warning before hitting a hard limit. The `WarningThresholdPercent` field is stored but never used.
+**Context:** Requires notification platform (email or in-app). `SoftWarning` enforcement mode in `QuotaDecision` is wired for the API response but no async notification is triggered.
+**Deferred from:** Phase 10R, 2026-06-18.
+
+### TODO-024 — Explicit transaction scope for UsageEvent + StudentUsageDaily upsert
+**What:** Wrap `UsageQuotaService.RecordAsync` in an explicit `IDbContextTransaction` so UsageEvent and StudentUsageDaily are written atomically.
+**Why:** Currently both writes use a single `SaveChangesAsync` call which is implicit. An explicit transaction scope would make the atomicity guarantee clearer and allow future use of `IsolationLevel.Serializable` for the upsert if write contention becomes an issue.
+**Deferred from:** Phase 10R engineering review, 2026-06-18.
+
+---
+
 ### ~~TODO-014~~ — Wire TryMarkConsumedAsync into ActivitySubmitHandler — **DONE in Phase 10O-F**
 
 `ActivitySubmitHandler` now calls `TryConsumeReadinessItemAsync` best-effort after all activity completion paths. Looks up Reserved readiness item by `studentProfileId + LearningActivityId`, calls `TryMarkConsumedAsync`. Idempotent and exception-safe.

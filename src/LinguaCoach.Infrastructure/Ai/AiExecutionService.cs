@@ -1,5 +1,7 @@
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.UsageGovernance;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -9,15 +11,43 @@ public sealed class AiExecutionService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IAiProviderResolver _resolver;
+    private readonly IUsageQuotaService _quota;
     private readonly ILogger<AiExecutionService> _logger;
+
+    // Feature keys that require a pre-call quota check
+    private static readonly HashSet<string> QuotaCheckedFeatures = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "writing.evaluate",
+        "speaking.evaluate",
+        "tts.generate",
+        "practice.dynamic.generate",
+        "lesson.generate",
+        "lesson.regenerate",
+        "learning_path.generate",
+        "learning_path.regenerate",
+    };
+
+    // Mapping from internal AI feature keys to governance feature keys
+    private static readonly Dictionary<string, string> GovernanceKeyMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["activity_evaluate_writing"] = "writing.evaluate",
+        ["writing.exercise"] = "writing.evaluate",
+        ["writing.exercise.v2"] = "writing.evaluate",
+        ["activity_evaluate_speaking_roleplay"] = "speaking.evaluate",
+        ["activity_evaluate_lesson_reflection"] = "speaking.evaluate",
+        ["learning_path_generate"] = "learning_path.generate",
+        ["learning_path_generate_adaptive"] = "learning_path.regenerate",
+    };
 
     public AiExecutionService(
         LinguaCoachDbContext db,
         IAiProviderResolver resolver,
+        IUsageQuotaService quota,
         ILogger<AiExecutionService> logger)
     {
         _db = db;
         _resolver = resolver;
+        _quota = quota;
         _logger = logger;
     }
 
@@ -28,13 +58,26 @@ public sealed class AiExecutionService
         string? correlationId,
         CancellationToken ct)
     {
+        var governanceKey = ResolveGovernanceKey(featureKey);
+
+        // Pre-call quota check for expensive features when a student is known
+        if (studentProfileId.HasValue && studentProfileId != Guid.Empty
+            && QuotaCheckedFeatures.Contains(governanceKey))
+        {
+            var decision = await _quota.CheckAsync(studentProfileId.Value, governanceKey, estimatedUnits: 1, ct: ct);
+            if (!decision.Allowed)
+                throw new QuotaExceededException(decision);
+        }
+
         var pair = _resolver.ResolveLlm(featureKey, ResolveLlmCategory(featureKey));
         var started = DateTime.UtcNow;
+        AiResponse? successResponse = null;
+
         try
         {
-            return await ExecuteOneAsync(pair.Primary, baseRequest, featureKey, false, studentProfileId, correlationId, ct);
+            successResponse = await ExecuteOneInternalAsync(pair.Primary, baseRequest, featureKey, false, studentProfileId, correlationId, ct);
         }
-        catch (Exception primaryEx) when (primaryEx is not AiUnavailableException)
+        catch (Exception primaryEx) when (primaryEx is not AiUnavailableException and not QuotaExceededException)
         {
             _logger.LogWarning(primaryEx,
                 "Primary AI provider failed FeatureKey={FeatureKey} Provider={Provider} Model={Model} CorrelationId={CorrelationId}",
@@ -48,24 +91,58 @@ public sealed class AiExecutionService
                 throw new AiUnavailableException($"AI provider '{pair.Primary.ProviderName}' failed and no fallback is configured.", primaryEx);
         }
 
-        try
+        if (successResponse is null)
         {
-            started = DateTime.UtcNow;
-            return await ExecuteOneAsync(pair.Fallback!, baseRequest, featureKey, true, studentProfileId, correlationId, ct);
+            try
+            {
+                started = DateTime.UtcNow;
+                successResponse = await ExecuteOneInternalAsync(pair.Fallback!, baseRequest, featureKey, true, studentProfileId, correlationId, ct);
+            }
+            catch (Exception fallbackEx) when (fallbackEx is not AiUnavailableException and not QuotaExceededException)
+            {
+                _logger.LogError(fallbackEx,
+                    "Fallback AI provider failed FeatureKey={FeatureKey} Provider={Provider} Model={Model} CorrelationId={CorrelationId}",
+                    featureKey, pair.Fallback!.ProviderName, pair.Fallback.ModelName, correlationId);
+
+                await LogUsageAsync(new AiResponse("", 0, 0, 0m, pair.Fallback.ModelName, pair.Fallback.ProviderName),
+                    featureKey, true, false, fallbackEx.GetType().Name, studentProfileId, correlationId, ct,
+                    (long)(DateTime.UtcNow - started).TotalMilliseconds);
+
+                throw new AiUnavailableException($"All AI providers failed for feature '{featureKey}'.", fallbackEx);
+            }
         }
-        catch (Exception fallbackEx) when (fallbackEx is not AiUnavailableException)
+
+        // Record governance usage event after successful call
+        if (studentProfileId.HasValue && studentProfileId != Guid.Empty && successResponse is not null)
         {
-            _logger.LogError(fallbackEx,
-                "Fallback AI provider failed FeatureKey={FeatureKey} Provider={Provider} Model={Model} CorrelationId={CorrelationId}",
-                featureKey, pair.Fallback!.ProviderName, pair.Fallback.ModelName, correlationId);
-
-            await LogUsageAsync(new AiResponse("", 0, 0, 0m, pair.Fallback.ModelName, pair.Fallback.ProviderName),
-                featureKey, true, false, fallbackEx.GetType().Name, studentProfileId, correlationId, ct,
-                (long)(DateTime.UtcNow - started).TotalMilliseconds);
-
-            throw new AiUnavailableException($"All AI providers failed for feature '{featureKey}'.", fallbackEx);
+            try
+            {
+                await _quota.RecordAsync(new UsageEvent(
+                    studentProfileId.Value,
+                    governanceKey,
+                    UsageUnitType.Count,
+                    unitsUsed: 1,
+                    provider: successResponse.ProviderName,
+                    model: successResponse.ModelName,
+                    inputTokens: successResponse.InputTokens,
+                    outputTokens: successResponse.OutputTokens,
+                    totalTokens: successResponse.InputTokens + successResponse.OutputTokens,
+                    estimatedCost: successResponse.CostUsd,
+                    requestId: null,
+                    correlationId: correlationId,
+                    success: true), ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to record usage event FeatureKey={FeatureKey}", governanceKey);
+            }
         }
+
+        return successResponse!.ResponseJson;
     }
+
+    private static string ResolveGovernanceKey(string featureKey) =>
+        GovernanceKeyMap.TryGetValue(featureKey, out var mapped) ? mapped : featureKey;
 
     private static string ResolveLlmCategory(string featureKey)
     {
@@ -103,7 +180,7 @@ public sealed class AiExecutionService
         };
     }
 
-    private async Task<string> ExecuteOneAsync(
+    private async Task<AiResponse> ExecuteOneInternalAsync(
         AiProviderSelection selection,
         AiRequest baseRequest,
         string featureKey,
@@ -123,7 +200,7 @@ public sealed class AiExecutionService
         var response = await selection.Provider.CompleteAsync(request, ct);
         var durationMs = (long)(DateTime.UtcNow - started).TotalMilliseconds;
         await LogUsageAsync(response, featureKey, isFallback, true, null, studentProfileId, correlationId, ct, durationMs);
-        return response.ResponseJson;
+        return response;
     }
 
     private async Task LogUsageAsync(

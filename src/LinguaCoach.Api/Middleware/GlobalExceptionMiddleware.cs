@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.UsageGovernance;
 
 namespace LinguaCoach.Api.Middleware;
 
@@ -45,6 +46,21 @@ public sealed class GlobalExceptionMiddleware
                 ex.GetType().Name);
 
             if (context.Response.HasStarted) return;
+
+            if (ex is QuotaExceededException quotaEx)
+            {
+                context.Response.StatusCode = 429;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = quotaEx.Decision.Reason ?? "You have reached your usage limit for this feature.",
+                    featureKey = quotaEx.Decision.FeatureKey,
+                    availableAlternatives = quotaEx.Decision.AvailableAlternatives,
+                    resetAt = quotaEx.Decision.ResetAt,
+                    correlationId = cid,
+                });
+                return;
+            }
 
             context.Response.StatusCode = ex is KeyNotFoundException ? 404
                 : ex is UnauthorizedAccessException ? 403

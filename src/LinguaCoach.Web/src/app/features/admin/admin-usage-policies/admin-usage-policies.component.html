@@ -1,0 +1,116 @@
+<div class="sp-admin-page-header">
+  <h1 class="sp-admin-page-title">Usage Policies</h1>
+  <p class="sp-admin-page-sub">Define and manage quota policies for features and AI usage.</p>
+</div>
+
+@if (saveSuccess()) {
+  <div class="sp-admin-alert-success" style="margin-bottom:16px">{{ saveSuccess() }}</div>
+}
+
+@if (!showForm()) {
+  <div style="margin-bottom:16px">
+    <button class="sp-btn sp-btn-primary" (click)="openCreate()">New Policy</button>
+  </div>
+}
+
+<!-- Create/Edit form -->
+@if (showForm()) {
+  <div class="sp-admin-form-card" style="margin-bottom:24px;padding:20px">
+    <h2 style="font-size:15px;font-weight:700;margin-bottom:16px">
+      {{ editingId() ? 'Edit Policy' : 'New Policy' }}
+    </h2>
+
+    @if (saveError()) {
+      <div class="sp-admin-alert-error" style="margin-bottom:12px">{{ saveError() }}</div>
+    }
+
+    <div style="display:grid;gap:12px;max-width:480px">
+      <div>
+        <label class="sp-label">Name</label>
+        <input class="sp-input" [ngModel]="formName()" (ngModelChange)="formName.set($event)" placeholder="Policy name" />
+      </div>
+      <div>
+        <label class="sp-label">Description</label>
+        <input class="sp-input" [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)" placeholder="Optional description" />
+      </div>
+      @if (!editingId()) {
+        <div>
+          <label class="sp-label">Scope type</label>
+          <select class="sp-input" [ngModel]="formScopeType()" (ngModelChange)="formScopeType.set($event)">
+            <option value="Global">Global</option>
+            <option value="Student">Student</option>
+          </select>
+        </div>
+      }
+      <div style="display:flex;gap:24px;align-items:center">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" [ngModel]="formIsDefault()" (ngModelChange)="formIsDefault.set($event)" />
+          Default policy
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" [ngModel]="formIsActive()" (ngModelChange)="formIsActive.set($event)" />
+          Active
+        </label>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="sp-btn sp-btn-primary" (click)="save()" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : (editingId() ? 'Update' : 'Create') }}
+      </button>
+      <button class="sp-btn sp-btn-ghost" (click)="cancel()">Cancel</button>
+    </div>
+  </div>
+}
+
+<!-- Policies table -->
+@if (loading()) {
+  <div class="sp-loading-pulse" style="height:160px"></div>
+} @else if (error()) {
+  <div class="sp-admin-alert-error">{{ error() }}</div>
+} @else {
+  <div class="sp-admin-table-card">
+    @if (policies().length === 0) {
+      <div style="padding:24px;text-align:center;font-size:13px;color:var(--sp-muted)">No usage policies yet.</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table class="sp-admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Scope</th>
+              <th>Default</th>
+              <th>Active</th>
+              <th>Rules</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of policies(); track p.id) {
+              <tr>
+                <td style="font-weight:600">{{ p.name }}</td>
+                <td>{{ p.scopeType }}</td>
+                <td>
+                  @if (p.isDefault) {
+                    <span style="color:var(--sp-success);font-weight:700">Yes</span>
+                  } @else {
+                    <span style="color:var(--sp-faint)">—</span>
+                  }
+                </td>
+                <td>
+                  <span [style.color]="p.isActive ? 'var(--sp-success)' : 'var(--sp-speaking)'">
+                    {{ p.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td style="color:var(--sp-muted)">{{ p.rules.length }}</td>
+                <td>
+                  <button class="sp-btn sp-btn-ghost" style="font-size:12px;padding:4px 10px" (click)="openEdit(p)">Edit</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

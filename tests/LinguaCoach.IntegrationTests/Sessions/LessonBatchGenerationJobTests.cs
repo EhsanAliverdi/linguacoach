@@ -35,6 +35,7 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
         var ai = new AiExecutionService(
             db,
             new LessonPlanProviderResolver(),
+            scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.UsageGovernance.IUsageQuotaService>(),
             NullLogger<AiExecutionService>.Instance);
 
         var routing = scope.ServiceProvider.GetRequiredService<ICurriculumRoutingService>();

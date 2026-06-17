@@ -61,6 +61,15 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 10M — Student activity readiness pool
     public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();
 
+    // Phase 10R — Usage governance, token tracking & quota enforcement
+    public DbSet<FeatureDefinition> FeatureDefinitions => Set<FeatureDefinition>();
+    public DbSet<UsagePolicy> UsagePolicies => Set<UsagePolicy>();
+    public DbSet<UsagePolicyRule> UsagePolicyRules => Set<UsagePolicyRule>();
+    public DbSet<StudentPolicyAssignment> StudentPolicyAssignments => Set<StudentPolicyAssignment>();
+    public DbSet<UsageEvent> UsageEvents => Set<UsageEvent>();
+    public DbSet<StudentUsageDaily> StudentUsageDaily => Set<StudentUsageDaily>();
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

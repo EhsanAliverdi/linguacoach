@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 12:00
+lastUpdated: 2026-06-18 18:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,64 @@ Last updated: 2026-06-18
 ---
 
 ## Most recently completed sprint
+
+**Phase 10R — Usage Governance, Token Tracking & Quota Enforcement** — complete (2026-06-18)
+
+Phase 10R introduces enterprise-grade usage governance. Every AI feature call is tracked per student. Admins can define quota policies with daily limits per feature. Expensive AI calls are blocked before they incur cost when a student's quota is exhausted. The system distinguishes prepared learning (always allowed) from expensive on-demand AI (gated).
+
+### What was built
+
+**Domain**
+- 4 new enums: `FeatureCategory`, `EnforcementMode`, `UsageUnitType`, `UsagePolicyScopeType`.
+- 7 new entities: `FeatureDefinition`, `UsagePolicy`, `UsagePolicyRule`, `StudentPolicyAssignment`, `UsageEvent` (append-only ledger), `StudentUsageDaily` (upserted aggregate), `AdminAuditLog`.
+
+**Persistence**
+- 7 new EF Core configurations.
+- EF migration `Phase10R_UsageGovernance`.
+- `UsageGovernanceSeeder` — seeds 16 feature definitions and 3 policies idempotently.
+
+**Application layer**
+- `IUsageQuotaService` — `CheckAsync`, `RecordAsync`, `GetUsageSummaryAsync`, `GetEffectivePolicyAsync`.
+- `QuotaDecision` — result with Allowed flag, limits, AvailableAlternatives.
+- `QuotaExceededException` — wraps QuotaDecision for middleware mapping.
+- `IUsageGovernanceAdminService` — feature definitions, policy CRUD, student assignment.
+
+**Infrastructure**
+- `UsageQuotaService` — policy resolution (student → global default), HardLimit enforcement against `StudentUsageDaily`, event recording.
+- `UsageGovernanceAdminService` — policy CRUD with audit log writes.
+- `AiExecutionService` — pre-call `CheckAsync` for 8 expensive features; post-call `RecordAsync`; failed calls not recorded.
+
+**API**
+- `AdminUsageGovernanceController` — 8 endpoints under `/api/admin/` (feature definitions, policy CRUD, student assignment, usage summary).
+- `GlobalExceptionMiddleware` — `QuotaExceededException` → HTTP 429 with structured body.
+
+**Angular**
+- `UsageGovernanceService` — HTTP client for all 8 admin endpoints.
+- `AdminUsagePoliciesComponent` — create/edit policy form with signals; policies table.
+- Route: `/admin/usage-policies`.
+
+**Tests**
+- 16 DB-layer integration tests (`UsageGovernanceDbTests`): seeding idempotency, record+aggregate, HardLimit blocking, TrackOnly pass-through, policy resolution, audit log, daily rollup, usage summary, admin CRUD.
+- 5 HTTP endpoint integration tests (`UsageGovernanceEndpointTests`): list features, 403, create policy, student usage, non-admin 403.
+- 8 Angular component unit tests + 6 service HTTP tests.
+
+### Gates at completion
+- Architecture: 3 passed
+- Unit: 1233 passed
+- Integration: 649 passed
+- Total .NET: 1885 passed, 0 failed
+- Angular: 302 passed, 0 failed
+- Angular prod build: clean
+
+### What is intentionally NOT in Phase 10R
+Workspace/cohort policy inheritance, billing integration, provider pricing tables, monthly/weekly limit enforcement, CSV export, student-facing usage widget, notification platform, enterprise auth overhaul.
+
+See: `docs/reviews/2026-06-18-phase-10r-usage-governance-token-quota-review.md`
+See: `docs/architecture/usage-governance.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10Q — Admin Curriculum, Format & Context Controls** — complete (2026-06-18)
 

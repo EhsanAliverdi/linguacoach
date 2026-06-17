@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 02:00
+lastUpdated: 2026-06-18 18:00
 owner: product
 supersedes:
 supersededBy:
@@ -47,6 +47,22 @@ Failure categories found and fixed:
 
 Final Playwright result: 175 passed. No tests remain failing or skipped from this
 stabilisation pass. No product behaviour changed.
+
+## Usage governance (Phase 10R)
+
+All AI feature calls are tracked per student. Admins can define and assign quota policies with per-feature daily limits. Expensive on-demand AI calls are blocked (HTTP 429) before they incur cost when a student exhausts their quota. Prepared/pre-generated content is always allowed.
+
+- Feature registry: 16 features across PreparedLearning, DynamicAi, ExpensiveAi categories.
+- 3 seeded policies: Default Pilot Student (TrackOnly all), Low Cost Student (HardLimit 5/day writing, 3/day speaking, 5/day TTS), Test Unlimited (TrackOnly, for testing).
+- Admin UI at `/admin/usage-policies` — create, edit, assign policies.
+- HTTP 429 response includes `featureKey`, `availableAlternatives`, `resetAt`.
+- Audit log written for every policy assignment change.
+
+Deferred: workspace/cohort inheritance, billing, monthly/weekly limits, student-facing widget.
+
+See: `docs/architecture/usage-governance.md`
+
+---
 
 ## Learning preferences in AI context
 

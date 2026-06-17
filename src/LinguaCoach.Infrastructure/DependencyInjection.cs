@@ -249,6 +249,12 @@ public static class DependencyInjection
         services.AddScoped<IGetPlacementCurrentSectionHandler>(sp => sp.GetRequiredService<PlacementService>());
         services.AddScoped<IGetPlacementResultHandler>(sp => sp.GetRequiredService<PlacementService>());
 
+        // Usage governance, token tracking & quota enforcement (Phase 10R)
+        services.AddScoped<LinguaCoach.Application.UsageGovernance.IUsageQuotaService,
+            LinguaCoach.Infrastructure.UsageGovernance.UsageQuotaService>();
+        services.AddScoped<LinguaCoach.Application.UsageGovernance.IUsageGovernanceAdminService,
+            LinguaCoach.Infrastructure.UsageGovernance.UsageGovernanceAdminService>();
+
         return services;
     }
 }

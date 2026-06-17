@@ -1,0 +1,126 @@
+using LinguaCoach.Application.UsageGovernance;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace LinguaCoach.Infrastructure.UsageGovernance;
+
+public sealed class UsageGovernanceAdminService : IUsageGovernanceAdminService
+{
+    private readonly LinguaCoachDbContext _db;
+
+    public UsageGovernanceAdminService(LinguaCoachDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<FeatureDefinition>> ListFeatureDefinitionsAsync(CancellationToken ct = default) =>
+        await _db.FeatureDefinitions.OrderBy(f => f.Category).ThenBy(f => f.Key).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<UsagePolicy>> ListUsagePoliciesAsync(CancellationToken ct = default) =>
+        await _db.UsagePolicies
+            .Include(p => p.Rules.Where(r => r.IsActive))
+            .OrderBy(p => p.Name)
+            .ToListAsync(ct);
+
+    public async Task<UsagePolicy?> GetUsagePolicyAsync(Guid id, CancellationToken ct = default) =>
+        await _db.UsagePolicies
+            .Include(p => p.Rules)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
+
+    public async Task<UsagePolicy> CreateUsagePolicyAsync(
+        CreateUsagePolicyRequest request,
+        Guid adminUserId,
+        CancellationToken ct = default)
+    {
+        var policy = new UsagePolicy(
+            request.Name,
+            request.Description,
+            request.ScopeType,
+            request.IsDefault,
+            request.IsActive);
+
+        _db.UsagePolicies.Add(policy);
+        await _db.SaveChangesAsync(ct);
+
+        foreach (var r in request.Rules)
+        {
+            _db.UsagePolicyRules.Add(new UsagePolicyRule(
+                policy.Id, r.FeatureKey, r.TrackingEnabled,
+                r.EnforcementMode, r.UnitType,
+                r.DailyLimit, r.WeeklyLimit, r.MonthlyLimit,
+                r.DailyCostLimit, r.MonthlyCostLimit,
+                r.WarningThresholdPercent, r.IsActive));
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return policy;
+    }
+
+    public async Task<UsagePolicy> UpdateUsagePolicyAsync(
+        Guid id,
+        UpdateUsagePolicyRequest request,
+        Guid adminUserId,
+        CancellationToken ct = default)
+    {
+        var policy = await _db.UsagePolicies.FirstOrDefaultAsync(p => p.Id == id, ct)
+            ?? throw new KeyNotFoundException($"Usage policy {id} not found.");
+
+        policy.Update(request.Name, request.Description, request.IsDefault, request.IsActive);
+        await _db.SaveChangesAsync(ct);
+        return policy;
+    }
+
+    public async Task AssignPolicyToStudentAsync(
+        Guid studentProfileId,
+        Guid usagePolicyId,
+        Guid adminUserId,
+        string? reason,
+        CancellationToken ct = default)
+    {
+        // Deactivate any existing assignment
+        var existing = await _db.StudentPolicyAssignments
+            .Where(a => a.StudentProfileId == studentProfileId && a.IsActive)
+            .ToListAsync(ct);
+
+        foreach (var a in existing)
+            a.Deactivate();
+
+        var policy = await _db.UsagePolicies.FirstOrDefaultAsync(p => p.Id == usagePolicyId && p.IsActive, ct)
+            ?? throw new KeyNotFoundException($"Usage policy {usagePolicyId} not found or inactive.");
+
+        _db.StudentPolicyAssignments.Add(
+            new StudentPolicyAssignment(studentProfileId, usagePolicyId, adminUserId, reason));
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            adminUserId, "AssignUsagePolicy", "StudentPolicyAssignment",
+            entityId: studentProfileId.ToString(),
+            targetStudentId: studentProfileId,
+            newValueJson: $"{{\"policyId\":\"{usagePolicyId}\",\"policyName\":\"{policy.Name}\"}}",
+            reason: reason));
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<UsagePolicy?> GetStudentEffectivePolicyAsync(Guid studentProfileId, CancellationToken ct = default)
+    {
+        var assignment = await _db.StudentPolicyAssignments
+            .Where(a => a.StudentProfileId == studentProfileId && a.IsActive)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        Guid? policyId = assignment?.UsagePolicyId;
+
+        if (policyId is null)
+        {
+            policyId = await _db.UsagePolicies
+                .Where(p => p.IsDefault && p.IsActive && p.ScopeType == UsagePolicyScopeType.Global)
+                .Select(p => (Guid?)p.Id)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        if (policyId is null) return null;
+
+        return await _db.UsagePolicies
+            .Include(p => p.Rules.Where(r => r.IsActive))
+            .FirstOrDefaultAsync(p => p.Id == policyId, ct);
+    }
+}
