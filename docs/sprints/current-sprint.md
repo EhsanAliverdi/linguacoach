@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 23:45
+lastUpdated: 2026-06-18 02:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,49 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10O — Practice Gym Suggested Practice & Pool Serving** — complete (2026-06-18)
+
+Phase 10O connects the readiness pool to the student-facing Practice Gym. Students now receive personalised suggestion cards from their pre-filled pool, organised into Suggested, Continue, and Review sections, instead of only the static skill/exercise-type launcher.
+
+### What was built
+
+**Application layer**
+- `IPracticeGymSuggestionService` — interface: `GetSuggestionsForStudentAsync`, `StartSuggestionAsync`, `TryMarkConsumedAsync`.
+- `PracticeGymSuggestionsDto` / `PracticeGymSuggestionItemDto` / `StartSuggestionResult` — student-facing DTOs with full routing metadata, call-to-action labels, and navigation targets.
+
+**Infrastructure layer**
+- `PracticeGymSuggestionService` — pool query, in-memory ranking (focus match → context match → priority → expiry → FIFO), section partitioning, reservation with concurrency retry, best-effort consumption.
+
+**API layer**
+- `PracticeGymSuggestionsController` — three new student-facing endpoints:
+  - `GET /api/practice-gym/suggestions` — personalised suggestion cards.
+  - `POST /api/practice-gym/suggestions/{id}/start` — reserve item, return navigation target.
+  - `POST /api/practice-gym/suggestions/{id}/complete` — best-effort mark consumed.
+- Existing `GET /api/activity/practice-gym/next` unchanged.
+
+**DI**
+- `IPracticeGymSuggestionService` registered as Scoped in `DependencyInjection.cs`.
+
+### Tests
+- 14 new unit tests in `PracticeGymSuggestionServiceTests.cs`: exclusion rules, section assignment, reservation idempotency, consumed/failed status handling, TryMarkConsumed.
+- 10 new integration tests in `PracticeGymSuggestionIntegrationTests.cs`: DI registration, GET suggestions sections, POST start/complete lifecycle, smoke tests for existing paths, admin write-endpoint absence.
+
+### Gates at completion
+- Architecture: 3 passed
+- Unit: 1174 passed (was 1160, +14)
+- Integration: 597 passed (was 587, +10)
+- Total: 1774 passed, 0 failed
+- Angular/Playwright: blocked by pre-existing Node 24 + path-with-space environment issue. No Angular source changed in Phase 10O.
+
+### What is intentionally NOT in Phase 10O
+Angular/frontend integration (API is ready; deferred to a follow-on frontend phase), `TryMarkConsumedAsync` wiring in `ActivitySubmitHandler` (deferred — see TODOS.md TODO-010), admin write endpoints, full mastery/placement engine, `StudentProfile.CefrLevel` migration, plus-level persistence, notification system, usage/quota enforcement.
+
+See: `docs/reviews/2026-06-18-phase-10o-practice-gym-suggested-practice-review.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10N — Background Replenishment Pipeline** — complete (2026-06-17)
 

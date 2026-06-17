@@ -94,3 +94,15 @@ Each item includes context, motivation, and the phase where it was deferred.
 **What:** Replace `EnableReviewScaffoldGeneration` global flag with a per-student check: allow review/scaffold for a specific student × skill when `StudentSkillProfile.ScorePercent < threshold` for a prerequisite objective.
 **Why:** Global flag is too coarse. A B1-weak B2 student should get review content for B1 prerequisites, not all students globally.
 **Deferred from:** Phase 10N, 2026-06-17.
+
+### TODO-014 — Wire TryMarkConsumedAsync into ActivitySubmitHandler (Phase 10P+)
+**What:** When a student completes a Practice Gym activity that was started from a readiness pool suggestion (i.e. the activity has a linked `StudentActivityReadinessItem` in `Reserved` status), call `IPracticeGymSuggestionService.TryMarkConsumedAsync` to transition the item to `Consumed`.
+**Why:** Currently `StartSuggestionAsync` reserves the item but completion does not mark it consumed, so reserved items linger until the expiry sweep. Tracking consumption correctly closes the lifecycle loop and improves pool health metrics.
+**How:** In `ActivitySubmitHandler` (or `SessionLifecycleHandler.CompleteExercise`), after a successful completion, query `StudentActivityReadinessItems` for a matching `LearningActivityId` in `Reserved` status and call `TryMarkConsumedAsync`. Must be best-effort so a failure does not block the completion response.
+**Deferred from:** Phase 10O, 2026-06-18.
+
+### TODO-015 — Angular Practice Gym "Suggested for you" section (Phase 10P+)
+**What:** Add Suggested, Continue, and Review sections to the Practice Gym Angular page using the new `GET /api/practice-gym/suggestions` endpoint. Cards should show skill, CEFR level, routing reason label, duration, and a CTA button. Clicking a card calls `POST .../start` and navigates to the returned activity.
+**Why:** Phase 10O backend API is complete but the Angular frontend has not been updated. Students cannot yet see pool suggestions in the UI.
+**How:** Update `practice-gym.component.ts` and template. First fix the pre-existing `CommonModule` error in `PatternEvaluationResultComponent` (blocking production build), then add the suggestion sections. Follow existing responsive design tokens and style conventions.
+**Deferred from:** Phase 10O, 2026-06-18.

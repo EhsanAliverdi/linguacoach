@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 23:30
+lastUpdated: 2026-06-18 02:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -162,9 +162,31 @@ Bound from `appsettings.json` under `"ReadinessPool"`. Defaults:
 
 Replenishment targets students with `LifecycleStage >= CourseReady` and `OnboardingStatus = Complete` and not `Archived`.
 
-### Serving from pool (Phase 10O+)
+### Serving from pool (Phase 10O)
 
-Phase 10N creates pool items but does not change user-facing serving paths. Today lessons and Practice Gym still fall back to on-demand generation. Phase 10O will wire `ReserveNextReadyAsync` into session and practice retrieval paths.
+Phase 10O adds student-facing serving for Practice Gym pool items via `IPracticeGymSuggestionService` / `PracticeGymSuggestionService`.
+
+**Selection** — items are filtered by student + source + active statuses (excludes Consumed, Expired, Failed, Stale, Queued, Generating), then partitioned:
+
+- **SuggestedItems** — `Ready`, not lower-level review content. Ranked by focus-area match → goal context match → priority → expiry urgency → FIFO.
+- **ContinueItems** — `Reserved`, not past `ExpiresAt`.
+- **ReviewItems** — `ReviewOnly` status, or `Ready` + `IsLowerLevelContent=true` + non-Normal routing reason.
+
+**Reservation** — `StartSuggestionAsync` calls `item.Reserve()` with optimistic concurrency retry. Idempotent: already-reserved items return `AlreadyReserved=true` and the same navigation target.
+
+**Consumption** — `TryMarkConsumedAsync` is best-effort (swallows errors) so completion callbacks never break the calling flow. Must be called from `ActivitySubmitHandler` or a similar completion path (TODO — deferred to a later phase).
+
+**Replenishment signal** — `IsReplenishmentRecommended` in the DTO flags a below-target pool. The background `ReadinessPoolReplenishmentJob` (every 20 min) also handles this automatically.
+
+## Student-Facing API (Phase 10O)
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/practice-gym/suggestions` | Personalised suggestion cards (Suggested, Continue, Review sections) |
+| POST | `/api/practice-gym/suggestions/{id}/start` | Reserve item, return navigation target (LearningActivityId etc.) |
+| POST | `/api/practice-gym/suggestions/{id}/complete` | Best-effort mark item consumed |
+
+The existing `GET /api/activity/practice-gym/next` (by skill / by exercise type) remains unchanged.
 
 ## Admin Endpoints
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 23:45
+lastUpdated: 2026-06-18 02:00
 owner: product
 supersedes:
 supersededBy:
@@ -437,6 +437,39 @@ Completed staged migrations:
 Remaining staged migrations are pattern-backed activities. Planned future exercise formats made runnable so far: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), `reorder_paragraphs` (Phase 8D), `reading_writing_fill_in_blanks` (Phase 8E), `summarize_written_text` (Phase 8F), `write_essay` (Phase 8G), `listening_multiple_choice_single` (Phase 8H — first runnable listening-primary format), `listening_multiple_choice_multi` (Phase 8I — second runnable listening-primary format), `listening_fill_in_blanks` (Phase 8J — third runnable listening-primary format, first runnable listening+writing format), `select_missing_word` (Phase 8K — fourth runnable listening-primary format), `highlight_correct_summary` (Phase 8L — fifth runnable listening-primary format, first runnable listening+reading format), `highlight_incorrect_words` (Phase 8M — sixth runnable listening-primary format, second runnable listening+reading format), `write_from_dictation` (Phase 8O — seventh runnable listening-primary format), and `summarize_spoken_text` (Phase 8Q — eighth runnable listening-primary format, first AI-evaluated listening+writing format). All reading-primary, writing, and listening planned future formats are now ready. All remaining planned future exercise formats are the speaking formats (`read_aloud`, `repeat_sentence`, `describe_image`, `respond_to_situation`, `retell_lecture`, `summarize_group_discussion`, `answer_short_question`), which remain planned and non-runnable. Today pre-generation remains a future phase. Phase 8P (2026-06-16) wired the audio lifecycle for all 9 listening pattern keys. `HandlePatternKeyedAsync` now calls `EnsureAudioAsync` after creating pattern-keyed listening activities. `ActivityDto` gains an `AudioStatus` string field (`"ready"` / `"pending"` / `"unavailable"`). A shared `app-audio-player` Angular component was created and all 5 listening renderer HTML templates now use it instead of inline `<audio>` tags. The exercise-renderer getters for `listeningFillInBlanks`, `highlightCorrectSummary`, and `highlightIncorrectWords` now fall back to `activity.audioUrl` from the API when `ed['audioUrl']` is absent from the content JSON. Audio is now generated on first fetch for all listening patterns; `audioUrl` will be non-null when TTS succeeds. Phase 8Q (2026-06-16) added `summarize_spoken_text` to `ListeningAudioService.ListeningPatternKeys` (now 10 keys) so it reuses the same shared audio lifecycle and `app-audio-player`. Its evaluation reuses the existing `AiStructuredEvaluator` AI path (same as `summarize_written_text` / `write_essay`); `learnContent` and the expected-answer `keyPoints` are never sent to the AI before submission.
 
 Phase 8N (2026-06-16) added configurable practice item counts as a foundation (not a new format). Every `ExerciseTypeDefinition` now carries `MinItemsPerPractice`/`DefaultItemsPerPractice`/`MaxItemsPerPractice` and `MinOptionsPerItem`/`DefaultOptionsPerItem`/`MaxOptionsPerItem`, seeded per type, editable in the admin exercise-types page (with inline `min <= default <= max` and non-negative validation) and via admin PATCH. Counts feed generation prompt context and optional validator count enforcement. Counts are configuration only and never change readiness; no format was made runnable. See [practice-item-sets.md](../architecture/practice-item-sets.md).
+
+## Phase 10O — Practice Gym Suggested Practice & Pool Serving, completed (2026-06-18)
+
+Phase 10O connects the readiness pool to the student-facing Practice Gym. The pool built in 10M/10N is now surfaced as personalised suggestion cards via a new student API.
+
+### New student-facing API endpoints
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/practice-gym/suggestions` | Returns SuggestedItems, ContinueItems, ReviewItems from the readiness pool |
+| POST | `/api/practice-gym/suggestions/{id}/start` | Reserves an item; returns LearningActivityId / LearningSessionId for navigation |
+| POST | `/api/practice-gym/suggestions/{id}/complete` | Best-effort marks item consumed |
+
+### Sections returned
+
+- **SuggestedItems** — Ready items ranked by focus-area match → goal context match → pool priority → expiry → FIFO. Max 6.
+- **ContinueItems** — Reserved (in-progress) items not past expiry. Max 3.
+- **ReviewItems** — ReviewOnly status items or Ready+lower-level content with review/scaffold/remediation routing reason. Max 4.
+
+### Labels / wording
+
+Normal → "Recommended for your current goal" | Review → "Review" | Scaffold → "Step back to strengthen basics" | Remediation → "Targeted fix" | Fallback → "General practice".
+
+### What is NOT done yet
+
+- Angular frontend integration (API ready; see TODO-015).
+- `TryMarkConsumedAsync` wiring in `ActivitySubmitHandler` (see TODO-014).
+- Existing `GET /api/activity/practice-gym/next` (by skill/exercise type) is unchanged.
+
+### Tests
++14 unit tests, +10 integration tests. Total: 1774 passed, 0 failed.
+
+---
 
 ## Phase 10N — Background Replenishment Pipeline, completed (2026-06-17)
 

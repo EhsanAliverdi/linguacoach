@@ -38,6 +38,7 @@ using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Infrastructure.Curriculum;
+using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Infrastructure.ReadinessPool;
 using Microsoft.Extensions.Options;
@@ -226,6 +227,9 @@ public static class DependencyInjection
             services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
         services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
         services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
+
+        // Practice Gym suggestion service (Phase 10O)
+        services.AddScoped<IPracticeGymSuggestionService, LinguaCoach.Infrastructure.PracticeGym.PracticeGymSuggestionService>();
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();
