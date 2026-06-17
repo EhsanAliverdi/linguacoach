@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminPageHeaderComponent } from '../../../admin';
+import { SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -23,13 +23,13 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminPageHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
     </sp-admin-page-header>
 
-    <div class="sp-admin-students-toolbar">
+    <sp-admin-filter-bar>
       <label class="sp-admin-filter-toggle">
         <input type="checkbox" [(ngModel)]="includeArchived" (change)="load()" />
         <span>Show archived students</span>
@@ -42,7 +42,7 @@ interface StudentEditForm {
         (ngModelChange)="page.set(1)"
         aria-label="Search students" />
       <span class="sp-admin-table-muted">{{ filteredStudents().length }} shown</span>
-    </div>
+    </sp-admin-filter-bar>
 
     @if (loading()) {
       <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
@@ -112,11 +112,7 @@ interface StudentEditForm {
         }
       </div>
       @if (totalPages() > 1) {
-        <div class="sp-admin-pagination">
-          <button type="button" class="sp-button-ghost" [disabled]="page() <= 1" (click)="page.set(page() - 1)">Previous</button>
-          <span class="sp-admin-table-muted">Page {{ page() }} of {{ totalPages() }}</span>
-          <button type="button" class="sp-button-ghost" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">Next</button>
-        </div>
+        <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
       }
     }
 

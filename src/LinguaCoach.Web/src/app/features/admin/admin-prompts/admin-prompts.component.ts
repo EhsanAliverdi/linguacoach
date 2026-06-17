@@ -3,62 +3,70 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/admin.models';
+import {
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminCardComponent,
+  SpAdminEmptyStateComponent,
+  SpAdminFormFieldComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminTableComponent,
+} from '../../../admin';
 
 @Component({
   selector: 'app-admin-prompts',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminCardComponent,
+    SpAdminEmptyStateComponent,
+    SpAdminFormFieldComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminTableComponent,
+  ],
   template: `
-    <div class="sp-admin-page-header">
-      <div class="sp-admin-header-row">
-        <div>
-          <h1 class="sp-admin-page-title">Prompt Templates</h1>
-          <p class="sp-admin-page-sub">Manage and version AI prompt templates</p>
-        </div>
-        <button (click)="showForm.set(!showForm())" class="sp-admin-btn-primary">+ New version</button>
-      </div>
-    </div>
+    <sp-admin-page-header title="Prompt Templates" subtitle="Manage and version AI prompt templates">
+      <sp-admin-button (click)="showForm.set(!showForm())">New version</sp-admin-button>
+    </sp-admin-page-header>
 
     @if (showForm()) {
-      <div class="sp-admin-form-card sp-admin-mb">
-        <h3 class="sp-admin-section-title">Create new prompt version</h3>
+      <sp-admin-card title="Create new prompt version">
         <div class="sp-admin-field-grid">
-          <label class="sp-admin-field sp-admin-wide">
-            <span class="sp-admin-field-label">Key</span>
+          <sp-admin-form-field label="Key" class="sp-admin-wide">
             <input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" class="sp-input" />
-          </label>
-          <label class="sp-admin-field sp-admin-wide">
-            <span class="sp-admin-field-label">Content</span>
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Content" class="sp-admin-wide">
             <textarea [(ngModel)]="newContent" rows="6" placeholder="Prompt content with {{'{{variable}}'}} placeholders" class="sp-input sp-admin-mono"></textarea>
-          </label>
-          <label class="sp-admin-field">
-            <span class="sp-admin-field-label">Max input tokens</span>
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Max input tokens">
             <input [(ngModel)]="newMaxInput" type="number" class="sp-input" />
-          </label>
-          <label class="sp-admin-field">
-            <span class="sp-admin-field-label">Max output tokens</span>
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Max output tokens">
             <input [(ngModel)]="newMaxOutput" type="number" class="sp-input" />
-          </label>
+          </sp-admin-form-field>
         </div>
         @if (formError()) { <p class="sp-admin-text-error">{{ formError() }}</p> }
         <div class="sp-admin-action-row">
-          <button (click)="createVersion()" class="sp-admin-btn-primary">Create</button>
+          <sp-admin-button (click)="createVersion()">Create</sp-admin-button>
         </div>
-      </div>
+      </sp-admin-card>
     }
 
     @if (detail()) {
-      <div class="sp-admin-form-card sp-admin-mb">
-        <div class="sp-admin-header-row">
-          <span class="sp-admin-subsection-title">{{ detail()!.key }} v{{ detail()!.version }}</span>
-          <button (click)="detail.set(null)" class="sp-admin-link-button">Close</button>
-        </div>
+      <sp-admin-card [title]="detail()!.key + ' v' + detail()!.version">
+        <sp-admin-button slot="actions" variant="ghost" size="sm" (click)="detail.set(null)">Close</sp-admin-button>
         <pre class="sp-admin-prompt-preview">{{ detail()!.content }}</pre>
-      </div>
+      </sp-admin-card>
     }
 
-    <div class="sp-admin-table-card">
-      <table class="sp-admin-table">
+    @if (prompts().length === 0) {
+      <sp-admin-empty-state message="No prompt templates yet." />
+    } @else {
+      <sp-admin-table>
+      <table>
         <thead>
           <tr>
             <th>Key</th>
@@ -74,9 +82,9 @@ import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/a
               <td class="sp-admin-table-mono">{{ p.key }}</td>
               <td>v{{ p.version }}</td>
               <td>
-                <span class="sp-admin-badge" [class.sp-admin-badge-green]="p.isActive" [class.sp-admin-badge-slate]="!p.isActive">
+                <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'">
                   {{ p.isActive ? 'Active' : 'Inactive' }}
-                </span>
+                </sp-admin-badge>
               </td>
               <td class="sp-admin-table-muted">{{ p.maxInputTokens }}/{{ p.maxOutputTokens }}</td>
               <td class="sp-admin-row-actions">
@@ -91,10 +99,8 @@ import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/a
           }
         </tbody>
       </table>
-      @if (prompts().length === 0) {
-        <p class="sp-admin-empty-row">No prompt templates yet.</p>
-      }
-    </div>
+      </sp-admin-table>
+    }
   `,
   styles: [`
     .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}

@@ -53,6 +53,8 @@ describe('AdminExerciseTypesComponent', () => {
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('sp-admin-page-header')).toBeTruthy();
+    expect(html.querySelector('sp-admin-table')).toBeTruthy();
     expect(html.querySelector('[aria-label="min items"]')).toBeTruthy();
     expect(html.querySelector('[aria-label="max options"]')).toBeTruthy();
   });

@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type SpAdminBadgeTone = 'success' | 'warning' | 'info' | 'danger' | 'neutral';
+export type SpAdminBadgeTone = 'success' | 'warning' | 'info' | 'danger' | 'neutral' | 'primary';
 
 @Component({
   selector: 'sp-admin-badge',
@@ -22,6 +22,7 @@ export type SpAdminBadgeTone = 'success' | 'warning' | 'info' | 'danger' | 'neut
     .sp-adm-badge-success { background: var(--sp-admin-green-bg); color: var(--sp-admin-green); }
     .sp-adm-badge-warning { background: var(--sp-admin-amber-bg); color: var(--sp-admin-amber); }
     .sp-adm-badge-info { background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary); }
+    .sp-adm-badge-primary { background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary); }
     .sp-adm-badge-danger { background: var(--sp-admin-danger-bg); color: var(--sp-admin-danger); }
     .sp-adm-badge-neutral { background: var(--sp-admin-slate-bg); color: var(--sp-admin-slate); }
   `],

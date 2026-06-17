@@ -8,11 +8,34 @@ import {
   CreateUsagePolicyRequest,
   UpdateUsagePolicyRequest,
 } from '../../../core/services/usage-governance.service';
+import {
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminCardComponent,
+  SpAdminEmptyStateComponent,
+  SpAdminErrorStateComponent,
+  SpAdminFormFieldComponent,
+  SpAdminLoadingStateComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminTableComponent,
+} from '../../../admin';
 
 @Component({
   selector: 'app-admin-usage-policies',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminCardComponent,
+    SpAdminEmptyStateComponent,
+    SpAdminErrorStateComponent,
+    SpAdminFormFieldComponent,
+    SpAdminLoadingStateComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminTableComponent,
+  ],
   templateUrl: './admin-usage-policies.component.html',
 })
 export class AdminUsagePoliciesComponent implements OnInit {

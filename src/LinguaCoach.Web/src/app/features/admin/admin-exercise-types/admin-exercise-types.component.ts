@@ -3,104 +3,133 @@ import { FormsModule } from '@angular/forms';
 import { Component, OnInit, signal } from '@angular/core';
 import { AdminService } from '../../../core/services/admin.service';
 import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
+import {
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminErrorStateComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminTableComponent,
+} from '../../../admin';
 
 @Component({
   selector: 'app-admin-exercise-types',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminErrorStateComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminTableComponent,
+  ],
   template: `
-    <section class="sp-admin-page">
-      <div class="sp-admin-page-header">
-        <p class="sp-eyebrow">Learning engine</p>
-        <h1>Exercise types</h1>
-        <p>
-          Control which exercise types can be used for future SpeakPath lessons and Practice Gym generation.
-          Planned types stay unavailable until their renderer and evaluator are ready.
-        </p>
-      </div>
+    <sp-admin-page-header
+      title="Exercise Types"
+      subtitle="Control which exercise types can be used for future SpeakPath lessons and Practice Gym generation." />
 
       @if (error()) {
-        <div class="sp-card" style="border-color:#fecaca;color:#991b1b">{{ error() }}</div>
+        <sp-admin-error-state title="Exercise types unavailable" [message]="error()!" />
       }
 
-      <div class="sp-card" style="overflow:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <sp-admin-table>
+        <table>
           <thead>
-            <tr style="text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">
-              <th style="padding:12px">Exercise</th>
-              <th style="padding:12px">Skill</th>
-              <th style="padding:12px">Category</th>
-              <th style="padding:12px">Status</th>
-              <th style="padding:12px">Surfaces</th>
-              <th style="padding:12px">Needs</th>
-              <th style="padding:12px">Generation</th>
-              <th style="padding:12px">Item counts (min/def/max)</th>
-              <th style="padding:12px">Option counts (min/def/max)</th>
-              <th style="padding:12px">Action</th>
+            <tr>
+              <th>Exercise</th>
+              <th>Skill</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Surfaces</th>
+              <th>Needs</th>
+              <th>Generation</th>
+              <th>Item counts</th>
+              <th>Option counts</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             @for (type of exerciseTypes(); track type.key) {
-              <tr style="border-bottom:1px solid #f1f5f9">
-                <td style="padding:12px;min-width:240px">
+              <tr>
+                <td class="sp-admin-wide-cell">
                   <strong>{{ type.displayName }}</strong>
-                  <div style="color:#64748b;font-size:12px">{{ type.key }}</div>
-                  <div style="color:#64748b;font-size:12px">{{ type.description }}</div>
+                  <div class="sp-admin-mono">{{ type.key }}</div>
+                  <div class="sp-admin-muted">{{ type.description }}</div>
                 </td>
-                <td style="padding:12px">
-                  <span style="text-transform:capitalize">{{ type.primarySkill }}</span>
+                <td>
+                  <span class="sp-admin-cap">{{ type.primarySkill }}</span>
                   @if (type.secondarySkills.length) {
-                    <div style="color:#64748b;font-size:12px">+ {{ type.secondarySkills.join(', ') }}</div>
+                    <div class="sp-admin-muted">+ {{ type.secondarySkills.join(', ') }}</div>
                   }
                 </td>
-                <td style="padding:12px">{{ type.category }}</td>
-                <td style="padding:12px">
-                  <span [style.color]="type.implementationStatus === 'ready' ? '#047857' : '#92400e'">
+                <td>{{ type.category }}</td>
+                <td>
+                  <sp-admin-badge [tone]="type.implementationStatus === 'ready' ? 'success' : 'warning'">
                     {{ type.implementationStatus === 'ready' ? 'Ready' : 'Not implemented' }}
-                  </span>
-                  <div style="font-size:12px;color:#64748b">{{ type.isEnabled ? 'Enabled' : 'Disabled' }}</div>
+                  </sp-admin-badge>
+                  <div class="sp-admin-muted">{{ type.isEnabled ? 'Enabled' : 'Disabled' }}</div>
                 </td>
-                <td style="padding:12px;font-size:12px;color:#475569">
+                <td class="sp-admin-muted">
                   <div>Practice: {{ type.supportsPracticeGym ? 'yes' : 'no' }}</div>
                   <div>Today: {{ type.supportsTodayLesson ? 'yes' : 'no' }}</div>
                 </td>
-                <td style="padding:12px;font-size:12px;color:#475569">
+                <td class="sp-admin-muted">
                   <div>Audio: {{ type.requiresAudio ? 'yes' : 'no' }}</div>
                   <div>Image: {{ type.requiresImage ? 'yes' : 'no' }}</div>
                 </td>
-                <td style="padding:12px">
-                  <span [style.color]="type.isAvailableForGeneration ? '#047857' : '#991b1b'">
+                <td>
+                  <sp-admin-badge [tone]="type.isAvailableForGeneration ? 'success' : 'danger'">
                     {{ type.isAvailableForGeneration ? 'Available' : 'Blocked' }}
-                  </span>
+                  </sp-admin-badge>
                 </td>
-                <td style="padding:12px;white-space:nowrap">
-                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.minItemsPerPractice" aria-label="min items" />
-                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.defaultItemsPerPractice" aria-label="default items" />
-                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.maxItemsPerPractice" aria-label="max items" />
+                <td class="sp-admin-counts">
+                  <input type="number" min="0" [(ngModel)]="type.minItemsPerPractice" aria-label="min items" />
+                  <input type="number" min="0" [(ngModel)]="type.defaultItemsPerPractice" aria-label="default items" />
+                  <input type="number" min="0" [(ngModel)]="type.maxItemsPerPractice" aria-label="max items" />
                 </td>
-                <td style="padding:12px;white-space:nowrap">
-                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.minOptionsPerItem" aria-label="min options" />
-                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.defaultOptionsPerItem" aria-label="default options" />
-                  <input type="number" min="0" style="width:48px" [(ngModel)]="type.maxOptionsPerItem" aria-label="max options" />
+                <td class="sp-admin-counts">
+                  <input type="number" min="0" [(ngModel)]="type.minOptionsPerItem" aria-label="min options" />
+                  <input type="number" min="0" [(ngModel)]="type.defaultOptionsPerItem" aria-label="default options" />
+                  <input type="number" min="0" [(ngModel)]="type.maxOptionsPerItem" aria-label="max options" />
                   @if (countError(type)) {
-                    <div style="color:#991b1b;font-size:11px">{{ countError(type) }}</div>
+                    <div class="sp-admin-count-error">{{ countError(type) }}</div>
                   }
                 </td>
-                <td style="padding:12px;white-space:nowrap">
-                  <button class="sp-btn sp-btn-secondary" type="button" (click)="toggle(type)" [disabled]="savingKey() === type.key">
+                <td class="sp-admin-actions">
+                  <sp-admin-button variant="ghost" size="sm" type="button" (click)="toggle(type)" [disabled]="savingKey() === type.key">
                     {{ type.isEnabled ? 'Disable' : 'Enable' }}
-                  </button>
-                  <button class="sp-btn sp-btn-secondary" type="button" (click)="saveCounts(type)" [disabled]="savingKey() === type.key || !!countError(type)">
+                  </sp-admin-button>
+                  <sp-admin-button variant="ghost" size="sm" type="button" (click)="saveCounts(type)" [disabled]="savingKey() === type.key || !!countError(type)">
                     Save counts
-                  </button>
+                  </sp-admin-button>
                 </td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
-    </section>
+      </sp-admin-table>
   `,
+  styles: [`
+    .sp-admin-wide-cell { min-width: 240px; }
+    .sp-admin-counts {
+      white-space: nowrap;
+      min-width: 156px;
+    }
+    .sp-admin-counts input {
+      width: 48px;
+      margin-right: 4px;
+      border: 1px solid var(--sp-admin-border);
+      border-radius: var(--sp-admin-radius-sm);
+      padding: 6px;
+      font: inherit;
+      font-size: 12px;
+    }
+    .sp-admin-count-error {
+      color: var(--sp-admin-danger);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+  `],
 })
 export class AdminExerciseTypesComponent implements OnInit {
   exerciseTypes = signal<ExerciseTypeDefinition[]>([]);

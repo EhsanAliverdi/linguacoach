@@ -4,6 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { AiConfigCategoryItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
+import {
+  SpAdminBadgeComponent,
+  SpAdminCardComponent,
+  SpAdminPageHeaderComponent,
+} from '../../../admin';
 
 interface CategoryState {
   item: AiConfigCategoryItem;
@@ -45,19 +50,16 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent],
   template: `
-    <div class="sp-admin-page-header">
-      <h1 class="sp-admin-page-title">AI Configuration</h1>
-      <p class="sp-admin-page-sub">Category-level AI provider config, TTS voices, and provider credentials</p>
-    </div>
+    <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
     @if (loading()) {
       <div class="sp-admin-table-loading">Loading…</div>
     } @else {
 
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
-      <div class="mb-8">
+      <sp-admin-card title="LLM Categories" class="sp-admin-section-wrap">
         <h2 class="text-base font-semibold text-slate-900 mb-1">LLM Categories</h2>
         <p class="text-sm text-slate-500 mb-4">
           Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
@@ -72,9 +74,9 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   <div class="text-xs font-mono text-slate-400 mt-0.5">{{ cs.item.categoryKey }}</div>
                 </div>
                 @if (cs.item.providerName && cs.item.providerName !== 'fake') {
-                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Configured</span>
+                  <sp-admin-badge tone="success">Configured</sp-admin-badge>
                 } @else {
-                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Not set</span>
+                  <sp-admin-badge tone="warning">Not set</sp-admin-badge>
                 }
               </div>
 
@@ -119,10 +121,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
             </div>
           }
         </div>
-      </div>
+      </sp-admin-card>
 
       <!-- ── Section 2: TTS Categories ─────────────────────────────────── -->
-      <div class="mb-8">
+      <sp-admin-card title="Text-to-Speech" class="sp-admin-section-wrap">
         <h2 class="text-base font-semibold text-slate-900 mb-1">Text-to-Speech</h2>
         <p class="text-sm text-slate-500 mb-4">
           TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
@@ -137,9 +139,9 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   <div class="text-xs font-mono text-slate-400 mt-0.5">{{ cs.item.categoryKey }}</div>
                 </div>
                 @if (cs.item.providerName && cs.item.providerName !== 'fake') {
-                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">Configured</span>
+                  <sp-admin-badge tone="success">Configured</sp-admin-badge>
                 } @else {
-                  <span class="shrink-0 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">TTS disabled</span>
+                  <sp-admin-badge tone="warning">TTS disabled</sp-admin-badge>
                 }
               </div>
 
@@ -191,10 +193,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
             </div>
           }
         </div>
-      </div>
+      </sp-admin-card>
 
       <!-- ── Section 3: Provider credentials ────────────────────────────── -->
-      <div>
+      <sp-admin-card title="Provider credentials" class="sp-admin-section-wrap">
         <h2 class="text-base font-semibold text-slate-900 mb-1">Provider credentials</h2>
         <p class="text-sm text-slate-500 mb-4">
           One API key per provider applies to all features using it.
@@ -210,12 +212,12 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 <div class="flex items-center gap-3">
                   <span class="text-sm font-bold text-slate-800 capitalize w-24">{{ ps.catalog.providerName }}</span>
                   @if (ps.catalog.hasApiKey) {
-                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">Key stored</span>
+                    <sp-admin-badge tone="success">Key stored</sp-admin-badge>
                   } @else {
-                    <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Using env var</span>
+                    <sp-admin-badge tone="neutral">Using env var</sp-admin-badge>
                   }
                   @if (hasEndpointConfig(ps.catalog.providerName) && ps.catalog.apiEndpoint) {
-                    <span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">Endpoint set</span>
+                    <sp-admin-badge tone="info">Endpoint set</sp-admin-badge>
                   }
                 </div>
                 <div class="flex items-center gap-2">
@@ -351,11 +353,12 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
             </div>
           }
         </div>
-      </div>
+      </sp-admin-card>
 
     }
   `,
   styles: [`
+    .sp-admin-section-wrap { display: block; margin-bottom: 24px; }
     .sp-ai-select{width:100%;border:1px solid #CBD5E1;border-radius:9px;padding:7px 9px;font-size:13px;background:#fff;color:#0F172A;}
     .sp-ai-select:disabled{background:#F8FAFC;color:#94A3B8;}
     .sp-ai-model-select{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}

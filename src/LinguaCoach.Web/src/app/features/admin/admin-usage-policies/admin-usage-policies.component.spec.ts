@@ -56,6 +56,8 @@ describe('AdminUsagePoliciesComponent', () => {
     const fixture = TestBed.createComponent(AdminUsagePoliciesComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('sp-admin-page-header')).toBeTruthy();
+    expect(html.querySelector('sp-admin-table')).toBeTruthy();
     expect(html.textContent).toContain('Default Pilot Student');
   });
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 09:15
+lastUpdated: 2026-06-18 18:39
 owner: architecture
 supersedes:
 supersededBy:
@@ -107,6 +107,29 @@ For each admin page migration:
 
 ## Current Scope
 
-Phase 10X-A migrates the admin shell plus proof pages.
-Dashboard, Students, and Diagnostics now use the wrapper layer enough to prove the pattern.
-Full admin page migration is Phase 10X-B.
+Phase 10X-A migrated the admin shell plus proof pages.
+Phase 10X-B migrated the core admin pages to the wrapper layer where feasible.
+
+Migrated pages:
+
+- Dashboard: wrapper page header remains; full inline dashboard CSS reduction is still partial.
+- Students: wrapper page header, filter bar, and pagination; existing student management modals preserved.
+- AI Config: wrapper page header, section cards, and admin badges around category/provider status.
+- AI Usage: wrapper page header, stat cards, cards, table, badges, loading, empty, and error states.
+- Prompts: wrapper page header, card, form field, table, badge, empty state, and button components.
+- Exercise Types: wrapper page header, table, badges, buttons, and error state.
+- Integrations: wrapper page header and section cards; existing operational forms preserved.
+- Diagnostics: wrapper page header, loading, and error states from 10X-A remain.
+- Curriculum: wrapper page header, filter bar, table, badges, buttons, loading, and error states for the list path.
+- Usage Policies: wrapper page header, card, form field, table, badge, loading, empty, and error states.
+
+Remaining legacy areas:
+
+- Dashboard still has large component-local CSS for action cards, KPI layout, and placeholders.
+- Student edit/reset modals still use page-local modal markup.
+- AI Config still contains page-local form layout and some legacy utility class lists inside section cards.
+- Integrations still contains page-local forms and legacy table utility classes inside wrapper cards.
+- Curriculum create/edit/preview subviews still have page-local form markup.
+
+Feature pages should not introduce new long TailAdmin class lists for common UI. Add or extend
+`sp-admin-*` wrappers first, then use page-local CSS only for truly unique behavior.

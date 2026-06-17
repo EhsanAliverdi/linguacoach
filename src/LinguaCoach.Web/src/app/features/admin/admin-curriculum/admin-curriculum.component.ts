@@ -10,6 +10,15 @@ import {
   AdminRoutingPreviewRequest,
   AdminRoutingPreviewResult,
 } from '../../../core/services/curriculum.service';
+import {
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminErrorStateComponent,
+  SpAdminFilterBarComponent,
+  SpAdminLoadingStateComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminTableComponent,
+} from '../../../admin';
 
 type View = 'list' | 'edit' | 'create' | 'preview';
 
@@ -21,26 +30,32 @@ function parseJsonArray(json: string | null | undefined): string[] {
 @Component({
   selector: 'app-admin-curriculum',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminErrorStateComponent,
+    SpAdminFilterBarComponent,
+    SpAdminLoadingStateComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminTableComponent,
+  ],
   template: `
-    <section class="sp-admin-page">
-      <div class="sp-admin-page-header">
-        <p class="sp-eyebrow">Curriculum</p>
-        <h1>Curriculum objectives</h1>
-        <p>Manage the curriculum syllabus used for CEFR-aware activity routing.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-          <button class="sp-btn sp-btn-primary" type="button" (click)="startCreate()">New objective</button>
-          <button class="sp-btn sp-btn-secondary" type="button" (click)="view.set('preview')">Routing preview</button>
-        </div>
-      </div>
+    <sp-admin-page-header
+      title="Curriculum Objectives"
+      subtitle="Manage the curriculum syllabus used for CEFR-aware activity routing.">
+      <sp-admin-button type="button" (click)="startCreate()">New objective</sp-admin-button>
+      <sp-admin-button variant="secondary" type="button" (click)="view.set('preview')">Routing preview</sp-admin-button>
+    </sp-admin-page-header>
 
       @if (globalError()) {
-        <div class="sp-card" style="border-color:#fecaca;color:#991b1b;margin-bottom:16px">{{ globalError() }}</div>
+        <sp-admin-error-state title="Curriculum unavailable" [message]="globalError()!" />
       }
 
       <!-- ── List ── -->
       @if (view() === 'list') {
-        <div class="sp-card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <sp-admin-filter-bar>
           <select class="sp-input" style="min-width:120px" [(ngModel)]="filterCefr" (change)="load()">
             <option value="">All levels</option>
             @for (level of taxonomy()?.cefrLevels ?? []; track level) {
@@ -58,15 +73,15 @@ function parseJsonArray(json: string | null | undefined): string[] {
             <option value="true">Active only</option>
             <option value="false">Inactive only</option>
           </select>
-        </div>
+        </sp-admin-filter-bar>
 
-        <div class="sp-card" style="overflow:auto">
+        <sp-admin-table>
           @if (loading()) {
-            <p style="padding:16px;color:#64748b">Loading...</p>
+            <sp-admin-loading-state message="Loading objectives" />
           } @else if (objectives().length === 0) {
             <p style="padding:16px;color:#64748b">No objectives found.</p>
           } @else {
-            <table style="width:100%;border-collapse:collapse;font-size:14px">
+            <table>
               <thead>
                 <tr style="text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">
                   <th style="padding:12px">Objective</th>
@@ -96,18 +111,18 @@ function parseJsonArray(json: string | null | undefined): string[] {
                     </td>
                     <td style="padding:12px">{{ obj.difficultyBand }}/5</td>
                     <td style="padding:12px">
-                      <span [style.color]="obj.isActive ? '#047857' : '#64748b'">
+                      <sp-admin-badge [tone]="obj.isActive ? 'success' : 'neutral'">
                         {{ obj.isActive ? 'Active' : 'Inactive' }}
-                      </span>
+                      </sp-admin-badge>
                       @if (obj.isReviewable) { <div style="font-size:11px;color:#64748b">Reviewable</div> }
                       @if (obj.isExamInspired) { <div style="font-size:11px;color:#64748b">Exam-inspired</div> }
                     </td>
                     <td style="padding:12px;white-space:nowrap">
-                      <button class="sp-btn sp-btn-secondary" style="margin-right:4px" type="button" (click)="startEdit(obj)">Edit</button>
+                      <sp-admin-button variant="ghost" size="sm" type="button" (click)="startEdit(obj)">Edit</sp-admin-button>
                       @if (obj.isActive) {
-                        <button class="sp-btn sp-btn-secondary" type="button" [disabled]="actionKey() === obj.key" (click)="deactivate(obj.key)">Deactivate</button>
+                        <sp-admin-button variant="ghost" size="sm" type="button" [disabled]="actionKey() === obj.key" (click)="deactivate(obj.key)">Deactivate</sp-admin-button>
                       } @else {
-                        <button class="sp-btn sp-btn-secondary" type="button" [disabled]="actionKey() === obj.key" (click)="activate(obj.key)">Activate</button>
+                        <sp-admin-button variant="ghost" size="sm" type="button" [disabled]="actionKey() === obj.key" (click)="activate(obj.key)">Activate</sp-admin-button>
                       }
                     </td>
                   </tr>
@@ -115,7 +130,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
               </tbody>
             </table>
           }
-        </div>
+        </sp-admin-table>
       }
 
       <!-- ── Create / Edit form ── -->
@@ -318,7 +333,6 @@ function parseJsonArray(json: string | null | undefined): string[] {
           </div>
         </div>
       }
-    </section>
   `,
 })
 export class AdminCurriculumComponent implements OnInit {

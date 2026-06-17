@@ -17,6 +17,10 @@ export interface SpAdminTableColumn {
     <div class="sp-adm-table-card">
       @if (loading) {
         <sp-admin-loading-state message="Loading records" />
+      } @else if (columns.length === 0) {
+        <div class="sp-adm-table-scroll">
+          <ng-content />
+        </div>
       } @else if (!rows.length) {
         <sp-admin-empty-state [message]="emptyMessage" />
       } @else {
@@ -51,6 +55,30 @@ export interface SpAdminTableColumn {
       overflow: hidden;
     }
     .sp-adm-table-scroll { overflow-x: auto; }
+    :host ::ng-deep table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    :host ::ng-deep th {
+      text-align: left;
+      padding: 10px 14px;
+      background: var(--sp-admin-surface-subtle);
+      border-bottom: 1px solid var(--sp-admin-border);
+      color: var(--sp-admin-text-dim);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      white-space: nowrap;
+    }
+    :host ::ng-deep td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--sp-admin-border-subtle);
+      color: var(--sp-admin-text-secondary);
+      vertical-align: middle;
+    }
+    :host ::ng-deep tr:last-child td { border-bottom: none; }
     .sp-adm-table {
       width: 100%;
       border-collapse: collapse;

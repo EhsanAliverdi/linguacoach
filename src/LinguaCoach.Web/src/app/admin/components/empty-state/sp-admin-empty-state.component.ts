@@ -9,6 +9,9 @@ import { RouterLink } from '@angular/router';
   template: `
     <div class="sp-empty">
       <ng-content select="[slot=icon]" />
+      @if (title) {
+        <strong class="sp-empty-title">{{ title }}</strong>
+      }
       <p class="sp-empty-msg">{{ message }}</p>
       @if (ctaLabel && ctaRoute) {
         <a [routerLink]="ctaRoute" class="sp-empty-cta">{{ ctaLabel }}</a>
@@ -26,6 +29,11 @@ import { RouterLink } from '@angular/router';
       color: var(--sp-admin-text-dim);
       font-size: 13px;
     }
+    .sp-empty-title {
+      color: var(--sp-admin-text);
+      font-size: 14px;
+      font-weight: 800;
+    }
     .sp-empty-msg { margin: 0; }
     .sp-empty-cta {
       display: inline-block;
@@ -41,6 +49,7 @@ import { RouterLink } from '@angular/router';
   `],
 })
 export class SpAdminEmptyStateComponent {
+  @Input() title = '';
   @Input() message = 'No items found.';
   @Input() ctaLabel = '';
   @Input() ctaRoute = '';

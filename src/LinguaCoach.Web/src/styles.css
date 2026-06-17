@@ -563,6 +563,19 @@ button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-f
 
 /* Form card */
 .sp-admin-form-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.sp-admin-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.sp-admin-two-col{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:24px;}
+@media(min-width:960px){.sp-admin-two-col{grid-template-columns:1fr 1fr;}}
+.sp-admin-cap{text-transform:capitalize;font-weight:700;}
+.sp-admin-muted{color:var(--sp-admin-text-muted);}
+.sp-admin-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--sp-admin-text-muted);}
+.sp-admin-stack{display:grid;gap:16px;}
+.sp-admin-section-wrap{display:block;margin-bottom:24px;}
+.sp-admin-field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+.sp-admin-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.sp-admin-form-stack{display:grid;gap:12px;max-width:520px;}
+.sp-admin-check{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--sp-admin-text-secondary);cursor:pointer;}
+.sp-admin-check input{accent-color:var(--sp-admin-primary);}
 .sp-admin-form-desc{font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:20px;}
 
 /* Section heading inside a form/table card */

@@ -389,6 +389,19 @@ test('admin: mobile hamburger', async ({ page }) => {
   await page.screenshot({ path: 'e2e/screenshots/mobile-admin-drawer.png', fullPage: false });
 });
 
+test('admin: migrated pages do not create mobile page overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockAdmin(page);
+  await adminLogin(page);
+
+  for (const route of ['/admin/students', '/admin/ai-config']) {
+    await page.goto(route);
+    await page.waitForLoadState('networkidle');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  }
+});
+
 test('admin: diagnostics page loads with status section', async ({ page }) => {
   await mockAdmin(page);
   // Mock diagnostics endpoints

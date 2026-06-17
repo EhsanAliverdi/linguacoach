@@ -95,6 +95,9 @@ describe('AdminCurriculumComponent', () => {
     fixture.detectChanges();
     expect(svc.listObjectives).toHaveBeenCalled();
     const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('sp-admin-page-header')).toBeTruthy();
+    expect(html.querySelector('sp-admin-filter-bar')).toBeTruthy();
+    expect(html.querySelector('sp-admin-table')).toBeTruthy();
     expect(html.textContent).toContain('Greetings');
   });
 

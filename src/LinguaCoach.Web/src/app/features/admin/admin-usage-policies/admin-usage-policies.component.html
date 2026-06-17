@@ -1,116 +1,101 @@
-<div class="sp-admin-page-header">
-  <h1 class="sp-admin-page-title">Usage Policies</h1>
-  <p class="sp-admin-page-sub">Define and manage quota policies for features and AI usage.</p>
-</div>
+<sp-admin-page-header
+  title="Usage Policies"
+  subtitle="Define and manage quota policies for features and AI usage.">
+  @if (!showForm()) {
+    <sp-admin-button (click)="openCreate()">New Policy</sp-admin-button>
+  }
+</sp-admin-page-header>
 
 @if (saveSuccess()) {
-  <div class="sp-admin-alert-success" style="margin-bottom:16px">{{ saveSuccess() }}</div>
+  <sp-admin-card padding="sm">
+    <sp-admin-badge tone="success">{{ saveSuccess() }}</sp-admin-badge>
+  </sp-admin-card>
 }
 
-@if (!showForm()) {
-  <div style="margin-bottom:16px">
-    <button class="sp-btn sp-btn-primary" (click)="openCreate()">New Policy</button>
-  </div>
-}
-
-<!-- Create/Edit form -->
 @if (showForm()) {
-  <div class="sp-admin-form-card" style="margin-bottom:24px;padding:20px">
-    <h2 style="font-size:15px;font-weight:700;margin-bottom:16px">
-      {{ editingId() ? 'Edit Policy' : 'New Policy' }}
-    </h2>
-
+  <sp-admin-card [title]="editingId() ? 'Edit Policy' : 'New Policy'">
     @if (saveError()) {
-      <div class="sp-admin-alert-error" style="margin-bottom:12px">{{ saveError() }}</div>
+      <sp-admin-error-state title="Policy save failed" [message]="saveError()" />
     }
 
-    <div style="display:grid;gap:12px;max-width:480px">
-      <div>
-        <label class="sp-label">Name</label>
+    <div class="sp-admin-form-stack">
+      <sp-admin-form-field label="Name">
         <input class="sp-input" [ngModel]="formName()" (ngModelChange)="formName.set($event)" placeholder="Policy name" />
-      </div>
-      <div>
-        <label class="sp-label">Description</label>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Description">
         <input class="sp-input" [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)" placeholder="Optional description" />
-      </div>
+      </sp-admin-form-field>
       @if (!editingId()) {
-        <div>
-          <label class="sp-label">Scope type</label>
+        <sp-admin-form-field label="Scope type">
           <select class="sp-input" [ngModel]="formScopeType()" (ngModelChange)="formScopeType.set($event)">
             <option value="Global">Global</option>
             <option value="Student">Student</option>
           </select>
-        </div>
+        </sp-admin-form-field>
       }
-      <div style="display:flex;gap:24px;align-items:center">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+      <div class="sp-admin-actions">
+        <label class="sp-admin-check">
           <input type="checkbox" [ngModel]="formIsDefault()" (ngModelChange)="formIsDefault.set($event)" />
           Default policy
         </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <label class="sp-admin-check">
           <input type="checkbox" [ngModel]="formIsActive()" (ngModelChange)="formIsActive.set($event)" />
           Active
         </label>
       </div>
+      <div class="sp-admin-actions">
+        <sp-admin-button (click)="save()" [loading]="saving()">
+          {{ editingId() ? 'Update' : 'Create' }}
+        </sp-admin-button>
+        <sp-admin-button variant="ghost" (click)="cancel()">Cancel</sp-admin-button>
+      </div>
     </div>
-
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="sp-btn sp-btn-primary" (click)="save()" [disabled]="saving()">
-        {{ saving() ? 'Saving…' : (editingId() ? 'Update' : 'Create') }}
-      </button>
-      <button class="sp-btn sp-btn-ghost" (click)="cancel()">Cancel</button>
-    </div>
-  </div>
+  </sp-admin-card>
 }
 
-<!-- Policies table -->
 @if (loading()) {
-  <div class="sp-loading-pulse" style="height:160px"></div>
+  <sp-admin-loading-state message="Loading usage policies" />
 } @else if (error()) {
-  <div class="sp-admin-alert-error">{{ error() }}</div>
+  <sp-admin-error-state title="Usage policies unavailable" [message]="error()" />
+} @else if (policies().length === 0) {
+  <sp-admin-empty-state message="No usage policies yet." />
 } @else {
-  <div class="sp-admin-table-card">
-    @if (policies().length === 0) {
-      <div style="padding:24px;text-align:center;font-size:13px;color:var(--sp-muted)">No usage policies yet.</div>
-    } @else {
-      <div style="overflow-x:auto">
-        <table class="sp-admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Scope</th>
-              <th>Default</th>
-              <th>Active</th>
-              <th>Rules</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of policies(); track p.id) {
-              <tr>
-                <td style="font-weight:600">{{ p.name }}</td>
-                <td>{{ p.scopeType }}</td>
-                <td>
-                  @if (p.isDefault) {
-                    <span style="color:var(--sp-success);font-weight:700">Yes</span>
-                  } @else {
-                    <span style="color:var(--sp-faint)">—</span>
-                  }
-                </td>
-                <td>
-                  <span [style.color]="p.isActive ? 'var(--sp-success)' : 'var(--sp-speaking)'">
-                    {{ p.isActive ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td style="color:var(--sp-muted)">{{ p.rules.length }}</td>
-                <td>
-                  <button class="sp-btn sp-btn-ghost" style="font-size:12px;padding:4px 10px" (click)="openEdit(p)">Edit</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  </div>
+  <sp-admin-table>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Scope</th>
+          <th>Default</th>
+          <th>Active</th>
+          <th>Rules</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of policies(); track p.id) {
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ p.scopeType }}</td>
+            <td>
+              @if (p.isDefault) {
+                <sp-admin-badge tone="primary">Default</sp-admin-badge>
+              } @else {
+                <span class="sp-admin-muted">-</span>
+              }
+            </td>
+            <td>
+              <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'">
+                {{ p.isActive ? 'Active' : 'Inactive' }}
+              </sp-admin-badge>
+            </td>
+            <td class="sp-admin-muted">{{ p.rules.length }}</td>
+            <td>
+              <sp-admin-button variant="ghost" size="sm" (click)="openEdit(p)">Edit</sp-admin-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </sp-admin-table>
 }

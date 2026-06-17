@@ -1,12 +1,9 @@
-<div class="sp-admin-page">
-  <header class="sp-admin-page-header">
-    <h1 class="sp-admin-page-title">Integrations</h1>
-    <p class="sp-admin-page-sub">Object storage health and background lesson generation.</p>
-  </header>
+<sp-admin-page-header
+  title="Integrations"
+  subtitle="Object storage health and background lesson generation." />
 
   <!-- ── MinIO / Object Storage ──────────────────────────────────────────── -->
-  <section class="sp-admin-form-card" style="margin-bottom:20px">
-    <h2 class="sp-admin-section-title">MinIO / Object Storage</h2>
+  <sp-admin-card title="MinIO / Object Storage" class="sp-admin-section-wrap">
 
     @if (storageError()) {
       <p class="sp-admin-alert-error">{{ storageError() }}</p>
@@ -59,11 +56,10 @@
         </span>
       }
     </div>
-  </section>
+  </sp-admin-card>
 
   <!-- ── Generation settings ─────────────────────────────────────────────── -->
-  <section class="sp-admin-form-card" style="margin-bottom:20px">
-    <h2 class="sp-admin-section-title">Lesson Buffer Settings</h2>
+  <sp-admin-card title="Lesson Buffer Settings" class="sp-admin-section-wrap">
 
     @if (settingsError()) { <p class="sp-admin-alert-error">{{ settingsError() }}</p> }
     @if (settingsSaved()) { <p class="sp-admin-text-success">Settings saved.</p> }
@@ -127,11 +123,10 @@
         <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="saveSettings()">Save</button>
       </div>
     }
-  </section>
+  </sp-admin-card>
 
   <!-- ── Background Jobs ──────────────────────────────────────────────────── -->
-  <section class="sp-admin-form-card">
-    <h2 class="sp-admin-section-title">Background Jobs</h2>
+  <sp-admin-card title="Background Jobs">
 
     @if (batchesError()) { <p class="sp-admin-alert-error">{{ batchesError() }}</p> }
 
@@ -207,5 +202,4 @@
         </table>
       </div>
     }
-  </section>
-</div>
+  </sp-admin-card>

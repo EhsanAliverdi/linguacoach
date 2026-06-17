@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 18:00
+lastUpdated: 2026-06-18 18:39
 owner: product
 supersedes:
 supersededBy:
@@ -12,7 +12,7 @@ Last updated: 2026-06-18
 
 ---
 
-## Admin UI foundation (Phase 10X-A)
+## Admin UI foundation and core migration (Phase 10X-A / 10X-B)
 
 The admin app now has a SpeakPath wrapper component layer for future admin screens.
 TailAdmin-inspired styling is isolated behind `sp-admin-*` components and admin tokens.
@@ -22,9 +22,15 @@ TailAdmin-inspired styling is isolated behind `sp-admin-*` components and admin 
 - Shell wrappers: `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header`.
 - Page wrappers: page header, card, stat card, button, badge, table, state components, form controls, pagination, filter bar, modal, drawer, and toast outlet.
 - Service foundations: admin toast, modal confirm state, drawer state.
-- Proof pages: Dashboard, Students, and Diagnostics use the wrapper layer.
+- Phase 10X-A proof pages: Dashboard, Students, and Diagnostics use the wrapper layer.
+- Phase 10X-B core pages migrated where feasible: Students, AI Config, AI Usage, Prompts,
+  Exercise Types, Integrations, Curriculum, and Usage Policies.
+- Wrapper improvements in 10X-B: projected table content, primary badge tone, empty-state title,
+  and more flexible filter-bar alignment.
 
-Full migration of all admin pages is deferred to Phase 10X-B.
+Remaining admin polish is scoped to page-local legacy internals, not new product features.
+Dashboard inline CSS, AI Config form internals, Integrations internals, Curriculum create/edit/preview
+forms, and student management modals remain future cleanup areas.
 
 See: `docs/architecture/admin-ui-design-system.md`
 

@@ -8,11 +8,15 @@ import {
   GenerationSettings,
   BatchesResponse,
 } from '../../../core/services/admin-integrations.service';
+import {
+  SpAdminCardComponent,
+  SpAdminPageHeaderComponent,
+} from '../../../admin';
 
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SpAdminCardComponent, SpAdminPageHeaderComponent],
   templateUrl: './admin-integrations.component.html',
 })
 export class AdminIntegrationsComponent implements OnInit {

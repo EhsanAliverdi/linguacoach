@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 18:00
+lastUpdated: 2026-06-18 18:39
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,32 +14,51 @@ Last updated: 2026-06-18
 
 ## Active sprint
 
-**Phase 10X-A - Admin UI Design System, TailAdmin Adapter & Shell Migration** - in progress (2026-06-18)
+**Phase 10X-B - Admin Core Page Migration to Design System** - complete (2026-06-18)
 
-Goal: create the reusable SpeakPath admin UI foundation before building more usage-governance and student-management screens.
+Goal: migrate existing admin pages to the reusable SpeakPath admin wrapper system without adding new business features.
 
 ### In scope
 
-- Admin design tokens and TailAdmin adapter boundary.
-- `sp-admin-*` wrapper components.
-- Admin shell wrapper migration.
-- Toast, modal, and drawer foundations.
-- Proof migration for Dashboard, Students, and Diagnostics.
-- Component and service unit tests.
-- Architecture docs and review note.
+- Migrate core admin pages to `sp-admin-*` wrappers where feasible.
+- Reduce direct feature-page use of common TailAdmin-style utility lists.
+- Improve wrapper capability only where required by migration.
+- Preserve existing admin functionality.
+- Add Angular wrapper-presence tests.
+- Add a stable Playwright mobile overflow check for migrated admin pages.
+- Update architecture, handoff, review, and TODO docs.
 
 ### Out of scope
 
-Full admin page migration, full usage-governance UX, full AI Usage redesign, notification platform, enterprise auth, prompt playground, observability stack, billing, StudentProfile CEFR migration, full placement engine, and full mastery engine.
+Full usage-governance UX, full AI Usage redesign, notification platform, enterprise auth, prompt playground, observability stack, billing, StudentProfile CEFR migration, full placement engine, full mastery engine, and new backend business logic.
 
 ### Architecture decisions
 
 - Feature pages import wrappers from `src/app/admin`.
 - TailAdmin-specific style decisions stay behind wrappers and tokens.
 - Student UI remains separate.
+- Tables that need custom projected rows use `sp-admin-table` projection.
+- Page-local CSS remains allowed for unique workflows, but common cards, headers, badges,
+  filters, buttons, tables, empty, loading, and error states should use wrappers.
+
+### Delivered
+
+- Wrapper improvements: projected table mode, `primary` badge tone, empty-state title,
+  and improved filter-bar alignment.
+- Migrated pages: Dashboard, Students, AI Config, AI Usage, Prompts, Exercise Types,
+  Integrations, Diagnostics, Curriculum, and Usage Policies.
+- Added `admin-wrapper-migration.spec.ts` plus wrapper assertions in existing admin specs.
+- Added Playwright mobile overflow coverage for `/admin/students` and `/admin/ai-config`.
+
+### Remaining legacy internals
+
+- Dashboard still carries large inline component CSS.
+- Student edit/reset/archive modals still use page-local modal markup.
+- AI Config and Integrations still retain page-local form internals inside wrapper cards.
+- Curriculum create/edit/preview subviews still retain page-local form internals.
 
 See: `docs/architecture/admin-ui-design-system.md`
-See: `docs/reviews/2026-06-18-phase-10x-a-admin-ui-design-system-shell-review.md`
+See: `docs/reviews/2026-06-18-phase-10x-b-admin-core-page-migration-review.md`
 
 ---
 

@@ -1,11 +1,31 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
+import {
+  SpAdminBadgeComponent,
+  SpAdminCardComponent,
+  SpAdminEmptyStateComponent,
+  SpAdminErrorStateComponent,
+  SpAdminLoadingStateComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminStatCardComponent,
+  SpAdminTableComponent,
+} from '../../../admin';
 
 @Component({
   selector: 'app-admin-ai-usage',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    SpAdminBadgeComponent,
+    SpAdminCardComponent,
+    SpAdminEmptyStateComponent,
+    SpAdminErrorStateComponent,
+    SpAdminLoadingStateComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminStatCardComponent,
+    SpAdminTableComponent,
+  ],
   templateUrl: './admin-ai-usage.component.html',
 })
 export class AdminAiUsageComponent implements OnInit {
