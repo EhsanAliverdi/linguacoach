@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-15 13:10
+lastUpdated: 2026-06-17 09:43
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath â€” Current Product State
 
-Last updated: 2026-06-15
+Last updated: 2026-06-17
 
 ---
 
@@ -30,6 +30,25 @@ Admin logs in
 â†’ Student retries or continues to next activity
 â†’ Student can revisit learning history
 ```
+
+## Learning preferences in AI context
+
+Student profile preferences are now used by AI generation.
+Generated Today lesson activities, Practice Gym activities, background Practice
+Gym activities, buffered lesson activities, and lesson batch planning summaries
+receive compact learner preference context when fields are present.
+
+The context can include preferred name, learning language, support language,
+translation help preference, learning goals, custom goal, focus areas, custom
+focus, difficulty preference, and current CEFR level as system-estimated.
+
+Prompt-editing fields, admin-only profile names, roles, quotas, lifecycle state,
+account details, raw submitted text, and any student-editable CEFR override are
+excluded. Missing preferences create no fake defaults.
+
+`LearningGoalContext` uses custom goal first, then selected goals, then legacy
+goal fields, then career context. If none are present, it remains null and does
+not default to workplace.
 
 ## Student navigation model
 

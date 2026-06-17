@@ -6,6 +6,7 @@ using LinguaCoach.Application.Sessions;
 using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -237,6 +238,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             activityAttemptId: attempt.Id,
             exerciseType: activity.ActivityType.ToString(),
             patternKey: activity.ExercisePatternKey,
+            learningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile),
             cefrLevelAtEvent: profile.CefrLevel,
             score: score.HasValue ? Math.Round(score.Value, 1) : null,
             normalizedScore: score.HasValue ? Math.Round(score.Value / 100.0, 4) : null);
@@ -375,6 +377,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             exerciseType: activity.ActivityType.ToString(),
             patternKey: activity.ExercisePatternKey,
             primarySkill: primarySkillKey,
+            learningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile),
             cefrLevelAtEvent: profile.CefrLevel,
             score: Math.Round(evalResult.Percentage, 1),
             normalizedScore: Math.Round(evalResult.Percentage / 100.0, 4),

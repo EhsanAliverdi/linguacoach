@@ -4,6 +4,7 @@ using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -178,7 +179,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
             TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
             TopicHint: topicHint,
-            RecentMistakesSummary: recentMistakes);
+            RecentMistakesSummary: recentMistakes,
+            LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                profile, profile.LanguagePair?.TargetLanguage?.Name),
+            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
 
         _logger.LogInformation("AI activity generation started ActivityType={ActivityType} CefrLevel={CefrLevel}",
             activityType, context.CefrLevel);
@@ -297,7 +301,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             TopicHint: topicHint,
             RecentMistakesSummary: recentMistakes,
             OverridePromptKey: pattern.AiGeneratePromptKey,
-            ExercisePatternKey: patternKey);
+            ExercisePatternKey: patternKey,
+            LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                profile, profile.LanguagePair?.TargetLanguage?.Name),
+            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
 
         string contentJson;
         try
@@ -382,7 +389,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
             TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
             TopicHint: topicHint,
-            RecentMistakesSummary: recentMistakes);
+            RecentMistakesSummary: recentMistakes,
+            LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                profile, profile.LanguagePair?.TargetLanguage?.Name),
+            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
 
         string contentJson;
         try

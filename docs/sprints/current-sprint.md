@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 18:00
+lastUpdated: 2026-06-17 09:43
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,34 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10H - AI Context Personalisation from Learning Preferences** - complete (2026-06-17)
+
+Phase 10H wires Phase 10G learning preferences into AI generation context for
+Today lesson activities, Practice Gym activities, background Practice Gym
+materialization, buffered lesson activity materialization, and lesson batch
+planning summaries.
+
+### What was added
+
+- `LearnerPreferenceContextFormatter` for compact, bounded preference context.
+- AI prompt rendering inserts learner preferences before JSON return instructions.
+- Generation context now carries `LearnerPreferenceContext` and `LearningGoalContext`.
+- Ledger events now store `LearningGoalContext` when a clear value exists.
+- Dynamic pattern selection uses preference-backed goal context before legacy fallback.
+- Practice Gym generic background topic fallback changed to "English class practice".
+
+### Tests added
+
+- Formatter tests for included fields, missing preferences, excluded admin fields,
+  CEFR system-estimated wording, goal fallback order, and no workplace default.
+- Prompt builder tests for learner preference insertion and token-budget failure.
+
+See: `docs/reviews/2026-06-17-phase-10h-ai-context-personalisation-from-learning-preferences.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10G — Student Profile & Learning Preferences v2** — complete (2026-06-17)
 

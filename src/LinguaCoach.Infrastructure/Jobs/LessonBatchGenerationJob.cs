@@ -340,6 +340,12 @@ public sealed class LessonBatchGenerationJob : IJob
             careerContext = profile.CareerProfile?.Name ?? "General",
             sourceLanguage = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
             targetLanguage = profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+            learnerPreferences = new
+            {
+                context = LearnerPreferenceContextFormatter.Build(
+                    profile, profile.LanguagePair?.TargetLanguage?.Name),
+                learningGoalContext = LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile)
+            },
             completedSessions,
             weakSkills = skills.Where(s => s.IsWeak).Select(s => s.SkillLabel).ToList(),
             strongSkills = skills.Where(s => !s.IsWeak).Select(s => s.SkillLabel).ToList(),

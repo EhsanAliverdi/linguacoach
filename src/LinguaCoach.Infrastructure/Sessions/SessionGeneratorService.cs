@@ -5,6 +5,7 @@ using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -134,7 +135,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         // ── 7. Apply dynamic pattern selection per slot ───────────────────────
         var steps = ApplyDynamicPatternSelection(
             template, skillScores, recentPatternKeys, catalogEntries,
-            profile.LearningGoalDescription ?? profile.LearningGoal, profile.SkillFocus,
+            LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile), profile.SkillFocus,
             ledgerSignals);
 
         // Filter any step whose chosen key is still not in the ready catalog.

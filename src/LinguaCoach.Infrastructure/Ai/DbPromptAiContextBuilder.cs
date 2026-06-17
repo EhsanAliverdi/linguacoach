@@ -34,6 +34,7 @@ public sealed class DbPromptAiContextBuilder : IAiContextBuilder
                 "Writing feedback is temporarily unavailable because the AI prompt is not configured yet.");
 
         var rendered = Render(template.Content, variables);
+        rendered = InsertLearnerPreferenceContext(rendered, variables);
 
         if (template.MaxInputTokens.HasValue)
         {
@@ -69,6 +70,29 @@ public sealed class DbPromptAiContextBuilder : IAiContextBuilder
         foreach (var (key, value) in variables)
             result = result.Replace($"{{{{{key}}}}}", value ?? string.Empty);
         return result;
+    }
+
+    private static string InsertLearnerPreferenceContext(
+        string rendered,
+        IReadOnlyDictionary<string, string> variables)
+    {
+        if (!variables.TryGetValue("learnerPreferences", out var learnerPreferences)
+            || string.IsNullOrWhiteSpace(learnerPreferences)
+            || rendered.Contains(learnerPreferences, StringComparison.Ordinal))
+            return rendered;
+
+        var section = $"{learnerPreferences.Trim()}{Environment.NewLine}{Environment.NewLine}" +
+            "Preference behaviour rules:" + Environment.NewLine +
+            "- Let goals and focus areas guide topic emphasis." + Environment.NewLine +
+            "- Use support language only as optional help." + Environment.NewLine +
+            "- Do not translate the whole activity by default." + Environment.NewLine +
+            "- Do not assume workplace context unless requested." + Environment.NewLine + Environment.NewLine;
+
+        var returnOnlyIndex = rendered.IndexOf("Return ONLY", StringComparison.OrdinalIgnoreCase);
+        if (returnOnlyIndex >= 0)
+            return rendered.Insert(returnOnlyIndex, section);
+
+        return $"{rendered.TrimEnd()}{Environment.NewLine}{Environment.NewLine}{section.TrimEnd()}";
     }
 
     // Rough estimate: 4 characters ≈ 1 token (GPT-4 tokeniser average).

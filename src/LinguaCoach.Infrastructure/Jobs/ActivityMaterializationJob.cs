@@ -2,6 +2,7 @@ using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Persistence;
@@ -169,7 +170,10 @@ public sealed class ActivityMaterializationJob : IJob
             TopicHint: $"{session.Title}: {exercise.Instructions}",
             RecentMistakesSummary: recentMistakes,
             OverridePromptKey: overridePromptKey,
-            ExercisePatternKey: patternKey);
+            ExercisePatternKey: patternKey,
+            LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                profile, pair?.TargetLanguage?.Name),
+            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
 
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
 

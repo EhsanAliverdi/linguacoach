@@ -2,6 +2,7 @@ using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
@@ -122,10 +123,13 @@ public sealed class PracticeGymGenerationJob : IJob
             LanguagePairCode: $"{pair?.SourceLanguage?.Code ?? "fa"}-{pair?.TargetLanguage?.Code ?? "en"}",
             SourceLanguageName: pair?.SourceLanguage?.Name ?? "Persian",
             TargetLanguageName: pair?.TargetLanguage?.Name ?? "English",
-            TopicHint: cache.SkillFocus ?? "workplace English class practice",
+            TopicHint: cache.SkillFocus ?? "English class practice",
             RecentMistakesSummary: recentMistakes,
             OverridePromptKey: pattern.AiGeneratePromptKey,
-            ExercisePatternKey: pattern.Key);
+            ExercisePatternKey: pattern.Key,
+            LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                profile, pair?.TargetLanguage?.Name),
+            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
 
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
         var title = ExtractTitle(contentJson) ?? pattern.Name;

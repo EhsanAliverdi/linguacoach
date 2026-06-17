@@ -3,6 +3,7 @@ using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
@@ -165,7 +166,10 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             TopicHint: $"{session.Title}: {exercise.Instructions}",
             RecentMistakesSummary: recentMistakes,
             OverridePromptKey: overridePromptKey,
-            ExercisePatternKey: patternKey);
+            ExercisePatternKey: patternKey,
+            LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                profile, profile.LanguagePair?.TargetLanguage?.Name),
+            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
 
         _logger.LogInformation(
             "Prepare exercise: generating ActivityType={ActivityType} ExerciseId={ExerciseId} PromptKey={PromptKey}",

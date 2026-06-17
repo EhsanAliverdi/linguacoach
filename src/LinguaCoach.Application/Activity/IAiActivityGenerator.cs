@@ -45,7 +45,15 @@ public sealed record ActivityGenerationContext(
     /// <summary>
     /// The canonical exercise pattern key (e.g. "email_reply"). Stored on LearningActivity.
     /// </summary>
-    string? ExercisePatternKey = null);
+    string? ExercisePatternKey = null,
+    /// <summary>
+    /// Compact, bounded learner preference context for AI generation.
+    /// </summary>
+    string? LearnerPreferenceContext = null,
+    /// <summary>
+    /// Compact goal label for ledger and adaptive selection.
+    /// </summary>
+    string? LearningGoalContext = null);
 
 public sealed record ActivityEvaluationContext(
     ActivityType ActivityType,
