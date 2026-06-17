@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -32,6 +33,7 @@ public sealed class ActivityMaterializationJob : IJob
     private readonly IExercisePatternRepository _patternRepo;
     private readonly StudentProgressService _progress;
     private readonly ISchedulerFactory _schedulerFactory;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<ActivityMaterializationJob> _logger;
 
     public ActivityMaterializationJob(
@@ -40,6 +42,7 @@ public sealed class ActivityMaterializationJob : IJob
         IExercisePatternRepository patternRepo,
         StudentProgressService progress,
         ISchedulerFactory schedulerFactory,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<ActivityMaterializationJob> logger)
     {
         _db = db;
@@ -47,6 +50,7 @@ public sealed class ActivityMaterializationJob : IJob
         _patternRepo = patternRepo;
         _progress = progress;
         _schedulerFactory = schedulerFactory;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -173,7 +177,7 @@ public sealed class ActivityMaterializationJob : IJob
             ExercisePatternKey: patternKey,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, pair?.TargetLanguage?.Name),
-            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
+            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivityMaterializationJob" }).ContextSummary);
 
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
 

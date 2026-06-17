@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Sessions;
@@ -32,6 +33,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
     private readonly ILearningPathGenerator _pathGenerator;
     private readonly IExerciseTypeRegistry _exerciseTypes;
     private readonly IStudentLearningLedger _ledger;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<SessionGeneratorService> _logger;
 
     public SessionGeneratorService(
@@ -39,12 +41,14 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         ILearningPathGenerator pathGenerator,
         IExerciseTypeRegistry exerciseTypes,
         IStudentLearningLedger ledger,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<SessionGeneratorService> logger)
     {
         _db = db;
         _pathGenerator = pathGenerator;
         _exerciseTypes = exerciseTypes;
         _ledger = ledger;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -135,7 +139,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         // ── 7. Apply dynamic pattern selection per slot ───────────────────────
         var steps = ApplyDynamicPatternSelection(
             template, skillScores, recentPatternKeys, catalogEntries,
-            LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile), profile.SkillFocus,
+            _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "SessionGeneratorService" }).ContextSummary, profile.SkillFocus,
             ledgerSignals);
 
         // Filter any step whose chosen key is still not in the ready catalog.

@@ -3,6 +3,7 @@ using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Jobs;
+using LinguaCoach.Infrastructure.Learning;
 using LinguaCoach.IntegrationTests.Api;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
@@ -39,6 +40,7 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
             db,
             ai,
             new SingleSchedulerFactory(scheduler),
+            new LearningGoalContextResolver(),
             jobLogger);
 
         await job.Execute(new FakeJobExecutionContext(scheduler, new JobDataMap

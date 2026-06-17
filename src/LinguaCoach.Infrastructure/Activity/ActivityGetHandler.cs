@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Enums;
@@ -43,6 +44,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private readonly ListeningAudioService _listeningAudio;
     private readonly IExercisePatternRepository _patternRepo;
     private readonly IExerciseTypeRegistry _exerciseTypes;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
@@ -54,6 +56,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         ListeningAudioService listeningAudio,
         IExercisePatternRepository patternRepo,
         IExerciseTypeRegistry exerciseTypes,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
@@ -64,6 +67,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         _listeningAudio = listeningAudio;
         _patternRepo = patternRepo;
         _exerciseTypes = exerciseTypes;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -182,7 +186,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             RecentMistakesSummary: recentMistakes,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, profile.LanguagePair?.TargetLanguage?.Name),
-            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
+            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivityGetHandler" }).ContextSummary);
 
         _logger.LogInformation("AI activity generation started ActivityType={ActivityType} CefrLevel={CefrLevel}",
             activityType, context.CefrLevel);
@@ -304,7 +308,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             ExercisePatternKey: patternKey,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, profile.LanguagePair?.TargetLanguage?.Name),
-            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
+            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivityGetHandler" }).ContextSummary);
 
         string contentJson;
         try
@@ -392,7 +396,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             RecentMistakesSummary: recentMistakes,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, profile.LanguagePair?.TargetLanguage?.Name),
-            LearningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile));
+            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivityGetHandler" }).ContextSummary);
 
         string contentJson;
         try

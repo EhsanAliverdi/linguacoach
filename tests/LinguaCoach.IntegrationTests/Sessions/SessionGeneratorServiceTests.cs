@@ -3,6 +3,7 @@ using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Learning;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Memory;
@@ -35,7 +36,8 @@ public sealed class SessionGeneratorServiceTests : IDisposable
         ExerciseTypeDefinitionSeeder.SeedAsync(_db, NullLogger.Instance).GetAwaiter().GetResult();
 
         var ledger = new StudentLearningLedgerService(_db, NullLogger<StudentLearningLedgerService>.Instance);
-        _service = new SessionGeneratorService(_db, new FakeLearningPathGenerator(_db), new ExerciseTypeRegistry(_db), ledger, NullLogger<SessionGeneratorService>.Instance);
+        var goalContextResolver = new LearningGoalContextResolver();
+        _service = new SessionGeneratorService(_db, new FakeLearningPathGenerator(_db), new ExerciseTypeRegistry(_db), ledger, goalContextResolver, NullLogger<SessionGeneratorService>.Instance);
     }
 
     /// <summary>

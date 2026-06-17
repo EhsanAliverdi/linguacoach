@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Application.Vocabulary;
@@ -25,6 +26,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IExercisePatternRepository _patternRepo;
     private readonly PatternSkillUpdateService _patternSkillUpdate;
     private readonly IStudentLearningLedger _learningLedger;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -38,6 +40,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IExercisePatternRepository patternRepo,
         PatternSkillUpdateService patternSkillUpdate,
         IStudentLearningLedger learningLedger,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -50,6 +53,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _patternRepo = patternRepo;
         _patternSkillUpdate = patternSkillUpdate;
         _learningLedger = learningLedger;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -228,6 +232,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 ? LearningEventOutcome.NeedsReview
                 : LearningEventOutcome.Practised;
 
+        var legacyGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler.Legacy" });
         var legacyEvent = new StudentLearningEvent(
             studentProfileId: profile.Id,
             source: legacySource,
@@ -238,7 +243,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             activityAttemptId: attempt.Id,
             exerciseType: activity.ActivityType.ToString(),
             patternKey: activity.ExercisePatternKey,
-            learningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile),
+            learningGoalContext: legacyGoalContext.ContextSummary,
             cefrLevelAtEvent: profile.CefrLevel,
             score: score.HasValue ? Math.Round(score.Value, 1) : null,
             normalizedScore: score.HasValue ? Math.Round(score.Value / 100.0, 4) : null);
@@ -366,6 +371,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 evalResult.Corrections.Take(5).Select(c => c.Category).Distinct())
             : null;
 
+        var patternGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler.Pattern" });
         var learningEvent = new StudentLearningEvent(
             studentProfileId: profile.Id,
             source: ledgerSource,
@@ -377,7 +383,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             exerciseType: activity.ActivityType.ToString(),
             patternKey: activity.ExercisePatternKey,
             primarySkill: primarySkillKey,
-            learningGoalContext: LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile),
+            learningGoalContext: patternGoalContext.ContextSummary,
             cefrLevelAtEvent: profile.CefrLevel,
             score: Math.Round(evalResult.Percentage, 1),
             normalizedScore: Math.Round(evalResult.Percentage / 100.0, 4),

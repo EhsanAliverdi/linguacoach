@@ -763,3 +763,37 @@ This sprint covers pre-generating the next 5-10 lessons, pre-generating a config
 Do not add more isolated activity types. Build the course structure and pattern engine that organises existing ones.
 
 When unsure, choose the option that makes SpeakPath feel more like a structured English class, not a card-based practice tool.
+
+---
+
+## Phase 10J — Learning Goal Context Resolver (2026-06-17)
+
+**Goal:** Normalize `LearningGoalContext` across all generation and ledger paths via a consistent, testable resolver.
+
+**Delivered:**
+
+- `ResolvedLearningGoalContext` value object (`src/LinguaCoach.Application/Learning/`)
+- `ILearningGoalContextResolver` interface with `LearningGoalResolutionContext` call context
+- `LearningGoalContextResolver` implementation (`src/LinguaCoach.Infrastructure/Learning/`)
+- DI registration: `AddSingleton<ILearningGoalContextResolver, LearningGoalContextResolver>()`
+- 7 call sites migrated from `LearnerPreferenceContextFormatter.BuildLearningGoalContext()` to resolver:
+  - `ActivityGetHandler` (3 sites)
+  - `ActivitySubmitHandler` (2 ledger record sites)
+  - `ExercisePrepareHandler` (1 site)
+  - `PracticeGymGenerationJob` (1 site)
+  - `SessionGeneratorService` (1 site)
+  - `ActivityMaterializationJob` (1 site)
+  - `LessonBatchGenerationJob` (1 site)
+- 18 unit tests, 2 integration tests — all pass
+
+**Priority chain (strict order):**
+1. `ExplicitGoalOverride` from call context
+2. `LearningGoals` + `FocusAreas` (Phase 10G/10I structured fields)
+3. `CustomLearningGoal` / `CustomFocusArea`
+4. `LearningGoalDescription` → `LearningGoal` → `CareerContext` (legacy)
+5. `"general English communication"` — never workplace-only
+
+**Not implemented:** curriculum routing, readiness pools, CEFR routing, background generation.
+
+**Backward compatible:** `LearnerPreferenceContextFormatter.BuildLearningGoalContext()` kept intact. Old ledger records without goal context do not throw.
+

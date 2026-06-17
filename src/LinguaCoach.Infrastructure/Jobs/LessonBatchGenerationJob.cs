@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -29,17 +30,20 @@ public sealed class LessonBatchGenerationJob : IJob
     private readonly LinguaCoachDbContext _db;
     private readonly AiExecutionService _ai;
     private readonly ISchedulerFactory _schedulerFactory;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<LessonBatchGenerationJob> _logger;
 
     public LessonBatchGenerationJob(
         LinguaCoachDbContext db,
         AiExecutionService ai,
         ISchedulerFactory schedulerFactory,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<LessonBatchGenerationJob> logger)
     {
         _db = db;
         _ai = ai;
         _schedulerFactory = schedulerFactory;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -344,7 +348,7 @@ public sealed class LessonBatchGenerationJob : IJob
             {
                 context = LearnerPreferenceContextFormatter.Build(
                     profile, profile.LanguagePair?.TargetLanguage?.Name),
-                learningGoalContext = LearnerPreferenceContextFormatter.BuildLearningGoalContext(profile)
+                learningGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "LessonBatchGenerationJob" }).ContextSummary
             },
             completedSessions,
             weakSkills = skills.Where(s => s.IsWeak).Select(s => s.SkillLabel).ToList(),

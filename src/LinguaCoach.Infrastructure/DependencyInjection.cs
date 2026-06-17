@@ -23,7 +23,9 @@ using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.Reference;
 using LinguaCoach.Application.History;
 using LinguaCoach.Application.Memory;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Infrastructure.History;
+using LinguaCoach.Infrastructure.Learning;
 using LinguaCoach.Infrastructure.Memory;
 using LinguaCoach.Application.Progress;
 using LinguaCoach.Application.Vocabulary;
@@ -147,6 +149,7 @@ public static class DependencyInjection
         services.AddScoped<IStudentMemoryService, StudentMemoryService>();
         services.AddScoped<IStudentMemoryQuery, StudentMemoryService>();
         services.AddScoped<IStudentLearningLedger, StudentLearningLedgerService>();
+        services.AddSingleton<ILearningGoalContextResolver, LearningGoalContextResolver>();
         services.AddScoped<IAdminAiUsageHandler, AiUsageHandler>();
 
         // Activity (AI-first learning flow)
