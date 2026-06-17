@@ -1,9 +1,11 @@
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
+using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Persistence;
@@ -34,6 +36,7 @@ public sealed class ActivityMaterializationJob : IJob
     private readonly StudentProgressService _progress;
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILearningGoalContextResolver _goalContextResolver;
+    private readonly ICurriculumRoutingService _routing;
     private readonly ILogger<ActivityMaterializationJob> _logger;
 
     public ActivityMaterializationJob(
@@ -43,6 +46,7 @@ public sealed class ActivityMaterializationJob : IJob
         StudentProgressService progress,
         ISchedulerFactory schedulerFactory,
         ILearningGoalContextResolver goalContextResolver,
+        ICurriculumRoutingService routing,
         ILogger<ActivityMaterializationJob> logger)
     {
         _db = db;
@@ -51,6 +55,7 @@ public sealed class ActivityMaterializationJob : IJob
         _progress = progress;
         _schedulerFactory = schedulerFactory;
         _goalContextResolver = goalContextResolver;
+        _routing = routing;
         _logger = logger;
     }
 
@@ -163,10 +168,20 @@ public sealed class ActivityMaterializationJob : IJob
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
         var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
 
+        var resolvedGoalContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "ActivityMaterializationJob" });
+
+        var routingRequest = CurriculumRoutingRequestFactory.Build(
+            profile, resolvedGoalContext,
+            source: "ActivityMaterializationJob",
+            requestedPatternKey: patternKey,
+            allowReviewOrScaffold: false);
+        var routing = await _routing.RecommendAsync(routingRequest, ct);
+
         var pair = profile.LanguagePair;
         var context = new ActivityGenerationContext(
             ActivityType: activityType,
-            CefrLevel: profile.CefrLevel ?? "B1",
+            CefrLevel: routing.TargetCefrLevel,
             CareerContext: profile.CareerProfile?.Name ?? "General",
             LanguagePairCode: $"{pair?.SourceLanguage?.Code ?? "fa"}-{pair?.TargetLanguage?.Code ?? "en"}",
             SourceLanguageName: pair?.SourceLanguage?.Name ?? "Persian",
@@ -177,7 +192,10 @@ public sealed class ActivityMaterializationJob : IJob
             ExercisePatternKey: patternKey,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, pair?.TargetLanguage?.Name),
-            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivityMaterializationJob" }).ContextSummary);
+            LearningGoalContext: resolvedGoalContext.ContextSummary,
+            RoutingContext: routing.RoutingContextSummary,
+            RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
+            IsReviewOrScaffold: routing.IsLowerLevelContent);
 
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
 

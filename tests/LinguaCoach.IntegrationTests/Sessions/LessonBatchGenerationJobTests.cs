@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
@@ -35,12 +36,14 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
             new LessonPlanProviderResolver(),
             NullLogger<AiExecutionService>.Instance);
 
+        var routing = scope.ServiceProvider.GetRequiredService<ICurriculumRoutingService>();
         var jobLogger = new CapturingLogger<LessonBatchGenerationJob>();
         var job = new LessonBatchGenerationJob(
             db,
             ai,
             new SingleSchedulerFactory(scheduler),
             new LearningGoalContextResolver(),
+            routing,
             jobLogger);
 
         await job.Execute(new FakeJobExecutionContext(scheduler, new JobDataMap

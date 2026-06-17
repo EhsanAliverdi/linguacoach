@@ -53,7 +53,20 @@ public sealed record ActivityGenerationContext(
     /// <summary>
     /// Compact goal label for ledger and adaptive selection.
     /// </summary>
-    string? LearningGoalContext = null);
+    string? LearningGoalContext = null,
+    /// <summary>
+    /// Compact routing context for AI prompt (objective title, context tags, reason).
+    /// Built from CurriculumRoutingRecommendation.RoutingContextSummary.
+    /// </summary>
+    string? RoutingContext = null,
+    /// <summary>
+    /// Routing reason label injected into AI prompt ("normal", "review", "scaffold", etc.).
+    /// </summary>
+    string? RoutingReason = null,
+    /// <summary>
+    /// When true, AI prompt should treat this as review/scaffold/remediation content.
+    /// </summary>
+    bool IsReviewOrScaffold = false);
 
 public sealed record ActivityEvaluationContext(
     ActivityType ActivityType,

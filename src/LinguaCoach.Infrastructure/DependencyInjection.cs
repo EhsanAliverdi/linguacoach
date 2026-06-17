@@ -37,9 +37,9 @@ using LinguaCoach.Infrastructure.Placement;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
 using LinguaCoach.Application.Curriculum;
+using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Application.Profile;
 using LinguaCoach.Application.Storage;
-using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Infrastructure.Profile;
 using LinguaCoach.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
@@ -208,6 +208,9 @@ public static class DependencyInjection
 
         // Curriculum syllabus (Phase 10K)
         services.AddScoped<ICurriculumSyllabusQuery, CurriculumSyllabusQueryService>();
+
+        // Curriculum routing (Phase 10L)
+        services.AddScoped<ICurriculumRoutingService, CurriculumRoutingService>();
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();

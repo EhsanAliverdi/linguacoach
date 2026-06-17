@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 22:00
+lastUpdated: 2026-06-17 23:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,58 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10L — CEFR-Aware Activity Routing** - complete (2026-06-17)
+
+Phase 10L introduces a pure application-layer routing policy that selects suitable
+CEFR bands and curriculum objectives before every AI activity generation call.
+
+### What was built
+
+**Routing models (Application layer)**
+- `CurriculumRoutingRequest` — input: student context, CEFR, skill, source, goal context, preferences.
+- `CurriculumRoutingRecommendation` — output: target CEFR, allowed levels, objective key/title, context/focus tags, difficulty band, `RoutingReason`, `IsLowerLevelContent`, explanation.
+- `ICurriculumRoutingService` — interface with `RecommendAsync` and `NormalizeCefrLevel`.
+
+**Routing service (Infrastructure layer)**
+- `CurriculumRoutingService` — CEFR normalization (B2+ → B2), candidate selection from `ICurriculumSyllabusQuery`, skill filter, difficulty band mapping, lower-level guard (never silently lowers level), non-workplace fallback.
+- `CurriculumRoutingRequestFactory` — static helper building requests from `StudentProfile` + resolved goal context.
+
+**AI prompt integration**
+- `ActivityGenerationContext` extended: `RoutingContext`, `RoutingReason`, `IsReviewOrScaffold`.
+- `AiActivityGeneratorHandler` injects `routingContext` and `routingReason` into AI variables.
+- `DbPromptAiContextBuilder` appends routing context before "Return ONLY" in rendered prompt.
+
+**Integration points wired**
+- `ActivityGetHandler.HandlePatternKeyedAsync` — on-demand and Practice Gym pattern routing.
+- `ExercisePrepareHandler` — Today's Lesson exercise preparation.
+- `PracticeGymGenerationJob.MaterializeAsync` — background Practice Gym generation.
+- `ActivityMaterializationJob.MaterializeExerciseAsync` — background lesson batch materialization.
+- `LessonBatchGenerationJob.BuildCompactSummaryAsync` — AI lesson planning summary now includes routing metadata.
+
+**DI:** `ICurriculumRoutingService` registered as Scoped.
+
+### Tests
+
+- 16 new unit tests in `CurriculumRoutingServiceTests.cs`.
+- 7 new integration tests in `CurriculumRoutingIntegrationTests.cs`.
+- 1 existing integration test updated (`LessonBatchGenerationJobTests`) to pass routing service.
+
+### Gates at completion
+- Architecture: 3 passed
+- Unit: 1124 passed (was 1098, +26)
+- Integration: 565 passed (was 555, +10)
+- Total: 1692 passed, 0 failed
+- Angular/Playwright: blocked by pre-existing Node 24 + path-with-space environment issue. No Angular source changed.
+
+### What is intentionally NOT in this phase
+Readiness pools, background replenishment lifecycle, Practice Gym suggested UI redesign, admin curriculum write UI, `StudentProfile.CefrLevel` migration, plus-level routing persistence, full placement engine, `AllowReviewOrScaffold=true` in handlers (built but always false — enablement belongs to 10M adaptive routing), session length influence on candidate count, CEFR-aware format matrix.
+
+See: `docs/reviews/2026-06-17-phase-10l-cefr-aware-activity-routing-review.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10K-F — Profile Preference Enforcement Audit & Routing Fix** - complete (2026-06-17)
 

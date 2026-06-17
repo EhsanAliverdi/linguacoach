@@ -94,6 +94,8 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["recentMistakes"] = context.RecentMistakesSummary ?? "none",
             ["topicHint"] = context.TopicHint ?? "everyday real-life communication",
             ["learnerPreferences"] = context.LearnerPreferenceContext ?? string.Empty,
+            ["routingContext"] = context.RoutingContext ?? string.Empty,
+            ["routingReason"] = context.RoutingReason ?? "normal",
         };
 
         // Phase 8N: configurable per-format item/option counts.

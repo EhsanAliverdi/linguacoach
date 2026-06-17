@@ -78,6 +78,7 @@ Current recommended next sprint: **Dynamic Pattern Selection** or **Practice Gym
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
 | [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; AI generation flow; how activity types share infrastructure |
 | [curriculum-syllabus-model.md](curriculum-syllabus-model.md) | `CurriculumObjective` entity; CEFR level constants; context tag / focus area taxonomy; seeder pattern; `ICurriculumSyllabusQuery` candidate query interface (Phase 10K) |
+| [curriculum-routing.md](curriculum-routing.md) | `ICurriculumRoutingService`; `CurriculumRoutingRequest/Recommendation`; CEFR normalization; level/context/skill/difficulty routing rules; RoutingReason enum; integration points (Phase 10L) |
 
 ---
 
@@ -141,6 +142,8 @@ Archived
 | Exercise Pattern Engine | ✅ Done — seeded pattern definitions, pattern-aware prepare/generation, `InteractionMode` renderer dispatch, 8 MVP renderers, 97 e2e + 762 dotnet tests pass |
 | Pattern Evaluation Engine | ✅ Done — deterministic `ExactMatch` / `KeyedSelection` / `NoMarking` evaluators, structured `AiStructured` / `AiOpenEnded` evaluators, pattern router, `StudentSkillProfile` upserts, compact memory signals, pattern-aware result UI, 865 dotnet tests + 111 Playwright tests pass |
 | Student UX Alignment / Writing-Assumption Cleanup | ✅ Done — Today/Journey/Practice/Progress/Profile nav model; Practice Gym MVP at `/practice`; mixed-skill copy; 165 Playwright tests pass |
+| Curriculum Syllabus Foundation | ✅ Done — Phase 10K: `CurriculumObjective`, `ICurriculumSyllabusQuery`, seeder |
+| CEFR-Aware Activity Routing | ✅ Done — Phase 10L: `ICurriculumRoutingService`, routing wired into all 5 generation handlers |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Practice Gym expansion | ⬜ Deferred — Workplace Chat, Email, Gap Fill, Phrase Match unlock; dynamic session templates |
 | IFileStorageService / MinIO | ⬜ Deferred — not blocking deployment at current scale |

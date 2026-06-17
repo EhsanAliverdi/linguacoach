@@ -438,6 +438,48 @@ Remaining staged migrations are pattern-backed activities. Planned future exerci
 
 Phase 8N (2026-06-16) added configurable practice item counts as a foundation (not a new format). Every `ExerciseTypeDefinition` now carries `MinItemsPerPractice`/`DefaultItemsPerPractice`/`MaxItemsPerPractice` and `MinOptionsPerItem`/`DefaultOptionsPerItem`/`MaxOptionsPerItem`, seeded per type, editable in the admin exercise-types page (with inline `min <= default <= max` and non-negative validation) and via admin PATCH. Counts feed generation prompt context and optional validator count enforcement. Counts are configuration only and never change readiness; no format was made runnable. See [practice-item-sets.md](../architecture/practice-item-sets.md).
 
+## Phase 10L — CEFR-Aware Activity Routing, completed (2026-06-17)
+
+Backend-only phase. No learner-facing behaviour changed. No Angular source changed.
+
+**What was added:**
+
+- `ICurriculumRoutingService` / `CurriculumRoutingService` — pure application-layer routing policy.
+  Selects suitable CEFR band and curriculum objectives before every AI generation call.
+  Does not call AI. Does not modify student data. Always returns a recommendation.
+- `CurriculumRoutingRequest` — input: student context, raw CEFR level, primary skill, source label, resolved goal context, learner preferences, `AllowReviewOrScaffold`.
+- `CurriculumRoutingRecommendation` — output: `TargetCefrLevel` (normalized), `CurriculumObjectiveKey/Title`, `ContextTags`, `FocusTags`, `DifficultyBand`, `RoutingReason`, `IsLowerLevelContent`, `Explanation`, `RoutingContextSummary` (for AI prompt injection).
+- `CurriculumRoutingRequestFactory` — builds request from `StudentProfile` + `ResolvedLearningGoalContext`.
+- CEFR normalization: `B2+` → `B2`, `C1-` → `C1`, null/unknown → `A1`. Does not modify `StudentProfile.CefrLevel`.
+- `RoutingReason` enum: `Normal`, `Review`, `Scaffold`, `Remediation`, `Fallback`.
+
+**Routing wired into all 5 generation handlers:**
+- `ActivityGetHandler.HandlePatternKeyedAsync` (on-demand + Practice Gym)
+- `ExercisePrepareHandler` (Today's Lesson)
+- `PracticeGymGenerationJob.MaterializeAsync` (background Practice Gym)
+- `ActivityMaterializationJob.MaterializeExerciseAsync` (background lesson batch)
+- `LessonBatchGenerationJob.BuildCompactSummaryAsync` (AI lesson planning summary)
+
+**AI prompt integration:**
+- `ActivityGenerationContext` extended with `RoutingContext`, `RoutingReason`, `IsReviewOrScaffold`.
+- `DbPromptAiContextBuilder` appends routing context before "Return ONLY".
+- `cefrLevel` passed to AI is now the routing-normalized level, not raw profile value.
+
+**Core rules enforced:**
+- Routing never silently lowers CEFR level. Lower-level content requires `AllowReviewOrScaffold=true` and produces `RoutingReason.Review` + `IsLowerLevelContent=true`.
+- Routing never defaults to workplace context. Non-workplace profiles always get `general_english` or goal-specific tags.
+- DifficultyPreference maps to DifficultyBand: Gentle→1, Balanced→2, Challenging→4.
+
+**What is NOT implemented (deferred to 10M+):**
+`AllowReviewOrScaffold=true` in any handler (built but always false — enablement needs adaptive/ledger signals), session length → candidate count, CEFR-aware format matrix, readiness pools, background replenishment, Practice Gym UI redesign, admin write UI, `StudentProfile.CefrLevel` migration.
+
+**Tests:** 16 new unit tests + 7 new integration tests. Total: 1692 passed (was 1656).
+
+See: `docs/reviews/2026-06-17-phase-10l-cefr-aware-activity-routing-review.md`
+See: `docs/architecture/curriculum-routing.md`
+
+---
+
 ## Phase 10K — Curriculum Boundary / Level Syllabus Foundation, completed (2026-06-17)
 
 Backend-only phase. No learner-facing behaviour changed. No CEFR-aware routing implemented.

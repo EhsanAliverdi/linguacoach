@@ -1,11 +1,13 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
+using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +47,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private readonly IExercisePatternRepository _patternRepo;
     private readonly IExerciseTypeRegistry _exerciseTypes;
     private readonly ILearningGoalContextResolver _goalContextResolver;
+    private readonly ICurriculumRoutingService _routing;
     private readonly ILogger<ActivityGetHandler> _logger;
 
     public ActivityGetHandler(
@@ -57,6 +60,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         IExercisePatternRepository patternRepo,
         IExerciseTypeRegistry exerciseTypes,
         ILearningGoalContextResolver goalContextResolver,
+        ICurriculumRoutingService routing,
         ILogger<ActivityGetHandler> logger)
     {
         _db = db;
@@ -68,6 +72,7 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         _patternRepo = patternRepo;
         _exerciseTypes = exerciseTypes;
         _goalContextResolver = goalContextResolver;
+        _routing = routing;
         _logger = logger;
     }
 
@@ -302,9 +307,18 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
         var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
 
+        var resolvedGoalContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "ActivityGetHandler", RequestedExerciseType = patternKey });
+        var routingRequest = CurriculumRoutingRequestFactory.Build(
+            profile, resolvedGoalContext,
+            source: "on_demand",
+            requestedPatternKey: patternKey,
+            allowReviewOrScaffold: false);
+        var routing = await _routing.RecommendAsync(routingRequest, ct);
+
         var generationContext = new ActivityGenerationContext(
             ActivityType: pattern.ActivityType,
-            CefrLevel: profile.CefrLevel ?? "B1",
+            CefrLevel: routing.TargetCefrLevel,
             CareerContext: profile.CareerProfile?.Name ?? "General",
             LanguagePairCode: BuildPairCode(profile.LanguagePair),
             SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
@@ -315,7 +329,10 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             ExercisePatternKey: patternKey,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, profile.LanguagePair?.TargetLanguage?.Name),
-            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivityGetHandler" }).ContextSummary);
+            LearningGoalContext: resolvedGoalContext.ContextSummary,
+            RoutingContext: routing.RoutingContextSummary,
+            RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
+            IsReviewOrScaffold: routing.IsLowerLevelContent);
 
         string contentJson;
         try

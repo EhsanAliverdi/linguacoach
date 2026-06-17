@@ -35,6 +35,7 @@ public sealed class DbPromptAiContextBuilder : IAiContextBuilder
 
         var rendered = Render(template.Content, variables);
         rendered = InsertLearnerPreferenceContext(rendered, variables);
+        rendered = InsertRoutingContext(rendered, variables);
 
         if (template.MaxInputTokens.HasValue)
         {
@@ -87,6 +88,24 @@ public sealed class DbPromptAiContextBuilder : IAiContextBuilder
             "- Use support language only as optional help." + Environment.NewLine +
             "- Do not translate the whole activity by default." + Environment.NewLine +
             "- Do not assume workplace context unless requested." + Environment.NewLine + Environment.NewLine;
+
+        var returnOnlyIndex = rendered.IndexOf("Return ONLY", StringComparison.OrdinalIgnoreCase);
+        if (returnOnlyIndex >= 0)
+            return rendered.Insert(returnOnlyIndex, section);
+
+        return $"{rendered.TrimEnd()}{Environment.NewLine}{Environment.NewLine}{section.TrimEnd()}";
+    }
+
+    private static string InsertRoutingContext(
+        string rendered,
+        IReadOnlyDictionary<string, string> variables)
+    {
+        if (!variables.TryGetValue("routingContext", out var routingContext)
+            || string.IsNullOrWhiteSpace(routingContext)
+            || rendered.Contains(routingContext, StringComparison.Ordinal))
+            return rendered;
+
+        var section = $"Curriculum context: {routingContext.Trim()}{Environment.NewLine}{Environment.NewLine}";
 
         var returnOnlyIndex = rendered.IndexOf("Return ONLY", StringComparison.OrdinalIgnoreCase);
         if (returnOnlyIndex >= 0)

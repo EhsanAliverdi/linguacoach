@@ -1,10 +1,12 @@
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +31,7 @@ public sealed class PracticeGymGenerationJob : IJob
     private readonly StudentProgressService _progress;
     private readonly ListeningAudioService _listeningAudio;
     private readonly ILearningGoalContextResolver _goalContextResolver;
+    private readonly ICurriculumRoutingService _routing;
     private readonly ILogger<PracticeGymGenerationJob> _logger;
 
     public PracticeGymGenerationJob(
@@ -38,6 +41,7 @@ public sealed class PracticeGymGenerationJob : IJob
         StudentProgressService progress,
         ListeningAudioService listeningAudio,
         ILearningGoalContextResolver goalContextResolver,
+        ICurriculumRoutingService routing,
         ILogger<PracticeGymGenerationJob> logger)
     {
         _db = db;
@@ -46,6 +50,7 @@ public sealed class PracticeGymGenerationJob : IJob
         _progress = progress;
         _listeningAudio = listeningAudio;
         _goalContextResolver = goalContextResolver;
+        _routing = routing;
         _logger = logger;
     }
 
@@ -120,9 +125,19 @@ public sealed class PracticeGymGenerationJob : IJob
         var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
         var pair = profile.LanguagePair;
 
+        var resolvedGoalContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "PracticeGymGenerationJob" });
+
+        var routingRequest = CurriculumRoutingRequestFactory.Build(
+            profile, resolvedGoalContext,
+            source: "PracticeGymGenerationJob",
+            requestedPatternKey: pattern.Key,
+            allowReviewOrScaffold: false);
+        var routing = await _routing.RecommendAsync(routingRequest, ct);
+
         var generationContext = new ActivityGenerationContext(
             ActivityType: pattern.ActivityType,
-            CefrLevel: cache.CefrLevel,
+            CefrLevel: routing.TargetCefrLevel,
             CareerContext: profile.CareerProfile?.Name ?? profile.CareerContext ?? "General",
             LanguagePairCode: $"{pair?.SourceLanguage?.Code ?? "fa"}-{pair?.TargetLanguage?.Code ?? "en"}",
             SourceLanguageName: pair?.SourceLanguage?.Name ?? "Persian",
@@ -133,7 +148,10 @@ public sealed class PracticeGymGenerationJob : IJob
             ExercisePatternKey: pattern.Key,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, pair?.TargetLanguage?.Name),
-            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "PracticeGymGenerationJob" }).ContextSummary);
+            LearningGoalContext: resolvedGoalContext.ContextSummary,
+            RoutingContext: routing.RoutingContextSummary,
+            RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
+            IsReviewOrScaffold: routing.IsLowerLevelContent);
 
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
         var title = ExtractTitle(contentJson) ?? pattern.Name;

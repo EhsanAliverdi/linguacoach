@@ -1,11 +1,13 @@
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Infrastructure.Progress;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +35,7 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
     private readonly StudentProgressService _progress;
     private readonly ListeningAudioService _listeningAudio;
     private readonly ILearningGoalContextResolver _goalContextResolver;
+    private readonly ICurriculumRoutingService _routing;
     private readonly ILogger<ExercisePrepareHandler> _logger;
 
     public ExercisePrepareHandler(
@@ -42,6 +45,7 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         StudentProgressService progress,
         ListeningAudioService listeningAudio,
         ILearningGoalContextResolver goalContextResolver,
+        ICurriculumRoutingService routing,
         ILogger<ExercisePrepareHandler> logger)
     {
         _db = db;
@@ -50,6 +54,7 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         _progress = progress;
         _listeningAudio = listeningAudio;
         _goalContextResolver = goalContextResolver;
+        _routing = routing;
         _logger = logger;
     }
 
@@ -160,9 +165,18 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
         var focusArea = await _progress.GetCurrentFocusAreaAsync(profile.Id, ct);
         var recentMistakes = StudentProgressService.BuildRecentMistakesSummary(focusArea);
 
+        var resolvedGoalContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "ExercisePrepareHandler" });
+        var routingRequest = CurriculumRoutingRequestFactory.Build(
+            profile, resolvedGoalContext,
+            source: "today_lesson",
+            requestedPatternKey: patternKey,
+            allowReviewOrScaffold: false);
+        var routing = await _routing.RecommendAsync(routingRequest, ct);
+
         var context = new ActivityGenerationContext(
             ActivityType: activityType,
-            CefrLevel: profile.CefrLevel ?? "B1",
+            CefrLevel: routing.TargetCefrLevel,
             CareerContext: profile.CareerProfile?.Name ?? "General",
             LanguagePairCode: BuildPairCode(profile.LanguagePair),
             SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
@@ -173,7 +187,10 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             ExercisePatternKey: patternKey,
             LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                 profile, profile.LanguagePair?.TargetLanguage?.Name),
-            LearningGoalContext: _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ExercisePrepareHandler" }).ContextSummary);
+            LearningGoalContext: resolvedGoalContext.ContextSummary,
+            RoutingContext: routing.RoutingContextSummary,
+            RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
+            IsReviewOrScaffold: routing.IsLowerLevelContent);
 
         _logger.LogInformation(
             "Prepare exercise: generating ActivityType={ActivityType} ExerciseId={ExerciseId} PromptKey={PromptKey}",

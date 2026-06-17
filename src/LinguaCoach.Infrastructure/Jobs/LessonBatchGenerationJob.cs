@@ -1,7 +1,9 @@
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Infrastructure.Ai;
+using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -31,6 +33,7 @@ public sealed class LessonBatchGenerationJob : IJob
     private readonly AiExecutionService _ai;
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILearningGoalContextResolver _goalContextResolver;
+    private readonly ICurriculumRoutingService _routing;
     private readonly ILogger<LessonBatchGenerationJob> _logger;
 
     public LessonBatchGenerationJob(
@@ -38,12 +41,14 @@ public sealed class LessonBatchGenerationJob : IJob
         AiExecutionService ai,
         ISchedulerFactory schedulerFactory,
         ILearningGoalContextResolver goalContextResolver,
+        ICurriculumRoutingService routing,
         ILogger<LessonBatchGenerationJob> logger)
     {
         _db = db;
         _ai = ai;
         _schedulerFactory = schedulerFactory;
         _goalContextResolver = goalContextResolver;
+        _routing = routing;
         _logger = logger;
     }
 
@@ -337,9 +342,22 @@ public sealed class LessonBatchGenerationJob : IJob
             .Take(8)
             .ToListAsync(ct);
 
+        var resolvedGoalContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "LessonBatchGenerationJob" });
+
+        var routingRequest = CurriculumRoutingRequestFactory.Build(
+            profile, resolvedGoalContext,
+            source: "lesson_batch",
+            allowReviewOrScaffold: false);
+        var routing = await _routing.RecommendAsync(routingRequest, ct);
+
         var summary = new
         {
             studentLevel = profile.CefrLevel ?? "B1",
+            routingLevel = routing.TargetCefrLevel,
+            routingContext = routing.ContextTags,
+            routingReason = routing.RoutingReason.ToString().ToLowerInvariant(),
+            curriculumObjective = routing.CurriculumObjectiveTitle,
             domainComplexity = profile.WorkplaceSeniority?.ToString() ?? "intermediate_workplace",
             careerContext = profile.CareerProfile?.Name ?? "General",
             sourceLanguage = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
@@ -348,7 +366,7 @@ public sealed class LessonBatchGenerationJob : IJob
             {
                 context = LearnerPreferenceContextFormatter.Build(
                     profile, profile.LanguagePair?.TargetLanguage?.Name),
-                learningGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "LessonBatchGenerationJob" }).ContextSummary,
+                learningGoalContext = resolvedGoalContext.ContextSummary,
                 preferredSessionDurationMinutes = profile.PreferredSessionDurationMinutes
             },
             completedSessions,
