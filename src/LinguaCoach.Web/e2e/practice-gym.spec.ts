@@ -26,6 +26,21 @@ async function withAuth(page: Page) {
   }, JSON.stringify({ token, mustChangePassword: false }));
 }
 
+const practiceExerciseTypes = [
+  { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'open_writing_task', displayName: 'Open Writing Task', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'free_text_entry', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_open_writing_task', legacyActivityType: 'WritingScenario', exercisePatternKey: 'open_writing_task', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'speaking_roleplay_turn', displayName: 'Speaking Roleplay Turn', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_speaking_roleplay_turn', legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: 'speaking_roleplay_turn', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'phrase_match', displayName: 'Phrase Match', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'matching_pairs', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_phrase_match', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'phrase_match', estimatedDurationMinutes: 3, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'gap_fill_workplace_phrase', displayName: 'Gap Fill Workplace Phrase', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'gap_fill', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_gap_fill_workplace_phrase', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'gap_fill_workplace_phrase', estimatedDurationMinutes: 4, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'email_reply', displayName: 'Email Reply', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'email_reply', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_email_reply', legacyActivityType: 'WritingScenario', exercisePatternKey: 'email_reply', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'teams_chat_simulation', displayName: 'Teams Chat Simulation', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'chat_reply', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_teams_chat_simulation', legacyActivityType: 'WritingScenario', exercisePatternKey: 'teams_chat_simulation', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'ai_role_play', displayName: 'AI Role Play', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'planned', isAvailableForGeneration: false, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: null, legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: null, estimatedDurationMinutes: 8, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false },
+];
+
+function formatCard(page: Page, key: string) {
+  return page.getByTestId(`practice-format-${key}`);
+}
+
 async function mockPracticeRoute(page: Page) {
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({
@@ -38,22 +53,15 @@ async function mockPracticeRoute(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([
-        { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-        { key: 'open_writing_task', displayName: 'Open Writing Task', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'free_text_entry', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_open_writing_task', legacyActivityType: 'WritingScenario', exercisePatternKey: 'open_writing_task', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-        { key: 'speaking_roleplay_turn', displayName: 'Speaking Roleplay Turn', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_speaking_roleplay_turn', legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: 'speaking_roleplay_turn', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-        { key: 'phrase_match', displayName: 'Phrase Match', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'matching_pairs', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_phrase_match', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'phrase_match', estimatedDurationMinutes: 3, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-        { key: 'gap_fill_workplace_phrase', displayName: 'Gap Fill Workplace Phrase', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'gap_fill', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_gap_fill_workplace_phrase', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'gap_fill_workplace_phrase', estimatedDurationMinutes: 4, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-        { key: 'email_reply', displayName: 'Email Reply', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'email_reply', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_email_reply', legacyActivityType: 'WritingScenario', exercisePatternKey: 'email_reply', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-        { key: 'teams_chat_simulation', displayName: 'Teams Chat Simulation', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'chat_reply', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_teams_chat_simulation', legacyActivityType: 'WritingScenario', exercisePatternKey: 'teams_chat_simulation', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true }
-      ]),
+      body: JSON.stringify(practiceExerciseTypes),
     });
   });
 
   await page.route('**/api/activity/practice-gym/next?**', async route => {
     const url = new URL(route.request().url());
     const skill = url.searchParams.get('skill');
-    const key = skill === 'listening' ? 'listen_and_answer' : skill === 'writing' ? 'open_writing_task' : skill === 'speaking' ? 'speaking_roleplay_turn' : skill === 'vocabulary' ? 'phrase_match' : null;
+    const requested = url.searchParams.get('exerciseType');
+    const key = requested ?? (skill === 'listening' ? 'listen_and_answer' : skill === 'writing' ? 'open_writing_task' : skill === 'speaking' ? 'speaking_roleplay_turn' : skill === 'vocabulary' ? 'phrase_match' : null);
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -106,85 +114,85 @@ test('/practice does not auto-redirect to /activity on load', async ({ page }) =
 
 // ── All 8 cards present ────────────────────────────────────────────────────────
 
-test('Practice Gym shows a Vocabulary (Word cards) card', async ({ page }) => {
+test('Practice Gym shows a Vocabulary format card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-vocabulary')).toBeVisible();
-  await expect(page.getByTestId('practice-card-vocabulary')).toContainText('Word cards');
+  await expect(formatCard(page, 'phrase_match')).toBeVisible();
+  await expect(formatCard(page, 'phrase_match')).toContainText('Phrase Match');
 });
 
 test('Practice Gym shows a Listening card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-listening')).toBeVisible();
-  await expect(page.getByTestId('practice-card-listening')).toContainText('Listening');
+  await expect(formatCard(page, 'listen_and_answer')).toBeVisible();
+  await expect(formatCard(page, 'listen_and_answer')).toContainText('Listen and Answer');
 });
 
 test('Practice Gym shows a Writing card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-writing')).toBeVisible();
-  await expect(page.getByTestId('practice-card-writing')).toContainText('Writing');
+  await expect(formatCard(page, 'open_writing_task')).toBeVisible();
+  await expect(formatCard(page, 'open_writing_task')).toContainText('Open Writing Task');
 });
 
 test('Practice Gym shows a Speaking card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('speaking-card')).toBeVisible();
-  await expect(page.getByTestId('speaking-card')).toContainText('Speaking');
+  await expect(formatCard(page, 'speaking_roleplay_turn')).toBeVisible();
+  await expect(formatCard(page, 'speaking_roleplay_turn')).toContainText('Speaking Roleplay Turn');
 });
 
 test('Practice Gym shows a Workplace Chat card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-workplace-chat')).toBeVisible();
-  await expect(page.getByTestId('practice-card-workplace-chat')).toContainText('Workplace chat');
+  await expect(formatCard(page, 'teams_chat_simulation')).toBeVisible();
+  await expect(formatCard(page, 'teams_chat_simulation')).toContainText('Teams Chat Simulation');
 });
 
 test('Practice Gym shows an Email card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-email')).toBeVisible();
-  await expect(page.getByTestId('practice-card-email')).toContainText('Email');
+  await expect(formatCard(page, 'email_reply')).toBeVisible();
+  await expect(formatCard(page, 'email_reply')).toContainText('Email Reply');
 });
 
 test('Practice Gym shows a Fill in the blanks card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-gap-fill')).toBeVisible();
-  await expect(page.getByTestId('practice-card-gap-fill')).toContainText('Fill in the blanks');
+  await expect(formatCard(page, 'gap_fill_workplace_phrase')).toBeVisible();
+  await expect(formatCard(page, 'gap_fill_workplace_phrase')).toContainText('Gap Fill Workplace Phrase');
 });
 
 test('Practice Gym shows a Matching card', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await expect(page.getByTestId('practice-card-phrase-match')).toBeVisible();
-  await expect(page.getByTestId('practice-card-phrase-match')).toContainText('Matching');
+  await expect(formatCard(page, 'phrase_match')).toBeVisible();
+  await expect(formatCard(page, 'phrase_match')).toContainText('Phrase Match');
 });
 
 // ── Functional card routing ────────────────────────────────────────────────────
 
-test('Vocabulary (Word cards) card links to /module/gym-phrase_match', async ({ page }) => {
+test('Vocabulary format opens a pool-backed phrase match activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-vocabulary');
-  await expect(card).toHaveAttribute('href', '/module/gym-phrase_match');
+  await formatCard(page, 'phrase_match').click();
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-phrase_match/);
 });
 
 test('Listening skill card opens a pool-backed activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await page.getByTestId('practice-card-listening').click();
+  await formatCard(page, 'listen_and_answer').click();
   await expect(page).toHaveURL(/\/activity\?activityId=activity-listen_and_answer/);
 });
 
@@ -192,7 +200,7 @@ test('Writing skill card opens a pool-backed activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await page.getByTestId('practice-card-writing').click();
+  await formatCard(page, 'open_writing_task').click();
   await expect(page).toHaveURL(/\/activity\?activityId=activity-open_writing_task/);
 });
 
@@ -200,7 +208,7 @@ test('Speaking skill card opens a pool-backed activity', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  await page.getByTestId('speaking-card').click();
+  await formatCard(page, 'speaking_roleplay_turn').click();
   await expect(page).toHaveURL(/\/activity\?activityId=activity-speaking_roleplay_turn/);
 });
 
@@ -208,47 +216,51 @@ test('Speaking skill card opens a pool-backed activity', async ({ page }) => {
 
 // ── Activated pattern cards — now functional ──────────────────────────────────
 
-test('Workplace Chat card is functional and links to a module', async ({ page }) => {
+test('Workplace Chat card is functional and starts practice', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-workplace-chat');
+  const card = formatCard(page, 'teams_chat_simulation');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', '/module/gym-teams_chat_simulation');
+  await card.click();
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-teams_chat_simulation/);
 });
 
-test('Email card is functional and links to a module', async ({ page }) => {
+test('Email card is functional and starts practice', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-email');
+  const card = formatCard(page, 'email_reply');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', '/module/gym-email_reply');
+  await card.click();
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-email_reply/);
 });
 
-test('Gap Fill card is functional and links to a module', async ({ page }) => {
+test('Gap Fill card is functional and starts practice', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-gap-fill');
+  const card = formatCard(page, 'gap_fill_workplace_phrase');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', '/module/gym-gap_fill_workplace_phrase');
+  await card.click();
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-gap_fill_workplace_phrase/);
 });
 
-test('Phrase Match card is functional and links to a module', async ({ page }) => {
+test('Phrase Match card is functional and starts practice', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-phrase-match');
+  const card = formatCard(page, 'phrase_match');
   await expect(card).not.toContainText('Coming soon');
-  await expect(card).toHaveAttribute('href', '/module/gym-phrase_match');
+  await card.click();
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-phrase_match/);
 });
 
 test('AI role play card remains Coming soon and has no link', async ({ page }) => {
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('practice-card-ai-role-play');
+  const card = formatCard(page, 'ai_role_play');
   await expect(card).toContainText('Coming soon');
   await expect(card.locator('a')).toHaveCount(0);
 });
@@ -257,7 +269,7 @@ test('Speaking card does not mention pronunciation scoring', async ({ page }) =>
   await withAuth(page);
   await mockPracticeRoute(page);
   await page.goto('/practice');
-  const card = page.getByTestId('speaking-card');
+  const card = formatCard(page, 'speaking_roleplay_turn');
   const cardText = await card.textContent();
   expect((cardText ?? '').toLowerCase()).not.toContain('pronunciation');
 });

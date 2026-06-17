@@ -339,14 +339,15 @@ test('HighlightCorrectSummary shows audio fallback, question, options, and submi
 
   // Learn page shows teaching only — no audio script, options, or correct answer leaked.
   await expect(page.getByTestId('teach-cta-btn')).toBeVisible();
-  await expect(page.getByTestId('audio-script-fallback')).toHaveCount(0);
+  await expect(page.getByTestId('audio-unavailable')).toHaveCount(0);
   await expect(page.getByTestId('summary-option-A')).toHaveCount(0);
 
   await page.getByTestId('teach-cta-btn').click();
 
   // Practice page: audio fallback, question, and options visible.
   await expect(page.getByTestId('highlight-correct-summary-renderer')).toBeVisible();
-  await expect(page.getByTestId('audio-script-fallback')).toBeVisible();
+  await expect(page.getByTestId('audio-unavailable')).toBeVisible();
+  await expect(page.getByTestId('audio-unavailable')).toContainText('The redesign is on track');
   await expect(page.getByTestId('summary-question')).toContainText('Which summary best matches the audio?');
   await expect(page.getByTestId('summary-option-A')).toBeVisible();
 
@@ -401,14 +402,15 @@ test('HighlightIncorrectWords shows audio fallback, selectable tokens, and submi
 
   // Learn page shows teaching only — no audio script, transcript tokens, or answers leaked.
   await expect(page.getByTestId('teach-cta-btn')).toBeVisible();
-  await expect(page.getByTestId('audio-script-fallback')).toHaveCount(0);
+  await expect(page.getByTestId('audio-unavailable')).toHaveCount(0);
   await expect(page.getByTestId('hiw-token-t4')).toHaveCount(0);
 
   await page.getByTestId('teach-cta-btn').click();
 
   // Practice page: audio fallback, question, and selectable tokens visible.
   await expect(page.getByTestId('highlight-incorrect-words-renderer')).toBeVisible();
-  await expect(page.getByTestId('audio-script-fallback')).toBeVisible();
+  await expect(page.getByTestId('audio-unavailable')).toBeVisible();
+  await expect(page.getByTestId('audio-unavailable')).toContainText('Let us meet on Monday');
   await expect(page.getByTestId('hiw-question')).toContainText('Which words are different from the audio?');
   await expect(page.getByTestId('hiw-token-t4')).toBeVisible();
 

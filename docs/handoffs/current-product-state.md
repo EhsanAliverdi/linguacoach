@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 09:43
+lastUpdated: 2026-06-17 10:46
 owner: product
 supersedes:
 supersededBy:
@@ -30,6 +30,23 @@ Admin logs in
 â†’ Student retries or continues to next activity
 â†’ Student can revisit learning history
 ```
+
+## Playwright gate status
+
+Phase 10H-F restored the full Playwright suite after Practice Gym fixture drift.
+
+Failure categories found and fixed:
+
+- Selector drift from old fixed Practice Gym card IDs to catalog-driven
+  `practice-format-*` cards.
+- Fixture/test data drift around ready runnable exercise types and planned
+  non-runnable AI role play rows.
+- Copy/label drift for the landing hero and perfect-score result label.
+- Shared audio fallback selector drift after listening formats moved to the
+  shared audio player.
+
+Final Playwright result: 175 passed. No tests remain failing or skipped from this
+stabilisation pass. No product behaviour changed.
 
 ## Learning preferences in AI context
 

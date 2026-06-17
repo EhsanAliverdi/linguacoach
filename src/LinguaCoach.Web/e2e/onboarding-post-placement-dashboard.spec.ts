@@ -134,17 +134,18 @@ test('Practice Gym page has skill cards for implemented skills and pronunciation
         { key: 'open_writing_task', displayName: 'Open Writing Task', description: '', primarySkill: 'writing', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'free_text_entry', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_open_writing_task', legacyActivityType: 'WritingScenario', exercisePatternKey: 'open_writing_task', estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
         { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
         { key: 'speaking_roleplay_turn', displayName: 'Speaking Roleplay Turn', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_speaking_roleplay_turn', legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: 'speaking_roleplay_turn', estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+        { key: 'ai_role_play', displayName: 'AI Role Play', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'planned', isAvailableForGeneration: false, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: null, legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: null, estimatedDurationMinutes: 8, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false },
       ]),
     });
   });
 
   await page.goto('/practice');
 
-  await expect(page.getByTestId('practice-card-writing')).not.toContainText('Coming soon');
-  await expect(page.getByTestId('practice-card-listening')).not.toContainText('Coming soon');
-  await expect(page.getByTestId('speaking-card')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('practice-format-open_writing_task')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('practice-format-listen_and_answer')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('practice-format-speaking_roleplay_turn')).not.toContainText('Coming soon');
 
-  const aiRolePlay = page.getByTestId('practice-card-ai-role-play');
+  const aiRolePlay = page.getByTestId('practice-format-ai_role_play');
   await expect(aiRolePlay).toContainText('Coming soon');
   await expect(aiRolePlay.locator('a')).toHaveCount(0);
 });

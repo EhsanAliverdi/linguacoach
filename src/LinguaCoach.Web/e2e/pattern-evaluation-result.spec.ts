@@ -160,7 +160,7 @@ test('phrase_match result shows score card and per-pair correct/incorrect state'
   await expect(page.getByTestId('pattern-coach-summary')).toContainText('One pair was correct');
 });
 
-test('phrase_match full score shows Great work label', async ({ page }) => {
+test('phrase_match full score shows Excellent label', async ({ page }) => {
   await withAuth(page);
 
   const fb = {
@@ -188,7 +188,8 @@ test('phrase_match full score shows Great work label', async ({ page }) => {
   await page.getByTestId('meaning-meaning_0').click();
   await page.getByTestId('matching-pairs-submit-btn').click();
 
-  await expect(page.getByTestId('pattern-score-card')).toContainText('Great work');
+  await expect(page.getByTestId('pattern-score-card')).toContainText('Excellent');
+  await expect(page.getByTestId('pattern-score-card')).toContainText('Ready for the next challenge.');
 });
 
 // ── B. GapFill result UI ──────────────────────────────────────────────────────

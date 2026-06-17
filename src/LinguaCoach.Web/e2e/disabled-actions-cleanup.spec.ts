@@ -74,30 +74,45 @@ async function mockDashboard(page: Page) {
   });
 }
 
+const exerciseTypes = [
+  { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'phrase_match', displayName: 'Phrase Match', description: '', primarySkill: 'vocabulary', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'matching_pairs', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_phrase_match', legacyActivityType: 'VocabularyPractice', exercisePatternKey: 'phrase_match', estimatedDurationMinutes: 3, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
+  { key: 'ai_role_play', displayName: 'AI Role Play', description: '', primarySkill: 'speaking', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'planned', isAvailableForGeneration: false, rendererKey: 'audio_response', evaluatorKey: 'ai_open_ended', generationPromptKey: null, legacyActivityType: 'SpeakingRolePlay', exercisePatternKey: null, estimatedDurationMinutes: 8, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false },
+];
+
 test('practice gym marks future skills as coming soon', async ({ page }) => {
   await withAuth(page);
   await page.route('**/api/activity/exercise-types', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([
-        { key: 'listen_and_answer', displayName: 'Listen and Answer', description: '', primarySkill: 'listening', secondarySkills: [], category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true, rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer', legacyActivityType: 'ListeningComprehension', exercisePatternKey: 'listen_and_answer', estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true },
-      ]),
+      body: JSON.stringify(exerciseTypes),
     });
   });
 
   await page.goto('/practice');
 
-  await expect(page.getByTestId('practice-card-ai-role-play')).toContainText('Coming soon');
-  await expect(page.getByTestId('practice-card-listening')).not.toContainText('Coming soon');
+  await expect(page.getByTestId('practice-format-ai_role_play')).toContainText('Coming soon');
+  await expect(page.getByTestId('practice-format-listen_and_answer')).not.toContainText('Coming soon');
 });
 
-test('practice gym vocabulary card links to the word cards module', async ({ page }) => {
+test('practice gym vocabulary format starts phrase match practice', async ({ page }) => {
   await withAuth(page);
+  await page.route('**/api/activity/exercise-types', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(exerciseTypes) });
+  });
+  await page.route('**/api/activity/practice-gym/next?**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ hasActivity: true, activityId: 'activity-phrase_match', exerciseType: 'phrase_match', primarySkill: 'vocabulary', source: 'pool', poolItemId: 'pool-1', reason: null }),
+    });
+  });
 
   await page.goto('/practice');
 
-  await expect(page.getByTestId('practice-card-vocabulary')).toHaveAttribute('href', '/module/gym-phrase_match');
+  await page.getByTestId('practice-format-phrase_match').click();
+  await expect(page).toHaveURL(/\/activity\?activityId=activity-phrase_match/);
 });
 
 test('dashboard vocabulary card shows prerequisite message when vocab items insufficient', async ({ page }) => {

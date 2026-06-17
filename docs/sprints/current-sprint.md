@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 09:43
+lastUpdated: 2026-06-17 10:46
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,48 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10H-F - Practice Gym Playwright Fixture Stabilisation** - complete (2026-06-17)
+
+Phase 10H-F restored the full Playwright suite as a reliable gate after the
+catalog-driven Practice Gym UI and related renderer/result copy had moved ahead
+of older E2E fixtures.
+
+### Failure categories found
+
+- Selector drift: tests still looked for old fixed Practice Gym card IDs such
+  as `practice-card-listening` and `speaking-card`.
+- Fixture/test data drift: Practice Gym tests did not mock the current exercise
+  type catalog shape, including planned non-runnable AI role play rows.
+- Copy/label drift: the landing hero and perfect-score feedback labels had
+  intentionally changed.
+- Shared component selector drift: listening fallback text moved into the shared
+  `app-audio-player` unavailable state.
+
+No backend/API failures, timing issues, real UI regressions, or environment-only
+failures remained after the fixes.
+
+### What was fixed
+
+- Practice Gym E2E tests now use current catalog-driven `practice-format-*`
+  selectors.
+- Practice Gym mocked exercise-type data now includes ready runnable formats and
+  planned locked formats.
+- Practice Gym routing assertions now verify activity startup through
+  `activityId` navigation instead of obsolete module-link assumptions.
+- Listening renderer tests now assert the shared `audio-unavailable` fallback.
+- Landing and score-band assertions now match current user-facing copy.
+
+### Final test counts
+
+- Targeted affected Playwright specs: 62 passed.
+- Full Playwright: 175 passed.
+
+Known limitations: none.
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10H - AI Context Personalisation from Learning Preferences** - complete (2026-06-17)
 

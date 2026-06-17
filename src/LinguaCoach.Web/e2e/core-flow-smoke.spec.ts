@@ -493,7 +493,7 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
 
   // ── Landing ──────────────────────────────────────────────────────────────────
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Practise the workplace message/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Practise the conversation before you need it/i })).toBeVisible();
 
   // ── Admin login ───────────────────────────────────────────────────────────────
   await page.getByRole('link', { name: /Sign in to SpeakPath/i }).click();
