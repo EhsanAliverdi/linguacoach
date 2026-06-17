@@ -31,3 +31,27 @@ Each item includes context, motivation, and the phase where it was deferred.
 **Context:** Phase 10K adds read-only admin endpoints (`GET /api/admin/curriculum/objectives`). Write endpoints are deferred. The domain model (`CurriculumObjective.UpdateDetails`, `Activate`, `Deactivate`) is already designed to support CRUD. The admin UI (TailAdmin migration) is a separate workstream.
 **Depends on:** Phase 10K complete (done). Admin UI migration (separate backlog item).
 **Deferred from:** Phase 10K engineering review, 2026-06-17.
+
+---
+
+## Preference Enforcement / AI Context
+
+### TODO-004 — Wire `learnerPreferences` and `learningGoalContext` into evaluation prompt templates
+**What:** Update `activity_evaluate_writing` and `activity_evaluate_speaking_role_play` prompt templates in the database to reference `{{learnerPreferences}}` and `{{learningGoalContext}}` variables.
+**Why:** Phase 10K-F adds these variables to `ActivityEvaluationContext` and passes them to the prompt variable dict, but the prompt templates do not yet reference them. Variables are available but unused.
+**Context:** Adding unused variables to the dict is safe. A prompt-engineering pass should add preference-aware coaching instructions (e.g. use support language for explanations when `translationHelpPreference` allows it; adjust challenge level based on `difficultyPreference`).
+**Depends on:** Phase 10K-F complete (done).
+**Deferred from:** Phase 10K-F engineering review, 2026-06-17.
+
+### TODO-005 — Add `SupportLanguageCode` to `ActivityGenerationContext`
+**What:** Add the BCP-47 support language code (e.g. `"fa"`, `"zh"`) to `ActivityGenerationContext` alongside the existing `SupportLanguageName`.
+**Why:** `SupportLanguageCode` is stored on `ResolvedLearningGoalContext` but not propagated to `ActivityGenerationContext`. If a prompt template needs the code for structured language-switching, it is unavailable.
+**Context:** Current prompts use `SupportLanguageName` in prose. Add when a prompt template requires the code.
+**Depends on:** Phase 10K-F complete (done).
+**Deferred from:** Phase 10K-F engineering review, 2026-06-17.
+
+### TODO-006 — Add `TranslationHelpPreference` to `ResolvedLearningGoalContext`
+**What:** Expose `TranslationHelpPreference` as a field on `ResolvedLearningGoalContext` so downstream consumers (curriculum mappers, ledger, future routing) can read it without going through the formatter.
+**Why:** Only `LearnerPreferenceContextFormatter` currently knows the translation preference. Ledger events and curriculum selection cannot use it directly.
+**Depends on:** Phase 10K-F complete (done).
+**Deferred from:** Phase 10K-F engineering review, 2026-06-17.

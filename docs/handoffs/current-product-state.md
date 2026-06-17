@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 21:00
+lastUpdated: 2026-06-17 22:00
 owner: product
 supersedes:
 supersededBy:
@@ -50,10 +50,11 @@ stabilisation pass. No product behaviour changed.
 
 ## Learning preferences in AI context
 
-Student profile preferences are now used by AI generation.
+Student profile preferences are used by AI generation and evaluation.
 Generated Today lesson activities, Practice Gym activities, background Practice
-Gym activities, buffered lesson activities, and lesson batch planning summaries
-receive compact learner preference context when fields are present.
+Gym activities, buffered lesson activities, lesson batch planning summaries, and
+AI activity evaluation (WritingScenario, SpeakingRolePlay) all receive compact
+learner preference context when fields are present.
 
 The context can include preferred name, learning language, support language,
 translation help preference, learning goals, custom goal, focus areas, custom
@@ -66,6 +67,18 @@ excluded. Missing preferences create no fake defaults.
 `LearningGoalContext` uses custom goal first, then selected goals, then legacy
 goal fields, then career context. If none are present, it remains null and does
 not default to workplace.
+
+## Preference enforcement rules (Phase 10K-F)
+
+- Vocabulary cadence picks gate on `WorkplaceSpecific` from the resolved goal context.
+  Non-workplace students (Day-to-day, Travel, Social, etc.) receive `PhraseMatch`.
+  Workplace students receive `GapFillWorkplacePhrase`.
+- Lesson batch generation compact summary includes `preferredSessionDurationMinutes`
+  as a hint to the AI planner. `SessionDurationTemplates` in `SessionGeneratorService`
+  is the authoritative session length gate.
+- AI evaluation prompts receive `learnerPreferences` and `learningGoalContext`
+  variable slots. Current evaluation prompt templates do not yet reference these
+  variables — a prompt-engineering pass is needed to activate them.
 
 ## Student navigation model
 

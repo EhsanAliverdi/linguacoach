@@ -101,7 +101,14 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
         if (!query.PreferredType.HasValue)
         {
             if (activityType == ActivityType.VocabularyPractice)
-                return await HandlePatternKeyedAsync(Domain.ExercisePatternKey.GapFillWorkplacePhrase, profile, ct);
+            {
+                var resolved = _goalContextResolver.Resolve(
+                    profile, new LearningGoalResolutionContext { Source = "ActivityGetHandler.VocabCadence" });
+                var vocabPatternKey = resolved.WorkplaceSpecific
+                    ? Domain.ExercisePatternKey.GapFillWorkplacePhrase
+                    : Domain.ExercisePatternKey.PhraseMatch;
+                return await HandlePatternKeyedAsync(vocabPatternKey, profile, ct);
+            }
 
             if (activityType == ActivityType.ListeningComprehension)
                 return await HandlePatternKeyedAsync(Domain.ExercisePatternKey.ListenAndAnswer, profile, ct);

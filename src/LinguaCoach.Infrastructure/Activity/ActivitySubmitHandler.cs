@@ -185,7 +185,11 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 CefrLevel: profile.CefrLevel ?? "B1",
                 CareerContext: profile.CareerProfile?.Name ?? "General",
                 SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
-                TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English");
+                TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+                LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
+                    profile, profile.LanguagePair?.TargetLanguage?.Name),
+                LearningGoalContext: _goalContextResolver.Resolve(
+                    profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler" }).ContextSummary);
 
             _logger.LogInformation("AI evaluation started ActivityId={ActivityId} PromptKey={PromptKey}",
                 command.ActivityId, promptKey);

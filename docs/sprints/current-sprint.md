@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 21:00
+lastUpdated: 2026-06-17 22:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,49 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10K-F — Profile Preference Enforcement Audit & Routing Fix** - complete (2026-06-17)
+
+Phase 10K-F audits and fixes preference propagation across all AI generation surfaces before Phase 10L CEFR-aware routing.
+
+### What was built
+
+**Audit findings**
+- Full preference propagation audit across 5 AI generation surfaces, evaluation path, and background jobs.
+- `LearnerPreferenceContextFormatter`, `LearningGoalContextResolver`, `CurriculumContextMapper` all confirmed correct for generation paths.
+- Three gaps found and fixed.
+
+**Fix P1 — evaluation context carries zero preference data**
+- Added `LearnerPreferenceContext` and `LearningGoalContext` optional fields to `ActivityEvaluationContext` (`IAiActivityGenerator.cs`).
+- `ActivitySubmitHandler` now passes both fields (formatter + resolver output) into evaluation context.
+- `AiActivityGeneratorHandler.EvaluateAttemptAsync` now includes `learnerPreferences` and `learningGoalContext` in prompt variable dict.
+- AI evaluation for `WritingScenario` and `SpeakingRolePlay` can now reflect student difficulty preference, support language, and learning goals.
+
+**Fix P2 — vocabulary cadence unconditionally routed to `GapFillWorkplacePhrase`**
+- `ActivityGetHandler` vocabulary cadence pick now gates on `WorkplaceSpecific` from `ILearningGoalContextResolver`.
+- Non-workplace students receive `PhraseMatch`; workplace students receive `GapFillWorkplacePhrase`.
+- A student with Day-to-day English / Travel / Social goals will no longer receive workplace-labelled vocabulary by default.
+
+**Fix P3 — `PreferredSessionDurationMinutes` absent from batch generation summary**
+- Added `preferredSessionDurationMinutes` to `learnerPreferences` object in `LessonBatchGenerationJob.BuildCompactSummaryAsync`.
+- AI lesson planner now receives session length preference as a hint.
+
+**Tests**
+- 20 new unit tests in `PreferenceEnforcementTests.cs`.
+- Covers: general English fallback, workplace/non-workplace goal gates, formatter output for goals/focus/support language/difficulty, `CurriculumContextMapper` null guard, vocabulary cadence pattern key selection.
+
+### Gates at completion
+- Backend: 1098 unit + 555 integration + 3 architecture = 1656 passed, 0 failed
+- Angular/Playwright: blocked by pre-existing Node 24 + path-with-space environment issue. No Angular source changed.
+
+### What is intentionally NOT in this phase
+Full 10L CEFR-aware routing, exercise format locking, readiness pools, background replenishment lifecycle, Practice Gym suggested UI redesign, admin curriculum write UI, StudentProfile.CefrLevel migration, plus-level routing, full placement engine.
+
+See: `docs/reviews/2026-06-17-phase-10k-f-profile-preference-enforcement-review.md`
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10K — Curriculum Boundary / Level Syllabus Foundation** - complete (2026-06-17)
 

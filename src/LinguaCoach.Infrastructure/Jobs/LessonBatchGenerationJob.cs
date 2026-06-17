@@ -348,7 +348,8 @@ public sealed class LessonBatchGenerationJob : IJob
             {
                 context = LearnerPreferenceContextFormatter.Build(
                     profile, profile.LanguagePair?.TargetLanguage?.Name),
-                learningGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "LessonBatchGenerationJob" }).ContextSummary
+                learningGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "LessonBatchGenerationJob" }).ContextSummary,
+                preferredSessionDurationMinutes = profile.PreferredSessionDurationMinutes
             },
             completedSessions,
             weakSkills = skills.Where(s => s.IsWeak).Select(s => s.SkillLabel).ToList(),

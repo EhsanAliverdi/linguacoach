@@ -62,4 +62,13 @@ public sealed record ActivityEvaluationContext(
     string CefrLevel,
     string CareerContext,
     string SourceLanguageName,
-    string TargetLanguageName);
+    string TargetLanguageName,
+    /// <summary>
+    /// Compact, bounded learner preference context — same as generation context.
+    /// Allows evaluation prompts to match feedback tone/difficulty to student preference.
+    /// </summary>
+    string? LearnerPreferenceContext = null,
+    /// <summary>
+    /// Resolved learning goal context label for evaluation prompt framing.
+    /// </summary>
+    string? LearningGoalContext = null);

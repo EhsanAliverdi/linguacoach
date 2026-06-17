@@ -194,6 +194,8 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ["careerContext"] = context.CareerContext,
             ["sourceLanguageName"] = context.SourceLanguageName,
             ["targetLanguageName"] = context.TargetLanguageName,
+            ["learnerPreferences"] = context.LearnerPreferenceContext ?? string.Empty,
+            ["learningGoalContext"] = context.LearningGoalContext ?? string.Empty,
         };
 
         var evalPromptKey = context.ActivityType == ActivityType.SpeakingRolePlay
