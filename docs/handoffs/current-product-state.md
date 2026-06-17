@@ -12,6 +12,22 @@ Last updated: 2026-06-18
 
 ---
 
+## Admin UI foundation (Phase 10X-A)
+
+The admin app now has a SpeakPath wrapper component layer for future admin screens.
+TailAdmin-inspired styling is isolated behind `sp-admin-*` components and admin tokens.
+
+- Admin tokens: `src/app/admin/tokens/admin-tokens.css`.
+- Barrel: `src/app/admin/index.ts`.
+- Shell wrappers: `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header`.
+- Page wrappers: page header, card, stat card, button, badge, table, state components, form controls, pagination, filter bar, modal, drawer, and toast outlet.
+- Service foundations: admin toast, modal confirm state, drawer state.
+- Proof pages: Dashboard, Students, and Diagnostics use the wrapper layer.
+
+Full migration of all admin pages is deferred to Phase 10X-B.
+
+See: `docs/architecture/admin-ui-design-system.md`
+
 ## What is built and verified
 
 The following end-to-end flow is implemented and verified:
@@ -652,4 +668,3 @@ Frontend-only phase. No product behaviour, API contracts, or backend logic chang
 ## Phase 10J — Learning Goal Context Resolver, completed (2026-06-17)
 
 `ILearningGoalContextResolver` / `LearningGoalContextResolver` now provides a single consistent priority chain for resolving learning goal context from any `StudentProfile`. All 7 generation and ledger call sites use it. `LearnerPreferenceContextFormatter.BuildLearningGoalContext()` is kept but no longer called externally. Generic fallback is `"general English communication"` — never workplace-biased. `WorkplaceSpecific` flag is derived from keyword detection, not assumed. `LegacyFallbackUsed` flag enables future migration tracking.
-

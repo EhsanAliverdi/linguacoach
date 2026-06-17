@@ -1,7 +1,4 @@
-<div class="sp-admin-page-header">
-  <h1 class="sp-admin-page-title">Diagnostics</h1>
-  <p class="sp-admin-page-sub">System status, recent log events, and correlation ID lookup.</p>
-</div>
+<sp-admin-page-header title="Diagnostics" subtitle="System status, recent log events, and correlation ID lookup." />
 
 <!-- ── System Status ──────────────────────────────────────────────────── -->
 <section style="margin-bottom:24px">
@@ -13,9 +10,9 @@
   </div>
 
   @if (loadingStatus()) {
-    <div class="sp-admin-spinner" style="margin:24px auto"></div>
+    <sp-admin-loading-state message="Loading system status" />
   } @else if (statusError()) {
-    <div class="sp-admin-alert-error">{{ statusError() }}</div>
+    <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
   } @else if (status()) {
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
       <!-- Environment -->
@@ -136,9 +133,9 @@
   </div>
 
   @if (loadingEvents()) {
-    <div class="sp-admin-spinner" style="margin:24px auto"></div>
+    <sp-admin-loading-state message="Loading diagnostic events" />
   } @else if (eventsError()) {
-    <div class="sp-admin-alert-error">{{ eventsError() }}</div>
+    <sp-admin-error-state title="Could not load events" [message]="eventsError()" />
   } @else {
     <div class="sp-admin-table-card">
       @if (events().length === 0) {

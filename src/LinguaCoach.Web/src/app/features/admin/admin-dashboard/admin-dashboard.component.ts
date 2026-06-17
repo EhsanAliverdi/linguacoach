@@ -3,17 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, AdminStats } from '../../../core/models/admin.models';
+import { SpAdminPageHeaderComponent } from '../../../admin';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, SpAdminPageHeaderComponent],
   template: `
-    <!-- Page header -->
-    <div class="sp-admin-page-header">
-      <h1 class="sp-admin-page-title">Dashboard</h1>
-      <p class="sp-admin-page-sub">SpeakPath platform overview</p>
-    </div>
+    <sp-admin-page-header title="Dashboard" subtitle="SpeakPath platform overview" />
 
     <!-- KPI cards -->
     <div class="sp-admin-kpi-grid">

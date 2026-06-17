@@ -2,11 +2,12 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
+import { SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminPageHeaderComponent } from '../../../admin';
 
 @Component({
   selector: 'app-admin-diagnostics',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminPageHeaderComponent],
   templateUrl: './admin-diagnostics.component.html',
 })
 export class AdminDiagnosticsComponent implements OnInit, OnDestroy {

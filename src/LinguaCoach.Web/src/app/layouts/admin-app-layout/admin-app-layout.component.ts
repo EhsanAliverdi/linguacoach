@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent } from '../../admin';
 
 const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
 
 @Component({
   selector: 'app-admin-app-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent],
   templateUrl: './admin-app-layout.component.html',
   styleUrls: ['./admin-app-layout.component.css'],
 })

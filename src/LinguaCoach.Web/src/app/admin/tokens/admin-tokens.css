@@ -1,0 +1,74 @@
+/* SpeakPath admin design tokens
+   All admin UI components consume these custom properties.
+   TailAdmin-inspired values are isolated here; feature pages never use raw hex. */
+:root {
+  /* Layout */
+  --sp-admin-sidebar-w: 240px;
+  --sp-admin-sidebar-w-collapsed: 72px;
+  --sp-admin-header-h: 56px;
+
+  /* Surfaces */
+  --sp-admin-bg: #F8FAFC;
+  --sp-admin-surface: #ffffff;
+  --sp-admin-surface-subtle: #F8FAFC;
+
+  /* Borders */
+  --sp-admin-border: #E2E8F0;
+  --sp-admin-border-subtle: #F1F5F9;
+
+  /* Text */
+  --sp-admin-text: #0F172A;
+  --sp-admin-text-secondary: #334155;
+  --sp-admin-text-muted: #64748B;
+  --sp-admin-text-dim: #94A3B8;
+  --sp-admin-text-faint: #CBD5E1;
+
+  /* Brand / primary */
+  --sp-admin-primary: #4338CA;
+  --sp-admin-primary-bg: #EEF2FF;
+  --sp-admin-primary-hover: #3730A3;
+  --sp-admin-primary-focus: #C7D2FE;
+
+  /* Status tones */
+  --sp-admin-green: #16A34A;
+  --sp-admin-green-bg: #F0FDF4;
+  --sp-admin-green-ring: #DCFCE7;
+
+  --sp-admin-amber: #D97706;
+  --sp-admin-amber-bg: #FFFBEB;
+
+  --sp-admin-violet: #7C3AED;
+  --sp-admin-violet-bg: #F5F3FF;
+
+  --sp-admin-teal: #0D9488;
+  --sp-admin-teal-bg: #F0FDFA;
+
+  --sp-admin-slate: #475569;
+  --sp-admin-slate-bg: #F1F5F9;
+
+  --sp-admin-danger: #EF4444;
+  --sp-admin-danger-bg: #FEF2F2;
+  --sp-admin-danger-hover: #FEF2F2;
+
+  /* Radii */
+  --sp-admin-radius-sm: 8px;
+  --sp-admin-radius-md: 12px;
+  --sp-admin-radius-lg: 14px;
+
+  /* Shadows */
+  --sp-admin-shadow-card: 0 1px 3px rgba(0,0,0,.04);
+  --sp-admin-shadow-action: 0 2px 8px rgba(67,56,202,.08);
+
+  /* Typography */
+  --sp-admin-font: inherit;
+
+  /* Z-index layers */
+  --sp-admin-z-sidebar: 40;
+  --sp-admin-z-header: 30;
+  --sp-admin-z-modal: 50;
+  --sp-admin-z-toast: 60;
+
+  /* Transitions */
+  --sp-admin-transition: .22s ease;
+  --sp-admin-transition-fast: .14s;
+}

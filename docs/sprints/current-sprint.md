@@ -12,6 +12,37 @@ Last updated: 2026-06-18
 
 ---
 
+## Active sprint
+
+**Phase 10X-A - Admin UI Design System, TailAdmin Adapter & Shell Migration** - in progress (2026-06-18)
+
+Goal: create the reusable SpeakPath admin UI foundation before building more usage-governance and student-management screens.
+
+### In scope
+
+- Admin design tokens and TailAdmin adapter boundary.
+- `sp-admin-*` wrapper components.
+- Admin shell wrapper migration.
+- Toast, modal, and drawer foundations.
+- Proof migration for Dashboard, Students, and Diagnostics.
+- Component and service unit tests.
+- Architecture docs and review note.
+
+### Out of scope
+
+Full admin page migration, full usage-governance UX, full AI Usage redesign, notification platform, enterprise auth, prompt playground, observability stack, billing, StudentProfile CEFR migration, full placement engine, and full mastery engine.
+
+### Architecture decisions
+
+- Feature pages import wrappers from `src/app/admin`.
+- TailAdmin-specific style decisions stay behind wrappers and tokens.
+- Student UI remains separate.
+
+See: `docs/architecture/admin-ui-design-system.md`
+See: `docs/reviews/2026-06-18-phase-10x-a-admin-ui-design-system-shell-review.md`
+
+---
+
 ## Most recently completed sprint
 
 **Phase 10R — Usage Governance, Token Tracking & Quota Enforcement** — complete (2026-06-18)
@@ -1302,4 +1333,3 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 **Not implemented:** curriculum routing, readiness pools, CEFR routing, background generation.
 
 **Backward compatible:** `LearnerPreferenceContextFormatter.BuildLearningGoalContext()` kept intact. Old ledger records without goal context do not throw.
-

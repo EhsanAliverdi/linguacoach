@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
+import { SpAdminPageHeaderComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -22,17 +23,11 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminPageHeaderComponent],
   template: `
-    <div class="sp-admin-page-header">
-      <div class="sp-admin-header-row">
-        <div>
-          <h1 class="sp-admin-page-title">Students</h1>
-          <p class="sp-admin-page-sub">Manage pilot student accounts</p>
-        </div>
-        <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
-      </div>
-    </div>
+    <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
+      <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
+    </sp-admin-page-header>
 
     <div class="sp-admin-students-toolbar">
       <label class="sp-admin-filter-toggle">

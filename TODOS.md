@@ -159,3 +159,11 @@ Each item includes context, motivation, and the phase where it was deferred.
 ### ~~TODO-015~~ — Angular Practice Gym "Suggested for you" section — **DONE in Phase 10O-F**
 
 `PracticeGymSuggestionsService` added. Practice Gym component updated with Suggested for you, Continue practice, and Review practice sections. Cards show skill, CEFR level, routing label, duration. Start flow calls `POST .../start` and navigates to returned activity. Empty/error states implemented.
+# Phase 10X-A follow-ups
+
+- TODO-10X-B: migrate all remaining admin pages to the `sp-admin-*` wrapper layer.
+- TODO-10R-F: build usage governance UX on the new admin design system.
+- TODO-10X-ASSETS: review TailAdmin asset and licensing integration before copying any vendor assets.
+- TODO-10X-MODAL: add richer modal confirm orchestration, focus trap, and keyboard return focus.
+- TODO-10X-DRAWER: add typed drawer payloads for student detail, usage policy editor, and prompt preview.
+- TODO-10X-TOAST: add toast action buttons and queue limits if admin workflows need them.
