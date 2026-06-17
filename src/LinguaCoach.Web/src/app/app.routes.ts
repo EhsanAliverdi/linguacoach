@@ -106,6 +106,7 @@ export const routes: Routes = [
       { path: 'step-3', loadComponent: () => import('./features/onboarding/step3-career/step3-career.component').then(m => m.Step3CareerComponent) },
       { path: 'step-4', loadComponent: () => import('./features/onboarding/step4-skill/step4-skill.component').then(m => m.Step4SkillComponent) },
       { path: 'step-5', loadComponent: () => import('./features/onboarding/step5-experience/step5-experience.component').then(m => m.Step5ExperienceComponent) },
+      { path: 'v2', loadComponent: () => import('./features/onboarding/onboarding-v2/onboarding-v2.component').then(m => m.OnboardingV2Component) },
     ],
   },
 

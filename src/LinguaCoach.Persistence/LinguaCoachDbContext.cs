@@ -49,6 +49,12 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<PracticeActivityCache> PracticeActivityCache => Set<PracticeActivityCache>();
     public DbSet<StudentLearningEvent> StudentLearningEvents => Set<StudentLearningEvent>();
 
+    // T47 — Onboarding v2
+    public DbSet<OnboardingFlowDefinition> OnboardingFlowDefinitions => Set<OnboardingFlowDefinition>();
+    public DbSet<OnboardingStepDefinition> OnboardingStepDefinitions => Set<OnboardingStepDefinition>();
+    public DbSet<StudentOnboardingProgress> StudentOnboardingProgress => Set<StudentOnboardingProgress>();
+    public DbSet<StudentOnboardingResponse> StudentOnboardingResponses => Set<StudentOnboardingResponse>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -64,6 +70,13 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
                 .IsConcurrencyToken();
 
             modelBuilder.Entity<PracticeActivityCache>()
+                .Property<uint>("xmin")
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<StudentOnboardingProgress>()
                 .Property<uint>("xmin")
                 .HasColumnName("xmin")
                 .HasColumnType("xid")

@@ -91,6 +91,12 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingStatusQuery, OnboardingHandler>();
         services.AddScoped<IOnboardingExperienceHandler, OnboardingHandler>();
 
+        // Onboarding v2
+        services.AddScoped<IOnboardingV2Query, OnboardingV2QueryHandler>();
+        services.AddScoped<IOnboardingV2StepHandler, OnboardingV2StepHandler>();
+        services.AddScoped<IOnboardingV2CompleteHandler, OnboardingV2CompleteHandler>();
+        services.AddScoped<IAdminOnboardingFlowQuery, AdminOnboardingFlowQueryHandler>();
+
         // Dashboard
         services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();

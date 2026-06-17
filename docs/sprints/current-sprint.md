@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 10:46
+lastUpdated: 2026-06-17 12:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,70 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10I - Configurable Multi-step Onboarding / Assessment v2 Foundation** - complete (2026-06-17)
+
+Phase 10I introduces the v2 onboarding system running in parallel with the existing v1 state machine. Existing students are unaffected. New students receive a configurable, flow-driven onboarding experience with preliminary CEFR scoring.
+
+### What was built
+
+**Domain layer**
+- `OnboardingFlowDefinition` entity — versioned, immutable once students have progress; single active flow enforced via PostgreSQL partial unique index.
+- `OnboardingStepDefinition` entity — system-required vs admin-configured steps, typed `OnboardingAnswerMapping` enum (serialised as string in DB).
+- `StudentOnboardingProgress` entity — per-student progress record with `PreliminaryCefrLevel`; xmin concurrency token; unique `(progress_id, step_key)` constraint on responses.
+- `StudentOnboardingResponse` entity — idempotent answer store (upsert pattern).
+- `PreliminaryCefrCalculator` — static weighted scoring (A1–C2); never overwrites a real PlacementAssessment CEFR level.
+
+**Persistence layer**
+- EF Core configurations for all 4 new entities.
+- Migration T47_OnboardingV2.
+- `OnboardingFlowSeeder` — idempotent; seeds 10 SystemRequired steps + 1 AdminConfigured disabled step.
+
+**Application layer**
+- Contracts: `OnboardingV2Contracts.cs` — student DTOs (no `AssessmentMetadataJson`), admin DTOs, interfaces, commands/queries/results.
+
+**Infrastructure layer**
+- `OnboardingV2QueryHandler` — lazy-creates progress; detects v1-complete students and auto-initialises as complete.
+- `OnboardingV2StepHandler` — validates and applies answers; percentage counts only SystemRequired+enabled steps.
+- `OnboardingV2CompleteHandler` — scores assessment responses; sets `PreliminaryCefrLevel`; calls `SetCefrLevel()` only if CefrLevel is null; transitions lifecycle to `PlacementRequired`.
+- `AdminOnboardingFlowQueryHandler` — read-only GET, excludes `AssessmentMetadataJson`.
+
+**API layer**
+- `OnboardingController` extended: `GET /api/onboarding`, `POST /api/onboarding/steps/{stepKey}`, `POST /api/onboarding/complete`.
+- `AdminOnboardingController` added: `GET /api/admin/onboarding/flow` (Admin role only).
+- `OnboardingFlowSeeder` wired into app startup after `ExerciseTypeDefinitionSeeder`.
+
+**Angular layer**
+- `onboarding-v2.models.ts` — TypeScript interfaces for all v2 DTOs.
+- `OnboardingV2Service` — `getStatus()`, `submitStep()`, `complete()`.
+- `OnboardingV2Component` — shell with progress bar, dynamic step dispatch by `stepType`.
+- 11 step renderer components: Welcome, PreferredName, SupportLanguage, LearningGoals, FocusAreas, DifficultyPreference, SingleChoice, MultipleChoice, FreeText, AssessmentQuestion, Summary.
+- Route: `/onboarding/v2` added to `app.routes.ts`.
+
+### Tightening rules applied (all 10)
+
+1. `PreliminaryCefrLevel` stored separately — real `CefrLevel` only updated when null.
+2. `OnboardingAnswerMapping` typed enum, not raw string keys.
+3. Flow versions immutable once students have progress; admin edits create new versions.
+4. Single active flow enforced by DB partial unique index.
+5. Student API never exposes `AssessmentMetadataJson`, correct answers, or scoring weights.
+6. Percentage counts SystemRequired+enabled steps only.
+7. Post-onboarding lifecycle → `PlacementRequired`.
+8. Unique `(progress_id, step_key)` constraint on `StudentOnboardingResponse`.
+9. v1 `OnboardingStatus`/`OnboardingStep` fields preserved as legacy compatibility.
+10. Documented limitations: no full CEFR engine, no admin visual builder, no curriculum routing.
+
+### Final test counts (CI green)
+
+- Backend: 863 unit + 511 integration passed (net gain from v2 handler tests).
+- Angular: production build clean (CSS warnings pre-existing, no errors).
+- Architecture tests: not rebuilt (build artefact absent; unit/integration cover coverage).
+
+Known limitations: no Playwright E2E spec for v2 onboarding flow (no test user seeded with v2 progress); no admin visual flow builder; preliminary CEFR is a simple weight band, not a full adaptive engine; no curriculum routing post-onboarding.
+
+---
+
+## Previously most recently completed sprint
 
 **Phase 10H-F - Practice Gym Playwright Fixture Stabilisation** - complete (2026-06-17)
 

@@ -15,15 +15,24 @@ public sealed class OnboardingController : ControllerBase
     private readonly IOnboardingHandler _handler;
     private readonly IOnboardingStatusQuery _statusQuery;
     private readonly IOnboardingExperienceHandler _experienceHandler;
+    private readonly IOnboardingV2Query _v2Query;
+    private readonly IOnboardingV2StepHandler _v2StepHandler;
+    private readonly IOnboardingV2CompleteHandler _v2CompleteHandler;
 
     public OnboardingController(
         IOnboardingHandler handler,
         IOnboardingStatusQuery statusQuery,
-        IOnboardingExperienceHandler experienceHandler)
+        IOnboardingExperienceHandler experienceHandler,
+        IOnboardingV2Query v2Query,
+        IOnboardingV2StepHandler v2StepHandler,
+        IOnboardingV2CompleteHandler v2CompleteHandler)
     {
         _handler = handler;
         _statusQuery = statusQuery;
         _experienceHandler = experienceHandler;
+        _v2Query = v2Query;
+        _v2StepHandler = v2StepHandler;
+        _v2CompleteHandler = v2CompleteHandler;
     }
 
     [HttpPatch]
@@ -109,6 +118,74 @@ public sealed class OnboardingController : ControllerBase
         return Ok(new { currentStep = result.CurrentStep, isComplete = result.IsComplete, languagePairId = result.LanguagePairId });
     }
 
+    // ── Onboarding v2 endpoints ───────────────────────────────────────────────
+
+    [HttpGet]
+    public async Task<IActionResult> GetV2(CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _v2Query.HandleAsync(new GetOnboardingV2Query(userId), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("steps/{stepKey}")]
+    public async Task<IActionResult> SubmitStep(string stepKey, [FromBody] OnboardingV2StepRequestDto dto, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(stepKey))
+            return BadRequest(new { error = "stepKey is required." });
+
+        if (string.IsNullOrWhiteSpace(dto.AnswerJson))
+            return BadRequest(new { error = "answerJson is required." });
+
+        try
+        {
+            var result = await _v2StepHandler.HandleAsync(
+                new SubmitOnboardingStepCommand(userId, stepKey, dto.AnswerJson), ct);
+            return Ok(result);
+        }
+        catch (OnboardingV2ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("complete")]
+    public async Task<IActionResult> Complete(CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _v2CompleteHandler.HandleAsync(new CompleteOnboardingV2Command(userId), ct);
+            return Ok(result);
+        }
+        catch (OnboardingV2ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
@@ -118,6 +195,11 @@ public sealed class ExperienceStepDto
 {
     public ProfessionalExperienceLevel ProfessionalExperienceLevel { get; set; }
     public RoleFamiliarity RoleFamiliarity { get; set; }
+}
+
+public sealed class OnboardingV2StepRequestDto
+{
+    public string? AnswerJson { get; set; }
 }
 
 public sealed class OnboardingStepDto
