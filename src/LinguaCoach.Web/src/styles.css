@@ -22,7 +22,16 @@
   --sp-sh-md:0 8px 24px rgba(60,48,140,.10);
   --sp-sh-lg:0 16px 40px rgba(60,48,140,.14);
   --sp-sh-glow:0 10px 30px rgba(123,80,220,.30);
-  --sp-r-sm:14px;--sp-r:18px;--sp-r-lg:22px;--sp-r-xl:28px;--sp-r-full:999px;
+  --sp-r-sm:14px;--sp-r-md:16px;--sp-r:18px;--sp-r-lg:22px;--sp-r-xl:28px;--sp-r-full:999px;
+  --sp-brand:#5B4BE8;
+  --sp-nav-h:64px;
+  --sp-sidebar-w:264px;
+  --sp-sidebar-w-collapsed:76px;
+  --sp-content-max:520px;
+  --sp-content-max-desktop:1080px;
+  --sp-zi-header:30;
+  --sp-zi-nav:40;
+  --sp-zi-flyout:200;
 }
 
 /* == Base ================================================================== */
@@ -97,21 +106,7 @@ button,a,input,textarea{touch-action:manipulation;font-family:inherit;}
 .sp-greet-lg{font-size:20px;font-weight:800;color:var(--sp-ink);margin-top:1px;}
 .sp-content{flex:1;width:100%;max-width:520px;margin:0 auto;padding:18px 18px 108px;}
 @media(min-width:900px){.sp-content{max-width:1080px;padding:30px 40px 60px;}}
-.sp-bottomnav{
-  position:fixed;left:0;right:0;bottom:0;z-index:40;
-  display:flex;justify-content:space-around;align-items:center;
-  padding:9px 8px calc(9px + env(safe-area-inset-bottom));
-  background:rgba(255,255,255,.85);backdrop-filter:blur(16px);
-  border-top:1px solid var(--sp-border);
-}
-@media(min-width:900px){.sp-bottomnav{display:none !important;}}
-.sp-navbtn{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  flex:1;padding:5px 2px;color:var(--sp-faint);border-radius:14px;
-  background:none;border:none;cursor:pointer;text-decoration:none;transition:color .18s;
-}
-.sp-navbtn span{font-size:10.5px;font-weight:700;letter-spacing:.01em;}
-.sp-navbtn.is-active{color:var(--sp-writing);}
+/* sp-bottomnav and sp-navbtn are defined in student-app-layout.component.css */
 
 /* == Layout helpers ======================================================== */
 .sp-col{display:flex;flex-direction:column;}
@@ -132,6 +127,9 @@ button,a,input,textarea{touch-action:manipulation;font-family:inherit;}
 
 /* == Cards ================================================================= */
 .sp-card{background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:var(--sp-r-lg);box-shadow:var(--sp-sh-sm);}
+.sp-card-hover{transition:transform .18s,box-shadow .2s,border-color .15s;cursor:pointer;}
+.sp-card-hover:hover{transform:translateY(-2px);box-shadow:var(--sp-sh-md);}
+.sp-card-hover:active{transform:scale(.98);}
 .sp-card-pad{padding:18px;}
 .sp-card-soft{background:var(--sp-grad-brand-soft);border:1px solid #EADBFF;border-radius:var(--sp-r-lg);padding:18px;}
 .sp-info-block{background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:var(--sp-r-lg);padding:18px;box-shadow:var(--sp-sh-xs);}
@@ -206,6 +204,18 @@ button,a,input,textarea{touch-action:manipulation;font-family:inherit;}
   transition:border-color .15s,background .15s,color .15s;
 }
 .sp-option:hover,.sp-option.selected{border-color:var(--sp-writing);background:var(--sp-writing-soft);color:var(--sp-writing-ink);}
+
+/* == Preference chips (profile page toggles) =============================== */
+.sp-pref-chip{
+  padding:7px 14px;border-radius:var(--sp-r-full);
+  font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  background:var(--sp-canvas);color:var(--sp-ink);
+  border:1.5px solid var(--sp-border2);
+  transition:background .15s,color .15s,border-color .15s,box-shadow .15s;
+}
+.sp-pref-chip:hover:not(.sp-pref-chip--on){border-color:var(--sp-brand);color:var(--sp-brand);}
+.sp-pref-chip--on{background:var(--sp-brand);color:#fff;border-color:var(--sp-brand);font-weight:700;}
+.sp-pref-chip:focus-visible{outline:2px solid var(--sp-brand);outline-offset:2px;}
 
 /* == Pills & chips ========================================================= */
 .sp-pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12px;padding:5px 11px;border-radius:var(--sp-r-full);}

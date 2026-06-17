@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 10:46
+lastUpdated: 2026-06-17 19:00
 owner: product
 supersedes:
 supersededBy:
@@ -424,6 +424,34 @@ Completed staged migrations:
 Remaining staged migrations are pattern-backed activities. Planned future exercise formats made runnable so far: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), `reorder_paragraphs` (Phase 8D), `reading_writing_fill_in_blanks` (Phase 8E), `summarize_written_text` (Phase 8F), `write_essay` (Phase 8G), `listening_multiple_choice_single` (Phase 8H — first runnable listening-primary format), `listening_multiple_choice_multi` (Phase 8I — second runnable listening-primary format), `listening_fill_in_blanks` (Phase 8J — third runnable listening-primary format, first runnable listening+writing format), `select_missing_word` (Phase 8K — fourth runnable listening-primary format), `highlight_correct_summary` (Phase 8L — fifth runnable listening-primary format, first runnable listening+reading format), `highlight_incorrect_words` (Phase 8M — sixth runnable listening-primary format, second runnable listening+reading format), `write_from_dictation` (Phase 8O — seventh runnable listening-primary format), and `summarize_spoken_text` (Phase 8Q — eighth runnable listening-primary format, first AI-evaluated listening+writing format). All reading-primary, writing, and listening planned future formats are now ready. All remaining planned future exercise formats are the speaking formats (`read_aloud`, `repeat_sentence`, `describe_image`, `respond_to_situation`, `retell_lecture`, `summarize_group_discussion`, `answer_short_question`), which remain planned and non-runnable. Today pre-generation remains a future phase. Phase 8P (2026-06-16) wired the audio lifecycle for all 9 listening pattern keys. `HandlePatternKeyedAsync` now calls `EnsureAudioAsync` after creating pattern-keyed listening activities. `ActivityDto` gains an `AudioStatus` string field (`"ready"` / `"pending"` / `"unavailable"`). A shared `app-audio-player` Angular component was created and all 5 listening renderer HTML templates now use it instead of inline `<audio>` tags. The exercise-renderer getters for `listeningFillInBlanks`, `highlightCorrectSummary`, and `highlightIncorrectWords` now fall back to `activity.audioUrl` from the API when `ed['audioUrl']` is absent from the content JSON. Audio is now generated on first fetch for all listening patterns; `audioUrl` will be non-null when TTS succeeds. Phase 8Q (2026-06-16) added `summarize_spoken_text` to `ListeningAudioService.ListeningPatternKeys` (now 10 keys) so it reuses the same shared audio lifecycle and `app-audio-player`. Its evaluation reuses the existing `AiStructuredEvaluator` AI path (same as `summarize_written_text` / `write_essay`); `learnContent` and the expected-answer `keyPoints` are never sent to the AI before submission.
 
 Phase 8N (2026-06-16) added configurable practice item counts as a foundation (not a new format). Every `ExerciseTypeDefinition` now carries `MinItemsPerPractice`/`DefaultItemsPerPractice`/`MaxItemsPerPractice` and `MinOptionsPerItem`/`DefaultOptionsPerItem`/`MaxOptionsPerItem`, seeded per type, editable in the admin exercise-types page (with inline `min <= default <= max` and non-negative validation) and via admin PATCH. Counts feed generation prompt context and optional validator count enforcement. Counts are configuration only and never change readiness; no format was made runnable. See [practice-item-sets.md](../architecture/practice-item-sets.md).
+
+## Phase 10J-F — Student App Design System & Responsive UI Foundation, completed (2026-06-17)
+
+Frontend-only phase. No product behaviour, API contracts, or backend logic changed.
+
+**Design tokens extended (`styles.css`):**
+- `--sp-brand` (solid brand colour, `#5B4BE8`), `--sp-r-md`, `--sp-nav-h`, `--sp-sidebar-w`, `--sp-sidebar-w-collapsed`, `--sp-content-max`, `--sp-content-max-desktop`, z-index layer tokens added to `:root`.
+- `sp-card-hover` utility class added (transition, hover lift, active scale).
+- `sp-pref-chip` / `sp-pref-chip--on` added for all preference chip toggles.
+- Duplicate `sp-bottomnav` / `sp-navbtn` removed from global CSS (canonical definition in `student-app-layout.component.css`).
+
+**Profile page:**
+- All chip buttons (learning goals, focus areas, session length, difficulty) now use `sp-pref-chip--on` CSS class binding instead of inline `chipStyle()` method.
+- `aria-pressed` attribute added to all chip buttons. `data-testid` added per chip.
+- `focus-visible` keyboard ring included in chip CSS.
+- `chipStyle()` method removed.
+
+**Progress component:**
+- All hardcoded hex colors replaced with design tokens (`--sp-success`, `--sp-warn`, `--sp-speaking`, `--sp-writing-ink`, `--sp-success-soft`, `--sp-warn-soft`, `--sp-canvas2`, `--sp-muted`).
+
+**Practice Gym CSS:**
+- `var(--sp-primary)` references (non-existent token) replaced with `var(--sp-brand)`.
+
+**Shared student UI components (`src/app/shared/student-ui/`):**
+- `StudentChipComponent` (`sp-chip`) — reusable toggle chip.
+- `StudentBadgeComponent` (`sp-badge`) — reusable badge with variant input.
+
+**Tests:** Angular 261 passed. Playwright 187 passed (12 new in `e2e/design-system-10jf.spec.ts`). Backend 1565 passed.
 
 ## Phase 10J — Learning Goal Context Resolver, completed (2026-06-17)
 

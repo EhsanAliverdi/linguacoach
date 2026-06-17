@@ -123,8 +123,12 @@ const SUPPORT_LANGUAGES = [
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px" data-testid="learning-goals-chips">
           @for (goal of predefinedGoals; track goal) {
             <button
+              type="button"
               (click)="toggleGoal(goal)"
-              [style]="chipStyle(isGoalSelected(goal))"
+              class="sp-pref-chip"
+              [class.sp-pref-chip--on]="isGoalSelected(goal)"
+              [attr.aria-pressed]="isGoalSelected(goal)"
+              [attr.data-testid]="'goal-chip-' + goal"
             >{{ goal }}</button>
           }
         </div>
@@ -147,8 +151,12 @@ const SUPPORT_LANGUAGES = [
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
           @for (area of predefinedFocusAreas; track area) {
             <button
+              type="button"
               (click)="toggleFocusArea(area)"
-              [style]="chipStyle(isFocusAreaSelected(area))"
+              class="sp-pref-chip"
+              [class.sp-pref-chip--on]="isFocusAreaSelected(area)"
+              [attr.aria-pressed]="isFocusAreaSelected(area)"
+              [attr.data-testid]="'focus-chip-' + area"
             >{{ area }}</button>
           }
         </div>
@@ -199,21 +207,25 @@ const SUPPORT_LANGUAGES = [
       <div class="sp-card" style="padding:18px;margin-bottom:20px">
         <div style="margin-bottom:14px">
           <label style="font-size:12px;font-weight:600;color:var(--sp-muted);display:block;margin-bottom:8px">Session length</label>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
             @for (mins of sessionLengths; track mins) {
               <button
+                type="button"
                 (click)="form.preferredSessionDurationMinutes = mins"
-                [style]="chipStyle(form.preferredSessionDurationMinutes === mins)"
+                class="sp-pref-chip"
+                [class.sp-pref-chip--on]="form.preferredSessionDurationMinutes === mins"
+                [attr.aria-pressed]="form.preferredSessionDurationMinutes === mins"
+                [attr.data-testid]="'session-length-' + mins"
               >{{ mins }} min</button>
             }
           </div>
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;color:var(--sp-muted);display:block;margin-bottom:8px">Difficulty</label>
-          <div style="display:flex;gap:8px">
-            <button (click)="form.difficultyPreference = 0" [style]="chipStyle(form.difficultyPreference === 0)">Gentle</button>
-            <button (click)="form.difficultyPreference = 1" [style]="chipStyle(form.difficultyPreference === 1)">Balanced</button>
-            <button (click)="form.difficultyPreference = 2" [style]="chipStyle(form.difficultyPreference === 2)">Challenging</button>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button type="button" (click)="form.difficultyPreference = 0" class="sp-pref-chip" [class.sp-pref-chip--on]="form.difficultyPreference === 0" [attr.aria-pressed]="form.difficultyPreference === 0" data-testid="difficulty-gentle">Gentle</button>
+            <button type="button" (click)="form.difficultyPreference = 1" class="sp-pref-chip" [class.sp-pref-chip--on]="form.difficultyPreference === 1" [attr.aria-pressed]="form.difficultyPreference === 1" data-testid="difficulty-balanced">Balanced</button>
+            <button type="button" (click)="form.difficultyPreference = 2" class="sp-pref-chip" [class.sp-pref-chip--on]="form.difficultyPreference === 2" [attr.aria-pressed]="form.difficultyPreference === 2" data-testid="difficulty-challenging">Challenging</button>
           </div>
         </div>
       </div>
@@ -356,12 +368,6 @@ export class ProfileComponent implements OnInit {
   onSupportLanguageChange(code: string | null): void {
     const lang = this.supportLanguages.find(l => l.code === code);
     this.form.supportLanguageName = lang?.name ?? null;
-  }
-
-  chipStyle(selected: boolean): string {
-    return selected
-      ? 'padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:var(--sp-brand);color:#fff;border:1.5px solid var(--sp-brand);transition:all .15s'
-      : 'padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:var(--sp-canvas);color:var(--sp-ink);border:1.5px solid var(--sp-border);transition:all .15s';
   }
 
   save(): void {

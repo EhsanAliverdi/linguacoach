@@ -142,7 +142,7 @@ import { StudentVocabularyItem } from '../../core/models/vocabulary.models';
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px">
                 @for (s of data()!.skillProgress.topStrengths; track s) {
-                  <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--sp-writing-bg,#e8f5e9);color:var(--sp-writing,#2e7d32)">
+                  <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--sp-success-soft);color:var(--sp-success)">
                     {{ s }}
                   </span>
                 }
@@ -156,7 +156,7 @@ import { StudentVocabularyItem } from '../../core/models/vocabulary.models';
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px">
                 @for (s of data()!.skillProgress.weakestSkills; track s) {
-                  <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--sp-warn-bg,#fff3e0);color:var(--sp-warn,#e65100)">
+                  <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--sp-warn-soft);color:var(--sp-warn)">
                     {{ s }}
                   </span>
                 }
@@ -169,11 +169,11 @@ import { StudentVocabularyItem } from '../../core/models/vocabulary.models';
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="width:8px;height:8px;border-radius:50%"
-                         [style.background]="skill.isWeak ? 'var(--sp-warn,#e65100)' : 'var(--sp-writing,#2e7d32)'">
+                         [style.background]="skill.isWeak ? 'var(--sp-warn)' : 'var(--sp-success)'">
                     </div>
                     <span style="font-size:13px;font-weight:600;color:var(--sp-ink)">{{ skill.skillLabel }}</span>
                   </div>
-                  <span style="font-size:11px;font-weight:600" [style.color]="skill.isWeak ? 'var(--sp-warn,#e65100)' : 'var(--sp-muted)'">
+                  <span style="font-size:11px;font-weight:600" [style.color]="skill.isWeak ? 'var(--sp-warn)' : 'var(--sp-muted)'">
                     {{ skill.scorePercent }}%
                   </span>
                 </div>
@@ -241,7 +241,7 @@ import { StudentVocabularyItem } from '../../core/models/vocabulary.models';
                     <div style="font-size:12px;color:var(--sp-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.suggestedPhrase }}</div>
                   }
                 </div>
-                <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0;background:#e3f2fd;color:#1565c0">
+                <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0;background:var(--sp-writing-soft);color:var(--sp-writing-ink)">
                   {{ v.status }}
                 </span>
               </div>
@@ -332,9 +332,9 @@ export class ProgressComponent implements OnInit {
   }
 
   scoreColour(score: number): string {
-    if (score >= 80) return '#2e7d32';
-    if (score >= 65) return '#f57c00';
-    return '#c62828';
+    if (score >= 80) return 'var(--sp-success)';
+    if (score >= 65) return 'var(--sp-warn)';
+    return 'var(--sp-speaking)';
   }
 
   statusLabel(status: string): string {
@@ -344,14 +344,14 @@ export class ProgressComponent implements OnInit {
   }
 
   statusBg(status: string): string {
-    if (status === 'completed') return '#e8f5e9';
-    if (status === 'current') return '#e3f2fd';
-    return '#f5f5f5';
+    if (status === 'completed') return 'var(--sp-success-soft)';
+    if (status === 'current') return 'var(--sp-writing-soft)';
+    return 'var(--sp-canvas2)';
   }
 
   statusFg(status: string): string {
-    if (status === 'completed') return '#2e7d32';
-    if (status === 'current') return '#1565c0';
-    return '#757575';
+    if (status === 'completed') return 'var(--sp-success)';
+    if (status === 'current') return 'var(--sp-writing-ink)';
+    return 'var(--sp-muted)';
   }
 }

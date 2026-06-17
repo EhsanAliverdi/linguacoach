@@ -62,7 +62,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--sp-primary);
+  background: var(--sp-brand);
   animation: sp-bounce 1.2s infinite ease-in-out;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .sp-format-card-icon {
-  color: var(--sp-primary);
+  color: var(--sp-brand);
   font-size: 18px;
   font-weight: 900;
   line-height: 1;
@@ -142,8 +142,8 @@
 }
 
 .sp-format-card-status--ready {
-  background: color-mix(in srgb, var(--sp-primary) 12%, transparent);
-  color: var(--sp-primary);
+  background: color-mix(in srgb, var(--sp-brand) 12%, transparent);
+  color: var(--sp-brand);
 }
 
 .sp-format-card-status--loading {
@@ -216,7 +216,7 @@
 /* CTA */
 .sp-format-card-cta {
   margin-top: 8px;
-  color: var(--sp-primary);
+  color: var(--sp-brand);
   font-size: 12px;
   font-weight: 800;
 }

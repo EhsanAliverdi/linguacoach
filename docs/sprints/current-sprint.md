@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 12:00
+lastUpdated: 2026-06-17 19:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,45 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10J-F — Student App Design System & Responsive UI Foundation** - complete (2026-06-17)
+
+Phase 10J-F refactors the student-facing Angular UI into a more maintainable design-system foundation. No product behaviour changed. No backend changes.
+
+### What was built
+
+**Design tokens (styles.css)**
+- Added `--sp-brand`, `--sp-r-md`, `--sp-nav-h`, `--sp-sidebar-w`, `--sp-sidebar-w-collapsed`, `--sp-content-max`, `--sp-content-max-desktop`, z-index layer tokens.
+- Added `sp-card-hover` utility class (was used but missing).
+- Added `sp-pref-chip` / `sp-pref-chip--on` — centralised preference chip class replacing scattered inline chipStyle() strings.
+- Removed duplicate `sp-bottomnav` / `sp-navbtn` definition (kept in component CSS only).
+
+**Profile page**
+- Replaced `chipStyle()` inline style method with `sp-pref-chip` CSS class bindings.
+- Added `aria-pressed` to all chip buttons (learning goals, focus areas, session length, difficulty).
+- Added `data-testid` per chip for test targeting.
+- Added `focus-visible` outline for keyboard accessibility.
+
+**Progress component**
+- Replaced all hardcoded hex color values with design tokens (`--sp-success`, `--sp-warn`, `--sp-writing-ink`, `--sp-success-soft`, `--sp-warn-soft`, `--sp-speaking`, `--sp-canvas2`, `--sp-muted`).
+- Fixed `var(--sp-writing-bg)` and `var(--sp-warn-bg)` references (those tokens don't exist).
+
+**Practice Gym CSS**
+- Replaced all `var(--sp-primary)` references with `var(--sp-brand)`.
+
+**Shared student UI components**
+- `StudentChipComponent` (`sp-chip` selector) — reusable toggle chip with `selected`, `disabled`, `toggle`.
+- `StudentBadgeComponent` (`sp-badge` selector) — reusable badge with variant input.
+- `src/app/shared/student-ui/index.ts` barrel export.
+
+**Tests**
+- Angular: 261 tests, 261 passed.
+- Playwright: 187 tests, 187 passed (12 new in `e2e/design-system-10jf.spec.ts`).
+- Backend: 1565 passed across all suites.
+
+---
+
+## Previously completed sprint
 
 **Phase 10I - Configurable Multi-step Onboarding / Assessment v2 Foundation** - complete (2026-06-17)
 
