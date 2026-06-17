@@ -2,9 +2,16 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ActivityService } from '../../core/services/activity.service';
+import {
+  PracticeGymSuggestionsService,
+  PracticeGymSuggestionItem,
+  PracticeGymSuggestionsResponse,
+  routingReasonLabel,
+} from '../../core/services/practice-gym-suggestions.service';
 import { ExerciseTypeDefinition } from '../../core/models/admin.models';
 
 export type LoadState = 'loading' | 'ready' | 'error';
+export type SuggestionsLoadState = 'loading' | 'ready' | 'error' | 'empty';
 
 export interface FormatCard {
   key: string;
@@ -94,6 +101,12 @@ export class PracticeGymComponent implements OnInit {
   activeSkill = signal<string | null>(null);
   selectionMessage = signal<string | null>(null);
 
+  // Suggestions state
+  suggestionsLoadState = signal<SuggestionsLoadState>('loading');
+  suggestions = signal<PracticeGymSuggestionsResponse | null>(null);
+  startingItemId = signal<string | null>(null);
+  suggestionMessage = signal<string | null>(null);
+
   readonly skillGroups = computed(() => {
     const all = this._types();
     const map = new Map<string, FormatCard[]>();
@@ -111,8 +124,13 @@ export class PracticeGymComponent implements OnInit {
     this._types().filter(t => t.isEnabled && t.isAvailableForGeneration && t.implementationStatus === 'ready' && t.supportsPracticeGym).length
   );
 
+  readonly suggestedItems = computed(() => this.suggestions()?.suggestedItems ?? []);
+  readonly continueItems = computed(() => this.suggestions()?.continueItems ?? []);
+  readonly reviewItems = computed(() => this.suggestions()?.reviewItems ?? []);
+
   constructor(
     private activityService: ActivityService,
+    private practiceGymSuggestionsService: PracticeGymSuggestionsService,
     private router: Router,
   ) {}
 
@@ -124,6 +142,64 @@ export class PracticeGymComponent implements OnInit {
       },
       error: () => this.loadState.set('error'),
     });
+
+    this.loadSuggestions();
+  }
+
+  private loadSuggestions(): void {
+    this.suggestionsLoadState.set('loading');
+    this.practiceGymSuggestionsService.getSuggestions().subscribe({
+      next: resp => {
+        this.suggestions.set(resp);
+        const hasAny = resp.suggestedItems.length > 0
+          || resp.continueItems.length > 0
+          || resp.reviewItems.length > 0;
+        this.suggestionsLoadState.set(hasAny ? 'ready' : 'empty');
+      },
+      error: () => {
+        this.suggestionsLoadState.set('error');
+      },
+    });
+  }
+
+  startSuggestion(item: PracticeGymSuggestionItem): void {
+    if (this.startingItemId() !== null) return;
+    this.suggestionMessage.set(null);
+    this.startingItemId.set(item.readinessItemId);
+
+    this.practiceGymSuggestionsService.startSuggestion(item.readinessItemId).subscribe({
+      next: result => {
+        this.startingItemId.set(null);
+        if (!result.success) {
+          this.suggestionMessage.set('This item is no longer available. Refreshing suggestions.');
+          this.loadSuggestions();
+          return;
+        }
+        if (result.learningActivityId) {
+          this.router.navigate(['/activity'], {
+            queryParams: { activityId: result.learningActivityId, returnTo: '/practice' },
+          });
+        } else if (result.learningSessionId) {
+          this.router.navigate(['/lesson'], {
+            queryParams: { sessionId: result.learningSessionId, returnTo: '/practice' },
+          });
+        } else {
+          this.suggestionMessage.set('Could not start this practice. Please try again.');
+        }
+      },
+      error: () => {
+        this.startingItemId.set(null);
+        this.suggestionMessage.set('Could not start this practice. Please try again.');
+      },
+    });
+  }
+
+  isStartingSuggestion(id: string): boolean {
+    return this.startingItemId() === id;
+  }
+
+  routingLabel(item: PracticeGymSuggestionItem): string {
+    return routingReasonLabel(item.routingReason);
   }
 
   startFormat(card: FormatCard): void {

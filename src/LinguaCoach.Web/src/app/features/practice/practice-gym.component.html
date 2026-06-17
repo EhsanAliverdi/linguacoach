@@ -8,6 +8,120 @@
     </p>
   </header>
 
+  <!-- ── Suggestions: Suggested for you / Continue / Review ─────────────── -->
+
+  @if (suggestionMessage()) {
+    <div class="sp-practice-alert" role="status" data-testid="suggestion-message">
+      {{ suggestionMessage() }}
+    </div>
+  }
+
+  @if (suggestionsLoadState() === 'loading') {
+    <div class="sp-practice-loading" data-testid="suggestions-loading" role="status" aria-live="polite">
+      <span class="sp-practice-loading-dot"></span>
+      <span class="sp-practice-loading-dot"></span>
+      <span class="sp-practice-loading-dot"></span>
+      <span class="sp-practice-loading-text">Loading suggestions&hellip;</span>
+    </div>
+  }
+
+  @if (suggestionsLoadState() === 'error') {
+    <div class="sp-practice-alert" data-testid="suggestions-error" role="alert">
+      We could not load suggestions right now. You can still practise by skill below.
+    </div>
+  }
+
+  @if (suggestionsLoadState() === 'empty') {
+    <div class="sp-suggestion-empty" data-testid="suggestions-empty" role="status">
+      Your practice is being prepared. You can still choose a skill below.
+    </div>
+  }
+
+  @if (suggestionsLoadState() === 'ready') {
+
+    @if (suggestedItems().length > 0) {
+      <section class="sp-practice-section" data-testid="suggestions-section">
+        <p class="sp-eyebrow sp-practice-section-label">Suggested for you</p>
+        <div class="sp-suggestion-grid" data-testid="suggestions-grid">
+          @for (item of suggestedItems(); track item.readinessItemId) {
+            <ng-container *ngTemplateOutlet="suggestionCard; context: { $implicit: item }"></ng-container>
+          }
+        </div>
+      </section>
+    }
+
+    @if (continueItems().length > 0) {
+      <section class="sp-practice-section" data-testid="continue-section">
+        <p class="sp-eyebrow sp-practice-section-label">Continue practice</p>
+        <div class="sp-suggestion-grid" data-testid="continue-grid">
+          @for (item of continueItems(); track item.readinessItemId) {
+            <ng-container *ngTemplateOutlet="suggestionCard; context: { $implicit: item }"></ng-container>
+          }
+        </div>
+      </section>
+    }
+
+    @if (reviewItems().length > 0) {
+      <section class="sp-practice-section" data-testid="review-section">
+        <p class="sp-eyebrow sp-practice-section-label">Review practice</p>
+        <div class="sp-suggestion-grid" data-testid="review-grid">
+          @for (item of reviewItems(); track item.readinessItemId) {
+            <ng-container *ngTemplateOutlet="suggestionCard; context: { $implicit: item }"></ng-container>
+          }
+        </div>
+      </section>
+    }
+
+  }
+
+  <!-- Suggestion card template -->
+  <ng-template #suggestionCard let-item>
+    <div class="sp-card sp-suggestion-card" [attr.data-testid]="'suggestion-card-' + item.readinessItemId">
+      <div class="sp-suggestion-card-top">
+        @if (item.primarySkill) {
+          <span class="sp-chip sp-suggestion-skill-chip">{{ item.primarySkill | titlecase }}</span>
+        }
+        @if (item.isLowerLevelContent) {
+          <span class="sp-chip sp-suggestion-level-chip sp-chip--muted" data-testid="lower-level-label">{{ routingLabel(item) }}</span>
+        } @else {
+          <span class="sp-chip sp-suggestion-level-chip" data-testid="routing-label">{{ routingLabel(item) }}</span>
+        }
+      </div>
+      <div class="sp-suggestion-card-title">{{ item.title }}</div>
+      @if (item.description) {
+        <div class="sp-suggestion-card-desc">{{ item.description }}</div>
+      }
+      <div class="sp-suggestion-card-meta">
+        @if (item.targetCefrLevel) {
+          <span class="sp-suggestion-cefr" data-testid="suggestion-cefr">{{ item.targetCefrLevel }}</span>
+        }
+        @if (item.estimatedDurationMinutes) {
+          <span class="sp-suggestion-duration">~{{ item.estimatedDurationMinutes }} min</span>
+        }
+        @if (item.contextTags.length > 0) {
+          @for (tag of item.contextTags.slice(0, 2); track tag) {
+            <span class="sp-chip sp-chip--xs">{{ tag }}</span>
+          }
+        }
+      </div>
+      <button
+        type="button"
+        class="sp-btn sp-btn-primary sp-suggestion-start-btn"
+        [attr.data-testid]="'suggestion-start-' + item.readinessItemId"
+        [disabled]="startingItemId() !== null"
+        (click)="startSuggestion(item)"
+      >
+        @if (isStartingSuggestion(item.readinessItemId)) {
+          <span>Starting&hellip;</span>
+        } @else {
+          <span>{{ item.callToAction || 'Start practice' }}</span>
+        }
+      </button>
+    </div>
+  </ng-template>
+
+  <!-- ── Main formats load state ─────────────────────────────────────────── -->
+
   @if (loadState() === 'loading') {
     <div class="sp-practice-loading" data-testid="practice-loading" role="status" aria-live="polite">
       <span class="sp-practice-loading-dot"></span>

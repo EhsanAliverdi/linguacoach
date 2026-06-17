@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath â€” Current Product State
 
-Last updated: 2026-06-17
+Last updated: 2026-06-18
 
 ---
 
@@ -460,14 +460,55 @@ Phase 10O connects the readiness pool to the student-facing Practice Gym. The po
 
 Normal → "Recommended for your current goal" | Review → "Review" | Scaffold → "Step back to strengthen basics" | Remediation → "Targeted fix" | Fallback → "General practice".
 
-### What is NOT done yet
+### What is NOT done yet (after 10O-F)
 
-- Angular frontend integration (API ready; see TODO-015).
-- `TryMarkConsumedAsync` wiring in `ActivitySubmitHandler` (see TODO-014).
 - Existing `GET /api/activity/practice-gym/next` (by skill/exercise type) is unchanged.
+- Session/SessionExercise completion paths do not yet wire consumption (linked via LearningActivityId only).
 
-### Tests
+### Tests (10O only)
 +14 unit tests, +10 integration tests. Total: 1774 passed, 0 failed.
+
+---
+
+## Phase 10O-F — Practice Gym UI Integration & Completion Consumption Wiring, completed (2026-06-18)
+
+Phase 10O-F connects the 10O backend API to the Angular Practice Gym page and wires completed activities back to readiness pool consumption.
+
+### Angular UI changes
+
+- **`PracticeGymSuggestionsService`** — new Angular service: `getSuggestions()`, `startSuggestion(id)`, `completeSuggestion(id)`.
+- **`PracticeGymComponent`** — extended: suggestion signals, `loadSuggestions()`, `startSuggestion()` with loading/disabled state, `routingLabel()` helper.
+- **Practice Gym template** — new sections: Suggested for you, Continue practice, Review practice. Cards show title, skill, CEFR level, estimated duration, context tags, routing label. Empty/loading/error states present. Existing By skill and By exercise type sections preserved.
+- Student-friendly routing labels: Normal → "Recommended for your current goal", Review → "Review", Scaffold → "Step back to strengthen basics", Remediation → "Targeted fix", Fallback → "General practice".
+- Lower-level content labelled with muted chip. No silent downgrade.
+
+### Backend consumption wiring (TODO-014 resolved)
+
+- `ActivitySubmitHandler` — injected `IPracticeGymSuggestionService`. `TryConsumeReadinessItemAsync` called best-effort after all completion paths:
+  - WritingScenario / AI-evaluated: always called after save.
+  - VocabularyPractice: called after deterministic evaluation.
+  - ListeningComprehension: called after deterministic evaluation.
+  - Pattern evaluation: called only when `evalResult.Completed == true`.
+- Lookup scoped to `studentProfileId + activityId + Reserved status`. Exception swallowed — completion response never blocked.
+- Idempotent: `TryMarkConsumedAsync` no-ops on already-consumed items.
+
+### Tests added
+
+- 4 integration tests (`ReadinessConsumptionWiringTests`): completion marks consumed, idempotent, no-item path safe, consumed item absent from suggestions.
+- 12 Angular unit tests in `practice-gym.component.spec.ts`: load, empty, error, section rendering, start navigation, labels, existing sections preserved.
+
+### Total test counts
+
+- Architecture: 3 passed
+- Unit: 1174 passed
+- Integration: 601 passed (was 597 before this phase)
+- Angular: 272 passed (was 247 before this phase)
+- Total backend: 1778 passed, 0 failed
+
+### TODOs closed
+
+- TODO-014 — TryMarkConsumedAsync wired into ActivitySubmitHandler. Done.
+- TODO-015 — Angular Practice Gym suggestion UI implemented. Done.
 
 ---
 

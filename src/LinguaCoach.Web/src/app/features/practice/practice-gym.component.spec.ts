@@ -3,6 +3,47 @@ import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { PracticeGymComponent } from './practice-gym.component';
 import { ActivityService } from '../../core/services/activity.service';
+import {
+  PracticeGymSuggestionsService,
+  PracticeGymSuggestionsResponse,
+  PracticeGymSuggestionItem,
+} from '../../core/services/practice-gym-suggestions.service';
+
+const emptySuggestions: PracticeGymSuggestionsResponse = {
+  suggestedItems: [], continueItems: [], reviewItems: [],
+  readyCount: 0, reviewOnlyCount: 0, reservedCount: 0,
+  isReplenishmentRecommended: false, generatedAtUtc: new Date().toISOString(),
+};
+
+function makeSuggestionItem(overrides: Partial<PracticeGymSuggestionItem> = {}): PracticeGymSuggestionItem {
+  return {
+    readinessItemId: 'item-1',
+    title: 'Test Practice',
+    description: 'A test practice item',
+    primarySkill: 'listening',
+    secondarySkills: [],
+    patternKey: 'listen_and_answer',
+    activityType: null,
+    targetCefrLevel: 'B2',
+    studentCefrLevelSnapshot: 'B2',
+    curriculumObjectiveKey: null,
+    curriculumObjectiveTitle: null,
+    contextTags: ['general_english'],
+    focusTags: [],
+    routingReason: 'Normal',
+    isLowerLevelContent: false,
+    difficultyBand: 2,
+    estimatedDurationMinutes: 5,
+    supportLanguageName: null,
+    status: 'ready',
+    callToAction: 'Start practice',
+    explanation: 'Recommended for your level',
+    linkedLearningActivityId: 'act-123',
+    linkedLearningSessionId: null,
+    linkedSessionExerciseId: null,
+    ...overrides,
+  };
+}
 
 const readyListening: any = {
   key: 'listen_and_answer', displayName: 'Listen and Answer', primarySkill: 'listening', secondarySkills: [],
@@ -193,16 +234,21 @@ describe('PracticeGymComponent', () => {
   let fixture: ComponentFixture<PracticeGymComponent>;
   let component: PracticeGymComponent;
   let activityService: jasmine.SpyObj<ActivityService>;
+  let suggestionsService: jasmine.SpyObj<PracticeGymSuggestionsService>;
   let router: Router;
 
   beforeEach(async () => {
     activityService = jasmine.createSpyObj('ActivityService', ['getExerciseTypes', 'getPracticeGymNext']);
     activityService.getExerciseTypes.and.returnValue(of(ALL_READY));
 
+    suggestionsService = jasmine.createSpyObj('PracticeGymSuggestionsService', ['getSuggestions', 'startSuggestion', 'completeSuggestion']);
+    suggestionsService.getSuggestions.and.returnValue(of(emptySuggestions));
+
     await TestBed.configureTestingModule({
       imports: [PracticeGymComponent],
       providers: [
         { provide: ActivityService, useValue: activityService },
+        { provide: PracticeGymSuggestionsService, useValue: suggestionsService },
         provideRouter([]),
       ],
     }).compileComponents();
@@ -764,5 +810,125 @@ describe('PracticeGymComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
       queryParams: { activityId: 'activity-asq-1', returnTo: '/practice' },
     });
+  });
+
+  // ── Suggestions: Suggested for you / Continue / Review ───────────────────
+
+  it('loads suggestions on init', () => {
+    expect(suggestionsService.getSuggestions).toHaveBeenCalled();
+  });
+
+  it('shows empty state when no suggestions exist', async () => {
+    suggestionsService.getSuggestions.and.returnValue(of(emptySuggestions));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const el = f.nativeElement.querySelector('[data-testid="suggestions-empty"]');
+    expect(el).toBeTruthy();
+  });
+
+  it('shows suggestions-error when API fails', async () => {
+    suggestionsService.getSuggestions.and.returnValue(throwError(() => new Error('net')));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const el = f.nativeElement.querySelector('[data-testid="suggestions-error"]');
+    expect(el).toBeTruthy();
+  });
+
+  it('renders suggested-for-you section when suggestedItems present', async () => {
+    const item = makeSuggestionItem();
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const section = f.nativeElement.querySelector('[data-testid="suggestions-section"]');
+    expect(section).toBeTruthy();
+    const card = f.nativeElement.querySelector('[data-testid="suggestion-card-item-1"]');
+    expect(card).toBeTruthy();
+  });
+
+  it('renders continue section only when continueItems present', async () => {
+    const item = makeSuggestionItem({ readinessItemId: 'cont-1', status: 'reserved' });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, continueItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    expect(f.nativeElement.querySelector('[data-testid="continue-section"]')).toBeTruthy();
+    expect(f.nativeElement.querySelector('[data-testid="suggestions-section"]')).toBeNull();
+  });
+
+  it('renders review section only when reviewItems present', async () => {
+    const item = makeSuggestionItem({ readinessItemId: 'rev-1', routingReason: 'Review', isLowerLevelContent: true });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, reviewItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    expect(f.nativeElement.querySelector('[data-testid="review-section"]')).toBeTruthy();
+  });
+
+  it('clicking start calls startSuggestion and navigates to activity', async () => {
+    const item = makeSuggestionItem();
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [item] }));
+    suggestionsService.startSuggestion.and.returnValue(of({
+      success: true, failureReason: null,
+      learningActivityId: 'act-123', learningSessionId: null, sessionExerciseId: null,
+      alreadyReserved: false,
+    }));
+    // Use the fixture already created by beforeEach (router already spied)
+    suggestionsService.getSuggestions.calls.reset();
+    (router.navigate as jasmine.Spy).calls.reset();
+
+    // Re-init to pick up the new suggestions response
+    component.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const btn = fixture.nativeElement.querySelector('[data-testid="suggestion-start-item-1"]');
+    btn.click();
+    await fixture.whenStable();
+
+    expect(suggestionsService.startSuggestion).toHaveBeenCalledWith('item-1');
+    expect(router.navigate).toHaveBeenCalledWith(['/activity'], {
+      queryParams: { activityId: 'act-123', returnTo: '/practice' },
+    });
+  });
+
+  it('shows routing label for normal item', async () => {
+    const item = makeSuggestionItem({ routingReason: 'Normal', isLowerLevelContent: false });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const label = f.nativeElement.querySelector('[data-testid="routing-label"]');
+    expect(label?.textContent).toContain('Recommended for your current goal');
+  });
+
+  it('shows lower-level label for scaffold item', async () => {
+    const item = makeSuggestionItem({ routingReason: 'Scaffold', isLowerLevelContent: true });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const label = f.nativeElement.querySelector('[data-testid="lower-level-label"]');
+    expect(label?.textContent).toContain('Step back to strengthen basics');
+  });
+
+  it('existing by-skill sections still render after suggestions load', async () => {
+    suggestionsService.getSuggestions.and.returnValue(of(emptySuggestions));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const sections = f.nativeElement.querySelectorAll('[data-testid^="practice-skill-section-"]');
+    expect(sections.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('manual practice sections render even when suggestions error', async () => {
+    suggestionsService.getSuggestions.and.returnValue(throwError(() => new Error('net')));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const sections = f.nativeElement.querySelectorAll('[data-testid^="practice-skill-section-"]');
+    expect(sections.length).toBeGreaterThanOrEqual(4);
   });
 });

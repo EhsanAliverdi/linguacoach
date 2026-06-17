@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Memory;
+using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Domain.Entities;
@@ -27,6 +28,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly PatternSkillUpdateService _patternSkillUpdate;
     private readonly IStudentLearningLedger _learningLedger;
     private readonly ILearningGoalContextResolver _goalContextResolver;
+    private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -41,6 +43,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         PatternSkillUpdateService patternSkillUpdate,
         IStudentLearningLedger learningLedger,
         ILearningGoalContextResolver goalContextResolver,
+        IPracticeGymSuggestionService practiceGymSuggestions,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -54,6 +57,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _patternSkillUpdate = patternSkillUpdate;
         _learningLedger = learningLedger;
         _goalContextResolver = goalContextResolver;
+        _practiceGymSuggestions = practiceGymSuggestions;
         _logger = logger;
     }
 
@@ -139,6 +143,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
             // Memory update not needed for vocabulary practice (it's not a writing attempt)
             // Vocabulary extraction not needed (no AI feedback to extract from)
+            await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
             return ParseVocabularyFeedback(vpAttempt.Id, vpFeedbackJson, vpScore);
         }
 
@@ -168,6 +173,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             _logger.LogInformation("ListeningComprehension attempt saved AttemptId={AttemptId} Score={Score}",
                 listeningAttempt.Id, listeningScore);
 
+            await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
             return ParseListeningFeedback(listeningAttempt.Id, listeningFeedbackJson, listeningScore);
         }
 
@@ -274,6 +280,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             FeedbackJson: feedbackJson,
             ImprovedVersion: improvedVersion,
             CorrelationId: null), ct);
+
+        // Best-effort readiness consumption — must not block or fail the response.
+        await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
 
         return ParseFeedback(attempt.Id, feedbackJson, score);
     }
@@ -421,6 +430,10 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 attempt.Id, activity.ExercisePatternKey);
         }
 
+        // Best-effort readiness consumption — must not block or fail the response.
+        if (evalResult.Completed)
+            await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
+
         var patternDto = BuildPatternEvaluationDto(activity.ExercisePatternKey, pattern.MarkingMode, evalResult);
 
         return new ActivityFeedbackDto(
@@ -450,6 +463,37 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     /// <summary>
     /// Builds a short human-readable summary of the student's current standing on the
     /// skill primarily targeted by this exercise pattern, for AI evaluation prompts to
+    /// Looks up a Reserved readiness item linked to the completed activity and marks it
+    /// consumed. Best-effort: logs and swallows any exception so completion is never blocked.
+    /// <paramref name="userId"/> is the auth user ID passed to TryMarkConsumedAsync for profile resolution.
+    /// <paramref name="profileId"/> is the StudentProfile.Id used to scope the DB lookup.
+    private async Task TryConsumeReadinessItemAsync(Guid userId, Guid profileId, Guid activityId, CancellationToken ct)
+    {
+        try
+        {
+            var item = await _db.StudentActivityReadinessItems
+                .FirstOrDefaultAsync(
+                    i => i.StudentId == profileId
+                      && i.LearningActivityId == activityId
+                      && i.Status == Domain.Enums.ReadinessPoolStatus.Reserved,
+                    ct);
+
+            if (item is null) return;
+
+            await _practiceGymSuggestions.TryMarkConsumedAsync(userId, item.Id, ct);
+
+            _logger.LogInformation(
+                "ReadinessItem consumed ActivityId={ActivityId} ReadinessItemId={ReadinessItemId}",
+                activityId, item.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Best-effort readiness consumption failed ActivityId={ActivityId} — completion not affected",
+                activityId);
+        }
+    }
+
     /// reference (so coachSummary can be grounded in student progress, not generic).
     /// Only meaningful for AI-marked patterns — returns null for deterministic ones.
     /// </summary>

@@ -8,11 +8,32 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-17
+Last updated: 2026-06-18
 
 ---
 
 ## Most recently completed sprint
+
+**Phase 10O-F — Practice Gym UI Integration & Completion Consumption Wiring** — complete (2026-06-18)
+
+Phase 10O-F connects the 10O backend suggestion API to the Angular Practice Gym UI and wires completed activities back to readiness pool consumption.
+
+### What was built
+
+**Angular UI**
+- `PracticeGymSuggestionsService` — new Angular service with `getSuggestions()`, `startSuggestion()`, `completeSuggestion()` methods targeting `/api/practice-gym/suggestions`.
+- `PracticeGymComponent` — extended with suggestion state signals, `loadSuggestions()`, `startSuggestion()` flow, and `routingLabel()` for student-friendly reason display.
+- Practice Gym template — added Suggested for you, Continue practice, and Review practice sections with cards showing title, skill, CEFR level, estimated duration, context tags, and routing label. Empty/loading/error states. Existing By skill and By exercise type sections preserved.
+
+**Backend wiring (TODO-014)**
+- `ActivitySubmitHandler` — injected `IPracticeGymSuggestionService`. Added `TryConsumeReadinessItemAsync` helper called best-effort after all activity completion paths (WritingScenario/AI, VocabularyPractice, ListeningComprehension, pattern evaluation). Consumption only fires when `evalResult.Completed` is true for pattern path.
+- Idempotent: `TryMarkConsumedAsync` no-ops if item is already consumed. Exceptions swallowed so completion response is never blocked.
+
+**Tests**
+- 4 new integration tests in `ReadinessConsumptionWiringTests`: completion marks item consumed, idempotent, no-item path succeeds, consumed item absent from suggestions.
+- 12 new Angular unit tests in `practice-gym.component.spec.ts`: suggestions load, empty/error states, section rendering, start navigation, routing labels, existing sections preserved under error.
+
+### Previous sprint
 
 **Phase 10O — Practice Gym Suggested Practice & Pool Serving** — complete (2026-06-18)
 
