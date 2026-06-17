@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 02:00
+lastUpdated: 2026-06-18 10:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,34 @@ Last updated: 2026-06-18
 ---
 
 ## Most recently completed sprint
+
+**Phase 10P — Multi-skill Scoring & Progress Updates** — complete (2026-06-18)
+
+Phase 10P adds a safe, testable multi-skill progress update foundation. Activity attempts now update `StudentSkillProfile` rows for all skills trained by an exercise, not just the primary skill.
+
+### What was built
+
+**Application layer**
+- `IMultiSkillProgressService` — new interface in `LinguaCoach.Application.Activity` with `ApplyAsync` and `BuildRequest` methods.
+- `MultiSkillProgressUpdateRequest` / `MultiSkillProgressUpdateResult` — input/output contracts.
+
+**Infrastructure layer**
+- `MultiSkillProgressService` — implementation in `LinguaCoach.Infrastructure.Activity`.
+  - Skill registry: 19 known keys (9 general + 10 workplace-specific). No workplace default.
+  - Weighting: primary 70%, secondaries share 30% equally. Primary-only → 100%.
+  - Score-to-delta: 0-100 score mapped to −1..1 delta centred on 60; scaled by 10 points/unit.
+  - ActivityType fallback map for 6 activity types when no pattern metadata available.
+  - Incomplete attempts skipped (no skill writes on failed/abandoned submissions).
+  - Best-effort: exceptions swallowed, never blocks activity submission.
+- `ActivitySubmitHandler` — injected `IMultiSkillProgressService`. Called after both the pattern evaluation path and the legacy AI path.
+  - Pattern path: uses `ExercisePatternDefinition.PrimarySkill` + `SecondarySkillsJson`.
+  - Legacy path: falls back to `ActivityType` fallback map.
+
+**Tests**
+- 20 unit tests in `MultiSkillProgressServiceTests`: weighting splits, deduplication, unknown keys, incomplete attempts, ActivityType fallback, no-workplace-default, lower-level content.
+- 10 integration tests in `MultiSkillProgressServiceIntegrationTests`: DB writes, multi-skill rows, listening+writing, speaking roleplay, writing+grammar+vocab, pattern override, idempotent update.
+
+### Previous sprint
 
 **Phase 10O-F — Practice Gym UI Integration & Completion Consumption Wiring** — complete (2026-06-18)
 

@@ -173,6 +173,7 @@ public static class DependencyInjection
 
         // Pattern Evaluation Engine — skill update (Phase 5), evaluators (Phases 2 & 4) + router (Phase 3)
         services.AddScoped<PatternSkillUpdateService>();
+        services.AddScoped<IMultiSkillProgressService, MultiSkillProgressService>();
         services.AddScoped<IPatternEvaluator, ExactMatchEvaluator>();
         services.AddScoped<IPatternEvaluator, KeyedSelectionEvaluator>();
         services.AddScoped<IPatternEvaluator, NoMarkingEvaluator>();

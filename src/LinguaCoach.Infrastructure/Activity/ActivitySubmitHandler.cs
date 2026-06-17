@@ -26,6 +26,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IPatternEvaluationRouter _patternRouter;
     private readonly IExercisePatternRepository _patternRepo;
     private readonly PatternSkillUpdateService _patternSkillUpdate;
+    private readonly IMultiSkillProgressService _multiSkillProgress;
     private readonly IStudentLearningLedger _learningLedger;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
@@ -41,6 +42,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IPatternEvaluationRouter patternRouter,
         IExercisePatternRepository patternRepo,
         PatternSkillUpdateService patternSkillUpdate,
+        IMultiSkillProgressService multiSkillProgress,
         IStudentLearningLedger learningLedger,
         ILearningGoalContextResolver goalContextResolver,
         IPracticeGymSuggestionService practiceGymSuggestions,
@@ -55,6 +57,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _patternRouter = patternRouter;
         _patternRepo = patternRepo;
         _patternSkillUpdate = patternSkillUpdate;
+        _multiSkillProgress = multiSkillProgress;
         _learningLedger = learningLedger;
         _goalContextResolver = goalContextResolver;
         _practiceGymSuggestions = practiceGymSuggestions;
@@ -260,6 +263,18 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         await _learningLedger.RecordAsync(legacyEvent, ct);
 
+        // Multi-skill progress: derive affected skills from ActivityType fallback (no pattern metadata here).
+        var legacyMultiSkillReq = _multiSkillProgress.BuildRequest(
+            studentProfileId: profile.Id,
+            exercisePatternKey: activity.ExercisePatternKey,
+            patternPrimarySkill: null,
+            patternSecondarySkills: null,
+            activityType: activity.ActivityType,
+            normalizedScore: score ?? 0,
+            completed: true,
+            source: "legacy_activity");
+        await _multiSkillProgress.ApplyAsync(legacyMultiSkillReq, ct);
+
         await _memoryService.UpdateMemoryAsync(new ActivityMemoryUpdateRequest(
             profile,
             activity,
@@ -360,6 +375,18 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         // Best-effort post-submission updates — must not fail activity submission.
         await _patternSkillUpdate.ApplyAsync(profile.Id, evalResult, activity.ExercisePatternKey, ct);
+
+        // Multi-skill progress: derive affected skills from pattern metadata, then update all.
+        var patternMultiSkillReq = _multiSkillProgress.BuildRequest(
+            studentProfileId: profile.Id,
+            exercisePatternKey: activity.ExercisePatternKey,
+            patternPrimarySkill: pattern.PrimarySkill,
+            patternSecondarySkills: DeserialiseSecondarySkills(pattern.SecondarySkillsJson),
+            activityType: activity.ActivityType,
+            normalizedScore: evalResult.Percentage,
+            completed: evalResult.Completed,
+            source: "pattern_evaluation");
+        await _multiSkillProgress.ApplyAsync(patternMultiSkillReq, ct);
 
         // Determine whether this came from a Today lesson or Practice Gym.
         // A linked SessionExercise means Today lesson; no link means Practice Gym.
@@ -760,6 +787,20 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             RewriteChallenge: payload?.RewriteChallenge,
             NextPracticeSuggestion: payload?.NextPracticeSuggestion,
             FeedbackInSourceLanguage: payload?.FeedbackInSourceLanguage);
+    }
+
+    private static IReadOnlyList<string> DeserialiseSecondarySkills(string? secondarySkillsJson)
+    {
+        if (string.IsNullOrWhiteSpace(secondarySkillsJson) || secondarySkillsJson == "[]")
+            return [];
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(secondarySkillsJson) ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 }
 
