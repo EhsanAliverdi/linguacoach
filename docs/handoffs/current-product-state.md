@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 19:00
+lastUpdated: 2026-06-17 21:00
 owner: product
 supersedes:
 supersededBy:
@@ -424,6 +424,29 @@ Completed staged migrations:
 Remaining staged migrations are pattern-backed activities. Planned future exercise formats made runnable so far: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), `reorder_paragraphs` (Phase 8D), `reading_writing_fill_in_blanks` (Phase 8E), `summarize_written_text` (Phase 8F), `write_essay` (Phase 8G), `listening_multiple_choice_single` (Phase 8H — first runnable listening-primary format), `listening_multiple_choice_multi` (Phase 8I — second runnable listening-primary format), `listening_fill_in_blanks` (Phase 8J — third runnable listening-primary format, first runnable listening+writing format), `select_missing_word` (Phase 8K — fourth runnable listening-primary format), `highlight_correct_summary` (Phase 8L — fifth runnable listening-primary format, first runnable listening+reading format), `highlight_incorrect_words` (Phase 8M — sixth runnable listening-primary format, second runnable listening+reading format), `write_from_dictation` (Phase 8O — seventh runnable listening-primary format), and `summarize_spoken_text` (Phase 8Q — eighth runnable listening-primary format, first AI-evaluated listening+writing format). All reading-primary, writing, and listening planned future formats are now ready. All remaining planned future exercise formats are the speaking formats (`read_aloud`, `repeat_sentence`, `describe_image`, `respond_to_situation`, `retell_lecture`, `summarize_group_discussion`, `answer_short_question`), which remain planned and non-runnable. Today pre-generation remains a future phase. Phase 8P (2026-06-16) wired the audio lifecycle for all 9 listening pattern keys. `HandlePatternKeyedAsync` now calls `EnsureAudioAsync` after creating pattern-keyed listening activities. `ActivityDto` gains an `AudioStatus` string field (`"ready"` / `"pending"` / `"unavailable"`). A shared `app-audio-player` Angular component was created and all 5 listening renderer HTML templates now use it instead of inline `<audio>` tags. The exercise-renderer getters for `listeningFillInBlanks`, `highlightCorrectSummary`, and `highlightIncorrectWords` now fall back to `activity.audioUrl` from the API when `ed['audioUrl']` is absent from the content JSON. Audio is now generated on first fetch for all listening patterns; `audioUrl` will be non-null when TTS succeeds. Phase 8Q (2026-06-16) added `summarize_spoken_text` to `ListeningAudioService.ListeningPatternKeys` (now 10 keys) so it reuses the same shared audio lifecycle and `app-audio-player`. Its evaluation reuses the existing `AiStructuredEvaluator` AI path (same as `summarize_written_text` / `write_essay`); `learnContent` and the expected-answer `keyPoints` are never sent to the AI before submission.
 
 Phase 8N (2026-06-16) added configurable practice item counts as a foundation (not a new format). Every `ExerciseTypeDefinition` now carries `MinItemsPerPractice`/`DefaultItemsPerPractice`/`MaxItemsPerPractice` and `MinOptionsPerItem`/`DefaultOptionsPerItem`/`MaxOptionsPerItem`, seeded per type, editable in the admin exercise-types page (with inline `min <= default <= max` and non-negative validation) and via admin PATCH. Counts feed generation prompt context and optional validator count enforcement. Counts are configuration only and never change readiness; no format was made runnable. See [practice-item-sets.md](../architecture/practice-item-sets.md).
+
+## Phase 10K — Curriculum Boundary / Level Syllabus Foundation, completed (2026-06-17)
+
+Backend-only phase. No learner-facing behaviour changed. No CEFR-aware routing implemented.
+
+**What was added:**
+
+- `CurriculumObjective` domain entity — scoped by CEFR level (A1–C2), primary skill, context tags, focus tags, prerequisite keys, recommended order, difficulty band (1-5), active/reviewable/exam-inspired flags.
+- `CefrLevelConstants`, `CurriculumSkillConstants`, `CurriculumContextTagConstants` — canonical validated string sets. `workplace` is one context tag among 13; it is not the default for any objective.
+- `CurriculumObjectiveSeeder` — 22 starter objectives across A1/A2/B1/B2, all major skills, multiple learner contexts. Upserts on Key (idempotent). Post-seed prerequisite integrity check.
+- `ICurriculumSyllabusQuery` / `CurriculumSyllabusQueryService` — read-only query service: by CEFR, by CEFR+skill, by CEFR+context tag, by CEFR+focus area, prerequisites, and `GetCandidatesForStudent`. Candidates only — no activity selection.
+- `CurriculumContextMapper` — maps `ResolvedLearningGoalContext` to curriculum context tags. Null-safe; fallback is `general_english`. Non-workplace profiles never default to `workplace`.
+- `GET /api/admin/curriculum/objectives` — read-only admin endpoint with optional `cefrLevel` and `skill` filters.
+- `GET /api/admin/curriculum/objectives/{key}` — single objective by key.
+- Migration `T50_CurriculumSyllabusFoundation`.
+
+**What is NOT implemented (deferred to 10L+):**
+
+CEFR-aware activity routing, exercise format locking by level, readiness pools, background generation from curriculum, Practice Gym suggested practice, admin write UI, `StudentProfile.CefrLevel` type migration.
+
+**TODOS added:** See `TODOS.md` — TODO-001 (plus-levels), TODO-002 (StudentProfile.CefrLevel migration), TODO-003 (admin builder).
+
+---
 
 ## Phase 10J-F — Student App Design System & Responsive UI Foundation, completed (2026-06-17)
 

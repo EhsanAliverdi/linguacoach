@@ -55,6 +55,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<StudentOnboardingProgress> StudentOnboardingProgress => Set<StudentOnboardingProgress>();
     public DbSet<StudentOnboardingResponse> StudentOnboardingResponses => Set<StudentOnboardingResponse>();
 
+    // Phase 10K — Curriculum syllabus foundation
+    public DbSet<CurriculumObjective> CurriculumObjectives => Set<CurriculumObjective>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

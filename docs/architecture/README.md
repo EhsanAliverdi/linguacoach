@@ -77,6 +77,7 @@ Current recommended next sprint: **Dynamic Pattern Selection** or **Practice Gym
 | [student-lifecycle-reset-tools.md](student-lifecycle-reset-tools.md) | 12 lifecycle stages (canonical enum); admin reset endpoint; `StudentResetLog`; soft vs hard delete rules |
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
 | [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; AI generation flow; how activity types share infrastructure |
+| [curriculum-syllabus-model.md](curriculum-syllabus-model.md) | `CurriculumObjective` entity; CEFR level constants; context tag / focus area taxonomy; seeder pattern; `ICurriculumSyllabusQuery` candidate query interface (Phase 10K) |
 
 ---
 

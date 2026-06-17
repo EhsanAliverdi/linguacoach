@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 19:00
+lastUpdated: 2026-06-17 21:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,59 @@ Last updated: 2026-06-17
 ---
 
 ## Most recently completed sprint
+
+**Phase 10K — Curriculum Boundary / Level Syllabus Foundation** - complete (2026-06-17)
+
+Phase 10K introduces the curriculum syllabus data model and query foundation. It defines what the system is recommended to teach at each CEFR level, skill, learner goal/context, and focus area. No CEFR-aware routing, readiness pools, or background generation were implemented — this phase is foundation only.
+
+### What was built
+
+**Domain constants**
+- `CefrLevelConstants` — canonical A1/A2/B1/B2/C1/C2 string constants with `IsValid()` helper.
+- `CurriculumSkillConstants` — canonical skill identifiers (writing, reading, listening, speaking, vocabulary, grammar, pronunciation, fluency, confidence).
+- `CurriculumContextTagConstants` — canonical learner context tags (general_english, day_to_day, travel, study_academic, migration_settlement, job_interviews, social_conversation, workplace, pronunciation, listening_confidence, writing_confidence, exam_inspired, custom). `workplace` is one tag among many, not the default.
+
+**Domain entity**
+- `CurriculumObjective` — single flat entity with: Key (stable), Title, Description, CefrLevel, PrimarySkill, SecondarySkillsJson, ContextTagsJson, FocusTagsJson, PrerequisiteKeysJson, RecommendedOrder, DifficultyBand (1-5), IsActive, IsReviewable, IsExamInspired, TeachingNotes.
+- Full constructor validation: invalid CEFR rejected, invalid skill rejected, self-prerequisite rejected, DifficultyBand 1-5 enforced.
+- `Activate()` / `Deactivate()` / `UpdateDetails()` methods.
+
+**Persistence**
+- `CurriculumObjectiveConfiguration` — EF Core config, snake_case columns, unique index on Key, composite index on (cefr_level, primary_skill, is_active).
+- Migration `T50_CurriculumSyllabusFoundation` — creates `curriculum_objectives` table.
+- `CurriculumObjectiveSeeder` — 22 starter objectives across A1/A2/B1/B2, all major skills, multiple learner contexts. Upserts on Key (idempotent). Post-seed prerequisite integrity validation.
+
+**Application layer**
+- `ICurriculumSyllabusQuery` — query interface: GetActiveObjectives, GetByCefr, GetByCefrAndSkill, GetByCefrAndContext, GetByCefrAndFocusArea, GetPrerequisites, GetCandidatesForStudent, GetByKey.
+- `CurriculumContextMapper` — static null-safe mapper from `ResolvedLearningGoalContext` to curriculum context tags. Null input returns `[general_english]`. Non-workplace context never defaults to workplace.
+
+**Infrastructure**
+- `CurriculumSyllabusQueryService` — implements `ICurriculumSyllabusQuery` using EF Core with `AsNoTracking()`. `GetCandidatesForStudent` returns ordered candidates only — does NOT select activities or formats.
+
+**API**
+- `AdminCurriculumController` — read-only: `GET /api/admin/curriculum/objectives` (with optional `cefrLevel` and `skill` filters), `GET /api/admin/curriculum/objectives/{key}`. Admin-only. No write endpoints.
+
+**Tests**
+- Unit: 22 tests in `CurriculumObjectiveTests` and `CurriculumContextMapperTests`.
+- Integration: 14 tests in `CurriculumSyllabusIntegrationTests` — seeder, query service, admin endpoint, regression smoke.
+
+**Docs**
+- `docs/reviews/2026-06-17-phase-10k-curriculum-syllabus-eng-review.md`
+- `TODOS.md` — 3 deferred items: CEFR plus-levels, StudentProfile.CefrLevel migration, admin curriculum builder.
+
+### Gates at completion
+- Backend: all tests passed (architecture + unit + integration)
+- Angular unit: 261 passed
+- Angular build: clean
+- Playwright: 187 passed
+- No breaking changes to existing learner-facing behavior
+
+### What is intentionally NOT in this phase
+CEFR-aware activity routing, exercise format locking, readiness pools, background generation, Practice Gym suggested practice, admin write UI, StudentProfile CEFR migration, plus-level routing.
+
+---
+
+## Previously completed sprint
 
 **Phase 10J-F — Student App Design System & Responsive UI Foundation** - complete (2026-06-17)
 
