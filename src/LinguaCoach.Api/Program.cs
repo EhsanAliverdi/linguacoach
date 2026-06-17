@@ -157,7 +157,7 @@ if (enableDiagEvents)
     builder.Logging.AddProvider(new DiagnosticLoggerProvider(diagBuffer));
 
 // ── Infrastructure services ─────────────────────────────────────────────────
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // ── Quartz background jobs (lesson buffer / TTS / cleanup) ──────────────────
 // Runs inside the API process as IHostedService. Skipped in Testing (SQLite has no Quartz schema).

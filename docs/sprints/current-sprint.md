@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 23:00
+lastUpdated: 2026-06-17 23:45
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,7 +14,59 @@ Last updated: 2026-06-17
 
 ## Most recently completed sprint
 
-**Phase 10M — Student Activity Readiness Pool Foundation** - complete (2026-06-17)
+**Phase 10N — Background Replenishment Pipeline** — complete (2026-06-17)
+
+Phase 10N builds the background engine that keeps student readiness pools healthy. Pool items are now swept for expiry, orphaned generating items are recovered, failed items are retried within attempt limits, and shortfalls are filled for Today lesson and Practice Gym pools.
+
+### What was built
+
+**Application layer**
+- `ReadinessPoolReplenishmentOptions` — configuration bound from `appsettings.json` under `"ReadinessPool"`. Defaults: target 10 items per pool, 14-day expiry, 2-hour reserved timeout, 30-min generating timeout, 60-min retry delay, 50 max items per run. `EnableReviewScaffoldGeneration=false` (conservative default).
+- `PoolHealthSummary` — lightweight health DTO: ready count, in-flight count, shortfall, target, needsReplenishment flag.
+- `IReadinessPoolReplenishmentService` + `ReplenishmentRunSummary` — service contract for running the full maintenance cycle and querying health per student/source.
+
+**Infrastructure layer**
+- `ReadinessPoolReplenishmentService` — full engine:
+  - Sweeps expired ready items (past `ReadyItemExpiryDays`).
+  - Sweeps expired reserved items (past `ReservedItemExpiryHours`).
+  - Recovers orphaned generating items (past `GeneratingTimeoutMinutes` → Failed).
+  - Retries failed items (`AttemptCount < MaxGenerationAttempts` and past delay → new Queued item).
+  - Fills shortfalls for each active student × source using routing recommendations.
+  - Prevents duplicates: skips items already Queued/Generating/Ready/Reserved for same objective/pattern/CEFR.
+  - Review/scaffold only enabled when `EnableReviewScaffoldGeneration=true` AND ledger weak events exist.
+  - B2 students never silently receive B1 Normal content.
+  - `general_english` remains fallback; workplace is not default.
+- `ReadinessPoolReplenishmentJob` — Quartz job, every 20 minutes, `[DisallowConcurrentExecution]`.
+
+**DI + Quartz**
+- `AddInfrastructure(IConfiguration?)` — now accepts optional config to bind `ReadinessPoolReplenishmentOptions`.
+- `QuartzConfiguration` — `ReadinessPoolReplenishmentJob` trigger added (every 20 min).
+- `DependencyInjection.cs` — `IReadinessPoolReplenishmentService` registered as Scoped.
+
+**Admin API**
+- `GET /api/admin/students/{studentId}/readiness-pool/health` — new read-only endpoint. Returns health for `TodayLesson` and `PracticeGym` pools: target, ready, in-flight, failed, stale, expired, shortfall, needsReplenishment.
+
+### Tests
+- 16 new unit tests in `ReplenishmentOptionsTests.cs`: options defaults, pool health math, status exclusion rules, lower-level content guard, routing snapshot preservation, general_english fallback, retry attempt gating.
+- 11 new integration tests in `ReplenishmentIntegrationTests.cs`: service DI, health counts by status, ReviewOnly exclusion, expired exclusion, queued/generating in-flight counting, retry path, admin health endpoint, admin pool endpoint (smoke), 10M lifecycle smoke, unknown student zero counts, two-student isolation.
+
+### Gates at completion
+- Architecture: 3 passed
+- Unit: 1160 passed (was 1144, +16)
+- Integration: 587 passed (was 576, +11)
+- Total: 1750 passed, 0 failed
+- Angular/Playwright: blocked by pre-existing Node 24 + path-with-space environment issue. No Angular source changed in Phase 10N.
+
+### What is intentionally NOT in Phase 10N
+Practice Gym suggested UI redesign, admin write endpoints, `StudentProfile.CefrLevel` migration, plus-level persistence, full mastery engine, full placement engine, serving from pool on user-facing paths (deferred to 10O), `AllowReviewOrScaffold=true` enabled by default, per-student review/scaffold signal, ledger-weighted skill rotation.
+
+See: `docs/reviews/2026-06-17-phase-10n-background-replenishment-pipeline-review.md`
+
+---
+
+## Previously most recently completed sprint
+
+**Phase 10M — Student Activity Readiness Pool Foundation** — complete (2026-06-17)
 
 Phase 10M introduces the persisted lifecycle model for pre-generated Today lessons and Practice Gym activities. Activities are no longer treated as simple one-off outputs; every generated item is tracked in a student-specific readiness pool with lifecycle status, routing snapshot, and personalisation metadata.
 

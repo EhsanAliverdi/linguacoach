@@ -73,6 +73,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{AudioCleanupJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()));
 
+            // Readiness pool replenishment — every 20 minutes.
+            var replenishKey = new JobKey(ReadinessPoolReplenishmentJob.JobName);
+            q.AddJob<ReadinessPoolReplenishmentJob>(opts => opts.WithIdentity(replenishKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(replenishKey)
+                .WithIdentity($"{ReadinessPoolReplenishmentJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(20).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());

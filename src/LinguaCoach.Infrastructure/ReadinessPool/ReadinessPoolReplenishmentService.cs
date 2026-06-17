@@ -1,0 +1,438 @@
+using LinguaCoach.Application.Curriculum;
+using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.Memory;
+using LinguaCoach.Application.ReadinessPool;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Curriculum;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace LinguaCoach.Infrastructure.ReadinessPool;
+
+/// <summary>
+/// Maintains readiness pool health for all active students.
+///
+/// Per-run responsibilities:
+///   1. Sweep expired ready items (past ReadyItemExpiryDays).
+///   2. Sweep expired reserved items (past ReservedItemExpiryHours).
+///   3. Recover orphaned generating items (past GeneratingTimeoutMinutes → failed).
+///   4. Retry eligible failed items (attempts &lt; MaxGenerationAttempts, delay elapsed).
+///   5. For each active student × source below target: queue new items up to MaxItemsGeneratedPerRun.
+///   6. Duplicate prevention: skip if same (student, source, objectiveKey, patternKey, cefrLevel) already queued/generating/ready.
+///
+/// Review/scaffold rule:
+///   AllowReviewOrScaffold is enabled only when GetWeakEventsAsync returns at least one
+///   relevant weak event for the student. Otherwise strict same-level routing is used.
+///   B2 students will never silently receive B1 content as Normal.
+/// </summary>
+public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishmentService
+{
+    private readonly LinguaCoachDbContext _db;
+    private readonly IStudentActivityReadinessPoolService _pool;
+    private readonly IStudentLearningLedger _ledger;
+    private readonly ILearningGoalContextResolver _goalResolver;
+    private readonly ICurriculumRoutingService _routing;
+    private readonly ReadinessPoolReplenishmentOptions _opts;
+    private readonly ILogger<ReadinessPoolReplenishmentService> _logger;
+
+    public ReadinessPoolReplenishmentService(
+        LinguaCoachDbContext db,
+        IStudentActivityReadinessPoolService pool,
+        IStudentLearningLedger ledger,
+        ILearningGoalContextResolver goalResolver,
+        ICurriculumRoutingService routing,
+        IOptions<ReadinessPoolReplenishmentOptions> opts,
+        ILogger<ReadinessPoolReplenishmentService> logger)
+    {
+        _db = db;
+        _pool = pool;
+        _ledger = ledger;
+        _goalResolver = goalResolver;
+        _routing = routing;
+        _opts = opts.Value;
+        _logger = logger;
+    }
+
+    public async Task<ReplenishmentRunSummary> RunAsync(CancellationToken ct = default)
+    {
+        var started = DateTime.UtcNow;
+        var totalQueued = 0;
+        var totalExpired = 0;
+        var totalRecovered = 0;
+        var totalRetryQueued = 0;
+        var totalStale = 0;
+        var totalSkipped = 0;
+        var hitLimit = false;
+
+        _logger.LogInformation("ReadinessPool replenishment run starting.");
+
+        // Step 1+2: expire ready items past age and reserved items past timeout.
+        var expired = await SweepExpiredItemsAsync(ct);
+        totalExpired += expired;
+
+        // Step 3: recover orphaned generating items.
+        var recovered = await RecoverOrphanedGeneratingAsync(ct);
+        totalRecovered += recovered;
+
+        // Step 4+5: retry failed + fill shortfalls per active student.
+        var activeStudents = await GetActiveStudentProfilesAsync(ct);
+        _logger.LogInformation(
+            "ReadinessPool: processing {Count} active students.", activeStudents.Count);
+
+        var generatedThisRun = 0;
+
+        foreach (var profile in activeStudents)
+        {
+            if (ct.IsCancellationRequested) break;
+
+            var (retried, skippedR) = await RetryFailedItemsAsync(profile, generatedThisRun, ct);
+            totalRetryQueued += retried;
+            totalSkipped += skippedR;
+            generatedThisRun += retried;
+
+            if (generatedThisRun >= _opts.MaxItemsGeneratedPerRun)
+            {
+                hitLimit = true;
+                break;
+            }
+
+            foreach (var source in new[] { ReadinessPoolSource.TodayLesson, ReadinessPoolSource.PracticeGym })
+            {
+                var health = await GetHealthAsync(profile.Id, source, ct);
+                if (!health.NeedsReplenishment) continue;
+
+                var toCreate = Math.Min(
+                    health.ShortfallCount,
+                    _opts.MaxItemsGeneratedPerRun - generatedThisRun);
+
+                if (toCreate <= 0)
+                {
+                    hitLimit = true;
+                    break;
+                }
+
+                var (queued, skipped) = await FillShortfallAsync(profile, source, toCreate, ct);
+                totalQueued += queued;
+                totalSkipped += skipped;
+                generatedThisRun += queued;
+
+                if (generatedThisRun >= _opts.MaxItemsGeneratedPerRun)
+                {
+                    hitLimit = true;
+                    break;
+                }
+            }
+
+            if (hitLimit) break;
+        }
+
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = started,
+            CompletedAt = DateTime.UtcNow,
+            StudentsProcessed = activeStudents.Count,
+            ItemsQueued = totalQueued,
+            ItemsExpired = totalExpired,
+            ItemsRecoveredFromGenerating = totalRecovered,
+            ItemsRetryQueued = totalRetryQueued,
+            ItemsMarkedStale = totalStale,
+            SkippedDuplicates = totalSkipped,
+            HitMaxItemsLimit = hitLimit
+        };
+
+        _logger.LogInformation(
+            "ReadinessPool replenishment complete. queued={Queued} expired={Expired} recovered={Recovered} retried={Retried} skipped={Skipped} limitHit={Limit}",
+            summary.ItemsQueued, summary.ItemsExpired, summary.ItemsRecoveredFromGenerating,
+            summary.ItemsRetryQueued, summary.SkippedDuplicates, summary.HitMaxItemsLimit);
+
+        return summary;
+    }
+
+    public async Task<PoolHealthSummary> GetHealthAsync(
+        Guid studentId,
+        ReadinessPoolSource source,
+        CancellationToken ct = default)
+    {
+        var target = source == ReadinessPoolSource.TodayLesson
+            ? _opts.TodayLessonPoolTargetCount
+            : _opts.PracticeGymPoolTargetCount;
+
+        var counts = await _db.StudentActivityReadinessItems
+            .Where(i => i.StudentId == studentId && i.Source == source)
+            .GroupBy(i => i.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        int Get(ReadinessPoolStatus s) => counts.FirstOrDefault(c => c.Status == s)?.Count ?? 0;
+
+        return new PoolHealthSummary
+        {
+            StudentId = studentId,
+            Source = source,
+            TargetCount = target,
+            ReadyCount = Get(ReadinessPoolStatus.Ready),
+            // Queued and Generating count toward "in-flight" — do not over-generate.
+            QueuedOrGeneratingCount = Get(ReadinessPoolStatus.Queued) + Get(ReadinessPoolStatus.Generating),
+            FailedCount = Get(ReadinessPoolStatus.Failed),
+            StaleCount = Get(ReadinessPoolStatus.Stale),
+            ExpiredCount = Get(ReadinessPoolStatus.Expired),
+            ReviewOnlyCount = Get(ReadinessPoolStatus.ReviewOnly)
+        };
+    }
+
+    // --- private helpers ---
+
+    private async Task<List<StudentProfile>> GetActiveStudentProfilesAsync(CancellationToken ct)
+    {
+        return await _db.StudentProfiles
+            .Include(p => p.CareerProfile)
+            .Include(p => p.LanguagePair!).ThenInclude(lp => lp.SourceLanguage)
+            .Include(p => p.LanguagePair!).ThenInclude(lp => lp.TargetLanguage)
+            .Where(p => p.LifecycleStage != StudentLifecycleStage.Archived
+                     && p.LifecycleStage >= StudentLifecycleStage.CourseReady
+                     && p.OnboardingStatus == OnboardingStatus.Complete)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
+    private async Task<int> SweepExpiredItemsAsync(CancellationToken ct)
+    {
+        var readyExpiryCutoff = DateTime.UtcNow.AddDays(-_opts.ReadyItemExpiryDays);
+        var reservedExpiryCutoff = DateTime.UtcNow.AddHours(-_opts.ReservedItemExpiryHours);
+        var count = 0;
+
+        // Ready items past age.
+        var expiredReady = await _db.StudentActivityReadinessItems
+            .Where(i => i.Status == ReadinessPoolStatus.Ready
+                     && i.UpdatedAt < readyExpiryCutoff)
+            .ToListAsync(ct);
+
+        foreach (var item in expiredReady)
+        {
+            item.Expire("Expired: past ReadyItemExpiryDays.");
+            count++;
+        }
+
+        // Reserved items stuck past timeout.
+        var expiredReserved = await _db.StudentActivityReadinessItems
+            .Where(i => i.Status == ReadinessPoolStatus.Reserved
+                     && i.ReservedAt != null
+                     && i.ReservedAt < reservedExpiryCutoff)
+            .ToListAsync(ct);
+
+        foreach (var item in expiredReserved)
+        {
+            item.Expire("Expired: reserved item past ReservedItemExpiryHours.");
+            count++;
+        }
+
+        if (count > 0)
+        {
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("ReadinessPool sweep: expired {Count} items.", count);
+        }
+
+        return count;
+    }
+
+    private async Task<int> RecoverOrphanedGeneratingAsync(CancellationToken ct)
+    {
+        var timeoutCutoff = DateTime.UtcNow.AddMinutes(-_opts.GeneratingTimeoutMinutes);
+
+        var orphaned = await _db.StudentActivityReadinessItems
+            .Where(i => i.Status == ReadinessPoolStatus.Generating
+                     && i.UpdatedAt < timeoutCutoff)
+            .ToListAsync(ct);
+
+        if (orphaned.Count == 0) return 0;
+
+        foreach (var item in orphaned)
+        {
+            // If under attempt limit, mark failed so retry logic can pick it up.
+            // If at limit, keep failed (no retry).
+            item.MarkFailed("TIMEOUT", $"Generating timed out after {_opts.GeneratingTimeoutMinutes} minutes.");
+            _logger.LogWarning(
+                "ReadinessPool: recovered orphaned generating item {Id} for student {StudentId} (attempt {A}).",
+                item.Id, item.StudentId, item.AttemptCount);
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return orphaned.Count;
+    }
+
+    private async Task<(int retried, int skipped)> RetryFailedItemsAsync(
+        StudentProfile profile,
+        int generatedThisRun,
+        CancellationToken ct)
+    {
+        var retryCutoff = DateTime.UtcNow.AddMinutes(-_opts.FailedRetryDelayMinutes);
+        var retried = 0;
+        var skipped = 0;
+
+        var failedItems = await _db.StudentActivityReadinessItems
+            .Where(i => i.StudentId == profile.Id
+                     && i.Status == ReadinessPoolStatus.Failed
+                     && i.AttemptCount < _opts.MaxGenerationAttempts
+                     && i.UpdatedAt < retryCutoff)
+            .OrderBy(i => i.UpdatedAt)
+            .ToListAsync(ct);
+
+        foreach (var failed in failedItems)
+        {
+            if (generatedThisRun + retried >= _opts.MaxItemsGeneratedPerRun) break;
+
+            // Create a fresh queued item from the failed item's routing snapshot.
+            var req = new CreateReadinessItemRequest
+            {
+                StudentId = failed.StudentId,
+                Source = failed.Source,
+                TargetCefrLevel = failed.TargetCefrLevel,
+                RoutingReason = failed.RoutingReason,
+                IsLowerLevelContent = failed.IsLowerLevelContent,
+                CurriculumObjectiveKey = failed.CurriculumObjectiveKey,
+                CurriculumObjectiveTitle = failed.CurriculumObjectiveTitle,
+                PrimarySkill = failed.PrimarySkill,
+                SecondarySkillsJson = failed.SecondarySkillsJson,
+                ContextTagsJson = failed.ContextTagsJson,
+                FocusTagsJson = failed.FocusTagsJson,
+                PatternKey = failed.PatternKey,
+                ActivityType = failed.ActivityType,
+                DifficultyBand = failed.DifficultyBand,
+                OriginalCefrLevelSnapshot = failed.OriginalCefrLevelSnapshot,
+                RoutingExplanation = failed.RoutingExplanation,
+                PreferredSessionDurationMinutes = failed.PreferredSessionDurationMinutes,
+                DifficultyPreference = failed.DifficultyPreference,
+                SupportLanguageCode = failed.SupportLanguageCode,
+                SupportLanguageName = failed.SupportLanguageName,
+                TranslationHelpPreference = failed.TranslationHelpPreference,
+                GeneratedBy = "ReadinessPoolReplenishment:Retry",
+                ExpiresAt = DateTime.UtcNow.AddDays(_opts.ReadyItemExpiryDays)
+            };
+
+            await _pool.CreateQueuedAsync(req, ct);
+            retried++;
+
+            _logger.LogInformation(
+                "ReadinessPool: queued retry for failed item {Id} student {StudentId} source={Source} attempt={A}.",
+                failed.Id, failed.StudentId, failed.Source, failed.AttemptCount);
+        }
+
+        return (retried, skipped);
+    }
+
+    private async Task<(int queued, int skipped)> FillShortfallAsync(
+        StudentProfile profile,
+        ReadinessPoolSource source,
+        int toCreate,
+        CancellationToken ct)
+    {
+        var queued = 0;
+        var skipped = 0;
+
+        // Determine if review/scaffold is safe based on weak ledger signals.
+        var allowReviewOrScaffold = false;
+        if (_opts.EnableReviewScaffoldGeneration)
+        {
+            var weakEvents = await _ledger.GetWeakEventsAsync(profile.Id, limit: 5, ct);
+            allowReviewOrScaffold = weakEvents.Count > 0;
+        }
+
+        var resolvedGoalContext = _goalResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "ReadinessPoolReplenishment" });
+
+        // Build a set of existing active item keys to prevent duplicates.
+        var existingKeys = await _db.StudentActivityReadinessItems
+            .Where(i => i.StudentId == profile.Id
+                     && i.Source == source
+                     && (i.Status == ReadinessPoolStatus.Queued
+                      || i.Status == ReadinessPoolStatus.Generating
+                      || i.Status == ReadinessPoolStatus.Ready
+                      || i.Status == ReadinessPoolStatus.Reserved))
+            .Select(i => new DuplicateKey(
+                i.CurriculumObjectiveKey,
+                i.PatternKey,
+                i.TargetCefrLevel))
+            .ToListAsync(ct);
+
+        var existingKeySet = existingKeys.ToHashSet();
+
+        // Determine primary skills to target based on source.
+        var skills = source == ReadinessPoolSource.TodayLesson
+            ? new[] { "writing", "listening", "speaking", "vocabulary" }
+            : new[] { "writing", "listening", "speaking", "vocabulary", "reading" };
+
+        var skillIndex = 0;
+
+        for (var i = 0; i < toCreate; i++)
+        {
+            // Rotate through skills for variety.
+            var skill = skills[skillIndex % skills.Length];
+            skillIndex++;
+
+            var routingRequest = CurriculumRoutingRequestFactory.Build(
+                profile, resolvedGoalContext,
+                source: $"ReadinessPoolReplenishment:{source}",
+                primarySkill: skill,
+                allowReviewOrScaffold: allowReviewOrScaffold);
+
+            CurriculumRoutingRecommendation routing;
+            try
+            {
+                routing = await _routing.RecommendAsync(routingRequest, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "ReadinessPool: routing failed for student {Id} skill={Skill}. Skipping slot.",
+                    profile.Id, skill);
+                skipped++;
+                continue;
+            }
+
+            // Duplicate check.
+            var key = new DuplicateKey(
+                routing.CurriculumObjectiveKey,
+                null,
+                routing.TargetCefrLevel);
+
+            if (existingKeySet.Contains(key))
+            {
+                skipped++;
+                continue;
+            }
+
+            existingKeySet.Add(key);
+
+            var req = ReadinessItemRequestBuilder.FromRoutingRecommendation(
+                studentId: profile.Id,
+                source: source,
+                recommendation: routing,
+                originalCefrLevelSnapshot: profile.CefrLevel,
+                preferredSessionDurationMinutes: profile.PreferredSessionDurationMinutes,
+                difficultyPreference: profile.DifficultyPreference?.ToString(),
+                supportLanguageCode: profile.LanguagePair?.SourceLanguage?.Code,
+                supportLanguageName: profile.LanguagePair?.SourceLanguage?.Name,
+                translationHelpPreference: profile.TranslationHelpPreference?.ToString(),
+                generatedBy: "ReadinessPoolReplenishment",
+                expiresAt: DateTime.UtcNow.AddDays(_opts.ReadyItemExpiryDays));
+
+            await _pool.CreateQueuedAsync(req, ct);
+            queued++;
+
+            _logger.LogDebug(
+                "ReadinessPool: queued item for student {StudentId} source={Source} cefr={Cefr} skill={Skill} obj={Obj}.",
+                profile.Id, source, routing.TargetCefrLevel, skill, routing.CurriculumObjectiveKey);
+        }
+
+        return (queued, skipped);
+    }
+
+    // Value type for duplicate detection (objective key + pattern key + cefr level).
+    private readonly record struct DuplicateKey(
+        string? ObjectiveKey,
+        string? PatternKey,
+        string CefrLevel);
+}

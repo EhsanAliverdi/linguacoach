@@ -58,28 +58,39 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
-## Readiness Pool (Phase 10M foundation — serving/replenishment deferred)
+## Readiness Pool (Phase 10M/10N foundation — serving deferred to 10O)
 
-### TODO-007 — Pool replenishment background engine (Phase 10N)
-**What:** Implement a background job that monitors pool health per student and triggers generation when the ready count drops below a threshold.
-**Why:** Phase 10M records pool items during existing generation jobs. It does not proactively refill the pool. Without replenishment, the pool will only be populated when `PracticeGymGenerationJob` or `LessonBatchGenerationJob` happen to run.
-**Context:** The `IStudentActivityReadinessPoolService` and `StudentActivityReadinessItem` entity are ready. The replenishment job needs to: query ready counts by student/source, trigger generation for low-count students, and handle stale/failed item cleanup.
-**Deferred from:** Phase 10M engineering review, 2026-06-17.
+### ~~TODO-007~~ — Pool replenishment background engine — **DONE in Phase 10N**
 
-### TODO-008 — Serve from pool on Today and Practice Gym page load (Phase 10N/10O)
+`ReadinessPoolReplenishmentService` + `ReadinessPoolReplenishmentJob` implemented. Sweeps, recovers, retries, and fills shortfalls for all active students every 20 minutes.
+
+### TODO-008 — Serve from pool on Today and Practice Gym page load (Phase 10O)
 **What:** Update `ActivityGetHandler` and `ExercisePrepareHandler` to check the readiness pool for a suitable ready item before falling back to on-demand generation.
-**Why:** Phase 10M records items in the pool but does not change page-load serving. The pool is currently write-only from the user-facing perspective.
-**Context:** `IStudentActivityReadinessPoolService.ReserveNextReadyAsync` is safe and ready. The serving integration point is `ActivityGetHandler.HandlePatternKeyedAsync` for Practice Gym and `ExercisePrepareHandler.HandleAsync` for Today lessons.
-**Deferred from:** Phase 10M engineering review, 2026-06-17.
+**Why:** Phase 10N creates and maintains pool items but does not change page-load serving. The pool is populated and healthy but never consumed by students.
+**Context:** `IStudentActivityReadinessPoolService.ReserveNextReadyAsync` is safe and ready. Integration points: `ActivityGetHandler.HandlePatternKeyedAsync` (Practice Gym), `ExercisePrepareHandler.HandleAsync` (Today lessons). Existing on-demand fallback must remain intact.
+**Deferred from:** Phase 10M/10N, 2026-06-17.
 
-### TODO-009 — Enable `AllowReviewOrScaffold=true` based on mastery signals (Phase 10N)
+### TODO-009 — Enable `AllowReviewOrScaffold=true` based on mastery signals (Phase 10O+)
 **What:** Wire mastery/ledger signals so that `CurriculumRoutingRequestFactory.Build` passes `allowReviewOrScaffold=true` when a student has demonstrated mastery of the target objective.
-**Why:** All current production call sites pass `allowReviewOrScaffold=false`. The routing service supports review/scaffold routing but it is never activated.
-**Context:** Requires mastery engine or ledger query to determine when a student has passed an objective. The routing service and pool lifecycle already support `RoutingReason.Review / Scaffold / Remediation`.
-**Deferred from:** Phase 10L/10M engineering review, 2026-06-17.
+**Why:** `EnableReviewScaffoldGeneration=false` by default in Phase 10N. The routing service supports review/scaffold routing but it is never activated in production.
+**Context:** Requires mastery engine or reliable ledger query. `GetWeakEventsAsync` exists but is a conservative signal only. Phase 10N keeps the flag false until the signal is validated.
+**Deferred from:** Phase 10L/10M/10N, 2026-06-17.
 
-### TODO-010 — Sweep orphaned Generating pool items (Phase 10N)
-**What:** Add a background sweep that expires `StudentActivityReadinessItem` rows stuck in `Generating` status beyond a configurable timeout.
-**Why:** If `PracticeGymGenerationJob` or `LessonBatchGenerationJob` throw an unexpected exception after creating a pool item but before calling `MarkReadyAsync` or `MarkFailedAsync`, the item remains in `Generating` indefinitely.
-**Context:** The outer `Execute` catch block in generation jobs marks the cache/batch as failed but does not have access to `poolItemId` in the current design. A sweep job is the correct fix.
-**Deferred from:** Phase 10M engineering review, 2026-06-17.
+### ~~TODO-010~~ — Sweep orphaned Generating pool items — **DONE in Phase 10N**
+
+`ReadinessPoolReplenishmentService.RecoverOrphanedGeneratingAsync` marks generating items past `GeneratingTimeoutMinutes` as Failed. Retry picks them up if under `MaxGenerationAttempts`.
+
+### TODO-011 — Move ReadinessPoolReplenishmentOptions to DB-backed admin config (Phase 10O+)
+**What:** Expose `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MaxItemsGeneratedPerRun`, `ReadyItemExpiryDays` etc. in the admin UI so they can be tuned without a redeploy.
+**Why:** Currently bound from `appsettings.json`. Target counts and expiry windows are operational decisions that should be tunable by admin without code changes.
+**Deferred from:** Phase 10N, 2026-06-17.
+
+### TODO-012 — Ledger-weighted skill rotation in replenishment (Phase 10O+)
+**What:** Weight skill selection in `FillShortfallAsync` toward skills with low `StudentSkillProfile.ScorePercent` instead of round-robin rotation.
+**Why:** Round-robin creates equal distribution. Weighted selection would prioritise weak skills and make the pool more useful for adaptive learning.
+**Deferred from:** Phase 10N, 2026-06-17.
+
+### TODO-013 — Per-student review/scaffold signal instead of global flag (Phase 10O+)
+**What:** Replace `EnableReviewScaffoldGeneration` global flag with a per-student check: allow review/scaffold for a specific student × skill when `StudentSkillProfile.ScorePercent < threshold` for a prerequisite objective.
+**Why:** Global flag is too coarse. A B1-weak B2 student should get review content for B1 prerequisites, not all students globally.
+**Deferred from:** Phase 10N, 2026-06-17.

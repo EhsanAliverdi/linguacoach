@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 23:30
+lastUpdated: 2026-06-17 23:45
 owner: product
 supersedes:
 supersededBy:
@@ -437,6 +437,31 @@ Completed staged migrations:
 Remaining staged migrations are pattern-backed activities. Planned future exercise formats made runnable so far: `reading_multiple_choice_single` (Phase 8A), `reading_multiple_choice_multi` (Phase 8B), `reading_fill_in_blanks` (Phase 8C), `reorder_paragraphs` (Phase 8D), `reading_writing_fill_in_blanks` (Phase 8E), `summarize_written_text` (Phase 8F), `write_essay` (Phase 8G), `listening_multiple_choice_single` (Phase 8H — first runnable listening-primary format), `listening_multiple_choice_multi` (Phase 8I — second runnable listening-primary format), `listening_fill_in_blanks` (Phase 8J — third runnable listening-primary format, first runnable listening+writing format), `select_missing_word` (Phase 8K — fourth runnable listening-primary format), `highlight_correct_summary` (Phase 8L — fifth runnable listening-primary format, first runnable listening+reading format), `highlight_incorrect_words` (Phase 8M — sixth runnable listening-primary format, second runnable listening+reading format), `write_from_dictation` (Phase 8O — seventh runnable listening-primary format), and `summarize_spoken_text` (Phase 8Q — eighth runnable listening-primary format, first AI-evaluated listening+writing format). All reading-primary, writing, and listening planned future formats are now ready. All remaining planned future exercise formats are the speaking formats (`read_aloud`, `repeat_sentence`, `describe_image`, `respond_to_situation`, `retell_lecture`, `summarize_group_discussion`, `answer_short_question`), which remain planned and non-runnable. Today pre-generation remains a future phase. Phase 8P (2026-06-16) wired the audio lifecycle for all 9 listening pattern keys. `HandlePatternKeyedAsync` now calls `EnsureAudioAsync` after creating pattern-keyed listening activities. `ActivityDto` gains an `AudioStatus` string field (`"ready"` / `"pending"` / `"unavailable"`). A shared `app-audio-player` Angular component was created and all 5 listening renderer HTML templates now use it instead of inline `<audio>` tags. The exercise-renderer getters for `listeningFillInBlanks`, `highlightCorrectSummary`, and `highlightIncorrectWords` now fall back to `activity.audioUrl` from the API when `ed['audioUrl']` is absent from the content JSON. Audio is now generated on first fetch for all listening patterns; `audioUrl` will be non-null when TTS succeeds. Phase 8Q (2026-06-16) added `summarize_spoken_text` to `ListeningAudioService.ListeningPatternKeys` (now 10 keys) so it reuses the same shared audio lifecycle and `app-audio-player`. Its evaluation reuses the existing `AiStructuredEvaluator` AI path (same as `summarize_written_text` / `write_essay`); `learnContent` and the expected-answer `keyPoints` are never sent to the AI before submission.
 
 Phase 8N (2026-06-16) added configurable practice item counts as a foundation (not a new format). Every `ExerciseTypeDefinition` now carries `MinItemsPerPractice`/`DefaultItemsPerPractice`/`MaxItemsPerPractice` and `MinOptionsPerItem`/`DefaultOptionsPerItem`/`MaxOptionsPerItem`, seeded per type, editable in the admin exercise-types page (with inline `min <= default <= max` and non-negative validation) and via admin PATCH. Counts feed generation prompt context and optional validator count enforcement. Counts are configuration only and never change readiness; no format was made runnable. See [practice-item-sets.md](../architecture/practice-item-sets.md).
+
+## Phase 10N — Background Replenishment Pipeline, completed (2026-06-17)
+
+Backend-only phase. No learner-facing behaviour changed. No Angular source changed.
+
+**What was added:**
+
+- `IReadinessPoolReplenishmentService` / `ReadinessPoolReplenishmentService` — background engine that sweeps expired/reserved items, recovers orphaned generating items, retries failed items, and fills pool shortfalls for all active students.
+- `ReadinessPoolReplenishmentOptions` — appsettings-bound configuration (target count, expiry days, retry delay, max items per run, review/scaffold flag).
+- `PoolHealthSummary` — health snapshot DTO: ready count, in-flight count, shortfall, `needsReplenishment` flag.
+- `ReadinessPoolReplenishmentJob` — Quartz job running every 20 minutes.
+- `GET /api/admin/students/{studentId}/readiness-pool/health` — new read-only admin endpoint showing health for both TodayLesson and PracticeGym pools.
+
+**Key rules preserved:**
+- `general_english` is the fallback context; workplace is not default.
+- B2 students cannot silently receive B1 content as Normal.
+- `EnableReviewScaffoldGeneration=false` by default; review/scaffold requires explicit flag AND ledger weakness signals.
+- Existing on-demand generation paths unchanged (pool serving deferred to Phase 10O).
+- No admin write endpoints added.
+
+**Tests:** 16 new unit + 11 new integration = +27. Total: 1750 passed, 0 failed.
+
+See: `docs/reviews/2026-06-17-phase-10n-background-replenishment-pipeline-review.md`
+
+---
 
 ## Phase 10L — CEFR-Aware Activity Routing, completed (2026-06-17)
 

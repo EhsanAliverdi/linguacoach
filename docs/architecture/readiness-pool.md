@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-17 23:00
+lastUpdated: 2026-06-17 23:30
 owner: architecture
 supersedes:
 supersededBy:
@@ -103,14 +103,72 @@ Key methods:
 | `ActivityMaterializationJob` | Links `LearningActivityId` and `SessionExerciseId` to matching pool item by `LearningSessionId`. |
 | `GET /api/admin/students/{id}/readiness-pool` | Read-only admin inspection endpoint. |
 
-## Serving from Pool (Deferred to Phase 10N)
+## Replenishment Engine (Phase 10N)
 
-Phase 10M records pool items but does not yet change user-facing serving behaviour. Today lessons and Practice Gym still generate on-demand if the pool is empty. Phase 10N will:
-- Implement background replenishment to keep the pool filled.
-- Update Today and Practice Gym page-load paths to serve from pool when a ready item is available.
-- Enable `AllowReviewOrScaffold=true` based on mastery signals.
-- Add stale/failed item sweep.
+### Service: IReadinessPoolReplenishmentService
 
-## Admin Endpoint
+Application layer interface: `LinguaCoach.Application.ReadinessPool.IReadinessPoolReplenishmentService`.
+Implementation: `LinguaCoach.Infrastructure.ReadinessPool.ReadinessPoolReplenishmentService`.
+Registered as `AddScoped`.
 
-`GET /api/admin/students/{studentId}/readiness-pool` — requires Admin role. Returns `ReadinessPoolSummary` with counts by status and item list. No write endpoints in Phase 10M.
+Key methods:
+- `RunAsync()` — full maintenance cycle for all active students. Returns `ReplenishmentRunSummary`.
+- `GetHealthAsync(studentId, source)` — calculates `PoolHealthSummary` without side effects.
+
+### Job: ReadinessPoolReplenishmentJob
+
+Quartz job (`LinguaCoach.Infrastructure.Jobs.ReadinessPoolReplenishmentJob`).
+Trigger: every 20 minutes. `[DisallowConcurrentExecution]`.
+Delegates all logic to `IReadinessPoolReplenishmentService.RunAsync()`.
+
+### Configuration: ReadinessPoolReplenishmentOptions
+
+Bound from `appsettings.json` under `"ReadinessPool"`. Defaults:
+
+| Option | Default | Purpose |
+|---|---|---|
+| `TodayLessonPoolTargetCount` | 10 | Target ready items per student for Today lessons. |
+| `PracticeGymPoolTargetCount` | 10 | Target ready items per student for Practice Gym. |
+| `MaxGenerationAttempts` | 3 | Max attempts per pool item before abandoning. |
+| `ReadyItemExpiryDays` | 14 | Days before a ready item is expired. |
+| `ReservedItemExpiryHours` | 2 | Hours before a stuck reserved item is expired. |
+| `GeneratingTimeoutMinutes` | 30 | Minutes before an orphaned generating item is failed. |
+| `FailedRetryDelayMinutes` | 60 | Minutes a failed item must wait before retry. |
+| `MaxItemsGeneratedPerRun` | 50 | Cap on new items queued per replenishment run. |
+| `EnableReviewScaffoldGeneration` | false | Allows lower-level review/scaffold items when ledger shows weakness. Conservative default. TODO: enable after mastery/weakness engine validated. |
+
+### Pool Health
+
+`PoolHealthSummary` counts:
+- `ReadyCount` — items in `Ready` status. Counts toward target.
+- `QueuedOrGeneratingCount` — in-flight items. Count toward target to prevent over-generation.
+- `ShortfallCount = max(0, Target - Ready - QueuedOrGenerating)`.
+- `ReviewOnly`, `Stale`, `Expired`, `Failed` — do not reduce shortfall.
+
+### Replenishment cycle responsibilities
+
+1. **Sweep expired ready items** — past `ReadyItemExpiryDays` → `Expired`.
+2. **Sweep expired reserved items** — past `ReservedItemExpiryHours` → `Expired`.
+3. **Recover orphaned generating** — past `GeneratingTimeoutMinutes` → `Failed` (retryable if under attempt limit).
+4. **Retry failed items** — `AttemptCount < MaxGenerationAttempts` and past `FailedRetryDelayMinutes` → new `Queued` item with same routing snapshot.
+5. **Fill shortfalls** — for each active student × source below target, queue new items up to `MaxItemsGeneratedPerRun`.
+6. **Duplicate prevention** — skip if same `(StudentId, Source, CurriculumObjectiveKey, PatternKey, TargetCefrLevel)` already `Queued/Generating/Ready/Reserved`.
+
+### Review / scaffold rule
+
+`AllowReviewOrScaffold=true` is passed to routing only when `EnableReviewScaffoldGeneration=true` AND `IStudentLearningLedger.GetWeakEventsAsync` returns at least one event. Default is `false`. B2 students will never silently receive B1 content as Normal content. Lower-level content is only generated when `RoutingReason != Normal` and `IsLowerLevelContent = true`.
+
+### Active students
+
+Replenishment targets students with `LifecycleStage >= CourseReady` and `OnboardingStatus = Complete` and not `Archived`.
+
+### Serving from pool (Phase 10O+)
+
+Phase 10N creates pool items but does not change user-facing serving paths. Today lessons and Practice Gym still fall back to on-demand generation. Phase 10O will wire `ReserveNextReadyAsync` into session and practice retrieval paths.
+
+## Admin Endpoints
+
+- `GET /api/admin/students/{studentId}/readiness-pool` — Returns `ReadinessPoolSummary` with counts by status and item list.
+- `GET /api/admin/students/{studentId}/readiness-pool/health` — Returns `PoolHealthSummary` for `TodayLesson` and `PracticeGym` pools, including target, ready, in-flight, shortfall, and `needsReplenishment` flag.
+
+Both endpoints require Admin role. No write endpoints.

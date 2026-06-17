@@ -40,6 +40,7 @@ using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Infrastructure.ReadinessPool;
+using Microsoft.Extensions.Options;
 using LinguaCoach.Application.Profile;
 using LinguaCoach.Application.Storage;
 using LinguaCoach.Infrastructure.Profile;
@@ -51,7 +52,7 @@ namespace LinguaCoach.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration? configuration = null)
     {
         // File storage (IFileStorageService) — provider chosen at startup from config.
         // Registered as a singleton; holds no per-request state.
@@ -216,6 +217,15 @@ public static class DependencyInjection
 
         // Student activity readiness pool (Phase 10M)
         services.AddScoped<IStudentActivityReadinessPoolService, StudentActivityReadinessPoolService>();
+
+        // Readiness pool replenishment (Phase 10N)
+        if (configuration is not null)
+            services.Configure<ReadinessPoolReplenishmentOptions>(
+                configuration.GetSection(ReadinessPoolReplenishmentOptions.SectionName));
+        else
+            services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
+        services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
+        services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();
