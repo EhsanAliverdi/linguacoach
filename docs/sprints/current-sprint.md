@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 10:00
+lastUpdated: 2026-06-18 12:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,63 @@ Last updated: 2026-06-18
 ---
 
 ## Most recently completed sprint
+
+**Phase 10Q — Admin Curriculum, Format & Context Controls** — complete (2026-06-18)
+
+Phase 10Q gives admins full CRUD control over the curriculum syllabus used for CEFR-aware activity routing. Includes a non-mutating routing preview, seeder protection for admin-edited objectives, and a full Angular admin UI.
+
+### What was built
+
+**Domain**
+- `CurriculumObjective` — added `ExamplePrompts` (string?) and `AdminUpdatedAt` (DateTimeOffset?) properties.
+- Added `AdminUpdate()` method: validates CEFR, skill, difficulty band, self-prerequisites; sets `AdminUpdatedAt = UtcNow`.
+- Existing `UpdateDetails()` preserved as seeder-safe (never sets `AdminUpdatedAt`).
+
+**EF Migration**
+- `T52_CurriculumObjectiveAdminFields` — adds nullable `example_prompts` and `admin_updated_at` columns to `curriculum_objectives`.
+
+**Application layer**
+- `AdminCurriculumContracts.cs` — `AdminCurriculumObjectiveDto`, `AdminCurriculumObjectiveUpsertRequest`, `CurriculumTaxonomyDto`, `AdminRoutingPreviewRequest`, `AdminRoutingPreviewResult`, `ICurriculumObjectiveWriteService`, `IAdminCurriculumSyllabusQuery`.
+
+**Infrastructure**
+- `CurriculumObjectiveWriteService` — Create, Update, Activate, Deactivate, PreviewRouting. Full validation: slug key format, CEFR, skill, context tag, difficulty band 1–5, self-prerequisite, dangling prerequisite. `PreviewRoutingAsync` is read-only: calls routing service but never calls `SaveChangesAsync` or mutates student data.
+- `CurriculumSyllabusQueryService` — now implements both `ICurriculumSyllabusQuery` and `IAdminCurriculumSyllabusQuery`. `GetAllObjectivesForAdminAsync` returns active and inactive objectives with optional filters.
+- `DependencyInjection.cs` — dual-interface registration for `CurriculumSyllabusQueryService`; registered `ICurriculumObjectiveWriteService`.
+
+**Seeder**
+- `CurriculumObjectiveSeeder` — changed from upsert to seed-only-missing: `if (existing.ContainsKey(def.Key)) continue;`. Admin-edited objectives are never overwritten on startup.
+
+**API**
+- `AdminCurriculumController` — 8 endpoints:
+  - `GET /api/admin/curriculum/objectives` (cefrLevel, skill, isActive filters)
+  - `GET /api/admin/curriculum/objectives/{key}`
+  - `GET /api/admin/curriculum/taxonomy`
+  - `POST /api/admin/curriculum/objectives`
+  - `PUT /api/admin/curriculum/objectives/{key}`
+  - `POST /api/admin/curriculum/objectives/{key}/activate`
+  - `POST /api/admin/curriculum/objectives/{key}/deactivate`
+  - `POST /api/admin/curriculum/routing-preview`
+
+**Angular**
+- `CurriculumService` — Angular service with all TypeScript interfaces and 8 methods matching the backend API.
+- `AdminCurriculumComponent` — single standalone component with `view` signal (`list` | `create` | `edit` | `preview`). List with CEFR/skill/active filters; create/edit form with all fields; non-mutating routing preview panel. No TailAdmin migration.
+- `app.routes.ts` — added `/admin/curriculum` route.
+- `AdminShellComponent` — added Curriculum nav link.
+
+**Tests**
+- 20 unit tests in `AdminCurriculumObjectiveUnitTests`: AdminUpdate, AdminUpdatedAt, ExamplePrompts, DifficultyBand, self-prerequisite, seeder-safe UpdateDetails, general_english/workplace constants.
+- 20 integration tests in `AdminCurriculumObjectivesIntegrationTests`: list/filter, taxonomy, create (valid/invalid CEFR/skill/self-prereq/dangling-prereq), update, deactivate/reactivate, non-admin 403, routing preview non-mutation, general_english default, seeder idempotent.
+- 16 Angular unit tests in `admin-curriculum.component.spec.ts`: list renders, filter calls API, activate/deactivate, create/edit navigation, form population, routing preview, error state, taxonomy loading.
+
+### Product rules enforced
+- `general_english` remains default/fallback — `workplace` is never silently added as default.
+- Deactivating an objective does NOT delete historical records (soft lifecycle only).
+- Seeder never overwrites admin-edited objectives.
+- Routing preview is non-mutating: no AI calls, no student state changes.
+
+---
+
+## Previous sprint
 
 **Phase 10P — Multi-skill Scoring & Progress Updates** — complete (2026-06-18)
 

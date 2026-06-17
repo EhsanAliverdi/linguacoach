@@ -212,7 +212,12 @@ public static class DependencyInjection
         services.AddScoped<IExercisePatternRepository, ExercisePatternRepository>();
 
         // Curriculum syllabus (Phase 10K)
-        services.AddScoped<ICurriculumSyllabusQuery, CurriculumSyllabusQueryService>();
+        services.AddScoped<CurriculumSyllabusQueryService>();
+        services.AddScoped<ICurriculumSyllabusQuery>(sp => sp.GetRequiredService<CurriculumSyllabusQueryService>());
+        services.AddScoped<IAdminCurriculumSyllabusQuery>(sp => sp.GetRequiredService<CurriculumSyllabusQueryService>());
+
+        // Curriculum write service (Phase 10Q)
+        services.AddScoped<ICurriculumObjectiveWriteService, CurriculumObjectiveWriteService>();
 
         // Curriculum routing (Phase 10L)
         services.AddScoped<ICurriculumRoutingService, CurriculumRoutingService>();

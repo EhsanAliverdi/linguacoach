@@ -34,6 +34,8 @@ internal sealed class CurriculumObjectiveConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.IsReviewable).HasColumnName("is_reviewable").IsRequired();
         builder.Property(e => e.IsExamInspired).HasColumnName("is_exam_inspired").IsRequired();
         builder.Property(e => e.TeachingNotes).HasColumnName("teaching_notes");
+        builder.Property(e => e.ExamplePrompts).HasColumnName("example_prompts");
+        builder.Property(e => e.AdminUpdatedAt).HasColumnName("admin_updated_at");
 
         builder.HasIndex(e => e.Key)
             .IsUnique()

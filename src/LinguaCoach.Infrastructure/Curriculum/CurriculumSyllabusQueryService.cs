@@ -11,7 +11,7 @@ namespace LinguaCoach.Infrastructure.Curriculum;
 /// All queries use AsNoTracking — this service never writes.
 /// Returns candidate lists only; does NOT select activities or exercise formats.
 /// </summary>
-public sealed class CurriculumSyllabusQueryService : ICurriculumSyllabusQuery
+public sealed class CurriculumSyllabusQueryService : ICurriculumSyllabusQuery, IAdminCurriculumSyllabusQuery
 {
     private readonly LinguaCoachDbContext _db;
 
@@ -132,6 +132,26 @@ public sealed class CurriculumSyllabusQueryService : ICurriculumSyllabusQuery
         => await _db.CurriculumObjectives
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Key == key, ct);
+
+    public async Task<IReadOnlyList<CurriculumObjective>> GetAllObjectivesForAdminAsync(
+        string? cefrLevel, string? skill, bool? isActive, CancellationToken ct = default)
+    {
+        var query = _db.CurriculumObjectives.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(cefrLevel))
+            query = query.Where(o => o.CefrLevel == cefrLevel.ToUpperInvariant());
+
+        if (!string.IsNullOrWhiteSpace(skill))
+            query = query.Where(o => o.PrimarySkill == skill.ToLowerInvariant());
+
+        if (isActive.HasValue)
+            query = query.Where(o => o.IsActive == isActive.Value);
+
+        return await query
+            .OrderBy(o => o.CefrLevel)
+            .ThenBy(o => o.RecommendedOrder)
+            .ToListAsync(ct);
+    }
 
     private static List<string> ParseJsonStringArray(string json)
     {

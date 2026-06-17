@@ -71,6 +71,12 @@ public sealed class CurriculumObjective : BaseEntity
     /// <summary>Optional teaching notes for AI prompt context. Not shown to students.</summary>
     public string? TeachingNotes { get; private set; }
 
+    /// <summary>Optional example prompts for AI generation context. Not shown to students.</summary>
+    public string? ExamplePrompts { get; private set; }
+
+    /// <summary>UTC timestamp when this objective was last modified by an admin (not the seeder).</summary>
+    public DateTimeOffset? AdminUpdatedAt { get; private set; }
+
     private CurriculumObjective()
     {
         Key = string.Empty;
@@ -82,6 +88,8 @@ public sealed class CurriculumObjective : BaseEntity
         ContextTagsJson = "[]";
         FocusTagsJson = "[]";
         PrerequisiteKeysJson = "[]";
+        ExamplePrompts = null;
+        AdminUpdatedAt = null;
     }
 
     public CurriculumObjective(
@@ -99,7 +107,8 @@ public sealed class CurriculumObjective : BaseEntity
         bool isActive = true,
         bool isReviewable = false,
         bool isExamInspired = false,
-        string? teachingNotes = null)
+        string? teachingNotes = null,
+        string? examplePrompts = null)
     {
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException("Key is required.", nameof(key));
@@ -134,11 +143,13 @@ public sealed class CurriculumObjective : BaseEntity
         IsReviewable = isReviewable;
         IsExamInspired = isExamInspired;
         TeachingNotes = teachingNotes?.Trim();
+        ExamplePrompts = examplePrompts?.Trim();
     }
 
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
 
+    /// <summary>Seeder-safe update: only title/description/order/difficulty/notes. Does not touch admin fields.</summary>
     public void UpdateDetails(
         string title,
         string description,
@@ -160,6 +171,55 @@ public sealed class CurriculumObjective : BaseEntity
         RecommendedOrder = recommendedOrder;
         DifficultyBand = difficultyBand;
         TeachingNotes = teachingNotes?.Trim();
+    }
+
+    /// <summary>Admin full update: updates all mutable fields including skills, tags, prerequisites.</summary>
+    public void AdminUpdate(
+        string title,
+        string description,
+        string cefrLevel,
+        string primarySkill,
+        string secondarySkillsJson,
+        string contextTagsJson,
+        string focusTagsJson,
+        string prerequisiteKeysJson,
+        int recommendedOrder,
+        int difficultyBand,
+        bool isReviewable,
+        bool isExamInspired,
+        string? teachingNotes,
+        string? examplePrompts)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ArgumentException("Title is required.", nameof(title));
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description is required.", nameof(description));
+        if (!CefrLevelConstants.IsValid(cefrLevel))
+            throw new ArgumentException($"Invalid CEFR level '{cefrLevel}'.", nameof(cefrLevel));
+        if (!CurriculumSkillConstants.IsValid(primarySkill))
+            throw new ArgumentException($"Invalid primary skill '{primarySkill}'.", nameof(primarySkill));
+        if (difficultyBand is < 1 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
+        if (recommendedOrder < 0)
+            throw new ArgumentOutOfRangeException(nameof(recommendedOrder), "RecommendedOrder must be >= 0.");
+
+        ValidateNoSelfPrerequisite(Key, prerequisiteKeysJson);
+
+        Title = title.Trim();
+        Description = description.Trim();
+        CefrLevel = cefrLevel.ToUpperInvariant();
+        PrimarySkill = primarySkill.ToLowerInvariant();
+        SecondarySkillsJson = secondarySkillsJson;
+        ContextTagsJson = contextTagsJson;
+        FocusTagsJson = focusTagsJson;
+        PrerequisiteKeysJson = prerequisiteKeysJson;
+        RecommendedOrder = recommendedOrder;
+        DifficultyBand = difficultyBand;
+        IsReviewable = isReviewable;
+        IsExamInspired = isExamInspired;
+        TeachingNotes = teachingNotes?.Trim();
+        ExamplePrompts = examplePrompts?.Trim();
+        AdminUpdatedAt = DateTimeOffset.UtcNow;
     }
 
     private static void ValidateNoSelfPrerequisite(string key, string prerequisiteKeysJson)

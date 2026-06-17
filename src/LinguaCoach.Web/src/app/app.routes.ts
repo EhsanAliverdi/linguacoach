@@ -90,6 +90,10 @@ export const routes: Routes = [
         path: 'integrations',
         loadComponent: () => import('./features/admin/admin-integrations/admin-integrations.component').then(m => m.AdminIntegrationsComponent),
       },
+      {
+        path: 'curriculum',
+        loadComponent: () => import('./features/admin/admin-curriculum/admin-curriculum.component').then(m => m.AdminCurriculumComponent),
+      },
     ],
   },
 

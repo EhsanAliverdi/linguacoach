@@ -587,18 +587,21 @@ Backend-only phase. No learner-facing behaviour changed. No CEFR-aware routing i
 
 - `CurriculumObjective` domain entity — scoped by CEFR level (A1–C2), primary skill, context tags, focus tags, prerequisite keys, recommended order, difficulty band (1-5), active/reviewable/exam-inspired flags.
 - `CefrLevelConstants`, `CurriculumSkillConstants`, `CurriculumContextTagConstants` — canonical validated string sets. `workplace` is one context tag among 13; it is not the default for any objective.
-- `CurriculumObjectiveSeeder` — 22 starter objectives across A1/A2/B1/B2, all major skills, multiple learner contexts. Upserts on Key (idempotent). Post-seed prerequisite integrity check.
+- `CurriculumObjectiveSeeder` — 22 starter objectives across A1/A2/B1/B2, all major skills, multiple learner contexts. **Seed-only-missing** (Phase 10Q): skips any key already in the DB so admin-edited objectives are never overwritten on startup.
 - `ICurriculumSyllabusQuery` / `CurriculumSyllabusQueryService` — read-only query service: by CEFR, by CEFR+skill, by CEFR+context tag, by CEFR+focus area, prerequisites, and `GetCandidatesForStudent`. Candidates only — no activity selection.
+- `IAdminCurriculumSyllabusQuery` — admin extension returning active and inactive objectives with optional filters (Phase 10Q).
 - `CurriculumContextMapper` — maps `ResolvedLearningGoalContext` to curriculum context tags. Null-safe; fallback is `general_english`. Non-workplace profiles never default to `workplace`.
-- `GET /api/admin/curriculum/objectives` — read-only admin endpoint with optional `cefrLevel` and `skill` filters.
-- `GET /api/admin/curriculum/objectives/{key}` — single objective by key.
-- Migration `T50_CurriculumSyllabusFoundation`.
+- `CurriculumObjective.ExamplePrompts` / `AdminUpdatedAt` — Phase 10Q audit fields. `AdminUpdate()` sets `AdminUpdatedAt`; seeder uses `UpdateDetails()` which does not.
+- `ICurriculumObjectiveWriteService` / `CurriculumObjectiveWriteService` — full admin CRUD with validation (Phase 10Q): slug key, CEFR, skill, context tag, difficulty band 1–5, self-prereq, dangling prereq. `PreviewRoutingAsync` is read-only — no student state mutation.
+- Admin API endpoints (Phase 10Q): `GET /objectives`, `GET /objectives/{key}`, `GET /taxonomy`, `POST /objectives`, `PUT /objectives/{key}`, `POST /objectives/{key}/activate`, `POST /objectives/{key}/deactivate`, `POST /routing-preview`.
+- Angular `AdminCurriculumComponent` — list with filters, create/edit form, non-mutating routing preview panel (Phase 10Q).
+- Migrations: `T50_CurriculumSyllabusFoundation`, `T52_CurriculumObjectiveAdminFields`.
 
-**What is NOT implemented (deferred to 10L+):**
+**What is NOT implemented (deferred):**
 
-CEFR-aware activity routing, exercise format locking by level, readiness pools, background generation from curriculum, Practice Gym suggested practice, admin write UI, `StudentProfile.CefrLevel` type migration.
+Exercise format locking by level, `StudentProfile.CefrLevel` type migration.
 
-**TODOS added:** See `TODOS.md` — TODO-001 (plus-levels), TODO-002 (StudentProfile.CefrLevel migration), TODO-003 (admin builder).
+**TODOS added:** See `TODOS.md` — TODO-001 (plus-levels), TODO-002 (StudentProfile.CefrLevel migration).
 
 ---
 

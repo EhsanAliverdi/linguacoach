@@ -28,44 +28,26 @@ public static class CurriculumObjectiveSeeder
             .ToDictionaryAsync(o => o.Key, ct);
 
         var added = 0;
-        var updated = 0;
 
         foreach (var def in definitions)
         {
-            if (!existing.TryGetValue(def.Key, out var current))
-            {
-                db.CurriculumObjectives.Add(def);
-                added++;
-                continue;
-            }
+            if (existing.ContainsKey(def.Key))
+                continue; // Seed-only-missing: never overwrite admin-edited objectives.
 
-            // Upsert: update mutable fields if changed.
-            if (current.Title != def.Title
-                || current.Description != def.Description
-                || current.RecommendedOrder != def.RecommendedOrder
-                || current.DifficultyBand != def.DifficultyBand
-                || current.TeachingNotes != def.TeachingNotes)
-            {
-                current.UpdateDetails(
-                    def.Title,
-                    def.Description,
-                    def.RecommendedOrder,
-                    def.DifficultyBand,
-                    def.TeachingNotes);
-                updated++;
-            }
+            db.CurriculumObjectives.Add(def);
+            added++;
         }
 
-        if (added > 0 || updated > 0)
+        if (added > 0)
             await db.SaveChangesAsync(ct);
 
         // Post-seed prerequisite integrity check.
         ValidatePrerequisiteIntegrity(definitions, logger);
 
-        if (added > 0 || updated > 0)
+        if (added > 0)
             logger.LogInformation(
-                "CurriculumObjectiveSeeder: {Added} added, {Updated} updated.",
-                added, updated);
+                "CurriculumObjectiveSeeder: {Added} added. Existing objectives were not overwritten (admin-safe seed).",
+                added);
     }
 
     private static void ValidatePrerequisiteIntegrity(

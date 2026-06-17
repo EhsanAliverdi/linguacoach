@@ -1,0 +1,483 @@
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Component, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import {
+  CurriculumService,
+  AdminCurriculumObjectiveDto,
+  CurriculumTaxonomyDto,
+  AdminCurriculumObjectiveUpsertRequest,
+  AdminRoutingPreviewRequest,
+  AdminRoutingPreviewResult,
+} from '../../../core/services/curriculum.service';
+
+type View = 'list' | 'edit' | 'create' | 'preview';
+
+function parseJsonArray(json: string | null | undefined): string[] {
+  if (!json || json === '[]') return [];
+  try { return JSON.parse(json); } catch { return []; }
+}
+
+@Component({
+  selector: 'app-admin-curriculum',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <section class="sp-admin-page">
+      <div class="sp-admin-page-header">
+        <p class="sp-eyebrow">Curriculum</p>
+        <h1>Curriculum objectives</h1>
+        <p>Manage the curriculum syllabus used for CEFR-aware activity routing.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="sp-btn sp-btn-primary" type="button" (click)="startCreate()">New objective</button>
+          <button class="sp-btn sp-btn-secondary" type="button" (click)="view.set('preview')">Routing preview</button>
+        </div>
+      </div>
+
+      @if (globalError()) {
+        <div class="sp-card" style="border-color:#fecaca;color:#991b1b;margin-bottom:16px">{{ globalError() }}</div>
+      }
+
+      <!-- ── List ── -->
+      @if (view() === 'list') {
+        <div class="sp-card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <select class="sp-input" style="min-width:120px" [(ngModel)]="filterCefr" (change)="load()">
+            <option value="">All levels</option>
+            @for (level of taxonomy()?.cefrLevels ?? []; track level) {
+              <option [value]="level">{{ level }}</option>
+            }
+          </select>
+          <select class="sp-input" style="min-width:140px" [(ngModel)]="filterSkill" (change)="load()">
+            <option value="">All skills</option>
+            @for (skill of taxonomy()?.skills ?? []; track skill) {
+              <option [value]="skill">{{ skill }}</option>
+            }
+          </select>
+          <select class="sp-input" style="min-width:140px" [(ngModel)]="filterActive" (change)="load()">
+            <option value="">Active + inactive</option>
+            <option value="true">Active only</option>
+            <option value="false">Inactive only</option>
+          </select>
+        </div>
+
+        <div class="sp-card" style="overflow:auto">
+          @if (loading()) {
+            <p style="padding:16px;color:#64748b">Loading...</p>
+          } @else if (objectives().length === 0) {
+            <p style="padding:16px;color:#64748b">No objectives found.</p>
+          } @else {
+            <table style="width:100%;border-collapse:collapse;font-size:14px">
+              <thead>
+                <tr style="text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">
+                  <th style="padding:12px">Objective</th>
+                  <th style="padding:12px">CEFR</th>
+                  <th style="padding:12px">Skill</th>
+                  <th style="padding:12px">Band</th>
+                  <th style="padding:12px">Status</th>
+                  <th style="padding:12px">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (obj of objectives(); track obj.key) {
+                  <tr style="border-bottom:1px solid #f1f5f9">
+                    <td style="padding:12px;min-width:260px">
+                      <strong>{{ obj.title }}</strong>
+                      <div style="color:#64748b;font-size:12px">{{ obj.key }}</div>
+                      <div style="color:#64748b;font-size:12px;max-width:320px">{{ obj.description }}</div>
+                    </td>
+                    <td style="padding:12px">
+                      <span style="font-weight:600">{{ obj.cefrLevel }}</span>
+                    </td>
+                    <td style="padding:12px;text-transform:capitalize">
+                      {{ obj.primarySkill }}
+                      @if (parseJsonArray(obj.secondarySkillsJson).length) {
+                        <div style="color:#64748b;font-size:12px">+ {{ parseJsonArray(obj.secondarySkillsJson).join(', ') }}</div>
+                      }
+                    </td>
+                    <td style="padding:12px">{{ obj.difficultyBand }}/5</td>
+                    <td style="padding:12px">
+                      <span [style.color]="obj.isActive ? '#047857' : '#64748b'">
+                        {{ obj.isActive ? 'Active' : 'Inactive' }}
+                      </span>
+                      @if (obj.isReviewable) { <div style="font-size:11px;color:#64748b">Reviewable</div> }
+                      @if (obj.isExamInspired) { <div style="font-size:11px;color:#64748b">Exam-inspired</div> }
+                    </td>
+                    <td style="padding:12px;white-space:nowrap">
+                      <button class="sp-btn sp-btn-secondary" style="margin-right:4px" type="button" (click)="startEdit(obj)">Edit</button>
+                      @if (obj.isActive) {
+                        <button class="sp-btn sp-btn-secondary" type="button" [disabled]="actionKey() === obj.key" (click)="deactivate(obj.key)">Deactivate</button>
+                      } @else {
+                        <button class="sp-btn sp-btn-secondary" type="button" [disabled]="actionKey() === obj.key" (click)="activate(obj.key)">Activate</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      }
+
+      <!-- ── Create / Edit form ── -->
+      @if (view() === 'create' || view() === 'edit') {
+        <div class="sp-card">
+          <h2 style="margin-bottom:16px">{{ view() === 'create' ? 'New objective' : 'Edit: ' + form.key }}</h2>
+          @if (formError()) {
+            <div style="color:#991b1b;margin-bottom:12px;padding:10px;background:#fef2f2;border-radius:6px">{{ formError() }}</div>
+          }
+          <div style="display:grid;gap:14px;max-width:640px">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Key <span style="color:#991b1b">*</span></label>
+              <input class="sp-input" style="width:100%" [(ngModel)]="form.key" [disabled]="view() === 'edit'" placeholder="e.g. b1.writing.clear_emails" />
+              <div style="font-size:12px;color:#64748b;margin-top:2px">Stable slug — lowercase letters, digits, dots, underscores, hyphens.</div>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Title <span style="color:#991b1b">*</span></label>
+              <input class="sp-input" style="width:100%" [(ngModel)]="form.title" placeholder="e.g. Writing Clear Short Emails" />
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Description <span style="color:#991b1b">*</span></label>
+              <textarea class="sp-input" style="width:100%;min-height:70px" [(ngModel)]="form.description"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">CEFR level <span style="color:#991b1b">*</span></label>
+                <select class="sp-input" style="width:100%" [(ngModel)]="form.cefrLevel">
+                  @for (level of taxonomy()?.cefrLevels ?? []; track level) {
+                    <option [value]="level">{{ level }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Primary skill <span style="color:#991b1b">*</span></label>
+                <select class="sp-input" style="width:100%" [(ngModel)]="form.primarySkill">
+                  @for (skill of taxonomy()?.skills ?? []; track skill) {
+                    <option [value]="skill">{{ skill }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Difficulty band (1–5) <span style="color:#991b1b">*</span></label>
+                <input class="sp-input" style="width:100%" type="number" min="1" max="5" [(ngModel)]="form.difficultyBand" />
+              </div>
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Recommended order</label>
+                <input class="sp-input" style="width:100%" type="number" min="0" [(ngModel)]="form.recommendedOrder" />
+              </div>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Context tags</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                @for (tag of taxonomy()?.contextTags ?? []; track tag) {
+                  <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" [checked]="form.contextTags.includes(tag)" (change)="toggleTag('contextTags', tag, $event)" />
+                    {{ tag }}
+                  </label>
+                }
+              </div>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Focus tags <span style="font-weight:400;color:#64748b">(comma-separated)</span></label>
+              <input class="sp-input" style="width:100%" [(ngModel)]="focusTagsRaw" placeholder="e.g. email_writing, workplace_communication" />
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Secondary skills</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                @for (skill of taxonomy()?.skills ?? []; track skill) {
+                  <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" [checked]="form.secondarySkills.includes(skill)" (change)="toggleTag('secondarySkills', skill, $event)" />
+                    {{ skill }}
+                  </label>
+                }
+              </div>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Prerequisite keys <span style="font-weight:400;color:#64748b">(comma-separated)</span></label>
+              <input class="sp-input" style="width:100%" [(ngModel)]="prerequisiteKeysRaw" placeholder="e.g. a2.writing.short_messages" />
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" [(ngModel)]="form.isActive" /> Active
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" [(ngModel)]="form.isReviewable" /> Reviewable
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" [(ngModel)]="form.isExamInspired" /> Exam-inspired
+              </label>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Teaching notes <span style="font-weight:400;color:#64748b">(not shown to students)</span></label>
+              <textarea class="sp-input" style="width:100%;min-height:60px" [(ngModel)]="form.teachingNotes"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Example prompts <span style="font-weight:400;color:#64748b">(not shown to students)</span></label>
+              <textarea class="sp-input" style="width:100%;min-height:60px" [(ngModel)]="form.examplePrompts"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;padding-top:8px">
+              <button class="sp-btn sp-btn-primary" type="button" [disabled]="saving()" (click)="save()">
+                {{ saving() ? 'Saving...' : (view() === 'create' ? 'Create' : 'Save changes') }}
+              </button>
+              <button class="sp-btn sp-btn-secondary" type="button" (click)="cancelEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Routing preview ── -->
+      @if (view() === 'preview') {
+        <div class="sp-card" style="max-width:640px">
+          <h2 style="margin-bottom:16px">Routing preview</h2>
+          <p style="color:#64748b;font-size:14px;margin-bottom:16px">
+            Test routing without generating AI content or mutating any student state.
+          </p>
+          <div style="display:grid;gap:14px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">CEFR level override</label>
+                <select class="sp-input" style="width:100%" [(ngModel)]="preview.cefrLevelOverride">
+                  <option value="">Auto (from student)</option>
+                  @for (level of taxonomy()?.cefrLevels ?? []; track level) {
+                    <option [value]="level">{{ level }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Primary skill</label>
+                <select class="sp-input" style="width:100%" [(ngModel)]="preview.primarySkill">
+                  <option value="">Any</option>
+                  @for (skill of taxonomy()?.skills ?? []; track skill) {
+                    <option [value]="skill">{{ skill }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Source label</label>
+              <select class="sp-input" style="width:100%" [(ngModel)]="preview.source">
+                <option value="admin_preview">admin_preview</option>
+                <option value="today_lesson">today_lesson</option>
+                <option value="practice_gym">practice_gym</option>
+                <option value="on_demand">on_demand</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Difficulty preference</label>
+              <select class="sp-input" style="width:100%" [(ngModel)]="preview.difficultyPreference">
+                <option value="">Balanced (default)</option>
+                <option value="gentle">Gentle</option>
+                <option value="challenging">Challenging</option>
+              </select>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" [(ngModel)]="preview.allowReviewOrScaffold" />
+              Allow review / scaffold (may select lower-level content)
+            </label>
+            <div>
+              <button class="sp-btn sp-btn-primary" type="button" [disabled]="previewing()" (click)="runPreview()">
+                {{ previewing() ? 'Running...' : 'Run preview' }}
+              </button>
+              <button class="sp-btn sp-btn-secondary" style="margin-left:8px" type="button" (click)="view.set('list')">Back to list</button>
+            </div>
+            @if (previewResult()) {
+              <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;background:#f8fafc">
+                <div style="display:grid;gap:8px;font-size:14px">
+                  <div><strong>Target CEFR:</strong> {{ previewResult()!.targetCefrLevel }}</div>
+                  <div><strong>Objective:</strong>
+                    @if (previewResult()!.curriculumObjectiveKey) {
+                      {{ previewResult()!.curriculumObjectiveTitle }} <span style="color:#64748b">({{ previewResult()!.curriculumObjectiveKey }})</span>
+                    } @else {
+                      <span style="color:#64748b">None matched</span>
+                    }
+                  </div>
+                  <div><strong>Routing reason:</strong> {{ previewResult()!.routingReason }}</div>
+                  <div><strong>Context tags:</strong> {{ previewResult()!.contextTags.join(', ') || '—' }}</div>
+                  <div><strong>Focus tags:</strong> {{ previewResult()!.focusTags.join(', ') || '—' }}</div>
+                  <div><strong>Difficulty band:</strong> {{ previewResult()!.difficultyBand }}</div>
+                  @if (previewResult()!.isLowerLevelContent) {
+                    <div style="color:#92400e;background:#fffbeb;padding:8px;border-radius:4px">
+                      Lower-level content selected.
+                    </div>
+                  }
+                  @if (previewResult()!.fallbackUsed) {
+                    <div style="color:#92400e;background:#fffbeb;padding:8px;border-radius:4px">
+                      Fallback used — no matching objective found.
+                    </div>
+                  }
+                  @if (previewResult()!.explanation) {
+                    <div style="color:#475569"><strong>Explanation:</strong> {{ previewResult()!.explanation }}</div>
+                  }
+                  @for (warning of previewResult()!.warnings; track warning) {
+                    <div style="color:#b45309;background:#fffbeb;padding:6px 10px;border-radius:4px;font-size:13px">{{ warning }}</div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  `,
+})
+export class AdminCurriculumComponent implements OnInit {
+  view = signal<View>('list');
+  objectives = signal<AdminCurriculumObjectiveDto[]>([]);
+  taxonomy = signal<CurriculumTaxonomyDto | null>(null);
+  loading = signal(false);
+  saving = signal(false);
+  previewing = signal(false);
+  actionKey = signal<string | null>(null);
+  globalError = signal<string | null>(null);
+  formError = signal<string | null>(null);
+  previewResult = signal<AdminRoutingPreviewResult | null>(null);
+
+  filterCefr = '';
+  filterSkill = '';
+  filterActive = 'true';
+  focusTagsRaw = '';
+  prerequisiteKeysRaw = '';
+
+  form: AdminCurriculumObjectiveUpsertRequest = this.emptyForm();
+  preview: AdminRoutingPreviewRequest = { allowReviewOrScaffold: false, source: 'admin_preview' };
+
+  readonly parseJsonArray = parseJsonArray;
+
+  constructor(private curriculum: CurriculumService) {}
+
+  ngOnInit(): void {
+    this.loadTaxonomy();
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.globalError.set(null);
+    const active = this.filterActive === '' ? undefined : this.filterActive === 'true';
+    this.curriculum.listObjectives(
+      this.filterCefr || undefined,
+      this.filterSkill || undefined,
+      active,
+    ).subscribe({
+      next: items => { this.objectives.set(items); this.loading.set(false); },
+      error: () => { this.globalError.set('Could not load objectives.'); this.loading.set(false); },
+    });
+  }
+
+  loadTaxonomy(): void {
+    this.curriculum.getTaxonomy().subscribe({
+      next: tax => this.taxonomy.set(tax),
+    });
+  }
+
+  startCreate(): void {
+    this.form = this.emptyForm();
+    this.focusTagsRaw = '';
+    this.prerequisiteKeysRaw = '';
+    this.formError.set(null);
+    this.view.set('create');
+  }
+
+  startEdit(obj: AdminCurriculumObjectiveDto): void {
+    this.form = {
+      key: obj.key,
+      title: obj.title,
+      description: obj.description,
+      cefrLevel: obj.cefrLevel,
+      primarySkill: obj.primarySkill,
+      secondarySkills: parseJsonArray(obj.secondarySkillsJson),
+      contextTags: parseJsonArray(obj.contextTagsJson),
+      focusTags: parseJsonArray(obj.focusTagsJson),
+      prerequisiteObjectiveKeys: parseJsonArray(obj.prerequisiteKeysJson),
+      recommendedOrder: obj.recommendedOrder,
+      difficultyBand: obj.difficultyBand,
+      isActive: obj.isActive,
+      isReviewable: obj.isReviewable,
+      isExamInspired: obj.isExamInspired,
+      teachingNotes: obj.teachingNotes,
+      examplePrompts: obj.examplePrompts,
+    };
+    this.focusTagsRaw = this.form.focusTags.join(', ');
+    this.prerequisiteKeysRaw = this.form.prerequisiteObjectiveKeys.join(', ');
+    this.formError.set(null);
+    this.view.set('edit');
+  }
+
+  cancelEdit(): void {
+    this.view.set('list');
+    this.formError.set(null);
+  }
+
+  save(): void {
+    this.form.focusTags = this.focusTagsRaw.split(',').map(s => s.trim()).filter(Boolean);
+    this.form.prerequisiteObjectiveKeys = this.prerequisiteKeysRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+    this.saving.set(true);
+    this.formError.set(null);
+
+    const obs = this.view() === 'create'
+      ? this.curriculum.createObjective(this.form)
+      : this.curriculum.updateObjective(this.form.key, this.form);
+
+    obs.subscribe({
+      next: () => { this.saving.set(false); this.view.set('list'); this.load(); },
+      error: (err) => {
+        this.saving.set(false);
+        this.formError.set(err?.error?.error ?? 'Could not save objective.');
+      },
+    });
+  }
+
+  activate(key: string): void {
+    this.actionKey.set(key);
+    this.curriculum.activateObjective(key).subscribe({
+      next: updated => {
+        this.objectives.update(items => items.map(o => o.key === key ? updated : o));
+        this.actionKey.set(null);
+      },
+      error: () => { this.globalError.set('Could not activate objective.'); this.actionKey.set(null); },
+    });
+  }
+
+  deactivate(key: string): void {
+    this.actionKey.set(key);
+    this.curriculum.deactivateObjective(key).subscribe({
+      next: updated => {
+        this.objectives.update(items => items.map(o => o.key === key ? updated : o));
+        this.actionKey.set(null);
+      },
+      error: () => { this.globalError.set('Could not deactivate objective.'); this.actionKey.set(null); },
+    });
+  }
+
+  runPreview(): void {
+    this.previewing.set(true);
+    this.previewResult.set(null);
+    this.curriculum.previewRouting(this.preview).subscribe({
+      next: result => { this.previewResult.set(result); this.previewing.set(false); },
+      error: () => { this.previewing.set(false); },
+    });
+  }
+
+  toggleTag(field: 'contextTags' | 'secondarySkills', value: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) {
+      if (!this.form[field].includes(value)) this.form[field] = [...this.form[field], value];
+    } else {
+      this.form[field] = this.form[field].filter(t => t !== value);
+    }
+  }
+
+  private emptyForm(): AdminCurriculumObjectiveUpsertRequest {
+    return {
+      key: '', title: '', description: '',
+      cefrLevel: 'A1', primarySkill: 'speaking',
+      secondarySkills: [], contextTags: ['general_english'], focusTags: [],
+      prerequisiteObjectiveKeys: [],
+      recommendedOrder: 0, difficultyBand: 1,
+      isActive: true, isReviewable: false, isExamInspired: false,
+      teachingNotes: null, examplePrompts: null,
+    };
+  }
+}

@@ -18,6 +18,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <a routerLink="students" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Students</a>
           <a routerLink="prompts" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Prompts</a>
           <a routerLink="ai-config" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">AI Config</a>
+          <a routerLink="curriculum" routerLinkActive="text-indigo-700" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Curriculum</a>
           <button (click)="auth.logout()" class="sp-link ml-auto">Sign out</button>
         </div>
       </nav>
