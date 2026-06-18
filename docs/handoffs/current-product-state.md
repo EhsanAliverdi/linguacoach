@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 18:39
+lastUpdated: 2026-06-18 22:00
 owner: product
 supersedes:
 supersededBy:
@@ -12,21 +12,26 @@ Last updated: 2026-06-18
 
 ---
 
-## Admin UI foundation and core migration (Phase 10X-A / 10X-B)
+## Admin UI foundation, core migration, and gate closure (Phase 10X-A / 10X-B / 10X-C-F)
 
-The admin app now has a SpeakPath wrapper component layer for future admin screens.
-TailAdmin-inspired styling is isolated behind `sp-admin-*` components and admin tokens.
+The admin app now has a SpeakPath wrapper component layer aligned with TailAdmin Angular Layout One.
+
+**Visual source of truth:** TailAdmin Angular Layout One (https://angular-demo.tailadmin.com/layout-one).
+Actual TailAdmin source/assets are not present. Styling approximates TailAdmin Layout One.
+See `docs/architecture/admin-ui-design-system.md` for the full architecture and asset status.
+
+**Critical fix in 10X-C-F:** `AdminAppLayoutComponent` now uses `ViewEncapsulation.None` so
+shell CSS (sidebar, nav items, header, drawer, profile flyout) reaches child component DOM.
+Before this fix, the CSS existed but was blocked by Angular's default emulated encapsulation.
+All admin pages now render with sidebar left, content right, header sticky — matching TailAdmin Layout One.
 
 - Admin tokens: `src/app/admin/tokens/admin-tokens.css`.
 - Barrel: `src/app/admin/index.ts`.
 - Shell wrappers: `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header`.
 - Page wrappers: page header, card, stat card, button, badge, table, state components, form controls, pagination, filter bar, modal, drawer, and toast outlet.
 - Service foundations: admin toast, modal confirm state, drawer state.
-- Phase 10X-A proof pages: Dashboard, Students, and Diagnostics use the wrapper layer.
-- Phase 10X-B core pages migrated where feasible: Students, AI Config, AI Usage, Prompts,
-  Exercise Types, Integrations, Curriculum, and Usage Policies.
-- Wrapper improvements in 10X-B: projected table content, primary badge tone, empty-state title,
-  and more flexible filter-bar alignment.
+- All core admin pages migrated to wrapper layer: Dashboard, Students, AI Config, AI Usage, Prompts,
+  Exercise Types, Integrations, Diagnostics, Curriculum, and Usage Policies.
 
 Remaining admin polish is scoped to page-local legacy internals, not new product features.
 Dashboard inline CSS, AI Config form internals, Integrations internals, Curriculum create/edit/preview

@@ -162,13 +162,13 @@ Each item includes context, motivation, and the phase where it was deferred.
 # Phase 10X follow-ups
 
 - ~~TODO-10X-B~~: migrate core admin pages to the `sp-admin-*` wrapper layer — **DONE in Phase 10X-B**
-- TODO-10X-C: reduce remaining dashboard inline CSS and move reusable action/status card patterns into wrappers.
+- ~~TODO-10X-C~~: Angular build gate, ViewEncapsulation fix, TailAdmin Layout One structural alignment — **DONE in Phase 10X-C-F**
 - TODO-10X-D: migrate student edit/reset/archive modal internals to `sp-admin-modal` or a typed admin drawer.
-- TODO-10X-E: finish AI Config, Integrations, and Curriculum create/edit/preview form internals with wrapper form components.
-- TODO-10R-F: build usage governance UX on the new admin design system.
-- TODO-10U: full AI usage/config redesign on the admin design system.
-- TODO-10V: prompt playground on the admin design system.
-- TODO-10X-ASSETS: review TailAdmin asset and licensing integration before copying any vendor assets.
+- TODO-10X-E: reduce remaining dashboard inline CSS; finish AI Config, Integrations, and Curriculum create/edit/preview form internals with wrapper form components. Legacy style audit and enforcement.
+- TODO-10X-ASSETS: review TailAdmin Angular Layout One licensing. When source is licensed, adapt it inside `sp-admin-*` wrappers. Remove approximation CSS. Feature pages must not change.
 - TODO-10X-MODAL: add richer modal confirm orchestration, focus trap, and keyboard return focus.
 - TODO-10X-DRAWER: add typed drawer payloads for student detail, usage policy editor, and prompt preview.
 - TODO-10X-TOAST: add toast action buttons and queue limits if admin workflows need them.
+- TODO-10R-F: build usage governance UX on the new admin design system (admin usage dashboard, quota editor UX, near-quota alert display).
+- TODO-10U: full AI usage/config redesign on the admin design system.
+- TODO-10V: prompt playground on the admin design system.

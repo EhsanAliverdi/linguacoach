@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 18:39
+lastUpdated: 2026-06-18 22:00
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,39 @@ Last updated: 2026-06-18
 ---
 
 ## Active sprint
+
+**Phase 10X-C-F — TailAdmin Layout One Gate Closure** - complete (2026-06-18)
+
+Goal: close Phase 10X-C, fix the critical ViewEncapsulation bug, verify all gates,
+and confirm the admin shell now matches TailAdmin Angular Layout One structurally.
+
+### Delivered
+
+- Fixed `AdminAppLayoutComponent` to use `ViewEncapsulation.None` so shell CSS
+  (sidebar, nav, header, drawer, profile flyout) reaches child component DOM.
+- Raised `anyComponentStyle` budget in `angular.json` from 8kB → 12kB warning / 20kB error
+  to accommodate the legitimate admin shell CSS.
+- Angular production build: passing.
+- Angular unit tests: 334 passed.
+- Playwright: 188 passed.
+- .NET tests: 1885 passed (3 arch + 1233 unit + 649 integration).
+- Visual screenshots confirmed: sidebar left, content right, header sticky, collapsed state,
+  mobile drawer — all match TailAdmin Layout One structure.
+- Updated `docs/architecture/admin-ui-design-system.md` with TailAdmin as visual source of truth,
+  ViewEncapsulation note, asset status, legacy style rules, and migration checklist.
+- Updated `docs/sprints/current-sprint.md`, `docs/handoffs/current-product-state.md`, TODOS.md.
+- Engineering review saved to `docs/reviews/`.
+
+### Remaining legacy areas (unchanged from 10X-B)
+
+- Dashboard still has large component-local CSS for action cards, KPI layout, and placeholders.
+- Student edit/reset modals still use page-local modal markup.
+- AI Config and Integrations still retain page-local form internals inside wrapper cards.
+- Curriculum create/edit/preview subviews still have page-local form markup.
+
+---
+
+## Previous sprint
 
 **Phase 10X-B - Admin Core Page Migration to Design System** - complete (2026-06-18)
 

@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, signal } from '@angular/core';
+import { Component, HostListener, ViewEncapsulation, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -13,6 +13,7 @@ const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
   imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent],
   templateUrl: './admin-app-layout.component.html',
   styleUrls: ['./admin-app-layout.component.css'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class AdminAppLayoutComponent {
   collapsed = signal(this.readCollapsed());

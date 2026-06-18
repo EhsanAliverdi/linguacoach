@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 18:39
+lastUpdated: 2026-06-18 22:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -8,13 +8,56 @@ supersededBy:
 
 # Admin UI Design System
 
-SpeakPath admin UI uses a wrapper component layer.
+## Visual Source of Truth
+
+**TailAdmin Angular Layout One** is the chosen visual direction for the SpeakPath admin app.
+
+Reference: https://angular-demo.tailadmin.com/layout-one
+
+SpeakPath does not copy or redistribute TailAdmin source files. The visual direction
+is implemented through the `sp-admin-*` wrapper layer using CSS custom properties and
+class patterns that match TailAdmin Layout One's structure and aesthetic. When actual
+TailAdmin Angular source is licensed and available, it must be adapted through this
+wrapper layer — never referenced directly from feature pages.
+
+## Dependency Direction
 
 ```
-TailAdmin-inspired tokens and patterns
-SpeakPath admin wrapper components
-Admin feature pages
+TailAdmin Angular Layout One (visual reference / licensed source when available)
+          ↓
+SpeakPath admin tokens (admin-tokens.css) + shell CSS (admin-app-layout)
+          ↓
+SpeakPath admin wrapper components (sp-admin-*)
+          ↓
+SpeakPath admin feature pages
 ```
+
+Feature pages must import from `src/app/admin`.
+They must not reference TailAdmin internals directly.
+They must not copy TailAdmin page markup or utility class lists.
+If TailAdmin source is later licensed, all TailAdmin-specific markup belongs inside
+wrapper components or the admin shell — not in feature pages.
+
+## Angular ViewEncapsulation Note
+
+`AdminAppLayoutComponent` uses `ViewEncapsulation.None` so that the shell CSS
+(sidebar, nav items, header, drawer, profile flyout) reaches the inner DOM of
+`sp-admin-layout`, `sp-admin-sidebar`, and `sp-admin-header` child components.
+This is intentional. Shell-level CSS is global for the admin module only.
+Wrapper component CSS remains emulated/scoped inside each wrapper.
+
+## TailAdmin Asset Status
+
+Actual TailAdmin Angular source/assets are NOT present in this repository.
+All styling approximates TailAdmin Layout One using CSS custom properties and
+class conventions.
+
+TODO-10X-ASSETS: review TailAdmin licensing before copying any vendor assets.
+When real TailAdmin assets become available:
+1. Place them in `src/app/admin-template/tailadmin/`.
+2. Wrap components/patterns inside `sp-admin-*` components.
+3. Remove approximation CSS that was added as a placeholder.
+4. Feature pages must not change.
 
 Feature pages must import from `src/app/admin`.
 They should not copy TailAdmin page markup directly.
@@ -105,10 +148,23 @@ For each admin page migration:
 7. Keep page-specific layout CSS small.
 8. Do not move student UI into admin wrappers.
 
+## Legacy Style Rule
+
+Admin CSS that overrides or fights TailAdmin Layout One must not be added.
+Avoid:
+- Raw `background`, `color`, `padding` overrides on `.sp-admin-nav-item-active` outside the shell CSS.
+- Repeated TailAdmin utility class lists in feature page templates.
+- One-off component CSS for common UI that belongs in a wrapper.
+
+When a page needs a visual fix, fix it in the wrapper component, shell, or tokens first.
+Only use page-local CSS for truly unique content layout.
+
 ## Current Scope
 
 Phase 10X-A migrated the admin shell plus proof pages.
 Phase 10X-B migrated the core admin pages to the wrapper layer where feasible.
+Phase 10X-C-F fixed the critical ViewEncapsulation bug, verified all gates,
+and hardened TailAdmin Layout One alignment.
 
 Migrated pages:
 
