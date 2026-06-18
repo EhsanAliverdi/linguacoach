@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 (10X-G)
+lastUpdated: 2026-06-19 (10X-H)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,44 @@ Last updated: 2026-06-18
 ---
 
 ## Active sprint
+
+**Phase 10X-H — Admin Form Wrapper CVA + Remaining Form/Modal Migration Foundation** - complete (2026-06-19)
+
+Goal: make TailAdmin-backed admin form wrappers safe for real Angular forms by adding
+`ControlValueAccessor`, preparing the foundation for future enterprise admin screens.
+
+### Delivered
+
+- `sp-admin-input`: `ControlValueAccessor` via `NG_VALUE_ACCESSOR` + `forwardRef`. Supports
+  `[(ngModel)]`, reactive `[formControl]`/`formControlName`, `setDisabledState`, touched-on-blur.
+  Pass-through `type`, `placeholder`, `autocomplete`, `readonly`, `required`, `invalid`.
+- `sp-admin-select`: `ControlValueAccessor`. Options via `[options]` or projected `<option>`,
+  `placeholder` disabled default option, `required`, `invalid`, disabled propagation, touched-on-blur.
+- `sp-admin-textarea`: new wrapper with `ControlValueAccessor`. `rows`, `placeholder`, `readonly`,
+  `required`, `invalid`, disabled propagation, touched-on-blur. Exported from `admin/index.ts`.
+- `sp-admin-form-field`: red `*` required marker via `[required]`; label/hint/error structure.
+- Tests: 15 new wrapper specs (ngModel write/propagate, reactive FormControl bind, disabled
+  propagation, touched-on-blur for input/select/textarea; form-field label/hint/error/required).
+
+### Deferred (CVA foundation now unblocks these)
+
+- AI Config dense provider-credentials grid (TODO-10X-G-AICONFIG-FORMS) — kept native this phase to
+  avoid silent save regressions across the high-field-count ngModel-driven grid.
+- Integrations operational forms (TODO-10X-G-INTEGRATIONS-FORMS) — per-field migration pass deferred.
+- Student edit/reset/archive modal internals (TODO-10X-D-MODAL).
+
+### Gates
+
+- git diff --check: clean
+- .NET build: 0 errors; .NET tests: 1885 passed (3 arch + 1233 unit + 649 integration)
+- Angular build (production): clean; Angular tests: 394 passed (up from 379)
+- Playwright: 188 passed
+
+See: `docs/reviews/2026-06-19-phase-10x-h-admin-form-cva-modal-foundation-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10X-G-F — Finish Remaining Admin Page Refactor to TailAdmin-backed Wrappers** - complete (2026-06-18)
 
@@ -51,7 +89,7 @@ See: `docs/reviews/2026-06-18-phase-10x-g-f-finish-admin-page-refactor-review.md
 
 ---
 
-## Previous sprint
+## Earlier sprint
 
 **Phase 10X-G — Full Admin Page Refactor to TailAdmin-backed Wrappers** - complete (2026-06-18)
 

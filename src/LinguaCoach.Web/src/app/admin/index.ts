@@ -28,6 +28,7 @@ export * from './components/spinner/sp-admin-spinner.component';
 export * from './components/stat-badge/sp-admin-stat-badge.component';
 export * from './components/stat-card/sp-admin-stat-card.component';
 export * from './components/table/sp-admin-table.component';
+export * from './components/textarea/sp-admin-textarea.component';
 export * from './components/toast-outlet/sp-admin-toast-outlet.component';
 export * from './services/admin-drawer.service';
 export * from './services/admin-modal.service';

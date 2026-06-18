@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
     -->
     <label class="sp-adm-field flex flex-col gap-1.5">
       @if (label) {
-        <span class="sp-adm-field-label block text-sm font-medium text-gray-700 dark:text-gray-400">{{ label }}</span>
+        <span class="sp-adm-field-label block text-sm font-medium text-gray-700 dark:text-gray-400">{{ label }}@if (required) {<span class="sp-adm-field-required text-red-500" aria-hidden="true"> *</span>}</span>
       }
       <ng-content />
       @if (hint && !error) {
@@ -31,4 +31,5 @@ export class SpAdminFormFieldComponent {
   @Input() label = '';
   @Input() hint = '';
   @Input() error = '';
+  @Input() required = false;
 }

@@ -1,6 +1,13 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  SpAdminFormFieldComponent,
+  SpAdminInputComponent,
+  SpAdminSelectComponent,
+  SpAdminTextareaComponent,
+} from '../index';
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
@@ -671,5 +678,235 @@ describe('admin wrapper components — Phase 10X-F', () => {
     fixture.detectChanges();
     const prev: HTMLButtonElement = fixture.nativeElement.querySelectorAll('button')[0];
     expect(prev.disabled).toBeFalse();
+  });
+});
+
+// ── Phase 10X-H: form wrapper ControlValueAccessor ──────────────────────────
+
+@Component({
+  standalone: true,
+  imports: [FormsModule, SpAdminInputComponent],
+  template: `<sp-admin-input [(ngModel)]="value" />`,
+})
+class InputNgModelHostComponent {
+  value = 'initial';
+}
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, SpAdminInputComponent],
+  template: `<sp-admin-input [formControl]="control" />`,
+})
+class InputReactiveHostComponent {
+  control = new FormControl('start');
+}
+
+@Component({
+  standalone: true,
+  imports: [FormsModule, SpAdminSelectComponent],
+  template: `<sp-admin-select [(ngModel)]="value" [options]="options" />`,
+})
+class SelectNgModelHostComponent {
+  value = 'b';
+  options = [
+    { value: 'a', label: 'Alpha' },
+    { value: 'b', label: 'Beta' },
+  ];
+}
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, SpAdminSelectComponent],
+  template: `<sp-admin-select [formControl]="control" [options]="options" />`,
+})
+class SelectReactiveHostComponent {
+  control = new FormControl('a');
+  options = [
+    { value: 'a', label: 'Alpha' },
+    { value: 'b', label: 'Beta' },
+  ];
+}
+
+@Component({
+  standalone: true,
+  imports: [FormsModule, SpAdminTextareaComponent],
+  template: `<sp-admin-textarea [(ngModel)]="value" />`,
+})
+class TextareaNgModelHostComponent {
+  value = 'note';
+}
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, SpAdminTextareaComponent],
+  template: `<sp-admin-textarea [formControl]="control" />`,
+})
+class TextareaReactiveHostComponent {
+  control = new FormControl('hello');
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminFormFieldComponent],
+  template: `
+    <sp-admin-form-field label="Email" hint="We never share it" [required]="true">
+      <input class="sp-input" />
+    </sp-admin-form-field>
+  `,
+})
+class FormFieldHostComponent {}
+
+describe('admin form wrappers — Phase 10X-H CVA', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  // sp-admin-input
+  it('input writes initial ngModel value into the native input', async () => {
+    const fixture = TestBed.createComponent(InputNgModelHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    expect(input.value).toBe('initial');
+  });
+
+  it('input propagates typed value back to ngModel', () => {
+    const fixture = TestBed.createComponent(InputNgModelHostComponent);
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    input.value = 'typed';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.value).toBe('typed');
+  });
+
+  it('input binds a reactive FormControl value', async () => {
+    const fixture = TestBed.createComponent(InputReactiveHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    expect(input.value).toBe('start');
+    input.value = 'changed';
+    input.dispatchEvent(new Event('input'));
+    expect(fixture.componentInstance.control.value).toBe('changed');
+  });
+
+  it('input propagates disabled state from a reactive control', () => {
+    const fixture = TestBed.createComponent(InputReactiveHostComponent);
+    fixture.componentInstance.control.disable();
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    expect(input.disabled).toBeTrue();
+  });
+
+  it('input marks the control touched on blur', () => {
+    const fixture = TestBed.createComponent(InputReactiveHostComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.control.touched).toBeFalse();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    input.dispatchEvent(new Event('blur'));
+    expect(fixture.componentInstance.control.touched).toBeTrue();
+  });
+
+  // sp-admin-select
+  it('select writes initial ngModel value into the native select', async () => {
+    const fixture = TestBed.createComponent(SelectNgModelHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    expect(select.value).toBe('b');
+  });
+
+  it('select propagates change back to ngModel', () => {
+    const fixture = TestBed.createComponent(SelectNgModelHostComponent);
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    select.value = 'a';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.value).toBe('a');
+  });
+
+  it('select binds a reactive FormControl value', async () => {
+    const fixture = TestBed.createComponent(SelectReactiveHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    expect(select.value).toBe('a');
+    select.value = 'b';
+    select.dispatchEvent(new Event('change'));
+    expect(fixture.componentInstance.control.value).toBe('b');
+  });
+
+  it('select propagates disabled state from a reactive control', () => {
+    const fixture = TestBed.createComponent(SelectReactiveHostComponent);
+    fixture.componentInstance.control.disable();
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    expect(select.disabled).toBeTrue();
+  });
+
+  it('select marks the control touched on blur', () => {
+    const fixture = TestBed.createComponent(SelectReactiveHostComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.control.touched).toBeFalse();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    select.dispatchEvent(new Event('blur'));
+    expect(fixture.componentInstance.control.touched).toBeTrue();
+  });
+
+  // sp-admin-textarea
+  it('textarea writes initial ngModel value', async () => {
+    const fixture = TestBed.createComponent(TextareaNgModelHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const ta: HTMLTextAreaElement = fixture.nativeElement.querySelector('textarea');
+    expect(ta.value).toBe('note');
+  });
+
+  it('textarea propagates typed value back to ngModel', () => {
+    const fixture = TestBed.createComponent(TextareaNgModelHostComponent);
+    fixture.detectChanges();
+    const ta: HTMLTextAreaElement = fixture.nativeElement.querySelector('textarea');
+    ta.value = 'updated note';
+    ta.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.value).toBe('updated note');
+  });
+
+  it('textarea binds a reactive FormControl and marks touched on blur', async () => {
+    const fixture = TestBed.createComponent(TextareaReactiveHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const ta: HTMLTextAreaElement = fixture.nativeElement.querySelector('textarea');
+    expect(ta.value).toBe('hello');
+    ta.dispatchEvent(new Event('blur'));
+    expect(fixture.componentInstance.control.touched).toBeTrue();
+  });
+
+  // sp-admin-form-field
+  it('form-field renders label, hint, required marker, and projected control', () => {
+    const fixture = TestBed.createComponent(FormFieldHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-adm-field-label').textContent).toContain('Email');
+    expect(fixture.nativeElement.querySelector('.sp-adm-field-required')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-adm-field-hint').textContent).toContain('We never share it');
+    expect(fixture.nativeElement.querySelector('input.sp-input')).not.toBeNull();
+  });
+
+  it('form-field shows error instead of hint when error is set', () => {
+    const fixture = TestBed.createComponent(SpAdminFormFieldComponent);
+    fixture.componentInstance.label = 'Name';
+    fixture.componentInstance.hint = 'hint text';
+    fixture.componentInstance.error = 'Required';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-adm-field-error').textContent).toContain('Required');
+    expect(fixture.nativeElement.querySelector('.sp-adm-field-hint')).toBeNull();
   });
 });

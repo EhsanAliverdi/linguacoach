@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 (10X-G-F)
+lastUpdated: 2026-06-19 (10X-H)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,21 @@ supersededBy:
 Last updated: 2026-06-18
 
 ---
+
+## Admin form wrapper CVA foundation (Phase 10X-H)
+
+Made the TailAdmin-backed admin form wrappers safe for real Angular forms:
+
+- `sp-admin-input`, `sp-admin-select`, and the new `sp-admin-textarea` now implement
+  `ControlValueAccessor`. They two-way bind via `[(ngModel)]` or reactive `[formControl]`/
+  `formControlName`, propagate disabled state from a disabled `FormControl`, and mark touched on blur.
+- `sp-admin-form-field` renders the red `*` required marker via `[required]`.
+- This unblocks per-field migration of the AI Config dense provider-credentials grid and the
+  Integrations operational forms, which stay native this phase to avoid silent save regressions.
+- Existing student-detail modals and the admin-only dark-mode boundary remain deferred.
+- Gates: .NET 1885, Angular 394 (up from 379), Playwright 188.
+
+See: `docs/reviews/2026-06-19-phase-10x-h-admin-form-cva-modal-foundation-review.md`
 
 ## Finish remaining admin page refactor (Phase 10X-G-F)
 

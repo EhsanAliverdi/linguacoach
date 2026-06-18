@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 26:00
+lastUpdated: 2026-06-19 10:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -157,16 +157,46 @@ When refactoring an admin feature page, prefer wrappers in this order:
 Keep page-local CSS only for unique grid layout and content that no wrapper covers.
 Remove component-local CSS once a wrapper owns the visual (card/table/badge/button/stat).
 
-### Form-field wrapper rule (important)
+### Form-field wrapper rule (Phase 10X-H — CVA now supported)
 
-`sp-admin-input` and `sp-admin-select` bind their value to a plain `@Input() value` with an internal
-`[(ngModel)]` and expose no `ControlValueAccessor` and no value output. They cannot two-way bind back
-to a parent page's model. Do NOT replace a `[(ngModel)]`-driven native control with these wrappers on
-a data-entry form — it silently breaks form submission.
+As of Phase 10X-H, `sp-admin-input`, `sp-admin-select`, and the new `sp-admin-textarea` implement
+`ControlValueAccessor` via `NG_VALUE_ACCESSOR`. They can now two-way bind to a parent model.
 
-For ngModel-driven admin forms, use `sp-admin-form-field` for the label/hint/error structure and keep
-the native control (`.sp-input`) projected inside it. This is the pattern used by the Students and
-Curriculum forms. Adding a ControlValueAccessor to `sp-admin-input`/`sp-admin-select` is future work.
+Supported binding modes for all three wrappers:
+
+- Template-driven: `<sp-admin-input [(ngModel)]="model" name="field" />`
+- Reactive: `<sp-admin-input [formControl]="control" />` or `formControlName="field"`
+- Disabled propagation: a disabled `FormControl` (or `[disabled]` input) disables the native control.
+- Touched state: marked on blur, so `control.touched` and `ng-touched` work for validation display.
+
+Wrapper inputs:
+
+- `sp-admin-input`: `type`, `placeholder`, `autocomplete`, `readonly`, `required`, `invalid`.
+- `sp-admin-select`: `options` (`{ value, label }[]`) and/or projected `<option>`, `placeholder`
+  (disabled default option), `required`, `invalid`.
+- `sp-admin-textarea`: `rows`, `placeholder`, `readonly`, `required`, `invalid`.
+
+`sp-admin-form-field` supplies the label/hint/error/required-marker structure. Set `[required]="true"`
+to render the red `*` marker. Wrap a CVA control or a native control inside it:
+
+```html
+<sp-admin-form-field label="Display name" hint="Shown to students" [required]="true" [error]="nameError">
+  <sp-admin-input [(ngModel)]="displayName" name="displayName" />
+</sp-admin-form-field>
+```
+
+#### When native controls are still allowed
+
+Keep a native `.sp-input`/`.sp-ai-select` control inside `sp-admin-form-field` only when the CVA
+wrapper cannot safely represent the control yet, for example:
+
+- Multi-select, native `<datalist>`, file inputs, or controls with `multiple`.
+- Selects whose option set is rebuilt by complex conditional ngModel logic where re-validating each
+  field's two-way binding in a single migration pass would risk silent save regressions (AI Config
+  dense provider-credentials grid, Integrations operational forms). These remain native pending a
+  dedicated per-field migration pass. The CVA foundation now unblocks that work.
+
+Do not introduce new long TailAdmin class lists for inputs in feature pages; use the wrappers.
 
 ## Folder Structure
 
