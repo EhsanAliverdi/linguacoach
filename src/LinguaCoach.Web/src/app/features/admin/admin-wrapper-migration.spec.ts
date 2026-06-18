@@ -212,7 +212,8 @@ describe('admin wrapper migration', () => {
 
     const kpiGrid = fixture.nativeElement.querySelector('.sp-admin-kpi-grid');
     expect(kpiGrid).not.toBeNull();
-    const kpiCards = fixture.nativeElement.querySelectorAll('.sp-admin-kpi-card');
+    // Phase 10X-G: KPI cards now use the sp-admin-stat-card wrapper.
+    const kpiCards = fixture.nativeElement.querySelectorAll('sp-admin-stat-card');
     expect(kpiCards.length).toBeGreaterThanOrEqual(4);
   });
 

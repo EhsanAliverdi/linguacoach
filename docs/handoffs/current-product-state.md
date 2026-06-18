@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 (10X-F)
+lastUpdated: 2026-06-18 (10X-G)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,27 @@ supersededBy:
 # SpeakPath â€” Current Product State
 
 Last updated: 2026-06-18
+
+---
+
+## Full admin page refactor (Phase 10X-G)
+
+The highest-legacy admin pages now consume `sp-admin-*` wrappers consistently:
+
+- Dashboard KPI tiles use `sp-admin-stat-card`; sections use `sp-admin-card` (including dashed
+  analytics placeholders); status pills use `sp-admin-badge`. Page-local KPI/status/badge/table CSS removed.
+- AI Config category Save/Test actions use `sp-admin-button`; duplicate in-card headings removed.
+- Curriculum create/edit and routing-preview panels use `sp-admin-card`; actions use `sp-admin-button`.
+- The admin header user/profile menu is wired through `sp-admin-dropdown` (open state, click-outside,
+  and Escape handled by the wrapper; no page-local menu signal).
+
+Admin-only dark mode remains scoped to `AdminThemeService` (`adminTheme` localStorage key) and does
+not affect student UI. Full admin-only dark-mode class boundary is still future work.
+
+Deferred: remaining page-local form fields (`.sp-ai-select`, `.sp-input`, Integrations operational
+forms), student management modals, and the full usage-governance/AI-usage/prompt-playground redesigns.
+
+Angular: 377 passed. .NET: 1885 passed. Playwright: 188 passed.
 
 ---
 

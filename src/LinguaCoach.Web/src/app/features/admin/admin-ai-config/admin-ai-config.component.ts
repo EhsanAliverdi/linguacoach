@@ -8,6 +8,7 @@ import {
   SpAdminBadgeComponent,
   SpAdminCardComponent,
   SpAdminPageHeaderComponent,
+  SpAdminButtonComponent,
 } from '../../../admin';
 
 interface CategoryState {
@@ -50,7 +51,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent],
   template: `
     <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
@@ -60,7 +61,6 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
       <sp-admin-card title="LLM Categories" class="sp-admin-section-wrap">
-        <h2 class="text-base font-semibold text-slate-900 mb-1">LLM Categories</h2>
         <p class="text-sm text-slate-500 mb-4">
           Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
         </p>
@@ -106,14 +106,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
               </div>
 
               <div class="mt-3 flex items-center gap-3">
-                <button (click)="saveCategory(cs)" [disabled]="cs.saving"
-                  class="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                  {{ cs.saving ? 'Saving…' : 'Save' }}
-                </button>
-                <button (click)="testCategory(cs)" [disabled]="cs.testBusy"
-                  class="rounded-lg border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-                  {{ cs.testBusy ? 'Testing...' : 'Test' }}
-                </button>
+                <sp-admin-button size="sm" [loading]="cs.saving" [disabled]="cs.saving" (click)="saveCategory(cs)">Save</sp-admin-button>
+                <sp-admin-button size="sm" variant="secondary" [loading]="cs.testBusy" [disabled]="cs.testBusy" (click)="testCategory(cs)">Test</sp-admin-button>
                 @if (cs.saved) { <span class="text-xs text-emerald-600">Saved</span> }
                 @if (cs.error) { <span class="text-xs text-red-500">{{ cs.error }}</span> }
                 @if (cs.testResult) { <span class="text-xs text-slate-600">{{ cs.testResult }}</span> }
@@ -125,7 +119,6 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
       <!-- ── Section 2: TTS Categories ─────────────────────────────────── -->
       <sp-admin-card title="Text-to-Speech" class="sp-admin-section-wrap">
-        <h2 class="text-base font-semibold text-slate-900 mb-1">Text-to-Speech</h2>
         <p class="text-sm text-slate-500 mb-4">
           TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
         </p>
@@ -178,14 +171,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
               </div>
 
               <div class="mt-3 flex items-center gap-3">
-                <button (click)="saveCategory(cs)" [disabled]="cs.saving"
-                  class="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                  {{ cs.saving ? 'Saving…' : 'Save' }}
-                </button>
-                <button (click)="testCategory(cs)" [disabled]="cs.testBusy"
-                  class="rounded-lg border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-                  {{ cs.testBusy ? 'Testing...' : 'Test audio' }}
-                </button>
+                <sp-admin-button size="sm" [loading]="cs.saving" [disabled]="cs.saving" (click)="saveCategory(cs)">Save</sp-admin-button>
+                <sp-admin-button size="sm" variant="secondary" [loading]="cs.testBusy" [disabled]="cs.testBusy" (click)="testCategory(cs)">Test audio</sp-admin-button>
                 @if (cs.saved) { <span class="text-xs text-emerald-600">Saved</span> }
                 @if (cs.error) { <span class="text-xs text-red-500">{{ cs.error }}</span> }
                 @if (cs.testResult) { <span class="text-xs text-slate-600">{{ cs.testResult }}</span> }
@@ -197,7 +184,6 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
       <!-- ── Section 3: Provider credentials ────────────────────────────── -->
       <sp-admin-card title="Provider credentials" class="sp-admin-section-wrap">
-        <h2 class="text-base font-semibold text-slate-900 mb-1">Provider credentials</h2>
         <p class="text-sm text-slate-500 mb-4">
           One API key per provider applies to all features using it.
           "Test connection" checks every model with the stored key.

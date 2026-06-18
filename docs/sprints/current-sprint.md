@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 (10X-F)
+lastUpdated: 2026-06-18 (10X-G)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,52 @@ Last updated: 2026-06-18
 ---
 
 ## Active sprint
+
+**Phase 10X-G — Full Admin Page Refactor to TailAdmin-backed Wrappers** - complete (2026-06-18)
+
+Goal: refactor the highest-legacy admin pages onto `sp-admin-*` wrappers, wire the admin
+header user menu through `sp-admin-dropdown`, and reduce duplicated page-local CSS.
+
+### Delivered
+
+- Dashboard: KPI tiles → `sp-admin-stat-card`; sections → `sp-admin-card` (incl. dashed
+  placeholders); status pills → `sp-admin-badge`. Removed ~50 lines of page-local CSS
+  (KPI card, status card, badge, table-card) now owned by wrappers.
+- AI Config: removed duplicate in-card `<h2>` headings (card title is canonical); LLM and
+  TTS category Save/Test actions → `sp-admin-button`.
+- Curriculum: create/edit and routing-preview panels → `sp-admin-card`; form and preview
+  actions → `sp-admin-button` (replaced student-design `.sp-card`/`.sp-btn`).
+- Admin header user/profile menu → `sp-admin-dropdown` (open state, click-outside, Escape
+  owned by the wrapper). Removed `profileMenuOpen`, `toggleProfileMenu`, and the document
+  click handler from `AdminAppLayoutComponent`.
+- Tests: new `admin-app-layout.component.spec.ts` (4 header-dropdown tests); updated dashboard
+  KPI assertion to target `sp-admin-stat-card`; curriculum create test asserts `sp-admin-card`.
+- Docs: design-system page-refactor rules + header-dropdown section; adapter inventory 10X-G
+  phase; product-state; TODOs.
+
+### Gates
+
+- git diff --check: ✅ clean
+- Angular build: ✅ passed
+- Angular tests: ✅ 377 passed (up from 373)
+- .NET build: ✅ 0 errors
+- .NET tests: ✅ 1885 passed (3 arch + 1233 unit + 649 integration)
+- Playwright: ✅ 188 passed
+
+### Not implemented in 10X-G (deferred)
+
+- Migrating remaining page-local form fields (`.sp-ai-select`, `.sp-input`, Integrations
+  operational forms) to `sp-admin-form-field`/`sp-admin-select` — see TODOs.
+- Student edit/reset/archive modal internals (TODO-10X-D-MODAL).
+- Usage governance UX (TODO-10R-F), AI Usage redesign (TODO-10U), prompt playground (TODO-10V).
+- Notification platform, enterprise auth/security, observability stack, billing,
+  StudentProfile.CefrLevel migration, full placement engine, full mastery engine.
+
+See: `docs/reviews/2026-06-18-phase-10x-g-full-admin-page-refactor-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10X-F — Admin Wrapper Capability Completion** - complete (2026-06-18)
 

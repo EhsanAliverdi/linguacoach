@@ -174,6 +174,8 @@ describe('AdminCurriculumComponent', () => {
     fixture.detectChanges();
 
     expect(comp.view()).toBe('create');
+    // Phase 10X-G: create/edit form is wrapped in sp-admin-card.
+    expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-card')).toBeTruthy();
   });
 
   // ── Edit navigation ────────────────────────────────────────────────────────

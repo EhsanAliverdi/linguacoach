@@ -177,17 +177,16 @@
 
     <div style="flex:1"></div>
 
-    <!-- User menu -->
+    <!-- User menu (sp-admin-dropdown handles open state, click-outside, Escape) -->
     <div class="sp-admin-header-user">
-      <button
-        (click)="toggleProfileMenu($event)"
-        class="sp-admin-avatar"
-        aria-label="Profile menu"
-        [attr.aria-expanded]="profileMenuOpen()"
-      >{{ adminInitial() }}</button>
+      <sp-admin-dropdown align="right" width="auto" [closeOnMenuClick]="true">
+        <button
+          trigger
+          class="sp-admin-avatar"
+          aria-label="Profile menu"
+        >{{ adminInitial() }}</button>
 
-      @if (profileMenuOpen()) {
-        <div class="sp-admin-profile-menu" role="menu">
+        <div menu class="sp-admin-profile-menu" role="menu">
           <div class="sp-admin-profile-summary">
             <div class="sp-admin-profile-avatar">{{ adminInitial() }}</div>
             <div class="sp-admin-profile-meta">
@@ -206,7 +205,7 @@
             Sign out
           </button>
         </div>
-      }
+      </sp-admin-dropdown>
     </div>
 
   </sp-admin-header>

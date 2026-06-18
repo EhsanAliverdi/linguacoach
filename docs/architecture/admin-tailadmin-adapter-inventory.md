@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 (10X-F)
+lastUpdated: 2026-06-18 (10X-G)
 owner: architecture
 supersedes:
 supersededBy:
@@ -45,7 +45,7 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | `shared/components/form/input/` | Text inputs, states | `sp-admin-input` / `sp-admin-form-field` | 10X-E | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm`. TailAdmin input pattern. |
 | `shared/components/form/select/` | Select, multi-select | `sp-admin-select` | 10X-E | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm`. TailAdmin select pattern. |
 | `shared/components/ui/modal/` | Modal, confirm dialog | `sp-admin-modal` + `AdminModalService` | 10X-E | ✅ Done | `rounded-3xl bg-white`. Backdrop `bg-gray-400/50 backdrop-blur-sm`. Close `rounded-full bg-gray-100`. |
-| `shared/components/ui/dropdown/` | Dropdown menu | `sp-admin-dropdown` | 10X-F | ✅ Done | `absolute z-40 rounded-xl border border-gray-200 bg-white shadow-lg`. Trigger/menu content projection. Click-outside + Escape close. align left/right, width sm/md/lg. |
+| `shared/components/ui/dropdown/` | Dropdown menu | `sp-admin-dropdown` | 10X-F | ✅ Done | `absolute z-40 rounded-xl border border-gray-200 bg-white shadow-lg`. Trigger/menu content projection. Click-outside + Escape close. align left/right, width sm/md/lg. 10X-G: now consumed by the admin header user/profile menu. |
 | `shared/components/common/table-dropdown/` | Row action dropdown | `sp-admin-table-actions` | 10X-F | ✅ Done | Three-dot trigger, projected or `[actions]` array API. Danger item styling. Click-outside + Escape close. |
 | `shared/layout/header/` (notification area) | Notification dropdown | `sp-admin-toast-outlet` + notification wrapper | — | ⬜ Future | Toast outlet exists. Full notification dropdown in 10X-G+. |
 | `shared/services/sidebar.service.ts` | Sidebar open/collapse state | `AdminSidebarService` (existing) | 10X-C-F | ✅ Done | Collapse/drawer state managed in shell. |
@@ -80,7 +80,8 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | 10X-D | Vendor import, folder structure, documentation, adapter inventory | ✅ Done |
 | 10X-E | Wrapper alignment: all 15 sp-admin-* wrappers adapted to real TailAdmin patterns | ✅ Done |
 | 10X-F (next) | Wrapper completion: table sorting, dropdown, theme toggle, filter bar refinement | ⬜ Pending |
-| 10X-G+ | Notification dropdown, breadcrumb, charts, advanced form elements | ⬜ Future |
+| 10X-G | Full admin page refactor: Dashboard/AI Config/Curriculum to wrappers, header user dropdown via `sp-admin-dropdown`, page-local CSS reduction | ✅ Done |
+| 10X-H+ | Notification dropdown, breadcrumb, charts, advanced form elements, remaining page-local form fields | ⬜ Future |
 
 ---
 

@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
-import { SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent } from '../../admin';
+import { SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent, SpAdminDropdownComponent } from '../../admin';
 
 const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
 
 @Component({
   selector: 'app-admin-app-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, SpAdminHeaderComponent, SpAdminLayoutComponent, SpAdminSidebarComponent, SpAdminToastOutletComponent, SpAdminDropdownComponent],
   templateUrl: './admin-app-layout.component.html',
   styleUrls: ['./admin-app-layout.component.css'],
   encapsulation: ViewEncapsulation.None,
@@ -18,7 +18,6 @@ const COLLAPSE_KEY = 'speakpath.adminSidebarCollapsed';
 export class AdminAppLayoutComponent {
   collapsed = signal(this.readCollapsed());
   drawerOpen = signal(false);
-  profileMenuOpen = signal(false);
 
   adminEmail = computed(() => this.auth.currentUser()?.email ?? '');
   adminInitial = computed(() => {
@@ -47,7 +46,6 @@ export class AdminAppLayoutComponent {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.drawerOpen()) this.closeDrawer();
-    if (this.profileMenuOpen()) this.profileMenuOpen.set(false);
   }
 
   onDrawerTouchStart(event: TouchEvent): void {
@@ -63,16 +61,6 @@ export class AdminAppLayoutComponent {
     if (this.touchStartX - this.touchCurrentX > 60) {
       this.closeDrawer();
     }
-  }
-
-  toggleProfileMenu(event: Event): void {
-    event.stopPropagation();
-    this.profileMenuOpen.update(v => !v);
-  }
-
-  @HostListener('document:click')
-  closeProfileMenu(): void {
-    this.profileMenuOpen.set(false);
   }
 
   logout(): void {

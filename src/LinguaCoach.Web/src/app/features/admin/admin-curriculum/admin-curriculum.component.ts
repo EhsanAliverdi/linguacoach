@@ -13,6 +13,7 @@ import {
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminCardComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
   SpAdminLoadingStateComponent,
@@ -35,6 +36,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
     FormsModule,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminCardComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
     SpAdminLoadingStateComponent,
@@ -135,8 +137,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
 
       <!-- ── Create / Edit form ── -->
       @if (view() === 'create' || view() === 'edit') {
-        <div class="sp-card">
-          <h2 style="margin-bottom:16px">{{ view() === 'create' ? 'New objective' : 'Edit: ' + form.key }}</h2>
+        <sp-admin-card [title]="view() === 'create' ? 'New objective' : 'Edit: ' + form.key">
           @if (formError()) {
             <div style="color:#991b1b;margin-bottom:12px;padding:10px;background:#fef2f2;border-radius:6px">{{ formError() }}</div>
           }
@@ -232,19 +233,18 @@ function parseJsonArray(json: string | null | undefined): string[] {
               <textarea class="sp-input" style="width:100%;min-height:60px" [(ngModel)]="form.examplePrompts"></textarea>
             </div>
             <div style="display:flex;gap:8px;padding-top:8px">
-              <button class="sp-btn sp-btn-primary" type="button" [disabled]="saving()" (click)="save()">
-                {{ saving() ? 'Saving...' : (view() === 'create' ? 'Create' : 'Save changes') }}
-              </button>
-              <button class="sp-btn sp-btn-secondary" type="button" (click)="cancelEdit()">Cancel</button>
+              <sp-admin-button type="button" [loading]="saving()" [disabled]="saving()" (click)="save()">
+                {{ view() === 'create' ? 'Create' : 'Save changes' }}
+              </sp-admin-button>
+              <sp-admin-button variant="secondary" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
             </div>
           </div>
-        </div>
+        </sp-admin-card>
       }
 
       <!-- ── Routing preview ── -->
       @if (view() === 'preview') {
-        <div class="sp-card" style="max-width:640px">
-          <h2 style="margin-bottom:16px">Routing preview</h2>
+        <sp-admin-card title="Routing preview" style="display:block;max-width:640px">
           <p style="color:#64748b;font-size:14px;margin-bottom:16px">
             Test routing without generating AI content or mutating any student state.
           </p>
@@ -290,11 +290,11 @@ function parseJsonArray(json: string | null | undefined): string[] {
               <input type="checkbox" [(ngModel)]="preview.allowReviewOrScaffold" />
               Allow review / scaffold (may select lower-level content)
             </label>
-            <div>
-              <button class="sp-btn sp-btn-primary" type="button" [disabled]="previewing()" (click)="runPreview()">
-                {{ previewing() ? 'Running...' : 'Run preview' }}
-              </button>
-              <button class="sp-btn sp-btn-secondary" style="margin-left:8px" type="button" (click)="view.set('list')">Back to list</button>
+            <div style="display:flex;gap:8px">
+              <sp-admin-button type="button" [loading]="previewing()" [disabled]="previewing()" (click)="runPreview()">
+                Run preview
+              </sp-admin-button>
+              <sp-admin-button variant="secondary" type="button" (click)="view.set('list')">Back to list</sp-admin-button>
             </div>
             @if (previewResult()) {
               <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;background:#f8fafc">
@@ -331,7 +331,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
               </div>
             }
           </div>
-        </div>
+        </sp-admin-card>
       }
   `,
 })

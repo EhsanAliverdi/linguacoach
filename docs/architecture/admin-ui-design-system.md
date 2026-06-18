@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 24:00
+lastUpdated: 2026-06-18 26:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -125,6 +125,38 @@ Feature pages must import from `src/app/admin`.
 They must not reference `templates/` directly.
 They must not copy TailAdmin page markup or repeat long utility class lists.
 
+## Header User Dropdown (Phase 10X-G)
+
+The admin header user/profile menu uses `sp-admin-dropdown` (not a page-local open/close signal).
+
+- `AdminAppLayoutComponent` projects the avatar button into the dropdown `trigger` slot
+  and the profile flyout (email, role, disabled Profile item, Sign out) into the `menu` slot.
+- Open state, click-outside, and Escape close are owned by `sp-admin-dropdown`.
+- The layout no longer carries `profileMenuOpen`, `toggleProfileMenu`, or a document click handler.
+- `.sp-admin-header-user`, `.sp-admin-avatar`, and `.sp-admin-profile-*` shell CSS classes are retained.
+
+## Page Refactor Rules (Phase 10X-G)
+
+When refactoring an admin feature page, prefer wrappers in this order:
+
+1. Page title block → `sp-admin-page-header` (with projected `sp-admin-button` actions).
+2. KPI/metric tiles → `sp-admin-stat-card` (icon via `slot="icon"`, `tone`, `label`, `value`).
+3. Section containers → `sp-admin-card` (set `title`; use `[dashed]="true"` for placeholders;
+   project header-right content via `slot="actions"`). Do not re-render the title with a
+   page-local `<h2>` inside a titled card.
+4. Status pills → `sp-admin-badge` (tones: success/warning/info/primary/danger/neutral).
+5. Action buttons → `sp-admin-button` (`variant`, `size`, `[loading]`, `[disabled]`).
+   Note: `sp-admin-button` renders an inner `<button>`; do not put `routerLink` on it.
+   For navigation, use a plain anchor styled as a link/button.
+6. Tables → `sp-admin-table` (data-driven `columns`/`rows`, or projected `<table>` for
+   custom row layout); sortable columns via `sortable` + `(sortChange)`; row actions via
+   `sp-admin-table-actions`.
+7. Filter/search rows → `sp-admin-filter-bar`.
+8. States → `sp-admin-loading-state`, `sp-admin-empty-state`, `sp-admin-error-state`.
+
+Keep page-local CSS only for unique grid layout and content that no wrapper covers.
+Remove component-local CSS once a wrapper owns the visual (card/table/badge/button/stat).
+
 ## Folder Structure
 
 ```
@@ -242,11 +274,18 @@ Phase 10X-B migrated the core admin pages to the wrapper layer where feasible.
 Phase 10X-C-F fixed the critical ViewEncapsulation bug, verified all gates,
 and hardened TailAdmin Layout One alignment.
 
-Migrated pages:
+Phase 10X-G refactored the highest-legacy pages to wrappers and reduced page-local CSS.
 
-- Dashboard: wrapper page header remains; full inline dashboard CSS reduction is still partial.
+Migrated pages (post 10X-G):
+
+- Dashboard: KPI tiles now use `sp-admin-stat-card`; sections use `sp-admin-card`
+  (including dashed placeholders); all status pills use `sp-admin-badge`. Removed the
+  page-local KPI-card, status-card, badge, and table-card CSS now owned by wrappers.
 - Students: wrapper page header, filter bar, and pagination; existing student management modals preserved.
-- AI Config: wrapper page header, section cards, and admin badges around category/provider status.
+- AI Config: page header, section cards, badges; duplicate in-card `<h2>` headings removed
+  (card title is canonical); category Save/Test actions now use `sp-admin-button`.
+- Curriculum: create/edit and routing-preview panels now use `sp-admin-card`; form and
+  preview actions use `sp-admin-button` (replacing student-design-system `.sp-card`/`.sp-btn`).
 - AI Usage: wrapper page header, stat cards, cards, table, badges, loading, empty, and error states.
 - Prompts: wrapper page header, card, form field, table, badge, empty state, and button components.
 - Exercise Types: wrapper page header, table, badges, buttons, and error state.
@@ -255,13 +294,18 @@ Migrated pages:
 - Curriculum: wrapper page header, filter bar, table, badges, buttons, loading, and error states for the list path.
 - Usage Policies: wrapper page header, card, form field, table, badge, loading, empty, and error states.
 
-Remaining legacy areas:
+Remaining legacy areas (post 10X-G):
 
-- Dashboard still has large component-local CSS for action cards, KPI layout, and placeholders.
-- Student edit/reset modals still use page-local modal markup.
-- AI Config still contains page-local form layout and some legacy utility class lists inside section cards.
-- Integrations still contains page-local forms and legacy table utility classes inside wrapper cards.
-- Curriculum create/edit/preview subviews still have page-local form markup.
+- Dashboard keeps small page-local CSS for the action-card grid and analytics placeholder
+  content layout (unique layout, not duplicated wrapper behavior).
+- Student edit/reset/archive modals still use page-local modal markup (TODO-10X-D-MODAL).
+- AI Config form controls still use page-local `.sp-ai-select` inputs and the dense
+  provider-credentials grid. Migrating each field to `sp-admin-form-field`/`sp-admin-select`
+  is deferred (high field count, ngModel-driven option logic) — see TODO-10X-G-AICONFIG-FORMS.
+- Integrations still contains page-local operational forms and legacy table utility classes
+  inside wrapper cards (TODO-10X-G-INTEGRATIONS-FORMS).
+- Curriculum create/edit/preview still use page-local `.sp-input` form fields inside the
+  new `sp-admin-card` (TODO-10X-G-CURRICULUM-FORMS).
 
 Feature pages should not introduce new long TailAdmin class lists for common UI. Add or extend
 `sp-admin-*` wrappers first, then use page-local CSS only for truly unique behavior.
