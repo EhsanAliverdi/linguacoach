@@ -12,13 +12,25 @@ Last updated: 2026-06-18
 
 ---
 
+## TailAdmin template import and adapter plan (Phase 10X-D)
+
+The actual free TailAdmin Angular template source is now imported as a vendor reference.
+
+- **Source:** https://github.com/TailAdmin/free-angular-tailwind-dashboard (commit da992cf, MIT)
+- **Location:** `src/LinguaCoach.Web/src/app/templates/tailadmin/free-angular-tailwind-dashboard/`
+- **Gitignored:** yes — clone separately, not committed to main repo
+- **Adapter inventory:** `docs/architecture/admin-tailadmin-adapter-inventory.md`
+- The stale `admin-template/tailadmin/` placeholder has been removed.
+- The target is no longer "TailAdmin-inspired". It is: use the actual TailAdmin source as vendor reference, exposed to SpeakPath only through `sp-admin-*` wrapper components.
+- Feature pages must never import from `templates/`.
+
 ## Admin UI foundation, core migration, and gate closure (Phase 10X-A / 10X-B / 10X-C-F)
 
-The admin app now has a SpeakPath wrapper component layer aligned with TailAdmin Angular Layout One.
+The admin app has a SpeakPath wrapper component layer aligned with TailAdmin Angular Layout One.
 
-**Visual source of truth:** TailAdmin Angular Layout One (https://angular-demo.tailadmin.com/layout-one).
-Actual TailAdmin source/assets are not present. Styling approximates TailAdmin Layout One.
-See `docs/architecture/admin-ui-design-system.md` for the full architecture and asset status.
+**Visual source of truth:** actual TailAdmin Angular free template — `src/app/templates/tailadmin/`.
+Styling currently approximates TailAdmin Layout One via CSS custom properties. Full adapter alignment is 10X-E/10X-F.
+See `docs/architecture/admin-ui-design-system.md` for the full architecture.
 
 **Critical fix in 10X-C-F:** `AdminAppLayoutComponent` now uses `ViewEncapsulation.None` so
 shell CSS (sidebar, nav items, header, drawer, profile flyout) reaches child component DOM.

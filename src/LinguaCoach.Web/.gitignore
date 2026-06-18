@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Vendor template source (TailAdmin clone — tracked separately, not part of main repo)
+src/app/templates/

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 22:00
+lastUpdated: 2026-06-18 23:30
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,31 @@ Last updated: 2026-06-18
 ---
 
 ## Active sprint
+
+**Phase 10X-D — TailAdmin Template Import & Adapter Plan** - complete (2026-06-18)
+
+Goal: import the free TailAdmin Angular template as a vendor reference, document the adapter boundary, and create the mapping inventory that drives 10X-E/10X-F.
+
+### Delivered
+
+- Cloned TailAdmin free Angular template into `templates/tailadmin/free-angular-tailwind-dashboard/` (commit da992cf, MIT license).
+- Removed nested `.git` directory; added `.gitignore` to exclude `node_modules/dist/.angular/coverage`.
+- Added `templates/README.md` and `templates/tailadmin/README.md` with source URL, commit, license, allowed/disallowed adapter rules, and update process.
+- Updated `docs/architecture/admin-ui-design-system.md`: closed TODO-10X-ASSETS, updated folder structure, vendor source location, and adapter reference.
+- Created `docs/architecture/admin-tailadmin-adapter-inventory.md`: full mapping table (TailAdmin pattern → sp-admin-* wrapper, phase, status, notes).
+- Updated `docs/sprints/current-sprint.md` and `docs/handoffs/current-product-state.md`.
+- Created engineering review at `docs/reviews/2026-06-18-phase-10x-d-tailadmin-template-import-adapter-plan-review.md`.
+- Angular build, Angular tests, Playwright, and .NET tests all passed (gates below).
+
+### Not implemented in 10X-D
+
+- Full wrapper replacement using TailAdmin source (10X-E)
+- Full admin page refactor (10X-F)
+- Usage governance UX, AI Usage redesign, prompt playground, notification platform, enterprise auth/security, observability stack, billing, StudentProfile.CefrLevel migration, full placement engine, full mastery engine
+
+---
+
+## Previous sprint
 
 **Phase 10X-C-F — TailAdmin Layout One Gate Closure** - complete (2026-06-18)
 

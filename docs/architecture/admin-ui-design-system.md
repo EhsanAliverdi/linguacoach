@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 22:00
+lastUpdated: 2026-06-18 23:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -10,15 +10,18 @@ supersededBy:
 
 ## Visual Source of Truth
 
-**TailAdmin Angular Layout One** is the chosen visual direction for the SpeakPath admin app.
+**TailAdmin Angular Layout One** is the template source for the SpeakPath admin app.
 
-Reference: https://angular-demo.tailadmin.com/layout-one
+- Free template repo: https://github.com/TailAdmin/free-angular-tailwind-dashboard
+- Demo reference: https://angular-demo.tailadmin.com/layout-one
+- Vendored source: `src/app/templates/tailadmin/free-angular-tailwind-dashboard/` (gitignored — clone separately)
+- Commit imported: da992cf (2026-06-18)
+- License: MIT
 
-SpeakPath does not copy or redistribute TailAdmin source files. The visual direction
-is implemented through the `sp-admin-*` wrapper layer using CSS custom properties and
-class patterns that match TailAdmin Layout One's structure and aesthetic. When actual
-TailAdmin Angular source is licensed and available, it must be adapted through this
-wrapper layer — never referenced directly from feature pages.
+The actual TailAdmin Angular source is stored as a vendor reference under `src/app/templates/`.
+SpeakPath exposes TailAdmin **only** through `sp-admin-*` wrapper components.
+Feature pages must not import from `templates/` directly.
+The `templates/` folder is excluded from the main repo via `.gitignore` and should be cloned separately when onboarding.
 
 ## Dependency Direction
 
@@ -48,31 +51,53 @@ Wrapper component CSS remains emulated/scoped inside each wrapper.
 
 ## TailAdmin Asset Status
 
-Actual TailAdmin Angular source/assets are NOT present in this repository.
-All styling approximates TailAdmin Layout One using CSS custom properties and
-class conventions.
+**Phase 10X-D (2026-06-18):** TailAdmin free Angular template source has been imported.
 
-TODO-10X-ASSETS: review TailAdmin licensing before copying any vendor assets.
-When real TailAdmin assets become available:
-1. Place them in `src/app/admin-template/tailadmin/`.
-2. Wrap components/patterns inside `sp-admin-*` components.
-3. Remove approximation CSS that was added as a placeholder.
+- Source: https://github.com/TailAdmin/free-angular-tailwind-dashboard
+- Commit: da992cf
+- Location: `src/LinguaCoach.Web/src/app/templates/tailadmin/free-angular-tailwind-dashboard/`
+- License: MIT (see `templates/tailadmin/free-angular-tailwind-dashboard/LICENSE`)
+
+The source is stored as a vendor reference under `templates/tailadmin/`.
+SpeakPath app code does not import from this path.
+Wrapper components and shell CSS adapt TailAdmin patterns.
+See `docs/architecture/admin-tailadmin-adapter-inventory.md` for the full mapping.
+
+TODO-10X-ASSETS: closed. Source imported in 10X-D.
+When adapting TailAdmin patterns into wrappers (10X-E/10X-F):
+1. Reference `templates/tailadmin/free-angular-tailwind-dashboard/src/app/shared/`.
+2. Adapt markup/classes inside `sp-admin-*` wrapper components.
+3. Remove approximation CSS replaced by real TailAdmin patterns.
 4. Feature pages must not change.
 
 Feature pages must import from `src/app/admin`.
-They should not copy TailAdmin page markup directly.
-They should not repeat long utility class lists.
+They must not reference `templates/` directly.
+They must not copy TailAdmin page markup or repeat long utility class lists.
 
 ## Folder Structure
 
-- `src/app/admin/tokens/admin-tokens.css`
-- `src/app/admin/components/**`
-- `src/app/admin/services/**`
-- `src/app/admin/index.ts`
-- `src/app/admin-template/tailadmin/**`
+```
+src/LinguaCoach.Web/src/app/
+  templates/
+    README.md
+    tailadmin/
+      README.md                              <- version/license/source info
+      free-angular-tailwind-dashboard/       <- vendored TailAdmin source (MIT)
+        src/app/shared/layout/              <- Layout One shell reference
+        src/app/shared/components/          <- UI primitive reference
+        src/app/pages/                      <- demo pages — reference only, never import
+        package.json                        <- TailAdmin deps — do NOT merge into SpeakPath
+  admin/
+    tokens/admin-tokens.css
+    components/**                           <- sp-admin-* wrapper components
+    services/**
+    index.ts
+```
 
-`admin-template/tailadmin` is the vendor adapter boundary.
-No large TailAdmin assets are copied today.
+`src/app/templates/tailadmin` is the vendor reference boundary.
+`src/app/admin` is the SpeakPath adapter/wrapper layer.
+No TailAdmin source is imported into SpeakPath app build paths.
+Angular's compiler ignores `templates/` — it is not referenced in `tsconfig.app.json` or any import.
 
 ## Component Names
 
