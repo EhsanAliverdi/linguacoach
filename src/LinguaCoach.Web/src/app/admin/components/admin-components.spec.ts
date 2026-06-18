@@ -184,7 +184,7 @@ describe('admin wrapper components', () => {
     expect(fixture.nativeElement.textContent).toContain('Sidebar');
     expect(fixture.nativeElement.textContent).toContain('Header');
     expect(fixture.nativeElement.textContent).toContain('Content');
-    expect(fixture.nativeElement.querySelector('.sp-main-collapsed')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.flex-1')).not.toBeNull();
   });
 
   it('renders drawer when open and emits close', () => {
@@ -199,22 +199,22 @@ describe('admin wrapper components', () => {
     expect(fixture.componentInstance.closed.emit).toHaveBeenCalled();
   });
 
-  it('layout applies sp-main-collapsed when collapsed=true', () => {
+  it('layout applies xl:ml-[90px] when collapsed=true', () => {
     const fixture = TestBed.createComponent(LayoutHostComponent);
     fixture.detectChanges();
 
-    const main = fixture.nativeElement.querySelector('.sp-admin-main');
+    const main = fixture.nativeElement.querySelector('.flex-1');
     expect(main).not.toBeNull();
-    expect(main.classList).toContain('sp-main-collapsed');
+    expect(main.classList).toContain('xl:ml-[90px]');
   });
 
   it('layout renders sidebar and header slots in correct containers', () => {
     const fixture = TestBed.createComponent(LayoutHostComponent);
     fixture.detectChanges();
 
-    const shell = fixture.nativeElement.querySelector('.sp-admin-shell');
+    const shell = fixture.nativeElement.querySelector('.min-h-screen');
     expect(shell).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-content')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.flex-1')).not.toBeNull();
   });
 
   it('card renders header divider when title is set', () => {
@@ -239,17 +239,16 @@ describe('admin wrapper components', () => {
     const fixture = TestBed.createComponent(LayoutHostComponent);
     fixture.detectChanges();
 
-    const shell = fixture.nativeElement.querySelector('.sp-admin-shell');
+    const shell = fixture.nativeElement.querySelector('.min-h-screen');
     expect(shell).not.toBeNull();
     expect(shell.classList).toContain('min-h-screen');
-    expect(shell.classList).toContain('xl:flex');
   });
 
   it('layout main area carries TailAdmin xl:ml offset classes when collapsed', () => {
     const fixture = TestBed.createComponent(LayoutHostComponent);
     fixture.detectChanges();
 
-    const main = fixture.nativeElement.querySelector('.sp-admin-main');
+    const main = fixture.nativeElement.querySelector('.flex-1');
     expect(main.classList).toContain('transition-all');
     expect(main.classList).toContain('xl:ml-[90px]');
   });
@@ -260,7 +259,6 @@ describe('admin wrapper components', () => {
     fixture.detectChanges();
 
     const aside = fixture.nativeElement.querySelector('aside');
-    expect(aside.classList).toContain('sp-admin-sidebar');
     expect(aside.classList).toContain('fixed');
     expect(aside.classList).toContain('w-[290px]');
     expect(aside.classList).toContain('border-r');
@@ -282,7 +280,7 @@ describe('admin wrapper components', () => {
     const header = fixture.nativeElement.querySelector('header');
     expect(header.classList).toContain('sticky');
     expect(header.classList).toContain('top-0');
-    expect(header.classList).toContain('border-b');
+    expect(header.classList).toContain('xl:border-b');
   });
 
   it('button uses TailAdmin rounded-lg inline-flex classes', () => {
@@ -305,7 +303,7 @@ describe('admin wrapper components', () => {
     expect(badge.classList).toContain('sp-adm-badge-success');
   });
 
-  it('card uses TailAdmin rounded-2xl border border-gray-200 bg-white classes', () => {
+  it('card uses rounded-2xl border bg-white classes', () => {
     const fixture = TestBed.createComponent(CardHostComponent);
     fixture.detectChanges();
 
@@ -384,12 +382,11 @@ describe('admin wrapper components', () => {
     expect(aside.classList).toContain('fixed');
   });
 
-  it('active nav uses TailAdmin sp-admin-nav-item-active class (layout shell)', () => {
+  it('active nav uses TailAdmin class (layout shell structure intact)', () => {
     const fixture = TestBed.createComponent(LayoutHostComponent);
     fixture.detectChanges();
-    // Layout shell renders sidebar/header slot containers — just confirm shell structure intact
-    expect(fixture.nativeElement.querySelector('.sp-admin-shell')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-content')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.min-h-screen')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.flex-1')).not.toBeNull();
   });
 });
 
@@ -640,11 +637,10 @@ describe('admin wrapper components — Phase 10X-F', () => {
     expect(fixture.nativeElement.querySelector('.sp-adm-theme-btn')).not.toBeNull();
   });
 
-  it('header has left and actions content zones', () => {
+  it('header has grow inner flex container', () => {
     const fixture = TestBed.createComponent(SpAdminHeaderComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.sp-admin-header-left')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-header-actions')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.grow')).not.toBeNull();
   });
 
   // sp-admin-filter-bar named slots

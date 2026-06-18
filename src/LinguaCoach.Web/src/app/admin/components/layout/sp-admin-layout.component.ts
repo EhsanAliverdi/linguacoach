@@ -11,22 +11,18 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <!-- TailAdmin Layout One: min-h-screen xl:flex outer shell -->
-    <div class="sp-admin-shell min-h-screen xl:flex">
-      <!-- Sidebar slot (fixed, handled by sp-admin-sidebar) -->
+    <div class="min-h-screen xl:flex">
       <div>
         <ng-content select="[slot=sidebar]" />
       </div>
-      <!-- Main content area: mirrors TailAdmin flex-1 transition-all with ml offset -->
       <div
-        class="sp-admin-main flex-1 transition-all duration-300 ease-in-out"
-        [class.sp-main-collapsed]="collapsed"
+        class="flex-1 transition-all duration-300 ease-in-out"
         [ngClass]="collapsed ? 'xl:ml-[90px]' : 'xl:ml-[290px]'"
       >
         <ng-content select="[slot=header]" />
-        <main class="sp-admin-content p-4 mx-auto max-w-screen-2xl md:p-6">
+        <div class="p-4 mx-auto max-w-screen-2xl md:p-6">
           <ng-content />
-        </main>
+        </div>
       </div>
     </div>
   `,

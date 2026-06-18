@@ -177,6 +177,8 @@ Each item includes context, motivation, and the phase where it was deferred.
 - TODO-10X-MODAL: add richer modal confirm orchestration, focus trap, and keyboard return focus.
 - TODO-10X-DRAWER: add typed drawer payloads for student detail, usage policy editor, and prompt preview.
 - TODO-10X-TOAST: add toast action buttons and queue limits if admin workflows need them.
+- ~~TODO-10X-LAYOUT-BLOCKER~~: admin shell/sidebar/header/content must visually match TailAdmin Layout One — **DONE in Phase 10X-LAYOUT-BLOCKER** (2026-06-19). Imported TailAdmin `@utility` + `@theme` tokens into global styles.css. Rewrote `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header` to use pure TailAdmin Tailwind classes. Rewrote `admin-app-layout.html` with `menu-item`/grouped-sections nav structure. Stripped all competing custom CSS from layout component. Added `body.admin-layout` body-class for gray-50 background. 20 new Angular tests + 13 updated. Angular 411, .NET 1885, Playwright 183+ passed. 10X-I form migration unblocked.
+- TODO-10X-I: continue admin form migration (was blocked by layout blocker — now unblocked). Migrate remaining page-local form fields to `sp-admin-input`/`sp-admin-select`/`sp-admin-textarea` CVA wrappers.
 - TODO-10R-F: build usage governance UX on the new admin design system (admin usage dashboard, quota editor UX, near-quota alert display).
 - TODO-10U: full AI usage/config redesign on the admin design system.
 - TODO-10V: prompt playground on the admin design system.

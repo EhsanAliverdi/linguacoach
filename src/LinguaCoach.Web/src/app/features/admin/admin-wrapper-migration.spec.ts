@@ -23,18 +23,18 @@ import { signal } from '@angular/core';
     <sp-admin-layout [collapsed]="false">
       <sp-admin-sidebar slot="sidebar" [collapsed]="false">
         <nav>
-          <a routerLink="/admin" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">Dashboard</a>
-          <a routerLink="/admin/students" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">Students</a>
+          <a routerLink="/admin" routerLinkActive="menu-item-active" class="menu-item group menu-item-inactive">Dashboard</a>
+          <a routerLink="/admin/students" routerLinkActive="menu-item-active" class="menu-item group menu-item-inactive">Students</a>
         </nav>
       </sp-admin-sidebar>
       <sp-admin-header slot="header">
-        <button class="sp-admin-hamburger">Menu</button>
-        <button class="sp-layout-header-action">Toggle</button>
-        <div class="sp-admin-header-user">
+        <button aria-label="Open navigation" class="xl:hidden">Menu</button>
+        <button aria-label="Toggle sidebar" class="hidden xl:flex">Toggle</button>
+        <div user>
           <button class="sp-admin-avatar">A</button>
         </div>
       </sp-admin-header>
-      <div class="sp-admin-content-body">Page content</div>
+      <div>Page content</div>
       <sp-admin-toast-outlet />
     </sp-admin-layout>
   `,
@@ -305,7 +305,7 @@ describe('admin wrapper migration', () => {
   });
 });
 
-describe('admin shell visual structure (10X-C)', () => {
+describe('admin shell visual structure (10X-C → 10X-LAYOUT-BLOCKER)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideRouter([])],
@@ -316,51 +316,54 @@ describe('admin shell visual structure (10X-C)', () => {
     const fixture = TestBed.createComponent(ShellTestHostComponent);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.sp-admin-shell')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-sidebar')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-header')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-main')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-admin-content')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.min-h-screen')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('sp-admin-sidebar aside')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('sp-admin-header header')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.flex-1')).not.toBeNull();
   });
 
-  it('sidebar is not collapsed by default', () => {
+  it('sidebar is fixed and h-screen with border-r', () => {
     const fixture = TestBed.createComponent(ShellTestHostComponent);
     fixture.detectChanges();
 
-    const sidebar = fixture.nativeElement.querySelector('.sp-admin-sidebar');
-    expect(sidebar.classList).not.toContain('sp-sidebar-collapsed');
+    const aside = fixture.nativeElement.querySelector('sp-admin-sidebar aside');
+    expect(aside.classList).toContain('fixed');
+    expect(aside.classList).toContain('h-screen');
+    expect(aside.classList).toContain('border-r');
+    expect(aside.classList).toContain('w-[290px]');
   });
 
   it('header renders hamburger and desktop toggle buttons', () => {
     const fixture = TestBed.createComponent(ShellTestHostComponent);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.sp-admin-hamburger')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sp-layout-header-action')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('button[aria-label="Open navigation"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('button[aria-label="Toggle sidebar"]')).not.toBeNull();
   });
 
-  it('header renders avatar button in user zone', () => {
+  it('header renders avatar button', () => {
     const fixture = TestBed.createComponent(ShellTestHostComponent);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.sp-admin-header-user')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.sp-admin-avatar')).not.toBeNull();
   });
 
-  it('main area is not collapsed when layout collapsed=false', () => {
+  it('main area has xl:ml-[290px] when not collapsed', () => {
     const fixture = TestBed.createComponent(ShellTestHostComponent);
     fixture.detectChanges();
 
-    const main = fixture.nativeElement.querySelector('.sp-admin-main');
+    const main = fixture.nativeElement.querySelector('.flex-1');
     expect(main).not.toBeNull();
-    expect(main.classList).not.toContain('sp-main-collapsed');
+    expect(main.classList).toContain('xl:ml-[290px]');
   });
 
-  it('nav items are present in sidebar', () => {
+  it('header uses TailAdmin sticky top-0 xl:border-b', () => {
     const fixture = TestBed.createComponent(ShellTestHostComponent);
     fixture.detectChanges();
 
-    const navItems = fixture.nativeElement.querySelectorAll('.sp-admin-nav-item');
-    expect(navItems.length).toBeGreaterThanOrEqual(2);
+    const header = fixture.nativeElement.querySelector('sp-admin-header header');
+    expect(header.classList).toContain('sticky');
+    expect(header.classList).toContain('top-0');
+    expect(header.classList).toContain('xl:border-b');
   });
 });

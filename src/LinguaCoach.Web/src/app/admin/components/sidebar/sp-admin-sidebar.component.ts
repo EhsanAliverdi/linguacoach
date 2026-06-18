@@ -14,9 +14,12 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <aside
-      class="sp-admin-sidebar fixed flex flex-col top-0 left-0 px-5 bg-white dark:bg-gray-900 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 dark:border-gray-800 hidden xl:flex"
-      [class.sp-sidebar-collapsed]="collapsed"
-      [ngClass]="collapsed ? 'w-[90px]' : 'w-[290px]'"
+      class="fixed flex flex-col top-0 left-0 px-5 bg-white dark:bg-gray-900 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 dark:border-gray-800"
+      [ngClass]="{
+        'w-[290px]': !collapsed,
+        'w-[90px]': collapsed,
+        '-translate-x-full xl:translate-x-0': true
+      }"
     >
       <ng-content />
     </aside>

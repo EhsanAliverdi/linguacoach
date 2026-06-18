@@ -23,19 +23,17 @@ import { SpAdminThemeToggleComponent } from '../theme-toggle/sp-admin-theme-togg
   standalone: true,
   imports: [CommonModule, SpAdminThemeToggleComponent],
   template: `
-    <header class="sp-admin-header sticky top-0 flex w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-[99999]">
-      <div class="sp-admin-header-inner flex items-center justify-between grow px-3 py-3 xl:px-6 xl:py-4 gap-2 sm:gap-4">
-        <!-- Left zone: breadcrumb / sidebar toggle -->
-        <div class="sp-admin-header-left flex items-center gap-2 min-w-0">
-          <ng-content select="[left]" />
-          <!-- Fallback: general content if no named slots used -->
+    <header class="sticky top-0 flex w-full bg-white border-gray-200 z-[99999] dark:border-gray-800 dark:bg-gray-900 xl:border-b">
+      <div class="flex flex-col items-center justify-between grow xl:flex-row xl:px-6">
+        <div class="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 xl:justify-normal xl:border-b-0 xl:px-0 lg:py-4">
           <ng-content />
         </div>
-
-        <!-- Right action zone: theme toggle + projected actions -->
-        <div class="sp-admin-header-actions flex items-center gap-1 sm:gap-2 shrink-0">
-          <ng-content select="[actions]" />
-          <sp-admin-theme-toggle />
+        <div class="flex items-center justify-between w-full gap-4 px-5 py-4 xl:flex shadow-theme-md xl:justify-end xl:px-0 xl:shadow-none">
+          <div class="flex items-center gap-2 2xsm:gap-3">
+            <sp-admin-theme-toggle />
+            <ng-content select="[actions]" />
+          </div>
+          <ng-content select="[user]" />
         </div>
       </div>
     </header>

@@ -1,14 +1,23 @@
-<!-- Mobile drawer backdrop -->
-<div class="sp-sidebar-backdrop" [class.is-open]="drawerOpen()" (click)="closeDrawer()"></div>
+<!-- Mobile backdrop -->
+<div
+  class="fixed inset-0 z-40 bg-gray-900/50 xl:hidden"
+  [class.hidden]="!drawerOpen()"
+  (click)="closeDrawer()"
+></div>
 
-<!-- Mobile drawer -->
-<nav class="sp-sidebar-drawer" [class.is-open]="drawerOpen()"
-  (touchstart)="onDrawerTouchStart($event)" (touchmove)="onDrawerTouchMove($event)" (touchend)="onDrawerTouchEnd()">
-
-  <!-- Drawer header -->
-  <div style="padding:16px 14px 12px;border-bottom:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-    <a routerLink="/admin" (click)="closeDrawer()" style="display:flex;align-items:center;gap:10px;text-decoration:none">
-      <svg width="30" height="30" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+<!-- Mobile sidebar drawer -->
+<aside
+  class="fixed top-0 left-0 bottom-0 w-[290px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out xl:hidden"
+  [class.-translate-x-full]="!drawerOpen()"
+  [class.translate-x-0]="drawerOpen()"
+  (touchstart)="onDrawerTouchStart($event)"
+  (touchmove)="onDrawerTouchMove($event)"
+  (touchend)="onDrawerTouchEnd()"
+>
+  <!-- Drawer brand -->
+  <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+    <a routerLink="/admin" (click)="closeDrawer()" class="flex items-center gap-3 no-underline">
+      <svg class="w-8 h-8" viewBox="0 0 48 48" fill="none" aria-hidden="true">
         <defs><linearGradient id="lg-drawer" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/></linearGradient></defs>
         <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#lg-drawer)"/>
         <circle cx="14" cy="33" r="3.4" fill="#fff"/>
@@ -17,78 +26,124 @@
         <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
       </svg>
       <div>
-        <div style="font-size:14px;font-weight:800;color:#0F172A;line-height:1.1">SpeakPath</div>
-        <div style="font-size:10.5px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em">Admin</div>
+        <div class="text-sm font-bold text-gray-900 dark:text-white leading-tight">SpeakPath</div>
+        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Admin</div>
       </div>
     </a>
-    <button (click)="closeDrawer()" aria-label="Close navigation" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid #E2E8F0;background:none;color:#94A3B8;cursor:pointer">
+    <button (click)="closeDrawer()" aria-label="Close navigation"
+      class="flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
   <!-- Drawer nav -->
-  <div style="padding:8px 8px;display:flex;flex-direction:column;gap:1px;flex:1;overflow-y:auto">
-    <div class="sp-admin-nav-group-label">Overview</div>
-    <a routerLink="/admin" routerLinkActive="sp-admin-nav-item-active" [routerLinkActiveOptions]="{exact:true}" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </a>
-
-    <div class="sp-admin-nav-group-label">Students</div>
-    <a routerLink="/admin/students" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      Students
-    </a>
-
-    <div class="sp-admin-nav-group-label">AI System</div>
-    <a routerLink="/admin/ai-config" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-      AI Config
-    </a>
-    <a routerLink="/admin/prompts" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Prompts
-    </a>
-    <a routerLink="/admin/usage" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      AI Usage
-    </a>
-    <a routerLink="/admin/exercise-types" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      Exercise Types
-    </a>
-
-    <div class="sp-admin-nav-group-label">System</div>
-    <a routerLink="/admin/integrations" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-      Integrations
-    </a>
-    <a routerLink="/admin/diagnostics" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" (click)="closeDrawer()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      Diagnostics
-    </a>
-  </div>
+  <nav class="flex-1 overflow-y-auto no-scrollbar px-3 py-4" aria-label="Mobile navigation">
+    <div class="mb-4">
+      <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">Menu</p>
+      <ul class="flex flex-col gap-1">
+        <li>
+          <a routerLink="/admin" routerLinkActive="menu-item-active" [routerLinkActiveOptions]="{exact:true}"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
+            <span class="menu-item-text">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/students" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="menu-item-text">Students</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/ai-config" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+            </span>
+            <span class="menu-item-text">AI Config</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/prompts" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <span class="menu-item-text">Prompts</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/usage" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="menu-item-text">AI Usage</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/exercise-types" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </span>
+            <span class="menu-item-text">Exercise Types</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">System</p>
+      <ul class="flex flex-col gap-1">
+        <li>
+          <a routerLink="/admin/integrations" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+            </span>
+            <span class="menu-item-text">Integrations</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/diagnostics" routerLinkActive="menu-item-active"
+            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
+            <span class="menu-item-icon-size menu-item-icon-inactive">
+              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            <span class="menu-item-text">Diagnostics</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
   <!-- Drawer footer -->
-  <div style="padding:10px 8px 16px;border-top:1px solid #F1F5F9;flex-shrink:0">
-    <button (click)="logout(); closeDrawer()" class="sp-admin-signout-btn">
-      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      <span class="sp-admin-signout-label">Sign out</span>
+  <div class="border-t border-gray-200 dark:border-gray-800 px-3 py-4 flex-shrink-0">
+    <button (click)="logout(); closeDrawer()"
+      class="menu-item group menu-item-inactive w-full text-left">
+      <span class="menu-item-icon-size menu-item-icon-inactive">
+        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </span>
+      <span class="menu-item-text">Sign out</span>
     </button>
   </div>
-
-</nav>
+</aside>
 
 <!-- ── Main shell ─────────────────────────────────────────────────────── -->
 <sp-admin-layout [collapsed]="collapsed()">
 
-  <!-- Desktop left sidebar -->
+  <!-- Desktop sidebar -->
   <sp-admin-sidebar slot="sidebar" [collapsed]="collapsed()">
 
     <!-- Brand -->
-    <div class="sp-admin-brand">
-      <a routerLink="/admin" class="sp-admin-brand-link">
-        <svg class="sp-admin-brand-logo" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <div class="flex items-center gap-3 px-2 py-5 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+      <a routerLink="/admin" class="flex items-center gap-3 no-underline overflow-hidden">
+        <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="lg-admin-brand" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
               <stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/>
@@ -100,63 +155,114 @@
           <path d="M30 12.5h6.5A3.5 3.5 0 0 1 40 16v3.5a3.5 3.5 0 0 1-3.5 3.5H34l-3.2 2.3.2-2.3h-1A3.5 3.5 0 0 1 26.5 19.5V16A3.5 3.5 0 0 1 30 12.5Z" fill="#fff"/>
           <path d="M15.4 30.6 22 27.2M25.7 23.4l3.2-2.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".75"/>
         </svg>
-        <div>
-          <div class="sp-admin-brand-name">SpeakPath</div>
-          <div class="sp-admin-brand-role">Admin Panel</div>
-        </div>
+        @if (!collapsed()) {
+          <div class="overflow-hidden">
+            <div class="text-sm font-bold text-gray-900 dark:text-white leading-tight whitespace-nowrap">SpeakPath</div>
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">Admin Panel</div>
+          </div>
+        }
       </a>
     </div>
 
     <!-- Nav -->
-    <nav class="sp-admin-nav" aria-label="Admin navigation">
-
-      <div class="sp-admin-nav-group-label">Overview</div>
-      <a routerLink="/admin" routerLinkActive="sp-admin-nav-item-active" [routerLinkActiveOptions]="{exact:true}" class="sp-admin-nav-item" [title]="collapsed() ? 'Dashboard' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span class="sp-admin-nav-label">Dashboard</span>
-      </a>
-
-      <div class="sp-admin-nav-group-label">Students</div>
-      <a routerLink="/admin/students" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Students' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span class="sp-admin-nav-label">Students</span>
-      </a>
-
-      <div class="sp-admin-nav-group-label">AI System</div>
-      <a routerLink="/admin/ai-config" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'AI Config' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-        <span class="sp-admin-nav-label">AI Config</span>
-      </a>
-      <a routerLink="/admin/prompts" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Prompts' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span class="sp-admin-nav-label">Prompts</span>
-      </a>
-      <a routerLink="/admin/usage" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'AI Usage' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="sp-admin-nav-label">AI Usage</span>
-      </a>
-      <a routerLink="/admin/exercise-types" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Exercise Types' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        <span class="sp-admin-nav-label">Exercise Types</span>
-      </a>
-
-      <div class="sp-admin-nav-group-label">System</div>
-      <a routerLink="/admin/integrations" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Integrations' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-        <span class="sp-admin-nav-label">Integrations</span>
-      </a>
-      <a routerLink="/admin/diagnostics" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item" [title]="collapsed() ? 'Diagnostics' : ''">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        <span class="sp-admin-nav-label">Diagnostics</span>
-      </a>
-
+    <nav class="flex-1 overflow-y-auto no-scrollbar px-3 py-4" aria-label="Admin navigation">
+      <div class="mb-4">
+        @if (!collapsed()) {
+          <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">Menu</p>
+        }
+        <ul class="flex flex-col gap-1">
+          <li>
+            <a routerLink="/admin" routerLinkActive="menu-item-active" [routerLinkActiveOptions]="{exact:true}"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Dashboard' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">Dashboard</span> }
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/students" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Students' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">Students</span> }
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/ai-config" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'AI Config' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">AI Config</span> }
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/prompts" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Prompts' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">Prompts</span> }
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/usage" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'AI Usage' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">AI Usage</span> }
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/exercise-types" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Exercise Types' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">Exercise Types</span> }
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        @if (!collapsed()) {
+          <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">System</p>
+        }
+        <ul class="flex flex-col gap-1">
+          <li>
+            <a routerLink="/admin/integrations" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Integrations' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">Integrations</span> }
+            </a>
+          </li>
+          <li>
+            <a routerLink="/admin/diagnostics" routerLinkActive="menu-item-active"
+              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Diagnostics' : ''">
+              <span class="menu-item-icon-size menu-item-icon-inactive">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </span>
+              @if (!collapsed()) { <span class="menu-item-text">Diagnostics</span> }
+            </a>
+          </li>
+        </ul>
+      </div>
     </nav>
 
     <!-- Sidebar footer -->
-    <div class="sp-admin-sidebar-footer">
-      <button (click)="logout()" class="sp-admin-signout-btn" [title]="collapsed() ? 'Sign out' : ''">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span class="sp-admin-signout-label">Sign out</span>
+    <div class="border-t border-gray-200 dark:border-gray-800 px-3 py-4 flex-shrink-0">
+      <button (click)="logout()"
+        class="menu-item group menu-item-inactive w-full text-left"
+        [title]="collapsed() ? 'Sign out' : ''">
+        <span class="menu-item-icon-size menu-item-icon-inactive">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+        @if (!collapsed()) { <span class="menu-item-text">Sign out</span> }
       </button>
     </div>
 
@@ -166,19 +272,17 @@
   <sp-admin-header slot="header">
 
     <!-- Mobile hamburger -->
-    <button (click)="openDrawer()" class="sp-admin-hamburger" aria-label="Open navigation">
+    <button (click)="openDrawer()" class="xl:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" aria-label="Open navigation">
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
 
     <!-- Desktop sidebar toggle -->
-    <button (click)="toggleSidebar()" class="sp-layout-header-action" [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'" aria-label="Toggle sidebar">
+    <button (click)="toggleSidebar()" class="hidden xl:flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'" aria-label="Toggle sidebar">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
 
-    <div style="flex:1"></div>
-
-    <!-- User menu (sp-admin-dropdown handles open state, click-outside, Escape) -->
-    <div class="sp-admin-header-user">
+    <!-- User menu in [user] slot -->
+    <div user class="relative">
       <sp-admin-dropdown align="right" width="auto" [closeOnMenuClick]="true">
         <button
           trigger

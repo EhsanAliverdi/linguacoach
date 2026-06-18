@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-H)
+lastUpdated: 2026-06-19 (10X-LAYOUT-BLOCKER)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,49 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 ---
 
 ## Active sprint
+
+**Phase 10X-LAYOUT-BLOCKER — TailAdmin Layout One Shell Parity** - complete (2026-06-19)
+
+Goal: make admin shell/sidebar/header/content visually match TailAdmin Layout One.
+Blocked 10X-I until resolved.
+
+### Delivered
+
+- Imported TailAdmin `@utility` classes (`menu-item`, `menu-item-active`, `menu-item-inactive`,
+  `menu-item-icon-*`, `menu-dropdown-*`, `no-scrollbar`) and `@theme` tokens into global `styles.css`.
+- Rewrote `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header` wrappers to use exact
+  TailAdmin Tailwind classes with no competing custom CSS class names.
+- Rewrote `admin-app-layout.component.html` to use TailAdmin grouped nav section structure
+  (`menu-item`/`menu-item-active`/`menu-item-inactive` classes, `h2` section headings).
+- Replaced old mobile drawer (custom CSS) with TailAdmin `fixed inset-0 z-40` backdrop
+  and `xl:hidden -translate-x-full / translate-x-0` aside pattern.
+- Stripped all competing layout CSS from `admin-app-layout.component.css`.
+- Added `body.admin-layout` class (OnInit/OnDestroy) for TailAdmin gray-50 background
+  without affecting student layout.
+- 20 new Angular tests for Layout One shell structure.
+- Updated 13 existing tests to validate TailAdmin classes instead of old CSS class names.
+- All CI gates pass: 1885 .NET tests, 411 Angular tests, 183+ Playwright tests.
+
+### Root causes fixed
+
+1. TailAdmin `@utility` menu classes missing from SpeakPath Tailwind build.
+2. `admin-app-layout.component.css` margin-left override fighting Tailwind `xl:ml-*`.
+3. `sp-admin-layout/sidebar/header` CSS classes conflicting with Tailwind classes.
+4. Body background not overridden for admin context.
+5. Nav items using old `sp-admin-nav-item` instead of `menu-item` utility.
+
+### Review doc
+
+`docs/reviews/2026-06-19-phase-10x-layout-blocker-tailadmin-shell-parity-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10X-H — Admin Form Wrapper CVA + Remaining Form/Modal Migration Foundation** - complete (2026-06-19)
 
