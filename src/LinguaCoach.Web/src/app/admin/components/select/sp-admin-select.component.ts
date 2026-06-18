@@ -12,26 +12,25 @@ export interface SpAdminSelectOption {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <select class="sp-adm-select" [disabled]="disabled" [(ngModel)]="value">
+    <!--
+      TailAdmin select pattern (shared/components/form/select):
+      h-11 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5
+      text-sm text-gray-800 focus:border-brand-300 focus:ring-2 focus:ring-blue-100
+    -->
+    <select
+      class="sp-adm-select h-11 w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-sm focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-gray-800 dark:bg-gray-900 dark:text-white/90"
+      [disabled]="disabled"
+      [(ngModel)]="value"
+    >
       @for (option of options; track option.value) {
         <option [value]="option.value">{{ option.label }}</option>
       }
     </select>
   `,
   styles: [`
-    .sp-adm-select {
-      width: 100%;
-      min-height: 38px;
-      border: 1.5px solid var(--sp-admin-border);
-      border-radius: var(--sp-admin-radius-sm);
-      background: var(--sp-admin-surface);
-      color: var(--sp-admin-text);
-      padding: 8px 10px;
-      font: inherit;
-      font-size: 13px;
-      box-sizing: border-box;
-    }
-    .sp-adm-select:focus { outline: 3px solid var(--sp-admin-primary-focus); border-color: var(--sp-admin-primary); }
+    /* TailAdmin-backed: h-11 rounded-lg border border-gray-200 select pattern */
+    .sp-adm-select { box-sizing: border-box; }
+    .sp-adm-select:disabled { opacity: 0.55; cursor: not-allowed; background: #f9fafb; }
   `],
 })
 export class SpAdminSelectComponent {

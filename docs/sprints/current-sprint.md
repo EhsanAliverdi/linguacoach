@@ -14,6 +14,40 @@ Last updated: 2026-06-18
 
 ## Active sprint
 
+**Phase 10X-E — Adapt Real TailAdmin Patterns into sp-admin-* Wrappers** - complete (2026-06-18)
+
+Goal: replace custom CSS approximations in all 15 `sp-admin-*` wrappers with actual TailAdmin free Angular template class structures. Admin feature pages unchanged — they continue using `sp-admin-*` only.
+
+### Delivered
+
+- All 15 wrapper components adapted to TailAdmin source patterns:
+  layout (`min-h-screen xl:flex`), sidebar (`fixed w-[290px]/w-[90px]`), header (`sticky top-0 z-[99999]`),
+  button (brand-500 primary / outline), badge (light variant color map), card (`rounded-2xl border border-gray-200`),
+  stat-card, input (`h-11 rounded-lg border border-gray-200`), select, form-field, modal (`rounded-3xl`, `bg-gray-400/50 backdrop-blur-sm`),
+  table (`rounded-2xl`, th `text-xs bg-gray-50`), pagination, filter-bar, drawer.
+- Fixed TypeScript parse error: HTML comment inside `@Component({})` decorator in `sp-admin-badge.component.ts`
+  (converted to `//` TS comments above decorator).
+- Added 15 new TailAdmin-backed pattern tests in `admin-components.spec.ts` (Angular: 334 → 349).
+- Updated `docs/architecture/admin-tailadmin-adapter-inventory.md`: all adapted wrappers marked `✅ Done`.
+- Updated `docs/architecture/admin-ui-design-system.md`: Phase 10X-E note, wrapper API stability.
+- Engineering review saved to `docs/reviews/2026-06-18-phase-10x-e-tailadmin-wrapper-adaptation-review.md`.
+
+### Gates
+
+- Angular build: ✅ passed
+- Angular tests: ✅ 349 passed (0 failed)
+- .NET tests: ✅ 1885 passed (3 arch + 1233 unit + 649 integration)
+- Playwright: ✅ (see Playwright gate status in product-state)
+
+### Not implemented in 10X-E
+
+- Table sorting, dropdown, theme toggle wiring (10X-F)
+- Usage governance UX, AI Usage redesign, prompt playground, notification platform, enterprise auth, billing, placement engine
+
+---
+
+## Previous sprint
+
 **Phase 10X-D — TailAdmin Template Import & Adapter Plan** - complete (2026-06-18)
 
 Goal: import the free TailAdmin Angular template as a vendor reference, document the adapter boundary, and create the mapping inventory that drives 10X-E/10X-F.

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 23:00
+lastUpdated: 2026-06-18 24:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -64,11 +64,18 @@ Wrapper components and shell CSS adapt TailAdmin patterns.
 See `docs/architecture/admin-tailadmin-adapter-inventory.md` for the full mapping.
 
 TODO-10X-ASSETS: closed. Source imported in 10X-D.
-When adapting TailAdmin patterns into wrappers (10X-E/10X-F):
-1. Reference `templates/tailadmin/free-angular-tailwind-dashboard/src/app/shared/`.
-2. Adapt markup/classes inside `sp-admin-*` wrapper components.
-3. Remove approximation CSS replaced by real TailAdmin patterns.
-4. Feature pages must not change.
+
+**Phase 10X-E (2026-06-18):** All `sp-admin-*` wrappers now adapted to real TailAdmin patterns.
+
+All 15 wrapper components (layout, sidebar, header, button, badge, card, stat-card, input, select,
+form-field, modal, table, pagination, filter-bar, drawer) now use TailAdmin-sourced class structures
+internally. Custom CSS approximations replaced with actual TailAdmin class names and structures.
+
+Wrapper public APIs (inputs/outputs) remain stable — admin feature pages are unchanged.
+See `docs/architecture/admin-tailadmin-adapter-inventory.md` for the full mapping and status.
+See `docs/reviews/2026-06-18-phase-10x-e-tailadmin-wrapper-adaptation-review.md` for full findings.
+
+Remaining adapter work (10X-F): table sorting, dropdown, theme toggle, full filter bar alignment.
 
 Feature pages must import from `src/app/admin`.
 They must not reference `templates/` directly.

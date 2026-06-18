@@ -19,11 +19,12 @@
     "@angular/platform-browser-dynamic": "^19.2.0",
     "@angular/router": "^19.2.0",
     "rxjs": "~7.8.0",
+    "symbol-observable": "^4.0.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^19.2.25",
+    "@angular-devkit/build-angular": "^19.2.26",
     "@angular/cli": "^19.2.25",
     "@angular/compiler-cli": "^19.2.0",
     "@playwright/test": "^1.60.0",
@@ -38,6 +39,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "postcss": "^8.5.15",
+    "semver": "^7.8.1",
     "tailwindcss": "^4.3.0",
     "typescript": "~5.7.2"
   }

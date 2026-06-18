@@ -14,30 +14,39 @@ export interface SpAdminTableColumn {
   standalone: true,
   imports: [CommonModule, SpAdminEmptyStateComponent, SpAdminLoadingStateComponent],
   template: `
-    <div class="sp-adm-table-card">
+    <!--
+      TailAdmin table pattern (shared/components/ui/table/basic-table-one):
+      Outer: rounded-2xl border border-gray-200 bg-white overflow-hidden
+      thead th: px-5 py-3 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100 text-left
+      tbody td: px-5 py-4 text-sm text-gray-700 border-b border-gray-100 last:border-0
+    -->
+    <div class="sp-adm-table-card rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
       @if (loading) {
         <sp-admin-loading-state message="Loading records" />
       } @else if (columns.length === 0) {
-        <div class="sp-adm-table-scroll">
+        <div class="sp-adm-table-scroll overflow-x-auto">
           <ng-content />
         </div>
       } @else if (!rows.length) {
         <sp-admin-empty-state [message]="emptyMessage" />
       } @else {
-        <div class="sp-adm-table-scroll">
-          <table class="sp-adm-table">
+        <div class="sp-adm-table-scroll overflow-x-auto">
+          <table class="sp-adm-table w-full border-collapse">
             <thead>
-              <tr>
+              <tr class="border-b border-gray-100 dark:border-gray-800">
                 @for (column of columns; track column.key) {
-                  <th scope="col">{{ column.label }}</th>
+                  <th scope="col" class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/[0.03] whitespace-nowrap">{{ column.label }}</th>
                 }
               </tr>
             </thead>
             <tbody>
               @for (row of rows; track $index) {
-                <tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
                   @for (column of columns; track column.key) {
-                    <td [class.sp-adm-table-muted]="column.muted">{{ row[column.key] }}</td>
+                    <td
+                      class="px-5 py-4 text-sm text-gray-700 dark:text-gray-300 align-middle"
+                      [class.sp-adm-table-muted]="column.muted"
+                    >{{ row[column.key] }}</td>
                   }
                 </tr>
               }
@@ -48,62 +57,8 @@ export interface SpAdminTableColumn {
     </div>
   `,
   styles: [`
-    .sp-adm-table-card {
-      background: var(--sp-admin-surface);
-      border: 1px solid var(--sp-admin-border);
-      border-radius: var(--sp-admin-radius-md);
-      overflow: hidden;
-    }
-    .sp-adm-table-scroll { overflow-x: auto; }
-    :host ::ng-deep table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    :host ::ng-deep th {
-      text-align: left;
-      padding: 10px 14px;
-      background: var(--sp-admin-surface-subtle);
-      border-bottom: 1px solid var(--sp-admin-border);
-      color: var(--sp-admin-text-dim);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      white-space: nowrap;
-    }
-    :host ::ng-deep td {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--sp-admin-border-subtle);
-      color: var(--sp-admin-text-secondary);
-      vertical-align: middle;
-    }
-    :host ::ng-deep tr:last-child td { border-bottom: none; }
-    .sp-adm-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    .sp-adm-table th {
-      text-align: left;
-      padding: 10px 14px;
-      background: var(--sp-admin-surface-subtle);
-      border-bottom: 1px solid var(--sp-admin-border);
-      color: var(--sp-admin-text-dim);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      white-space: nowrap;
-    }
-    .sp-adm-table td {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--sp-admin-border-subtle);
-      color: var(--sp-admin-text-secondary);
-      vertical-align: middle;
-    }
-    .sp-adm-table tr:last-child td { border-bottom: none; }
-    .sp-adm-table-muted { color: var(--sp-admin-text-dim); font-size: 12px; }
+    /* TailAdmin-backed: rounded-2xl border border-gray-200 bg-white table pattern */
+    .sp-adm-table-muted { color: #94a3b8; font-size: 12px; }
   `],
 })
 export class SpAdminTableComponent {

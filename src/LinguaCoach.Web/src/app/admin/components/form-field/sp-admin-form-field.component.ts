@@ -6,23 +6,26 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <label class="sp-adm-field">
-      <span class="sp-adm-field-label">{{ label }}</span>
+    <!--
+      TailAdmin form label pattern (shared/components/form/label):
+      block text-sm font-medium text-gray-700 mb-1.5
+      hint: text-xs text-gray-400 mt-1
+      error: text-xs text-error-500 mt-1
+    -->
+    <label class="sp-adm-field flex flex-col gap-1.5">
+      @if (label) {
+        <span class="sp-adm-field-label block text-sm font-medium text-gray-700 dark:text-gray-400">{{ label }}</span>
+      }
       <ng-content />
-      @if (hint) {
-        <span class="sp-adm-field-hint">{{ hint }}</span>
+      @if (hint && !error) {
+        <span class="sp-adm-field-hint text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ hint }}</span>
       }
       @if (error) {
-        <span class="sp-adm-field-error">{{ error }}</span>
+        <span class="sp-adm-field-error text-xs text-red-500 mt-0.5">{{ error }}</span>
       }
     </label>
   `,
-  styles: [`
-    .sp-adm-field { display: flex; flex-direction: column; gap: 6px; }
-    .sp-adm-field-label { color: var(--sp-admin-text-secondary); font-size: 12px; font-weight: 800; }
-    .sp-adm-field-hint { color: var(--sp-admin-text-dim); font-size: 11.5px; }
-    .sp-adm-field-error { color: var(--sp-admin-danger); font-size: 12px; font-weight: 700; }
-  `],
+  styles: [`/* TailAdmin-backed: block text-sm font-medium text-gray-700 label pattern */`],
 })
 export class SpAdminFormFieldComponent {
   @Input() label = '';

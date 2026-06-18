@@ -5,16 +5,8 @@ import { CommonModule } from '@angular/common';
   selector: 'sp-admin-filter-bar',
   standalone: true,
   imports: [CommonModule],
-  template: `<div class="sp-adm-filter"><ng-content /></div>`,
-  styles: [`
-    .sp-adm-filter {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-  `],
+  // TailAdmin filter bar: flex items-end justify-between gap-3 flex-wrap mb-4
+  template: `<div class="sp-adm-filter flex items-end justify-between gap-3 flex-wrap mb-4"><ng-content /></div>`,
+  styles: [`/* TailAdmin-backed: flex items-end justify-between gap-3 filter bar */`],
 })
 export class SpAdminFilterBarComponent {}

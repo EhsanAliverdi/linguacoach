@@ -165,7 +165,7 @@ Each item includes context, motivation, and the phase where it was deferred.
 - ~~TODO-10X-C~~: Angular build gate, ViewEncapsulation fix, TailAdmin Layout One structural alignment — **DONE in Phase 10X-C-F**
 - ~~TODO-10X-ASSETS~~: **DONE in Phase 10X-D** — TailAdmin free Angular template imported at `src/app/templates/tailadmin/free-angular-tailwind-dashboard/` (commit da992cf, MIT). Adapter inventory created. `admin-template/` folder removed. Templates gitignored from main repo.
 - TODO-10X-D-MODAL: migrate student edit/reset/archive modal internals to `sp-admin-modal` or a typed admin drawer. (was TODO-10X-D, renumbered to avoid conflict with template-import phase)
-- TODO-10X-E: wrapper alignment phase — adapt real TailAdmin layout/sidebar/header/button/badge/card/input/modal patterns from `src/app/templates/tailadmin/` into `sp-admin-*` wrappers. Remove approximation CSS replaced by real patterns.
+- ~~TODO-10X-E~~: wrapper alignment phase — adapt real TailAdmin layout/sidebar/header/button/badge/card/input/modal patterns from `src/app/templates/tailadmin/` into `sp-admin-*` wrappers. Remove approximation CSS replaced by real patterns. — **DONE in Phase 10X-E** (2026-06-18). All 15 wrappers adapted. Angular 349 passed, .NET 1885 passed.
 - TODO-10X-F: wrapper completion — table sorting, dropdown, theme toggle, filter bar, pagination alignment with TailAdmin source. Reduce remaining dashboard inline CSS; finish AI Config, Integrations, Curriculum form internals.
 - TODO-10X-MODAL: add richer modal confirm orchestration, focus trap, and keyboard return focus.
 - TODO-10X-DRAWER: add typed drawer payloads for student detail, usage policy editor, and prompt preview.

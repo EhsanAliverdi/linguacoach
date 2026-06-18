@@ -12,6 +12,31 @@ Last updated: 2026-06-18
 
 ---
 
+## TailAdmin wrapper adaptation (Phase 10X-E)
+
+All 15 `sp-admin-*` wrapper components now use actual TailAdmin free Angular template patterns internally. Custom CSS approximations replaced with real TailAdmin class structures.
+
+- Layout shell: `min-h-screen xl:flex`, `xl:ml-[290px]/xl:ml-[90px]` transition — exact TailAdmin Layout One.
+- Sidebar: `fixed left-0 top-0 h-screen w-[290px]/w-[90px] bg-white border-r border-gray-200`.
+- Header: `sticky top-0 flex w-full bg-white border-b border-gray-200 z-[99999]`.
+- Button: brand-500 primary (`#465fff`), outline secondary. Rounded-lg, inline-flex.
+- Badge: `rounded-full font-medium text-xs` — TailAdmin light variant color map (success/warning/info/primary/danger/neutral).
+- Card / stat-card: `rounded-2xl border border-gray-200 bg-white`.
+- Modal: `rounded-3xl bg-white`, backdrop `bg-gray-400/50 backdrop-blur-sm`.
+- Table: `rounded-2xl border border-gray-200 bg-white`, th `text-xs text-gray-500 bg-gray-50`.
+- Input / select: `h-11 rounded-lg border border-gray-200 bg-transparent`.
+- Drawer: `fixed right-0 h-screen bg-white border-l border-gray-200`.
+- Pagination / filter-bar: TailAdmin footer/filter bar structures.
+
+Admin feature pages are unchanged — they use `sp-admin-*` only.
+Wrapper public APIs (inputs/outputs) are stable.
+
+See: `docs/architecture/admin-tailadmin-adapter-inventory.md`, `docs/reviews/2026-06-18-phase-10x-e-tailadmin-wrapper-adaptation-review.md`
+
+Remaining: table sorting, dropdown, theme toggle (10X-F).
+
+---
+
 ## TailAdmin template import and adapter plan (Phase 10X-D)
 
 The actual free TailAdmin Angular template source is now imported as a vendor reference.

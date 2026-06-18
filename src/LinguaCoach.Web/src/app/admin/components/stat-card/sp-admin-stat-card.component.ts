@@ -7,58 +7,36 @@ import { KpiVariant } from '../kpi-card/sp-admin-kpi-card.component';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <article class="sp-adm-stat">
-      <div class="sp-adm-stat-icon" [class]="'sp-adm-stat-icon-' + tone">
+    <!--
+      TailAdmin stat/metric card pattern: rounded-2xl border border-gray-200 bg-white
+      icon container: rounded-xl with brand/success/warning bg tones
+      label: text-sm text-gray-500  value: text-title-sm font-semibold text-gray-800
+    -->
+    <article
+      class="sp-adm-stat rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] flex items-center gap-4 p-5"
+    >
+      <div
+        class="sp-adm-stat-icon rounded-xl flex items-center justify-center w-11 h-11 shrink-0"
+        [class]="'sp-adm-stat-icon-' + tone"
+      >
         <ng-content select="[slot=icon]" />
       </div>
       <div>
-        <div class="sp-adm-stat-label">{{ label }}</div>
-        <div class="sp-adm-stat-value">{{ value }}</div>
+        <div class="sp-adm-stat-label text-sm text-gray-500 dark:text-gray-400">{{ label }}</div>
+        <div class="sp-adm-stat-value text-2xl font-semibold text-gray-800 dark:text-white/90 leading-tight mt-0.5">{{ value }}</div>
       </div>
     </article>
   `,
   styles: [`
     :host { display: block; min-width: 0; }
-    .sp-adm-stat {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      background: var(--sp-admin-surface);
-      border: 1px solid var(--sp-admin-border);
-      border-radius: var(--sp-admin-radius-lg);
-      padding: var(--sp-admin-card-pad);
-      box-shadow: var(--sp-admin-shadow-card);
-      min-width: 0;
-      transition: box-shadow var(--sp-admin-transition-fast);
-    }
-    .sp-adm-stat:hover { box-shadow: var(--sp-admin-shadow-card-hover); }
-    .sp-adm-stat-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-    }
-    .sp-adm-stat-icon-indigo { background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary); }
-    .sp-adm-stat-icon-green { background: var(--sp-admin-green-bg); color: var(--sp-admin-green); }
-    .sp-adm-stat-icon-violet { background: var(--sp-admin-violet-bg); color: var(--sp-admin-violet); }
-    .sp-adm-stat-icon-amber { background: var(--sp-admin-amber-bg); color: var(--sp-admin-amber); }
-    .sp-adm-stat-icon-teal { background: var(--sp-admin-teal-bg); color: var(--sp-admin-teal); }
-    .sp-adm-stat-icon-slate { background: var(--sp-admin-slate-bg); color: var(--sp-admin-slate); }
-    .sp-adm-stat-label {
-      color: var(--sp-admin-text-muted);
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-    .sp-adm-stat-value {
-      color: var(--sp-admin-text);
-      font-size: 24px;
-      font-weight: 800;
-      line-height: 1.1;
-    }
+    /* TailAdmin-backed: rounded-2xl border border-gray-200 bg-white stat card pattern */
+    /* Icon tone bg/color — maps to TailAdmin brand/success/warning/error color tokens */
+    .sp-adm-stat-icon-indigo { background: #ecf3ff; color: #465fff; }
+    .sp-adm-stat-icon-green  { background: #ecfdf3; color: #16a34a; }
+    .sp-adm-stat-icon-violet { background: #f5f3ff; color: #7c3aed; }
+    .sp-adm-stat-icon-amber  { background: #fffbeb; color: #d97706; }
+    .sp-adm-stat-icon-teal   { background: #f0fdfa; color: #0d9488; }
+    .sp-adm-stat-icon-slate  { background: #f2f4f7; color: #475569; }
   `],
 })
 export class SpAdminStatCardComponent {

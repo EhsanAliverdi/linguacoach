@@ -6,43 +6,45 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
+    <!--
+      TailAdmin drawer pattern (shared/components/ui/drawer):
+      Backdrop: fixed inset-0 bg-gray-400/50 backdrop-blur-sm
+      Panel:    fixed top-0 right-0 h-screen bg-white dark:bg-gray-900
+                border-l border-gray-200 shadow-2xl w-[420px]
+      Close:    h-9 w-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400
+    -->
     @if (open) {
-      <div class="sp-adm-drawer-backdrop" (click)="closed.emit()" aria-hidden="true"></div>
-      <aside class="sp-adm-drawer" role="dialog" aria-modal="true" [attr.aria-label]="title">
-        <header class="sp-adm-drawer-header">
-          <h2>{{ title }}</h2>
-          <button type="button" (click)="closed.emit()" aria-label="Close drawer">×</button>
+      <div
+        class="sp-adm-drawer-backdrop fixed inset-0 bg-gray-400/50 backdrop-blur-sm z-[99998]"
+        (click)="closed.emit()"
+        aria-hidden="true"
+      ></div>
+      <aside
+        class="sp-adm-drawer fixed top-0 right-0 h-screen w-full max-w-[420px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-2xl z-[99999] overflow-auto flex flex-col"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="title"
+      >
+        <header class="sp-adm-drawer-header flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white/90 m-0">{{ title }}</h2>
+          <button
+            type="button"
+            (click)="closed.emit()"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
+            aria-label="Close drawer"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M6.04289 16.5413C5.65237 16.9318 5.65237 17.565 6.04289 17.9555C6.43342 18.346 7.06658 18.346 7.45711 17.9555L11.9987 13.4139L16.5408 17.956C16.9313 18.3466 17.5645 18.3466 17.955 17.956C18.3455 17.5655 18.3455 16.9323 17.955 16.5418L13.4129 11.9997L17.955 7.4576C18.3455 7.06707 18.3455 6.43391 17.955 6.04338C17.5645 5.65286 16.9313 5.65286 16.5408 6.04338L11.9987 10.5855L7.45711 6.0439C7.06658 5.65338 6.43342 5.65338 6.04289 6.0439C5.65237 6.43442 5.65237 7.06759 6.04289 7.45811L10.5845 11.9997L6.04289 16.5413Z"
+                fill="currentColor"/>
+            </svg>
+          </button>
         </header>
-        <div class="sp-adm-drawer-body"><ng-content /></div>
+        <div class="sp-adm-drawer-body p-5 flex-1 overflow-y-auto"><ng-content /></div>
       </aside>
     }
   `,
-  styles: [`
-    .sp-adm-drawer-backdrop { position: fixed; inset: 0; z-index: var(--sp-admin-z-modal); background: rgba(15,23,42,.36); }
-    .sp-adm-drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      z-index: calc(var(--sp-admin-z-modal) + 1);
-      width: min(420px, 100vw);
-      background: var(--sp-admin-surface);
-      border-left: 1px solid var(--sp-admin-border);
-      box-shadow: -18px 0 48px rgba(15,23,42,.18);
-      overflow: auto;
-    }
-    .sp-adm-drawer-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--sp-admin-border);
-    }
-    .sp-adm-drawer-header h2 { margin: 0; font-size: 16px; font-weight: 800; color: var(--sp-admin-text); }
-    .sp-adm-drawer-header button { border: 1px solid var(--sp-admin-border); background: var(--sp-admin-surface); border-radius: var(--sp-admin-radius-sm); width: 32px; height: 32px; cursor: pointer; }
-    .sp-adm-drawer-body { padding: 20px; }
-  `],
+  styles: [`/* TailAdmin-backed: fixed right-0 bg-white border-l border-gray-200 drawer pattern */`],
 })
 export class SpAdminDrawerComponent {
   @Input() open = false;
