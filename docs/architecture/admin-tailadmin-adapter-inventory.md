@@ -81,7 +81,8 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | 10X-E | Wrapper alignment: all 15 sp-admin-* wrappers adapted to real TailAdmin patterns | ✅ Done |
 | 10X-F (next) | Wrapper completion: table sorting, dropdown, theme toggle, filter bar refinement | ⬜ Pending |
 | 10X-G | Full admin page refactor: Dashboard/AI Config/Curriculum to wrappers, header user dropdown via `sp-admin-dropdown`, page-local CSS reduction | ✅ Done |
-| 10X-H+ | Notification dropdown, breadcrumb, charts, advanced form elements, remaining page-local form fields | ⬜ Future |
+| 10X-G-F | Finish remaining page refactor: Students table/badge wrappers, Curriculum form-field wrappers; verified other priority pages already migrated | ✅ Done |
+| 10X-H+ | Notification dropdown, breadcrumb, charts, advanced form elements, AI Config + Integrations form fields, student modals, dark-mode boundary | ⬜ Future |
 
 ---
 

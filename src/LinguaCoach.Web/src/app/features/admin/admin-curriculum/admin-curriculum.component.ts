@@ -16,6 +16,7 @@ import {
   SpAdminCardComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
+  SpAdminFormFieldComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
   SpAdminTableComponent,
@@ -39,6 +40,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
     SpAdminCardComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
+    SpAdminFormFieldComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageHeaderComponent,
     SpAdminTableComponent,
@@ -142,46 +144,38 @@ function parseJsonArray(json: string | null | undefined): string[] {
             <div style="color:#991b1b;margin-bottom:12px;padding:10px;background:#fef2f2;border-radius:6px">{{ formError() }}</div>
           }
           <div style="display:grid;gap:14px;max-width:640px">
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Key <span style="color:#991b1b">*</span></label>
+            <sp-admin-form-field label="Key *" hint="Stable slug — lowercase letters, digits, dots, underscores, hyphens.">
               <input class="sp-input" style="width:100%" [(ngModel)]="form.key" [disabled]="view() === 'edit'" placeholder="e.g. b1.writing.clear_emails" />
-              <div style="font-size:12px;color:#64748b;margin-top:2px">Stable slug — lowercase letters, digits, dots, underscores, hyphens.</div>
-            </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Title <span style="color:#991b1b">*</span></label>
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Title *">
               <input class="sp-input" style="width:100%" [(ngModel)]="form.title" placeholder="e.g. Writing Clear Short Emails" />
-            </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Description <span style="color:#991b1b">*</span></label>
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Description *">
               <textarea class="sp-input" style="width:100%;min-height:70px" [(ngModel)]="form.description"></textarea>
-            </div>
+            </sp-admin-form-field>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">CEFR level <span style="color:#991b1b">*</span></label>
+              <sp-admin-form-field label="CEFR level *">
                 <select class="sp-input" style="width:100%" [(ngModel)]="form.cefrLevel">
                   @for (level of taxonomy()?.cefrLevels ?? []; track level) {
                     <option [value]="level">{{ level }}</option>
                   }
                 </select>
-              </div>
-              <div>
-                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Primary skill <span style="color:#991b1b">*</span></label>
+              </sp-admin-form-field>
+              <sp-admin-form-field label="Primary skill *">
                 <select class="sp-input" style="width:100%" [(ngModel)]="form.primarySkill">
                   @for (skill of taxonomy()?.skills ?? []; track skill) {
                     <option [value]="skill">{{ skill }}</option>
                   }
                 </select>
-              </div>
+              </sp-admin-form-field>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Difficulty band (1–5) <span style="color:#991b1b">*</span></label>
+              <sp-admin-form-field label="Difficulty band (1–5) *">
                 <input class="sp-input" style="width:100%" type="number" min="1" max="5" [(ngModel)]="form.difficultyBand" />
-              </div>
-              <div>
-                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Recommended order</label>
+              </sp-admin-form-field>
+              <sp-admin-form-field label="Recommended order">
                 <input class="sp-input" style="width:100%" type="number" min="0" [(ngModel)]="form.recommendedOrder" />
-              </div>
+              </sp-admin-form-field>
             </div>
             <div>
               <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Context tags</label>
@@ -194,10 +188,9 @@ function parseJsonArray(json: string | null | undefined): string[] {
                 }
               </div>
             </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Focus tags <span style="font-weight:400;color:#64748b">(comma-separated)</span></label>
+            <sp-admin-form-field label="Focus tags" hint="Comma-separated">
               <input class="sp-input" style="width:100%" [(ngModel)]="focusTagsRaw" placeholder="e.g. email_writing, workplace_communication" />
-            </div>
+            </sp-admin-form-field>
             <div>
               <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Secondary skills</label>
               <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -209,10 +202,9 @@ function parseJsonArray(json: string | null | undefined): string[] {
                 }
               </div>
             </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Prerequisite keys <span style="font-weight:400;color:#64748b">(comma-separated)</span></label>
+            <sp-admin-form-field label="Prerequisite keys" hint="Comma-separated">
               <input class="sp-input" style="width:100%" [(ngModel)]="prerequisiteKeysRaw" placeholder="e.g. a2.writing.short_messages" />
-            </div>
+            </sp-admin-form-field>
             <div style="display:flex;gap:16px;flex-wrap:wrap">
               <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                 <input type="checkbox" [(ngModel)]="form.isActive" /> Active
@@ -224,14 +216,12 @@ function parseJsonArray(json: string | null | undefined): string[] {
                 <input type="checkbox" [(ngModel)]="form.isExamInspired" /> Exam-inspired
               </label>
             </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Teaching notes <span style="font-weight:400;color:#64748b">(not shown to students)</span></label>
+            <sp-admin-form-field label="Teaching notes" hint="Not shown to students">
               <textarea class="sp-input" style="width:100%;min-height:60px" [(ngModel)]="form.teachingNotes"></textarea>
-            </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Example prompts <span style="font-weight:400;color:#64748b">(not shown to students)</span></label>
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Example prompts" hint="Not shown to students">
               <textarea class="sp-input" style="width:100%;min-height:60px" [(ngModel)]="form.examplePrompts"></textarea>
-            </div>
+            </sp-admin-form-field>
             <div style="display:flex;gap:8px;padding-top:8px">
               <sp-admin-button type="button" [loading]="saving()" [disabled]="saving()" (click)="save()">
                 {{ view() === 'create' ? 'Create' : 'Save changes' }}
@@ -250,42 +240,38 @@ function parseJsonArray(json: string | null | undefined): string[] {
           </p>
           <div style="display:grid;gap:14px">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">CEFR level override</label>
+              <sp-admin-form-field label="CEFR level override">
                 <select class="sp-input" style="width:100%" [(ngModel)]="preview.cefrLevelOverride">
                   <option value="">Auto (from student)</option>
                   @for (level of taxonomy()?.cefrLevels ?? []; track level) {
                     <option [value]="level">{{ level }}</option>
                   }
                 </select>
-              </div>
-              <div>
-                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Primary skill</label>
+              </sp-admin-form-field>
+              <sp-admin-form-field label="Primary skill">
                 <select class="sp-input" style="width:100%" [(ngModel)]="preview.primarySkill">
                   <option value="">Any</option>
                   @for (skill of taxonomy()?.skills ?? []; track skill) {
                     <option [value]="skill">{{ skill }}</option>
                   }
                 </select>
-              </div>
+              </sp-admin-form-field>
             </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Source label</label>
+            <sp-admin-form-field label="Source label">
               <select class="sp-input" style="width:100%" [(ngModel)]="preview.source">
                 <option value="admin_preview">admin_preview</option>
                 <option value="today_lesson">today_lesson</option>
                 <option value="practice_gym">practice_gym</option>
                 <option value="on_demand">on_demand</option>
               </select>
-            </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Difficulty preference</label>
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Difficulty preference">
               <select class="sp-input" style="width:100%" [(ngModel)]="preview.difficultyPreference">
                 <option value="">Balanced (default)</option>
                 <option value="gentle">Gentle</option>
                 <option value="challenging">Challenging</option>
               </select>
-            </div>
+            </sp-admin-form-field>
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
               <input type="checkbox" [(ngModel)]="preview.allowReviewOrScaffold" />
               Allow review / scaffold (may select lower-level content)

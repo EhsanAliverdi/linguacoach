@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent } from '../../../admin';
+import { SpAdminBadgeComponent, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -23,7 +23,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
@@ -49,7 +49,7 @@ interface StudentEditForm {
     } @else if (error()) {
       <div class="sp-admin-alert-error">{{ error() }}</div>
     } @else {
-      <div class="sp-admin-table-card sp-admin-table-scroll">
+      <sp-admin-table>
         <table class="sp-admin-table">
           <thead>
             <tr>
@@ -70,22 +70,14 @@ interface StudentEditForm {
                   <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
                 </td>
                 <td>
-                  <span class="sp-admin-badge"
-                    [class.sp-admin-badge-slate]="s.lifecycleStage === 'Archived'"
-                    [class.sp-admin-badge-indigo]="s.lifecycleStage !== 'Archived'">
-                    {{ s.lifecycleStage }}
-                  </span>
+                  <sp-admin-badge [tone]="s.lifecycleStage === 'Archived' ? 'neutral' : 'primary'">{{ s.lifecycleStage }}</sp-admin-badge>
                 </td>
                 <td>
-                  <span class="sp-admin-badge"
-                    [class.sp-admin-badge-green]="s.onboardingStatus === 'Complete'"
-                    [class.sp-admin-badge-amber]="s.onboardingStatus !== 'Complete'">
-                    {{ s.onboardingStatus }}
-                  </span>
+                  <sp-admin-badge [tone]="s.onboardingStatus === 'Complete' ? 'success' : 'warning'">{{ s.onboardingStatus }}</sp-admin-badge>
                 </td>
                 <td>
                   @if (s.cefrLevel) {
-                    <span class="sp-admin-badge sp-admin-badge-indigo">{{ s.cefrLevel }}</span>
+                    <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
                   } @else {
                     <span class="sp-admin-table-empty">-</span>
                   }
@@ -110,7 +102,7 @@ interface StudentEditForm {
         @if (filteredStudents().length === 0) {
           <div class="sp-admin-empty-row">No students found.</div>
         }
-      </div>
+      </sp-admin-table>
       @if (totalPages() > 1) {
         <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
       }
@@ -357,16 +349,11 @@ interface StudentEditForm {
     .sp-admin-search-input{max-width:280px;flex:1;}
     .sp-admin-sortable{cursor:pointer;user-select:none;}
     .sp-admin-sortable:hover{color:#334155;}
-    .sp-admin-pagination{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 0;}
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
     .sp-admin-filter-toggle input{accent-color:#4338CA;}
     .sp-admin-table-scroll{overflow-x:auto;}
     .sp-admin-student-name{font-weight:800;color:#0F172A;}
     .sp-admin-profile-cell{max-width:260px;overflow-wrap:anywhere;}
-    .sp-admin-row-actions{display:flex;align-items:center;gap:10px;white-space:nowrap;}
-    .sp-admin-link-button,.sp-admin-danger-link{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;}
-    .sp-admin-link-button{color:#4338CA;}
-    .sp-admin-danger-link{color:#DC2626;}
     .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}
     .sp-admin-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:120;}
     .sp-admin-modal{position:fixed;right:24px;top:76px;bottom:24px;z-index:121;width:min(720px,calc(100vw - 48px));overflow:auto;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.22);}

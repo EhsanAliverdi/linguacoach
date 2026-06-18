@@ -14,6 +14,45 @@ Last updated: 2026-06-18
 
 ## Active sprint
 
+**Phase 10X-G-F — Finish Remaining Admin Page Refactor to TailAdmin-backed Wrappers** - complete (2026-06-18)
+
+Goal: finish wrapper consistency on the remaining admin pages after 10X-G.
+
+### Delivered
+
+- Students: row table wrapped in `sp-admin-table` (projection mode); lifecycle/onboarding/CEFR pills
+  migrated from raw `.sp-admin-badge` class to the `sp-admin-badge` wrapper. Removed obsolete
+  page-local pagination, row-action link, and `.sp-admin-row-actions` CSS.
+- Curriculum: create/edit and routing-preview form fields migrated to `sp-admin-form-field`
+  (closes TODO-10X-G-CURRICULUM-FORMS). Native ngModel controls retained inside each field because
+  `sp-admin-input`/`sp-admin-select` have no ControlValueAccessor.
+- Verified AI Usage, Prompts, Exercise Types, Diagnostics, Usage Policies, and Integrations cards
+  were already wrapper-migrated in 10X-B/10X-G. No further raw badge/table legacy in those pages.
+- Tests: 2 new wrapper-migration specs (Students table/badge/actions; Curriculum form fields).
+
+### Gates
+
+- git diff --check: clean
+- .NET build: 0 errors; .NET tests: 1885 passed (3 arch + 1233 unit + 649 integration)
+- Angular build: clean; Angular tests: 379 passed (up from 377)
+- Playwright: 188 passed
+
+### Not implemented in 10X-G-F (deferred)
+
+- AI Config dense provider-credentials form fields (TODO-10X-G-AICONFIG-FORMS).
+- Integrations operational forms (TODO-10X-G-INTEGRATIONS-FORMS).
+- Student edit/reset/archive modal internals (TODO-10X-D-MODAL).
+- Admin-only dark-mode class boundary (TODO-10X-G-DARKMODE).
+- Usage governance UX (10R-F), AI Usage redesign (10U), prompt playground (10V), notification
+  platform, enterprise auth/security, observability, billing, StudentProfile.CefrLevel migration,
+  full placement engine, full mastery engine.
+
+See: `docs/reviews/2026-06-18-phase-10x-g-f-finish-admin-page-refactor-review.md`
+
+---
+
+## Previous sprint
+
 **Phase 10X-G — Full Admin Page Refactor to TailAdmin-backed Wrappers** - complete (2026-06-18)
 
 Goal: refactor the highest-legacy admin pages onto `sp-admin-*` wrappers, wire the admin

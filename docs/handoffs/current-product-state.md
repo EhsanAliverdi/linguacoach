@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 (10X-G)
+lastUpdated: 2026-06-18 (10X-G-F)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,31 @@ supersededBy:
 # SpeakPath â€” Current Product State
 
 Last updated: 2026-06-18
+
+---
+
+## Finish remaining admin page refactor (Phase 10X-G-F)
+
+Completed the remaining wrapper consistency work after 10X-G:
+
+- Students: the row table is wrapped in `sp-admin-table` (projected mode); lifecycle, onboarding,
+  and CEFR pills now use the `sp-admin-badge` wrapper (was raw `.sp-admin-badge` class). Obsolete
+  page-local pagination, row-action link, and badge CSS removed. Filter bar, pagination, sortable
+  headers, and `sp-admin-table-actions` row menu were already in place from 10X-F/10X-G.
+- Curriculum: create/edit and routing-preview form fields now use `sp-admin-form-field` for labels
+  and hints (closing TODO-10X-G-CURRICULUM-FORMS). Native ngModel controls kept inside each field
+  because `sp-admin-input`/`sp-admin-select` lack a ControlValueAccessor and cannot two-way bind.
+- Verified the remaining priority pages (AI Usage, Prompts, Exercise Types, Diagnostics, Usage
+  Policies, Integrations cards) were already wrapper-migrated in 10X-B/10X-G; no raw badge/table
+  legacy markup remained except student-detail (out of scope this phase).
+
+Intentionally deferred (unchanged, see TODOs): AI Config dense provider-credentials form fields,
+Integrations operational forms, student management modals, the admin-only dark-mode class boundary,
+and the full 10R-F/10U/10V redesigns.
+
+Angular: 379 passed. .NET: 1885 passed. Playwright: 188 passed.
+
+See: `docs/reviews/2026-06-18-phase-10x-g-f-finish-admin-page-refactor-review.md`
 
 ---
 

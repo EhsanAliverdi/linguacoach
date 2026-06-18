@@ -157,6 +157,17 @@ When refactoring an admin feature page, prefer wrappers in this order:
 Keep page-local CSS only for unique grid layout and content that no wrapper covers.
 Remove component-local CSS once a wrapper owns the visual (card/table/badge/button/stat).
 
+### Form-field wrapper rule (important)
+
+`sp-admin-input` and `sp-admin-select` bind their value to a plain `@Input() value` with an internal
+`[(ngModel)]` and expose no `ControlValueAccessor` and no value output. They cannot two-way bind back
+to a parent page's model. Do NOT replace a `[(ngModel)]`-driven native control with these wrappers on
+a data-entry form — it silently breaks form submission.
+
+For ngModel-driven admin forms, use `sp-admin-form-field` for the label/hint/error structure and keep
+the native control (`.sp-input`) projected inside it. This is the pattern used by the Students and
+Curriculum forms. Adding a ControlValueAccessor to `sp-admin-input`/`sp-admin-select` is future work.
+
 ## Folder Structure
 
 ```
@@ -275,9 +286,17 @@ Phase 10X-C-F fixed the critical ViewEncapsulation bug, verified all gates,
 and hardened TailAdmin Layout One alignment.
 
 Phase 10X-G refactored the highest-legacy pages to wrappers and reduced page-local CSS.
+Phase 10X-G-F finished the remaining wrapper consistency (Students table/badge wrappers,
+Curriculum form-field wrappers) and verified the other priority pages were already migrated.
 
-Migrated pages (post 10X-G):
+Migrated pages (post 10X-G-F):
 
+- Students: row table now wrapped in `sp-admin-table` (projection mode); lifecycle, onboarding,
+  and CEFR pills use the `sp-admin-badge` wrapper. Filter bar, pagination, sortable headers, and
+  `sp-admin-table-actions` row menu in place. Obsolete page-local pagination/row-action/badge CSS removed.
+- Curriculum: create/edit and routing-preview form fields use `sp-admin-form-field` for labels and
+  hints. Native ngModel controls stay inside each field (the `sp-admin-input`/`sp-admin-select`
+  wrappers have no ControlValueAccessor and cannot two-way bind to a parent model).
 - Dashboard: KPI tiles now use `sp-admin-stat-card`; sections use `sp-admin-card`
   (including dashed placeholders); all status pills use `sp-admin-badge`. Removed the
   page-local KPI-card, status-card, badge, and table-card CSS now owned by wrappers.

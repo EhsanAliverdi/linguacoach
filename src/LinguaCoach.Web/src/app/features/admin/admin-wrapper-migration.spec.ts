@@ -47,6 +47,8 @@ import { AdminDiagnosticsComponent } from './admin-diagnostics/admin-diagnostics
 import { AdminIntegrationsComponent } from './admin-integrations/admin-integrations.component';
 import { AdminPromptsComponent } from './admin-prompts/admin-prompts.component';
 import { AdminStudentsComponent } from './admin-students/admin-students.component';
+import { AdminCurriculumComponent } from './admin-curriculum/admin-curriculum.component';
+import { CurriculumService } from '../../core/services/curriculum.service';
 import { AdminApiService } from '../../core/services/admin.api.service';
 import { AiUsageService } from '../../core/services/ai-usage.service';
 import { DiagnosticsService } from '../../core/services/diagnostics.service';
@@ -93,6 +95,65 @@ describe('admin wrapper migration', () => {
 
     expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
     expect(query(fixture.nativeElement, 'sp-admin-filter-bar')).toBeTruthy();
+  });
+
+  it('students page uses sp-admin-table and sp-admin-badge wrappers for rows (10X-G-F)', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of([{
+      studentProfileId: 'p1',
+      email: 'student@example.com',
+      firstName: 'Ann',
+      lastName: 'Lee',
+      displayName: null,
+      lifecycleStage: 'CourseReady',
+      onboardingStatus: 'Complete',
+      cefrLevel: 'B1',
+      careerContext: null,
+      learningGoal: null,
+      learningGoalDescription: null,
+      difficultSituationsText: null,
+      preferredSessionDurationMinutes: null,
+      professionalExperienceLevel: null,
+      roleFamiliarity: null,
+      createdAt: new Date().toISOString(),
+    }]));
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: ToastService, useValue: toast },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(AdminStudentsComponent);
+    fixture.detectChanges();
+
+    expect(query(fixture.nativeElement, 'sp-admin-table')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-badge').length).toBeGreaterThanOrEqual(3);
+    expect(query(fixture.nativeElement, 'sp-admin-table-actions')).toBeTruthy();
+  });
+
+  it('curriculum create form uses sp-admin-form-field wrappers (10X-G-F)', () => {
+    const curriculum = jasmine.createSpyObj('CurriculumService', ['listObjectives', 'getTaxonomy']);
+    curriculum.listObjectives.and.returnValue(of([]));
+    curriculum.getTaxonomy.and.returnValue(of({
+      cefrLevels: ['A1', 'B1'], skills: ['writing', 'speaking'], contextTags: ['general_english'], focusTags: [],
+    }));
+
+    TestBed.configureTestingModule({
+      imports: [AdminCurriculumComponent],
+      providers: [provideRouter([]), { provide: CurriculumService, useValue: curriculum }],
+    });
+
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.startCreate();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-form-field').length).toBeGreaterThanOrEqual(6);
   });
 
   it('AI Config page renders with wrapper cards', () => {
