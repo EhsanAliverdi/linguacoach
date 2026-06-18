@@ -16,6 +16,7 @@ import { CommonModule } from '@angular/common';
       </div>
     </div>
   `,
+  styles: [`:host { display: contents; }`],
 })
 export class SpAdminLayoutComponent {
   @Input() collapsed = false;

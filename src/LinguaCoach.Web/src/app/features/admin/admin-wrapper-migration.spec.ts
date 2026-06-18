@@ -1,6 +1,45 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { of } from 'rxjs';
+import {
+  SpAdminLayoutComponent,
+  SpAdminSidebarComponent,
+  SpAdminHeaderComponent,
+  SpAdminToastOutletComponent,
+} from '../../admin';
+import { AuthService } from '../../core/services/auth.service';
+import { signal } from '@angular/core';
+
+@Component({
+  standalone: true,
+  imports: [
+    RouterLink, RouterLinkActive, RouterOutlet,
+    SpAdminLayoutComponent, SpAdminSidebarComponent,
+    SpAdminHeaderComponent, SpAdminToastOutletComponent,
+  ],
+  template: `
+    <sp-admin-layout [collapsed]="false">
+      <sp-admin-sidebar slot="sidebar" [collapsed]="false">
+        <nav>
+          <a routerLink="/admin" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">Dashboard</a>
+          <a routerLink="/admin/students" routerLinkActive="sp-admin-nav-item-active" class="sp-admin-nav-item">Students</a>
+        </nav>
+      </sp-admin-sidebar>
+      <sp-admin-header slot="header">
+        <button class="sp-admin-hamburger">Menu</button>
+        <button class="sp-layout-header-action">Toggle</button>
+        <div class="sp-admin-header-user">
+          <button class="sp-admin-avatar">A</button>
+        </div>
+      </sp-admin-header>
+      <div class="sp-admin-content-body">Page content</div>
+      <sp-admin-toast-outlet />
+    </sp-admin-layout>
+  `,
+})
+class ShellTestHostComponent {}
 import { AdminAiConfigComponent } from './admin-ai-config/admin-ai-config.component';
 import { AdminAiUsageComponent } from './admin-ai-usage/admin-ai-usage.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
@@ -158,6 +197,25 @@ describe('admin wrapper migration', () => {
     expect(fixture.nativeElement.querySelectorAll('sp-admin-card').length).toBeGreaterThanOrEqual(3);
   });
 
+  it('dashboard renders KPI grid cards', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
+    adminApi.listStudents.and.returnValue(of([]));
+    adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 42 }));
+
+    TestBed.configureTestingModule({
+      imports: [AdminDashboardComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: adminApi }],
+    });
+
+    const fixture = TestBed.createComponent(AdminDashboardComponent);
+    fixture.detectChanges();
+
+    const kpiGrid = fixture.nativeElement.querySelector('.sp-admin-kpi-grid');
+    expect(kpiGrid).not.toBeNull();
+    const kpiCards = fixture.nativeElement.querySelectorAll('.sp-admin-kpi-card');
+    expect(kpiCards.length).toBeGreaterThanOrEqual(4);
+  });
+
   it('Diagnostics page still renders wrapper header', () => {
     const svc = jasmine.createSpyObj('DiagnosticsService', ['getStatus', 'getEvents']);
     svc.getStatus.and.returnValue(of({
@@ -182,5 +240,65 @@ describe('admin wrapper migration', () => {
     fixture.detectChanges();
 
     expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
+  });
+});
+
+describe('admin shell visual structure (10X-C)', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([])],
+    });
+  });
+
+  it('renders shell with sidebar, header and content slots', () => {
+    const fixture = TestBed.createComponent(ShellTestHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.sp-admin-shell')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-sidebar')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-header')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-main')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-content')).not.toBeNull();
+  });
+
+  it('sidebar is not collapsed by default', () => {
+    const fixture = TestBed.createComponent(ShellTestHostComponent);
+    fixture.detectChanges();
+
+    const sidebar = fixture.nativeElement.querySelector('.sp-admin-sidebar');
+    expect(sidebar.classList).not.toContain('sp-sidebar-collapsed');
+  });
+
+  it('header renders hamburger and desktop toggle buttons', () => {
+    const fixture = TestBed.createComponent(ShellTestHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.sp-admin-hamburger')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-layout-header-action')).not.toBeNull();
+  });
+
+  it('header renders avatar button in user zone', () => {
+    const fixture = TestBed.createComponent(ShellTestHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.sp-admin-header-user')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-avatar')).not.toBeNull();
+  });
+
+  it('main area is not collapsed when layout collapsed=false', () => {
+    const fixture = TestBed.createComponent(ShellTestHostComponent);
+    fixture.detectChanges();
+
+    const main = fixture.nativeElement.querySelector('.sp-admin-main');
+    expect(main).not.toBeNull();
+    expect(main.classList).not.toContain('sp-main-collapsed');
+  });
+
+  it('nav items are present in sidebar', () => {
+    const fixture = TestBed.createComponent(ShellTestHostComponent);
+    fixture.detectChanges();
+
+    const navItems = fixture.nativeElement.querySelectorAll('.sp-admin-nav-item');
+    expect(navItems.length).toBeGreaterThanOrEqual(2);
   });
 });

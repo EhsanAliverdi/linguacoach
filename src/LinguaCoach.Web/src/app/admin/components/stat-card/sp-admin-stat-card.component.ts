@@ -18,20 +18,24 @@ import { KpiVariant } from '../kpi-card/sp-admin-kpi-card.component';
     </article>
   `,
   styles: [`
+    :host { display: block; min-width: 0; }
     .sp-adm-stat {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       background: var(--sp-admin-surface);
       border: 1px solid var(--sp-admin-border);
       border-radius: var(--sp-admin-radius-lg);
-      padding: 18px;
+      padding: var(--sp-admin-card-pad);
       box-shadow: var(--sp-admin-shadow-card);
+      min-width: 0;
+      transition: box-shadow var(--sp-admin-transition-fast);
     }
+    .sp-adm-stat:hover { box-shadow: var(--sp-admin-shadow-card-hover); }
     .sp-adm-stat-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: grid;
       place-items: center;
       flex-shrink: 0;

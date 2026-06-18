@@ -182,4 +182,38 @@ describe('admin wrapper components', () => {
     expect(fixture.nativeElement.textContent).toContain('Details');
     expect(fixture.componentInstance.closed.emit).toHaveBeenCalled();
   });
+
+  it('layout applies sp-main-collapsed when collapsed=true', () => {
+    const fixture = TestBed.createComponent(LayoutHostComponent);
+    fixture.detectChanges();
+
+    const main = fixture.nativeElement.querySelector('.sp-admin-main');
+    expect(main).not.toBeNull();
+    expect(main.classList).toContain('sp-main-collapsed');
+  });
+
+  it('layout renders sidebar and header slots in correct containers', () => {
+    const fixture = TestBed.createComponent(LayoutHostComponent);
+    fixture.detectChanges();
+
+    const shell = fixture.nativeElement.querySelector('.sp-admin-shell');
+    expect(shell).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-content')).not.toBeNull();
+  });
+
+  it('card renders header divider when title is set', () => {
+    const fixture = TestBed.createComponent(CardHostComponent);
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.querySelector('.sp-adm-card-header');
+    expect(header).not.toBeNull();
+    expect(header.textContent).toContain('Card title');
+  });
+
+  it('card uses sp-adm-card class on section element', () => {
+    const fixture = TestBed.createComponent(CardHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('section.sp-adm-card')).not.toBeNull();
+  });
 });

@@ -17,28 +17,32 @@ import { CommonModule } from '@angular/common';
     </section>
   `,
   styles: [`
+    :host { display: block; min-width: 0; }
     .sp-adm-card {
       background: var(--sp-admin-surface);
       border: 1px solid var(--sp-admin-border);
       border-radius: var(--sp-admin-radius-lg);
-      padding: 18px;
+      padding: var(--sp-admin-card-pad);
       box-shadow: var(--sp-admin-shadow-card);
       min-width: 0;
     }
-    .sp-adm-card-tight { padding: 14px; }
-    .sp-adm-card-dashed { border-style: dashed; }
+    .sp-adm-card-tight { padding: var(--sp-admin-card-pad-sm); }
+    .sp-adm-card-dashed { border-style: dashed; border-color: var(--sp-admin-border); }
     .sp-adm-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--sp-admin-border-subtle);
     }
     .sp-adm-card-header h2 {
       margin: 0;
       font-size: 14px;
       font-weight: 800;
       color: var(--sp-admin-text);
+      letter-spacing: -.01em;
     }
   `],
 })

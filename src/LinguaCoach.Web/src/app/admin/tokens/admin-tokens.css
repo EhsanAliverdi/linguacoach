@@ -1,35 +1,37 @@
 /* SpeakPath admin design tokens
    All admin UI components consume these custom properties.
-   TailAdmin-inspired values are isolated here; feature pages never use raw hex. */
+   TailAdmin-inspired values isolated here; feature pages never use raw hex. */
 :root {
-  /* Layout */
+  /* ── Layout ──────────────────────────────────────────────────────────── */
   --sp-admin-sidebar-w: 240px;
   --sp-admin-sidebar-w-collapsed: 72px;
-  --sp-admin-header-h: 56px;
+  --sp-admin-header-h: 60px;
+  --sp-admin-content-max: 1280px;
 
-  /* Surfaces */
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
   --sp-admin-bg: #F8FAFC;
   --sp-admin-surface: #ffffff;
   --sp-admin-surface-subtle: #F8FAFC;
+  --sp-admin-surface-elevated: #ffffff;
 
-  /* Borders */
+  /* ── Borders ─────────────────────────────────────────────────────────── */
   --sp-admin-border: #E2E8F0;
   --sp-admin-border-subtle: #F1F5F9;
 
-  /* Text */
+  /* ── Text ────────────────────────────────────────────────────────────── */
   --sp-admin-text: #0F172A;
   --sp-admin-text-secondary: #334155;
   --sp-admin-text-muted: #64748B;
   --sp-admin-text-dim: #94A3B8;
   --sp-admin-text-faint: #CBD5E1;
 
-  /* Brand / primary */
+  /* ── Brand / primary ─────────────────────────────────────────────────── */
   --sp-admin-primary: #4338CA;
   --sp-admin-primary-bg: #EEF2FF;
   --sp-admin-primary-hover: #3730A3;
   --sp-admin-primary-focus: #C7D2FE;
 
-  /* Status tones */
+  /* ── Status tones ────────────────────────────────────────────────────── */
   --sp-admin-green: #16A34A;
   --sp-admin-green-bg: #F0FDF4;
   --sp-admin-green-ring: #DCFCE7;
@@ -48,27 +50,46 @@
 
   --sp-admin-danger: #EF4444;
   --sp-admin-danger-bg: #FEF2F2;
-  --sp-admin-danger-hover: #FEF2F2;
+  --sp-admin-danger-hover: #DC2626;
 
-  /* Radii */
+  --sp-admin-info: #0284C7;
+  --sp-admin-info-bg: #F0F9FF;
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --sp-admin-radius-xs: 6px;
   --sp-admin-radius-sm: 8px;
   --sp-admin-radius-md: 12px;
   --sp-admin-radius-lg: 14px;
+  --sp-admin-radius-xl: 18px;
 
-  /* Shadows */
-  --sp-admin-shadow-card: 0 1px 3px rgba(0,0,0,.04);
-  --sp-admin-shadow-action: 0 2px 8px rgba(67,56,202,.08);
+  /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --sp-admin-shadow-card: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
+  --sp-admin-shadow-card-hover: 0 4px 12px rgba(0,0,0,.08);
+  --sp-admin-shadow-action: 0 2px 8px rgba(67,56,202,.10);
+  --sp-admin-shadow-dropdown: 0 10px 32px rgba(15,23,42,.14);
+  --sp-admin-shadow-modal: 0 20px 60px rgba(15,23,42,.20);
 
-  /* Typography */
+  /* ── Typography ──────────────────────────────────────────────────────── */
   --sp-admin-font: inherit;
 
-  /* Z-index layers */
+  /* ── Z-index layers ──────────────────────────────────────────────────── */
   --sp-admin-z-sidebar: 40;
   --sp-admin-z-header: 30;
   --sp-admin-z-modal: 50;
   --sp-admin-z-toast: 60;
 
-  /* Transitions */
+  /* ── Transitions ─────────────────────────────────────────────────────── */
   --sp-admin-transition: .22s ease;
-  --sp-admin-transition-fast: .14s;
+  --sp-admin-transition-fast: .14s ease;
+
+  /* ── Table ───────────────────────────────────────────────────────────── */
+  --sp-admin-table-row-h: 44px;
+
+  /* ── Card ────────────────────────────────────────────────────────────── */
+  --sp-admin-card-pad: 20px;
+  --sp-admin-card-pad-sm: 14px;
+
+  /* ── Form controls ───────────────────────────────────────────────────── */
+  --sp-admin-control-h: 36px;
+  --sp-admin-focus-ring: 0 0 0 3px rgba(67,56,202,.15);
 }
