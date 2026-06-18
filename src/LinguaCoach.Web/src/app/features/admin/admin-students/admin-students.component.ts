@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent } from '../../../admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -23,7 +23,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
@@ -108,266 +108,229 @@ interface StudentEditForm {
       }
     }
 
-    @if (editing(); as student) {
-      <div class="sp-admin-modal-backdrop" (click)="cancelEdit()"></div>
-      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="editStudentTitle">
-        <div class="sp-admin-modal-header">
-          <div>
-            <h2 id="editStudentTitle">Edit student</h2>
-            <p>{{ student.email }}</p>
-          </div>
-          <button type="button" (click)="cancelEdit()" aria-label="Close edit student">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
+    <sp-admin-modal
+      [open]="!!editing()"
+      [title]="'Edit student'"
+      [subtitle]="editing()?.email ?? ''"
+      maxWidth="720px"
+      (closed)="cancelEdit()"
+    >
+      <form (ngSubmit)="saveEdit()" class="sp-stu-edit-grid">
+        <sp-admin-form-field label="First name">
+          <sp-admin-input [(ngModel)]="editForm.firstName" name="firstName" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Last name">
+          <sp-admin-input [(ngModel)]="editForm.lastName" name="lastName" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Display name" class="sp-stu-wide">
+          <sp-admin-input [(ngModel)]="editForm.displayName" name="displayName" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Career or work context" class="sp-stu-wide">
+          <sp-admin-input [(ngModel)]="editForm.careerContext" name="careerContext" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Learning goal" class="sp-stu-wide">
+          <sp-admin-input [(ngModel)]="editForm.learningGoal" name="learningGoal" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Learning goal description" class="sp-stu-wide">
+          <sp-admin-textarea [rows]="3" [(ngModel)]="editForm.learningGoalDescription" name="learningGoalDescription" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Difficult situations" class="sp-stu-wide">
+          <sp-admin-textarea [rows]="3" [(ngModel)]="editForm.difficultSituationsText" name="difficultSituationsText" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Preferred duration">
+          <select class="sp-stu-select" [(ngModel)]="editForm.preferredSessionDurationMinutes" name="preferredSessionDurationMinutes">
+            <option [ngValue]="null">Not set</option>
+            @for (duration of sessionDurations; track duration) {
+              <option [ngValue]="duration">{{ duration }} minutes</option>
+            }
+          </select>
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Experience level">
+          <select class="sp-stu-select" [(ngModel)]="editForm.professionalExperienceLevel" name="professionalExperienceLevel">
+            <option [ngValue]="null">Not set</option>
+            @for (level of experienceLevels; track level.value) {
+              <option [ngValue]="level.value">{{ level.label }}</option>
+            }
+          </select>
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Role familiarity">
+          <select class="sp-stu-select" [(ngModel)]="editForm.roleFamiliarity" name="roleFamiliarity">
+            <option [ngValue]="null">Not set</option>
+            @for (level of familiarityLevels; track level.value) {
+              <option [ngValue]="level.value">{{ level.label }}</option>
+            }
+          </select>
+        </sp-admin-form-field>
+        @if (editError()) {
+          <div class="sp-admin-alert-error sp-stu-wide">{{ editError() }}</div>
+        }
+        <div class="sp-stu-wide flex justify-end gap-3 pt-2">
+          <sp-admin-button variant="ghost" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
+          <sp-admin-button type="submit" [loading]="savingEdit()" [disabled]="savingEdit()">
+            {{ savingEdit() ? 'Saving...' : 'Save changes' }}
+          </sp-admin-button>
         </div>
-        <form (ngSubmit)="saveEdit()" class="sp-admin-edit-grid">
-          <label>
-            <span>First name</span>
-            <input class="sp-input" [(ngModel)]="editForm.firstName" name="firstName" />
+      </form>
+    </sp-admin-modal>
+
+    <sp-admin-modal
+      [open]="!!resetting()"
+      [title]="'Reset password'"
+      [subtitle]="resetting()?.email ?? ''"
+      (closed)="cancelResetPassword()"
+    >
+      @if (resetSuccessPassword()) {
+        <div class="space-y-4">
+          <div class="sp-admin-alert-success">
+            Password reset. Share this temporary password with the student securely — it will not be shown again.
+          </div>
+          <sp-admin-form-field label="New temporary password">
+            <sp-admin-input [value]="resetSuccessPassword()" [readonly]="true" />
+          </sp-admin-form-field>
+          <div class="flex justify-end">
+            <sp-admin-button (click)="cancelResetPassword()">Done</sp-admin-button>
+          </div>
+        </div>
+      } @else {
+        <form (ngSubmit)="saveResetPassword()" class="space-y-4">
+          <sp-admin-form-field label="New temporary password">
+            <sp-admin-input
+              [(ngModel)]="resetForm.newPassword"
+              name="newPassword"
+              placeholder="At least 8 characters, with a digit"
+              autocomplete="off"
+            />
+          </sp-admin-form-field>
+          <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="resetForm.mustChangePassword" name="mustChangePassword" class="accent-blue-600 w-4 h-4" />
+            Require password change on next login
           </label>
-          <label>
-            <span>Last name</span>
-            <input class="sp-input" [(ngModel)]="editForm.lastName" name="lastName" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Display name</span>
-            <input class="sp-input" [(ngModel)]="editForm.displayName" name="displayName" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Career or work context</span>
-            <input class="sp-input" [(ngModel)]="editForm.careerContext" name="careerContext" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Learning goal</span>
-            <input class="sp-input" [(ngModel)]="editForm.learningGoal" name="learningGoal" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Learning goal description</span>
-            <textarea class="sp-input" rows="3" [(ngModel)]="editForm.learningGoalDescription" name="learningGoalDescription"></textarea>
-          </label>
-          <label class="sp-admin-wide">
-            <span>Difficult situations</span>
-            <textarea class="sp-input" rows="3" [(ngModel)]="editForm.difficultSituationsText" name="difficultSituationsText"></textarea>
-          </label>
-          <label>
-            <span>Preferred duration</span>
-            <select class="sp-input" [(ngModel)]="editForm.preferredSessionDurationMinutes" name="preferredSessionDurationMinutes">
-              <option [ngValue]="null">Not set</option>
-              @for (duration of sessionDurations; track duration) {
-                <option [ngValue]="duration">{{ duration }} minutes</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Experience level</span>
-            <select class="sp-input" [(ngModel)]="editForm.professionalExperienceLevel" name="professionalExperienceLevel">
-              <option [ngValue]="null">Not set</option>
-              @for (level of experienceLevels; track level.value) {
-                <option [ngValue]="level.value">{{ level.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Role familiarity</span>
-            <select class="sp-input" [(ngModel)]="editForm.roleFamiliarity" name="roleFamiliarity">
-              <option [ngValue]="null">Not set</option>
-              @for (level of familiarityLevels; track level.value) {
-                <option [ngValue]="level.value">{{ level.label }}</option>
-              }
-            </select>
-          </label>
-          @if (editError()) {
-            <div class="sp-admin-alert-error sp-admin-wide">{{ editError() }}</div>
+          @if (resetError()) {
+            <div class="sp-admin-alert-error">{{ resetError() }}</div>
           }
-          <div class="sp-admin-modal-actions sp-admin-wide">
-            <button type="button" class="sp-button-ghost" (click)="cancelEdit()">Cancel</button>
-            <button type="submit" class="sp-admin-btn-primary" [disabled]="savingEdit()">
-              {{ savingEdit() ? 'Saving...' : 'Save changes' }}
-            </button>
+          <div class="flex justify-end gap-3 pt-2">
+            <sp-admin-button variant="ghost" type="button" (click)="generateResetPassword()">Generate password</sp-admin-button>
+            <sp-admin-button variant="ghost" type="button" (click)="cancelResetPassword()">Cancel</sp-admin-button>
+            <sp-admin-button type="submit" [loading]="savingReset()" [disabled]="savingReset() || resetForm.newPassword.length < 8">
+              {{ savingReset() ? 'Saving...' : 'Reset password' }}
+            </sp-admin-button>
           </div>
         </form>
-      </section>
-    }
+      }
+    </sp-admin-modal>
 
-    @if (resetting(); as student) {
-      <div class="sp-admin-modal-backdrop" (click)="cancelResetPassword()"></div>
-      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle">
-        <div class="sp-admin-modal-header">
-          <div>
-            <h2 id="resetPasswordTitle">Reset password</h2>
-            <p>{{ student.email }}</p>
+    <sp-admin-modal
+      [open]="!!resettingData()"
+      [title]="'Reset student data'"
+      [subtitle]="resettingData()?.email ?? ''"
+      (closed)="cancelResetData()"
+    >
+      @if (resetDataResult(); as result) {
+        <div class="space-y-3">
+          <div class="sp-admin-alert-success">
+            Reset complete. New stage: {{ result.newStage }} (was {{ result.previousStage }}).
           </div>
-          <button type="button" (click)="cancelResetPassword()" aria-label="Close reset password">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
+          <p class="text-xs text-gray-500">
+            Cleared: onboarding={{ result.clearedItems.onboardingAnswers }},
+            placement={{ result.clearedItems.placementResults }},
+            courses/sessions={{ result.clearedItems.coursesAndSessions }},
+            attempts={{ result.clearedItems.activityAttempts }},
+            vocabulary={{ result.clearedItems.vocabulary }},
+            memory={{ result.clearedItems.learningMemory }},
+            audio files deleted={{ result.clearedItems.audioFilesDeleted }},
+            progress={{ result.clearedItems.progressData }}.
+          </p>
+          <p class="text-xs text-gray-400">Reset log: {{ result.resetLogId }}</p>
+          <div class="flex justify-end">
+            <sp-admin-button (click)="cancelResetData()">Done</sp-admin-button>
+          </div>
         </div>
-        @if (resetSuccessPassword()) {
-          <div class="sp-admin-edit-grid">
-            <div class="sp-admin-wide sp-admin-alert-success">
-              Password reset. Share this temporary password with the student
-              securely — it will not be shown again.
-            </div>
-            <label class="sp-admin-wide">
-              <span>New temporary password</span>
-              <input class="sp-input" [value]="resetSuccessPassword()" readonly />
+      } @else {
+        <form (ngSubmit)="saveResetData()" class="space-y-3">
+          <sp-admin-form-field label="Preset">
+            <select class="sp-stu-select" [(ngModel)]="resetDataForm.preset" name="preset" (change)="applyResetPreset()">
+              @for (preset of resetPresets; track preset.key) {
+                <option [ngValue]="preset.key">{{ preset.label }}</option>
+              }
+            </select>
+          </sp-admin-form-field>
+
+          <div class="flex flex-col gap-2">
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearOnboardingAnswers" name="clearOnboardingAnswers" class="accent-blue-600 w-4 h-4" />
+              Clear onboarding answers
             </label>
-            <div class="sp-admin-modal-actions sp-admin-wide">
-              <button type="button" class="sp-admin-btn-primary" (click)="cancelResetPassword()">Done</button>
-            </div>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearPlacementResults" name="clearPlacementResults" class="accent-blue-600 w-4 h-4" />
+              Clear placement results
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearCoursesAndSessions" name="clearCoursesAndSessions" class="accent-blue-600 w-4 h-4" />
+              Clear courses and sessions
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearActivityAttempts" name="clearActivityAttempts" class="accent-blue-600 w-4 h-4" />
+              Clear activity attempts
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearVocabulary" name="clearVocabulary" class="accent-blue-600 w-4 h-4" />
+              Clear vocabulary
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearLearningMemory" name="clearLearningMemory" class="accent-blue-600 w-4 h-4" />
+              Clear learning memory
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearAudioFiles" name="clearAudioFiles" class="accent-blue-600 w-4 h-4" />
+              Delete audio files
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="resetDataForm.clearProgressData" name="clearProgressData" class="accent-blue-600 w-4 h-4" />
+              Recalculate progress data
+            </label>
           </div>
-        } @else {
-          <form (ngSubmit)="saveResetPassword()" class="sp-admin-edit-grid">
-            <label class="sp-admin-wide">
-              <span>New temporary password</span>
-              <input class="sp-input" [(ngModel)]="resetForm.newPassword" name="newPassword"
-                placeholder="At least 8 characters, with a digit" autocomplete="off" />
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetForm.mustChangePassword" name="mustChangePassword" style="margin:0;" />
-              <span style="margin:0;">Require password change on next login</span>
-            </label>
-            @if (resetError()) {
-              <div class="sp-admin-alert-error sp-admin-wide">{{ resetError() }}</div>
-            }
-            <div class="sp-admin-modal-actions sp-admin-wide">
-              <button type="button" class="sp-button-ghost" (click)="generateResetPassword()">Generate password</button>
-              <button type="button" class="sp-button-ghost" (click)="cancelResetPassword()">Cancel</button>
-              <button type="submit" class="sp-admin-btn-primary" [disabled]="savingReset() || resetForm.newPassword.length < 8">
-                {{ savingReset() ? 'Saving...' : 'Reset password' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-    }
 
-    @if (resettingData(); as student) {
-      <div class="sp-admin-modal-backdrop" (click)="cancelResetData()"></div>
-      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="resetDataTitle">
-        <div class="sp-admin-modal-header">
-          <div>
-            <h2 id="resetDataTitle">Reset student data</h2>
-            <p>{{ student.email }}</p>
-          </div>
-          <button type="button" (click)="cancelResetData()" aria-label="Close reset data">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        @if (resetDataResult(); as result) {
-          <div class="sp-admin-edit-grid">
-            <div class="sp-admin-wide sp-admin-alert-success">
-              Reset complete. New stage: {{ result.newStage }} (was {{ result.previousStage }}).
-            </div>
-            <div class="sp-admin-wide sp-admin-table-muted">
-              Cleared: onboarding={{ result.clearedItems.onboardingAnswers }},
-              placement={{ result.clearedItems.placementResults }},
-              courses/sessions={{ result.clearedItems.coursesAndSessions }},
-              attempts={{ result.clearedItems.activityAttempts }},
-              vocabulary={{ result.clearedItems.vocabulary }},
-              memory={{ result.clearedItems.learningMemory }},
-              audio files deleted={{ result.clearedItems.audioFilesDeleted }},
-              progress={{ result.clearedItems.progressData }}.
-            </div>
-            <div class="sp-admin-wide sp-admin-table-muted">Reset log: {{ result.resetLogId }}</div>
-            <div class="sp-admin-modal-actions sp-admin-wide">
-              <button type="button" class="sp-admin-btn-primary" (click)="cancelResetData()">Done</button>
-            </div>
-          </div>
-        } @else {
-          <form (ngSubmit)="saveResetData()" class="sp-admin-edit-grid">
-            <label class="sp-admin-wide">
-              <span>Preset</span>
-              <select class="sp-input" [(ngModel)]="resetDataForm.preset" name="preset" (change)="applyResetPreset()">
-                @for (preset of resetPresets; track preset.key) {
-                  <option [ngValue]="preset.key">{{ preset.label }}</option>
-                }
-              </select>
-            </label>
+          <sp-admin-form-field label="Reason (required)">
+            <sp-admin-textarea [rows]="2" [(ngModel)]="resetDataForm.reason" name="reason"
+              placeholder="Why is this reset being performed?" />
+          </sp-admin-form-field>
 
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearOnboardingAnswers" name="clearOnboardingAnswers" style="margin:0;" />
-              <span style="margin:0;">Clear onboarding answers</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearPlacementResults" name="clearPlacementResults" style="margin:0;" />
-              <span style="margin:0;">Clear placement results</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearCoursesAndSessions" name="clearCoursesAndSessions" style="margin:0;" />
-              <span style="margin:0;">Clear courses and sessions</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearActivityAttempts" name="clearActivityAttempts" style="margin:0;" />
-              <span style="margin:0;">Clear activity attempts</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearVocabulary" name="clearVocabulary" style="margin:0;" />
-              <span style="margin:0;">Clear vocabulary</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearLearningMemory" name="clearLearningMemory" style="margin:0;" />
-              <span style="margin:0;">Clear learning memory</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearAudioFiles" name="clearAudioFiles" style="margin:0;" />
-              <span style="margin:0;">Delete audio files</span>
-            </label>
-            <label class="sp-admin-wide" style="display:flex;align-items:center;gap:8px;flex-direction:row;">
-              <input type="checkbox" [(ngModel)]="resetDataForm.clearProgressData" name="clearProgressData" style="margin:0;" />
-              <span style="margin:0;">Recalculate progress data</span>
-            </label>
+          @if (resettingData(); as student) {
+            <sp-admin-form-field [label]="confirmEmailLabel(student.email)">
+              <sp-admin-input [(ngModel)]="resetDataForm.confirmEmail" name="confirmEmail" autocomplete="off" />
+            </sp-admin-form-field>
+          }
 
-            <label class="sp-admin-wide">
-              <span>Reason (required)</span>
-              <textarea class="sp-input" rows="2" [(ngModel)]="resetDataForm.reason" name="reason"
-                placeholder="Why is this reset being performed?"></textarea>
-            </label>
-
-            <label class="sp-admin-wide">
-              <span>Type the student's email to confirm: {{ student.email }}</span>
-              <input class="sp-input" [(ngModel)]="resetDataForm.confirmEmail" name="confirmEmail" autocomplete="off" />
-            </label>
-
-            @if (resetDataError()) {
-              <div class="sp-admin-alert-error sp-admin-wide">{{ resetDataError() }}</div>
-            }
-            <div class="sp-admin-modal-actions sp-admin-wide">
-              <button type="button" class="sp-button-ghost" (click)="cancelResetData()">Cancel</button>
-              <button type="submit" class="sp-admin-btn-primary"
+          @if (resetDataError()) {
+            <div class="sp-admin-alert-error">{{ resetDataError() }}</div>
+          }
+          @if (resettingData(); as student) {
+            <div class="flex justify-end gap-3 pt-2">
+              <sp-admin-button variant="ghost" type="button" (click)="cancelResetData()">Cancel</sp-admin-button>
+              <sp-admin-button variant="danger" type="submit" [loading]="savingResetData()"
                 [disabled]="savingResetData() || resetDataForm.confirmEmail !== student.email || !resetDataForm.reason.trim()">
                 {{ savingResetData() ? 'Resetting...' : 'Reset data' }}
-              </button>
+              </sp-admin-button>
             </div>
-          </form>
-        }
-      </section>
-    }
+          }
+        </form>
+      }
+    </sp-admin-modal>
   `,
   styles: [`
-    .sp-admin-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-    .sp-admin-students-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-    .sp-admin-search-input{max-width:280px;flex:1;}
     .sp-admin-sortable{cursor:pointer;user-select:none;}
     .sp-admin-sortable:hover{color:#334155;}
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
     .sp-admin-filter-toggle input{accent-color:#4338CA;}
-    .sp-admin-table-scroll{overflow-x:auto;}
     .sp-admin-student-name{font-weight:800;color:#0F172A;}
     .sp-admin-profile-cell{max-width:260px;overflow-wrap:anywhere;}
     .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}
-    .sp-admin-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:120;}
-    .sp-admin-modal{position:fixed;right:24px;top:76px;bottom:24px;z-index:121;width:min(720px,calc(100vw - 48px));overflow:auto;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.22);}
-    .sp-admin-modal-header{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid #E2E8F0;}
-    .sp-admin-modal-header h2{font-size:18px;font-weight:800;color:#0F172A;}
-    .sp-admin-modal-header p{font-size:13px;color:#64748B;margin-top:2px;}
-    .sp-admin-modal-header button{width:34px;height:34px;border-radius:9px;border:1px solid #E2E8F0;background:#fff;color:#64748B;cursor:pointer;display:grid;place-items:center;}
-    .sp-admin-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:22px;}
-    .sp-admin-edit-grid label span{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;}
-    .sp-admin-wide{grid-column:1/-1;}
-    .sp-admin-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:8px;}
-    @media(max-width:720px){
-      .sp-admin-modal{left:12px;right:12px;top:68px;bottom:12px;width:auto;}
-      .sp-admin-edit-grid{grid-template-columns:1fr;padding:18px;}
+    .sp-stu-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+    .sp-stu-wide{grid-column:1/-1;}
+    .sp-stu-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
+    .sp-stu-select:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+    @media(max-width:640px){
+      .sp-stu-edit-grid{grid-template-columns:1fr;}
     }
   `],
 })
@@ -704,6 +667,10 @@ export class AdminStudentsComponent implements OnInit {
       reason: '',
       confirmEmail: '',
     };
+  }
+
+  confirmEmailLabel(email: string): string {
+    return `Type the student email to confirm: ${email}`;
   }
 
   private nullIfBlank(value: string): string | null {

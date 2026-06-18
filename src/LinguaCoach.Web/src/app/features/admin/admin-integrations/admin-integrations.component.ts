@@ -11,13 +11,20 @@ import {
 import {
   SpAdminCardComponent,
   SpAdminPageHeaderComponent,
+  SpAdminButtonComponent,
+  SpAdminFormFieldComponent,
+  SpAdminInputComponent,
 } from '../../../admin';
 
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminCardComponent, SpAdminPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent],
   templateUrl: './admin-integrations.component.html',
+  styles: [`
+    .sp-adm-num-input{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
+    .sp-adm-num-input:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+  `],
 })
 export class AdminIntegrationsComponent implements OnInit {
   // Storage

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-LAYOUT-BLOCKER)
+lastUpdated: 2026-06-19 (10X-I)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,55 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10X-I — Migrate Remaining Admin Forms and Modals to CVA Wrappers** - complete (2026-06-19)
+
+Goal: migrate the three deferred admin form/modal targets to `sp-admin-*` CVA wrappers after the
+CVA foundation (10X-H) and layout blocker fix (10X-LAYOUT-BLOCKER) unblocked this work.
+
+### Delivered
+
+- **AI Config:** provider/model/voice category selects kept as native `<select>` inside
+  `<sp-admin-form-field>` (incompatible with `sp-admin-select` due to `[ngValue]="null"`).
+  TTS voice text input, model name input, API key (password) input, Qwen endpoint input all
+  migrated to `<sp-admin-input>`. Add/Test/Save/Clear buttons migrated to `<sp-admin-button>`.
+  Removed page-local `.sp-ai-select`/`.sp-ai-model-select` CSS; added `.sp-adm-native-select`.
+- **Integrations:** storage display fields migrated to `<sp-admin-input [disabled]="true">` inside
+  `<sp-admin-form-field>`. Generation settings number inputs kept native `<input type="number">`
+  (CVA writes strings — numeric domain integrity preserved); wrapped in `<sp-admin-form-field>`.
+  Test/Save/Cancel/Retry/Generate buttons migrated to `<sp-admin-button>`. Tables rewrote to
+  TailAdmin Tailwind classes directly.
+- **Student modals (all 3):** edit, reset-password, and reset-data page-local modals replaced with
+  `<sp-admin-modal>`. All text/password inputs inside use `<sp-admin-input>`. Textareas use
+  `<sp-admin-textarea>`. Submit/cancel actions use `<sp-admin-button>`. Removed all page-local
+  `.sp-admin-modal-backdrop`/`.sp-admin-modal`/`.sp-admin-modal-header`/`.sp-admin-edit-grid` CSS.
+- **`sp-admin-modal`:** added `maxWidth` `@Input()` (default `520px`); student edit modal uses `720px`.
+- **`sp-admin-input`:** added `@Input() value` getter/setter for one-way display binding.
+- **`sp-admin-layout`:** content area changed from `<div>` to `<main>` for `role="main"` semantics,
+  fixing Playwright `getByRole('main')` locator failures.
+- 11 new Angular unit tests for the migrated components.
+
+### Gates
+
+- git diff --check: clean
+- .NET build: 0 errors; .NET tests: 1885 passed (3 arch + 1233 unit + 649 integration)
+- Angular build (production): clean; Angular tests: 421 passed (up from 411)
+- Playwright: `getByRole('main')` locator issue resolved by `<main>` layout fix
+
+### Closed TODOs
+
+- TODO-10X-G-AICONFIG-FORMS: done
+- TODO-10X-G-INTEGRATIONS-FORMS: done
+- TODO-10X-D-MODAL: done
+- TODO-10X-I: done
+
+### Review doc
+
+`docs/reviews/2026-06-19-phase-10x-i-admin-form-modal-migration-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10X-LAYOUT-BLOCKER — TailAdmin Layout One Shell Parity** - complete (2026-06-19)
 

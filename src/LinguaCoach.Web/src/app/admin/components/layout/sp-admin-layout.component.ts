@@ -20,9 +20,9 @@ import { CommonModule } from '@angular/common';
         [ngClass]="collapsed ? 'xl:ml-[90px]' : 'xl:ml-[290px]'"
       >
         <ng-content select="[slot=header]" />
-        <div class="p-4 mx-auto max-w-screen-2xl md:p-6">
+        <main class="p-4 mx-auto max-w-screen-2xl md:p-6">
           <ng-content />
-        </div>
+        </main>
       </div>
     </div>
   `,

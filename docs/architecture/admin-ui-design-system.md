@@ -157,6 +157,34 @@ When refactoring an admin feature page, prefer wrappers in this order:
 Keep page-local CSS only for unique grid layout and content that no wrapper covers.
 Remove component-local CSS once a wrapper owns the visual (card/table/badge/button/stat).
 
+## Form Field Conventions (Phase 10X-H / 10X-I)
+
+- Always wrap inputs in `<sp-admin-form-field label="...">` for consistent label/hint/error layout.
+- Use `<sp-admin-input>` for text, password, email, search fields.
+  - Supports `[(ngModel)]`, `[formControlName]`, `[value]` (one-way display), `[disabled]`.
+  - `type="password"` for credential fields.
+- Use native `<input type="number" [(ngModel)]="...">` inside `<sp-admin-form-field>` for numeric fields.
+  - `sp-admin-input` CVA writes strings; numeric domain integrity requires the native element.
+- Use native `<select [(ngModel)]="..." [ngValue]="null">` inside `<sp-admin-form-field>` for fields
+  with `number | null` option values. `sp-admin-select` only supports string `[value]` binding.
+- Use `<sp-admin-select>` only for `string`-valued selects with static option lists.
+- Use `<sp-admin-textarea>` for multi-line text (notes, goals, descriptions).
+
+## Modal Conventions (Phase 10X-E / 10X-I)
+
+- Use `<sp-admin-modal [open]="..." [title]="..." (closed)="...">` for all admin modals.
+- Avoid page-local backdrop/modal CSS (`.sp-admin-modal-backdrop`, `.sp-admin-modal`, etc.).
+- Use `maxWidth` input when the form needs more than the default 520px (e.g. `maxWidth="720px"`).
+- Submit buttons must be inside the `<form>` element — do not use `slot="footer"` for form actions
+  because a div in the footer slot is outside the `<form>` boundary and breaks form submission.
+- The `slot="footer"` projection is appropriate for non-form confirm/action dialogs only.
+
+## Layout Semantics (Phase 10X-I)
+
+- `sp-admin-layout` wraps the content area in `<main>` (not a plain `<div>`).
+- Playwright and accessibility tools locate the content area via `getByRole('main')`.
+- Do not override this with a `<div>` wrapper inside the content slot.
+
 ### Form-field wrapper rule (Phase 10X-H — CVA now supported)
 
 As of Phase 10X-H, `sp-admin-input`, `sp-admin-select`, and the new `sp-admin-textarea` implement

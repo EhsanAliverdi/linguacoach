@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-H)
+lastUpdated: 2026-06-19 (10X-I)
 owner: architecture
 supersedes:
 supersededBy:
@@ -42,10 +42,10 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | `shared/components/ui/badge/` | Tones, sizes | `sp-admin-badge` | 10X-E | ✅ Done | `inline-flex items-center px-2.5 py-0.5 rounded-full font-medium text-xs`. TailAdmin light variant color map. |
 | `shared/components/ui/table/` | Table, row, cell, header | `sp-admin-table` | 10X-F | ✅ Done | `rounded-2xl border border-gray-200 bg-white`. th `text-xs text-gray-500 bg-gray-50`. Sortable columns: `sortable` flag, `sortColumn`, `sortDirection`, `(sortChange)` output. `hasActions` slot. |
 | `shared/components/common/component-card/` | Card with header/action slots | `sp-admin-card` / `sp-admin-stat-card` | 10X-E | ✅ Done | `rounded-2xl border border-gray-200 bg-white`. Header `px-6 py-5`. Body `p-4 sm:p-6 border-t border-gray-100`. |
-| `shared/components/form/input/` | Text inputs, states | `sp-admin-input` / `sp-admin-form-field` | 10X-E / 10X-H | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm`. TailAdmin input pattern. **10X-H: ControlValueAccessor added** (ngModel + reactive, `setDisabledState`, touched-on-blur). |
+| `shared/components/form/input/` | Text inputs, states | `sp-admin-input` / `sp-admin-form-field` | 10X-E / 10X-H / 10X-I | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm`. TailAdmin input pattern. **10X-H: ControlValueAccessor added** (ngModel + reactive, `setDisabledState`, touched-on-blur). **10X-I: `[value]` `@Input()` added for one-way display binding.** |
 | `shared/components/form/select/` | Select, multi-select | `sp-admin-select` | 10X-E / 10X-H | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm`. TailAdmin select pattern. **10X-H: ControlValueAccessor added**; options via `[options]` or projected `<option>`, `placeholder` disabled default. Multi-select not yet wrapped. |
 | `shared/components/form/input/text-area/` | Textarea, states | `sp-admin-textarea` | 10X-H | ✅ Done | `rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm`. ControlValueAccessor (ngModel + reactive, `setDisabledState`, touched-on-blur). `rows`, `placeholder`, `readonly`, `invalid` inputs. |
-| `shared/components/ui/modal/` | Modal, confirm dialog | `sp-admin-modal` + `AdminModalService` | 10X-E | ✅ Done | `rounded-3xl bg-white`. Backdrop `bg-gray-400/50 backdrop-blur-sm`. Close `rounded-full bg-gray-100`. |
+| `shared/components/ui/modal/` | Modal, confirm dialog | `sp-admin-modal` + `AdminModalService` | 10X-E / 10X-I | ✅ Done | `rounded-3xl bg-white`. Backdrop `bg-gray-400/50 backdrop-blur-sm`. Close `rounded-full bg-gray-100`. **10X-I: added `maxWidth` `@Input()` (default `520px`) for wide modals.** |
 | `shared/components/ui/dropdown/` | Dropdown menu | `sp-admin-dropdown` | 10X-F | ✅ Done | `absolute z-40 rounded-xl border border-gray-200 bg-white shadow-lg`. Trigger/menu content projection. Click-outside + Escape close. align left/right, width sm/md/lg. 10X-G: now consumed by the admin header user/profile menu. |
 | `shared/components/common/table-dropdown/` | Row action dropdown | `sp-admin-table-actions` | 10X-F | ✅ Done | Three-dot trigger, projected or `[actions]` array API. Danger item styling. Click-outside + Escape close. |
 | `shared/layout/header/` (notification area) | Notification dropdown | `sp-admin-toast-outlet` + notification wrapper | — | ⬜ Future | Toast outlet exists. Full notification dropdown in 10X-G+. |
@@ -84,7 +84,9 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | 10X-G | Full admin page refactor: Dashboard/AI Config/Curriculum to wrappers, header user dropdown via `sp-admin-dropdown`, page-local CSS reduction | ✅ Done |
 | 10X-G-F | Finish remaining page refactor: Students table/badge wrappers, Curriculum form-field wrappers; verified other priority pages already migrated | ✅ Done |
 | 10X-H | Admin form wrapper CVA foundation: `ControlValueAccessor` on `sp-admin-input`/`sp-admin-select`, new `sp-admin-textarea`, `sp-admin-form-field` required marker. 15 new wrapper specs. | ✅ Done |
-| 10X-H+ | Notification dropdown, breadcrumb, charts, per-field AI Config + Integrations form migration, student modals, dark-mode boundary | ⬜ Future |
+| 10X-LAYOUT-BLOCKER | TailAdmin Layout One shell parity: `@utility` menu classes, exact Tailwind shell classes on layout/sidebar/header wrappers, body.admin-layout. | ✅ Done |
+| 10X-I | Remaining form/modal migration: AI Config credential inputs, Integrations operational fields, all 3 student modals. `maxWidth` on `sp-admin-modal`. `[value]` input on `sp-admin-input`. `<main>` in layout for `role="main"`. | ✅ Done |
+| 10X-I+ | Notification dropdown, breadcrumb, charts, dark-mode boundary, `sp-admin-select-object` (number\|null), `sp-admin-input-number` (numeric CVA) | ⬜ Future |
 
 ---
 

@@ -305,6 +305,214 @@ describe('admin wrapper migration', () => {
   });
 });
 
+describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration', () => {
+  function makeAdminApi() {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listStudents']);
+    adminApi.listAiCategories.and.returnValue(of([
+      { categoryKey: 'llm.default', displayName: 'Default LLM', providerName: 'fake', modelName: null, voiceName: null },
+      { categoryKey: 'tts.listening', displayName: 'Listening TTS', providerName: 'openai', modelName: 'tts-1', voiceName: 'onyx' },
+    ]));
+    adminApi.listAiProviders.and.returnValue(of([
+      { providerName: 'openai', hasApiKey: true, apiEndpoint: null, models: ['gpt-4o'], modelTests: [] },
+    ]));
+    adminApi.listStudents.and.returnValue(of([]));
+    return adminApi;
+  }
+
+  function makeIntegrationsSvc() {
+    const svc = jasmine.createSpyObj('AdminIntegrationsService', ['getStorage', 'getGenerationSettings', 'getBatches']);
+    svc.getStorage.and.returnValue(of({ provider: 's3', endpoint: 'http://minio:9000', bucketName: 'lc', accessKey: 'key', secretKey: 'sec', useSsl: false, signedUrlExpiryMinutes: 15 }));
+    svc.getGenerationSettings.and.returnValue(of({
+      readyLessonBufferSize: 5, refillThreshold: 2, refillBatchSize: 2, maxGenerationAttempts: 2,
+      generationTimeoutSeconds: 60, ttsTimeoutSeconds: 30, maxConcurrentGenerationJobs: 1, maxConcurrentTtsJobs: 1,
+      practiceGymReadyExercisesPerType: 2, practiceGymRefillThresholdPerType: 1, practiceGymRefillCountPerType: 1,
+      enableBackgroundGeneration: true, enableTtsGeneration: false,
+    }));
+    svc.getBatches.and.returnValue(of({ summary: { queued: 0, running: 0, failed: 0, lastSuccessfulGenerationUtc: null }, readyBufferPerStudent: [], batches: [] }));
+    return svc;
+  }
+
+  it('AI Config page renders sp-admin-form-field wrappers inside LLM category cards (10X-I)', () => {
+    const adminApi = makeAdminApi();
+    TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+    const fixture = TestBed.createComponent(AdminAiConfigComponent);
+    fixture.detectChanges();
+    const fields = fixture.nativeElement.querySelectorAll('sp-admin-form-field');
+    expect(fields.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('AI Config TTS voice field uses sp-admin-input wrapper (10X-I)', () => {
+    const adminApi = makeAdminApi();
+    TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+    const fixture = TestBed.createComponent(AdminAiConfigComponent);
+    fixture.detectChanges();
+    const inputs = fixture.nativeElement.querySelectorAll('sp-admin-input');
+    expect(inputs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('AI Config LLM category native selects are wrapped in sp-admin-form-field (10X-I)', () => {
+    const adminApi = makeAdminApi();
+    TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+    const fixture = TestBed.createComponent(AdminAiConfigComponent);
+    fixture.detectChanges();
+    const selects = fixture.nativeElement.querySelectorAll('select.sp-adm-native-select');
+    expect(selects.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('Integrations page renders sp-admin-form-field for storage display fields (10X-I)', () => {
+    const svc = makeIntegrationsSvc();
+    TestBed.configureTestingModule({
+      imports: [AdminIntegrationsComponent],
+      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+    });
+    const fixture = TestBed.createComponent(AdminIntegrationsComponent);
+    fixture.detectChanges();
+    const fields = fixture.nativeElement.querySelectorAll('sp-admin-form-field');
+    expect(fields.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('Integrations page renders sp-admin-button for test connection action (10X-I)', () => {
+    const svc = makeIntegrationsSvc();
+    TestBed.configureTestingModule({
+      imports: [AdminIntegrationsComponent],
+      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+    });
+    const fixture = TestBed.createComponent(AdminIntegrationsComponent);
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('sp-admin-button');
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('Integrations save button calls saveSettings (10X-I)', () => {
+    const svc = makeIntegrationsSvc();
+    svc.updateGenerationSettings = jasmine.createSpy('updateGenerationSettings').and.returnValue(of({}));
+    TestBed.configureTestingModule({
+      imports: [AdminIntegrationsComponent],
+      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+    });
+    const fixture = TestBed.createComponent(AdminIntegrationsComponent);
+    fixture.detectChanges();
+    const allBtns = Array.from(fixture.nativeElement.querySelectorAll('sp-admin-button')) as HTMLElement[];
+    const saveBtn = allBtns.find(el => el.textContent?.trim() === 'Save');
+    expect(saveBtn).toBeTruthy();
+    saveBtn?.click();
+    expect(svc.updateGenerationSettings).toHaveBeenCalled();
+  });
+
+  it('Students page no longer uses page-local sp-admin-modal CSS class (10X-I)', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of([]));
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: adminApi }, { provide: ToastService, useValue: toast }],
+    });
+    const fixture = TestBed.createComponent(AdminStudentsComponent);
+    fixture.detectChanges();
+    const legacyModal = fixture.nativeElement.querySelector('.sp-admin-modal');
+    expect(legacyModal).toBeNull();
+  });
+
+  it('Students edit modal opens as sp-admin-modal on startEdit (10X-I)', () => {
+    const student = {
+      studentProfileId: 'p1', email: 'ann@example.com', firstName: 'Ann', lastName: 'Lee',
+      displayName: null, lifecycleStage: 'CourseReady', onboardingStatus: 'Complete', cefrLevel: 'B1',
+      careerContext: null, learningGoal: null, learningGoalDescription: null, difficultSituationsText: null,
+      preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null,
+      createdAt: new Date().toISOString(),
+    };
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of([student]));
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: adminApi }, { provide: ToastService, useValue: toast }],
+    });
+    const fixture = TestBed.createComponent(AdminStudentsComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.startEdit(student as any);
+    fixture.detectChanges();
+    const modal = fixture.nativeElement.querySelector('sp-admin-modal');
+    expect(modal).toBeTruthy();
+    const inputs = modal.querySelectorAll('sp-admin-input');
+    expect(inputs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('Students edit modal closes on cancelEdit (10X-I)', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of([]));
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: adminApi }, { provide: ToastService, useValue: toast }],
+    });
+    const fixture = TestBed.createComponent(AdminStudentsComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.editing.set({ email: 'x@x.com' } as any);
+    fixture.detectChanges();
+    fixture.componentInstance.cancelEdit();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.editing()).toBeNull();
+  });
+
+  it('Students reset password modal opens as sp-admin-modal (10X-I)', () => {
+    const student = {
+      studentProfileId: 'p2', email: 'bob@example.com', firstName: 'Bob', lastName: 'Smith',
+      displayName: null, lifecycleStage: 'CourseReady', onboardingStatus: 'Complete', cefrLevel: null,
+      careerContext: null, learningGoal: null, learningGoalDescription: null, difficultSituationsText: null,
+      preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null,
+      createdAt: new Date().toISOString(),
+    };
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of([student]));
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: adminApi }, { provide: ToastService, useValue: toast }],
+    });
+    const fixture = TestBed.createComponent(AdminStudentsComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.startResetPassword(student as any);
+    fixture.detectChanges();
+    const modals = fixture.nativeElement.querySelectorAll('sp-admin-modal');
+    const openModal = (Array.from(modals) as Element[]).find(m => m.getAttribute('ng-reflect-open') !== 'false');
+    expect(openModal).toBeTruthy();
+  });
+
+  it('Students reset data modal opens as sp-admin-modal (10X-I)', () => {
+    const student = {
+      studentProfileId: 'p3', email: 'carol@example.com', firstName: 'Carol', lastName: 'Jones',
+      displayName: null, lifecycleStage: 'CourseReady', onboardingStatus: 'Complete', cefrLevel: null,
+      careerContext: null, learningGoal: null, learningGoalDescription: null, difficultSituationsText: null,
+      preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null,
+      createdAt: new Date().toISOString(),
+    };
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of([student]));
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: adminApi }, { provide: ToastService, useValue: toast }],
+    });
+    const fixture = TestBed.createComponent(AdminStudentsComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.startResetData(student as any);
+    fixture.detectChanges();
+    const modals = fixture.nativeElement.querySelectorAll('sp-admin-modal');
+    expect(modals.length).toBeGreaterThanOrEqual(1);
+    expect(fixture.componentInstance.resettingData()).toBeTruthy();
+  });
+});
+
 describe('admin shell visual structure (10X-C → 10X-LAYOUT-BLOCKER)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({

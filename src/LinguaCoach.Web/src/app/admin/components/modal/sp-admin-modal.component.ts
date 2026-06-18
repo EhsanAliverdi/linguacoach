@@ -26,7 +26,8 @@ import { CommonModule } from '@angular/common';
           role="dialog"
           [attr.aria-label]="title"
           aria-modal="true"
-          style="max-width:520px;max-height:calc(100vh - 64px);overflow-y:auto"
+          [style.max-width]="maxWidth"
+          style="max-height:calc(100vh - 64px);overflow-y:auto"
         >
           <!-- TailAdmin close button: absolute right-3 top-3 rounded-full bg-gray-100 -->
           <button
@@ -66,6 +67,7 @@ export class SpAdminModalComponent {
   @Input() title = '';
   @Input() subtitle = '';
   @Input() closeOnBackdrop = true;
+  @Input() maxWidth = '520px';
   @Output() closed = new EventEmitter<void>();
 
   close(): void { this.closed.emit(); }

@@ -1,14 +1,42 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-H)
+lastUpdated: 2026-06-19 (10X-I)
 owner: product
 supersedes:
 supersededBy:
 ---
 
-# SpeakPath â€” Current Product State
+# SpeakPath — Current Product State
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
+
+---
+
+## Admin form and modal migration complete (Phase 10X-I)
+
+Completed the three deferred admin UI CVA migration targets:
+
+- **AI Config:** provider/model/voice selects kept native inside `sp-admin-form-field` (incompatible
+  with `sp-admin-select` string binding). TTS voice, model name, API key (password), and Qwen
+  endpoint inputs migrated to `sp-admin-input`. All action buttons migrated to `sp-admin-button`.
+- **Integrations:** storage display fields → `sp-admin-input [disabled]`. Generation settings
+  number fields kept native `<input type=”number”>` inside `sp-admin-form-field` (CVA string
+  constraint). Background job controls and tables migrated to `sp-admin-button` and Tailwind
+  table classes.
+- **Student modals (all 3):** edit, reset-password, and reset-data page-local modals replaced with
+  `sp-admin-modal`. All inner text/password inputs use `sp-admin-input`, multi-line fields use
+  `sp-admin-textarea`, and actions use `sp-admin-button`. Page-local modal CSS removed entirely.
+
+Wrapper enhancements this phase:
+- `sp-admin-modal`: `maxWidth` input added (default 520px; student edit uses 720px).
+- `sp-admin-input`: `[value]` input added for one-way display binding.
+- `sp-admin-layout`: content area changed to `<main>` for `role=”main”` semantics (fixes Playwright).
+
+Gates: .NET 1885 passed, Angular 421 passed (up from 411), build clean.
+
+Closed TODOs: TODO-10X-G-AICONFIG-FORMS, TODO-10X-G-INTEGRATIONS-FORMS, TODO-10X-D-MODAL, TODO-10X-I.
+
+See: `docs/reviews/2026-06-19-phase-10x-i-admin-form-modal-migration-review.md`
 
 ---
 

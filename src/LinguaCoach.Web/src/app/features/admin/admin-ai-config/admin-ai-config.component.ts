@@ -9,6 +9,8 @@ import {
   SpAdminCardComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
+  SpAdminFormFieldComponent,
+  SpAdminInputComponent,
 } from '../../../admin';
 
 interface CategoryState {
@@ -51,7 +53,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent],
   template: `
     <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
@@ -83,26 +85,24 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
               <p class="text-xs text-slate-500 mb-4">{{ categoryDesc(cs.item.categoryKey) }}</p>
 
               <div class="grid grid-cols-2 gap-3">
-                <label>
-                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Provider</span>
-                  <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onCategoryProviderChange(cs, $event)" class="sp-ai-select">
+                <sp-admin-form-field label="Provider">
+                  <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onCategoryProviderChange(cs, $event)" class="sp-adm-native-select">
                     <option [ngValue]="null">— inherit —</option>
                     <option value="fake">fake (disable)</option>
                     @for (p of providers(); track p.catalog.providerName) {
                       <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
                     }
                   </select>
-                </label>
+                </sp-admin-form-field>
 
-                <label>
-                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Model</span>
-                  <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-ai-select sp-ai-model-select">
+                <sp-admin-form-field label="Model">
+                  <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-adm-native-select sp-adm-mono">
                     <option [ngValue]="null">— inherit —</option>
                     @for (m of modelsFor(cs.editingProvider ?? ''); track m) {
                       <option [value]="m">{{ m }}</option>
                     }
                   </select>
-                </label>
+                </sp-admin-form-field>
               </div>
 
               <div class="mt-3 flex items-center gap-3">
@@ -141,33 +141,31 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
               <p class="text-xs text-slate-500 mb-4">{{ categoryDesc(cs.item.categoryKey) }}</p>
 
               <div class="grid grid-cols-3 gap-3">
-                <label>
-                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Provider</span>
-                  <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onTtsProviderChange(cs, $event)" class="sp-ai-select">
+                <sp-admin-form-field label="Provider">
+                  <select [(ngModel)]="cs.editingProvider" (ngModelChange)="onTtsProviderChange(cs, $event)" class="sp-adm-native-select">
                     <option [ngValue]="null">— disable —</option>
                     <option value="openai">openai</option>
                     <option value="gemini">gemini</option>
                     <option value="qwen">qwen</option>
                   </select>
-                </label>
+                </sp-admin-form-field>
 
-                <label>
-                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Model</span>
-                  <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-ai-select sp-ai-model-select">
+                <sp-admin-form-field label="Model">
+                  <select [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" class="sp-adm-native-select sp-adm-mono">
                     <option [ngValue]="null">— default —</option>
                     @for (m of ttsModelsFor(cs.editingProvider ?? ''); track m) {
                       <option [value]="m">{{ m }}</option>
                     }
                   </select>
-                </label>
+                </sp-admin-form-field>
 
-                <label>
-                  <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Voice</span>
-                  <input type="text" [(ngModel)]="cs.editingVoice"
+                <sp-admin-form-field label="Voice">
+                  <sp-admin-input
+                    [(ngModel)]="cs.editingVoice"
                     [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'"
                     placeholder="e.g. onyx"
-                    class="sp-ai-select sp-ai-model-select" />
-                </label>
+                  />
+                </sp-admin-form-field>
               </div>
 
               <div class="mt-3 flex items-center gap-3">
@@ -245,19 +243,15 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
               <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-3 items-end">
                 <div class="flex-1 min-w-56">
-                  <label class="block text-xs text-slate-500 mb-1">Add model</label>
-                  <input type="text" [(ngModel)]="ps.newModelName"
-                    placeholder="provider model name"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                  <sp-admin-form-field label="Add model">
+                    <sp-admin-input
+                      [(ngModel)]="ps.newModelName"
+                      placeholder="provider model name"
+                    />
+                  </sp-admin-form-field>
                 </div>
-                <button (click)="addModel(ps)" [disabled]="ps.addModelBusy || !ps.newModelName.trim()"
-                  class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-                  {{ ps.addModelBusy ? 'Adding...' : 'Add' }}
-                </button>
-                <button (click)="testOneModel(ps)" [disabled]="ps.testBusy || !ps.newModelName.trim()"
-                  class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-                  Test model
-                </button>
+                <sp-admin-button variant="secondary" size="sm" [disabled]="ps.addModelBusy || !ps.newModelName.trim()" [loading]="ps.addModelBusy" (click)="addModel(ps)">Add</sp-admin-button>
+                <sp-admin-button variant="secondary" size="sm" [disabled]="ps.testBusy || !ps.newModelName.trim()" (click)="testOneModel(ps)">Test model</sp-admin-button>
                 @if (ps.addModelError) { <p class="w-full text-xs text-red-600">{{ ps.addModelError }}</p> }
               </div>
 
@@ -265,22 +259,17 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
               @if (!hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
                 <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-3 items-end">
                   <div class="flex-1 min-w-64">
-                    <label class="block text-xs text-slate-500 mb-1">
-                      API Key <span class="text-slate-400 ml-1">— blank clears and falls back to env var</span>
-                    </label>
-                    <input type="password" [(ngModel)]="ps.editKeyValue"
-                      [placeholder]="keyPlaceholder(ps.catalog.providerName)"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                    <sp-admin-form-field label="API Key" hint="blank clears and falls back to env var">
+                      <sp-admin-input
+                        type="password"
+                        [(ngModel)]="ps.editKeyValue"
+                        [placeholder]="keyPlaceholder(ps.catalog.providerName)"
+                      />
+                    </sp-admin-form-field>
                   </div>
-                  <button (click)="saveKey(ps)" [disabled]="ps.saveKeyBusy"
-                    class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                    {{ ps.saveKeyBusy ? 'Saving…' : 'Save' }}
-                  </button>
+                  <sp-admin-button [loading]="ps.saveKeyBusy" [disabled]="ps.saveKeyBusy" (click)="saveKey(ps)">Save</sp-admin-button>
                   @if (ps.catalog.hasApiKey) {
-                    <button (click)="clearKey(ps)"
-                      class="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                      Clear key
-                    </button>
+                    <sp-admin-button variant="danger" (click)="clearKey(ps)">Clear key</sp-admin-button>
                   }
                   <button (click)="ps.editingKey = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
                   @if (ps.saveKeyError) { <p class="w-full text-xs text-red-600">{{ ps.saveKeyError }}</p> }
@@ -294,29 +283,22 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                     Qwen uses a workspace-specific endpoint. Find these values in Alibaba Cloud Model Studio → your workspace.
                   </p>
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label class="block text-xs font-semibold text-slate-500 mb-1">
-                        API Key <span class="font-normal text-slate-400">— sk-… from your workspace</span>
-                      </label>
-                      <input type="password" [(ngModel)]="ps.editKeyValue"
+                    <sp-admin-form-field label="API Key" hint="sk-… from your workspace">
+                      <sp-admin-input
+                        type="password"
+                        [(ngModel)]="ps.editKeyValue"
                         placeholder="sk-…"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                    </div>
-                    <div>
-                      <label class="block text-xs font-semibold text-slate-500 mb-1">
-                        API Host <span class="font-normal text-slate-400">— workspace base URL</span>
-                      </label>
-                      <input type="text" [(ngModel)]="ps.editEndpointValue"
+                      />
+                    </sp-admin-form-field>
+                    <sp-admin-form-field label="API Host" hint="OpenAI-compatible endpoint. Leave blank to use global DashScope.">
+                      <sp-admin-input
+                        [(ngModel)]="ps.editEndpointValue"
                         placeholder="https://ws-xxx.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                      <p class="text-xs text-slate-400 mt-1">OpenAI-compatible endpoint from your workspace. Leave blank to use global DashScope.</p>
-                    </div>
+                      />
+                    </sp-admin-form-field>
                   </div>
                   <div class="flex flex-wrap gap-3 items-center pt-1">
-                    <button (click)="saveQwenConfig(ps)" [disabled]="ps.saveKeyBusy || ps.saveEndpointBusy"
-                      class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                      {{ (ps.saveKeyBusy || ps.saveEndpointBusy) ? 'Saving…' : 'Save' }}
-                    </button>
+                    <sp-admin-button [loading]="ps.saveKeyBusy || ps.saveEndpointBusy" [disabled]="ps.saveKeyBusy || ps.saveEndpointBusy" (click)="saveQwenConfig(ps)">Save</sp-admin-button>
                     <button (click)="ps.editingKey = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
                     @if (ps.saveKeyError || ps.saveEndpointError) {
                       <p class="text-xs text-red-600">{{ ps.saveKeyError || ps.saveEndpointError }}</p>
@@ -345,9 +327,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   `,
   styles: [`
     .sp-admin-section-wrap { display: block; margin-bottom: 24px; }
-    .sp-ai-select{width:100%;border:1px solid #CBD5E1;border-radius:9px;padding:7px 9px;font-size:13px;background:#fff;color:#0F172A;}
-    .sp-ai-select:disabled{background:#F8FAFC;color:#94A3B8;}
-    .sp-ai-model-select{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+    .sp-adm-native-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
+    .sp-adm-native-select:disabled{opacity:0.55;cursor:not-allowed;background:#F9FAFB;color:#9CA3AF;}
+    .sp-adm-native-select:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+    .sp-adm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
   `],
 })
 export class AdminAiConfigComponent implements OnInit {

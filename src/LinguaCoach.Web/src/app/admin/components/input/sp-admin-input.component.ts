@@ -58,19 +58,21 @@ export class SpAdminInputComponent implements ControlValueAccessor {
   @Input() readonly = false;
   @Input() required = false;
   @Input() invalid = false;
+  @Input() set value(v: string) { this._value = v ?? ''; }
+  get value(): string { return this._value; }
 
   private _disabled = false;
   @Input()
   get disabled(): boolean { return this._disabled; }
   set disabled(value: boolean) { this._disabled = value; }
 
-  value = '';
+  private _value = '';
 
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
   writeValue(value: string): void {
-    this.value = value ?? '';
+    this._value = value ?? '';
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -86,8 +88,8 @@ export class SpAdminInputComponent implements ControlValueAccessor {
   }
 
   onInput(event: Event): void {
-    this.value = (event.target as HTMLInputElement).value;
-    this.onChange(this.value);
+    this._value = (event.target as HTMLInputElement).value;
+    this.onChange(this._value);
   }
 
   onBlur(): void {

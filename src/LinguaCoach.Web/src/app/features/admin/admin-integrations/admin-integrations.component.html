@@ -10,47 +10,40 @@
     }
 
     @if (storage(); as s) {
-      <div class="sp-admin-field-grid">
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Provider</span>
-          <input type="text" [value]="s.provider" disabled />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Endpoint</span>
-          <input type="text" [value]="s.endpoint || '—'" disabled />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Bucket name</span>
-          <input type="text" [value]="s.bucketName || '—'" disabled />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Access key</span>
-          <input type="text" [value]="s.accessKey ? 'configured' : 'not set'" disabled />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Secret key</span>
-          <input type="text" [value]="s.secretKey ? 'configured' : 'not set'" disabled />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Use SSL</span>
-          <input type="text" [value]="s.useSsl ? 'yes' : 'no'" disabled />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Signed URL expiry (min)</span>
-          <input type="text" [value]="s.signedUrlExpiryMinutes" disabled />
-        </label>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <sp-admin-form-field label="Provider">
+          <sp-admin-input [value]="s.provider" [disabled]="true" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Endpoint">
+          <sp-admin-input [value]="s.endpoint || '—'" [disabled]="true" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Bucket name">
+          <sp-admin-input [value]="s.bucketName || '—'" [disabled]="true" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Access key">
+          <sp-admin-input [value]="s.accessKey ? 'configured' : 'not set'" [disabled]="true" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Secret key">
+          <sp-admin-input [value]="s.secretKey ? 'configured' : 'not set'" [disabled]="true" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Use SSL">
+          <sp-admin-input [value]="s.useSsl ? 'yes' : 'no'" [disabled]="true" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Signed URL expiry (min)">
+          <sp-admin-input [value]="s.signedUrlExpiryMinutes.toString()" [disabled]="true" />
+        </sp-admin-form-field>
       </div>
-      <p class="sp-admin-field-hint">
+      <p class="text-xs text-gray-400 mt-2">
         Secrets are sourced from environment variables / Docker secrets and never displayed.
       </p>
     }
 
-    <div class="sp-admin-action-row" style="margin-top:16px">
-      <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="testConnection()" [disabled]="testing()">
+    <div class="flex items-center gap-4 mt-4">
+      <sp-admin-button variant="secondary" [loading]="testing()" [disabled]="testing()" (click)="testConnection()">
         {{ testing() ? 'Testing…' : 'Test connection' }}
-      </button>
+      </sp-admin-button>
       @if (storageTest(); as t) {
-        <span [class]="t.ok ? 'sp-admin-text-success' : 'sp-admin-text-error'">
+        <span [class]="t.ok ? 'text-sm text-emerald-600' : 'text-sm text-red-500'">
           {{ t.ok ? 'Connected' : 'Failed' }} · checked {{ t.lastCheckedUtc | date:'short' }}
           @if (t.error) { · {{ t.error }} }
         </span>
@@ -62,65 +55,56 @@
   <sp-admin-card title="Lesson Buffer Settings" class="sp-admin-section-wrap">
 
     @if (settingsError()) { <p class="sp-admin-alert-error">{{ settingsError() }}</p> }
-    @if (settingsSaved()) { <p class="sp-admin-text-success">Settings saved.</p> }
+    @if (settingsSaved()) { <p class="text-sm text-emerald-600 mb-3">Settings saved.</p> }
 
     @if (settings(); as s) {
-      <div class="sp-admin-field-grid">
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Ready lesson buffer size</span>
-          <input type="number" [(ngModel)]="s.readyLessonBufferSize" min="1" />
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <sp-admin-form-field label="Ready lesson buffer size">
+          <input type="number" [(ngModel)]="s.readyLessonBufferSize" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Refill threshold">
+          <input type="number" [(ngModel)]="s.refillThreshold" min="0" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Refill batch size">
+          <input type="number" [(ngModel)]="s.refillBatchSize" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Max generation attempts">
+          <input type="number" [(ngModel)]="s.maxGenerationAttempts" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Generation timeout (s)">
+          <input type="number" [(ngModel)]="s.generationTimeoutSeconds" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="TTS timeout (s)">
+          <input type="number" [(ngModel)]="s.ttsTimeoutSeconds" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Max concurrent generation jobs">
+          <input type="number" [(ngModel)]="s.maxConcurrentGenerationJobs" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Max concurrent TTS jobs">
+          <input type="number" [(ngModel)]="s.maxConcurrentTtsJobs" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Practice ready per type">
+          <input type="number" [(ngModel)]="s.practiceGymReadyExercisesPerType" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Practice refill threshold">
+          <input type="number" [(ngModel)]="s.practiceGymRefillThresholdPerType" min="0" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Practice refill count">
+          <input type="number" [(ngModel)]="s.practiceGymRefillCountPerType" min="1" class="sp-adm-num-input" />
+        </sp-admin-form-field>
+      </div>
+      <div class="flex flex-col gap-2 mt-3">
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="s.enableBackgroundGeneration" class="accent-blue-600 w-4 h-4" />
+          Background generation
         </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Refill threshold</span>
-          <input type="number" [(ngModel)]="s.refillThreshold" min="0" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Refill batch size</span>
-          <input type="number" [(ngModel)]="s.refillBatchSize" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Max generation attempts</span>
-          <input type="number" [(ngModel)]="s.maxGenerationAttempts" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Generation timeout (s)</span>
-          <input type="number" [(ngModel)]="s.generationTimeoutSeconds" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">TTS timeout (s)</span>
-          <input type="number" [(ngModel)]="s.ttsTimeoutSeconds" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Max concurrent generation jobs</span>
-          <input type="number" [(ngModel)]="s.maxConcurrentGenerationJobs" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Max concurrent TTS jobs</span>
-          <input type="number" [(ngModel)]="s.maxConcurrentTtsJobs" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Practice ready per type</span>
-          <input type="number" [(ngModel)]="s.practiceGymReadyExercisesPerType" min="1" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Practice refill threshold</span>
-          <input type="number" [(ngModel)]="s.practiceGymRefillThresholdPerType" min="0" />
-        </label>
-        <label class="sp-admin-field">
-          <span class="sp-admin-field-label">Practice refill count</span>
-          <input type="number" [(ngModel)]="s.practiceGymRefillCountPerType" min="1" />
-        </label>
-        <label class="sp-admin-field sp-admin-field-checkbox">
-          <input type="checkbox" [(ngModel)]="s.enableBackgroundGeneration" />
-          <span class="sp-admin-field-label">Background generation</span>
-        </label>
-        <label class="sp-admin-field sp-admin-field-checkbox">
-          <input type="checkbox" [(ngModel)]="s.enableTtsGeneration" />
-          <span class="sp-admin-field-label">TTS generation</span>
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="s.enableTtsGeneration" class="accent-blue-600 w-4 h-4" />
+          TTS generation
         </label>
       </div>
-      <div style="margin-top:16px">
-        <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="saveSettings()">Save</button>
+      <div class="mt-4">
+        <sp-admin-button (click)="saveSettings()">Save</sp-admin-button>
       </div>
     }
   </sp-admin-card>
@@ -131,72 +115,89 @@
     @if (batchesError()) { <p class="sp-admin-alert-error">{{ batchesError() }}</p> }
 
     @if (batches(); as b) {
-      <div class="sp-admin-stat-row">
-        <div class="sp-admin-stat">
-          <span class="sp-admin-stat-value">{{ b.summary.queued }}</span>
-          <span class="sp-admin-stat-label">Queued</span>
+      <div class="flex gap-6 flex-wrap mb-4">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">{{ b.summary.queued }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Queued</div>
         </div>
-        <div class="sp-admin-stat">
-          <span class="sp-admin-stat-value">{{ b.summary.running }}</span>
-          <span class="sp-admin-stat-label">Running</span>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">{{ b.summary.running }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Running</div>
         </div>
-        <div class="sp-admin-stat">
-          <span class="sp-admin-stat-value">{{ b.summary.failed }}</span>
-          <span class="sp-admin-stat-label">Failed</span>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">{{ b.summary.failed }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Failed</div>
         </div>
-        <div class="sp-admin-stat">
-          <span class="sp-admin-stat-value">{{ b.summary.lastSuccessfulGenerationUtc ? (b.summary.lastSuccessfulGenerationUtc | date:'short') : '—' }}</span>
-          <span class="sp-admin-stat-label">Last success</span>
+        <div class="text-center">
+          <div class="text-sm font-semibold text-gray-900">{{ b.summary.lastSuccessfulGenerationUtc ? (b.summary.lastSuccessfulGenerationUtc | date:'short') : '—' }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Last success</div>
         </div>
       </div>
 
-      <div class="sp-admin-action-row">
-        <input type="text" placeholder="Student profile ID" [(ngModel)]="generateStudentId" />
-        <button class="sp-admin-btn-primary sp-admin-btn-sm" (click)="generateLessons()" [disabled]="!generateStudentId">
-          Generate lessons now
-        </button>
+      <div class="flex items-end gap-3 mb-4 flex-wrap">
+        <sp-admin-form-field label="Generate lessons for student">
+          <sp-admin-input placeholder="Student profile ID" [(ngModel)]="generateStudentId" />
+        </sp-admin-form-field>
+        <sp-admin-button [disabled]="!generateStudentId" (click)="generateLessons()">Generate lessons now</sp-admin-button>
       </div>
-      @if (generateStatus()) { <p class="sp-admin-text-success">{{ generateStatus() }}</p> }
+      @if (generateStatus()) { <p class="text-sm text-emerald-600 mb-3">{{ generateStatus() }}</p> }
 
-      <h3 class="sp-admin-subsection-title">Ready lesson buffer per student</h3>
-      <div class="sp-admin-table-card" style="margin-bottom:16px">
-        <table class="sp-admin-table">
-          <thead><tr><th>Student profile</th><th>Ready lessons</th></tr></thead>
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Ready lesson buffer per student</h3>
+      <div class="overflow-x-auto rounded-xl border border-gray-200 mb-4">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr class="border-b border-gray-200">
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Student profile</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Ready lessons</th>
+            </tr>
+          </thead>
           <tbody>
             @for (row of b.readyBufferPerStudent; track row.studentProfileId) {
-              <tr><td class="sp-admin-table-mono">{{ row.studentProfileId }}</td><td>{{ row.readyCount }}</td></tr>
+              <tr class="border-b border-gray-100">
+                <td class="px-4 py-2.5 font-mono text-xs text-gray-700">{{ row.studentProfileId }}</td>
+                <td class="px-4 py-2.5 text-gray-700">{{ row.readyCount }}</td>
+              </tr>
             }
             @if (b.readyBufferPerStudent.length === 0) {
-              <tr><td colspan="2" class="sp-admin-table-empty">No ready buffers yet.</td></tr>
+              <tr><td colspan="2" class="px-4 py-4 text-center text-xs text-gray-400">No ready buffers yet.</td></tr>
             }
           </tbody>
         </table>
       </div>
 
-      <h3 class="sp-admin-subsection-title">Recent batches</h3>
-      <div class="sp-admin-table-card">
-        <table class="sp-admin-table">
-          <thead><tr><th>Status</th><th>Trigger</th><th>Sessions</th><th>Provider</th><th>Failure</th><th></th></tr></thead>
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Recent batches</h3>
+      <div class="overflow-x-auto rounded-xl border border-gray-200">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr class="border-b border-gray-200">
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Status</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Trigger</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Sessions</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Provider</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Failure</th>
+              <th class="px-4 py-2.5"></th>
+            </tr>
+          </thead>
           <tbody>
             @for (batch of b.batches; track batch.id) {
-              <tr>
-                <td>{{ batch.status }}</td>
-                <td>{{ batch.triggerReason }}</td>
-                <td>{{ batch.completedSessionCount }} / {{ batch.requestedSessionCount }}</td>
-                <td>{{ batch.providerName || '—' }}</td>
-                <td class="sp-admin-text-error">{{ batch.failureReason || '' }}</td>
-                <td>
+              <tr class="border-b border-gray-100">
+                <td class="px-4 py-2.5 text-gray-700">{{ batch.status }}</td>
+                <td class="px-4 py-2.5 text-gray-700">{{ batch.triggerReason }}</td>
+                <td class="px-4 py-2.5 text-gray-700">{{ batch.completedSessionCount }} / {{ batch.requestedSessionCount }}</td>
+                <td class="px-4 py-2.5 text-gray-700">{{ batch.providerName || '—' }}</td>
+                <td class="px-4 py-2.5 text-red-500">{{ batch.failureReason || '' }}</td>
+                <td class="px-4 py-2.5">
                   @if (batch.status === 'Queued' || batch.status === 'Running') {
-                    <button class="sp-admin-link" (click)="cancel(batch.id)">Cancel</button>
+                    <sp-admin-button variant="ghost" size="sm" (click)="cancel(batch.id)">Cancel</sp-admin-button>
                   }
                   @if (batch.status === 'Failed' || batch.status === 'Partial') {
-                    <button class="sp-admin-link" (click)="retry(batch.id)">Retry</button>
+                    <sp-admin-button variant="ghost" size="sm" (click)="retry(batch.id)">Retry</sp-admin-button>
                   }
                 </td>
               </tr>
             }
             @if (b.batches.length === 0) {
-              <tr><td colspan="6" class="sp-admin-table-empty">No generation batches yet.</td></tr>
+              <tr><td colspan="6" class="px-4 py-4 text-center text-xs text-gray-400">No generation batches yet.</td></tr>
             }
           </tbody>
         </table>
