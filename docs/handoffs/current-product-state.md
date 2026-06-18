@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 22:00
+lastUpdated: 2026-06-18 (10X-F)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,26 @@ supersededBy:
 # SpeakPath â€” Current Product State
 
 Last updated: 2026-06-18
+
+---
+
+## Admin wrapper capability completion (Phase 10X-F)
+
+New wrappers added (2026-06-18):
+- `sp-admin-dropdown`: TailAdmin-backed dropdown with content projection, click-outside + Escape close.
+- `sp-admin-table-actions`: row action three-dot dropdown. Generic actions API + content projection.
+- `sp-admin-theme-toggle`: admin-only dark/light toggle. Uses `AdminThemeService` (isolated from student UI).
+- `AdminThemeService`: admin-scoped theme service. `adminTheme` localStorage key.
+
+Updated wrappers:
+- `sp-admin-table`: sortable columns (`sortable`, `sortColumn`, `sortDirection`, `(sortChange)`). `hasActions` slot.
+- `sp-admin-header`: named `[left]` and `[actions]` content slots. Theme toggle auto-rendered.
+- `sp-admin-filter-bar`: named `[search]`, `[filters]`, `[actions]` slots.
+
+`admin-students` row actions migrated to `sp-admin-table-actions`.
+Angular: 373 passed. .NET: 1885 passed. Playwright: 188 passed.
+
+Next: full admin page refactor (TODO-10X-G).
 
 ---
 

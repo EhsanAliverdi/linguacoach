@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 23:30
+lastUpdated: 2026-06-18 (10X-F)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,41 @@ Last updated: 2026-06-18
 ---
 
 ## Active sprint
+
+**Phase 10X-F — Admin Wrapper Capability Completion** - complete (2026-06-18)
+
+Goal: add missing reusable admin wrapper capabilities: sortable tables, row action dropdowns, admin dropdown wrapper, theme toggle, improved filter-bar and header slots.
+
+### Delivered
+
+- `sp-admin-dropdown` — TailAdmin-backed dropdown with trigger/menu content projection, click-outside + Escape close, align and width inputs.
+- `sp-admin-table-actions` — row action dropdown (three-dot trigger). Generic `[actions]` array API + content projection for conditional per-row actions. Danger item red styling.
+- `sp-admin-theme-toggle` — admin-only dark/light toggle based on TailAdmin ThemeToggleButtonComponent. Uses `AdminThemeService` (isolated `adminTheme` localStorage key).
+- `AdminThemeService` — admin-scoped theme service mirroring TailAdmin pattern.
+- `sp-admin-table` updated: sortable column flag, `sortColumn`/`sortDirection` inputs, `(sortChange)` output, `↕/▲/▼` icons, `aria-sort`, keyboard-accessible headers.
+- `sp-admin-header` updated: named `[left]` and `[actions]` content slots. Theme toggle auto-rendered in right action zone.
+- `sp-admin-filter-bar` updated: named `[search]`, `[filters]`, `[actions]` slots. Left/right zone split. Backward-compat general projection retained.
+- Admin barrel (`admin/index.ts`) updated with 4 new exports.
+- `admin-students` page row actions migrated to `sp-admin-table-actions` (projected content with conditional actions).
+- 24 new Angular tests added in `admin-components.spec.ts` (Phase 10X-F block).
+- Playwright tests updated to open row action dropdown before interacting with action items (reset, archive, view, edit).
+
+### Gates
+
+- Angular build: ✅ passed
+- Angular tests: ✅ 373 passed (up from 349)
+- .NET tests: ✅ 1885 passed (3 arch + 1233 unit + 649 integration)
+- Playwright: ✅ 188 passed
+
+### Not implemented in 10X-F
+
+- Full admin page refactor/redesign (10X-G)
+- Usage governance UX (TODO-10R-F), AI Usage redesign (TODO-10U), prompt playground (TODO-10V)
+- Notification platform, enterprise auth, billing, placement/mastery engine
+
+---
+
+## Previous sprint
 
 **Phase 10X-E — Adapt Real TailAdmin Patterns into sp-admin-* Wrappers** - complete (2026-06-18)
 

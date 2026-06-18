@@ -1,6 +1,6 @@
-import { expect, test, Page } from '@playwright/test';
+﻿import { expect, test, Page } from '@playwright/test';
 
-// ── Shared JWT helpers ────────────────────────────────────────────────────────
+// â”€â”€ Shared JWT helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function fakeJwt(email: string, role: string): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
@@ -114,7 +114,7 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
         learningPath: {
-          pathId: 'p1', title: 'Workplace English for Document Controller — B1',
+          pathId: 'p1', title: 'Workplace English for Document Controller â€” B1',
           totalModules: 5, modulesCompleted: 1,
           currentModule: { moduleId: 'm1', order: 2, title: 'Writing professional emails', description: 'Learn to write clear emails.', completedActivities: 1, totalActivities: 4 },
           modules: [],
@@ -161,7 +161,7 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        pathId: 'p1', title: 'Workplace English for Document Controller â€” B1',
+        pathId: 'p1', title: 'Workplace English for Document Controller Ã¢â‚¬â€ B1',
         isActive: true,
         totalModules: 2, modulesCompleted: 1,
         currentFocus: null,
@@ -177,7 +177,7 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        pathId: 'p1', title: 'Workplace English for Document Controller — B1',
+        pathId: 'p1', title: 'Workplace English for Document Controller â€” B1',
         totalModules: 5, modulesCompleted: 1,
         currentModule: { moduleId: 'm1', order: 2, title: 'Writing professional emails', description: 'Learn emails.', completedActivities: 1, totalActivities: 4 },
         modules: generatedNext
@@ -200,7 +200,7 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
         situation: 'Your colleague asked for an update on the project status.',
         targetPhrases: ['I wanted to follow up', 'Please let me know if you need anything'],
         targetVocabulary: [], exampleText: null, commonMistakeToAvoid: 'Avoid being too informal.',
-        instructionInSourceLanguage: 'یک ایمیل حرفه‌ای به همکار خود بنویسید.',
+        instructionInSourceLanguage: 'ÛŒÚ© Ø§ÛŒÙ…ÛŒÙ„ Ø­Ø±ÙÙ‡â€ŒØ§ÛŒ Ø¨Ù‡ Ù‡Ù…Ú©Ø§Ø± Ø®ÙˆØ¯ Ø¨Ù†ÙˆÛŒØ³ÛŒØ¯.',
         learningGoal: null,
       }),
     });
@@ -225,7 +225,7 @@ async function studentLogin(page: Page) {
   await page.waitForTimeout(600);
 }
 
-// ── Admin page tests ──────────────────────────────────────────────────────────
+// â”€â”€ Admin page tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('admin: dashboard', async ({ page }) => {
   await mockAdmin(page);
@@ -239,8 +239,12 @@ test('admin: students', async ({ page }) => {
   await page.getByRole('link', { name: 'Students', exact: true }).click();
   await page.waitForURL(/\/admin\/students/, { timeout: 5000 });
   await expect(page.getByRole('main')).toContainText('Create student');
-  await expect(page.getByRole('main')).toContainText('Archive');
-  await expect(page.getByRole('main')).toContainText('Edit');
+  // Row actions are inside sp-admin-table-actions dropdown (Phase 10X-F)
+  await expect(page.locator('.sp-adm-actions-trigger').first()).toBeVisible();
+  await page.locator('.sp-adm-actions-trigger').first().click();
+  await expect(page.locator('[role="menu"] button, [role="menu"] a').filter({ hasText: 'Archive' }).first()).toBeVisible();
+  await expect(page.locator('[role="menu"] button, [role="menu"] a').filter({ hasText: 'Edit' }).first()).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(page.locator('aside').getByRole('link', { name: /Create student/i })).toHaveCount(0);
   await page.waitForTimeout(500);
   await page.screenshot({ path: 'e2e/screenshots/admin-02-students.png' });
@@ -284,7 +288,7 @@ test('admin: ai-config', async ({ page }) => {
   await page.screenshot({ path: 'e2e/screenshots/admin-04-ai-config.png' });
 });
 
-// ── Student page tests ────────────────────────────────────────────────────────
+// â”€â”€ Student page tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('login page', async ({ page }) => {
   await page.goto('/login');
@@ -429,7 +433,7 @@ test('admin: diagnostics page loads with status section', async ({ page }) => {
         total: 2,
         items: [
           { timestampUtc: new Date().toISOString(), level: 'Information', category: 'Activity.ActivityGetHandler', message: 'Next activity requested', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
-          { timestampUtc: new Date().toISOString(), level: 'Warning', category: 'Activity.ActivityGetHandler', message: 'AI generation failed — using SystemFallback', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
+          { timestampUtc: new Date().toISOString(), level: 'Warning', category: 'Activity.ActivityGetHandler', message: 'AI generation failed â€” using SystemFallback', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
         ],
       }),
     });

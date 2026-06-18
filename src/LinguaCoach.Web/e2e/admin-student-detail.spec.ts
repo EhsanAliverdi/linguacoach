@@ -72,7 +72,9 @@ test('admin: student detail page shows profile and learning memory', async ({ pa
 
   await page.getByRole('link', { name: 'Students', exact: true }).click();
   await page.waitForURL(/\/admin\/students/, { timeout: 5000 });
-  await page.getByRole('link', { name: 'View' }).first().click();
+  // Phase 10X-F: View link is inside sp-admin-table-actions dropdown
+  await page.locator('.sp-adm-actions-trigger').first().click();
+  await page.locator('[role="menu"] a').filter({ hasText: 'View' }).first().click();
   await page.waitForURL(/\/admin\/students\/sp1/, { timeout: 5000 });
 
   await expect(page.getByRole('main')).toContainText('Alice Nguyen');

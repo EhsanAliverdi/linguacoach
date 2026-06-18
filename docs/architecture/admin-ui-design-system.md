@@ -77,6 +77,50 @@ See `docs/reviews/2026-06-18-phase-10x-e-tailadmin-wrapper-adaptation-review.md`
 
 Remaining adapter work (10X-F): table sorting, dropdown, theme toggle, full filter bar alignment.
 
+**Phase 10X-F (2026-06-18):** Admin wrapper capability completion.
+
+New wrappers added:
+- `sp-admin-dropdown` — TailAdmin `absolute z-40 rounded-xl border border-gray-200 bg-white shadow-lg` dropdown. Trigger/menu content projection. Click-outside + Escape close. `align` (left/right) and `width` (sm/md/lg) inputs.
+- `sp-admin-table-actions` — Row action dropdown based on TailAdmin table-dropdown pattern. Three-dot trigger button. Supports generic `[actions]` array API with `(actionClick)` output, or full content projection for per-row conditional actions. Danger item red styling.
+- `sp-admin-theme-toggle` — Admin-only dark/light toggle based on TailAdmin `ThemeToggleButtonComponent`. Uses `AdminThemeService` (stores preference in `adminTheme` localStorage key, isolated from student UI). Sun/moon SVG icons.
+- `AdminThemeService` — admin-scoped theme service. Mirrors TailAdmin `ThemeService` pattern. Does not use student-UI theme.
+
+Updated wrappers:
+- `sp-admin-table` — now supports `sortable` column flag, `sortColumn`, `sortDirection` inputs, `(sortChange)` output, `↕/▲/▼` sort icons, `aria-sort` attribute, keyboard-accessible sortable headers.
+- `sp-admin-header` — now has named `[left]` and `[actions]` content slots. Theme toggle auto-rendered in right action zone.
+- `sp-admin-filter-bar` — now has named `[search]`, `[filters]`, `[actions]` slots. Left/right zone split. Backward-compat general projection retained.
+
+## Table Sorting Convention
+
+- Consumer page owns sort state (`sortColumn`, `sortDirection` signals/properties).
+- `sp-admin-table` emits `(sortChange)` with `{ column, direction }`.
+- Page re-sorts its data array and passes sorted `rows` back to the table.
+- Table does not sort internally. This enables server-side sort later.
+- `hasActions` input adds an "Actions" column header when true.
+
+## Row Action Dropdown Convention
+
+- Use `sp-admin-table-actions` for all row action menus.
+- For static action lists: pass `[actions]` array + handle `(actionClick)`.
+- For conditional per-row actions (View/Edit/Archive depend on row state): use content projection inside `sp-admin-table-actions`. Projected buttons use `sp-adm-action-item` class for consistent styling.
+- Do not put row action buttons directly in table cells without this wrapper.
+
+## Dropdown Convention
+
+- Use `sp-admin-dropdown` for all admin dropdown menus.
+- Admin feature pages must not use TailAdmin `app-dropdown` directly.
+- `align="right"` (default) — dropdown opens right-aligned with trigger.
+- `width="md"` (default, `w-48`) — adjust for content width.
+- Close on Escape and click-outside are built-in.
+
+## Theme Toggle / Admin-Only Dark Mode
+
+- `sp-admin-theme-toggle` is the only entry point for admin dark mode.
+- It is automatically included in `sp-admin-header`.
+- `AdminThemeService` stores preference in `adminTheme` localStorage key.
+- This does not affect student-facing pages, which use their own light theme.
+- Full dark-mode scoping (admin-only class boundary) is a TODO for 10X-G+.
+
 Feature pages must import from `src/app/admin`.
 They must not reference `templates/` directly.
 They must not copy TailAdmin page markup or repeat long utility class lists.

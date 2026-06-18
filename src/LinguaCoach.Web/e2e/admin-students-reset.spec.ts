@@ -83,12 +83,23 @@ async function gotoStudents(page: Page) {
   await page.waitForTimeout(300);
 }
 
+/**
+ * Opens the first row's sp-admin-table-actions dropdown, then clicks the
+ * action item matching the given label.
+ * Phase 10X-F: row actions moved into dropdown trigger (.sp-adm-actions-trigger).
+ * Projected content buttons use text matching (not role=menuitem).
+ */
+async function clickRowAction(page: Page, label: string) {
+  await page.locator('.sp-adm-actions-trigger').first().click();
+  await page.locator('[role="menu"] button, [role="menu"] a').filter({ hasText: label }).first().click();
+}
+
 test('admin: reset data modal opens with restart-onboarding preset by default', async ({ page }) => {
   await mockAdmin(page);
   await adminLogin(page);
   await gotoStudents(page);
 
-  await page.getByRole('button', { name: 'Reset data' }).first().click();
+  await clickRowAction(page, 'Reset data');
 
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
   await expect(dialog).toBeVisible();
@@ -103,7 +114,7 @@ test('admin: reset data submit disabled until reason and confirm email are fille
   await adminLogin(page);
   await gotoStudents(page);
 
-  await page.getByRole('button', { name: 'Reset data' }).first().click();
+  await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
   const submit = dialog.locator('button[type="submit"]');
@@ -124,7 +135,7 @@ test('admin: applying full-clean-reset preset checks all clear flags', async ({ 
   await adminLogin(page);
   await gotoStudents(page);
 
-  await page.getByRole('button', { name: 'Reset data' }).first().click();
+  await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
   await dialog.locator('select[name="preset"]').selectOption({ label: 'Full clean reset' });
@@ -143,7 +154,7 @@ test('admin: successful reset shows new stage, cleared items and reset log id', 
   await adminLogin(page);
   await gotoStudents(page);
 
-  await page.getByRole('button', { name: 'Reset data' }).first().click();
+  await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
   await dialog.locator('textarea[name="reason"]').fill('Stuck mid-onboarding after crash');
@@ -165,7 +176,7 @@ test('admin: reset failure shows error message', async ({ page }) => {
   await adminLogin(page);
   await gotoStudents(page);
 
-  await page.getByRole('button', { name: 'Reset data' }).first().click();
+  await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
   await dialog.locator('textarea[name="reason"]').fill('Stuck mid-onboarding after crash');
@@ -180,7 +191,7 @@ test('admin: reset data modal can be cancelled', async ({ page }) => {
   await adminLogin(page);
   await gotoStudents(page);
 
-  await page.getByRole('button', { name: 'Reset data' }).first().click();
+  await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
   await expect(dialog).toBeVisible();
 

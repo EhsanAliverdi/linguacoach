@@ -6,16 +6,21 @@ import {
   SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminDrawerComponent,
+  SpAdminDropdownComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
+  SpAdminFilterBarComponent,
   SpAdminHeaderComponent,
   SpAdminLayoutComponent,
   SpAdminLoadingStateComponent,
   SpAdminModalComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
   SpAdminSidebarComponent,
   SpAdminStatCardComponent,
+  SpAdminTableActionsComponent,
   SpAdminTableComponent,
+  SpAdminThemeToggleComponent,
 } from '../index';
 
 @Component({
@@ -378,5 +383,293 @@ describe('admin wrapper components', () => {
     // Layout shell renders sidebar/header slot containers — just confirm shell structure intact
     expect(fixture.nativeElement.querySelector('.sp-admin-shell')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.sp-admin-content')).not.toBeNull();
+  });
+});
+
+// ── Phase 10X-F: dropdown, sortable table, table-actions, theme toggle, filter-bar, header ──
+
+@Component({
+  standalone: true,
+  imports: [SpAdminDropdownComponent],
+  template: `
+    <sp-admin-dropdown [isOpen]="open" (isOpenChange)="open = $event">
+      <button trigger>Open</button>
+      <div menu>Menu content</div>
+    </sp-admin-dropdown>
+  `,
+})
+class DropdownHostComponent {
+  open = false;
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminTableComponent],
+  template: `
+    <sp-admin-table
+      [columns]="columns"
+      [rows]="rows"
+      [sortColumn]="sortColumn"
+      [sortDirection]="sortDirection"
+      (sortChange)="onSort($event)"
+    />
+  `,
+})
+class SortableTableHostComponent {
+  columns = [
+    { key: 'name', label: 'Name', sortable: true },
+    { key: 'email', label: 'Email', sortable: false },
+  ];
+  rows: Record<string, unknown>[] = [{ name: 'Alice', email: 'alice@example.com' }];
+  sortColumn = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+  lastSort: { column: string; direction: string } | null = null;
+  onSort(e: { column: string; direction: 'asc' | 'desc' }) { this.lastSort = e; }
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminTableActionsComponent],
+  template: `
+    <sp-admin-table-actions [actions]="actions" (actionClick)="last = $event.label" />
+  `,
+})
+class TableActionsHostComponent {
+  actions = [
+    { label: 'View' },
+    { label: 'Edit' },
+    { label: 'Delete', danger: true },
+  ];
+  last = '';
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminFilterBarComponent],
+  template: `
+    <sp-admin-filter-bar>
+      <input search placeholder="Search" />
+      <select filters><option>All</option></select>
+      <button actions>Export</button>
+    </sp-admin-filter-bar>
+  `,
+})
+class FilterBarHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminPaginationComponent],
+  template: `<sp-admin-pagination [page]="2" [totalPages]="5" (pageChange)="last = $event" />`,
+})
+class PaginationHostComponent {
+  last = 0;
+}
+
+describe('admin wrapper components — Phase 10X-F', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([])],
+    });
+  });
+
+  // sp-admin-dropdown
+  it('dropdown is closed by default', () => {
+    const fixture = TestBed.createComponent(DropdownHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[menu]')).toBeNull();
+  });
+
+  it('dropdown opens when trigger is clicked', () => {
+    const fixture = TestBed.createComponent(DropdownHostComponent);
+    fixture.detectChanges();
+    // Click the trigger zone (the .sp-adm-dropdown-trigger div)
+    fixture.nativeElement.querySelector('.sp-adm-dropdown-trigger').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Menu content');
+  });
+
+  it('dropdown projects trigger content', () => {
+    const fixture = TestBed.createComponent(DropdownHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Open');
+  });
+
+  it('dropdown closes on Escape key', () => {
+    const fixture = TestBed.createComponent(DropdownHostComponent);
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Menu content');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[menu]')).toBeNull();
+  });
+
+  it('dropdown uses TailAdmin rounded-xl border border-gray-200 bg-white menu panel', () => {
+    const fixture = TestBed.createComponent(DropdownHostComponent);
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('.sp-adm-dropdown > div:last-child');
+    expect(panel.classList).toContain('rounded-xl');
+    expect(panel.classList).toContain('border-gray-200');
+  });
+
+  // sp-admin-table sortable columns
+  it('table renders sortable column header with sort icon', () => {
+    const fixture = TestBed.createComponent(SortableTableHostComponent);
+    fixture.detectChanges();
+    const ths: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('th');
+    expect(ths[0].classList).toContain('sp-adm-th-sortable');
+    expect(ths[0].textContent).toContain('↕');
+  });
+
+  it('table non-sortable column has no sortable class', () => {
+    const fixture = TestBed.createComponent(SortableTableHostComponent);
+    fixture.detectChanges();
+    const ths: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('th');
+    expect(ths[1].classList).not.toContain('sp-adm-th-sortable');
+  });
+
+  it('table emits sortChange when sortable header is clicked', () => {
+    const fixture = TestBed.createComponent(SortableTableHostComponent);
+    fixture.detectChanges();
+    const th: HTMLElement = fixture.nativeElement.querySelector('th.sp-adm-th-sortable');
+    th.click();
+    expect(fixture.componentInstance.lastSort).toEqual({ column: 'name', direction: 'asc' });
+  });
+
+  it('table toggles sort direction on second click of same column', () => {
+    const fixture = TestBed.createComponent(SortableTableHostComponent);
+    fixture.componentInstance.sortColumn = 'name';
+    fixture.componentInstance.sortDirection = 'asc';
+    fixture.detectChanges();
+    const th: HTMLElement = fixture.nativeElement.querySelector('th.sp-adm-th-sortable');
+    th.click();
+    expect(fixture.componentInstance.lastSort?.direction).toBe('desc');
+  });
+
+  it('table shows ascending arrow icon when sort active asc', () => {
+    const fixture = TestBed.createComponent(SortableTableHostComponent);
+    fixture.componentInstance.sortColumn = 'name';
+    fixture.componentInstance.sortDirection = 'asc';
+    fixture.detectChanges();
+    const th: HTMLElement = fixture.nativeElement.querySelector('th.sp-adm-th-sortable');
+    expect(th.textContent).toContain('▲');
+  });
+
+  it('table shows descending arrow icon when sort active desc', () => {
+    const fixture = TestBed.createComponent(SortableTableHostComponent);
+    fixture.componentInstance.sortColumn = 'name';
+    fixture.componentInstance.sortDirection = 'desc';
+    fixture.detectChanges();
+    const th: HTMLElement = fixture.nativeElement.querySelector('th.sp-adm-th-sortable');
+    expect(th.textContent).toContain('▼');
+  });
+
+  // sp-admin-table-actions
+  it('table-actions trigger button is visible', () => {
+    const fixture = TestBed.createComponent(TableActionsHostComponent);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('.sp-adm-actions-trigger');
+    expect(btn).not.toBeNull();
+  });
+
+  it('table-actions menu is hidden by default', () => {
+    const fixture = TestBed.createComponent(TableActionsHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it('table-actions menu opens on trigger click', () => {
+    const fixture = TestBed.createComponent(TableActionsHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.sp-adm-actions-trigger').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('View');
+    expect(fixture.nativeElement.textContent).toContain('Delete');
+  });
+
+  it('table-actions emits actionClick when item clicked', () => {
+    const fixture = TestBed.createComponent(TableActionsHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.sp-adm-actions-trigger').click();
+    fixture.detectChanges();
+    const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('.sp-adm-action-item');
+    buttons[0].click();
+    expect(fixture.componentInstance.last).toBe('View');
+  });
+
+  it('table-actions danger item has red text class', () => {
+    const fixture = TestBed.createComponent(TableActionsHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.sp-adm-actions-trigger').click();
+    fixture.detectChanges();
+    const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('.sp-adm-action-item');
+    expect(buttons[2].classList).toContain('text-red-600');
+  });
+
+  // sp-admin-theme-toggle
+  it('theme toggle renders button', () => {
+    const fixture = TestBed.createComponent(SpAdminThemeToggleComponent);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('.sp-adm-theme-btn');
+    expect(btn).not.toBeNull();
+  });
+
+  it('theme toggle button click does not throw', () => {
+    const fixture = TestBed.createComponent(SpAdminThemeToggleComponent);
+    fixture.detectChanges();
+    expect(() => {
+      fixture.nativeElement.querySelector('.sp-adm-theme-btn').click();
+      fixture.detectChanges();
+    }).not.toThrow();
+  });
+
+  // sp-admin-header now includes theme toggle
+  it('header renders theme toggle button', () => {
+    const fixture = TestBed.createComponent(SpAdminHeaderComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-adm-theme-btn')).not.toBeNull();
+  });
+
+  it('header has left and actions content zones', () => {
+    const fixture = TestBed.createComponent(SpAdminHeaderComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-admin-header-left')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-admin-header-actions')).not.toBeNull();
+  });
+
+  // sp-admin-filter-bar named slots
+  it('filter-bar renders search and actions slots', () => {
+    const fixture = TestBed.createComponent(FilterBarHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[placeholder="Search"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Export');
+  });
+
+  it('filter-bar uses sp-adm-filter flex container', () => {
+    const fixture = TestBed.createComponent(FilterBarHostComponent);
+    fixture.detectChanges();
+    const bar = fixture.nativeElement.querySelector('.sp-adm-filter');
+    expect(bar).not.toBeNull();
+    expect(bar.classList).toContain('flex');
+    expect(bar.classList).toContain('mb-4');
+  });
+
+  // sp-admin-pagination
+  it('pagination renders page info and prev/next buttons', () => {
+    const fixture = TestBed.createComponent(PaginationHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Page 2 of 5');
+    const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('button');
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('pagination prev button is enabled when page > 1', () => {
+    const fixture = TestBed.createComponent(PaginationHostComponent);
+    fixture.detectChanges();
+    const prev: HTMLButtonElement = fixture.nativeElement.querySelectorAll('button')[0];
+    expect(prev.disabled).toBeFalse();
   });
 });

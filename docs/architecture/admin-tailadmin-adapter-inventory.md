@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18
+lastUpdated: 2026-06-18 (10X-F)
 owner: architecture
 supersedes:
 supersededBy:
@@ -40,17 +40,19 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | `shared/layout/app-header/` | Sticky header, user dropdown, theme toggle | `sp-admin-header` | 10X-E | ✅ Done | `sticky top-0 flex w-full bg-white border-b border-gray-200 z-[99999]`. Exact TailAdmin header. |
 | `shared/components/ui/button/` | Button variants, sizes, loading | `sp-admin-button` | 10X-E | ✅ Done | `inline-flex items-center justify-center gap-2 rounded-lg transition`. Brand-500 primary, outline secondary. |
 | `shared/components/ui/badge/` | Tones, sizes | `sp-admin-badge` | 10X-E | ✅ Done | `inline-flex items-center px-2.5 py-0.5 rounded-full font-medium text-xs`. TailAdmin light variant color map. |
-| `shared/components/ui/table/` | Table, row, cell, header | `sp-admin-table` | 10X-E | ✅ Done | `rounded-2xl border border-gray-200 bg-white`. th `text-xs text-gray-500 bg-gray-50`. Column sorting in 10X-F. |
+| `shared/components/ui/table/` | Table, row, cell, header | `sp-admin-table` | 10X-F | ✅ Done | `rounded-2xl border border-gray-200 bg-white`. th `text-xs text-gray-500 bg-gray-50`. Sortable columns: `sortable` flag, `sortColumn`, `sortDirection`, `(sortChange)` output. `hasActions` slot. |
 | `shared/components/common/component-card/` | Card with header/action slots | `sp-admin-card` / `sp-admin-stat-card` | 10X-E | ✅ Done | `rounded-2xl border border-gray-200 bg-white`. Header `px-6 py-5`. Body `p-4 sm:p-6 border-t border-gray-100`. |
 | `shared/components/form/input/` | Text inputs, states | `sp-admin-input` / `sp-admin-form-field` | 10X-E | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm`. TailAdmin input pattern. |
 | `shared/components/form/select/` | Select, multi-select | `sp-admin-select` | 10X-E | ✅ Done | `h-11 rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm`. TailAdmin select pattern. |
 | `shared/components/ui/modal/` | Modal, confirm dialog | `sp-admin-modal` + `AdminModalService` | 10X-E | ✅ Done | `rounded-3xl bg-white`. Backdrop `bg-gray-400/50 backdrop-blur-sm`. Close `rounded-full bg-gray-100`. |
-| `shared/components/ui/dropdown/` | Dropdown menu | `sp-admin-dropdown` | — | ⬜ Future | Not yet implemented. 10X-F candidate. |
+| `shared/components/ui/dropdown/` | Dropdown menu | `sp-admin-dropdown` | 10X-F | ✅ Done | `absolute z-40 rounded-xl border border-gray-200 bg-white shadow-lg`. Trigger/menu content projection. Click-outside + Escape close. align left/right, width sm/md/lg. |
+| `shared/components/common/table-dropdown/` | Row action dropdown | `sp-admin-table-actions` | 10X-F | ✅ Done | Three-dot trigger, projected or `[actions]` array API. Danger item styling. Click-outside + Escape close. |
 | `shared/layout/header/` (notification area) | Notification dropdown | `sp-admin-toast-outlet` + notification wrapper | — | ⬜ Future | Toast outlet exists. Full notification dropdown in 10X-G+. |
 | `shared/services/sidebar.service.ts` | Sidebar open/collapse state | `AdminSidebarService` (existing) | 10X-C-F | ✅ Done | Collapse/drawer state managed in shell. |
-| `shared/services/theme.service.ts` | Dark/light theme toggle | admin-tokens.css + future `AdminThemeService` | — | ⬜ Future | Token layer exists. Theme toggle wiring in 10X-F. |
+| `shared/services/theme.service.ts` | Dark/light theme toggle | `AdminThemeService` + `sp-admin-theme-toggle` | 10X-F | ✅ Done | Admin-only `adminTheme` localStorage key. Sun/moon icon toggle. Wired into `sp-admin-header` action zone. |
 | `shared/components/ui/pagination/` | Pagination controls | `sp-admin-pagination` | 10X-E | ✅ Done | `flex justify-between border-t border-gray-100 px-5 py-3`. TailAdmin pagination structure. |
-| `shared/components/filter/` | Filter bar / search | `sp-admin-filter-bar` | 10X-E | ✅ Done | `flex items-end justify-between gap-3 flex-wrap mb-4`. TailAdmin filter bar pattern. |
+| `shared/components/filter/` | Filter bar / search | `sp-admin-filter-bar` | 10X-F | ✅ Done | Named slots: `[search]`, `[filters]`, `[actions]`. Left/right zone split. Backward-compat general projection retained. |
+| `shared/layout/app-header/` (action zone) | Header action zone | `sp-admin-header` | 10X-F | ✅ Done | Added `[left]` and `[actions]` named slots. Theme toggle auto-rendered in right zone. |
 | `shared/components/ui/drawer/` | Slide-in drawer | `sp-admin-drawer` + `AdminDrawerService` | 10X-E | ✅ Done | `fixed right-0 h-screen bg-white border-l border-gray-200`. Close `rounded-full bg-gray-100`. |
 | `shared/components/form/label/` | Form field label, hint, error | `sp-admin-form-field` | 10X-E | ✅ Done | `block text-sm font-medium text-gray-700`. TailAdmin label pattern. |
 | `shared/components/common/breadcrumb/` | Breadcrumb navigation | — | — | ⬜ Future | Not yet wrapped. |

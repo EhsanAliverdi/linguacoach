@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent } from '../../../admin';
+import { SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -23,7 +23,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminFilterBarComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
@@ -93,15 +93,15 @@ interface StudentEditForm {
                 <td class="sp-admin-profile-cell">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
                 <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
                 <td>
-                  <div class="sp-admin-row-actions">
-                    <a [routerLink]="[s.studentProfileId]" class="sp-admin-link-button">View</a>
-                    <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
+                  <sp-admin-table-actions>
+                    <a [routerLink]="[s.studentProfileId]" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors block">View</a>
+                    <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" (click)="startEdit(s)">Edit</button>
                     @if (s.lifecycleStage !== 'Archived') {
-                      <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
-                      <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
-                      <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
+                      <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" (click)="startResetPassword(s)">Reset password</button>
+                      <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 transition-colors" (click)="startResetData(s)">Reset data</button>
+                      <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 transition-colors" (click)="confirmArchive(s)">Archive</button>
                     }
-                  </div>
+                  </sp-admin-table-actions>
                 </td>
               </tr>
             }
