@@ -1,36 +1,47 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+export type SpAdminDrawerSide = 'left' | 'right';
+export type SpAdminDrawerSize = 'sm' | 'md' | 'lg' | 'xl';
+
+const DRAWER_SIZE_MAP: Record<SpAdminDrawerSize, string> = {
+  sm: '320px',
+  md: '420px',
+  lg: '560px',
+  xl: '720px',
+};
+
+// TailAdmin drawer (shared/components/ui/drawer):
+// fixed top-0 right-0 h-screen bg-white border-l border-gray-200 shadow-2xl w-[420px]
 @Component({
   selector: 'sp-admin-drawer',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <!--
-      TailAdmin drawer pattern (shared/components/ui/drawer):
-      Backdrop: fixed inset-0 bg-gray-400/50 backdrop-blur-sm
-      Panel:    fixed top-0 right-0 h-screen bg-white dark:bg-gray-900
-                border-l border-gray-200 shadow-2xl w-[420px]
-      Close:    h-9 w-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400
-    -->
     @if (open) {
       <div
         class="sp-adm-drawer-backdrop fixed inset-0 bg-gray-400/50 backdrop-blur-sm z-[99998]"
-        (click)="closed.emit()"
+        (click)="closeOnBackdrop && closed.emit()"
         aria-hidden="true"
       ></div>
       <aside
-        class="sp-adm-drawer fixed top-0 right-0 h-screen w-full max-w-[420px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-2xl z-[99999] overflow-auto flex flex-col"
+        class="sp-adm-drawer fixed top-0 h-screen bg-white dark:bg-gray-900 shadow-2xl z-[99999] overflow-auto flex flex-col"
+        [class]="drawerClasses"
+        [style.width]="drawerWidth"
+        [style.max-width]="'100vw'"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="title"
       >
         <header class="sp-adm-drawer-header flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
-          <h2 class="text-base font-semibold text-gray-800 dark:text-white/90 m-0">{{ title }}</h2>
+          <ng-content select="[slot=header]" />
+          @if (title && !hasHeaderSlot) {
+            <h2 class="text-base font-semibold text-gray-800 dark:text-white/90 m-0">{{ title }}</h2>
+          }
           <button
             type="button"
             (click)="closed.emit()"
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white transition-colors ml-auto"
             aria-label="Close drawer"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -40,14 +51,37 @@ import { CommonModule } from '@angular/common';
             </svg>
           </button>
         </header>
-        <div class="sp-adm-drawer-body p-5 flex-1 overflow-y-auto"><ng-content /></div>
+        <div class="sp-adm-drawer-body p-5 flex-1 overflow-y-auto">
+          <ng-content />
+        </div>
+        <div class="sp-adm-drawer-footer">
+          <ng-content select="[slot=footer]" />
+        </div>
       </aside>
     }
   `,
-  styles: [`/* TailAdmin-backed: fixed right-0 bg-white border-l border-gray-200 drawer pattern */`],
+  styles: [`
+    /* TailAdmin-backed: fixed right-0 / left-0 bg-white border shadow-2xl drawer */
+    .sp-adm-drawer-right { right:0; border-left:1px solid #e5e7eb; }
+    .sp-adm-drawer-left  { left:0;  border-right:1px solid #e5e7eb; }
+    .sp-adm-drawer-footer:empty { display:none; }
+  `],
 })
 export class SpAdminDrawerComponent {
   @Input() open = false;
   @Input() title = '';
+  @Input() side: SpAdminDrawerSide = 'right';
+  @Input() size: SpAdminDrawerSize = 'md';
+  @Input() closeOnBackdrop = true;
   @Output() closed = new EventEmitter<void>();
+
+  readonly hasHeaderSlot = false;
+
+  get drawerWidth(): string {
+    return DRAWER_SIZE_MAP[this.size] ?? '420px';
+  }
+
+  get drawerClasses(): string {
+    return `sp-adm-drawer-${this.side}`;
+  }
 }

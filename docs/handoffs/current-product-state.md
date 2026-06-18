@@ -825,3 +825,15 @@ Frontend-only phase. No product behaviour, API contracts, or backend logic chang
 ## Phase 10J — Learning Goal Context Resolver, completed (2026-06-17)
 
 `ILearningGoalContextResolver` / `LearningGoalContextResolver` now provides a single consistent priority chain for resolving learning goal context from any `StudentProfile`. All 7 generation and ledger call sites use it. `LearnerPreferenceContextFormatter.BuildLearningGoalContext()` is kept but no longer called externally. Generic fallback is `"general English communication"` — never workplace-biased. `WorkplaceSpecific` flag is derived from keyword detection, not assumed. `LegacyFallbackUsed` flag enables future migration tracking.
+
+## Phase 10X-J — Admin Wrapper Variant API, completed (2026-06-19)
+
+All `sp-admin-*` wrapper components now expose typed variant/size/density/layout inputs. Feature pages request common TailAdmin variations through parameters — not inline class strings. TailAdmin class complexity stays inside wrappers.
+
+**APIs added:** `appearance` on button, `dot`/`purple` on badge, `variant`/`hover`/`loading` on card, `size`/`loading` on stat-card, `variant`/`density`/`selectable`/`stickyHeader` on table, `layout`/`density` on filter-bar and form-field, `size`/`state`/`fullWidth` on input/select/textarea, `size`/`variant`/`showCloseButton` on modal, `side`/`size`/`closeOnBackdrop` on drawer.
+
+**Backward compat:** `variant="ghost"` on button still works (alias to `appearance="ghost" variant="neutral"`). Modal `maxWidth` still works. Existing page code unchanged except two proof-usage calls.
+
+**Tests:** 439 Angular unit tests pass. .NET 1885 pass. Angular build clean.
+
+**Known gaps (tracked):** `sp-admin-input-number`, `sp-admin-select-object`, dashboard mini-table, breadcrumb wrapper.

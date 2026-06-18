@@ -1689,3 +1689,29 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 **Not implemented:** curriculum routing, readiness pools, CEFR routing, background generation.
 
 **Backward compatible:** `LearnerPreferenceContextFormatter.BuildLearningGoalContext()` kept intact. Old ledger records without goal context do not throw.
+
+---
+
+## Phase 10X-J — Admin Wrapper Variant API (2026-06-19)
+
+**Goal:** Make `sp-admin-*` wrapper components robust and flexible so admin pages become consumers of design-system components, not owners of styling/layout logic.
+
+**Delivered:**
+
+- `sp-admin-button`: `appearance` (solid/outline/soft/ghost/link), `size` (xs/sm/md/lg), `fullWidth`, `iconOnly`. Legacy `variant="ghost"` compat alias preserved.
+- `sp-admin-badge`: `appearance` (soft/solid/outline), `size` (sm/md), `dot`, `purple` tone added.
+- `sp-admin-card`: `variant` (default/bordered/elevated/flat/metric/section), `padding` (none/sm/md/lg), `radius` (md/lg/xl/2xl), `headerDivider`, `hover`, `loading`.
+- `sp-admin-stat-card`: `size` (sm/md/lg), unified tone names (primary/success/warning/danger/info/neutral alias the legacy names), `loading` skeleton, `[slot=trend]`.
+- `sp-admin-table`: `variant` (basic/data/bordered/striped/simple/card), `density` (compact/comfortable/spacious), `selectable`, `stickyHeader`, column `width`/`align`.
+- `sp-admin-filter-bar`: `layout` (inline/stacked/responsive), `density` (compact/comfortable).
+- `sp-admin-form-field`: `layout` (vertical/horizontal/inline), `size` (sm/md/lg).
+- `sp-admin-input`: `size` (sm/md/lg), `state` (default/error/success/disabled), `fullWidth`. CVA preserved.
+- `sp-admin-select`: `size` (sm/md/lg), `state`, `fullWidth`. CVA preserved.
+- `sp-admin-textarea`: `size` (sm/md/lg), `state`, `fullWidth`. CVA preserved.
+- `sp-admin-modal`: `size` (sm/md/lg/xl/full), `variant` (default/danger/form/confirm), `showCloseButton`. `maxWidth` still works (overrides size).
+- `sp-admin-drawer`: `side` (left/right), `size` (sm/md/lg/xl), `closeOnBackdrop`.
+- 18 new Phase 10X-J unit tests. 439 Angular tests pass (0 failures).
+- Proof usage applied: Students page `variant="data" density="compact"`, modal buttons `size="sm"`. Dashboard stat-cards `size="md" [loading]`, AI System card `variant="metric"`.
+- .NET: 1885 tests pass. Angular build clean. Playwright: pending (run from `src/LinguaCoach.Web`).
+
+**Not implemented:** 10R-F usage governance UX, 10U AI Usage redesign, 10V prompt playground, notification platform, enterprise auth/security, observability stack, billing, StudentProfile.CefrLevel migration, full placement engine, full mastery engine.

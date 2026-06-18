@@ -26,13 +26,13 @@ import {
 
     <!-- KPI cards -->
     <div class="sp-admin-kpi-grid">
-      <sp-admin-stat-card tone="indigo" label="Total students"
-        [value]="loadingStudents() ? '—' : students().length">
+      <sp-admin-stat-card tone="indigo" size="md" label="Total students"
+        [value]="loadingStudents() ? '—' : students().length" [loading]="loadingStudents()">
         <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </sp-admin-stat-card>
 
-      <sp-admin-stat-card tone="green" label="Onboarded"
-        [value]="loadingStudents() ? '—' : onboardedCount()">
+      <sp-admin-stat-card tone="green" size="md" label="Onboarded"
+        [value]="loadingStudents() ? '—' : onboardedCount()" [loading]="loadingStudents()">
         <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       </sp-admin-stat-card>
 
@@ -148,7 +148,7 @@ import {
     <div class="sp-admin-dash-bottom">
 
       <!-- AI system status -->
-      <sp-admin-card title="AI System" padding="md">
+      <sp-admin-card title="AI System" variant="metric" padding="md">
         <span slot="actions" class="sp-admin-status-dot sp-admin-status-dot-green"></span>
         <div class="sp-admin-status-rows">
           <div class="sp-admin-status-row">

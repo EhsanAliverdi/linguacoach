@@ -49,7 +49,7 @@ interface StudentEditForm {
     } @else if (error()) {
       <div class="sp-admin-alert-error">{{ error() }}</div>
     } @else {
-      <sp-admin-table>
+      <sp-admin-table variant="data" density="compact">
         <table class="sp-admin-table">
           <thead>
             <tr>
@@ -165,8 +165,8 @@ interface StudentEditForm {
           <div class="sp-admin-alert-error sp-stu-wide">{{ editError() }}</div>
         }
         <div class="sp-stu-wide flex justify-end gap-3 pt-2">
-          <sp-admin-button variant="ghost" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
-          <sp-admin-button type="submit" [loading]="savingEdit()" [disabled]="savingEdit()">
+          <sp-admin-button variant="ghost" size="sm" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
+          <sp-admin-button size="sm" type="submit" [loading]="savingEdit()" [disabled]="savingEdit()">
             {{ savingEdit() ? 'Saving...' : 'Save changes' }}
           </sp-admin-button>
         </div>

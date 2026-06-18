@@ -106,7 +106,7 @@ describe('admin wrapper components', () => {
     const button: HTMLButtonElement = fixture.nativeElement.querySelector('button');
     expect(button.textContent).toContain('Save');
     expect(button.disabled).toBeTrue();
-    expect(button.classList).toContain('sp-adm-btn-primary');
+    expect(button.classList).toContain('sp-adm-btn-solid-primary');
     expect(fixture.nativeElement.querySelector('.sp-adm-btn-spinner')).not.toBeNull();
   });
 
@@ -122,7 +122,7 @@ describe('admin wrapper components', () => {
     const fixture = TestBed.createComponent(BadgeHostComponent);
     fixture.detectChanges();
 
-    const badge: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-badge-success');
+    const badge: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-badge-soft-success');
     expect(badge.textContent).toContain('Active');
   });
 
@@ -300,16 +300,16 @@ describe('admin wrapper components', () => {
     const badge = fixture.nativeElement.querySelector('span');
     expect(badge.classList).toContain('rounded-full');
     expect(badge.classList).toContain('inline-flex');
-    expect(badge.classList).toContain('sp-adm-badge-success');
+    expect(badge.classList).toContain('sp-adm-badge-soft-success');
   });
 
-  it('card uses rounded-2xl border bg-white classes', () => {
+  it('card uses bg-white and variant/radius classes', () => {
     const fixture = TestBed.createComponent(CardHostComponent);
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('section');
-    expect(card.classList).toContain('rounded-2xl');
-    expect(card.classList).toContain('border');
+    expect(card.classList).toContain('sp-adm-card-default');
+    expect(card.classList).toContain('sp-adm-card-radius-2xl');
     expect(card.classList).toContain('bg-white');
   });
 
@@ -322,8 +322,7 @@ describe('admin wrapper components', () => {
 
     const article = fixture.nativeElement.querySelector('article');
     expect(article.classList).toContain('rounded-2xl');
-    expect(article.classList).toContain('flex');
-    expect(article.classList).toContain('items-center');
+    expect(article.classList).toContain('sp-adm-stat-md');
     expect(fixture.nativeElement.textContent).toContain('Students');
     expect(fixture.nativeElement.textContent).toContain('42');
   });
@@ -333,9 +332,7 @@ describe('admin wrapper components', () => {
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('.sp-adm-table-card');
-    expect(card.classList).toContain('rounded-2xl');
-    expect(card.classList).toContain('border');
-    expect(card.classList).toContain('bg-white');
+    expect(card).not.toBeNull();
   });
 
   it('table th uses TailAdmin text-xs text-gray-500 header pattern', () => {
@@ -343,8 +340,8 @@ describe('admin wrapper components', () => {
     fixture.detectChanges();
 
     const th = fixture.nativeElement.querySelector('th');
-    expect(th.classList).toContain('text-xs');
-    expect(th.classList).toContain('text-gray-500');
+    expect(th.classList).toContain('sp-adm-th');
+    expect(th.classList).toContain('sp-adm-th-comfortable');
   });
 
   it('modal uses TailAdmin rounded-3xl bg-white panel', () => {
@@ -354,7 +351,7 @@ describe('admin wrapper components', () => {
     fixture.detectChanges();
 
     const panel = fixture.nativeElement.querySelector('.sp-modal-panel');
-    expect(panel.classList).toContain('rounded-3xl');
+    expect(panel.classList).toContain('sp-modal-panel-default');
     expect(panel.classList).toContain('bg-white');
     expect(fixture.nativeElement.textContent).toContain('Confirm');
   });
@@ -378,7 +375,7 @@ describe('admin wrapper components', () => {
 
     const aside = fixture.nativeElement.querySelector('aside');
     expect(aside.classList).toContain('bg-white');
-    expect(aside.classList).toContain('border-l');
+    expect(aside.classList).toContain('sp-adm-drawer-right');
     expect(aside.classList).toContain('fixed');
   });
 
@@ -656,8 +653,8 @@ describe('admin wrapper components — Phase 10X-F', () => {
     fixture.detectChanges();
     const bar = fixture.nativeElement.querySelector('.sp-adm-filter');
     expect(bar).not.toBeNull();
-    expect(bar.classList).toContain('flex');
-    expect(bar.classList).toContain('mb-4');
+    expect(bar.classList).toContain('sp-adm-filter-comfortable');
+    expect(bar.classList).toContain('sp-adm-filter-responsive');
   });
 
   // sp-admin-pagination
@@ -904,5 +901,343 @@ describe('admin form wrappers — Phase 10X-H CVA', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.sp-adm-field-error').textContent).toContain('Required');
     expect(fixture.nativeElement.querySelector('.sp-adm-field-hint')).toBeNull();
+  });
+});
+
+// ─── Phase 10X-J: Wrapper Variant API tests ───────────────────────────────────
+
+@Component({
+  standalone: true,
+  imports: [SpAdminButtonComponent],
+  template: `
+    <sp-admin-button variant="danger" appearance="solid" size="xs">Delete</sp-admin-button>
+    <sp-admin-button variant="success" appearance="outline" size="lg">Save</sp-admin-button>
+    <sp-admin-button variant="primary" appearance="soft" size="sm">Draft</sp-admin-button>
+    <sp-admin-button variant="secondary" appearance="ghost" size="md">Cancel</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="link" size="md">Link</sp-admin-button>
+    <sp-admin-button [fullWidth]="true">Full</sp-admin-button>
+    <sp-admin-button [iconOnly]="true" size="sm">X</sp-admin-button>
+  `,
+})
+class ButtonVariantHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminBadgeComponent],
+  template: `
+    <sp-admin-badge tone="success" appearance="soft" size="sm">Active</sp-admin-badge>
+    <sp-admin-badge tone="danger" appearance="solid" size="md">Error</sp-admin-badge>
+    <sp-admin-badge tone="warning" appearance="outline" size="sm">Warn</sp-admin-badge>
+    <sp-admin-badge tone="purple" [dot]="true">Purple</sp-admin-badge>
+  `,
+})
+class BadgeVariantHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminCardComponent],
+  template: `
+    <sp-admin-card title="Default" variant="default" padding="md" radius="2xl">Body</sp-admin-card>
+    <sp-admin-card title="Elevated" variant="elevated" padding="lg" [headerDivider]="true">Body</sp-admin-card>
+    <sp-admin-card title="Flat" variant="flat" padding="none">Body</sp-admin-card>
+    <sp-admin-card title="Hover" [hover]="true">Body</sp-admin-card>
+  `,
+})
+class CardVariantHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminTableComponent],
+  template: `
+    <sp-admin-table variant="basic" density="comfortable" [columns]="cols" [rows]="rows" />
+    <sp-admin-table variant="data" density="compact" [columns]="cols" [rows]="rows" />
+  `,
+})
+class TableVariantHostComponent {
+  cols = [{ key: 'name', label: 'Name', sortable: true }];
+  rows: Record<string, unknown>[] = [{ name: 'Alice' }, { name: 'Bob' }];
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminTableComponent],
+  template: `<sp-admin-table [columns]="cols" [rows]="rows" (sortChange)="onSort($event)" />`,
+})
+class TableSortHostComponent {
+  cols = [{ key: 'name', label: 'Name', sortable: true }];
+  rows: Record<string, unknown>[] = [{ name: 'Alice' }];
+  lastSort: { column: string; direction: string } | null = null;
+  onSort(e: { column: string; direction: string }): void { this.lastSort = e; }
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminFilterBarComponent],
+  template: `
+    <sp-admin-filter-bar layout="inline" density="compact">
+      <input search placeholder="Search" />
+      <button actions>Export</button>
+    </sp-admin-filter-bar>
+    <sp-admin-filter-bar layout="stacked" density="comfortable">
+      <input search placeholder="Search" />
+    </sp-admin-filter-bar>
+  `,
+})
+class FilterBarVariantHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminFormFieldComponent],
+  template: `
+    <sp-admin-form-field label="Name" layout="vertical" size="sm"><input /></sp-admin-form-field>
+    <sp-admin-form-field label="Email" layout="horizontal" size="md"><input /></sp-admin-form-field>
+    <sp-admin-form-field label="Quick" layout="inline" size="lg"><input /></sp-admin-form-field>
+  `,
+})
+class FormFieldLayoutHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminModalComponent],
+  template: `
+    <sp-admin-modal [open]="true" title="Small" size="sm" variant="default" />
+    <sp-admin-modal [open]="true" title="Large" size="lg" variant="form" />
+    <sp-admin-modal [open]="true" title="Danger" size="md" variant="danger" />
+  `,
+})
+class ModalVariantHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminDropdownComponent],
+  template: `
+    <sp-admin-dropdown [(isOpen)]="open">
+      <button trigger>Trigger</button>
+      <div menu><a>Item</a></div>
+    </sp-admin-dropdown>
+  `,
+})
+class DropdownBehaviorHostComponent {
+  open = false;
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminInputComponent, SpAdminTableComponent, SpAdminBadgeComponent],
+  template: `
+    <sp-admin-input size="sm" state="error" />
+    <sp-admin-table variant="data" density="compact" [columns]="cols" [rows]="rows" />
+    <sp-admin-badge tone="success" appearance="soft">Active</sp-admin-badge>
+  `,
+})
+class PageUsageProofHostComponent {
+  cols = [{ key: 'name', label: 'Name' }];
+  rows: Record<string, unknown>[] = [{ name: 'Alice' }];
+}
+
+describe('Phase 10X-J — admin wrapper variant API', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([])],
+    });
+  });
+
+  // 1. sp-admin-button size variants
+  it('renders button size variants (xs, sm, md, lg)', () => {
+    const fixture = TestBed.createComponent(ButtonVariantHostComponent);
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('button');
+    expect(buttons[0].classList).toContain('sp-adm-btn-xs');
+    expect(buttons[1].classList).toContain('sp-adm-btn-lg');
+    expect(buttons[2].classList).toContain('sp-adm-btn-sm');
+    expect(buttons[3].classList).toContain('sp-adm-btn-md');
+  });
+
+  // 2. sp-admin-button appearance variants
+  it('renders button appearance variants (solid, outline, soft, ghost, link)', () => {
+    const fixture = TestBed.createComponent(ButtonVariantHostComponent);
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('button');
+    expect(buttons[0].classList).toContain('sp-adm-btn-solid-danger');
+    expect(buttons[1].classList).toContain('sp-adm-btn-outline-success');
+    expect(buttons[2].classList).toContain('sp-adm-btn-soft-primary');
+    expect(buttons[3].classList).toContain('sp-adm-btn-ghost-secondary');
+    expect(buttons[4].classList).toContain('sp-adm-btn-link-neutral');
+  });
+
+  // 3. sp-admin-button fullWidth / iconOnly modifiers
+  it('renders button fullWidth and iconOnly class modifiers', () => {
+    const fixture = TestBed.createComponent(ButtonVariantHostComponent);
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('button');
+    expect(buttons[5].classList).toContain('sp-adm-btn-block');
+    expect(buttons[6].classList).toContain('sp-adm-btn-icon-only');
+  });
+
+  // 4. sp-admin-badge tones
+  it('renders badge tones (success, danger, warning, purple)', () => {
+    const fixture = TestBed.createComponent(BadgeVariantHostComponent);
+    fixture.detectChanges();
+    const badges = fixture.nativeElement.querySelectorAll('.sp-adm-badge');
+    expect(badges[0].classList).toContain('sp-adm-badge-soft-success');
+    expect(badges[1].classList).toContain('sp-adm-badge-solid-danger');
+    expect(badges[2].classList).toContain('sp-adm-badge-outline-warning');
+    expect(badges[3].classList).toContain('sp-adm-badge-soft-purple');
+  });
+
+  // 5. sp-admin-badge appearances + dot
+  it('renders badge appearances and dot indicator', () => {
+    const fixture = TestBed.createComponent(BadgeVariantHostComponent);
+    fixture.detectChanges();
+    const badges = fixture.nativeElement.querySelectorAll('.sp-adm-badge');
+    expect(badges[0].classList).toContain('sp-adm-badge-sm');
+    expect(badges[1].classList).toContain('sp-adm-badge-md');
+    expect(fixture.nativeElement.querySelector('.sp-adm-badge-dot')).not.toBeNull();
+  });
+
+  // 6. sp-admin-card padding / variant / headerDivider
+  it('renders card padding, variant, and headerDivider options', () => {
+    const fixture = TestBed.createComponent(CardVariantHostComponent);
+    fixture.detectChanges();
+    const cards = fixture.nativeElement.querySelectorAll('section.sp-adm-card');
+    expect(cards[0].classList).toContain('sp-adm-card-default');
+    expect(cards[0].classList).toContain('sp-adm-card-radius-2xl');
+    const elevatedHeader = cards[1].querySelector('.sp-adm-card-header');
+    expect(elevatedHeader.classList).toContain('sp-adm-card-header-divider');
+    expect(cards[2].classList).toContain('sp-adm-card-flat');
+    expect(cards[3].classList).toContain('sp-adm-card-hover');
+  });
+
+  // 7. sp-admin-table renders basic variant
+  it('renders table basic variant with comfortable density', () => {
+    const fixture = TestBed.createComponent(TableVariantHostComponent);
+    fixture.detectChanges();
+    const wrappers = fixture.nativeElement.querySelectorAll('.sp-adm-table-card');
+    expect(wrappers.length).toBeGreaterThanOrEqual(1);
+    const th = fixture.nativeElement.querySelector('.sp-adm-th-comfortable');
+    expect(th).not.toBeNull();
+  });
+
+  // 8. sp-admin-table renders data variant
+  it('renders table data variant with compact density', () => {
+    const fixture = TestBed.createComponent(TableVariantHostComponent);
+    fixture.detectChanges();
+    const dataWrappers = fixture.nativeElement.querySelectorAll('.sp-adm-table-data');
+    expect(dataWrappers.length).toBeGreaterThanOrEqual(1);
+    const compactTd = fixture.nativeElement.querySelectorAll('.sp-adm-td-compact');
+    expect(compactTd.length).toBeGreaterThan(0);
+  });
+
+  // 9. sp-admin-table density classes on th/td
+  it('applies correct density classes to th and td', () => {
+    const fixture = TestBed.createComponent(TableVariantHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-adm-th-comfortable')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-adm-td-compact')).not.toBeNull();
+  });
+
+  // 10. sp-admin-table emits sort events
+  it('emits sortChange event when sortable header is clicked', () => {
+    const fixture = TestBed.createComponent(TableSortHostComponent);
+    fixture.detectChanges();
+    const th = fixture.nativeElement.querySelector('.sp-adm-th-sortable');
+    expect(th).not.toBeNull();
+    th.click();
+    expect(fixture.componentInstance.lastSort).toEqual({ column: 'name', direction: 'asc' });
+  });
+
+  // 11. sp-admin-filter-bar layout/density options
+  it('renders filter bar with inline/compact and stacked/comfortable layouts', () => {
+    const fixture = TestBed.createComponent(FilterBarVariantHostComponent);
+    fixture.detectChanges();
+    const bars = fixture.nativeElement.querySelectorAll('.sp-adm-filter');
+    expect(bars[0].classList).toContain('sp-adm-filter-compact');
+    expect(bars[0].classList).toContain('sp-adm-filter-inline');
+    expect(bars[1].classList).toContain('sp-adm-filter-comfortable');
+    expect(bars[1].classList).toContain('sp-adm-filter-stacked');
+  });
+
+  // 12. sp-admin-form-field layout options
+  it('renders form-field vertical, horizontal, and inline layouts', () => {
+    const fixture = TestBed.createComponent(FormFieldLayoutHostComponent);
+    fixture.detectChanges();
+    const fields = fixture.nativeElement.querySelectorAll('.sp-adm-field');
+    expect(fields[0].classList).toContain('sp-adm-field-vertical');
+    expect(fields[1].classList).toContain('sp-adm-field-horizontal');
+    expect(fields[2].classList).toContain('sp-adm-field-inline');
+  });
+
+  // 13. sp-admin-input CVA preserved after variant changes
+  it('sp-admin-input preserves CVA binding with size/state variants applied', () => {
+    const fixture = TestBed.createComponent(InputNgModelHostComponent);
+    fixture.detectChanges();
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminInputComponent;
+    comp.size = 'sm';
+    comp.state = 'error';
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    expect(input.classList).toContain('sp-adm-input-sm');
+    expect(input.classList).toContain('sp-adm-input-error');
+  });
+
+  // 14. sp-admin-select CVA preserved after variant changes
+  it('sp-admin-select preserves CVA binding with size/state variants applied', () => {
+    const fixture = TestBed.createComponent(SelectReactiveHostComponent);
+    fixture.detectChanges();
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminSelectComponent;
+    comp.size = 'lg';
+    comp.state = 'success';
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    expect(select.classList).toContain('sp-adm-select-lg');
+    expect(select.classList).toContain('sp-adm-select-success');
+  });
+
+  // 15. sp-admin-textarea CVA preserved after variant changes
+  it('sp-admin-textarea preserves CVA binding with size/state variants applied', () => {
+    const fixture = TestBed.createComponent(TextareaReactiveHostComponent);
+    fixture.detectChanges();
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminTextareaComponent;
+    comp.size = 'lg';
+    comp.state = 'error';
+    fixture.detectChanges();
+    const ta: HTMLTextAreaElement = fixture.nativeElement.querySelector('textarea');
+    expect(ta.classList).toContain('sp-adm-textarea-lg');
+    expect(ta.classList).toContain('sp-adm-textarea-error');
+  });
+
+  // 16. sp-admin-modal size/variant panel classes
+  it('renders modal size and variant panel classes', () => {
+    const fixture = TestBed.createComponent(ModalVariantHostComponent);
+    fixture.detectChanges();
+    const panels = fixture.nativeElement.querySelectorAll('.sp-modal-panel');
+    expect(panels.length).toBe(3);
+    expect(panels[0].classList).toContain('sp-modal-panel-default');
+    expect(panels[1].classList).toContain('sp-modal-panel-form');
+    expect(panels[2].classList).toContain('sp-modal-panel-danger');
+    expect(panels[2].querySelector('.sp-modal-danger-icon')).not.toBeNull();
+  });
+
+  // 17. sp-admin-dropdown open/close behavior preserved
+  it('sp-admin-dropdown preserves open/close behavior', () => {
+    const fixture = TestBed.createComponent(DropdownBehaviorHostComponent);
+    fixture.detectChanges();
+    const trigger = fixture.nativeElement.querySelector('.sp-adm-dropdown-trigger');
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
+    trigger.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).not.toBeNull();
+    trigger.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  // 18. Page-level usage renders without error
+  it('page-level use of table/input/badge variants renders without error', () => {
+    const fixture = TestBed.createComponent(PageUsageProofHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-adm-input-sm')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-adm-table-data')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.sp-adm-badge-soft-success')).not.toBeNull();
   });
 });

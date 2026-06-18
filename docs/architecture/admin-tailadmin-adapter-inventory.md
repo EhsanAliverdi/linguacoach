@@ -86,6 +86,7 @@ src/LinguaCoach.Web/src/app/admin/pages/               (feature pages — use sp
 | 10X-H | Admin form wrapper CVA foundation: `ControlValueAccessor` on `sp-admin-input`/`sp-admin-select`, new `sp-admin-textarea`, `sp-admin-form-field` required marker. 15 new wrapper specs. | ✅ Done |
 | 10X-LAYOUT-BLOCKER | TailAdmin Layout One shell parity: `@utility` menu classes, exact Tailwind shell classes on layout/sidebar/header wrappers, body.admin-layout. | ✅ Done |
 | 10X-I | Remaining form/modal migration: AI Config credential inputs, Integrations operational fields, all 3 student modals. `maxWidth` on `sp-admin-modal`. `[value]` input on `sp-admin-input`. `<main>` in layout for `role="main"`. | ✅ Done |
+| 10X-J | Wrapper variant API: `appearance`/`size`/`density`/`layout`/`variant` inputs on all 13 wrappers; `ghost` compat alias; 18 new tests; proof usage on students/dashboard. | ✅ Done |
 | 10X-I+ | Notification dropdown, breadcrumb, charts, dark-mode boundary, `sp-admin-select-object` (number\|null), `sp-admin-input-number` (numeric CVA) | ⬜ Future |
 
 ---

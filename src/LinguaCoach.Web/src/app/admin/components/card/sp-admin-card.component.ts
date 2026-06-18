@@ -1,50 +1,122 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+export type SpAdminCardVariant = 'default' | 'bordered' | 'elevated' | 'flat' | 'metric' | 'section';
+export type SpAdminCardPadding = 'none' | 'sm' | 'md' | 'lg';
+export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
+
+// TailAdmin card (shared/components/common/component-card):
+// rounded-2xl border border-gray-200 bg-white
+// header: px-6 py-5, body: p-4 border-t border-gray-100 sm:p-6
 @Component({
   selector: 'sp-admin-card',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <!--
-      TailAdmin card pattern (shared/components/common/component-card):
-      rounded-2xl border border-gray-200 bg-white
-      header: px-6 py-5, h3 text-base font-medium text-gray-800
-      body:   p-4 border-t border-gray-100 sm:p-6
-    -->
     <section
-      class="sp-adm-card rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-      [class.sp-adm-card-tight]="padding === 'sm'"
-      [class.sp-adm-card-dashed]="dashed"
+      class="sp-adm-card bg-white dark:bg-white/[0.03]"
+      [class]="hostClasses"
     >
-      @if (title) {
-        <header class="sp-adm-card-header px-6 py-5">
-          <h2 class="text-base font-medium text-gray-800 dark:text-white/90">{{ title }}</h2>
+      @if (loading) {
+        <div class="sp-adm-card-loading" aria-busy="true">
+          <span class="sp-adm-card-spinner" aria-hidden="true"></span>
+        </div>
+      }
+      @if (title || hasActions) {
+        <header class="sp-adm-card-header px-6 py-5" [class.sp-adm-card-header-divider]="headerDivider">
+          @if (title) {
+            <h2 class="sp-adm-card-title text-base font-medium text-gray-800 dark:text-white/90 m-0">{{ title }}</h2>
+          }
+          <ng-content select="[slot=header]" />
           <ng-content select="[slot=actions]" />
         </header>
       }
-      <div class="sp-adm-card-body p-4 sm:p-6" [class.border-t]="!!title" [class.border-gray-100]="!!title" [class.dark:border-gray-800]="!!title">
+      <div class="sp-adm-card-body" [class]="bodyClasses">
         <ng-content />
       </div>
     </section>
   `,
   styles: [`
-    :host { display: block; min-width: 0; }
-    /* TailAdmin-backed: rounded-2xl border border-gray-200 bg-white pattern */
-    .sp-adm-card { min-width: 0; }
-    .sp-adm-card-tight .sp-adm-card-body { padding: 12px 16px; }
-    .sp-adm-card-dashed { border-style: dashed; }
+    :host { display:block; min-width:0; }
+
+    /* Base */
+    .sp-adm-card { min-width:0; position:relative; overflow:hidden; }
+
+    /* Variant borders/shadows */
+    .sp-adm-card-default   { border:1px solid #e5e7eb; }
+    .sp-adm-card-bordered  { border:2px solid #e5e7eb; }
+    .sp-adm-card-elevated  { border:1px solid #e5e7eb; box-shadow:0 4px 12px rgba(0,0,0,.08); }
+    .sp-adm-card-flat      { border:none; background:#f9fafb !important; }
+    .sp-adm-card-metric    { border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    .sp-adm-card-section   { border:none; border-top:2px solid #465fff; }
+    .sp-adm-card-dashed    { border-style:dashed; }
+
+    /* Radius */
+    .sp-adm-card-radius-md  { border-radius:8px; }
+    .sp-adm-card-radius-lg  { border-radius:12px; }
+    .sp-adm-card-radius-xl  { border-radius:16px; }
+    .sp-adm-card-radius-2xl { border-radius:20px; }
+
+    /* Hover */
+    .sp-adm-card-hover { cursor:pointer; transition:box-shadow .15s,border-color .15s; }
+    .sp-adm-card-hover:hover { box-shadow:0 4px 16px rgba(70,95,255,.1); border-color:#c7d2fe; }
+
+    /* Header */
     .sp-adm-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
-    .sp-adm-card-header h2 { margin: 0; }
+    .sp-adm-card-header-divider { border-bottom:1px solid #f1f5f9; }
+    .sp-adm-card-title { margin:0; }
+
+    /* Body padding */
+    .sp-adm-card-body-none { padding:0; }
+    .sp-adm-card-body-sm   { padding:12px 16px; }
+    .sp-adm-card-body-md   { padding:16px 24px; }
+    .sp-adm-card-body-lg   { padding:24px 32px; }
+
+    /* Body border (when header present) */
+    .sp-adm-card-body-bordered { border-top:1px solid #f1f5f9; }
+
+    /* Loading overlay */
+    .sp-adm-card-loading {
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,.75); z-index:10;
+    }
+    .sp-adm-card-spinner {
+      width:24px; height:24px; border-radius:50%;
+      border:3px solid #e5e7eb; border-top-color:#465fff;
+      animation:sp-adm-card-spin .7s linear infinite;
+    }
+    @keyframes sp-adm-card-spin { to { transform:rotate(360deg); } }
   `],
 })
 export class SpAdminCardComponent {
   @Input() title = '';
-  @Input() padding: 'sm' | 'md' = 'md';
+  @Input() variant: SpAdminCardVariant = 'default';
+  @Input() padding: SpAdminCardPadding = 'md';
+  @Input() radius: SpAdminCardRadius = '2xl';
+  @Input() headerDivider = false;
+  @Input() hover = false;
+  @Input() loading = false;
   @Input() dashed = false;
+  /** @deprecated use variant='flat' or padding='sm' */
+  @Input() set tight(v: boolean) { if (v) this.padding = 'sm'; }
+
+  get hasActions(): boolean { return false; }
+
+  get hostClasses(): string {
+    const cls = [
+      `sp-adm-card-${this.variant}`,
+      `sp-adm-card-radius-${this.radius}`,
+    ];
+    if (this.hover) cls.push('sp-adm-card-hover');
+    if (this.dashed) cls.push('sp-adm-card-dashed');
+    return cls.join(' ');
+  }
+
+  get bodyClasses(): string {
+    const cls = [`sp-adm-card-body-${this.padding}`];
+    if (this.title) cls.push('sp-adm-card-body-bordered');
+    return cls.join(' ');
+  }
 }

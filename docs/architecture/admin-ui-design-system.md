@@ -386,3 +386,161 @@ Remaining legacy areas (post 10X-G):
 
 Feature pages should not introduce new long TailAdmin class lists for common UI. Add or extend
 `sp-admin-*` wrappers first, then use page-local CSS only for truly unique behavior.
+
+---
+
+## Phase 10X-J: Wrapper Variant API (2026-06-19)
+
+All `sp-admin-*` wrappers now expose a robust variant/size/density/layout API.
+Pages request design variations through typed inputs. TailAdmin class complexity stays inside wrappers.
+
+### sp-admin-button
+
+```html
+<!-- variant: primary | secondary | success | danger | warning | info | neutral | ghost (deprecated) -->
+<!-- appearance: solid | outline | soft | ghost | link -->
+<!-- size: xs | sm | md | lg -->
+<sp-admin-button variant="danger" appearance="solid" size="sm" [loading]="saving">Delete</sp-admin-button>
+<sp-admin-button variant="primary" appearance="outline" [fullWidth]="true">Save</sp-admin-button>
+<sp-admin-button variant="neutral" appearance="ghost" [iconOnly]="true" size="md">
+  <svg leading .../>
+</sp-admin-button>
+```
+
+Legacy: `variant="ghost"` continues to work (maps to `appearance="ghost" variant="neutral"`).
+
+### sp-admin-badge
+
+```html
+<!-- tone: neutral | primary | success | warning | danger | info | purple -->
+<!-- appearance: soft | solid | outline  (default: soft = TailAdmin light variant) -->
+<!-- size: sm | md -->
+<sp-admin-badge tone="success" appearance="soft" size="sm">Active</sp-admin-badge>
+<sp-admin-badge tone="danger" appearance="solid" size="md">Error</sp-admin-badge>
+<sp-admin-badge tone="warning" [dot]="true">Pending</sp-admin-badge>
+```
+
+### sp-admin-card
+
+```html
+<!-- variant: default | bordered | elevated | flat | metric | section -->
+<!-- padding: none | sm | md | lg   radius: md | lg | xl | 2xl -->
+<sp-admin-card title="AI Status" variant="metric" padding="md" [headerDivider]="true">
+  <span slot="actions">...</span>
+  Content
+</sp-admin-card>
+<sp-admin-card variant="elevated" [hover]="true" padding="lg">...</sp-admin-card>
+<sp-admin-card [dashed]="true" variant="flat" padding="md">Placeholder</sp-admin-card>
+```
+
+### sp-admin-stat-card
+
+```html
+<!-- size: sm | md | lg -->
+<!-- tone: indigo | green | violet | amber | teal | slate | primary | success | warning | danger | info | neutral -->
+<sp-admin-stat-card tone="indigo" size="md" label="Students" [value]="count" [loading]="loading">
+  <svg slot="icon" .../>
+  <span slot="trend">↑ 12%</span>
+</sp-admin-stat-card>
+```
+
+### sp-admin-table
+
+```html
+<!-- variant: basic | data | bordered | striped | simple | card -->
+<!-- density: compact | comfortable | spacious -->
+<sp-admin-table
+  variant="data"
+  density="compact"
+  [columns]="cols"
+  [rows]="rows"
+  [hoverable]="true"
+  [selectable]="true"
+  [stickyHeader]="true"
+  [hasActions]="true"
+  (sortChange)="onSort($event)"
+  (selectionChange)="onSelect($event)"
+/>
+```
+
+Column definition: `{ key, label, sortable?, muted?, width?, align? }`.
+Consumer is responsible for re-sorting rows on `(sortChange)`.
+
+### sp-admin-filter-bar
+
+```html
+<!-- layout: inline | stacked | responsive   density: compact | comfortable -->
+<sp-admin-filter-bar layout="responsive" density="comfortable">
+  <input search placeholder="Search..." />
+  <select filters>...</select>
+  <sp-admin-button actions variant="secondary" appearance="outline" size="sm">Export</sp-admin-button>
+</sp-admin-filter-bar>
+```
+
+### sp-admin-form-field
+
+```html
+<!-- layout: vertical | horizontal | inline   size: sm | md | lg -->
+<sp-admin-form-field label="Email" layout="vertical" size="md" [required]="true" hint="Used for login" [error]="err">
+  <sp-admin-input formControlName="email" />
+</sp-admin-form-field>
+<sp-admin-form-field label="Provider" layout="horizontal" size="md">
+  <sp-admin-select formControlName="provider" [options]="providerOpts" />
+</sp-admin-form-field>
+```
+
+### sp-admin-input / sp-admin-select / sp-admin-textarea
+
+```html
+<!-- size: sm | md | lg   state: default | error | success | disabled   fullWidth: boolean -->
+<sp-admin-input formControlName="name" size="md" state="error" />
+<sp-admin-select formControlName="tier" size="sm" [fullWidth]="false" [options]="opts" />
+<sp-admin-textarea formControlName="notes" size="md" [rows]="6" state="success" />
+```
+
+CVA behavior (`[(ngModel)]`, `formControlName`, `setDisabledState`, touched-on-blur) preserved in all three.
+
+### sp-admin-modal
+
+```html
+<!-- size: sm | md | lg | xl | full   variant: default | danger | form | confirm -->
+<sp-admin-modal [open]="open" title="Delete student?" size="md" variant="danger"
+  [closeOnBackdrop]="true" [showCloseButton]="true" (closed)="open = false">
+  <p>This cannot be undone.</p>
+  <sp-admin-button slot="footer" variant="danger" size="sm">Delete</sp-admin-button>
+  <sp-admin-button slot="footer" variant="neutral" appearance="ghost" size="sm" (click)="open = false">Cancel</sp-admin-button>
+</sp-admin-modal>
+```
+
+`maxWidth` input overrides the `size` preset if set explicitly (backward compat from 10X-I).
+
+### sp-admin-drawer
+
+```html
+<!-- side: left | right   size: sm | md | lg | xl -->
+<sp-admin-drawer [open]="open" title="Student detail" side="right" size="lg" (closed)="open = false">
+  Content
+</sp-admin-drawer>
+```
+
+---
+
+## Raw class policy
+
+**Not allowed in feature pages:**
+- Raw Tailwind/TailAdmin class lists for components that have a wrapper equivalent.
+- Example: `class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs"` for a badge.
+
+**Allowed:**
+- Layout-only utilities: `grid`, `flex`, `gap-*`, `col-span-*`, `w-full`, page-layout grids.
+- Page-local CSS for unique non-component behavior (action card links, stat grids, etc.).
+- `customClass` or `contentClass` escape hatches on wrappers — only when no typed input covers the need.
+
+---
+
+## Known gaps (tracked for future phases)
+
+- `sp-admin-input-number` — number inputs with null/undefined remain native inside `sp-admin-form-field`.
+- `sp-admin-select-object` — selects with non-string option values remain native inside `sp-admin-form-field`.
+- `sp-admin-breadcrumb` — not yet wrapped (future phase).
+- Dashboard mini-table still uses page-local `sp-admin-mini-table` CSS (migration to `sp-admin-table` pending).

@@ -179,6 +179,9 @@ Each item includes context, motivation, and the phase where it was deferred.
 - TODO-10X-TOAST: add toast action buttons and queue limits if admin workflows need them.
 - ~~TODO-10X-LAYOUT-BLOCKER~~: admin shell/sidebar/header/content must visually match TailAdmin Layout One — **DONE in Phase 10X-LAYOUT-BLOCKER** (2026-06-19). Imported TailAdmin `@utility` + `@theme` tokens into global styles.css. Rewrote `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header` to use pure TailAdmin Tailwind classes. Rewrote `admin-app-layout.html` with `menu-item`/grouped-sections nav structure. Stripped all competing custom CSS from layout component. Added `body.admin-layout` body-class for gray-50 background. 20 new Angular tests + 13 updated. Angular 411, .NET 1885, Playwright 183+ passed. 10X-I form migration unblocked.
 - ~~TODO-10X-I~~: migrate remaining admin forms and modals to CVA wrappers — **DONE in Phase 10X-I** (2026-06-19). AI Config, Integrations, and all 3 student modals migrated. `sp-admin-modal maxWidth`, `sp-admin-input [value]`, and `sp-admin-layout <main>` added. Angular 421, .NET 1885 passed.
-- TODO-10R-F: build usage governance UX on the new admin design system (admin usage dashboard, quota editor UX, near-quota alert display).
-- TODO-10U: full AI usage/config redesign on the admin design system.
-- TODO-10V: prompt playground on the admin design system.
+- TODO-10R-F: build usage governance UX on the new admin design system (admin usage dashboard, quota editor UX, near-quota alert display). Wrapper variant API (10X-J) is now available.
+- TODO-10U: full AI usage/config redesign on the admin design system. Wrapper variant API (10X-J) is now available.
+- TODO-10V: prompt playground on the admin design system. Wrapper variant API (10X-J) is now available.
+- TODO-10X-J-INPUT-NUMBER: implement `sp-admin-input-number` — numeric CVA wrapper for number|null inputs (currently remain native inside sp-admin-form-field).
+- TODO-10X-J-SELECT-OBJECT: implement `sp-admin-select-object` — select wrapper for non-string option values (number|null object selects remain native).
+- TODO-10X-J-DASHBOARD-MINITABLE: migrate dashboard recent-students mini-table from page-local CSS to sp-admin-table (projected mode).
