@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
@@ -24,7 +24,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
@@ -39,8 +39,8 @@ interface StudentEditForm {
       <sp-admin-input
         type="search"
         placeholder="Search by email or name"
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="page.set(1)" />
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event); page.set(1)" />
       <span class="sp-admin-table-muted">{{ filteredStudents().length }} shown</span>
     </sp-admin-filter-bar>
 
@@ -70,7 +70,7 @@ interface StudentEditForm {
                 <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
                   <td class="sp-admin-wide-cell">
                     <div class="sp-admin-student-name">{{ displayName(s) }}</div>
-                    <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
+                    <sp-admin-copyable-text [value]="s.email" class="sp-admin-table-muted" />
                   </td>
                   <td>
                     <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
@@ -85,7 +85,13 @@ interface StudentEditForm {
                       <span class="sp-admin-table-empty">-</span>
                     }
                   </td>
-                  <td class="sp-admin-profile-cell sp-admin-table-wrap">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
+                  <td class="sp-admin-profile-cell">
+                    @if (s.careerContext || s.learningGoal) {
+                      <sp-admin-truncated-text [value]="s.careerContext || s.learningGoal || ''" [maxLength]="60" [maxWidth]="'260px'" />
+                    } @else {
+                      <span class="sp-admin-table-empty">Not set</span>
+                    }
+                  </td>
                   <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
                   <td class="sp-admin-actions">
                     <sp-admin-table-actions>
@@ -326,7 +332,7 @@ interface StudentEditForm {
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
     .sp-admin-filter-toggle input{accent-color:#4338CA;}
     .sp-admin-student-name{font-weight:800;color:#0F172A;}
-    .sp-admin-profile-cell{max-width:260px;overflow-wrap:anywhere;}
+    .sp-admin-profile-cell{max-width:280px;}
     .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}
     .sp-stu-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
     .sp-stu-wide{grid-column:1/-1;}
@@ -346,14 +352,14 @@ export class AdminStudentsComponent implements OnInit {
   editError = signal('');
   includeArchived = false;
 
-  searchTerm = '';
+  searchTerm = signal('');
   page = signal(1);
   readonly pageSize = 25;
   sortColumn = signal<'name' | 'onboarding' | 'joined'>('joined');
   sortDirection = signal<'asc' | 'desc'>('desc');
 
   filteredStudents = computed(() => {
-    const term = this.searchTerm.trim().toLowerCase();
+    const term = this.searchTerm().trim().toLowerCase();
     let items = this.students();
     if (term) {
       items = items.filter(s =>
