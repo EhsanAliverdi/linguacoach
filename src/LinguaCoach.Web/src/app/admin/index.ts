@@ -25,6 +25,7 @@ export * from './components/kpi-card/sp-admin-kpi-card.component';
 export * from './components/layout/sp-admin-layout.component';
 export * from './components/loading-state/sp-admin-loading-state.component';
 export * from './components/modal/sp-admin-modal.component';
+export * from './components/slide-over/sp-admin-slide-over.component';
 export * from './components/page-body/sp-admin-page-body.component';
 export * from './components/page-header/sp-admin-page-header.component';
 export * from './components/pagination/sp-admin-pagination.component';

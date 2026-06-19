@@ -276,6 +276,7 @@ Implemented foundation:
 - `sp-admin-filter-bar`
 - `sp-admin-modal`
 - `sp-admin-drawer`
+- `sp-admin-slide-over`
 - `sp-admin-toast-outlet`
 
 Existing adapter aliases remain for current pages:
@@ -522,6 +523,45 @@ CVA behavior (`[(ngModel)]`, `formControlName`, `setDisabledState`, touched-on-b
   Content
 </sp-admin-drawer>
 ```
+
+### sp-admin-slide-over
+
+Purpose-built for admin secondary detail/edit flows (student preferences, audit history, rule editing, prompt preview). Slides from the right. Has structured title/subtitle header, header-actions slot, loading and error states, and a footer actions slot.
+
+Use `sp-admin-slide-over` (not `sp-admin-drawer`) for admin entity detail/edit panels going forward.
+
+```html
+<!-- size: sm (360px) | md (480px) | lg (600px) | xl (768px) -->
+<sp-admin-slide-over
+  [open]="panelOpen"
+  title="Student Preferences"
+  subtitle="Read-only view"
+  size="lg"
+  [loading]="loading"
+  [error]="errorMessage"
+  (closed)="panelOpen = false"
+>
+  <!-- optional header action buttons -->
+  <button slot="header-actions" sp-admin-button variant="primary" size="sm">Edit</button>
+
+  <!-- body content (default slot) -->
+  <p>Content here</p>
+
+  <!-- footer actions -->
+  <div slot="footer">
+    <button sp-admin-button variant="neutral" appearance="outline" (click)="panelOpen = false">Cancel</button>
+    <button sp-admin-button variant="primary" (click)="save()">Save</button>
+  </div>
+</sp-admin-slide-over>
+```
+
+**When to use which:**
+
+| Component | Use for |
+|---|---|
+| `sp-admin-modal` | Confirmations, short forms, destructive actions, dialogs requiring a decision |
+| `sp-admin-drawer` | General-purpose side panel (left or right), arbitrary content |
+| `sp-admin-slide-over` | Admin entity detail/view/edit flows with structured title, loading, error, and footer |
 
 ---
 
