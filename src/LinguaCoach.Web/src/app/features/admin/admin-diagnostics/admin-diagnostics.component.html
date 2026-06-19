@@ -11,33 +11,33 @@
   } @else if (statusError()) {
     <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
   } @else if (status()) {
-    <div class="sp-admin-diagnostics-grid">
-      <sp-admin-stat-card label="Environment" [value]="status()!.environment" tone="neutral" size="sm"></sp-admin-stat-card>
-      <sp-admin-stat-card label="Version" [value]="status()!.version" tone="neutral" size="sm"></sp-admin-stat-card>
-      <sp-admin-stat-card label="Uptime" [value]="uptimeLabel(status()!.uptimeSeconds)" tone="info" size="sm"></sp-admin-stat-card>
-      <sp-admin-stat-card label="Log level" [value]="status()!.logLevel" tone="neutral" size="sm"></sp-admin-stat-card>
+    <div class="sp-diag-status-grid">
+      <sp-admin-stat-card label="Environment"   [value]="status()!.environment"                                                              tone="neutral" size="sm" />
+      <sp-admin-stat-card label="Version"        [value]="status()!.version"                                                                  tone="neutral" size="sm" />
+      <sp-admin-stat-card label="Uptime"         [value]="uptimeLabel(status()!.uptimeSeconds)"                                               tone="info"    size="sm" />
+      <sp-admin-stat-card label="Log level"      [value]="status()!.logLevel"                                                                 tone="neutral" size="sm" />
       <sp-admin-stat-card
         label="Database"
         [value]="status()!.database.reachable ? 'Reachable' : 'Unreachable'"
         [tone]="status()!.database.reachable ? 'success' : 'danger'"
-        size="sm"></sp-admin-stat-card>
+        size="sm" />
       <sp-admin-stat-card
         label="AI provider"
         [value]="status()!.ai.providerConfigured ? (status()!.ai.activeProvider ?? 'Configured') : 'Not configured'"
         [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'"
-        size="sm"></sp-admin-stat-card>
+        size="sm" />
       <sp-admin-stat-card
         label="Event buffer"
         [value]="status()!.diagnosticEventsEnabled ? (status()!.diagnosticEventCount + ' events') : 'Disabled'"
         [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'"
-        size="sm"></sp-admin-stat-card>
-      <sp-admin-stat-card label="Server time" [value]="formatTime(status()!.serverTimeUtc)" tone="neutral" size="sm"></sp-admin-stat-card>
+        size="sm" />
+      <sp-admin-stat-card label="Server time"   [value]="formatDateTime(status()!.serverTimeUtc)"                                             tone="neutral" size="sm" />
     </div>
   }
 </sp-admin-card>
 
 <sp-admin-card title="Recent events" variant="section" padding="none" [headerDivider]="true">
-  <div slot="actions" class="sp-admin-diagnostics-actions">
+  <div slot="actions" class="sp-diag-header-actions">
     <sp-admin-button
       size="sm"
       [variant]="autoRefresh() ? 'success' : 'neutral'"
@@ -93,15 +93,15 @@
   } @else if (events().length === 0) {
     <sp-admin-empty-state [message]="filterLevel || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
   } @else {
-    <div class="sp-admin-diagnostics-count">
-      Showing {{ pagedEvents().length }} of {{ events().length }} loaded events. Total matching events: {{ total() }}.
+    <div class="sp-diag-count">
+      Showing {{ pagedEvents().length }} of {{ events().length }} loaded &mdash; {{ total() }} total matching.
     </div>
-    <sp-admin-table variant="data" density="compact" minWidth="980px">
+    <sp-admin-table variant="data" density="compact" minWidth="960px">
       <table>
         <thead>
           <tr>
-            <th>Time</th>
-            <th>Level</th>
+            <th class="sp-diag-th-time">Time</th>
+            <th class="sp-diag-th-level">Level</th>
             <th>Category</th>
             <th>Message</th>
             <th>Correlation</th>
@@ -109,18 +109,38 @@
         </thead>
         <tbody>
           @for (event of pagedEvents(); track $index) {
-            <tr>
-              <td class="sp-admin-mono">{{ formatTime(event.timestampUtc) }}</td>
-              <td>
+            <tr [class.sp-diag-row-error]="event.level?.toLowerCase() === 'error'"
+                [class.sp-diag-row-warn]="event.level?.toLowerCase() === 'warning'">
+              <td class="sp-diag-mono sp-diag-time">{{ formatDateTime(event.timestampUtc) }}</td>
+              <td class="sp-diag-level-cell">
                 <sp-admin-badge [tone]="levelTone(event.level)">{{ eventLevelLabel(event.level) }}</sp-admin-badge>
               </td>
-              <td><sp-admin-truncated-text [value]="event.category" [maxLength]="32" /></td>
-              <td class="sp-admin-table-wrap" [title]="event.message">{{ event.message }}</td>
-              <td>
+              <td class="sp-diag-category-cell">
+                <sp-admin-code-pill [value]="event.category" tone="neutral" [maxLength]="32" />
+              </td>
+              <td class="sp-diag-message-cell">
+                <sp-admin-truncated-text [value]="event.message" [maxLength]="120" />
+                @if (event.path || event.statusCode || event.elapsedMs != null) {
+                  <div class="sp-diag-meta">
+                    @if (event.path) {
+                      <span class="sp-diag-meta-item sp-diag-mono">{{ event.path }}</span>
+                    }
+                    @if (event.statusCode) {
+                      <sp-admin-badge [tone]="event.statusCode >= 500 ? 'danger' : event.statusCode >= 400 ? 'warning' : 'neutral'" >
+                        {{ event.statusCode }}
+                      </sp-admin-badge>
+                    }
+                    @if (event.elapsedMs != null) {
+                      <span class="sp-diag-meta-item sp-diag-mono">{{ event.elapsedMs }}ms</span>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="sp-diag-corr-cell">
                 @if (event.correlationId) {
                   <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
                 } @else {
-                  <span class="sp-admin-muted">-</span>
+                  <span class="sp-diag-muted">—</span>
                 }
               </td>
             </tr>

@@ -49,14 +49,58 @@ describe('AdminExerciseTypesComponent', () => {
     });
   });
 
-  it('displays seeded count fields', () => {
+  it('renders page header and table', () => {
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
     expect(html.querySelector('sp-admin-page-header')).toBeTruthy();
     expect(html.querySelector('sp-admin-table')).toBeTruthy();
+  });
+
+  it('renders count input fields', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
     expect(html.querySelector('[aria-label="min items"]')).toBeTruthy();
     expect(html.querySelector('[aria-label="max options"]')).toBeTruthy();
+  });
+
+  it('renders filter bar with search and selects', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('sp-admin-filter-bar')).toBeTruthy();
+    expect(html.querySelector('[aria-label="Search exercise types"]')).toBeTruthy();
+    expect(html.querySelector('sp-admin-select')).toBeTruthy();
+  });
+
+  it('filters rows by search query', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.searchQuery.set('nonexistent');
+    fixture.detectChanges();
+    expect(c.filteredExerciseTypes().length).toBe(0);
+
+    c.searchQuery.set('reading');
+    fixture.detectChanges();
+    expect(c.filteredExerciseTypes().length).toBe(1);
+  });
+
+  it('filters rows by status', () => {
+    admin.listExerciseTypes.and.returnValue(of([
+      makeType({ key: 'a', isEnabled: true }),
+      makeType({ key: 'b', isEnabled: false }),
+    ]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.statusFilter.set('enabled');
+    fixture.detectChanges();
+    expect(c.filteredExerciseTypes().length).toBe(1);
+    expect(c.filteredExerciseTypes()[0].key).toBe('a');
   });
 
   it('submits valid count edits through the patch flow', () => {
@@ -90,5 +134,41 @@ describe('AdminExerciseTypesComponent', () => {
     const type = makeType({ minOptionsPerItem: -1 });
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     expect(fixture.componentInstance.countError(type)).toBe('No negative values.');
+  });
+
+  it('onRowAction dispatches toggle for Enable/Disable', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    const type = c.exerciseTypes()[0];
+
+    c.onRowAction({ label: 'Disable' }, type);
+    expect(admin.updateExerciseType).toHaveBeenCalledWith('reading_fill_in_blanks', jasmine.objectContaining({ isEnabled: false }));
+  });
+
+  it('onRowAction dispatches saveCounts for Save counts', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    const type = c.exerciseTypes()[0];
+
+    c.onRowAction({ label: 'Save counts' }, type);
+    expect(admin.updateExerciseType).toHaveBeenCalledWith('reading_fill_in_blanks', jasmine.objectContaining({
+      minItemsPerPractice: 3,
+    }));
+  });
+
+  it('pagination resets to 1 when onSearch is called', () => {
+    admin.listExerciseTypes.and.returnValue(of(
+      Array.from({ length: 25 }, (_, i) => makeType({ key: `type_${i}`, displayName: `Type ${i}` }))
+    ));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.page.set(2);
+    const fakeEvent = { target: { value: 'Type 1' } } as unknown as Event;
+    c.onSearch(fakeEvent);
+    expect(c.page()).toBe(1);
   });
 });

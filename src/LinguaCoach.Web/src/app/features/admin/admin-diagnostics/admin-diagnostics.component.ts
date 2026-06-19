@@ -6,6 +6,7 @@ import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
+  SpAdminCodePillComponent,
   SpAdminCopyableTextComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
@@ -32,6 +33,7 @@ import { eventLevelLabel } from '../../../admin/utils/admin-badge.utils';
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
+    SpAdminCodePillComponent,
     SpAdminCopyableTextComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
@@ -49,11 +51,22 @@ import { eventLevelLabel } from '../../../admin/utils/admin-badge.utils';
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
-    .sp-admin-diagnostics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;}
-    .sp-admin-diagnostics-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-    .sp-admin-diagnostics-count{padding:10px 16px;border-top:1px solid #F1F5F9;color:#64748B;font-size:12px;font-weight:600;}
-    .sp-admin-diagnostics-truncate{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .sp-admin-diagnostics-message{max-width:480px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .sp-diag-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .sp-diag-count { padding: 8px 16px; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 12px; font-weight: 600; }
+    .sp-diag-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+    .sp-diag-muted { color: var(--sp-admin-muted, #9ca3af); }
+    .sp-diag-th-time { white-space: nowrap; min-width: 130px; }
+    .sp-diag-th-level { min-width: 80px; }
+    .sp-diag-time { white-space: nowrap; }
+    .sp-diag-level-cell { white-space: nowrap; }
+    .sp-diag-category-cell { white-space: nowrap; }
+    .sp-diag-message-cell { max-width: 480px; }
+    .sp-diag-corr-cell { white-space: nowrap; }
+    .sp-diag-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+    .sp-diag-meta-item { font-size: 11px; color: #6b7280; }
+    .sp-diag-row-error td { background: #fff5f5; }
+    .sp-diag-row-warn  td { background: #fffbeb; }
   `],
 })
 export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
@@ -65,7 +78,6 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   statusError = signal('');
   eventsError = signal('');
 
-  // Filters
   filterLevel = '';
   filterCategory = '';
   filterCorrelationId = '';
@@ -84,7 +96,6 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   autoRefresh = signal(false);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
-  readonly levels = ['', 'Information', 'Warning', 'Error', 'Debug'];
   readonly levelOptions = [
     { value: '', label: 'All levels' },
     { value: 'Information', label: 'Information' },
@@ -115,10 +126,7 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
     this.statusError.set('');
     this.svc.getStatus().subscribe({
       next: s => { this.status.set(s); this.loadingStatus.set(false); },
-      error: err => {
-        this.loadingStatus.set(false);
-        this.statusError.set(err.error?.error ?? 'Could not load diagnostics status.');
-      },
+      error: err => { this.loadingStatus.set(false); this.statusError.set(err.error?.error ?? 'Could not load diagnostics status.'); },
     });
   }
 
@@ -132,16 +140,8 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       q: this.filterQ || undefined,
       limit: this.filterLimit,
     }).subscribe({
-      next: r => {
-        this.events.set(r.items);
-        this.total.set(r.total);
-        this.eventsPage.set(1);
-        this.loadingEvents.set(false);
-      },
-      error: err => {
-        this.loadingEvents.set(false);
-        this.eventsError.set(err.error?.error ?? 'Could not load events.');
-      },
+      next: r => { this.events.set(r.items); this.total.set(r.total); this.eventsPage.set(1); this.loadingEvents.set(false); },
+      error: err => { this.loadingEvents.set(false); this.eventsError.set(err.error?.error ?? 'Could not load events.'); },
     });
   }
 
@@ -162,39 +162,24 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
     }
   }
 
-  levelColour(level: string): string {
-    switch (level?.toLowerCase()) {
-      case 'error': return 'var(--sp-speaking)';
-      case 'warning': return 'var(--sp-warn)';
-      case 'information': return 'var(--sp-writing)';
-      default: return 'var(--sp-muted)';
-    }
-  }
-
-  levelBg(level: string): string {
-    switch (level?.toLowerCase()) {
-      case 'error': return '#FEE2E2';
-      case 'warning': return 'var(--sp-warn-soft)';
-      case 'information': return 'var(--sp-writing-soft)';
-      default: return 'var(--sp-canvas2)';
-    }
-  }
-
   readonly eventLevelLabel = eventLevelLabel;
 
   levelTone(level: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
     switch (level?.toLowerCase()) {
-      case 'error': return 'danger';
-      case 'warning': return 'warning';
+      case 'error':       return 'danger';
+      case 'warning':     return 'warning';
       case 'information': return 'info';
-      case 'debug': return 'neutral';
-      default: return 'neutral';
+      case 'debug':       return 'neutral';
+      default:            return 'neutral';
     }
   }
 
-  formatTime(iso: string): string {
+  formatDateTime(iso: string): string {
     try {
-      return new Date(iso).toLocaleTimeString('en-AU', { hour12: false });
+      const d = new Date(iso);
+      const date = d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' });
+      const time = d.toLocaleTimeString('en-AU', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return `${date} ${time}`;
     } catch { return iso; }
   }
 

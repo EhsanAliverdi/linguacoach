@@ -8,32 +8,48 @@
 } @else if (summaryError()) {
   <sp-admin-error-state title="Usage summary unavailable" [message]="summaryError()" />
 } @else if (summary()) {
-  <div class="sp-admin-stat-grid">
-    <sp-admin-stat-card label="Total calls" [value]="summary()!.totalCalls" tone="indigo" />
-    <sp-admin-stat-card label="Success rate" [value]="summary()!.successRate + '%'" tone="green" />
-    <sp-admin-stat-card label="Failed calls" [value]="summary()!.failedCalls" tone="amber" />
-    <sp-admin-stat-card label="Fallback calls" [value]="summary()!.fallbackCalls" tone="violet" />
-    <sp-admin-stat-card label="Total cost" [value]="'$' + summary()!.totalCostUsd.toFixed(4)" tone="teal" />
+  <div class="sp-au-stat-grid">
+    <sp-admin-stat-card label="Total calls"    [value]="summary()!.totalCalls"                    tone="indigo" />
+    <sp-admin-stat-card label="Success rate"   [value]="summary()!.successRate + '%'"             tone="green"  />
+    <sp-admin-stat-card label="Failed calls"   [value]="summary()!.failedCalls"                   tone="amber"  />
+    <sp-admin-stat-card label="Fallback calls" [value]="summary()!.fallbackCalls"                 tone="violet" />
+    <sp-admin-stat-card label="Total cost"     [value]="'$' + summary()!.totalCostUsd.toFixed(4)" tone="teal"   />
   </div>
 
-  <div class="sp-admin-two-col">
+  <div class="sp-au-two-col">
     <sp-admin-card title="By provider">
       @if (summary()!.byProvider.length === 0) {
         <sp-admin-empty-state message="No calls yet." />
       } @else {
-        <sp-admin-table variant="data" density="compact" minWidth="520px">
+        <sp-admin-table variant="data" density="compact" minWidth="480px">
           <table>
             <thead>
-              <tr><th>Provider</th><th>Calls</th><th>OK</th><th>Fallback</th><th>Cost</th></tr>
+              <tr>
+                <th>Provider</th>
+                <th class="sp-au-num-th">Calls</th>
+                <th class="sp-au-num-th">OK</th>
+                <th class="sp-au-num-th">Fallback</th>
+                <th class="sp-au-num-th">Cost</th>
+              </tr>
             </thead>
             <tbody>
               @for (p of summary()!.byProvider; track p.provider) {
                 <tr>
-                  <td class="sp-admin-cap sp-admin-table-truncate">{{ p.provider }}</td>
-                  <td class="sp-admin-table-num">{{ p.calls }}</td>
-                  <td class="sp-admin-table-num">{{ p.successful }}</td>
-                  <td class="sp-admin-table-num">{{ p.fallback }}</td>
-                  <td class="sp-admin-table-num">${{ p.costUsd.toFixed(4) }}</td>
+                  <td>
+                    <sp-admin-code-pill [value]="p.provider" tone="neutral" />
+                  </td>
+                  <td class="sp-au-num">{{ p.calls }}</td>
+                  <td class="sp-au-num">
+                    <sp-admin-badge tone="success">{{ p.successful }}</sp-admin-badge>
+                  </td>
+                  <td class="sp-au-num">
+                    @if (p.fallback > 0) {
+                      <sp-admin-badge tone="warning">{{ p.fallback }}</sp-admin-badge>
+                    } @else {
+                      <span class="sp-au-muted">0</span>
+                    }
+                  </td>
+                  <td class="sp-au-num sp-au-mono">${{ p.costUsd.toFixed(4) }}</td>
                 </tr>
               }
             </tbody>
@@ -46,18 +62,28 @@
       @if (summary()!.byFeature.length === 0) {
         <sp-admin-empty-state message="No calls yet." />
       } @else {
-        <sp-admin-table variant="data" density="compact" minWidth="520px">
+        <sp-admin-table variant="data" density="compact" minWidth="480px">
           <table>
             <thead>
-              <tr><th>Feature</th><th>Calls</th><th>OK</th><th>Cost</th></tr>
+              <tr>
+                <th>Feature</th>
+                <th class="sp-au-num-th">Calls</th>
+                <th class="sp-au-num-th">OK</th>
+                <th class="sp-au-num-th">Cost</th>
+              </tr>
             </thead>
             <tbody>
               @for (f of summary()!.byFeature; track f.feature) {
                 <tr>
-                  <td class="sp-admin-table-truncate" [title]="featureLabel(f.feature)">{{ featureLabel(f.feature) }}</td>
-                  <td class="sp-admin-table-num">{{ f.calls }}</td>
-                  <td class="sp-admin-table-num">{{ f.successful }}</td>
-                  <td class="sp-admin-table-num">${{ f.costUsd.toFixed(4) }}</td>
+                  <td>
+                    <sp-admin-truncated-text [value]="featureLabel(f.feature)" [maxLength]="36" />
+                    <div class="sp-au-key"><sp-admin-code-pill [value]="f.feature" tone="neutral" /></div>
+                  </td>
+                  <td class="sp-au-num">{{ f.calls }}</td>
+                  <td class="sp-au-num">
+                    <sp-admin-badge tone="success">{{ f.successful }}</sp-admin-badge>
+                  </td>
+                  <td class="sp-au-num sp-au-mono">${{ f.costUsd.toFixed(4) }}</td>
                 </tr>
               }
             </tbody>
@@ -76,57 +102,91 @@
   } @else if (recentItems().length === 0) {
     <sp-admin-empty-state message="No AI calls recorded yet. AI calls will appear here once the system is used." />
   } @else {
-    <sp-admin-table variant="data" density="compact" minWidth="1100px">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Feature</th>
-            <th>Provider</th>
-            <th>Model</th>
-            <th>Status</th>
-            <th>Fallback</th>
-            <th>Duration</th>
-            <th>Correlation</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of pagedRecentItems(); track item.id) {
+    <sp-admin-filter-bar density="compact">
+      <sp-admin-select
+        filters
+        size="sm"
+        placeholder="All providers"
+        [options]="providerOptions()"
+        [(ngModel)]="providerFilterValue"
+        (ngModelChange)="onProviderFilterChange($event)"
+        aria-label="Filter by provider" />
+      <sp-admin-select
+        filters
+        size="sm"
+        placeholder="All statuses"
+        [options]="recentStatusOptions"
+        [(ngModel)]="statusFilterValue"
+        (ngModelChange)="onStatusFilterChange($event)"
+        aria-label="Filter by status" />
+    </sp-admin-filter-bar>
+
+    @if (filteredRecentItems().length === 0) {
+      <sp-admin-empty-state message="No calls match your filters." />
+    } @else {
+      <sp-admin-table variant="data" density="compact" minWidth="1080px">
+        <table>
+          <thead>
             <tr>
-              <td class="sp-admin-mono">{{ formatTime(item.createdAt) }}</td>
-              <td><sp-admin-truncated-text [value]="featureLabel(item.featureKey)" [maxLength]="28" /></td>
-              <td><sp-admin-truncated-text [value]="item.provider" [maxLength]="20" /></td>
-              <td><sp-admin-code-pill [value]="item.model" tone="neutral" [maxLength]="24" /></td>
-              <td>
-                <sp-admin-badge [tone]="item.wasSuccessful ? 'success' : 'danger'">
-                  {{ item.wasSuccessful ? 'OK' : 'Failed' }}
-                </sp-admin-badge>
-              </td>
-              <td>
-                @if (item.isFallback) {
-                  <sp-admin-badge tone="warning">Fallback</sp-admin-badge>
-                } @else {
-                  <span class="sp-admin-muted">-</span>
-                }
-              </td>
-              <td class="sp-admin-num">{{ item.durationMs }}ms</td>
-              <td>
-                @if (item.correlationId) {
-                  <sp-admin-copyable-text [value]="item.correlationId" [maxLength]="12" [mono]="true" />
-                } @else {
-                  <span class="sp-admin-muted">-</span>
-                }
-              </td>
+              <th>Time</th>
+              <th>Feature</th>
+              <th>Provider / Model</th>
+              <th>Status</th>
+              <th class="sp-au-num-th">Tokens in/out</th>
+              <th class="sp-au-num-th">Cost</th>
+              <th class="sp-au-num-th">Duration</th>
+              <th>Correlation</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </sp-admin-table>
-    @if (recentTotalPages() > 1) {
-      <sp-admin-pagination
-        [page]="recentPage()"
-        [totalPages]="recentTotalPages()"
-        (pageChange)="recentPage.set($event)" />
+          </thead>
+          <tbody>
+            @for (item of pagedRecentItems(); track item.id) {
+              <tr>
+                <td class="sp-au-mono sp-au-time">{{ formatDateTime(item.createdAt) }}</td>
+                <td class="sp-au-feature">
+                  <sp-admin-truncated-text [value]="featureLabel(item.featureKey)" [maxLength]="28" />
+                  <div class="sp-au-key"><sp-admin-code-pill [value]="item.featureKey" tone="neutral" /></div>
+                </td>
+                <td>
+                  <sp-admin-code-pill [value]="item.provider" tone="neutral" />
+                  <div class="sp-au-model"><sp-admin-code-pill [value]="item.model" tone="neutral" [maxLength]="28" /></div>
+                </td>
+                <td>
+                  <div class="sp-au-badges">
+                    <sp-admin-badge [tone]="item.wasSuccessful ? 'success' : 'danger'">
+                      {{ item.wasSuccessful ? 'OK' : 'Failed' }}
+                    </sp-admin-badge>
+                    @if (item.isFallback) {
+                      <sp-admin-badge tone="warning">Fallback</sp-admin-badge>
+                    }
+                  </div>
+                  @if (!item.wasSuccessful && item.failureReason) {
+                    <div class="sp-au-fail-reason">{{ item.failureReason }}</div>
+                  }
+                </td>
+                <td class="sp-au-num sp-au-mono">
+                  {{ item.inputTokens | number }}&nbsp;/&nbsp;{{ item.outputTokens | number }}
+                </td>
+                <td class="sp-au-num sp-au-mono">${{ item.costUsd.toFixed(4) }}</td>
+                <td class="sp-au-num sp-au-mono">{{ item.durationMs | number }}ms</td>
+                <td>
+                  @if (item.correlationId) {
+                    <sp-admin-copyable-text [value]="item.correlationId" [maxLength]="12" [mono]="true" />
+                  } @else {
+                    <span class="sp-au-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+
+      @if (recentTotalPages() > 1) {
+        <sp-admin-pagination
+          [page]="recentPage()"
+          [totalPages]="recentTotalPages()"
+          (pageChange)="recentPage.set($event)" />
+      }
     }
   }
 </sp-admin-card>
