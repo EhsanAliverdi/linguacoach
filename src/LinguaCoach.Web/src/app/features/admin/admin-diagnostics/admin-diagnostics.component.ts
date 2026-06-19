@@ -2,13 +2,50 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
-import { SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminPageHeaderComponent } from '../../../admin';
+import {
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminCardComponent,
+  SpAdminEmptyStateComponent,
+  SpAdminErrorStateComponent,
+  SpAdminFilterBarComponent,
+  SpAdminFormFieldComponent,
+  SpAdminInputComponent,
+  SpAdminLoadingStateComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminSelectComponent,
+  SpAdminStatCardComponent,
+  SpAdminTableComponent,
+} from '../../../admin';
 
 @Component({
   selector: 'app-admin-diagnostics',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminPageHeaderComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminCardComponent,
+    SpAdminEmptyStateComponent,
+    SpAdminErrorStateComponent,
+    SpAdminFilterBarComponent,
+    SpAdminFormFieldComponent,
+    SpAdminInputComponent,
+    SpAdminLoadingStateComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminSelectComponent,
+    SpAdminStatCardComponent,
+    SpAdminTableComponent,
+  ],
   templateUrl: './admin-diagnostics.component.html',
+  styles: [`
+    .sp-admin-diagnostics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;}
+    .sp-admin-diagnostics-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .sp-admin-diagnostics-count{padding:10px 16px;border-top:1px solid #F1F5F9;color:#64748B;font-size:12px;font-weight:600;}
+    .sp-admin-diagnostics-truncate{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .sp-admin-diagnostics-message{max-width:480px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  `],
 })
 export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   status = signal<DiagnosticsStatus | null>(null);
@@ -30,6 +67,19 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly levels = ['', 'Information', 'Warning', 'Error', 'Debug'];
+  readonly levelOptions = [
+    { value: '', label: 'All levels' },
+    { value: 'Information', label: 'Information' },
+    { value: 'Warning', label: 'Warning' },
+    { value: 'Error', label: 'Error' },
+    { value: 'Debug', label: 'Debug' },
+  ];
+  readonly limitOptions = [
+    { value: '50', label: '50' },
+    { value: '100', label: '100' },
+    { value: '250', label: '250' },
+    { value: '500', label: '500' },
+  ];
 
   constructor(private svc: DiagnosticsService) {}
 
@@ -108,6 +158,16 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       case 'warning': return 'var(--sp-warn-soft)';
       case 'information': return 'var(--sp-writing-soft)';
       default: return 'var(--sp-canvas2)';
+    }
+  }
+
+  levelTone(level: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
+    switch (level?.toLowerCase()) {
+      case 'error': return 'danger';
+      case 'warning': return 'warning';
+      case 'information': return 'info';
+      case 'debug': return 'neutral';
+      default: return 'neutral';
     }
   }
 

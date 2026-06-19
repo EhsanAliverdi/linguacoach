@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
 import {
@@ -8,6 +8,7 @@ import {
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
   SpAdminStatCardComponent,
   SpAdminTableComponent,
 } from '../../../admin';
@@ -23,6 +24,7 @@ import {
     SpAdminErrorStateComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
     SpAdminStatCardComponent,
     SpAdminTableComponent,
   ],
@@ -35,6 +37,15 @@ export class AdminAiUsageComponent implements OnInit {
   loadingRecent = signal(true);
   summaryError = signal('');
   recentError = signal('');
+  recentPage = signal(1);
+  readonly recentPageSize = 25;
+
+  recentTotalPages = computed(() => Math.max(1, Math.ceil(this.recentItems().length / this.recentPageSize)));
+  pagedRecentItems = computed(() => {
+    const page = Math.min(this.recentPage(), this.recentTotalPages());
+    const start = (page - 1) * this.recentPageSize;
+    return this.recentItems().slice(start, start + this.recentPageSize);
+  });
 
   constructor(private svc: AiUsageService) {}
 
@@ -44,7 +55,7 @@ export class AdminAiUsageComponent implements OnInit {
       error: err => { this.summaryError.set(err.error?.error ?? 'Could not load summary.'); this.loadingSummary.set(false); },
     });
     this.svc.getRecent(100).subscribe({
-      next: r => { this.recentItems.set(r.items); this.loadingRecent.set(false); },
+      next: r => { this.recentItems.set(r.items); this.recentPage.set(1); this.loadingRecent.set(false); },
       error: err => { this.recentError.set(err.error?.error ?? 'Could not load recent calls.'); this.loadingRecent.set(false); },
     });
   }

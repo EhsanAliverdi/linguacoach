@@ -6,7 +6,9 @@ import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
+  SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
   SpAdminTableComponent,
 } from '../../../admin';
@@ -19,7 +21,9 @@ import {
     FormsModule,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
+    SpAdminLoadingStateComponent,
     SpAdminPageHeaderComponent,
     SpAdminTableComponent,
   ],
@@ -32,6 +36,11 @@ import {
         <sp-admin-error-state title="Exercise types unavailable" [message]="error()!" />
       }
 
+      @if (loading()) {
+        <sp-admin-loading-state message="Loading exercise types" />
+      } @else if (exerciseTypes().length === 0) {
+        <sp-admin-empty-state message="No exercise types found." />
+      } @else {
       <sp-admin-table>
         <table>
           <thead>
@@ -108,6 +117,7 @@ import {
           </tbody>
         </table>
       </sp-admin-table>
+      }
   `,
   styles: [`
     .sp-admin-wide-cell { min-width: 240px; }
@@ -135,6 +145,7 @@ export class AdminExerciseTypesComponent implements OnInit {
   exerciseTypes = signal<ExerciseTypeDefinition[]>([]);
   savingKey = signal<string | null>(null);
   error = signal<string | null>(null);
+  loading = signal(true);
 
   constructor(private admin: AdminService) {}
 
@@ -143,9 +154,10 @@ export class AdminExerciseTypesComponent implements OnInit {
   }
 
   load(): void {
+    this.loading.set(true);
     this.admin.listExerciseTypes().subscribe({
-      next: items => this.exerciseTypes.set(items),
-      error: () => this.error.set('Could not load exercise types.'),
+      next: items => { this.exerciseTypes.set(items); this.loading.set(false); },
+      error: () => { this.error.set('Could not load exercise types.'); this.loading.set(false); },
     });
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../../core/services/admin.api.service';
@@ -8,10 +8,20 @@ import {
   SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminEmptyStateComponent,
+  SpAdminErrorStateComponent,
+  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
+  SpAdminInputComponent,
+  SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
+  SpAdminStatCardComponent,
+  SpAdminTableActionsComponent,
   SpAdminTableComponent,
+  SpAdminTextareaComponent,
 } from '../../../admin';
+
+type PromptStatusFilter = 'all' | 'active' | 'inactive';
 
 @Component({
   selector: 'app-admin-prompts',
@@ -23,23 +33,31 @@ import {
     SpAdminButtonComponent,
     SpAdminCardComponent,
     SpAdminEmptyStateComponent,
+    SpAdminErrorStateComponent,
+    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
+    SpAdminInputComponent,
+    SpAdminLoadingStateComponent,
     SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
+    SpAdminStatCardComponent,
+    SpAdminTableActionsComponent,
     SpAdminTableComponent,
+    SpAdminTextareaComponent,
   ],
   template: `
     <sp-admin-page-header title="Prompt Templates" subtitle="Manage and version AI prompt templates">
-      <sp-admin-button (click)="showForm.set(!showForm())">New version</sp-admin-button>
+      <sp-admin-button (click)="toggleForm()">{{ showForm() ? 'Cancel' : 'New version' }}</sp-admin-button>
     </sp-admin-page-header>
 
     @if (showForm()) {
-      <sp-admin-card title="Create new prompt version">
+      <sp-admin-card title="Create new prompt version" variant="section" padding="md" [headerDivider]="true">
         <div class="sp-admin-field-grid">
           <sp-admin-form-field label="Key" class="sp-admin-wide">
-            <input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" class="sp-input" />
+            <sp-admin-input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" />
           </sp-admin-form-field>
           <sp-admin-form-field label="Content" class="sp-admin-wide">
-            <textarea [(ngModel)]="newContent" rows="6" placeholder="Prompt content with {{'{{variable}}'}} placeholders" class="sp-input sp-admin-mono"></textarea>
+            <sp-admin-textarea [(ngModel)]="newContent" [rows]="8" placeholder="Prompt content with {{'{{variable}}'}} placeholders" />
           </sp-admin-form-field>
           <sp-admin-form-field label="Max input tokens">
             <input [(ngModel)]="newMaxInput" type="number" class="sp-input" />
@@ -50,68 +68,101 @@ import {
         </div>
         @if (formError()) { <p class="sp-admin-text-error">{{ formError() }}</p> }
         <div class="sp-admin-action-row">
-          <sp-admin-button (click)="createVersion()">Create</sp-admin-button>
+          <sp-admin-button (click)="createVersion()" [loading]="creating()">Create</sp-admin-button>
         </div>
       </sp-admin-card>
     }
 
     @if (detail()) {
-      <sp-admin-card [title]="detail()!.key + ' v' + detail()!.version">
-        <sp-admin-button slot="actions" variant="ghost" size="sm" (click)="detail.set(null)">Close</sp-admin-button>
+      <sp-admin-card [title]="detail()!.key + ' v' + detail()!.version" variant="section" padding="md" [headerDivider]="true">
+        <sp-admin-button slot="actions" variant="neutral" appearance="ghost" size="sm" (click)="detail.set(null)">Close</sp-admin-button>
         <pre class="sp-admin-prompt-preview">{{ detail()!.content }}</pre>
       </sp-admin-card>
     }
 
-    @if (prompts().length === 0) {
-      <sp-admin-empty-state message="No prompt templates yet." />
+    <div class="sp-admin-metric-grid" aria-label="Prompt template summary">
+      <sp-admin-stat-card tone="primary" size="md" label="Templates" [value]="uniqueKeyCount()" />
+      <sp-admin-stat-card tone="success" size="md" label="Active versions" [value]="activeCount()" />
+      <sp-admin-stat-card tone="neutral" size="md" label="Total versions" [value]="prompts().length" />
+      <sp-admin-stat-card tone="info" size="md" label="Avg token budget" [value]="averageTokenBudget()" />
+    </div>
+
+    <sp-admin-card title="Prompt library" variant="section" padding="none" [headerDivider]="true">
+      <sp-admin-filter-bar layout="responsive" density="compact">
+        <sp-admin-form-field search label="Search prompts" size="sm">
+          <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Status" size="sm">
+          <select [ngModel]="statusFilter()" class="sp-input sp-admin-status-select" (ngModelChange)="setStatusFilter($event)">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </sp-admin-form-field>
+        <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()" [loading]="loading()">Refresh</sp-admin-button>
+      </sp-admin-filter-bar>
+
+      @if (loading()) {
+        <sp-admin-loading-state message="Loading prompt templates" />
+      } @else if (loadError()) {
+        <div class="sp-admin-state-wrap">
+          <sp-admin-error-state title="Prompt templates could not load" [message]="loadError()" />
+          <sp-admin-button variant="primary" appearance="outline" size="sm" (click)="load()">Try again</sp-admin-button>
+        </div>
+      } @else if (filteredPrompts().length === 0) {
+        <sp-admin-empty-state [message]="emptyMessage()" />
     } @else {
-      <sp-admin-table>
-      <table>
-        <thead>
-          <tr>
-            <th>Key</th>
-            <th>Version</th>
-            <th>Status</th>
-            <th>Tokens</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of prompts(); track p.id) {
-            <tr>
-              <td class="sp-admin-table-mono">{{ p.key }}</td>
-              <td>v{{ p.version }}</td>
-              <td>
-                <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'">
-                  {{ p.isActive ? 'Active' : 'Inactive' }}
-                </sp-admin-badge>
-              </td>
-              <td class="sp-admin-table-muted">{{ p.maxInputTokens }}/{{ p.maxOutputTokens }}</td>
-              <td class="sp-admin-row-actions">
-                <button (click)="viewDetail(p.id)" class="sp-admin-link-button">View</button>
-                @if (p.isActive) {
-                  <button (click)="deactivate(p)" class="sp-admin-link-button sp-admin-text-amber">Deactivate</button>
-                } @else {
-                  <button (click)="activate(p)" class="sp-admin-link-button sp-admin-text-success-link">Activate</button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      </sp-admin-table>
-    }
+        <sp-admin-table variant="data" density="compact">
+          <table>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Version</th>
+                <th>Status</th>
+                <th>Token budget</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of pagedPrompts(); track p.id) {
+                <tr>
+                  <td class="sp-admin-table-mono">{{ p.key }}</td>
+                  <td>v{{ p.version }}</td>
+                  <td>
+                    <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
+                      {{ p.isActive ? 'Active' : 'Inactive' }}
+                    </sp-admin-badge>
+                  </td>
+                  <td class="sp-admin-table-muted">{{ tokenBudgetLabel(p) }}</td>
+                  <td>
+                    <sp-admin-table-actions>
+                      <button type="button" class="sp-adm-action-item" (click)="viewDetail(p.id)">View content</button>
+                      @if (p.isActive) {
+                        <button type="button" class="sp-adm-action-item" (click)="deactivate(p)" [disabled]="busyPromptId() === p.id">Deactivate</button>
+                      } @else {
+                        <button type="button" class="sp-adm-action-item" (click)="activate(p)" [disabled]="busyPromptId() === p.id">Activate</button>
+                      }
+                    </sp-admin-table-actions>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+        @if (totalPages() > 1) {
+          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
+        }
+      }
+    </sp-admin-card>
   `,
   styles: [`
-    .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
     .sp-admin-wide{grid-column:1/-1;}
-    .sp-admin-link-button{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;color:#4338CA;}
-    .sp-admin-mb{margin-bottom:20px;}
-    .sp-admin-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;}
+    .sp-admin-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px;}
     .sp-admin-prompt-preview{font-size:12px;color:#334155;background:#F8FAFC;border-radius:8px;padding:12px;overflow:auto;max-height:220px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;}
-    .sp-admin-row-actions{display:flex;gap:10px;justify-content:flex-end;}
-    .sp-admin-text-amber{color:#D97706;}
-    .sp-admin-text-success-link{color:#16A34A;}
+    .sp-admin-state-wrap{display:grid;gap:12px;padding:16px;}
+    .sp-admin-status-select{min-width:150px;}
+    @media (max-width: 1100px){.sp-admin-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media (max-width: 640px){.sp-admin-metric-grid{grid-template-columns:1fr;}}
   `],
 })
 export class AdminPromptsComponent implements OnInit {
@@ -119,26 +170,111 @@ export class AdminPromptsComponent implements OnInit {
   detail = signal<PromptTemplateDetail | null>(null);
   showForm = signal(false);
   formError = signal('');
+  loading = signal(false);
+  loadError = signal('');
+  creating = signal(false);
+  busyPromptId = signal<string | null>(null);
+  searchTerm = signal('');
+  statusFilter = signal<PromptStatusFilter>('all');
+  page = signal(1);
+  readonly pageSize = 12;
   newKey = ''; newContent = ''; newMaxInput = 800; newMaxOutput = 600;
 
   constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void { this.load(); }
 
+  activeCount = computed(() => this.prompts().filter(p => p.isActive).length);
+  uniqueKeyCount = computed(() => new Set(this.prompts().map(p => p.key)).size);
+  averageTokenBudget = computed(() => {
+    const budgets = this.prompts()
+      .map(p => (p.maxInputTokens ?? 0) + (p.maxOutputTokens ?? 0))
+      .filter(total => total > 0);
+    if (!budgets.length) return 'n/a';
+    const average = Math.round(budgets.reduce((sum, value) => sum + value, 0) / budgets.length);
+    return average.toLocaleString();
+  });
+  filteredPrompts = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const status = this.statusFilter();
+    return this.prompts().filter(p => {
+      const matchesSearch = !term || p.key.toLowerCase().includes(term);
+      const matchesStatus =
+        status === 'all' ||
+        (status === 'active' && p.isActive) ||
+        (status === 'inactive' && !p.isActive);
+      return matchesSearch && matchesStatus;
+    });
+  });
+  totalPages = computed(() => Math.max(1, Math.ceil(this.filteredPrompts().length / this.pageSize)));
+  pagedPrompts = computed(() => {
+    const page = Math.min(this.page(), this.totalPages());
+    const start = (page - 1) * this.pageSize;
+    return this.filteredPrompts().slice(start, start + this.pageSize);
+  });
+  emptyMessage = computed(() => this.prompts().length === 0
+    ? 'No prompt templates yet.'
+    : 'No prompt templates match the current filters.');
+
   load(): void {
-    this.adminApi.listPrompts().subscribe({ next: p => this.prompts.set(p) });
+    this.loading.set(true);
+    this.loadError.set('');
+    this.adminApi.listPrompts().subscribe({
+      next: p => {
+        this.prompts.set(p);
+        this.page.set(1);
+        this.loading.set(false);
+      },
+      error: err => {
+        this.loadError.set(err.error?.error ?? 'Refresh the page or try again.');
+        this.loading.set(false);
+      },
+    });
   }
 
   viewDetail(id: string): void {
-    this.adminApi.getPrompt(id).subscribe({ next: d => this.detail.set(d) });
+    this.busyPromptId.set(id);
+    this.adminApi.getPrompt(id).subscribe({
+      next: d => {
+        this.detail.set(d);
+        this.busyPromptId.set(null);
+      },
+      error: () => {
+        this.loadError.set('Prompt content could not be loaded.');
+        this.busyPromptId.set(null);
+      },
+    });
   }
 
   activate(p: PromptTemplateItem): void {
-    this.adminApi.activatePrompt(p.id).subscribe({ next: () => this.load() });
+    this.busyPromptId.set(p.id);
+    this.adminApi.activatePrompt(p.id).subscribe({
+      next: () => { this.busyPromptId.set(null); this.load(); },
+      error: () => { this.loadError.set('Prompt version could not be activated.'); this.busyPromptId.set(null); },
+    });
   }
 
   deactivate(p: PromptTemplateItem): void {
-    this.adminApi.deactivatePrompt(p.id).subscribe({ next: () => this.load() });
+    this.busyPromptId.set(p.id);
+    this.adminApi.deactivatePrompt(p.id).subscribe({
+      next: () => { this.busyPromptId.set(null); this.load(); },
+      error: () => { this.loadError.set('Prompt version could not be deactivated.'); this.busyPromptId.set(null); },
+    });
+  }
+
+  toggleForm(): void {
+    this.showForm.set(!this.showForm());
+    this.formError.set('');
+  }
+
+  setSearchTerm(term: string): void {
+    this.searchTerm.set(term);
+    this.page.set(1);
+  }
+
+  setStatusFilter(status: PromptStatusFilter): void {
+    this.statusFilter.set(status);
+    this.page.set(1);
   }
 
   createVersion(): void {
@@ -146,12 +282,29 @@ export class AdminPromptsComponent implements OnInit {
       this.formError.set('Key and content are required.');
       return;
     }
+    this.creating.set(true);
     this.adminApi.createPromptVersion({
       key: this.newKey, content: this.newContent,
       maxInputTokens: this.newMaxInput, maxOutputTokens: this.newMaxOutput
     }).subscribe({
-      next: () => { this.showForm.set(false); this.newKey = ''; this.newContent = ''; this.formError.set(''); this.load(); },
-      error: err => this.formError.set(err.error?.error ?? 'Failed to create.'),
+      next: () => {
+        this.showForm.set(false);
+        this.newKey = '';
+        this.newContent = '';
+        this.formError.set('');
+        this.creating.set(false);
+        this.load();
+      },
+      error: err => {
+        this.formError.set(err.error?.error ?? 'Failed to create.');
+        this.creating.set(false);
+      },
     });
+  }
+
+  tokenBudgetLabel(prompt: PromptTemplateItem): string {
+    const input = prompt.maxInputTokens?.toLocaleString() ?? 'n/a';
+    const output = prompt.maxOutputTokens?.toLocaleString() ?? 'n/a';
+    return `${input} in / ${output} out`;
   }
 }

@@ -90,7 +90,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (item of recentItems(); track item.id) {
+          @for (item of pagedRecentItems(); track item.id) {
             <tr>
               <td class="sp-admin-mono">{{ formatTime(item.createdAt) }}</td>
               <td>{{ featureLabel(item.featureKey) }}</td>
@@ -115,5 +115,11 @@
         </tbody>
       </table>
     </sp-admin-table>
+    @if (recentTotalPages() > 1) {
+      <sp-admin-pagination
+        [page]="recentPage()"
+        [totalPages]="recentTotalPages()"
+        (pageChange)="recentPage.set($event)" />
+    }
   }
 </sp-admin-card>

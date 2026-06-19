@@ -1,192 +1,125 @@
 <sp-admin-page-header title="Diagnostics" subtitle="System status, recent log events, and correlation ID lookup." />
 
-<!-- ── System Status ──────────────────────────────────────────────────── -->
-<section style="margin-bottom:24px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <h2 style="font-size:15px;font-weight:700;color:var(--sp-ink)">System status</h2>
-    <button (click)="loadStatus()" class="sp-admin-btn-primary" style="font-size:12px;padding:6px 14px">
-      Refresh
-    </button>
-  </div>
+<sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
+  <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (click)="loadStatus()">
+    Refresh
+  </sp-admin-button>
 
   @if (loadingStatus()) {
     <sp-admin-loading-state message="Loading system status" />
   } @else if (statusError()) {
     <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
   } @else if (status()) {
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
-      <!-- Environment -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Environment</div>
-        <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ status()!.environment }}</div>
-      </div>
-      <!-- Version -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Version</div>
-        <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ status()!.version }}</div>
-      </div>
-      <!-- Uptime -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Uptime</div>
-        <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ uptimeLabel(status()!.uptimeSeconds) }}</div>
-      </div>
-      <!-- Log level -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Log level</div>
-        <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ status()!.logLevel }}</div>
-      </div>
-      <!-- Database -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Database</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:8px;height:8px;border-radius:50%;background:{{ status()!.database.reachable ? '#13B07C' : '#FB6B57' }}"></span>
-          <span style="font-size:14px;font-weight:700"
-            [style.color]="status()!.database.reachable ? 'var(--sp-success)' : 'var(--sp-speaking)'">
-            {{ status()!.database.reachable ? 'Reachable' : 'Unreachable' }}
-          </span>
-        </div>
-      </div>
-      <!-- AI provider -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">AI Provider</div>
-        @if (status()!.ai.providerConfigured) {
-          <div style="font-size:13px;font-weight:700;color:var(--sp-success)">{{ status()!.ai.activeProvider }}</div>
-          <div style="font-size:11px;color:var(--sp-muted)">{{ status()!.ai.activeModel }}</div>
-        } @else {
-          <div style="font-size:13px;font-weight:700;color:var(--sp-warn)">Not configured</div>
-        }
-      </div>
-      <!-- Diagnostic events -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Event buffer</div>
-        @if (status()!.diagnosticEventsEnabled) {
-          <div style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ status()!.diagnosticEventCount }} events</div>
-        } @else {
-          <div style="font-size:13px;color:var(--sp-muted)">Disabled</div>
-        }
-      </div>
-      <!-- Server time -->
-      <div class="sp-admin-form-card" style="padding:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Server time (UTC)</div>
-        <div style="font-size:13px;font-weight:600;color:var(--sp-ink)">{{ formatTime(status()!.serverTimeUtc) }}</div>
-      </div>
+    <div class="sp-admin-diagnostics-grid">
+      <sp-admin-stat-card label="Environment" [value]="status()!.environment" tone="neutral" size="sm" />
+      <sp-admin-stat-card label="Version" [value]="status()!.version" tone="neutral" size="sm" />
+      <sp-admin-stat-card label="Uptime" [value]="uptimeLabel(status()!.uptimeSeconds)" tone="info" size="sm" />
+      <sp-admin-stat-card label="Log level" [value]="status()!.logLevel" tone="neutral" size="sm" />
+      <sp-admin-stat-card
+        label="Database"
+        [value]="status()!.database.reachable ? 'Reachable' : 'Unreachable'"
+        [tone]="status()!.database.reachable ? 'success' : 'danger'"
+        size="sm" />
+      <sp-admin-stat-card
+        label="AI provider"
+        [value]="status()!.ai.providerConfigured ? (status()!.ai.activeProvider ?? 'Configured') : 'Not configured'"
+        [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'"
+        size="sm" />
+      <sp-admin-stat-card
+        label="Event buffer"
+        [value]="status()!.diagnosticEventsEnabled ? (status()!.diagnosticEventCount + ' events') : 'Disabled'"
+        [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'"
+        size="sm" />
+      <sp-admin-stat-card label="Server time" [value]="formatTime(status()!.serverTimeUtc)" tone="neutral" size="sm" />
     </div>
   }
-</section>
+</sp-admin-card>
 
-<!-- ── Recent Events ──────────────────────────────────────────────────── -->
-<section>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-    <h2 style="font-size:15px;font-weight:700;color:var(--sp-ink)">Recent events</h2>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button (click)="toggleAutoRefresh()"
-        class="sp-admin-btn-primary"
-        style="font-size:12px;padding:6px 14px"
-        [style.background]="autoRefresh() ? '#13B07C' : ''">
-        {{ autoRefresh() ? 'Stop auto-refresh' : 'Auto-refresh (5s)' }}
-      </button>
-      <button (click)="loadEvents()" class="sp-admin-btn-primary" style="font-size:12px;padding:6px 14px">
-        Refresh
-      </button>
-    </div>
+<sp-admin-card title="Recent events" variant="section" padding="none" [headerDivider]="true">
+  <div slot="actions" class="sp-admin-diagnostics-actions">
+    <sp-admin-button
+      size="sm"
+      [variant]="autoRefresh() ? 'success' : 'neutral'"
+      [appearance]="autoRefresh() ? 'solid' : 'outline'"
+      (click)="toggleAutoRefresh()">
+      {{ autoRefresh() ? 'Stop auto-refresh' : 'Auto-refresh' }}
+    </sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="loadEvents()">Refresh</sp-admin-button>
   </div>
 
-  <!-- Filters row -->
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:flex-end">
-    <div>
-      <label style="font-size:11px;font-weight:700;color:var(--sp-muted);display:block;margin-bottom:3px">Level</label>
-      <select [(ngModel)]="filterLevel" (change)="loadEvents()"
-        style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;background:#fff;min-width:120px">
-        @for (l of levels; track l) {
-          <option [value]="l">{{ l || 'All levels' }}</option>
-        }
-      </select>
-    </div>
-    <div>
-      <label style="font-size:11px;font-weight:700;color:var(--sp-muted);display:block;margin-bottom:3px">Category</label>
-      <input [(ngModel)]="filterCategory" (change)="loadEvents()"
+  <sp-admin-filter-bar layout="responsive" density="compact">
+    <sp-admin-form-field search label="Level" size="sm">
+      <sp-admin-select
+        [ngModel]="filterLevel"
+        (ngModelChange)="filterLevel = $event; loadEvents()"
+        [options]="levelOptions"
+        size="sm" />
+    </sp-admin-form-field>
+    <sp-admin-form-field filters label="Category" size="sm">
+      <sp-admin-input
+        [(ngModel)]="filterCategory"
+        (change)="loadEvents()"
         placeholder="e.g. Activity"
-        style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;min-width:140px">
-    </div>
-    <div>
-      <label style="font-size:11px;font-weight:700;color:var(--sp-muted);display:block;margin-bottom:3px">Correlation ID</label>
-      <input [(ngModel)]="filterCorrelationId" (change)="loadEvents()"
+        size="sm" />
+    </sp-admin-form-field>
+    <sp-admin-form-field filters label="Correlation ID" size="sm">
+      <sp-admin-input
+        [(ngModel)]="filterCorrelationId"
+        (change)="loadEvents()"
         placeholder="e.g. abc123ef0012"
-        style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;min-width:160px;font-family:monospace">
-    </div>
-    <div>
-      <label style="font-size:11px;font-weight:700;color:var(--sp-muted);display:block;margin-bottom:3px">Search</label>
-      <input [(ngModel)]="filterQ" (change)="loadEvents()"
-        placeholder="Search messages…"
-        style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;min-width:180px">
-    </div>
-    <div>
-      <label style="font-size:11px;font-weight:700;color:var(--sp-muted);display:block;margin-bottom:3px">Limit</label>
-      <select [(ngModel)]="filterLimit" (change)="loadEvents()"
-        style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;background:#fff">
-        <option [value]="50">50</option>
-        <option [value]="100">100</option>
-        <option [value]="250">250</option>
-        <option [value]="500">500</option>
-      </select>
-    </div>
-  </div>
+        size="sm" />
+    </sp-admin-form-field>
+    <sp-admin-form-field filters label="Search" size="sm">
+      <sp-admin-input
+        [(ngModel)]="filterQ"
+        (change)="loadEvents()"
+        placeholder="Search messages"
+        size="sm" />
+    </sp-admin-form-field>
+    <sp-admin-form-field filters label="Limit" size="sm">
+      <sp-admin-select
+        [ngModel]="filterLimit.toString()"
+        (ngModelChange)="filterLimit = +$event; loadEvents()"
+        [options]="limitOptions"
+        size="sm" />
+    </sp-admin-form-field>
+  </sp-admin-filter-bar>
 
   @if (loadingEvents()) {
     <sp-admin-loading-state message="Loading diagnostic events" />
   } @else if (eventsError()) {
     <sp-admin-error-state title="Could not load events" [message]="eventsError()" />
+  } @else if (events().length === 0) {
+    <sp-admin-empty-state [message]="filterLevel || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
   } @else {
-    <div class="sp-admin-table-card">
-      @if (events().length === 0) {
-        <div class="sp-admin-table-empty" style="padding:32px;text-align:center">
-          <p style="font-size:13px;color:var(--sp-muted)">No events found. {{ filterLevel || filterCorrelationId || filterQ ? 'Try adjusting filters.' : 'Events will appear once the app is used.' }}</p>
-        </div>
-      } @else {
-        <div style="font-size:11px;color:var(--sp-muted);padding:8px 16px;border-bottom:1px solid #E2E8F0">
-          Showing {{ events().length }} of {{ total() }} events (most recent first)
-        </div>
-        <div style="overflow-x:auto">
-          <table class="sp-admin-table" style="font-size:12px">
-            <thead>
-              <tr>
-                <th style="width:72px">Time</th>
-                <th style="width:80px">Level</th>
-                <th style="width:160px">Category</th>
-                <th>Message</th>
-                <th style="width:110px">Correlation</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (event of events(); track $index) {
-                <tr>
-                  <td style="font-family:monospace;font-size:11px;white-space:nowrap;color:var(--sp-muted)">
-                    {{ formatTime(event.timestampUtc) }}
-                  </td>
-                  <td>
-                    <span style="border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700"
-                      [style.background]="levelBg(event.level)"
-                      [style.color]="levelColour(event.level)">
-                      {{ event.level }}
-                    </span>
-                  </td>
-                  <td style="font-size:11px;color:var(--sp-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-                    [title]="event.category">
-                    {{ event.category }}
-                  </td>
-                  <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--sp-text)"
-                    [title]="event.message">
-                    {{ event.message }}
-                  </td>
-                  <td style="font-family:monospace;font-size:11px;color:var(--sp-muted)">
-                    {{ event.correlationId ?? '—' }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
+    <div class="sp-admin-diagnostics-count">
+      Showing {{ events().length }} of {{ total() }} events. Most recent first.
     </div>
+    <sp-admin-table variant="data" density="compact">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Level</th>
+            <th>Category</th>
+            <th>Message</th>
+            <th>Correlation</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of events(); track $index) {
+            <tr>
+              <td class="sp-admin-mono">{{ formatTime(event.timestampUtc) }}</td>
+              <td>
+                <sp-admin-badge [tone]="levelTone(event.level)">{{ event.level }}</sp-admin-badge>
+              </td>
+              <td class="sp-admin-muted sp-admin-diagnostics-truncate" [title]="event.category">{{ event.category }}</td>
+              <td class="sp-admin-diagnostics-message" [title]="event.message">{{ event.message }}</td>
+              <td class="sp-admin-mono">{{ event.correlationId ?? '-' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </sp-admin-table>
   }
-</section>
+</sp-admin-card>

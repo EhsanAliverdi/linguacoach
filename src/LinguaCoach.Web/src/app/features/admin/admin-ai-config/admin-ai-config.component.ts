@@ -9,8 +9,10 @@ import {
   SpAdminCardComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
+  SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
+  SpAdminLoadingStateComponent,
 } from '../../../admin';
 
 interface CategoryState {
@@ -53,12 +55,14 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
   template: `
     <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
     @if (loading()) {
-      <div class="sp-admin-table-loading">Loading…</div>
+      <sp-admin-loading-state message="Loading AI configuration" />
+    } @else if (loadError()) {
+      <sp-admin-error-state title="AI configuration unavailable" [message]="loadError()" />
     } @else {
 
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
@@ -337,6 +341,7 @@ export class AdminAiConfigComponent implements OnInit {
   categories = signal<CategoryState[]>([]);
   providers = signal<ProviderState[]>([]);
   loading = signal(true);
+  loadError = signal('');
 
   constructor(private adminApi: AdminApiService) {}
 
@@ -365,7 +370,10 @@ export class AdminAiConfigComponent implements OnInit {
         })));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: err => {
+        this.loadError.set(err.error?.error ?? 'Could not load AI configuration.');
+        this.loading.set(false);
+      },
     });
   }
 

@@ -6,7 +6,7 @@
   <sp-admin-card title="MinIO / Object Storage" class="sp-admin-section-wrap">
 
     @if (storageError()) {
-      <p class="sp-admin-alert-error">{{ storageError() }}</p>
+      <sp-admin-error-state title="Storage settings unavailable" [message]="storageError()" />
     }
 
     @if (storage(); as s) {
@@ -54,7 +54,7 @@
   <!-- ── Generation settings ─────────────────────────────────────────────── -->
   <sp-admin-card title="Lesson Buffer Settings" class="sp-admin-section-wrap">
 
-    @if (settingsError()) { <p class="sp-admin-alert-error">{{ settingsError() }}</p> }
+    @if (settingsError()) { <sp-admin-error-state title="Generation settings unavailable" [message]="settingsError()" /> }
     @if (settingsSaved()) { <p class="text-sm text-emerald-600 mb-3">Settings saved.</p> }
 
     @if (settings(); as s) {
@@ -112,26 +112,14 @@
   <!-- ── Background Jobs ──────────────────────────────────────────────────── -->
   <sp-admin-card title="Background Jobs">
 
-    @if (batchesError()) { <p class="sp-admin-alert-error">{{ batchesError() }}</p> }
+    @if (batchesError()) { <sp-admin-error-state title="Background jobs unavailable" [message]="batchesError()" /> }
 
     @if (batches(); as b) {
-      <div class="flex gap-6 flex-wrap mb-4">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">{{ b.summary.queued }}</div>
-          <div class="text-xs text-gray-500 mt-0.5">Queued</div>
-        </div>
-        <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">{{ b.summary.running }}</div>
-          <div class="text-xs text-gray-500 mt-0.5">Running</div>
-        </div>
-        <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">{{ b.summary.failed }}</div>
-          <div class="text-xs text-gray-500 mt-0.5">Failed</div>
-        </div>
-        <div class="text-center">
-          <div class="text-sm font-semibold text-gray-900">{{ b.summary.lastSuccessfulGenerationUtc ? (b.summary.lastSuccessfulGenerationUtc | date:'short') : '—' }}</div>
-          <div class="text-xs text-gray-500 mt-0.5">Last success</div>
-        </div>
+      <div class="sp-admin-integration-metrics">
+        <sp-admin-stat-card label="Queued" [value]="b.summary.queued" tone="neutral" size="sm" />
+        <sp-admin-stat-card label="Running" [value]="b.summary.running" tone="info" size="sm" />
+        <sp-admin-stat-card label="Failed" [value]="b.summary.failed" [tone]="b.summary.failed > 0 ? 'danger' : 'success'" size="sm" />
+        <sp-admin-stat-card label="Last success" [value]="b.summary.lastSuccessfulGenerationUtc ? (b.summary.lastSuccessfulGenerationUtc | date:'short')! : '-'" tone="success" size="sm" />
       </div>
 
       <div class="flex items-end gap-3 mb-4 flex-wrap">

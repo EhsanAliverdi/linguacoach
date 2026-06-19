@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import {
   SpAdminLayoutComponent,
   SpAdminSidebarComponent,
@@ -206,9 +206,20 @@ describe('admin wrapper migration', () => {
     expect(query(fixture.nativeElement, 'sp-admin-card')).toBeTruthy();
   });
 
-  it('Prompts page renders wrapper table actions', () => {
+  function promptItem(id: number, active = false) {
+    return {
+      id: `prompt-${id}`,
+      key: `activity.prompt.${id}`,
+      version: id,
+      isActive: active,
+      maxInputTokens: 800,
+      maxOutputTokens: 600,
+    };
+  }
+
+  it('Prompts page renders metrics, filters, and pagination', () => {
     const adminApi = jasmine.createSpyObj('AdminApiService', ['listPrompts']);
-    adminApi.listPrompts.and.returnValue(of([]));
+    adminApi.listPrompts.and.returnValue(of(Array.from({ length: 13 }, (_, index) => promptItem(index + 1, index === 0))));
 
     TestBed.configureTestingModule({
       imports: [AdminPromptsComponent],
@@ -219,7 +230,73 @@ describe('admin wrapper migration', () => {
     fixture.detectChanges();
 
     expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
-    expect(query(fixture.nativeElement, 'sp-admin-empty-state')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Templates');
+    expect(fixture.nativeElement.textContent).toContain('Prompt library');
+    expect(query(fixture.nativeElement, 'sp-admin-filter-bar')).toBeTruthy();
+    expect(query(fixture.nativeElement, 'sp-admin-pagination')).toBeTruthy();
+  });
+
+  it('Prompts page filters prompt rows by search text', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listPrompts']);
+    adminApi.listPrompts.and.returnValue(of([
+      { ...promptItem(1), key: 'activity.email.reply' },
+      { ...promptItem(2), key: 'activity.listening.summary' },
+    ]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminPromptsComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+
+    const fixture = TestBed.createComponent(AdminPromptsComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.setSearchTerm('email');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('activity.email.reply');
+    expect(fixture.nativeElement.textContent).not.toContain('activity.listening.summary');
+  });
+
+  it('Prompts page opens row actions and loads prompt detail', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listPrompts', 'getPrompt']);
+    adminApi.listPrompts.and.returnValue(of([promptItem(1, true)]));
+    adminApi.getPrompt.and.returnValue(of({ ...promptItem(1, true), content: 'Return ONLY valid JSON.' }));
+
+    TestBed.configureTestingModule({
+      imports: [AdminPromptsComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+
+    const fixture = TestBed.createComponent(AdminPromptsComponent);
+    fixture.detectChanges();
+
+    const actionsButton = fixture.nativeElement.querySelector('button[aria-label="Row actions"]') as HTMLButtonElement;
+    actionsButton.click();
+    fixture.detectChanges();
+    const menuItems = fixture.nativeElement.querySelectorAll('sp-admin-table-actions button') as NodeListOf<HTMLButtonElement>;
+    const viewButton = Array.from(menuItems)
+      .find(button => button.textContent?.includes('View content')) as HTMLButtonElement;
+    viewButton.click();
+    fixture.detectChanges();
+
+    expect(adminApi.getPrompt).toHaveBeenCalledWith('prompt-1');
+    expect(fixture.nativeElement.textContent).toContain('Return ONLY valid JSON.');
+  });
+
+  it('Prompts page renders an error state when loading fails', () => {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listPrompts']);
+    adminApi.listPrompts.and.returnValue(throwError(() => ({ error: { error: 'API unavailable' } })));
+
+    TestBed.configureTestingModule({
+      imports: [AdminPromptsComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+
+    const fixture = TestBed.createComponent(AdminPromptsComponent);
+    fixture.detectChanges();
+
+    expect(query(fixture.nativeElement, 'sp-admin-error-state')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('API unavailable');
   });
 
   it('Integrations page renders wrapper cards', () => {

@@ -10,18 +10,21 @@ import {
 } from '../../../core/services/admin-integrations.service';
 import {
   SpAdminCardComponent,
+  SpAdminErrorStateComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
+  SpAdminStatCardComponent,
 } from '../../../admin';
 
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent],
+  imports: [CommonModule, FormsModule, SpAdminCardComponent, SpAdminErrorStateComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
+    .sp-admin-integration-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
     .sp-adm-num-input{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
     .sp-adm-num-input:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
   `],

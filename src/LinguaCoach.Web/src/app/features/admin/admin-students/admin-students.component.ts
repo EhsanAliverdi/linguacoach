@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -23,7 +23,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
@@ -34,20 +34,18 @@ interface StudentEditForm {
         <input type="checkbox" [(ngModel)]="includeArchived" (change)="load()" />
         <span>Show archived students</span>
       </label>
-      <input
+      <sp-admin-input
         type="search"
-        class="sp-input sp-admin-search-input"
-        placeholder="Search by email or name…"
+        placeholder="Search by email or name"
         [(ngModel)]="searchTerm"
-        (ngModelChange)="page.set(1)"
-        aria-label="Search students" />
+        (ngModelChange)="page.set(1)" />
       <span class="sp-admin-table-muted">{{ filteredStudents().length }} shown</span>
     </sp-admin-filter-bar>
 
     @if (loading()) {
-      <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+      <sp-admin-loading-state message="Loading students" />
     } @else if (error()) {
-      <div class="sp-admin-alert-error">{{ error() }}</div>
+      <sp-admin-error-state title="Could not load students" [message]="error()" />
     } @else {
       <sp-admin-table variant="data" density="compact">
         <table class="sp-admin-table">
@@ -100,7 +98,7 @@ interface StudentEditForm {
           </tbody>
         </table>
         @if (filteredStudents().length === 0) {
-          <div class="sp-admin-empty-row">No students found.</div>
+          <sp-admin-empty-state message="No students found." />
         }
       </sp-admin-table>
       @if (totalPages() > 1) {
