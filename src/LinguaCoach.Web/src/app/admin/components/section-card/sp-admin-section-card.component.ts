@@ -19,24 +19,25 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .sp-sc-root {
-      background: var(--sp-admin-surface);
-      border: 1px solid var(--sp-admin-border);
-      border-radius: var(--sp-admin-radius-lg);
-      padding: 18px;
+      background: var(--sp-admin-surface, #fff);
+      border: 1px solid var(--sp-admin-border, #e5e7eb);
+      border-radius: 16px;
+      padding: 20px;
     }
     .sp-sc-dashed {
-      border: 1.5px dashed var(--sp-admin-border);
+      border: 1.5px dashed var(--sp-admin-border, #e5e7eb);
     }
     .sp-sc-header {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .sp-sc-title {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--sp-admin-text);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sp-admin-text, #374151);
+      letter-spacing: 0.01em;
       flex: 1;
     }
   `],

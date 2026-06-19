@@ -39,10 +39,10 @@ export type SpAdminStatusCardTone = 'success' | 'warning' | 'danger' | 'info' | 
     .sp-sc-root {
       display: flex;
       flex-direction: column;
-      border-radius: 12px;
-      border: 1px solid var(--sp-sc-border, #e2e8f0);
+      border-radius: 16px;
+      border: 1px solid var(--sp-sc-border, #e5e7eb);
       background: var(--sp-sc-bg, #fff);
-      padding: 14px 16px 12px;
+      padding: 16px 20px 14px;
       min-width: 0;
     }
 
@@ -95,7 +95,7 @@ export type SpAdminStatusCardTone = 'success' | 'warning' | 'danger' | 'info' | 
     }
 
     .sp-sc-value {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
       color: #1e293b;
       white-space: nowrap;

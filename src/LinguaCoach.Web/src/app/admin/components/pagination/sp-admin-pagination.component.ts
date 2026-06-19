@@ -27,14 +27,14 @@ import { SpAdminButtonComponent } from '../button/sp-admin-button.component';
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
-      padding:14px 18px;
+      padding:10px 20px;
       border-top:1px solid #f1f5f9;
       background:#fff;
     }
     .sp-adm-pagination-label {
-      color:#667085;
-      font-size:13px;
-      font-weight:600;
+      color:#6b7280;
+      font-size:12px;
+      font-weight:500;
     }
     .sp-adm-pagination-actions {
       display:flex;

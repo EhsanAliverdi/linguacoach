@@ -132,21 +132,22 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     }
     :host ::ng-deep thead tr { border-bottom:1px solid #e5e7eb; }
     :host ::ng-deep th {
-      padding:10px 16px;
+      padding:11px 16px;
       background:#f9fafb;
-      color:#667085;
+      color:#6b7280;
       font-size:11px;
-      font-weight:700;
+      font-weight:600;
       line-height:1.4;
       text-align:left;
       white-space:nowrap;
-      vertical-align:bottom;
+      vertical-align:middle;
+      letter-spacing:0.02em;
     }
     :host ::ng-deep td {
-      padding:12px 16px;
-      color:#344054;
+      padding:13px 16px;
+      color:#374151;
       font-size:13px;
-      line-height:1.45;
+      line-height:1.5;
       vertical-align:middle;
       border-bottom:1px solid #f1f5f9;
       min-width:72px;

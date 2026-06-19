@@ -22,7 +22,7 @@ export type SpAdminFilterBarDensity = 'compact' | 'comfortable';
         <ng-content select="[filters]" />
         <ng-content />
       </div>
-      <div class="sp-adm-filter-right flex items-center shrink-0" [class.gap-2]="density === 'compact'" [class.gap-2]="density === 'comfortable'">
+      <div class="sp-adm-filter-right flex items-center shrink-0" [class.gap-2]="density === 'compact'" [class.gap-3]="density === 'comfortable'">
         <ng-content select="[actions]" />
       </div>
     </div>

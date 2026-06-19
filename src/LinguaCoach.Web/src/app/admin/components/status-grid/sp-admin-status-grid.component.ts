@@ -10,7 +10,7 @@ export type SpAdminStatusGridColumns = 2 | 3 | 4 | 'auto';
   template: `<div class="sp-sg-root" [class]="colClass"><ng-content /></div>`,
   styles: [`
     :host { display: block; }
-    .sp-sg-root { display: grid; gap: 10px; }
+    .sp-sg-root { display: grid; gap: 12px; }
     .sp-sg-2    { grid-template-columns: repeat(2, 1fr); }
     .sp-sg-3    { grid-template-columns: repeat(3, 1fr); }
     .sp-sg-4    { grid-template-columns: repeat(4, 1fr); }

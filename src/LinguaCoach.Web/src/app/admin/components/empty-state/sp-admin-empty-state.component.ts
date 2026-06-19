@@ -20,31 +20,32 @@ import { RouterLink } from '@angular/router';
   `,
   styles: [`
     .sp-empty {
-      padding: 32px 20px;
+      padding: 40px 24px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      color: var(--sp-admin-text-dim);
+      gap: 6px;
+      color: var(--sp-admin-text-dim, #9ca3af);
       font-size: 13px;
     }
     .sp-empty-title {
-      color: var(--sp-admin-text);
+      color: var(--sp-admin-text, #374151);
       font-size: 14px;
-      font-weight: 800;
+      font-weight: 600;
+      margin-bottom: 2px;
     }
-    .sp-empty-msg { margin: 0; }
+    .sp-empty-msg { margin: 0; color: #6b7280; }
     .sp-empty-cta {
       display: inline-block;
       font-size: 12px;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: var(--sp-admin-radius-sm);
-      background: var(--sp-admin-primary);
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 8px;
+      background: var(--sp-admin-primary, #465fff);
       color: #fff;
       text-decoration: none;
-      margin-top: 4px;
+      margin-top: 8px;
     }
   `],
 })

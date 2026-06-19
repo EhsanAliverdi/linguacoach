@@ -22,44 +22,44 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
   `,
   styles: [`
     .sp-kpi-card {
-      background: var(--sp-admin-surface);
-      border: 1px solid var(--sp-admin-border);
-      border-radius: var(--sp-admin-radius-lg);
-      padding: 18px;
+      background: var(--sp-admin-surface, #fff);
+      border: 1px solid var(--sp-admin-border, #e5e7eb);
+      border-radius: 16px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      box-shadow: var(--sp-admin-shadow-card);
+      gap: 16px;
+      box-shadow: var(--sp-admin-shadow-card, 0 1px 3px rgba(0,0,0,.06));
     }
     .sp-kpi-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
-    .sp-kpi-icon-indigo { background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary); }
-    .sp-kpi-icon-green  { background: var(--sp-admin-green-bg);   color: var(--sp-admin-green); }
-    .sp-kpi-icon-violet { background: var(--sp-admin-violet-bg);  color: var(--sp-admin-violet); }
-    .sp-kpi-icon-amber  { background: var(--sp-admin-amber-bg);   color: var(--sp-admin-amber); }
-    .sp-kpi-icon-teal   { background: var(--sp-admin-teal-bg);    color: var(--sp-admin-teal); }
-    .sp-kpi-icon-slate  { background: var(--sp-admin-slate-bg);   color: var(--sp-admin-slate); }
+    .sp-kpi-icon-indigo { background: var(--sp-admin-primary-bg, #ecf3ff); color: var(--sp-admin-primary, #465fff); }
+    .sp-kpi-icon-green  { background: var(--sp-admin-green-bg, #ecfdf3);   color: var(--sp-admin-green, #16a34a); }
+    .sp-kpi-icon-violet { background: var(--sp-admin-violet-bg, #f5f3ff);  color: var(--sp-admin-violet, #7c3aed); }
+    .sp-kpi-icon-amber  { background: var(--sp-admin-amber-bg, #fffbeb);   color: var(--sp-admin-amber, #d97706); }
+    .sp-kpi-icon-teal   { background: var(--sp-admin-teal-bg, #f0fdfa);    color: var(--sp-admin-teal, #0d9488); }
+    .sp-kpi-icon-slate  { background: var(--sp-admin-slate-bg, #f2f4f7);   color: var(--sp-admin-slate, #475569); }
     .sp-kpi-body { min-width: 0; }
     .sp-kpi-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      color: var(--sp-admin-text-muted);
+      color: var(--sp-admin-text-muted, #6b7280);
       text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 2px;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
     }
     .sp-kpi-value {
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--sp-admin-text);
-      line-height: 1;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--sp-admin-text, #111827);
+      line-height: 1.1;
     }
   `],
 })

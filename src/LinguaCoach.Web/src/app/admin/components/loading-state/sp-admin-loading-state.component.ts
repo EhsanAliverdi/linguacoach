@@ -16,11 +16,11 @@ import { SpAdminSpinnerComponent } from '../spinner/sp-admin-spinner.component';
     .sp-adm-loading {
       display: grid;
       place-items: center;
-      gap: 10px;
-      padding: 32px;
-      color: var(--sp-admin-text-dim);
+      gap: 12px;
+      padding: 40px 24px;
+      color: var(--sp-admin-text-dim, #9ca3af);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 500;
       text-align: center;
     }
   `],

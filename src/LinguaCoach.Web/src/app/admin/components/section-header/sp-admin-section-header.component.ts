@@ -23,19 +23,20 @@ import { CommonModule } from '@angular/common';
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
-    .sp-sh-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .sp-sh-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .sp-sh-title {
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 600;
       color: #374151;
-      line-height: 1.3;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
     }
     .sp-sh-desc {
-      font-size: 11.5px;
+      font-size: 12px;
       color: #6b7280;
-      line-height: 1.4;
+      line-height: 1.45;
     }
   `],
 })

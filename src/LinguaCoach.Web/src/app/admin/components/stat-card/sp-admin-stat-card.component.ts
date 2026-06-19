@@ -30,7 +30,7 @@ export type SpAdminStatCardSize = 'sm' | 'md' | 'lg';
         </div>
         <div class="sp-adm-stat-content">
           <div class="sp-adm-stat-label text-gray-500 dark:text-gray-400">{{ label }}</div>
-          <div class="sp-adm-stat-value font-semibold text-gray-800 dark:text-white/90 leading-tight mt-0.5">{{ value }}</div>
+          <div class="sp-adm-stat-value font-bold text-gray-800 dark:text-white/90 leading-tight mt-1">{{ value }}</div>
           <ng-content select="[slot=trend]" />
         </div>
       }
@@ -46,9 +46,9 @@ export type SpAdminStatCardSize = 'sm' | 'md' | 'lg';
     .sp-adm-stat-sm .sp-adm-stat-label { font-size:11px; }
     .sp-adm-stat-sm .sp-adm-stat-value { font-size:18px; }
 
-    .sp-adm-stat-md  { flex-direction:row; gap:14px; padding:18px; }
+    .sp-adm-stat-md  { flex-direction:row; gap:16px; padding:20px; }
     .sp-adm-stat-md .sp-adm-stat-icon  { width:44px; height:44px; }
-    .sp-adm-stat-md .sp-adm-stat-label { font-size:13px; }
+    .sp-adm-stat-md .sp-adm-stat-label { font-size:12px; }
     .sp-adm-stat-md .sp-adm-stat-value { font-size:24px; }
 
     .sp-adm-stat-lg  { flex-direction:row; gap:18px; padding:24px; }

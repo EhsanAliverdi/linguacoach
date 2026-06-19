@@ -24,8 +24,8 @@ export type SpAdminBadgeSize = 'sm' | 'md';
   `,
   styles: [`
     .sp-adm-badge    { white-space:nowrap; }
-    .sp-adm-badge-sm { padding:2px 8px;  font-size:10px; line-height:1.4; }
-    .sp-adm-badge-md { padding:3px 10px; font-size:12px; line-height:1.4; }
+    .sp-adm-badge-sm { padding:2px 8px;  font-size:11px; line-height:1.4; font-weight:500; }
+    .sp-adm-badge-md { padding:3px 10px; font-size:12px; line-height:1.4; font-weight:500; }
 
     /* Soft (TailAdmin light variant) */
     .sp-adm-badge-soft-success { background:#ecfdf3; color:#16a34a; }
