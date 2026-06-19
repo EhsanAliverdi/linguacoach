@@ -22,13 +22,21 @@
           <sp-admin-input [value]="s.bucketName || '—'" [disabled]="true" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Access key">
-          <sp-admin-input [value]="s.accessKey ? 'configured' : 'not set'" [disabled]="true" />
+          @if (s.accessKey) {
+            <sp-admin-badge tone="success" [dot]="true">Configured</sp-admin-badge>
+          } @else {
+            <sp-admin-badge tone="warning" [dot]="true">Not set</sp-admin-badge>
+          }
         </sp-admin-form-field>
         <sp-admin-form-field label="Secret key">
-          <sp-admin-input [value]="s.secretKey ? 'configured' : 'not set'" [disabled]="true" />
+          @if (s.secretKey) {
+            <sp-admin-badge tone="success" [dot]="true">Configured</sp-admin-badge>
+          } @else {
+            <sp-admin-badge tone="warning" [dot]="true">Not set</sp-admin-badge>
+          }
         </sp-admin-form-field>
         <sp-admin-form-field label="Use SSL">
-          <sp-admin-input [value]="s.useSsl ? 'yes' : 'no'" [disabled]="true" />
+          <sp-admin-badge [tone]="s.useSsl ? 'success' : 'neutral'" [dot]="true">{{ s.useSsl ? 'Enabled' : 'Disabled' }}</sp-admin-badge>
         </sp-admin-form-field>
         <sp-admin-form-field label="Signed URL expiry (min)">
           <sp-admin-input [value]="s.signedUrlExpiryMinutes.toString()" [disabled]="true" />
@@ -41,13 +49,14 @@
 
     <div class="flex items-center gap-4 mt-4">
       <sp-admin-button variant="secondary" [loading]="testing()" [disabled]="testing()" (click)="testConnection()">
-        {{ testing() ? 'Testing…' : 'Test connection' }}
+        Test connection
       </sp-admin-button>
       @if (storageTest(); as t) {
-        <span [class]="t.ok ? 'text-sm text-emerald-600' : 'text-sm text-red-500'">
-          {{ t.ok ? 'Connected' : 'Failed' }} · checked {{ t.lastCheckedUtc | date:'short' }}
+        <sp-admin-badge [tone]="t.ok ? 'success' : 'danger'" [dot]="true">
+          {{ t.ok ? 'Connected' : 'Failed' }}
+          @if (t.lastCheckedUtc) { · {{ t.lastCheckedUtc | date:'short' }} }
           @if (t.error) { · {{ t.error }} }
-        </span>
+        </sp-admin-badge>
       }
     </div>
   </sp-admin-card>
@@ -55,8 +64,12 @@
   <!-- ── Generation settings ─────────────────────────────────────────────── -->
   <sp-admin-card title="Lesson Buffer Settings">
 
-    @if (settingsError()) { <sp-admin-error-state title="Generation settings unavailable" [message]="settingsError()" /> }
-    @if (settingsSaved()) { <p class="text-sm text-emerald-600 mb-3">Settings saved.</p> }
+    @if (settingsError()) {
+      <sp-admin-alert variant="error">{{ settingsError() }}</sp-admin-alert>
+    }
+    @if (settingsSaved()) {
+      <sp-admin-alert variant="success">Settings saved.</sp-admin-alert>
+    }
 
     @if (settings(); as s) {
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -113,7 +126,9 @@
   <!-- ── Background Jobs ──────────────────────────────────────────────────── -->
   <sp-admin-card title="Background Jobs">
 
-    @if (batchesError()) { <sp-admin-error-state title="Background jobs unavailable" [message]="batchesError()" /> }
+    @if (batchesError()) {
+      <sp-admin-alert variant="error">{{ batchesError() }}</sp-admin-alert>
+    }
 
     @if (batches(); as b) {
       <div class="sp-admin-integration-metrics">
@@ -129,7 +144,9 @@
         </sp-admin-form-field>
         <sp-admin-button [disabled]="!generateStudentId" (click)="generateLessons()">Generate lessons now</sp-admin-button>
       </div>
-      @if (generateStatus()) { <p class="text-sm text-emerald-600 mb-3">{{ generateStatus() }}</p> }
+      @if (generateStatus()) {
+        <sp-admin-alert variant="success">{{ generateStatus() }}</sp-admin-alert>
+      }
 
       <h3 class="text-sm font-semibold text-gray-700 mb-2">Ready lesson buffer per student</h3>
       <div class="mb-4">
@@ -172,11 +189,11 @@
           <tbody>
             @for (batch of b.batches; track batch.id) {
               <tr>
-                <td><sp-admin-badge [tone]="batchStatusTone(batch.status)">{{ batch.status }}</sp-admin-badge></td>
-                <td class="sp-admin-table-truncate" [title]="batch.triggerReason">{{ batch.triggerReason }}</td>
+                <td><sp-admin-badge [tone]="batchStatusTone(batch.status)" [dot]="true">{{ batch.status }}</sp-admin-badge></td>
+                <td><sp-admin-truncated-text [value]="batch.triggerReason" [maxLength]="40" /></td>
                 <td class="sp-admin-num">{{ batch.completedSessionCount }} / {{ batch.requestedSessionCount }}</td>
-                <td class="sp-admin-table-truncate" [title]="batch.providerName || '-'">{{ batch.providerName || '-' }}</td>
-                <td class="sp-admin-table-wrap" [title]="batch.failureReason || ''">{{ batch.failureReason || '' }}</td>
+                <td><sp-admin-truncated-text [value]="batch.providerName || '—'" [maxLength]="24" /></td>
+                <td><sp-admin-truncated-text [value]="batch.failureReason || ''" [maxLength]="48" /></td>
                 <td class="sp-admin-actions">
                   @if (batch.status === 'Queued' || batch.status === 'Running') {
                     <sp-admin-button variant="ghost" size="sm" (click)="cancel(batch.id)">Cancel</sp-admin-button>

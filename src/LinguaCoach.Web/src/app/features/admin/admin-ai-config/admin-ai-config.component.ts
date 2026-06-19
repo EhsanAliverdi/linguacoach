@@ -5,8 +5,10 @@ import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { AiConfigCategoryItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminCardComponent,
+  SpAdminCodePillComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
@@ -56,17 +58,16 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
+  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCodePillComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
   template: `
     <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
+    <sp-admin-page-body>
     @if (loading()) {
       <sp-admin-loading-state message="Loading AI configuration" />
     } @else if (loadError()) {
       <sp-admin-error-state title="AI configuration unavailable" [message]="loadError()" />
     } @else {
-
-    <sp-admin-page-body>
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
       <sp-admin-card title="LLM Categories">
         <p class="text-sm text-slate-500 mb-4">
@@ -200,11 +201,11 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
               <!-- Header row: provider name + status badges + action buttons -->
               <div class="flex items-center justify-between gap-4 mb-4">
                 <div class="flex items-center gap-3">
-                  <span class="text-sm font-bold text-slate-800 capitalize w-24">{{ ps.catalog.providerName }}</span>
+                  <sp-admin-code-pill [value]="ps.catalog.providerName" tone="neutral" />
                   @if (ps.catalog.hasApiKey) {
-                    <sp-admin-badge tone="success">Key stored</sp-admin-badge>
+                    <sp-admin-badge tone="success" [dot]="true">Key stored</sp-admin-badge>
                   } @else {
-                    <sp-admin-badge tone="neutral">Using env var</sp-admin-badge>
+                    <sp-admin-badge tone="neutral" [dot]="true">Env var</sp-admin-badge>
                   }
                   @if (hasEndpointConfig(ps.catalog.providerName) && ps.catalog.apiEndpoint) {
                     <sp-admin-badge tone="info">Endpoint set</sp-admin-badge>
@@ -212,38 +213,22 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 </div>
                 <div class="flex items-center gap-2">
                   @if (hasEndpointConfig(ps.catalog.providerName)) {
-                    <!-- Qwen: single Configure button opens unified form -->
-                    <button (click)="toggleQwenConfig(ps)" class="text-xs font-medium text-indigo-600 hover:underline">
-                      Configure
-                    </button>
+                    <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="toggleQwenConfig(ps)">Configure</sp-admin-button>
                   } @else {
-                    <button (click)="toggleKeyEdit(ps)" class="text-xs font-medium text-indigo-600 hover:underline">
-                      {{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}
-                    </button>
+                    <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="toggleKeyEdit(ps)">{{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}</sp-admin-button>
                   }
-                  <button (click)="runTest(ps)" [disabled]="ps.testBusy"
-                    class="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50 transition-colors">
-                    @if (ps.testBusy) {
-                      <span class="animate-spin h-3 w-3 border-2 border-slate-400 border-t-transparent rounded-full"></span>
-                      Testing all models…
-                    } @else {
-                      Test connection
-                    }
-                  </button>
+                  <sp-admin-button variant="neutral" appearance="outline" size="sm" [loading]="ps.testBusy" [disabled]="ps.testBusy" (click)="runTest(ps)">Test connection</sp-admin-button>
                 </div>
               </div>
 
               <!-- Model test chips -->
               <div class="flex flex-wrap gap-2">
                 @for (m of ps.catalog.modelTests; track m.modelName) {
-                  <div [class]="modelChipClass(m)" [title]="modelChipTitle(m)">
-                    <span [class]="modelDotClass(m)"></span>
+                  <sp-admin-badge [tone]="modelChipTone(m)" [dot]="true" [title]="modelChipTitle(m)">
                     <span class="font-mono">{{ m.modelName }}</span>
-                    @if (hasBeenTested(m)) {
-                      @if (m.ok) { <span class="opacity-60">{{ m.latencyMs }}ms</span> }
-                      @else { <span>✗</span> }
-                    }
-                  </div>
+                    @if (hasBeenTested(m) && m.ok) { <span class="opacity-60 ml-1">{{ m.latencyMs }}ms</span> }
+                    @if (hasBeenTested(m) && !m.ok) { <span class="ml-1">✗</span> }
+                  </sp-admin-badge>
                 }
               </div>
 
@@ -277,8 +262,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   @if (ps.catalog.hasApiKey) {
                     <sp-admin-button variant="danger" (click)="clearKey(ps)">Clear key</sp-admin-button>
                   }
-                  <button (click)="ps.editingKey = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
-                  @if (ps.saveKeyError) { <p class="w-full text-xs text-red-600">{{ ps.saveKeyError }}</p> }
+                  <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
+                  @if (ps.saveKeyError) { <sp-admin-alert variant="error" class="w-full">{{ ps.saveKeyError }}</sp-admin-alert> }
                 </div>
               }
 
@@ -305,9 +290,9 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   </div>
                   <div class="flex flex-wrap gap-3 items-center pt-1">
                     <sp-admin-button [loading]="ps.saveKeyBusy || ps.saveEndpointBusy" [disabled]="ps.saveKeyBusy || ps.saveEndpointBusy" (click)="saveQwenConfig(ps)">Save</sp-admin-button>
-                    <button (click)="ps.editingKey = false" class="text-xs text-slate-400 hover:underline">Cancel</button>
+                    <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
                     @if (ps.saveKeyError || ps.saveEndpointError) {
-                      <p class="text-xs text-red-600">{{ ps.saveKeyError || ps.saveEndpointError }}</p>
+                      <sp-admin-alert variant="error" class="w-full">{{ ps.saveKeyError || ps.saveEndpointError }}</sp-admin-alert>
                     }
                   </div>
                   <!-- Current values summary -->
@@ -329,8 +314,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
-    </sp-admin-page-body>
     }
+    </sp-admin-page-body>
   `,
   styles: [`
     .sp-adm-native-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
@@ -478,17 +463,9 @@ export class AdminAiConfigComponent implements OnInit {
     return m.testedAt !== '0001-01-01T00:00:00' && m.testedAt !== null;
   }
 
-  modelChipClass(m: ModelTestStatus): string {
-    const base = 'inline-flex items-center gap-1.5 text-xs rounded-lg border px-2 py-1';
-    if (!this.hasBeenTested(m)) return `${base} border-slate-200 bg-slate-50 text-slate-500`;
-    return m.ok
-      ? `${base} border-emerald-200 bg-emerald-50 text-emerald-700`
-      : `${base} border-red-200 bg-red-50 text-red-600`;
-  }
-
-  modelDotClass(m: ModelTestStatus): string {
-    if (!this.hasBeenTested(m)) return 'w-1.5 h-1.5 rounded-full bg-slate-300';
-    return m.ok ? 'w-1.5 h-1.5 rounded-full bg-emerald-500' : 'w-1.5 h-1.5 rounded-full bg-red-500';
+  modelChipTone(m: ModelTestStatus): 'neutral' | 'success' | 'danger' {
+    if (!this.hasBeenTested(m)) return 'neutral';
+    return m.ok ? 'success' : 'danger';
   }
 
   modelChipTitle(m: ModelTestStatus): string {

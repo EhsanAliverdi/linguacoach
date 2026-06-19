@@ -1,0 +1,282 @@
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+import { AdminAiConfigComponent } from './admin-ai-config.component';
+import { AdminApiService } from '../../../core/services/admin.api.service';
+import { AiConfigCategoryItem, AiProviderCatalogItem } from '../../../core/models/admin.models';
+
+const CAT_LLM: AiConfigCategoryItem = {
+  id: 'cat-1',
+  categoryKey: 'llm.default',
+  displayName: 'Default LLM',
+  providerName: 'anthropic',
+  modelName: 'claude-sonnet-4-6',
+  voiceName: null,
+};
+
+const CAT_TTS: AiConfigCategoryItem = {
+  id: 'cat-2',
+  categoryKey: 'tts.listening',
+  displayName: 'TTS Listening',
+  providerName: 'openai',
+  modelName: 'tts-1',
+  voiceName: 'onyx',
+};
+
+const CAT_UNSET: AiConfigCategoryItem = {
+  id: 'cat-3',
+  categoryKey: 'llm.evaluation',
+  displayName: 'Evaluation LLM',
+  providerName: null,
+  modelName: null,
+  voiceName: null,
+};
+
+const PROVIDER: AiProviderCatalogItem = {
+  providerName: 'anthropic',
+  models: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+  hasApiKey: true,
+  apiEndpoint: null,
+  modelTests: [
+    { modelName: 'claude-sonnet-4-6', ok: true, latencyMs: 320, error: null, testedAt: '2026-06-19T10:00:00Z' },
+    { modelName: 'claude-haiku-4-5-20251001', ok: false, latencyMs: 0, error: 'Auth failed', testedAt: '2026-06-19T10:01:00Z' },
+    { modelName: 'claude-opus-4-8', ok: false, latencyMs: 0, error: null, testedAt: '0001-01-01T00:00:00' },
+  ],
+};
+
+function makeAdminApi(
+  categories: AiConfigCategoryItem[] = [CAT_LLM, CAT_TTS],
+  catalog: AiProviderCatalogItem[] = [PROVIDER],
+) {
+  return {
+    listAiCategories: jasmine.createSpy('listAiCategories').and.returnValue(of(categories)),
+    listAiProviders: jasmine.createSpy('listAiProviders').and.returnValue(of(catalog)),
+    updateAiCategory: jasmine.createSpy('updateAiCategory').and.returnValue(of(CAT_LLM)),
+    testAiCategory: jasmine.createSpy('testAiCategory').and.returnValue(of({ ok: true, latencyMs: 200, error: null })),
+    setProviderApiKey: jasmine.createSpy('setProviderApiKey').and.returnValue(of(PROVIDER)),
+    setProviderEndpoint: jasmine.createSpy('setProviderEndpoint').and.returnValue(of(PROVIDER)),
+    testProvider: jasmine.createSpy('testProvider').and.returnValue(of(PROVIDER)),
+    addProviderModel: jasmine.createSpy('addProviderModel').and.returnValue(of(PROVIDER)),
+    testProviderModel: jasmine.createSpy('testProviderModel').and.returnValue(of(PROVIDER)),
+  };
+}
+
+describe('AdminAiConfigComponent', () => {
+  let fixture: ComponentFixture<AdminAiConfigComponent>;
+  let component: AdminAiConfigComponent;
+  let adminApi: ReturnType<typeof makeAdminApi>;
+
+  async function setup(
+    categories: AiConfigCategoryItem[] = [CAT_LLM, CAT_TTS],
+    catalog: AiProviderCatalogItem[] = [PROVIDER],
+  ) {
+    adminApi = makeAdminApi(categories, catalog);
+    await TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminAiConfigComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('renders the page', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('AI Configuration');
+  });
+
+  it('calls listAiCategories and listAiProviders on init', async () => {
+    await setup();
+    expect(adminApi.listAiCategories).toHaveBeenCalledTimes(1);
+    expect(adminApi.listAiProviders).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows loading state before data arrives', () => {
+    adminApi = makeAdminApi();
+    // Don't call setup — create manually with synchronous-pending observable
+    // loading() starts as true; just check the signal default
+    // We test the rendered state via the loading signal directly
+    TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    });
+    fixture = TestBed.createComponent(AdminAiConfigComponent);
+    component = fixture.componentInstance;
+    expect(component.loading()).toBeTrue();
+  });
+
+  it('shows error state on load failure', async () => {
+    adminApi = makeAdminApi();
+    adminApi.listAiCategories.and.returnValue(throwError(() => ({ error: { error: 'Server down' } })));
+    await TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminAiConfigComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('unavailable');
+  });
+
+  it('renders LLM category rows', async () => {
+    await setup([CAT_LLM, CAT_UNSET], [PROVIDER]);
+    expect(fixture.nativeElement.textContent).toContain('Default LLM');
+    expect(fixture.nativeElement.textContent).toContain('Evaluation LLM');
+  });
+
+  it('renders TTS category rows', async () => {
+    await setup([CAT_TTS], []);
+    expect(fixture.nativeElement.textContent).toContain('TTS Listening');
+  });
+
+  it('renders configured badge for set category', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(fixture.nativeElement.textContent).toContain('Configured');
+  });
+
+  it('renders not-set badge for unset category', async () => {
+    await setup([CAT_UNSET], []);
+    expect(fixture.nativeElement.textContent).toContain('Not set');
+  });
+
+  it('renders TTS disabled badge for unset TTS category', async () => {
+    await setup([{ ...CAT_TTS, providerName: null }], []);
+    expect(fixture.nativeElement.textContent).toContain('TTS disabled');
+  });
+
+  it('renders provider rows', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(fixture.nativeElement.textContent).toContain('anthropic');
+  });
+
+  it('renders key-stored badge for provider with key', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(fixture.nativeElement.textContent).toContain('Key stored');
+  });
+
+  it('renders env-var badge for provider without key', async () => {
+    await setup([CAT_LLM], [{ ...PROVIDER, hasApiKey: false }]);
+    expect(fixture.nativeElement.textContent).toContain('Env var');
+  });
+
+  it('renders model test chips for each model', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(fixture.nativeElement.textContent).toContain('claude-sonnet-4-6');
+    expect(fixture.nativeElement.textContent).toContain('claude-haiku-4-5-20251001');
+  });
+
+  it('calls updateAiCategory on saveCategory', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const cs = component.llmCategories()[0];
+    component.saveCategory(cs);
+    tick();
+    expect(adminApi.updateAiCategory).toHaveBeenCalledWith('llm.default', jasmine.objectContaining({ providerName: 'anthropic' }));
+  }));
+
+  it('calls testAiCategory on testCategory', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const cs = component.llmCategories()[0];
+    component.testCategory(cs);
+    tick();
+    expect(adminApi.testAiCategory).toHaveBeenCalledWith('llm.default');
+    expect(cs.testResult).toContain('OK');
+  }));
+
+  it('calls testProvider on runTest', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    component.runTest(ps);
+    tick();
+    expect(adminApi.testProvider).toHaveBeenCalledWith('anthropic');
+  }));
+
+  it('calls setProviderApiKey on saveKey', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    ps.editingKey = true;
+    ps.editKeyValue = 'sk-test';
+    component.saveKey(ps);
+    tick();
+    expect(adminApi.setProviderApiKey).toHaveBeenCalledWith('anthropic', 'sk-test');
+    expect(ps.editingKey).toBeFalse();
+  }));
+
+  it('calls clearKey with null on clearKey', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    component.clearKey(ps);
+    tick();
+    expect(adminApi.setProviderApiKey).toHaveBeenCalledWith('anthropic', null);
+  }));
+
+  it('calls addProviderModel on addModel', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    ps.newModelName = 'claude-new-model';
+    component.addModel(ps);
+    tick();
+    expect(adminApi.addProviderModel).toHaveBeenCalledWith('anthropic', 'claude-new-model');
+  }));
+
+  it('does not call addProviderModel when modelName is blank', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    ps.newModelName = '  ';
+    component.addModel(ps);
+    tick();
+    expect(adminApi.addProviderModel).not.toHaveBeenCalled();
+  }));
+
+  it('calls testProviderModel on testOneModel', fakeAsync(async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    ps.newModelName = 'claude-new-model';
+    component.testOneModel(ps);
+    tick();
+    expect(adminApi.testProviderModel).toHaveBeenCalledWith('anthropic', 'claude-new-model');
+  }));
+
+  it('modelChipTone returns neutral for untested model', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const untested = PROVIDER.modelTests[2];
+    expect(component.modelChipTone(untested)).toBe('neutral');
+  });
+
+  it('modelChipTone returns success for passing model', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(component.modelChipTone(PROVIDER.modelTests[0])).toBe('success');
+  });
+
+  it('modelChipTone returns danger for failing model', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(component.modelChipTone(PROVIDER.modelTests[1])).toBe('danger');
+  });
+
+  it('toggleKeyEdit toggles editingKey', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const ps = component.providers()[0];
+    expect(ps.editingKey).toBeFalse();
+    component.toggleKeyEdit(ps);
+    expect(ps.editingKey).toBeTrue();
+    component.toggleKeyEdit(ps);
+    expect(ps.editingKey).toBeFalse();
+  });
+
+  it('llmCategories returns only llm. prefixed categories', async () => {
+    await setup([CAT_LLM, CAT_TTS, CAT_UNSET], [PROVIDER]);
+    const keys = component.llmCategories().map(cs => cs.item.categoryKey);
+    expect(keys).toContain('llm.default');
+    expect(keys).toContain('llm.evaluation');
+    expect(keys).not.toContain('tts.listening');
+  });
+
+  it('ttsCategories returns only tts. prefixed categories', async () => {
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER]);
+    const keys = component.ttsCategories().map(cs => cs.item.categoryKey);
+    expect(keys).toContain('tts.listening');
+    expect(keys).not.toContain('llm.default');
+  });
+});
