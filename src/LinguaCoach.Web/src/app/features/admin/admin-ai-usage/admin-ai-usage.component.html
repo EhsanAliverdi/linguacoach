@@ -94,9 +94,9 @@
           @for (item of pagedRecentItems(); track item.id) {
             <tr>
               <td class="sp-admin-mono">{{ formatTime(item.createdAt) }}</td>
-              <td class="sp-admin-table-truncate" [title]="featureLabel(item.featureKey)">{{ featureLabel(item.featureKey) }}</td>
-              <td class="sp-admin-cap sp-admin-table-truncate" [title]="item.provider">{{ item.provider }}</td>
-              <td class="sp-admin-muted sp-admin-table-truncate" [title]="item.model">{{ item.model }}</td>
+              <td><sp-admin-truncated-text [value]="featureLabel(item.featureKey)" [maxLength]="28" /></td>
+              <td><sp-admin-truncated-text [value]="item.provider" [maxLength]="20" /></td>
+              <td><sp-admin-code-pill [value]="item.model" tone="neutral" [maxLength]="24" /></td>
               <td>
                 <sp-admin-badge [tone]="item.wasSuccessful ? 'success' : 'danger'">
                   {{ item.wasSuccessful ? 'OK' : 'Failed' }}
@@ -110,7 +110,13 @@
                 }
               </td>
               <td class="sp-admin-num">{{ item.durationMs }}ms</td>
-              <td class="sp-admin-mono sp-admin-table-truncate" [title]="item.correlationId ?? '-'">{{ item.correlationId ?? '-' }}</td>
+              <td>
+                @if (item.correlationId) {
+                  <sp-admin-copyable-text [value]="item.correlationId" [maxLength]="12" [mono]="true" />
+                } @else {
+                  <span class="sp-admin-muted">-</span>
+                }
+              </td>
             </tr>
           }
         </tbody>

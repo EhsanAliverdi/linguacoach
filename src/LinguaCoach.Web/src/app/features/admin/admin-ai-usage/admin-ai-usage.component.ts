@@ -4,6 +4,8 @@ import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core
 import {
   SpAdminBadgeComponent,
   SpAdminCardComponent,
+  SpAdminCodePillComponent,
+  SpAdminCopyableTextComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
@@ -12,6 +14,7 @@ import {
   SpAdminPaginationComponent,
   SpAdminStatCardComponent,
   SpAdminTableComponent,
+  SpAdminTruncatedTextComponent,
 } from '../../../admin';
 
 @Component({
@@ -21,6 +24,8 @@ import {
     CommonModule,
     SpAdminBadgeComponent,
     SpAdminCardComponent,
+    SpAdminCodePillComponent,
+    SpAdminCopyableTextComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminLoadingStateComponent,
@@ -29,6 +34,7 @@ import {
     SpAdminPaginationComponent,
     SpAdminStatCardComponent,
     SpAdminTableComponent,
+    SpAdminTruncatedTextComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
   styles: [`

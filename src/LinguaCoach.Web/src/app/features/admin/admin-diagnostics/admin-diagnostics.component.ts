@@ -6,6 +6,7 @@ import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
+  SpAdminCopyableTextComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
@@ -18,7 +19,9 @@ import {
   SpAdminSelectComponent,
   SpAdminStatCardComponent,
   SpAdminTableComponent,
+  SpAdminTruncatedTextComponent,
 } from '../../../admin';
+import { eventLevelLabel } from '../../../admin/utils/admin-badge.utils';
 
 @Component({
   selector: 'app-admin-diagnostics',
@@ -29,6 +32,7 @@ import {
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
+    SpAdminCopyableTextComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
@@ -41,6 +45,7 @@ import {
     SpAdminSelectComponent,
     SpAdminStatCardComponent,
     SpAdminTableComponent,
+    SpAdminTruncatedTextComponent,
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
@@ -174,6 +179,8 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       default: return 'var(--sp-canvas2)';
     }
   }
+
+  readonly eventLevelLabel = eventLevelLabel;
 
   levelTone(level: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
     switch (level?.toLowerCase()) {

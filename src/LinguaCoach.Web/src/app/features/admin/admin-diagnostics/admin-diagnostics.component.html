@@ -112,11 +112,17 @@
             <tr>
               <td class="sp-admin-mono">{{ formatTime(event.timestampUtc) }}</td>
               <td>
-                <sp-admin-badge [tone]="levelTone(event.level)">{{ event.level }}</sp-admin-badge>
+                <sp-admin-badge [tone]="levelTone(event.level)">{{ eventLevelLabel(event.level) }}</sp-admin-badge>
               </td>
-              <td class="sp-admin-muted sp-admin-table-truncate" [title]="event.category">{{ event.category }}</td>
+              <td><sp-admin-truncated-text [value]="event.category" [maxLength]="32" /></td>
               <td class="sp-admin-table-wrap" [title]="event.message">{{ event.message }}</td>
-              <td class="sp-admin-mono">{{ event.correlationId ?? '-' }}</td>
+              <td>
+                @if (event.correlationId) {
+                  <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
+                } @else {
+                  <span class="sp-admin-muted">-</span>
+                }
+              </td>
             </tr>
           }
         </tbody>

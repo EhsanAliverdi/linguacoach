@@ -11,6 +11,7 @@ import {
 import {
   SpAdminCardComponent,
   SpAdminBadgeComponent,
+  SpAdminCopyableTextComponent,
   SpAdminErrorStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -24,7 +25,7 @@ import {
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminErrorStateComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent, SpAdminTableComponent],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent, SpAdminTableComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
     .sp-admin-integration-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}

@@ -1328,3 +1328,168 @@ describe('Phase 10X-K-1 — shell components', () => {
     expect(fixture.componentInstance.signedOut).toBeTrue();
   });
 });
+
+// ── Phase 10X-K-6: text helper components ────────────────────────────────────
+import { SpAdminTruncatedTextComponent } from './truncated-text/sp-admin-truncated-text.component';
+import { SpAdminCopyableTextComponent } from './copyable-text/sp-admin-copyable-text.component';
+import { SpAdminCodePillComponent } from './code-pill/sp-admin-code-pill.component';
+
+describe('admin text helper components — Phase 10X-K-6', () => {
+  beforeEach(() => TestBed.configureTestingModule({}));
+
+  // sp-admin-truncated-text
+  it('truncated-text renders full value when under maxLength', () => {
+    const fixture = TestBed.createComponent(SpAdminTruncatedTextComponent);
+    fixture.componentInstance.value = 'short';
+    fixture.componentInstance.maxLength = 20;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent.trim()).toBe('short');
+  });
+
+  it('truncated-text truncates value and appends ellipsis when over maxLength', () => {
+    const fixture = TestBed.createComponent(SpAdminTruncatedTextComponent);
+    fixture.componentInstance.value = 'writing.exercise.feedback.v3';
+    fixture.componentInstance.maxLength = 10;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent.trim()).toBe('writing.ex…');
+  });
+
+  it('truncated-text sets title to full value', () => {
+    const fixture = TestBed.createComponent(SpAdminTruncatedTextComponent);
+    fixture.componentInstance.value = 'some.long.key';
+    fixture.componentInstance.maxLength = 5;
+    fixture.detectChanges();
+    const span = fixture.nativeElement.querySelector('span');
+    expect(span.title).toBe('some.long.key');
+  });
+
+  // sp-admin-code-pill
+  it('code-pill renders value', () => {
+    const fixture = TestBed.createComponent(SpAdminCodePillComponent);
+    fixture.componentInstance.value = 'claude-sonnet-4-6';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent.trim()).toBe('claude-sonnet-4-6');
+  });
+
+  it('code-pill truncates and shows full value in title', () => {
+    const fixture = TestBed.createComponent(SpAdminCodePillComponent);
+    fixture.componentInstance.value = 'writing.exercise.fill-in-blank';
+    fixture.componentInstance.maxLength = 10;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent.trim()).toBe('writing.ex…');
+    expect(fixture.nativeElement.querySelector('span').title).toBe('writing.exercise.fill-in-blank');
+  });
+
+  // sp-admin-copyable-text
+  it('copyable-text renders display value', () => {
+    const fixture = TestBed.createComponent(SpAdminCopyableTextComponent);
+    fixture.componentInstance.value = 'abc123def456';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('abc123def456');
+  });
+
+  it('copyable-text renders copy button', () => {
+    const fixture = TestBed.createComponent(SpAdminCopyableTextComponent);
+    fixture.componentInstance.value = 'abc123';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('button[aria-label]')).not.toBeNull();
+  });
+
+  it('copyable-text truncates value when over maxLength', () => {
+    const fixture = TestBed.createComponent(SpAdminCopyableTextComponent);
+    fixture.componentInstance.value = 'abc123def456xyz';
+    fixture.componentInstance.maxLength = 6;
+    fixture.detectChanges();
+    const span: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-copy-text');
+    expect(span.textContent!.trim()).toBe('abc123…');
+  });
+
+  it('copyable-text shows full value in title', () => {
+    const fixture = TestBed.createComponent(SpAdminCopyableTextComponent);
+    fixture.componentInstance.value = 'abc123def456xyz';
+    fixture.componentInstance.maxLength = 6;
+    fixture.detectChanges();
+    const span: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-copy-text');
+    expect(span.title).toBe('abc123def456xyz');
+  });
+
+  it('copyable-text uses displayValue when provided', () => {
+    const fixture = TestBed.createComponent(SpAdminCopyableTextComponent);
+    fixture.componentInstance.value = 'abc123def456xyz';
+    fixture.componentInstance.displayValue = 'Custom label';
+    fixture.detectChanges();
+    const span: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-copy-text');
+    expect(span.textContent!.trim()).toBe('Custom label');
+  });
+});
+
+import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone, eventLevelLabel } from '../utils/admin-badge.utils';
+
+describe('admin-badge.utils — Phase 10X-K-7', () => {
+  describe('lifecycleLabel', () => {
+    it('maps known stages to human labels', () => {
+      expect(lifecycleLabel('PasswordChangeRequired')).toBe('Password change required');
+      expect(lifecycleLabel('ActiveLearning')).toBe('Active learning');
+      expect(lifecycleLabel('CourseReady')).toBe('Course ready');
+    });
+    it('returns the raw value for unknown stages', () => {
+      expect(lifecycleLabel('SomeUnknownStage')).toBe('SomeUnknownStage');
+    });
+  });
+
+  describe('lifecycleTone', () => {
+    it('returns success for active stages', () => {
+      expect(lifecycleTone('InLesson')).toBe('success');
+      expect(lifecycleTone('ActiveLearning')).toBe('success');
+    });
+    it('returns warning for required-action stages', () => {
+      expect(lifecycleTone('OnboardingRequired')).toBe('warning');
+      expect(lifecycleTone('PlacementRequired')).toBe('warning');
+    });
+    it('returns neutral for Archived', () => {
+      expect(lifecycleTone('Archived')).toBe('neutral');
+    });
+    it('falls back to neutral for unknown stages', () => {
+      expect(lifecycleTone('UnknownStage')).toBe('neutral');
+    });
+  });
+
+  describe('onboardingLabel', () => {
+    it('maps known statuses', () => {
+      expect(onboardingLabel('Complete')).toBe('Complete');
+      expect(onboardingLabel('InProgress')).toBe('In progress');
+      expect(onboardingLabel('NotStarted')).toBe('Not started');
+    });
+    it('returns raw value for unknown', () => {
+      expect(onboardingLabel('Whatever')).toBe('Whatever');
+    });
+  });
+
+  describe('onboardingTone', () => {
+    it('returns success for Complete', () => {
+      expect(onboardingTone('Complete')).toBe('success');
+    });
+    it('returns warning for not-started states', () => {
+      expect(onboardingTone('NotStarted')).toBe('warning');
+      expect(onboardingTone('Pending')).toBe('warning');
+    });
+    it('falls back to neutral for unknown', () => {
+      expect(onboardingTone('Unknown')).toBe('neutral');
+    });
+  });
+
+  describe('eventLevelLabel', () => {
+    it('maps Information to Info', () => {
+      expect(eventLevelLabel('Information')).toBe('Info');
+    });
+    it('passes through Warning, Error, Debug, Critical unchanged', () => {
+      expect(eventLevelLabel('Warning')).toBe('Warning');
+      expect(eventLevelLabel('Error')).toBe('Error');
+      expect(eventLevelLabel('Debug')).toBe('Debug');
+      expect(eventLevelLabel('Critical')).toBe('Critical');
+    });
+    it('returns raw value for unknown level', () => {
+      expect(eventLevelLabel('Verbose')).toBe('Verbose');
+    });
+  });
+});

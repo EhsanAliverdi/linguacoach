@@ -144,7 +144,7 @@
           <tbody>
             @for (row of b.readyBufferPerStudent; track row.studentProfileId) {
               <tr>
-                <td class="sp-admin-mono">{{ row.studentProfileId }}</td>
+                <td><sp-admin-copyable-text [value]="row.studentProfileId" [maxLength]="16" [mono]="true" /></td>
                 <td class="sp-admin-num">{{ row.readyCount }}</td>
               </tr>
             }

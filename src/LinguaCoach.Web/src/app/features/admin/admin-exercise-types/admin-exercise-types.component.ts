@@ -6,6 +6,7 @@ import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminCodePillComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
@@ -23,6 +24,7 @@ import {
     FormsModule,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminCodePillComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminLoadingStateComponent,
@@ -67,7 +69,7 @@ import {
               <tr>
                 <td class="sp-admin-wide-cell sp-admin-table-wrap">
                   <strong>{{ type.displayName }}</strong>
-                  <div class="sp-admin-mono">{{ type.key }}</div>
+                  <sp-admin-code-pill [value]="type.key" tone="neutral" />
                   <div class="sp-admin-muted">{{ type.description }}</div>
                 </td>
                 <td class="sp-admin-table-truncate">
@@ -81,7 +83,7 @@ import {
                   <sp-admin-badge [tone]="type.implementationStatus === 'ready' ? 'success' : 'warning'">
                     {{ type.implementationStatus === 'ready' ? 'Ready' : 'Not implemented' }}
                   </sp-admin-badge>
-                  <div class="sp-admin-muted">{{ type.isEnabled ? 'Enabled' : 'Disabled' }}</div>
+                  <sp-admin-badge [tone]="type.isEnabled ? 'success' : 'neutral'">{{ type.isEnabled ? 'Enabled' : 'Disabled' }}</sp-admin-badge>
                 </td>
                 <td class="sp-admin-muted">
                   <div>Practice: {{ type.supportsPracticeGym ? 'yes' : 'no' }}</div>

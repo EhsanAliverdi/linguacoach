@@ -6,6 +6,7 @@ import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
+import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
   firstName: string;
@@ -72,10 +73,10 @@ interface StudentEditForm {
                     <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
                   </td>
                   <td>
-                    <sp-admin-badge [tone]="s.lifecycleStage === 'Archived' ? 'neutral' : 'primary'">{{ s.lifecycleStage }}</sp-admin-badge>
+                    <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
                   </td>
                   <td>
-                    <sp-admin-badge [tone]="s.onboardingStatus === 'Complete' ? 'success' : 'warning'">{{ s.onboardingStatus }}</sp-admin-badge>
+                    <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
                   </td>
                   <td>
                     @if (s.cefrLevel) {
@@ -670,6 +671,11 @@ export class AdminStudentsComponent implements OnInit {
       confirmEmail: '',
     };
   }
+
+  readonly lifecycleLabel = lifecycleLabel;
+  readonly lifecycleTone = lifecycleTone;
+  readonly onboardingLabel = onboardingLabel;
+  readonly onboardingTone = onboardingTone;
 
   confirmEmailLabel(email: string): string {
     return `Type the student email to confirm: ${email}`;

@@ -7,6 +7,7 @@ import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
+  SpAdminCodePillComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
@@ -33,6 +34,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
+    SpAdminCodePillComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
@@ -129,7 +131,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
             <tbody>
               @for (p of pagedPrompts(); track p.id) {
                 <tr>
-                  <td class="sp-admin-table-mono sp-admin-table-truncate" [title]="p.key">{{ p.key }}</td>
+                  <td><sp-admin-code-pill [value]="p.key" tone="neutral" [maxLength]="48" /></td>
                   <td class="sp-admin-num">v{{ p.version }}</td>
                   <td>
                     <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
