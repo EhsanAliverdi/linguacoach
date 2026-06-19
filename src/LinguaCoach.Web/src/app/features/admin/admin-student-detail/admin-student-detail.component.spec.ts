@@ -5,7 +5,7 @@ import { AdminStudentDetailComponent } from './admin-student-detail.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo, StudentAuditHistoryItem } from '../../../core/models/admin.models';
 
 function makePolicy(overrides: Partial<UsagePolicy> = {}): UsagePolicy {
   return {
@@ -134,6 +134,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
   beforeEach(() => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -144,6 +145,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
     adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -309,6 +311,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   beforeEach(() => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -318,6 +321,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
 
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -486,6 +490,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   function setup(overrides: Partial<AdminStudentDetail> = {}) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -496,6 +501,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudent.and.returnValue(of(makeStudentDetail(overrides)));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -529,6 +535,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   it('shows loading state before response', () => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -540,6 +547,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudent.and.returnValue(new Subject<AdminStudentDetail>().asObservable());
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -562,6 +570,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   it('shows error state when getStudent fails', () => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -572,6 +581,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudent.and.returnValue(throwError(() => ({ status: 500 })));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -594,6 +604,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   it('shows 404 error message when student not found', () => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -604,6 +615,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudent.and.returnValue(throwError(() => ({ status: 404 })));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -684,6 +696,7 @@ describe('AdminStudentDetailComponent — admin CEFR management', () => {
   function setup(cefrLevel: string | null = 'B2') {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
     ]);
@@ -695,6 +708,7 @@ describe('AdminStudentDetailComponent — admin CEFR management', () => {
     adminApi.getStudent.and.returnValue(of(makeStudentDetail({ cefrLevel })));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -830,6 +844,7 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
   function setup(lifecycleStage = 'CourseReady') {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent',
     ]);
@@ -841,6 +856,7 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
     adminApi.getStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: lifecycleStage as any })));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
 
@@ -992,5 +1008,122 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
     comp.confirmLifecycleAction();
     fixture.detectChanges();
     expect(comp.lifecycleActionError()).toBe('Cannot pause an archived student.');
+  });
+});
+
+// ── Audit History section ─────────────────────────────────────────────────────
+
+function makeAuditItem(overrides: Partial<StudentAuditHistoryItem> = {}): StudentAuditHistoryItem {
+  return {
+    id: 'audit-1',
+    source: 'AdminAuditLog',
+    action: 'SetCefr',
+    actorId: 'admin-1',
+    timestamp: '2026-06-01T10:00:00Z',
+    ...overrides,
+  };
+}
+
+describe('AdminStudentDetailComponent — audit history section', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(auditItems: StudentAuditHistoryItem[] = [], auditError = false) {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    if (auditError) {
+      adminApi.getStudentAuditHistory.and.returnValue(throwError(() => new Error('network')));
+    } else {
+      adminApi.getStudentAuditHistory.and.returnValue(of(auditItems));
+    }
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('getStudentAuditHistory method exists on admin API service', () => {
+    setup();
+    expect(adminApi.getStudentAuditHistory).toBeDefined();
+  });
+
+  it('renders Audit history section heading', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Audit history');
+  });
+
+  it('shows loading state while fetching audit history', () => {
+    setup();
+    adminApi.getStudentAuditHistory.and.returnValue(new Subject<StudentAuditHistoryItem[]>().asObservable());
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.auditHistoryLoading()).toBeTrue();
+  });
+
+  it('shows empty state when audit list is empty', () => {
+    setup([]);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No admin actions recorded for this student.');
+  });
+
+  it('renders audit rows when history items are present', () => {
+    setup([makeAuditItem({ action: 'SetCefr', source: 'AdminAuditLog' })]);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('SetCefr');
+  });
+
+  it('renders reason and old/new values when present', () => {
+    setup([makeAuditItem({ reason: 'Test reason', oldValue: 'B1', newValue: 'C1' })]);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Test reason');
+    expect(html.textContent).toContain('B1');
+    expect(html.textContent).toContain('C1');
+  });
+
+  it('shows error state when audit history fetch fails', () => {
+    setup([], true);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Could not load audit history.');
+  });
+
+  it('has no edit or delete controls on audit rows', () => {
+    setup([makeAuditItem(), makeAuditItem({ id: 'audit-2', action: 'Archive' })]);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    // Find the audit history section by aria-label
+    const auditSection = html.querySelector('[aria-label="Audit history"]') as HTMLElement | null;
+    expect(auditSection).toBeTruthy();
+    const buttons = auditSection ? Array.from(auditSection.querySelectorAll('button')) as HTMLButtonElement[] : [];
+    const hasEditDelete = buttons.some(b => /^(edit|delete|remove)$/i.test(b.textContent?.trim() ?? ''));
+    expect(hasEditDelete).toBeFalse();
   });
 });

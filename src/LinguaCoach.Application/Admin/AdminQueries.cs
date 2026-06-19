@@ -72,6 +72,20 @@ public sealed record AdminActivityHistoryItem(
     bool? Completed,
     DateTime CreatedAt);
 
+public sealed record StudentAuditHistoryItemDto(
+    string Id,
+    string Source,
+    string Action,
+    string? ActorId,
+    string? ActorEmail,
+    DateTimeOffset Timestamp,
+    string? Summary,
+    string? Reason,
+    string? OldValue,
+    string? NewValue,
+    string? CorrelationId,
+    string? Details);
+
 // ── Student detail ────────────────────────────────────────────────────────────
 
 public sealed record StudentOnboardingProgressInfo(
@@ -132,6 +146,7 @@ public interface IAdminStudentQuery
     Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default);
     Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AdminActivityHistoryItem>> GetActivityHistoryAsync(Guid studentProfileId, CancellationToken ct = default);
+    Task<IReadOnlyList<StudentAuditHistoryItemDto>?> GetStudentAuditHistoryAsync(Guid studentProfileId, CancellationToken ct = default);
 }
 
 // ── Student lifecycle reset ─────────────────────────────────────────────────

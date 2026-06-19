@@ -8,6 +8,7 @@ import {
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
+  StudentAuditHistoryItem,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -57,6 +58,9 @@ export class AdminApiService {
   }
   getActivityHistory(studentProfileId: string): Observable<AdminActivityHistoryItem[]> {
     return this.http.get<AdminActivityHistoryItem[]>(`${this.api}/students/${studentProfileId}/activity-history`);
+  }
+  getStudentAuditHistory(studentProfileId: string): Observable<StudentAuditHistoryItem[]> {
+    return this.http.get<StudentAuditHistoryItem[]>(`${this.api}/students/${studentProfileId}/audit-history`);
   }
 
   // Prompts

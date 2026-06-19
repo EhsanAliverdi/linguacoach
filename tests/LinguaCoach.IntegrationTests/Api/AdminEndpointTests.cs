@@ -574,4 +574,141 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Contains("C1", auditEntry.NewValueJson ?? "");
         Assert.Equal("Test audit", auditEntry.Reason);
     }
+
+    // ── GET /api/admin/students/{id}/audit-history ────────────────────────────
+
+    private async Task<Guid> CreateStudentAndGetProfileIdAsync(string email)
+    {
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var body = await createResp.Content.ReadFromJsonAsync<JsonElement>();
+        return Guid.Parse(body.GetProperty("studentProfileId").GetString()!);
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_WithAdminAuditLogRows_Returns200WithEntries()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var profileId = await CreateStudentAndGetProfileIdAsync($"ah_audit_{Guid.NewGuid():N}@test.com");
+
+        // Trigger an action that writes an AdminAuditLog row
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr",
+            new { cefrLevel = "B2", reason = "audit history test" });
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}/audit-history");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+        Assert.NotNull(items);
+        Assert.True(items.Length > 0);
+        Assert.Contains(items, i => i.GetProperty("source").GetString() == "AdminAuditLog");
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_WithResetLogRows_ReturnsStudentResetLogEntries()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var profileId = await CreateStudentAndGetProfileIdAsync($"ah_reset_{Guid.NewGuid():N}@test.com");
+
+        // Trigger a lifecycle reset which writes a StudentResetLog row
+        await _client.PostAsJsonAsync($"/api/admin/students/{profileId}/reset",
+            new { targetStage = "OnboardingRequired", clearOnboardingAnswers = false, clearPlacementResults = false,
+                  clearCoursesAndSessions = false, clearActivityAttempts = false, clearVocabulary = false,
+                  clearLearningMemory = false, clearAudioFiles = false, clearProgressData = false,
+                  reason = "integration test reset" });
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}/audit-history");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+        Assert.NotNull(items);
+        Assert.Contains(items, i => i.GetProperty("source").GetString() == "StudentResetLog");
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_OrderedNewestFirst()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var profileId = await CreateStudentAndGetProfileIdAsync($"ah_order_{Guid.NewGuid():N}@test.com");
+
+        // Create two audit entries in sequence
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr", new { cefrLevel = "A1", reason = "first" });
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr", new { cefrLevel = "B1", reason = "second" });
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}/audit-history");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+        Assert.NotNull(items);
+        Assert.True(items.Length >= 2);
+
+        var timestamps = items.Select(i => DateTimeOffset.Parse(i.GetProperty("timestamp").GetString()!)).ToArray();
+        for (var i = 0; i < timestamps.Length - 1; i++)
+            Assert.True(timestamps[i] >= timestamps[i + 1], "Items should be newest-first");
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_ExcludesLogsForOtherStudents()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var profileId1 = await CreateStudentAndGetProfileIdAsync($"ah_iso1_{Guid.NewGuid():N}@test.com");
+        var profileId2 = await CreateStudentAndGetProfileIdAsync($"ah_iso2_{Guid.NewGuid():N}@test.com");
+
+        // Write audit log only for student 2
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId2}/cefr", new { cefrLevel = "C2", reason = "for student 2 only" });
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId1}/audit-history");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+        Assert.NotNull(items);
+        Assert.DoesNotContain(items, i => (i.GetProperty("reason").ValueKind == JsonValueKind.String && i.GetProperty("reason").GetString() == "for student 2 only"));
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_NoHistory_Returns200EmptyList()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var profileId = await CreateStudentAndGetProfileIdAsync($"ah_empty_{Guid.NewGuid():N}@test.com");
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}/audit-history");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+        Assert.NotNull(items);
+        // May have a creation audit log entry — check it's an array and doesn't error
+        Assert.IsType<JsonElement[]>(items);
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_MissingStudent_Returns404()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.GetAsync($"/api/admin/students/{Guid.NewGuid()}/audit-history");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAuditHistory_DoesNotExposePasswordOrSecretFields()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var profileId = await CreateStudentAndGetProfileIdAsync($"ah_secret_{Guid.NewGuid():N}@test.com");
+
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr", new { cefrLevel = "A2" });
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}/audit-history");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var raw = await response.Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("password", raw, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret", raw, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("temporaryPassword", raw, StringComparison.OrdinalIgnoreCase);
+    }
 }

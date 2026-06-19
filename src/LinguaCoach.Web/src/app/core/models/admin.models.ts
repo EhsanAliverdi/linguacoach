@@ -10,6 +10,21 @@ export interface AdminActivityHistoryItem {
   createdAt: string;
 }
 
+export interface StudentAuditHistoryItem {
+  id: string;
+  source: 'AdminAuditLog' | 'StudentResetLog';
+  action: string;
+  actorId?: string;
+  actorEmail?: string;
+  timestamp: string;
+  summary?: string;
+  reason?: string;
+  oldValue?: string;
+  newValue?: string;
+  correlationId?: string;
+  details?: string;
+}
+
 export interface AdminStats {
   totalStudents: number;
   onboardedStudents: number;

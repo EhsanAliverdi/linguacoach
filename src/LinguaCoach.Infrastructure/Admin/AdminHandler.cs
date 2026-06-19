@@ -168,6 +168,54 @@ public sealed class AdminHandler :
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<StudentAuditHistoryItemDto>?> GetStudentAuditHistoryAsync(Guid studentProfileId, CancellationToken ct = default)
+    {
+        var exists = await _db.StudentProfiles.AsNoTracking().AnyAsync(p => p.Id == studentProfileId, ct);
+        if (!exists) return null;
+
+        var auditLogs = await _db.AdminAuditLogs
+            .AsNoTracking()
+            .Where(l => l.TargetStudentId == studentProfileId)
+            .Select(l => new StudentAuditHistoryItemDto(
+                l.Id.ToString(),
+                "AdminAuditLog",
+                l.Action,
+                l.ActorAdminUserId.ToString(),
+                null,
+                new DateTimeOffset(l.CreatedAt, TimeSpan.Zero),
+                null,
+                l.Reason,
+                l.OldValueJson,
+                l.NewValueJson,
+                l.CorrelationId,
+                null))
+            .ToListAsync(ct);
+
+        var resetLogs = await _db.StudentResetLogs
+            .AsNoTracking()
+            .Where(r => r.StudentProfileId == studentProfileId)
+            .Select(r => new StudentAuditHistoryItemDto(
+                r.Id.ToString(),
+                "StudentResetLog",
+                $"Reset: {r.PreviousStage} → {r.NewStage}",
+                r.AdminUserId.ToString(),
+                null,
+                new DateTimeOffset(r.PerformedAtUtc, TimeSpan.Zero),
+                null,
+                r.Reason,
+                null,
+                null,
+                r.CorrelationId,
+                r.ClearedItemsJson))
+            .ToListAsync(ct);
+
+        return auditLogs
+            .Concat(resetLogs)
+            .OrderByDescending(x => x.Timestamp)
+            .Take(50)
+            .ToList();
+    }
+
     public async Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default)
     {
         var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)

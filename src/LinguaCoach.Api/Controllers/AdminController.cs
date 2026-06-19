@@ -108,6 +108,13 @@ public sealed class AdminController : ControllerBase
         return detail is null ? NotFound(new { error = "Student not found." }) : Ok(detail);
     }
 
+    [HttpGet("students/{studentId:guid}/audit-history")]
+    public async Task<IActionResult> GetStudentAuditHistory(Guid studentId, CancellationToken ct)
+    {
+        var history = await _studentQuery.GetStudentAuditHistoryAsync(studentId, ct);
+        return history is null ? NotFound(new { error = "Student not found." }) : Ok(history);
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct)
         => Ok(await _studentQuery.GetStatsAsync(ct));

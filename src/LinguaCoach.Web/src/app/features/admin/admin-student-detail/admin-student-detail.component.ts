@@ -6,7 +6,7 @@ import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
-  AdminStudentDetail,
+  AdminStudentDetail, StudentAuditHistoryItem,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -384,6 +384,78 @@ interface StudentEditForm {
             </table>
           }
         </section>
+
+        <section class="sp-admin-table-card sp-admin-detail-card sp-admin-wide" aria-label="Audit history">
+          <h2 class="sp-admin-card-title">Audit history</h2>
+          @if (auditHistoryLoading()) {
+            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+          } @else if (auditHistoryError()) {
+            <div class="sp-admin-alert-error">{{ auditHistoryError() }}</div>
+          } @else if (auditHistory().length === 0) {
+            <p class="sp-admin-table-empty">No admin actions recorded for this student.</p>
+          } @else {
+            <table class="sp-admin-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Source</th>
+                  <th>Actor</th>
+                  <th>Reason</th>
+                  <th>Value change</th>
+                  <th>Details</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of auditHistory(); track item.id) {
+                  <tr>
+                    <td>
+                      <span class="sp-admin-badge"
+                        [class.sp-admin-badge-indigo]="item.source === 'AdminAuditLog'"
+                        [class.sp-admin-badge-amber]="item.source === 'StudentResetLog'">
+                        {{ item.action }}
+                      </span>
+                    </td>
+                    <td class="sp-admin-table-muted">{{ item.source === 'AdminAuditLog' ? 'Audit' : 'Reset' }}</td>
+                    <td class="sp-admin-table-muted">
+                      @if (item.actorEmail) {
+                        {{ item.actorEmail }}
+                      } @else if (item.actorId) {
+                        <code class="sp-admin-code-pill">{{ item.actorId | slice:0:8 }}…</code>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="sp-safe-text sp-admin-table-muted">{{ item.reason || '—' }}</td>
+                    <td>
+                      @if (item.oldValue || item.newValue) {
+                        <span class="sp-admin-audit-change">
+                          <span class="sp-admin-table-muted">{{ item.oldValue || '—' }}</span>
+                          <span>&rarr;</span>
+                          <span>{{ item.newValue || '—' }}</span>
+                        </span>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>
+                      @if (item.details) {
+                        @if ((item.details || '').length > 80) {
+                          <button type="button" class="sp-admin-link-button" (click)="openAuditDetails(item)">View details</button>
+                        } @else {
+                          <code class="sp-admin-code-pill">{{ item.details }}</code>
+                        }
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="sp-admin-table-muted">{{ item.timestamp | date:'medium' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </section>
       </div>
     }
 
@@ -455,6 +527,25 @@ interface StudentEditForm {
         } @else {
           <p class="sp-admin-table-empty">Student has not set any learning preferences yet.</p>
         }
+      </sp-admin-slide-over>
+    }
+
+    @if (auditDetailsItem()) {
+      <sp-admin-slide-over
+        [open]="auditDetailsSlideOverOpen()"
+        title="Audit details"
+        size="md"
+        (closed)="closeAuditDetails()"
+      >
+        @let item = auditDetailsItem()!;
+        <dl class="sp-admin-detail-list sp-adm-prefs-list">
+          <div><dt>Action</dt><dd>{{ item.action }}</dd></div>
+          <div><dt>Source</dt><dd>{{ item.source }}</dd></div>
+          @if (item.reason) { <div><dt>Reason</dt><dd class="sp-safe-text">{{ item.reason }}</dd></div> }
+          @if (item.correlationId) { <div><dt>Correlation ID</dt><dd><code class="sp-admin-code-pill">{{ item.correlationId }}</code></dd></div> }
+          @if (item.details) { <div><dt>Details</dt><dd><pre class="sp-admin-audit-pre">{{ item.details }}</pre></dd></div> }
+          <div><dt>Timestamp</dt><dd>{{ item.timestamp | date:'medium' }}</dd></div>
+        </dl>
       </sp-admin-slide-over>
     }
 
@@ -834,6 +925,8 @@ interface StudentEditForm {
     .sp-adm-prefs-list-ul{margin:0;padding-left:18px;font-size:14px;color:#0F172A;}
     .sp-admin-cefr-row{display:flex;align-items:center;gap:8px;}
     .sp-admin-cefr-hint{font-size:11px;color:#94A3B8;margin-top:4px;}
+    .sp-admin-audit-change{display:flex;align-items:center;gap:4px;font-size:13px;}
+    .sp-admin-audit-pre{font-size:12px;color:#334155;white-space:pre-wrap;word-break:break-all;margin:0;background:#F8FAFC;border-radius:6px;padding:8px;}
     @media(max-width:900px){
       .sp-admin-detail-grid{grid-template-columns:1fr;}
     }
@@ -855,6 +948,12 @@ export class AdminStudentDetailComponent implements OnInit {
   history = signal<AdminActivityHistoryItem[]>([]);
   historyLoading = signal(true);
   historyError = signal('');
+
+  auditHistory = signal<StudentAuditHistoryItem[]>([]);
+  auditHistoryLoading = signal(true);
+  auditHistoryError = signal('');
+  auditDetailsSlideOverOpen = signal(false);
+  auditDetailsItem = signal<StudentAuditHistoryItem | null>(null);
 
   editing = signal<AdminStudentDetail | null>(null);
   savingEdit = signal(false);
@@ -1080,6 +1179,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadStudent(id);
     this.loadMemory(id);
     this.loadHistory(id);
+    this.loadAuditHistory(id);
     this.loadPolicy(id);
   }
 
@@ -1112,6 +1212,25 @@ export class AdminStudentDetailComponent implements OnInit {
       next: items => { this.history.set(items); this.historyLoading.set(false); },
       error: () => { this.historyError.set('Could not load activity history.'); this.historyLoading.set(false); },
     });
+  }
+
+  private loadAuditHistory(id: string): void {
+    this.auditHistoryLoading.set(true);
+    this.auditHistoryError.set('');
+    this.adminApi.getStudentAuditHistory(id).subscribe({
+      next: items => { this.auditHistory.set(items); this.auditHistoryLoading.set(false); },
+      error: () => { this.auditHistoryError.set('Could not load audit history.'); this.auditHistoryLoading.set(false); },
+    });
+  }
+
+  openAuditDetails(item: StudentAuditHistoryItem): void {
+    this.auditDetailsItem.set(item);
+    this.auditDetailsSlideOverOpen.set(true);
+  }
+
+  closeAuditDetails(): void {
+    this.auditDetailsSlideOverOpen.set(false);
+    this.auditDetailsItem.set(null);
   }
 
   displayName(student: AdminStudentDetail): string {

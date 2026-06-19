@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-D)
+lastUpdated: 2026-06-19 (10Students-F-E)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,26 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10Students-F-E — Student Audit / History Tab** - complete (2026-06-19)
+
+Goal: surface student-specific admin action history in the admin student detail page. Combines AdminAuditLog and StudentResetLog entries, newest-first, capped at 50.
+
+### Delivered
+
+- `StudentAuditHistoryItemDto` record in `AdminQueries.cs`.
+- `GetStudentAuditHistoryAsync(Guid studentProfileId)` added to `IAdminStudentQuery` interface and `AdminHandler` implementation. Queries both `AdminAuditLogs` (by `TargetStudentId`) and `StudentResetLogs` (by `StudentProfileId`). Combined in memory, sorted newest-first, capped at 50. Returns null when student not found (→ 404).
+- `GET /api/admin/students/{id}/audit-history` in `AdminController` — admin-only, 200 / 404.
+- No migration required — both tables already existed.
+- `StudentAuditHistoryItem` TypeScript interface added to `admin.models.ts`.
+- `AdminApiService.getStudentAuditHistory(id)` in Angular service.
+- Audit History section added at bottom of `admin-student-detail.component`: loading / error / empty states, table rows with action badge, source, actor ID prefix, reason, old→new value, details. Long details (>80 chars) open `sp-admin-slide-over`. No edit/delete controls on rows. No password fields.
+- 7 backend integration tests + 8 frontend unit tests. All gates green.
+- No student-facing changes. No global audit search. No server-side student list pagination.
+
+See: `docs/reviews/2026-06-19-phase-10students-f-e-student-audit-history-tab-review.md`
+
+---
 
 **Phase 10Students-F-D — Admin CEFR Management** - complete (2026-06-19)
 

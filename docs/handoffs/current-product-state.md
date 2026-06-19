@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-A)
+lastUpdated: 2026-06-19 (10Students-F-E)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,16 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Student audit history tab available (Phase 10Students-F-E)
+
+`GET /api/admin/students/{id}/audit-history` returns up to 50 admin action history entries for a student, newest-first, combining `AdminAuditLog` (governance actions: SetCefr, Archive, lifecycle changes, policy assignments) and `StudentResetLog` (lifecycle reset records).
+
+Admin student detail page now shows an "Audit history" section at the bottom with: action badge, source (Audit / Reset), actor ID prefix, reason, old→new value, details (inline for short; slide-over for long). No edit or delete controls. No password or secret fields exposed.
+
+**Tests:** 751/751 Angular tests pass. Backend: 1932/1932 pass.
 
 ---
 
