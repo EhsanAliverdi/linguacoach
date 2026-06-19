@@ -215,6 +215,49 @@ export interface ExerciseTypeDefinition {
   maxOptionsPerItem: number;
 }
 
+export interface StudentOnboardingProgressInfo {
+  currentStepKey: string | null;
+  completedStepKeys: string[];
+  percentageComplete: number;
+  startedAt: string;
+  completedAt: string | null;
+  isComplete: boolean;
+  preliminaryCefrLevel: string | null;
+}
+
+export interface AdminStudentDetail {
+  studentProfileId: string;
+  userId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  preferredName: string | null;
+  lifecycleStage: string;
+  onboardingStatus: string;
+  lastCompletedStep: string | null;
+  cefrLevel: string | null;
+  careerContext: string | null;
+  learningGoal: string | null;
+  learningGoalDescription: string | null;
+  difficultSituationsText: string | null;
+  preferredSessionDurationMinutes: number | null;
+  professionalExperienceLevel: number | null;
+  roleFamiliarity: number | null;
+  createdAt: string;
+  archivedAt: string | null;
+  supportLanguageCode: string | null;
+  supportLanguageName: string | null;
+  difficultyPreference: string | null;
+  translationHelpPreference: string | null;
+  focusAreas: string[];
+  customFocusArea: string | null;
+  learningGoals: string[];
+  customLearningGoal: string | null;
+  learningPreferencesUpdatedAt: string | null;
+  onboardingProgress: StudentOnboardingProgressInfo | null;
+}
+
 export interface UpdateExerciseTypeRequest {
   isEnabled?: boolean;
   supportsPracticeGym?: boolean;

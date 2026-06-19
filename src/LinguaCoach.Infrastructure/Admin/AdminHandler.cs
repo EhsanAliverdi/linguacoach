@@ -70,6 +70,71 @@ public sealed class AdminHandler :
             .ToList();
     }
 
+    public async Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentProfileId, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == studentProfileId, ct);
+
+        if (profile is null)
+            return null;
+
+        var user = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == profile.UserId, ct);
+
+        if (user is null)
+            return null;
+
+        // There is a unique index on UserId so at most one row exists.
+        // Avoid OrderBy on DateTimeOffset — SQLite does not support it.
+        var progress = await _db.Set<StudentOnboardingProgress>()
+            .AsNoTracking()
+            .Where(p => p.UserId == profile.UserId)
+            .FirstOrDefaultAsync(ct);
+
+        StudentOnboardingProgressInfo? progressInfo = progress is null ? null : new StudentOnboardingProgressInfo(
+            progress.CurrentStepKey,
+            progress.CompletedStepKeys,
+            progress.PercentageComplete,
+            progress.StartedAt,
+            progress.CompletedAt,
+            progress.IsComplete,
+            progress.PreliminaryCefrLevel);
+
+        return new AdminStudentDetailDto(
+            profile.Id,
+            profile.UserId,
+            user.Email ?? string.Empty,
+            profile.FirstName,
+            profile.LastName,
+            profile.DisplayName,
+            profile.PreferredName,
+            profile.LifecycleStage.ToString(),
+            profile.OnboardingStatus.ToString(),
+            null, // LastCompletedStep — derived from progress if needed
+            profile.CefrLevel,
+            profile.CareerContext,
+            profile.LearningGoal,
+            profile.LearningGoalDescription,
+            profile.DifficultSituationsText,
+            profile.PreferredSessionDurationMinutes,
+            profile.ProfessionalExperienceLevel,
+            profile.RoleFamiliarity,
+            profile.CreatedAt,
+            null, // ArchivedAt — not tracked on StudentProfile currently
+            profile.SupportLanguageCode,
+            profile.SupportLanguageName,
+            profile.DifficultyPreference?.ToString(),
+            profile.TranslationHelpPreference?.ToString(),
+            profile.FocusAreas ?? [],
+            profile.CustomFocusArea,
+            profile.LearningGoals ?? [],
+            profile.CustomLearningGoal,
+            profile.LearningPreferencesUpdatedAt,
+            progressInfo);
+    }
+
     public async Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default)
     {
         var totalStudents = await _db.StudentProfiles

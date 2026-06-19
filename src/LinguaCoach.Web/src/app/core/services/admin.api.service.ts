@@ -6,7 +6,8 @@ import {
   CareerProfileItem, CurriculumWordItem,
   AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
-  ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem
+  ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
+  AdminStudentDetail,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -20,6 +21,9 @@ export class AdminApiService {
   listStudents(includeArchived = false): Observable<StudentListItem[]> {
     const suffix = includeArchived ? '?includeArchived=true' : '';
     return this.http.get<StudentListItem[]>(`${this.api}/students${suffix}`);
+  }
+  getStudent(studentProfileId: string): Observable<AdminStudentDetail> {
+    return this.http.get<AdminStudentDetail>(`${this.api}/students/${studentProfileId}`);
   }
   updateStudent(studentProfileId: string, data: UpdateStudentProfileRequest): Observable<StudentListItem> {
     return this.http.put<StudentListItem>(`${this.api}/students/${studentProfileId}`, data);

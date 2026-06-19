@@ -6,6 +6,7 @@ import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
+  AdminStudentDetail,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -154,6 +155,56 @@ interface StudentEditForm {
             </dl>
           } @else {
             <p class="sp-admin-table-empty">Student has not set any learning preferences yet.</p>
+          }
+        </section>
+
+        <section class="sp-admin-table-card sp-admin-detail-card" aria-label="Onboarding progress">
+          <h2 class="sp-admin-card-title">Onboarding progress</h2>
+          @if (s.onboardingProgress; as op) {
+            <dl class="sp-admin-detail-list">
+              <div>
+                <dt>Status</dt>
+                <dd>
+                  <span class="sp-admin-badge"
+                    [class.sp-admin-badge-green]="op.isComplete"
+                    [class.sp-admin-badge-amber]="!op.isComplete">
+                    {{ op.isComplete ? 'Complete' : 'In progress' }}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt>Progress</dt>
+                <dd>{{ op.percentageComplete }}%</dd>
+              </div>
+              <div>
+                <dt>Steps completed</dt>
+                <dd>{{ op.completedStepKeys.length }}</dd>
+              </div>
+              @if (op.currentStepKey) {
+                <div>
+                  <dt>Current step</dt>
+                  <dd><code class="sp-admin-code-pill">{{ op.currentStepKey }}</code></dd>
+                </div>
+              }
+              @if (op.preliminaryCefrLevel) {
+                <div>
+                  <dt>Preliminary CEFR</dt>
+                  <dd>{{ op.preliminaryCefrLevel }}</dd>
+                </div>
+              }
+              <div>
+                <dt>Started</dt>
+                <dd>{{ op.startedAt | date:'mediumDate' }}</dd>
+              </div>
+              @if (op.completedAt) {
+                <div>
+                  <dt>Completed</dt>
+                  <dd>{{ op.completedAt | date:'mediumDate' }}</dd>
+                </div>
+              }
+            </dl>
+          } @else {
+            <p class="sp-admin-table-empty">No onboarding progress recorded for this student.</p>
           }
         </section>
 
@@ -708,7 +759,7 @@ interface StudentEditForm {
   `],
 })
 export class AdminStudentDetailComponent implements OnInit {
-  student = signal<StudentListItem | null>(null);
+  student = signal<AdminStudentDetail | null>(null);
   loading = signal(true);
   error = signal('');
 
@@ -720,18 +771,18 @@ export class AdminStudentDetailComponent implements OnInit {
   historyLoading = signal(true);
   historyError = signal('');
 
-  editing = signal<StudentListItem | null>(null);
+  editing = signal<AdminStudentDetail | null>(null);
   savingEdit = signal(false);
   editError = signal('');
   editForm: StudentEditForm = this.emptyForm();
 
-  resetting = signal<StudentListItem | null>(null);
+  resetting = signal<AdminStudentDetail | null>(null);
   savingReset = signal(false);
   resetError = signal('');
   resetSuccessPassword = signal('');
   resetForm = { newPassword: '', mustChangePassword: true };
 
-  resettingData = signal<StudentListItem | null>(null);
+  resettingData = signal<AdminStudentDetail | null>(null);
   savingResetData = signal(false);
   resetDataError = signal('');
   resetDataResult = signal<ResetStudentResponse | null>(null);
@@ -802,7 +853,7 @@ export class AdminStudentDetailComponent implements OnInit {
   openPrefsSlideOver(): void { this.prefsSlideOverOpen.set(true); }
   closePrefsSlideOver(): void { this.prefsSlideOverOpen.set(false); }
 
-  hasAnyPreference(s: StudentListItem): boolean {
+  hasAnyPreference(s: AdminStudentDetail): boolean {
     return !!(
       s.preferredName ||
       s.supportLanguageCode ||
@@ -840,17 +891,13 @@ export class AdminStudentDetailComponent implements OnInit {
   private loadStudent(id: string): void {
     this.loading.set(true);
     this.error.set('');
-    this.adminApi.listStudents(true).subscribe({
-      next: students => {
-        const found = students.find(s => s.studentProfileId === id);
-        if (!found) {
-          this.error.set('Student not found.');
-        } else {
-          this.student.set(found);
-        }
+    this.adminApi.getStudent(id).subscribe({
+      next: detail => { this.student.set(detail); this.loading.set(false); },
+      error: (err) => {
+        const status = err?.status;
+        this.error.set(status === 404 ? 'Student not found.' : 'Could not load student.');
         this.loading.set(false);
       },
-      error: () => { this.error.set('Could not load student.'); this.loading.set(false); },
     });
   }
 
@@ -872,7 +919,7 @@ export class AdminStudentDetailComponent implements OnInit {
     });
   }
 
-  displayName(student: StudentListItem): string {
+  displayName(student: AdminStudentDetail): string {
     return student.displayName
       || [student.firstName, student.lastName].filter(Boolean).join(' ')
       || student.email;
@@ -886,7 +933,7 @@ export class AdminStudentDetailComponent implements OnInit {
     return this.familiarityLevels.find(l => l.value === value)?.label ?? 'Not set';
   }
 
-  startEdit(student: StudentListItem): void {
+  startEdit(student: AdminStudentDetail): void {
     this.editing.set(student);
     this.editError.set('');
     this.editForm = {
@@ -929,10 +976,10 @@ export class AdminStudentDetailComponent implements OnInit {
     };
 
     this.adminApi.updateStudent(student.studentProfileId, request).subscribe({
-      next: updated => {
-        this.student.set(updated);
+      next: () => {
         this.savingEdit.set(false);
         this.editing.set(null);
+        this.loadStudent(student.studentProfileId);
         this.toast.success('Student updated successfully');
       },
       error: err => {
@@ -942,20 +989,20 @@ export class AdminStudentDetailComponent implements OnInit {
     });
   }
 
-  confirmArchive(student: StudentListItem): void {
+  confirmArchive(student: AdminStudentDetail): void {
     const confirmed = window.confirm(`Archive ${student.email}? They will be hidden from the active list and cannot sign in.`);
     if (!confirmed) return;
 
     this.adminApi.archiveStudent(student.studentProfileId).subscribe({
-      next: updated => {
-        this.student.set(updated);
+      next: () => {
+        this.loadStudent(student.studentProfileId);
         this.toast.success('Student archived');
       },
       error: err => this.toast.error(err.error?.error ?? 'Could not archive student.'),
     });
   }
 
-  startResetPassword(student: StudentListItem): void {
+  startResetPassword(student: AdminStudentDetail): void {
     this.resetting.set(student);
     this.resetError.set('');
     this.resetSuccessPassword.set('');
@@ -997,7 +1044,7 @@ export class AdminStudentDetailComponent implements OnInit {
     });
   }
 
-  startResetData(student: StudentListItem): void {
+  startResetData(student: AdminStudentDetail): void {
     this.resettingData.set(student);
     this.resetDataError.set('');
     this.resetDataResult.set(null);

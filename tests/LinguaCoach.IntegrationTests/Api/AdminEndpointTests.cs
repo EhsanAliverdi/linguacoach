@@ -5,6 +5,7 @@ using System.Text.Json;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
@@ -196,5 +197,139 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(GenerationBatchStatus.Failed, saved.Status);
         Assert.Equal(GenerationBatch.AdminCancelledFailureReason, saved.FailureReason);
         Assert.NotNull(saved.CompletedAtUtc);
+    }
+
+    // ── GET /api/admin/students/{id} ──────────────────────────────────────────
+
+    [Fact]
+    public async Task GetStudentDetail_AsAdmin_ReturnsExpectedFields()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"detail_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234", firstName = "Detail", lastName = "Test" });
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var createBody = await createResp.Content.ReadFromJsonAsync<JsonElement>();
+        var profileId = createBody.GetProperty("studentProfileId").GetString();
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}");
+
+        var rawBody = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, $"Expected 200 but got {response.StatusCode}: {rawBody}");
+        var body = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(rawBody);
+        Assert.Equal(email, body.GetProperty("email").GetString());
+        Assert.Equal("Detail", body.GetProperty("firstName").GetString());
+        Assert.Equal("Test", body.GetProperty("lastName").GetString());
+        Assert.True(body.TryGetProperty("lifecycleStage", out _));
+        Assert.True(body.TryGetProperty("onboardingStatus", out _));
+    }
+
+    [Fact]
+    public async Task GetStudentDetail_AsAdmin_ReturnsPreferenceFields()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"preffields_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234", careerContext = "Software", professionalExperienceLevel = 2 });
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var createBody = await createResp.Content.ReadFromJsonAsync<JsonElement>();
+        var profileId = createBody.GetProperty("studentProfileId").GetString();
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Software", body.GetProperty("careerContext").GetString());
+        Assert.True(body.TryGetProperty("focusAreas", out _));
+        Assert.True(body.TryGetProperty("learningGoals", out _));
+    }
+
+    [Fact]
+    public async Task GetStudentDetail_AsAdmin_ReturnsNullOnboardingProgressWhenNoRow()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"noprog_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("onboardingProgress").ValueKind);
+    }
+
+    [Fact]
+    public async Task GetStudentDetail_AsAdmin_ReturnsOnboardingProgressWhenRowExists()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var email = $"withprog_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var createBody = await createResp.Content.ReadFromJsonAsync<JsonElement>();
+        var profileId = Guid.Parse(createBody.GetProperty("studentProfileId").GetString()!);
+        var userId = Guid.Parse(createBody.GetProperty("userId").GetString()!);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var flowId = await db.OnboardingFlowDefinitions
+                .Where(f => f.IsActive)
+                .Select(f => f.Id)
+                .FirstAsync();
+            var progress = LinguaCoach.Domain.Entities.StudentOnboardingProgress.CreateCompleted(userId, flowId);
+            progress.RecordStepCompleted("step-intro");
+            db.Set<LinguaCoach.Domain.Entities.StudentOnboardingProgress>().Add(progress);
+            await db.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var prog = body.GetProperty("onboardingProgress");
+        Assert.NotEqual(JsonValueKind.Null, prog.ValueKind);
+        Assert.True(prog.GetProperty("isComplete").GetBoolean());
+        Assert.True(prog.GetProperty("percentageComplete").GetInt32() >= 0);
+    }
+
+    [Fact]
+    public async Task GetStudentDetail_AsAdmin_Returns404ForNonExistentStudent()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.GetAsync($"/api/admin/students/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetStudentDetail_AsStudent_Returns403()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email = $"sec_{Guid.NewGuid():N}@test.com", temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var (studentToken, _) = await _factory.CreateStudentAndGetTokenAsync($"caller_{Guid.NewGuid():N}@test.com");
+        var studentClient = _factory.CreateClient();
+        studentClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", studentToken);
+
+        var response = await studentClient.GetAsync($"/api/admin/students/{profileId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

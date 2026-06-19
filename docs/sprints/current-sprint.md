@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-A)
+lastUpdated: 2026-06-19 (10Students-F-B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,31 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10Students-F-B — Dedicated Student Detail Endpoint + Onboarding Progress** - complete (2026-06-19)
+
+Goal: dedicated `GET /api/admin/students/{id}` endpoint returning full student detail with onboarding progress. Fix SQLite integration test blocker. Wire Angular component to dedicated endpoint.
+
+### Delivered
+
+- `GetStudentDetailAsync` in `AdminHandler` queries `StudentOnboardingProgress` by `UserId` (no ORDER BY — unique index, at most one row; avoids SQLite DateTimeOffset incompatibility).
+- `AdminStudentDetailDto` and `StudentOnboardingProgressInfo` records in `AdminQueries.cs`.
+- `GET /api/admin/students/{studentId:guid}` in `AdminController`.
+- `OnboardingFlowSeeder.SeedAsync` added to `ApiTestFactory.EnsureCreatedAsync` — fixes FK constraint in integration tests.
+- 6 integration tests: expected fields, preference fields, null onboarding, onboarding row exists, 404, 403.
+- Angular: `getStudent(id)` in `AdminApiService`; `AdminStudentDetail` and `StudentOnboardingProgressInfo` models; component loads from dedicated endpoint; onboarding progress section with status badge, step, percentage, empty state.
+- Frontend spec: `Subject<AdminStudentDetail>` replaces `require('rxjs')` hack; `displayName: null` override fix.
+- Review doc: `docs/reviews/2026-06-19-phase-10students-f-b-dedicated-student-detail-endpoint-onboarding-progress-review.md`
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1911/1911)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (719/719)
+
+---
 
 **Phase 10Students-F-A — Admin Read: Student Learning Preferences** - complete (2026-06-19)
 

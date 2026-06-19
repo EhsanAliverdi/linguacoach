@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { AdminStudentDetailComponent } from './admin-student-detail.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo } from '../../../core/models/admin.models';
 
 function makePolicy(overrides: Partial<UsagePolicy> = {}): UsagePolicy {
   return {
@@ -65,6 +65,55 @@ function makeStudent(overrides: Partial<StudentListItem> = {}): StudentListItem 
   } as StudentListItem;
 }
 
+function makeStudentDetail(overrides: Partial<AdminStudentDetail> = {}): AdminStudentDetail {
+  return {
+    studentProfileId: 'student-1',
+    userId: 'user-1',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    displayName: 'Test User',
+    preferredName: null,
+    lifecycleStage: 'CourseReady',
+    onboardingStatus: 'Complete',
+    lastCompletedStep: null,
+    cefrLevel: 'B2',
+    careerContext: null,
+    learningGoal: null,
+    learningGoalDescription: null,
+    difficultSituationsText: null,
+    preferredSessionDurationMinutes: null,
+    professionalExperienceLevel: null,
+    roleFamiliarity: null,
+    createdAt: '2026-01-01T00:00:00Z',
+    archivedAt: null,
+    supportLanguageCode: null,
+    supportLanguageName: null,
+    difficultyPreference: null,
+    translationHelpPreference: null,
+    focusAreas: [],
+    customFocusArea: null,
+    learningGoals: [],
+    customLearningGoal: null,
+    learningPreferencesUpdatedAt: null,
+    onboardingProgress: null,
+    ...overrides,
+  };
+}
+
+function makeOnboardingProgress(overrides: Partial<StudentOnboardingProgressInfo> = {}): StudentOnboardingProgressInfo {
+  return {
+    currentStepKey: 'step-language',
+    completedStepKeys: ['step-intro', 'step-goals'],
+    percentageComplete: 60,
+    startedAt: '2026-01-01T00:00:00Z',
+    completedAt: null,
+    isComplete: false,
+    preliminaryCefrLevel: null,
+    ...overrides,
+  };
+}
+
 function makeMemory(): AdminStudentLearningMemory {
   return {
     journeySummary: null,
@@ -84,7 +133,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
 
   beforeEach(() => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
-      'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -92,7 +141,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
     ]);
     toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
 
-    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
@@ -259,7 +308,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
 
   beforeEach(() => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
-      'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
@@ -284,7 +333,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('renders Student preferences section heading', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -292,7 +341,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('shows empty state when no preference fields are set', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -300,7 +349,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('renders preferred name when present', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({ preferredName: 'Alex' })]));
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ preferredName: 'Alex' })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -308,10 +357,10 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('renders support language when present', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({
       supportLanguageCode: 'es',
       supportLanguageName: 'Spanish',
-    })]));
+    })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -319,9 +368,9 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('renders focus areas when present', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({
       focusAreas: ['Presentations', 'Emails', 'Meetings'],
-    })]));
+    })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -330,10 +379,10 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('renders custom focus area in slide-over when present', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({
       customFocusArea: 'Technical writing',
       focusAreas: ['Emails'],
-    })]));
+    })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const comp = fixture.componentInstance;
@@ -344,10 +393,10 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('renders learning goals in slide-over when present', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({
       learningGoals: ['Improve fluency', 'Business vocabulary'],
       focusAreas: ['Emails'],
-    })]));
+    })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const comp = fixture.componentInstance;
@@ -358,7 +407,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('opens sp-admin-slide-over when View preferences is clicked', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({ preferredName: 'Jo' })]));
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ preferredName: 'Jo' })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
@@ -374,7 +423,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('slide-over shows full preference details when open', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({
       preferredName: 'Jo',
       supportLanguageName: 'French',
       difficultyPreference: 'Challenging',
@@ -383,7 +432,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
       customFocusArea: 'Cold calls',
       learningGoals: ['Fluency'],
       customLearningGoal: 'Pass DELF B2',
-    })]));
+    })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const comp = fixture.componentInstance;
@@ -401,7 +450,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   });
 
   it('slide-over shows empty state when no preferences set', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const comp = fixture.componentInstance;
@@ -411,8 +460,8 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     expect(html.textContent).toContain('Student has not set any learning preferences yet.');
   });
 
-  it('has no edit or save controls for student preferences', () => {
-    adminApi.listStudents.and.returnValue(of([makeStudent({ preferredName: 'Alex' })]));
+  it('has no edit or save controls for student preferences (legacy)', () => {
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ preferredName: 'Alex' })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const comp = fixture.componentInstance;
@@ -424,5 +473,203 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     const buttons = prefSlideOver ? Array.from(prefSlideOver.querySelectorAll('button')) : [];
     const hasSave = buttons.some(b => /save|submit|edit/i.test(b.textContent ?? ''));
     expect(hasSave).toBeFalse();
+  });
+});
+
+// ── Dedicated student detail endpoint tests ───────────────────────────────────
+
+describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(overrides: Partial<AdminStudentDetail> = {}) {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail(overrides)));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('calls getStudent with route id on init', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(adminApi.getStudent).toHaveBeenCalledWith('student-1');
+  });
+
+  it('renders student detail from API response', () => {
+    setup({ firstName: 'Ada', lastName: 'Lovelace', displayName: null, email: 'ada@test.com' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Ada');
+    expect(html.textContent).toContain('Lovelace');
+  });
+
+  it('shows loading state before response', () => {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    // Never resolves — stays loading
+    adminApi.getStudent.and.returnValue(new Subject<AdminStudentDetail>().asObservable());
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.sp-admin-spinner')).toBeTruthy();
+  });
+
+  it('shows error state when getStudent fails', () => {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(throwError(() => ({ status: 500 })));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Could not load student.');
+  });
+
+  it('shows 404 error message when student not found', () => {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(throwError(() => ({ status: 404 })));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Student not found.');
+  });
+
+  it('renders onboarding progress section when data present', () => {
+    setup({ onboardingProgress: makeOnboardingProgress({ currentStepKey: 'step-language', percentageComplete: 60 }) });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Onboarding progress');
+    expect(html.textContent).toContain('step-language');
+    expect(html.textContent).toContain('60%');
+  });
+
+  it('renders complete badge when onboarding is complete', () => {
+    setup({ onboardingProgress: makeOnboardingProgress({ isComplete: true, completedAt: '2026-03-01T00:00:00Z', percentageComplete: 100 }) });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Complete');
+  });
+
+  it('renders preliminary CEFR when present', () => {
+    setup({ onboardingProgress: makeOnboardingProgress({ isComplete: true, preliminaryCefrLevel: 'B2', completedAt: '2026-03-01T00:00:00Z' }) });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('B2');
+  });
+
+  it('shows empty state when onboarding progress is null', () => {
+    setup({ onboardingProgress: null });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('No onboarding progress recorded for this student.');
+  });
+
+  it('renders usage policy section', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Usage policy');
+  });
+
+  it('renders student preferences section', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Student preferences');
   });
 });

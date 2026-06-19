@@ -67,9 +67,55 @@ public sealed record AdminActivityHistoryItem(
     bool? Completed,
     DateTime CreatedAt);
 
+// ── Student detail ────────────────────────────────────────────────────────────
+
+public sealed record StudentOnboardingProgressInfo(
+    string? CurrentStepKey,
+    IReadOnlyList<string> CompletedStepKeys,
+    int PercentageComplete,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? CompletedAt,
+    bool IsComplete,
+    string? PreliminaryCefrLevel);
+
+public sealed record AdminStudentDetailDto(
+    Guid StudentProfileId,
+    Guid UserId,
+    string Email,
+    string? FirstName,
+    string? LastName,
+    string? DisplayName,
+    string? PreferredName,
+    string LifecycleStage,
+    string OnboardingStatus,
+    string? LastCompletedStep,
+    string? CefrLevel,
+    string? CareerContext,
+    string? LearningGoal,
+    string? LearningGoalDescription,
+    string? DifficultSituationsText,
+    int? PreferredSessionDurationMinutes,
+    ProfessionalExperienceLevel? ProfessionalExperienceLevel,
+    RoleFamiliarity? RoleFamiliarity,
+    DateTime CreatedAt,
+    DateTimeOffset? ArchivedAt,
+    // Student-authored preferences (read-only for admin)
+    string? SupportLanguageCode,
+    string? SupportLanguageName,
+    string? DifficultyPreference,
+    string? TranslationHelpPreference,
+    IReadOnlyList<string> FocusAreas,
+    string? CustomFocusArea,
+    IReadOnlyList<string> LearningGoals,
+    string? CustomLearningGoal,
+    DateTimeOffset? LearningPreferencesUpdatedAt,
+    // Onboarding progress (null if no progress row exists)
+    StudentOnboardingProgressInfo? OnboardingProgress);
+
 public interface IAdminStudentQuery
 {
     Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
+    Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentProfileId, CancellationToken ct = default);
     Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
     Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);
     Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default);

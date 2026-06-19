@@ -101,6 +101,13 @@ public sealed class AdminController : ControllerBase
     public async Task<IActionResult> ListStudents([FromQuery] bool includeArchived, CancellationToken ct)
         => Ok(await _studentQuery.ListStudentsAsync(includeArchived, ct));
 
+    [HttpGet("students/{studentId:guid}")]
+    public async Task<IActionResult> GetStudentDetail(Guid studentId, CancellationToken ct)
+    {
+        var detail = await _studentQuery.GetStudentDetailAsync(studentId, ct);
+        return detail is null ? NotFound(new { error = "Student not found." }) : Ok(detail);
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct)
         => Ok(await _studentQuery.GetStatsAsync(ct));

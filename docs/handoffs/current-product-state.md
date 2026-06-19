@@ -12,6 +12,20 @@ Last updated: 2026-06-19
 
 ---
 
+## Dedicated student detail endpoint + onboarding progress complete (Phase 10Students-F-B)
+
+`GET /api/admin/students/{id}` is now a dedicated endpoint returning full student detail including onboarding progress (`StudentOnboardingProgressInfo`). Previously the component used the student list endpoint; it now calls the dedicated endpoint via `AdminApiService.getStudent(id)`.
+
+Onboarding progress section added to `admin-student-detail.component`: status badge, current step (code pill), percentage complete, empty state when no progress row exists.
+
+SQLite integration test blocker resolved: `OrderByDescending(p => p.StartedAt)` removed (unique index; SQLite does not support `DateTimeOffset` in ORDER BY). `OnboardingFlowSeeder` added to `ApiTestFactory` to satisfy FK constraint in onboarding progress tests.
+
+**Tests:** 719/719 Angular tests pass. Backend: 1911/1911 pass. `git diff --check`: clean.
+
+See: `docs/reviews/2026-06-19-phase-10students-f-b-dedicated-student-detail-endpoint-onboarding-progress-review.md`
+
+---
+
 ## Admin read: student learning preferences complete (Phase 10Students-F-A)
 
 Admins can now view all student-set learning preferences from the student detail page. A "Student preferences" summary card shows preference fields inline. A "View preferences" button opens the new `sp-admin-slide-over` panel for full detail. Admin edit of preferences is intentionally not implemented.
