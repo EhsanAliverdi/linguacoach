@@ -22,6 +22,8 @@ import {
   SpAdminButtonComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
+  SpAdminFormGridComponent,
+  SpAdminSectionHeaderComponent,
   SpAdminStatCardComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
@@ -30,11 +32,10 @@ import {
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCheckboxComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminNumberInputComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent, SpAdminTableComponent, SpAdminTruncatedTextComponent],
+  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCheckboxComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminFormGridComponent, SpAdminLoadingStateComponent, SpAdminNumberInputComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminSectionHeaderComponent, SpAdminStatCardComponent, SpAdminTableComponent, SpAdminTruncatedTextComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
     .sp-admin-integration-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
-    .sp-int-form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
     .sp-int-cb-stack{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
     .sp-int-test-row{display:flex;align-items:center;gap:16px;margin-top:16px;}
     .sp-int-generate-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap;}

@@ -11,7 +11,7 @@
     }
 
     @if (storage(); as s) {
-      <div class="sp-int-form-grid">
+      <sp-admin-form-grid [columns]="3">
         <sp-admin-form-field label="Provider">
           <sp-admin-input [value]="s.provider" [disabled]="true" />
         </sp-admin-form-field>
@@ -41,7 +41,7 @@
         <sp-admin-form-field label="Signed URL expiry (min)">
           <sp-admin-input [value]="s.signedUrlExpiryMinutes.toString()" [disabled]="true" />
         </sp-admin-form-field>
-      </div>
+      </sp-admin-form-grid>
       <p class="text-xs text-gray-400 mt-2">
         Secrets are sourced from environment variables / Docker secrets and never displayed.
       </p>
@@ -72,7 +72,7 @@
     }
 
     @if (settings(); as s) {
-      <div class="sp-int-form-grid">
+      <sp-admin-form-grid [columns]="3">
         <sp-admin-form-field label="Ready lesson buffer size">
           <sp-admin-number-input [(ngModel)]="s.readyLessonBufferSize" [min]="1" />
         </sp-admin-form-field>
@@ -106,7 +106,7 @@
         <sp-admin-form-field label="Practice refill count">
           <sp-admin-number-input [(ngModel)]="s.practiceGymRefillCountPerType" [min]="1" />
         </sp-admin-form-field>
-      </div>
+      </sp-admin-form-grid>
       <div class="sp-int-cb-stack">
         <sp-admin-checkbox [(ngModel)]="s.enableBackgroundGeneration" label="Background generation" />
         <sp-admin-checkbox [(ngModel)]="s.enableTtsGeneration" label="TTS generation" />
@@ -142,7 +142,7 @@
         <sp-admin-alert variant="success">{{ generateStatus() }}</sp-admin-alert>
       }
 
-      <h3 class="text-sm font-semibold text-gray-700 mb-2">Ready lesson buffer per student</h3>
+      <sp-admin-section-header title="Ready lesson buffer per student" />
       <div class="mb-4">
         <sp-admin-table variant="data" density="compact" minWidth="560px">
         <table>
@@ -167,7 +167,7 @@
         </sp-admin-table>
       </div>
 
-      <h3 class="text-sm font-semibold text-gray-700 mb-2">Recent batches</h3>
+      <sp-admin-section-header title="Recent batches" />
       <sp-admin-table variant="data" density="compact" minWidth="980px">
         <table>
           <thead>

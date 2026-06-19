@@ -306,4 +306,18 @@ describe('AdminIntegrationsComponent', () => {
     expect(typeof payload.ttsTimeoutSeconds).toBe('number');
     expect(typeof payload.enableBackgroundGeneration).toBe('boolean');
   }));
+
+  it('renders section headers for buffer and batches sub-sections', async () => {
+    await setup();
+    const headers = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-section-header');
+    expect(headers.length).toBeGreaterThanOrEqual(2);
+    expect(fixture.nativeElement.textContent).toContain('Ready lesson buffer per student');
+    expect(fixture.nativeElement.textContent).toContain('Recent batches');
+  });
+
+  it('renders form-grid wrappers for settings and storage fields', async () => {
+    await setup();
+    const grids = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-form-grid');
+    expect(grids.length).toBeGreaterThanOrEqual(2);
+  });
 });

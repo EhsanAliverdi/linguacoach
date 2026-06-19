@@ -53,11 +53,24 @@ describe('AdminDiagnosticsComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-page-header')).toBeTruthy();
   });
 
-  it('renders system status stat cards', () => {
+  it('renders 8 status cards inside status grid', () => {
     const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
     fixture.detectChanges();
-    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card');
+    expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-status-grid')).toBeTruthy();
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-status-card');
     expect(cards.length).toBe(8);
+  });
+
+  it('status card shows database reachable value', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Reachable');
+  });
+
+  it('status card shows AI provider value', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('anthropic');
   });
 
   it('renders event rows in the table', () => {

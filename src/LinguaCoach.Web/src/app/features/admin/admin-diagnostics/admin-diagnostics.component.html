@@ -11,28 +11,25 @@
   } @else if (statusError()) {
     <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
   } @else if (status()) {
-    <div class="sp-diag-status-grid">
-      <sp-admin-stat-card label="Environment"   [value]="status()!.environment"                                                              tone="neutral" size="sm" />
-      <sp-admin-stat-card label="Version"        [value]="status()!.version"                                                                  tone="neutral" size="sm" />
-      <sp-admin-stat-card label="Uptime"         [value]="uptimeLabel(status()!.uptimeSeconds)"                                               tone="info"    size="sm" />
-      <sp-admin-stat-card label="Log level"      [value]="status()!.logLevel"                                                                 tone="neutral" size="sm" />
-      <sp-admin-stat-card
+    <sp-admin-status-grid [columns]="4">
+      <sp-admin-status-card label="Environment"  [value]="status()!.environment"                                                                          tone="neutral" />
+      <sp-admin-status-card label="Version"      [value]="status()!.version"                                                                              tone="neutral" />
+      <sp-admin-status-card label="Uptime"       [value]="uptimeLabel(status()!.uptimeSeconds)"                                                           tone="info" />
+      <sp-admin-status-card label="Log level"    [value]="status()!.logLevel"                                                                             tone="neutral" />
+      <sp-admin-status-card
         label="Database"
         [value]="status()!.database.reachable ? 'Reachable' : 'Unreachable'"
-        [tone]="status()!.database.reachable ? 'success' : 'danger'"
-        size="sm" />
-      <sp-admin-stat-card
+        [tone]="status()!.database.reachable ? 'success' : 'danger'" />
+      <sp-admin-status-card
         label="AI provider"
         [value]="status()!.ai.providerConfigured ? (status()!.ai.activeProvider ?? 'Configured') : 'Not configured'"
-        [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'"
-        size="sm" />
-      <sp-admin-stat-card
+        [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'" />
+      <sp-admin-status-card
         label="Event buffer"
         [value]="status()!.diagnosticEventsEnabled ? (status()!.diagnosticEventCount + ' events') : 'Disabled'"
-        [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'"
-        size="sm" />
-      <sp-admin-stat-card label="Server time"   [value]="formatDateTime(status()!.serverTimeUtc)"                                             tone="neutral" size="sm" />
-    </div>
+        [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'" />
+      <sp-admin-status-card label="Server time"  [value]="formatDateTime(status()!.serverTimeUtc)"                                                        tone="neutral" />
+    </sp-admin-status-grid>
   }
 </sp-admin-card>
 

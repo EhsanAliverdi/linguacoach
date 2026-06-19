@@ -19,6 +19,8 @@ import {
   SpAdminPaginationComponent,
   SpAdminSelectComponent,
   SpAdminStatCardComponent,
+  SpAdminStatusCardComponent,
+  SpAdminStatusGridComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../admin';
@@ -46,12 +48,13 @@ import { eventLevelLabel } from '../../../admin/utils/admin-badge.utils';
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
     SpAdminStatCardComponent,
+    SpAdminStatusCardComponent,
+    SpAdminStatusGridComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
-    .sp-diag-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
     .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .sp-diag-count { padding: 8px 16px; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 12px; font-weight: 600; }
     .sp-diag-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
