@@ -40,7 +40,9 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         var response = await client.GetAsync("/api/admin/students");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(body.ValueKind == JsonValueKind.Array);
+        Assert.Equal(JsonValueKind.Object, body.ValueKind);
+        Assert.True(body.TryGetProperty("items", out var items));
+        Assert.Equal(JsonValueKind.Array, items.ValueKind);
     }
 
     [Fact]
@@ -110,11 +112,13 @@ public sealed class AdminManagementEndpointTests : IClassFixture<ApiTestFactory>
         var archivedBody = await archive.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Archived", archivedBody.GetProperty("lifecycleStage").GetString());
 
-        var activeList = await client.GetFromJsonAsync<JsonElement>("/api/admin/students");
-        Assert.DoesNotContain(activeList.EnumerateArray(), s => s.GetProperty("studentProfileId").GetString() == studentProfileId.ToString());
+        var activeList = await client.GetFromJsonAsync<JsonElement>("/api/admin/students?pageSize=100");
+        var activeItems = activeList.GetProperty("items");
+        Assert.DoesNotContain(activeItems.EnumerateArray(), s => s.GetProperty("studentProfileId").GetString() == studentProfileId.ToString());
 
-        var archivedList = await client.GetFromJsonAsync<JsonElement>("/api/admin/students?includeArchived=true");
-        Assert.Contains(archivedList.EnumerateArray(), s => s.GetProperty("studentProfileId").GetString() == studentProfileId.ToString());
+        var archivedList = await client.GetFromJsonAsync<JsonElement>("/api/admin/students?includeArchived=true&pageSize=100");
+        var archivedItems = archivedList.GetProperty("items");
+        Assert.Contains(archivedItems.EnumerateArray(), s => s.GetProperty("studentProfileId").GetString() == studentProfileId.ToString());
 
         var loginResponse = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login", new
         {

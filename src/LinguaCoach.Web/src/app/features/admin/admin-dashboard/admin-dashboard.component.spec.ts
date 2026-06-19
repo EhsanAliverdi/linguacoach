@@ -51,9 +51,13 @@ const STUDENT_NO_CEFR: StudentListItem = {
   onboardingStatus: 'NotStarted',
 };
 
+function pagedOf(items: StudentListItem[]) {
+  return { items, totalCount: items.length, page: 1, pageSize: 100, totalPages: 1 };
+}
+
 function makeAdminApi(students: StudentListItem[] = [STUDENT], stats: AdminStats = STATS) {
   return {
-    listStudents: jasmine.createSpy('listStudents').and.returnValue(of(students)),
+    listStudents: jasmine.createSpy('listStudents').and.returnValue(of(pagedOf(students))),
     getStats: jasmine.createSpy('getStats').and.returnValue(of(stats)),
   };
 }

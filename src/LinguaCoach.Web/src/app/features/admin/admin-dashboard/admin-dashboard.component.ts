@@ -190,8 +190,8 @@ export class AdminDashboardComponent implements OnInit {
   constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
-    this.adminApi.listStudents().subscribe({
-      next: s => { this.students.set(s); this.loadingStudents.set(false); },
+    this.adminApi.listStudents({ pageSize: 100 }).subscribe({
+      next: r => { this.students.set(r.items); this.loadingStudents.set(false); },
       error: () => { this.loadingStudents.set(false); },
     });
     this.adminApi.getStats().subscribe({

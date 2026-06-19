@@ -9,6 +9,7 @@ import {
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
   StudentAuditHistoryItem,
+  StudentListQuery, PagedResponse,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -19,9 +20,19 @@ export class AdminApiService {
   constructor(private http: HttpClient) {}
 
   // Students
-  listStudents(includeArchived = false): Observable<StudentListItem[]> {
-    const suffix = includeArchived ? '?includeArchived=true' : '';
-    return this.http.get<StudentListItem[]>(`${this.api}/students${suffix}`);
+  listStudents(query: StudentListQuery = {}): Observable<PagedResponse<StudentListItem>> {
+    const params = new URLSearchParams();
+    if (query.page !== undefined) params.set('page', String(query.page));
+    if (query.pageSize !== undefined) params.set('pageSize', String(query.pageSize));
+    if (query.search) params.set('search', query.search);
+    if (query.includeArchived) params.set('includeArchived', 'true');
+    if (query.lifecycleStage) params.set('lifecycleStage', query.lifecycleStage);
+    if (query.onboardingStatus) params.set('onboardingStatus', query.onboardingStatus);
+    if (query.cefrLevel) params.set('cefrLevel', query.cefrLevel);
+    if (query.sortBy) params.set('sortBy', query.sortBy);
+    if (query.sortDir) params.set('sortDir', query.sortDir);
+    const qs = params.toString();
+    return this.http.get<PagedResponse<StudentListItem>>(`${this.api}/students${qs ? '?' + qs : ''}`);
   }
   getStudent(studentProfileId: string): Observable<AdminStudentDetail> {
     return this.http.get<AdminStudentDetail>(`${this.api}/students/${studentProfileId}`);

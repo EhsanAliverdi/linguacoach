@@ -98,8 +98,30 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpGet("students")]
-    public async Task<IActionResult> ListStudents([FromQuery] bool includeArchived, CancellationToken ct)
-        => Ok(await _studentQuery.ListStudentsAsync(includeArchived, ct));
+    public async Task<IActionResult> ListStudents(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] string? search = null,
+        [FromQuery] bool includeArchived = false,
+        [FromQuery] string? lifecycleStage = null,
+        [FromQuery] string? onboardingStatus = null,
+        [FromQuery] string? cefrLevel = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDir = null,
+        CancellationToken ct = default)
+    {
+        var query = new StudentListQuery(
+            Math.Max(1, page),
+            Math.Clamp(pageSize, 1, 100),
+            search,
+            includeArchived,
+            lifecycleStage,
+            onboardingStatus,
+            cefrLevel,
+            sortBy,
+            sortDir);
+        return Ok(await _studentQuery.ListStudentsPagedAsync(query, ct));
+    }
 
     [HttpGet("students/{studentId:guid}")]
     public async Task<IActionResult> GetStudentDetail(Guid studentId, CancellationToken ct)

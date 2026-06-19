@@ -34,6 +34,24 @@ public sealed record StudentListItem(
     string? CustomLearningGoal,
     DateTimeOffset? LearningPreferencesUpdatedAt);
 
+public sealed record StudentListQuery(
+    int Page,
+    int PageSize,
+    string? Search,
+    bool IncludeArchived,
+    string? LifecycleStage,
+    string? OnboardingStatus,
+    string? CefrLevel,
+    string? SortBy,
+    string? SortDir);
+
+public sealed record PagedResponse<T>(
+    IReadOnlyList<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages);
+
 public sealed record UpdateStudentProfileCommand(
     Guid StudentProfileId,
     string? FirstName,
@@ -134,6 +152,7 @@ public sealed record AdminStudentDetailDto(
 public interface IAdminStudentQuery
 {
     Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
+    Task<PagedResponse<StudentListItem>> ListStudentsPagedAsync(StudentListQuery query, CancellationToken ct = default);
     Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentProfileId, CancellationToken ct = default);
     Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
     Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-E)
+lastUpdated: 2026-06-19 (10Students-F-F)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,18 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Server-side student pagination, filtering, and sorting available (Phase 10Students-F-F)
+
+`GET /api/admin/students` now returns a paged wrapper `{ items, totalCount, page, pageSize, totalPages }` instead of a flat array. Breaking change to the list endpoint shape.
+
+Query params accepted: `page` (default 1), `pageSize` (default 25, max 100), `search` (email/name substring, case-insensitive), `includeArchived` (default false), `lifecycleStage`, `onboardingStatus`, `cefrLevel`, `sortBy` (student/name/email/onboardingStatus/lifecycleStage/cefrLevel/createdAt), `sortDir` (asc/desc, default desc).
+
+Admin student list page is now server-driven: page, search, include-archived, and column sort all trigger a backend call. Pagination UI reflects `totalPages` from the server. All row actions (edit, reset password, reset data, archive) reload the current page after completion.
+
+**Tests:** 756/756 Angular tests pass. Backend: 1944/1944 pass.
 
 ---
 

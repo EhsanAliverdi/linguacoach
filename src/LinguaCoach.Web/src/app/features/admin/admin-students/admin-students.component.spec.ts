@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { AdminStudentsComponent } from './admin-students.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem } from '../../../core/models/admin.models';
+import { StudentListItem, PagedResponse } from '../../../core/models/admin.models';
 
 const STUDENT_ACTIVE: StudentListItem = {
   studentProfileId: 'id-1',
@@ -63,9 +63,13 @@ const STUDENT_NO_PROFILE: StudentListItem = {
   onboardingStatus: 'NotStarted',
 };
 
+function pagedOf(items: StudentListItem[]): PagedResponse<StudentListItem> {
+  return { items, totalCount: items.length, page: 1, pageSize: 25, totalPages: Math.max(1, Math.ceil(items.length / 25)) };
+}
+
 function makeAdminApi(students: StudentListItem[] = [STUDENT_ACTIVE]) {
   return {
-    listStudents: jasmine.createSpy('listStudents').and.returnValue(of(students)),
+    listStudents: jasmine.createSpy('listStudents').and.returnValue(of(pagedOf(students))),
     updateStudent: jasmine.createSpy('updateStudent').and.returnValue(of(STUDENT_ACTIVE)),
     archiveStudent: jasmine.createSpy('archiveStudent').and.returnValue(of({ ...STUDENT_ACTIVE, lifecycleStage: 'Archived' })),
     resetStudentPassword: jasmine.createSpy('resetStudentPassword').and.returnValue(of({})),
@@ -107,7 +111,15 @@ describe('AdminStudentsComponent', () => {
     expect(el.textContent).toContain('Students');
   });
 
-  it('loads and displays student rows', async () => {
+  it('calls listStudents with default params on init', async () => {
+    await setup([STUDENT_ACTIVE]);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.page).toBe(1);
+    expect(call.pageSize).toBe(25);
+  });
+
+  it('loads and displays student rows from paged response items', async () => {
     await setup([STUDENT_ACTIVE]);
     const rows = fixture.nativeElement.querySelectorAll('tbody tr');
     expect(rows.length).toBe(1);
@@ -153,19 +165,56 @@ describe('AdminStudentsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Could not load');
   });
 
-  it('shows empty state when no students match', async () => {
+  it('shows empty state when paged response items is empty', async () => {
     await setup([]);
     expect(fixture.nativeElement.textContent).toContain('No students found');
   });
 
-  it('filters students reactively when search term changes', async () => {
-    await setup([STUDENT_ACTIVE, STUDENT_ARCHIVED]);
-    expect(component.filteredStudents().length).toBe(2);
-    component.searchTerm.set('alice');
-    expect(component.filteredStudents().length).toBe(1);
-    expect(component.filteredStudents()[0].email).toBe('alice@example.com');
-    component.searchTerm.set('');
-    expect(component.filteredStudents().length).toBe(2);
+  it('calls listStudents with updated page when page changes', async () => {
+    await setup([STUDENT_ACTIVE]);
+    adminApi.listStudents.calls.reset();
+    component.onPageChange(2);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.page).toBe(2);
+  });
+
+  it('resets page to 1 and calls listStudents when search changes', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.page.set(3);
+    adminApi.listStudents.calls.reset();
+    component.onSearchChange('alice');
+    expect(component.page()).toBe(1);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.search).toBe('alice');
+    expect(call.page).toBe(1);
+  });
+
+  it('calls listStudents when includeArchived toggle changes', async () => {
+    await setup([STUDENT_ACTIVE]);
+    adminApi.listStudents.calls.reset();
+    component.includeArchived = true;
+    component.onIncludeArchivedChange();
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls listStudents with sortBy and sortDir when sort header clicked', async () => {
+    await setup([STUDENT_ACTIVE]);
+    adminApi.listStudents.calls.reset();
+    component.setSort('name');
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.sortBy).toBe('name');
+    expect(call.sortDir).toBeTruthy();
+  });
+
+  it('toggles sort direction on repeated click of same column', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.setSort('joined');
+    expect(component.sortDirection()).toBe('asc');
+    component.setSort('joined');
+    expect(component.sortDirection()).toBe('desc');
   });
 
   it('shows lifecycle badge with friendly label', async () => {
@@ -197,14 +246,24 @@ describe('AdminStudentsComponent', () => {
     expect(rows.length).toBe(1);
   });
 
-  it('shows pagination when total pages > 1', async () => {
-    const many = Array.from({ length: 30 }, (_, i) => ({
-      ...STUDENT_ACTIVE,
-      studentProfileId: `id-${i}`,
-      email: `user${i}@example.com`,
-      displayName: `User ${i}`,
-    }));
-    await setup(many);
+  it('shows pagination when totalPages > 1', async () => {
+    // Server returns totalPages = 2
+    adminApi = makeAdminApi([STUDENT_ACTIVE]);
+    adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 30, page: 1, pageSize: 25, totalPages: 2 }));
+    toast = makeToast();
+    await TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: ToastService, useValue: toast },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminStudentsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
     const pagination = fixture.nativeElement.querySelector('sp-admin-pagination');
     expect(pagination).not.toBeNull();
   });
@@ -221,11 +280,13 @@ describe('AdminStudentsComponent', () => {
     expect(actions).not.toBeNull();
   });
 
-  it('archive action calls archiveStudent and removes row', async () => {
+  it('archive action calls archiveStudent and reloads', async () => {
     await setup([STUDENT_ACTIVE]);
     spyOn(window, 'confirm').and.returnValue(true);
+    adminApi.listStudents.calls.reset();
     component.confirmArchive(STUDENT_ACTIVE);
     expect(adminApi.archiveStudent).toHaveBeenCalledWith('id-1');
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
   });
 
   it('startEdit populates editForm', async () => {
@@ -247,20 +308,31 @@ describe('AdminStudentsComponent', () => {
     expect(component.displayName(STUDENT_NO_PROFILE)).toBe('carol@example.com');
   });
 
-  it('sort by name changes order', async () => {
-    await setup([STUDENT_ACTIVE, STUDENT_ARCHIVED]);
-    component.setSort('name');
-    fixture.detectChanges();
-    const names = component.filteredStudents().map(s => component.displayName(s));
-    const sorted = [...names].sort();
-    expect(names).toEqual(sorted);
-  });
-
   it('sortIndicator returns arrow for active sort column', async () => {
     await setup();
     component.setSort('name');
     expect(component.sortIndicator('name')).toContain('▲');
+    adminApi.listStudents.and.returnValue(of(pagedOf([STUDENT_ACTIVE])));
     component.setSort('name');
     expect(component.sortIndicator('name')).toContain('▼');
+  });
+
+  it('totalCount signal reflects server response', async () => {
+    adminApi = makeAdminApi();
+    adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 42, page: 1, pageSize: 25, totalPages: 2 }));
+    toast = makeToast();
+    await TestBed.configureTestingModule({
+      imports: [AdminStudentsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: ToastService, useValue: toast },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminStudentsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.totalCount()).toBe(42);
   });
 });

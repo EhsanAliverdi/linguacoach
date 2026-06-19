@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -33,15 +33,15 @@ interface StudentEditForm {
     <sp-admin-page-body>
     <sp-admin-filter-bar>
       <label class="sp-admin-filter-toggle">
-        <input type="checkbox" [(ngModel)]="includeArchived" (change)="load()" />
+        <input type="checkbox" [(ngModel)]="includeArchived" (change)="onIncludeArchivedChange()" />
         <span>Show archived students</span>
       </label>
       <sp-admin-input
         type="search"
         placeholder="Search by email or name"
         [ngModel]="searchTerm()"
-        (ngModelChange)="searchTerm.set($event); page.set(1)" />
-      <span class="sp-admin-table-muted">{{ filteredStudents().length }} shown</span>
+        (ngModelChange)="onSearchChange($event)" />
+      <span class="sp-admin-table-muted">{{ totalCount() }} total</span>
     </sp-admin-filter-bar>
 
     @if (loading()) {
@@ -49,7 +49,7 @@ interface StudentEditForm {
     } @else if (error()) {
       <sp-admin-error-state title="Could not load students" [message]="error()" />
     } @else {
-      @if (filteredStudents().length === 0) {
+      @if (students().length === 0) {
         <sp-admin-empty-state message="No students found." />
       } @else {
         <sp-admin-table variant="data" density="compact" minWidth="980px">
@@ -66,7 +66,7 @@ interface StudentEditForm {
               </tr>
             </thead>
             <tbody>
-              @for (s of pagedStudents(); track s.studentProfileId) {
+              @for (s of students(); track s.studentProfileId) {
                 <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
                   <td class="sp-admin-wide-cell">
                     <div class="sp-admin-student-name">{{ displayName(s) }}</div>
@@ -110,7 +110,7 @@ interface StudentEditForm {
           </table>
         </sp-admin-table>
         @if (totalPages() > 1) {
-          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
+          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
         }
       }
     }
@@ -344,7 +344,13 @@ interface StudentEditForm {
   `],
 })
 export class AdminStudentsComponent implements OnInit {
+  // Server-driven list state
   students = signal<StudentListItem[]>([]);
+  totalCount = signal(0);
+  page = signal(1);
+  readonly pageSize = 25;
+  totalPages = signal(1);
+
   loading = signal(true);
   error = signal('');
   editing = signal<StudentListItem | null>(null);
@@ -353,44 +359,16 @@ export class AdminStudentsComponent implements OnInit {
   includeArchived = false;
 
   searchTerm = signal('');
-  page = signal(1);
-  readonly pageSize = 25;
   sortColumn = signal<'name' | 'onboarding' | 'joined'>('joined');
   sortDirection = signal<'asc' | 'desc'>('desc');
 
-  filteredStudents = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    let items = this.students();
-    if (term) {
-      items = items.filter(s =>
-        s.email.toLowerCase().includes(term) ||
-        this.displayName(s).toLowerCase().includes(term));
+  private sortByParam(): string {
+    switch (this.sortColumn()) {
+      case 'name': return 'name';
+      case 'onboarding': return 'onboardingStatus';
+      case 'joined': default: return 'createdAt';
     }
-
-    const column = this.sortColumn();
-    const direction = this.sortDirection() === 'asc' ? 1 : -1;
-    items = [...items].sort((a, b) => {
-      switch (column) {
-        case 'name':
-          return this.displayName(a).localeCompare(this.displayName(b)) * direction;
-        case 'onboarding':
-          return a.onboardingStatus.localeCompare(b.onboardingStatus) * direction;
-        case 'joined':
-        default:
-          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * direction;
-      }
-    });
-
-    return items;
-  });
-
-  totalPages = computed(() => Math.max(1, Math.ceil(this.filteredStudents().length / this.pageSize)));
-
-  pagedStudents = computed(() => {
-    const page = Math.min(this.page(), this.totalPages());
-    const start = (page - 1) * this.pageSize;
-    return this.filteredStudents().slice(start, start + this.pageSize);
-  });
+  }
 
   setSort(column: 'name' | 'onboarding' | 'joined'): void {
     if (this.sortColumn() === column) {
@@ -400,11 +378,28 @@ export class AdminStudentsComponent implements OnInit {
       this.sortDirection.set('asc');
     }
     this.page.set(1);
+    this.load();
   }
 
   sortIndicator(column: 'name' | 'onboarding' | 'joined'): string {
     if (this.sortColumn() !== column) return '';
     return this.sortDirection() === 'asc' ? ' ▲' : ' ▼';
+  }
+
+  onSearchChange(term: string): void {
+    this.searchTerm.set(term);
+    this.page.set(1);
+    this.load();
+  }
+
+  onIncludeArchivedChange(): void {
+    this.page.set(1);
+    this.load();
+  }
+
+  onPageChange(newPage: number): void {
+    this.page.set(newPage);
+    this.load();
   }
 
   resetting = signal<StudentListItem | null>(null);
@@ -480,8 +475,20 @@ export class AdminStudentsComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.adminApi.listStudents(this.includeArchived).subscribe({
-      next: s => { this.students.set(s); this.loading.set(false); },
+    this.adminApi.listStudents({
+      page: this.page(),
+      pageSize: this.pageSize,
+      search: this.searchTerm() || undefined,
+      includeArchived: this.includeArchived,
+      sortBy: this.sortByParam(),
+      sortDir: this.sortDirection(),
+    }).subscribe({
+      next: r => {
+        this.students.set(r.items);
+        this.totalCount.set(r.totalCount);
+        this.totalPages.set(r.totalPages);
+        this.loading.set(false);
+      },
       error: () => { this.error.set('Could not load students.'); this.loading.set(false); },
     });
   }
@@ -535,11 +542,11 @@ export class AdminStudentsComponent implements OnInit {
     };
 
     this.adminApi.updateStudent(student.studentProfileId, request).subscribe({
-      next: updated => {
-        this.students.update(items => items.map(item => item.studentProfileId === updated.studentProfileId ? updated : item));
+      next: () => {
         this.savingEdit.set(false);
         this.editing.set(null);
         this.toast.success('Student updated successfully');
+        this.load();
       },
       error: err => {
         this.savingEdit.set(false);
@@ -553,13 +560,9 @@ export class AdminStudentsComponent implements OnInit {
     if (!confirmed) return;
 
     this.adminApi.archiveStudent(student.studentProfileId).subscribe({
-      next: updated => {
-        if (this.includeArchived) {
-          this.students.update(items => items.map(item => item.studentProfileId === updated.studentProfileId ? updated : item));
-        } else {
-          this.students.update(items => items.filter(item => item.studentProfileId !== updated.studentProfileId));
-        }
+      next: () => {
         this.toast.success('Student archived');
+        this.load();
       },
       error: err => this.toast.error(err.error?.error ?? 'Could not archive student.'),
     });

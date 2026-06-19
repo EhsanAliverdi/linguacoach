@@ -1,3 +1,23 @@
+export interface StudentListQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  includeArchived?: boolean;
+  lifecycleStage?: string;
+  onboardingStatus?: string;
+  cefrLevel?: string;
+  sortBy?: string;
+  sortDir?: string;
+}
+
+export interface PagedResponse<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface AdminActivityHistoryItem {
   attemptId: string;
   activityId: string;

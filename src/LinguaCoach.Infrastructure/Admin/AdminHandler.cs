@@ -70,6 +70,83 @@ public sealed class AdminHandler :
             .ToList();
     }
 
+    public async Task<PagedResponse<StudentListItem>> ListStudentsPagedAsync(StudentListQuery listQuery, CancellationToken ct = default)
+    {
+        var page = Math.Max(1, listQuery.Page);
+        var pageSize = Math.Min(100, Math.Max(1, listQuery.PageSize));
+
+        // Join profiles with identity users so we can search on email.
+        // We materialise a joined projection first, then apply in-memory sort.
+        var profilesQ = _db.StudentProfiles.AsQueryable();
+
+        if (!listQuery.IncludeArchived)
+            profilesQ = profilesQ.Where(p => p.LifecycleStage != StudentLifecycleStage.Archived);
+
+        if (!string.IsNullOrWhiteSpace(listQuery.LifecycleStage) &&
+            Enum.TryParse<StudentLifecycleStage>(listQuery.LifecycleStage, ignoreCase: true, out var lifecycleEnum))
+            profilesQ = profilesQ.Where(p => p.LifecycleStage == lifecycleEnum);
+
+        if (!string.IsNullOrWhiteSpace(listQuery.OnboardingStatus) &&
+            Enum.TryParse<OnboardingStatus>(listQuery.OnboardingStatus, ignoreCase: true, out var onboardingEnum))
+            profilesQ = profilesQ.Where(p => p.OnboardingStatus == onboardingEnum);
+
+        if (!string.IsNullOrWhiteSpace(listQuery.CefrLevel))
+            profilesQ = profilesQ.Where(p => p.CefrLevel == listQuery.CefrLevel);
+
+        // Load profiles + batch-load users so we can apply email search.
+        var profiles = await profilesQ.ToListAsync(ct);
+        var userIds = profiles.Select(p => p.UserId).ToList();
+        var users = await _db.Users
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, ct);
+
+        // Build joined items (filter out profiles with no matching identity user).
+        var joined = profiles
+            .Where(p => users.ContainsKey(p.UserId))
+            .Select(p => (profile: p, email: users[p.UserId].Email ?? string.Empty))
+            .ToList();
+
+        // Apply search across email, displayName, firstName, lastName.
+        if (!string.IsNullOrWhiteSpace(listQuery.Search))
+        {
+            var term = listQuery.Search.Trim().ToLowerInvariant();
+            joined = joined.Where(x =>
+                x.email.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (x.profile.DisplayName ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (x.profile.FirstName ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (x.profile.LastName ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+
+        var totalCount = joined.Count;
+
+        // Sorting.
+        var sortDir = string.Equals(listQuery.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? 1 : -1;
+        joined = (listQuery.SortBy?.ToLowerInvariant() switch
+        {
+            "student" or "name" => joined.OrderBy(x =>
+                (x.profile.DisplayName ?? string.Empty + x.profile.FirstName ?? string.Empty + x.profile.LastName ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase),
+            "email" => joined.OrderBy(x => x.email, StringComparer.OrdinalIgnoreCase),
+            "onboardingstatus" => joined.OrderBy(x => x.profile.OnboardingStatus.ToString(), StringComparer.OrdinalIgnoreCase),
+            "lifecyclestage" => joined.OrderBy(x => x.profile.LifecycleStage.ToString(), StringComparer.OrdinalIgnoreCase),
+            "cefrlevel" => joined.OrderBy(x => x.profile.CefrLevel ?? string.Empty, StringComparer.OrdinalIgnoreCase),
+            _ => joined.OrderBy(x => x.profile.CreatedAt),
+        }).ToList();
+
+        if (sortDir == -1)
+            joined = Enumerable.Reverse(joined).ToList();
+
+        var items = joined
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => ToStudentListItem(x.profile, x.email))
+            .ToList();
+
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+        return new PagedResponse<StudentListItem>(items, totalCount, page, pageSize, totalPages);
+    }
+
     public async Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentProfileId, CancellationToken ct = default)
     {
         var profile = await _db.StudentProfiles

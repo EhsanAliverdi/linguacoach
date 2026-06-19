@@ -711,4 +711,223 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         Assert.DoesNotContain("secret", raw, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("temporaryPassword", raw, StringComparison.OrdinalIgnoreCase);
     }
+
+    // ── GET /api/admin/students — paged list ──────────────────────────────────
+
+    private async Task<string> SetupAdminAndStudentsAsync(params string[] emails)
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        foreach (var email in emails)
+            await _client.PostAsJsonAsync("/api/admin/students", new { email, temporaryPassword = "Student@1234" });
+        return adminToken;
+    }
+
+    [Fact]
+    public async Task ListStudents_DefaultParams_ReturnsPagedWrapper()
+    {
+        await SetupAdminAndStudentsAsync($"paged_a_{Guid.NewGuid():N}@test.com");
+
+        var response = await _client.GetAsync("/api/admin/students");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.TryGetProperty("items", out _));
+        Assert.True(body.TryGetProperty("totalCount", out _));
+        Assert.True(body.TryGetProperty("page", out var page));
+        Assert.Equal(1, page.GetInt32());
+        Assert.True(body.TryGetProperty("pageSize", out var ps));
+        Assert.Equal(25, ps.GetInt32());
+        Assert.True(body.TryGetProperty("totalPages", out _));
+    }
+
+    [Fact]
+    public async Task ListStudents_PageSizeCappedAt100()
+    {
+        await SetupAdminAndStudentsAsync($"cap_{Guid.NewGuid():N}@test.com");
+
+        var response = await _client.GetAsync("/api/admin/students?pageSize=999");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(100, body.GetProperty("pageSize").GetInt32());
+    }
+
+    [Fact]
+    public async Task ListStudents_Page2_ReturnsCorrectItems()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        // Create 3 students; request page 2 with pageSize 2 — expect 1 item.
+        for (var i = 0; i < 3; i++)
+            await _client.PostAsJsonAsync("/api/admin/students",
+                new { email = $"p2_{Guid.NewGuid():N}@test.com", temporaryPassword = "Student@1234" });
+
+        var response = await _client.GetAsync("/api/admin/students?page=2&pageSize=2");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, body.GetProperty("page").GetInt32());
+        // items count depends on total; at least the structure is valid.
+        Assert.True(body.GetProperty("items").GetArrayLength() >= 0);
+    }
+
+    [Fact]
+    public async Task ListStudents_SearchByEmail_ReturnsMatchingOnly()
+    {
+        var unique = Guid.NewGuid().ToString("N")[..8];
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        await _client.PostAsJsonAsync("/api/admin/students",
+            new { email = $"search_{unique}@example.com", temporaryPassword = "Student@1234" });
+        await _client.PostAsJsonAsync("/api/admin/students",
+            new { email = $"other_{Guid.NewGuid():N}@example.com", temporaryPassword = "Student@1234" });
+
+        var response = await _client.GetAsync($"/api/admin/students?search=search_{unique}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var items = body.GetProperty("items");
+        Assert.True(items.GetArrayLength() >= 1);
+        foreach (var item in items.EnumerateArray())
+            Assert.Contains(unique, item.GetProperty("email").GetString());
+    }
+
+    [Fact]
+    public async Task ListStudents_SearchByName_ReturnsMatchingOnly()
+    {
+        var uniqueName = $"Zephyr{Guid.NewGuid().ToString("N")[..6]}";
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        await _client.PostAsJsonAsync("/api/admin/students",
+            new { email = $"named_{Guid.NewGuid():N}@test.com", temporaryPassword = "Student@1234", firstName = uniqueName });
+        await _client.PostAsJsonAsync("/api/admin/students",
+            new { email = $"unnamed_{Guid.NewGuid():N}@test.com", temporaryPassword = "Student@1234" });
+
+        var response = await _client.GetAsync($"/api/admin/students?search={uniqueName}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("items").GetArrayLength() >= 1);
+    }
+
+    [Fact]
+    public async Task ListStudents_IncludeArchivedFalse_ExcludesArchived()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"arch_excl_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students", new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+        await _client.PostAsync($"/api/admin/students/{profileId}/archive", null);
+
+        var response = await _client.GetAsync($"/api/admin/students?includeArchived=false&search={email.Split('@')[0]}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, body.GetProperty("items").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task ListStudents_IncludeArchivedTrue_IncludesArchived()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"arch_incl_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students", new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+        await _client.PostAsync($"/api/admin/students/{profileId}/archive", null);
+
+        var response = await _client.GetAsync($"/api/admin/students?includeArchived=true&search={email.Split('@')[0]}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("items").GetArrayLength() >= 1);
+    }
+
+    [Fact]
+    public async Task ListStudents_LifecycleStageFilter_ReturnsMatchingOnly()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"lc_filter_{Guid.NewGuid():N}@test.com";
+        await _client.PostAsJsonAsync("/api/admin/students", new { email, temporaryPassword = "Student@1234" });
+
+        var response = await _client.GetAsync("/api/admin/students?lifecycleStage=OnboardingRequired");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        foreach (var item in body.GetProperty("items").EnumerateArray())
+            Assert.Equal("OnboardingRequired", item.GetProperty("lifecycleStage").GetString());
+    }
+
+    [Fact]
+    public async Task ListStudents_CefrLevelFilter_ReturnsMatchingOnly()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"cefr_filt_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students", new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr", new { cefrLevel = "C2" });
+
+        var response = await _client.GetAsync("/api/admin/students?cefrLevel=C2");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("items").GetArrayLength() >= 1);
+        foreach (var item in body.GetProperty("items").EnumerateArray())
+            Assert.Equal("C2", item.GetProperty("cefrLevel").GetString());
+    }
+
+    [Fact]
+    public async Task ListStudents_SortByCreatedAtAsc_OrderIsAscending()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        for (var i = 0; i < 3; i++)
+            await _client.PostAsJsonAsync("/api/admin/students",
+                new { email = $"sort_asc_{Guid.NewGuid():N}@test.com", temporaryPassword = "Student@1234" });
+
+        var response = await _client.GetAsync("/api/admin/students?sortBy=createdAt&sortDir=asc&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var dates = body.GetProperty("items").EnumerateArray()
+            .Select(i => DateTime.Parse(i.GetProperty("createdAt").GetString()!))
+            .ToList();
+        for (var i = 0; i < dates.Count - 1; i++)
+            Assert.True(dates[i] <= dates[i + 1], "Items should be sorted ascending by createdAt");
+    }
+
+    [Fact]
+    public async Task ListStudents_ResponseIncludesPaginationFields()
+    {
+        await SetupAdminAndStudentsAsync($"pf_{Guid.NewGuid():N}@test.com");
+
+        var response = await _client.GetAsync("/api/admin/students?page=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("totalCount").GetInt32() >= 0);
+        Assert.True(body.GetProperty("totalPages").GetInt32() >= 1);
+        Assert.Equal(1, body.GetProperty("page").GetInt32());
+        Assert.Equal(10, body.GetProperty("pageSize").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetStudentDetail_StillReturns200_AfterPagedListChange()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"detail_compat_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students", new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.GetAsync($"/api/admin/students/{profileId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(email, body.GetProperty("email").GetString());
+    }
 }

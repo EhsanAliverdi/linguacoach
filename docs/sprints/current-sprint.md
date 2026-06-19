@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-E)
+lastUpdated: 2026-06-19 (10Students-F-F)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,29 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10Students-F-F — Server-Side Student Pagination, Filtering, Sorting** - complete (2026-06-19)
+
+Goal: make the admin student list enterprise-ready by moving all pagination, filtering, searching, and sorting to the backend. Breaking change to the list endpoint response shape.
+
+### Delivered
+
+- `StudentListQuery` and `PagedResponse<T>` records added to `AdminQueries.cs`.
+- `ListStudentsPagedAsync(StudentListQuery)` added to `IAdminStudentQuery` interface and `AdminHandler` implementation. Applies archived filter, lifecycle/onboarding/CEFR exact-match filters, case-insensitive search across email/displayName/firstName/lastName, sorting on name/email/onboardingStatus/lifecycleStage/cefrLevel/createdAt, Skip/Take pagination. `pageSize` capped at 100.
+- `GET /api/admin/students` updated to accept `page`, `pageSize`, `search`, `includeArchived`, `lifecycleStage`, `onboardingStatus`, `cefrLevel`, `sortBy`, `sortDir` query params. Returns `PagedResponse<StudentListItem>` (breaking change from `StudentListItem[]`).
+- `GET /api/admin/students/{id}` (detail endpoint) unchanged.
+- `StudentListQuery` and `PagedResponse<T>` TypeScript interfaces added to `admin.models.ts`.
+- `AdminApiService.listStudents(query)` updated to accept `StudentListQuery` and return `Observable<PagedResponse<StudentListItem>>`.
+- `admin-students.component.ts` refactored: client-side computed signals removed, server-driven `load()` on every param change (page, search, includeArchived, sort). Row actions reload current page after success.
+- `admin-dashboard.component.ts` updated to read `r.items` from paged response.
+- All spec files updated: `admin-students.component.spec.ts` (full rewrite for server-driven pattern), `admin-dashboard.component.spec.ts`, `admin-wrapper-migration.spec.ts`, `AdminManagementEndpointTests.cs`.
+- 12 new integration tests in `AdminEndpointTests.cs`. 2 pre-existing tests in `AdminManagementEndpointTests.cs` fixed for new response shape.
+- Backend: 1944 tests pass. Frontend: 756 tests pass.
+- No migration. No student-facing changes. No bulk operations.
+
+See: `docs/reviews/2026-06-19-phase-10students-f-f-server-side-student-pagination-filtering-sorting-review.md`
+
+---
 
 **Phase 10Students-F-E — Student Audit / History Tab** - complete (2026-06-19)
 
