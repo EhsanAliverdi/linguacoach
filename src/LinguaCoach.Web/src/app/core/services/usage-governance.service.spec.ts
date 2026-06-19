@@ -67,4 +67,47 @@ describe('UsageGovernanceService', () => {
     expect(req.request.params.get('period')).toBe('today');
     req.flush({ totalTokens: 0 });
   });
+
+  it('addRule calls POST /api/admin/usage-policies/:policyId/rules', () => {
+    const policyId = 'policy-1';
+    const body = {
+      featureKey: 'writing.evaluate', trackingEnabled: true,
+      enforcementMode: 'HardLimit', unitType: 'Count',
+      dailyLimit: 5, weeklyLimit: null, monthlyLimit: null,
+      dailyCostLimit: null, monthlyCostLimit: null,
+      warningThresholdPercent: 80, isActive: true,
+    };
+    svc.addRule(policyId, body).subscribe();
+    const req = http.expectOne(`/api/admin/usage-policies/${policyId}/rules`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.featureKey).toBe('writing.evaluate');
+    expect(req.request.body.dailyLimit).toBe(5);
+    req.flush({ id: 'rule-1', ...body });
+  });
+
+  it('updateRule calls PUT /api/admin/usage-policies/:policyId/rules/:ruleId', () => {
+    const policyId = 'policy-1';
+    const ruleId = 'rule-1';
+    const body = {
+      trackingEnabled: false, enforcementMode: 'TrackOnly', unitType: 'Tokens',
+      dailyLimit: null, weeklyLimit: null, monthlyLimit: 100,
+      dailyCostLimit: null, monthlyCostLimit: null,
+      warningThresholdPercent: 70, isActive: true,
+    };
+    svc.updateRule(policyId, ruleId, body).subscribe();
+    const req = http.expectOne(`/api/admin/usage-policies/${policyId}/rules/${ruleId}`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body.enforcementMode).toBe('TrackOnly');
+    expect(req.request.body.monthlyLimit).toBe(100);
+    req.flush({ id: ruleId, featureKey: 'writing.evaluate', ...body });
+  });
+
+  it('deleteRule calls DELETE /api/admin/usage-policies/:policyId/rules/:ruleId', () => {
+    const policyId = 'policy-1';
+    const ruleId = 'rule-1';
+    svc.deleteRule(policyId, ruleId).subscribe();
+    const req = http.expectOne(`/api/admin/usage-policies/${policyId}/rules/${ruleId}`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
 });

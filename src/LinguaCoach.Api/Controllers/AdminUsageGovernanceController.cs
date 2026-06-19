@@ -92,6 +92,72 @@ public sealed class AdminUsageGovernanceController : ControllerBase
         }
     }
 
+    // ── Usage policy rules ───────────────────────────────────────────────────
+
+    [HttpPost("usage-policies/{policyId:guid}/rules")]
+    public async Task<IActionResult> AddRule(
+        Guid policyId,
+        [FromBody] AddUsagePolicyRuleRequest request,
+        CancellationToken ct)
+    {
+        try
+        {
+            var rule = await _governance.AddRuleAsync(policyId, request, AdminUserId, ct);
+            return CreatedAtAction(nameof(GetUsagePolicy), new { id = policyId }, MapRule(rule));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("usage-policies/{policyId:guid}/rules/{ruleId:guid}")]
+    public async Task<IActionResult> UpdateRule(
+        Guid policyId,
+        Guid ruleId,
+        [FromBody] UpdateUsagePolicyRuleRequest request,
+        CancellationToken ct)
+    {
+        try
+        {
+            var rule = await _governance.UpdateRuleAsync(policyId, ruleId, request, AdminUserId, ct);
+            return Ok(MapRule(rule));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("usage-policies/{policyId:guid}/rules/{ruleId:guid}")]
+    public async Task<IActionResult> DeleteRule(
+        Guid policyId,
+        Guid ruleId,
+        CancellationToken ct)
+    {
+        try
+        {
+            await _governance.DeleteRuleAsync(policyId, ruleId, AdminUserId, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     // ── Student policy assignment ────────────────────────────────────────────
 
     [HttpPut("students/{studentId:guid}/usage-policy")]
@@ -152,6 +218,22 @@ public sealed class AdminUsageGovernanceController : ControllerBase
     }
 
     // ── Mappings ─────────────────────────────────────────────────────────────
+
+    private static object MapRule(LinguaCoach.Domain.Entities.UsagePolicyRule r) => new
+    {
+        r.Id,
+        r.FeatureKey,
+        r.TrackingEnabled,
+        EnforcementMode = r.EnforcementMode.ToString(),
+        UnitType = r.UnitType.ToString(),
+        r.DailyLimit,
+        r.WeeklyLimit,
+        r.MonthlyLimit,
+        r.DailyCostLimit,
+        r.MonthlyCostLimit,
+        r.WarningThresholdPercent,
+        r.IsActive
+    };
 
     private static object MapPolicy(LinguaCoach.Domain.Entities.UsagePolicy p) => new
     {

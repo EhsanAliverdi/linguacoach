@@ -62,4 +62,41 @@ public sealed class UsagePolicyRule : BaseEntity
         WarningThresholdPercent = warningThresholdPercent;
         IsActive = isActive;
     }
+
+    public void Update(
+        bool trackingEnabled,
+        EnforcementMode enforcementMode,
+        UsageUnitType unitType,
+        long? dailyLimit,
+        long? weeklyLimit,
+        long? monthlyLimit,
+        decimal? dailyCostLimit,
+        decimal? monthlyCostLimit,
+        int warningThresholdPercent,
+        bool isActive)
+    {
+        if (dailyLimit.HasValue && dailyLimit < 0)
+            throw new ArgumentOutOfRangeException(nameof(dailyLimit), "Daily limit cannot be negative.");
+        if (weeklyLimit.HasValue && weeklyLimit < 0)
+            throw new ArgumentOutOfRangeException(nameof(weeklyLimit), "Weekly limit cannot be negative.");
+        if (monthlyLimit.HasValue && monthlyLimit < 0)
+            throw new ArgumentOutOfRangeException(nameof(monthlyLimit), "Monthly limit cannot be negative.");
+        if (dailyCostLimit.HasValue && dailyCostLimit < 0)
+            throw new ArgumentOutOfRangeException(nameof(dailyCostLimit), "Daily cost limit cannot be negative.");
+        if (monthlyCostLimit.HasValue && monthlyCostLimit < 0)
+            throw new ArgumentOutOfRangeException(nameof(monthlyCostLimit), "Monthly cost limit cannot be negative.");
+        if (warningThresholdPercent < 0 || warningThresholdPercent > 100)
+            throw new ArgumentOutOfRangeException(nameof(warningThresholdPercent), "Warning threshold must be 0-100.");
+
+        TrackingEnabled = trackingEnabled;
+        EnforcementMode = enforcementMode;
+        UnitType = unitType;
+        DailyLimit = dailyLimit;
+        WeeklyLimit = weeklyLimit;
+        MonthlyLimit = monthlyLimit;
+        DailyCostLimit = dailyCostLimit;
+        MonthlyCostLimit = monthlyCostLimit;
+        WarningThresholdPercent = warningThresholdPercent;
+        IsActive = isActive;
+    }
 }

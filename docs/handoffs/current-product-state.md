@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-J-T)
+lastUpdated: 2026-06-19 (10R-G)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,35 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Usage Policy Rule CRUD backend complete (Phase 10R-G)
+
+Admins can now manage individual usage policy rules via the API.
+
+What changed:
+- `UsagePolicyRule.Update(...)` domain method added — all limit fields are now mutable via domain layer.
+- Three new admin API endpoints: `POST/PUT/DELETE /api/admin/usage-policies/{policyId}/rules[/{ruleId}]`.
+- Duplicate-feature-key guard at application layer prevents two rules for the same feature in one policy.
+- Frontend `UsageGovernanceService` has `addRule`, `updateRule`, `deleteRule` methods ready for a UI.
+- No migration needed. No UI rule editor built yet (next phase: TODO-10R-RULE-MGMT-UI).
+
+See: `docs/reviews/2026-06-19-phase-10r-g-usage-policy-rule-crud-backend-foundation-review.md`
+
+---
+
+## Usage Governance Admin UX complete (Phase 10R-F)
+
+Usage Policies admin page is production-usable.
+
+What changed:
+- Summary stat cards (total / active / default policy name).
+- Expandable rule rows showing feature name, enforcement mode, unit type, and limits.
+- Feature display names resolved from feature-definitions API.
+- All admin design system wrappers used.
+
+See: `docs/reviews/2026-06-19-phase-10r-f-usage-governance-admin-ux-foundation-review.md`
 
 ---
 

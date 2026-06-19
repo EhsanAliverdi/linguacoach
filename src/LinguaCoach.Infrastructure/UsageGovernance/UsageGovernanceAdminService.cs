@@ -69,6 +69,72 @@ public sealed class UsageGovernanceAdminService : IUsageGovernanceAdminService
         return policy;
     }
 
+    public async Task<UsagePolicyRule> AddRuleAsync(
+        Guid policyId,
+        AddUsagePolicyRuleRequest request,
+        Guid adminUserId,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.FeatureKey))
+            throw new ArgumentException("Feature key is required.", nameof(request));
+
+        var policy = await _db.UsagePolicies.FirstOrDefaultAsync(p => p.Id == policyId, ct)
+            ?? throw new KeyNotFoundException($"Usage policy {policyId} not found.");
+
+        var existing = await _db.UsagePolicyRules
+            .FirstOrDefaultAsync(r => r.UsagePolicyId == policyId
+                && r.FeatureKey == request.FeatureKey.Trim().ToLowerInvariant(), ct);
+        if (existing is not null)
+            throw new InvalidOperationException(
+                $"A rule for feature '{request.FeatureKey}' already exists in this policy.");
+
+        var rule = new UsagePolicyRule(
+            policy.Id, request.FeatureKey, request.TrackingEnabled,
+            request.EnforcementMode, request.UnitType,
+            request.DailyLimit, request.WeeklyLimit, request.MonthlyLimit,
+            request.DailyCostLimit, request.MonthlyCostLimit,
+            request.WarningThresholdPercent, request.IsActive);
+
+        _db.UsagePolicyRules.Add(rule);
+        await _db.SaveChangesAsync(ct);
+        return rule;
+    }
+
+    public async Task<UsagePolicyRule> UpdateRuleAsync(
+        Guid policyId,
+        Guid ruleId,
+        UpdateUsagePolicyRuleRequest request,
+        Guid adminUserId,
+        CancellationToken ct = default)
+    {
+        var rule = await _db.UsagePolicyRules
+            .FirstOrDefaultAsync(r => r.Id == ruleId && r.UsagePolicyId == policyId, ct)
+            ?? throw new KeyNotFoundException($"Rule {ruleId} not found in policy {policyId}.");
+
+        rule.Update(
+            request.TrackingEnabled, request.EnforcementMode, request.UnitType,
+            request.DailyLimit, request.WeeklyLimit, request.MonthlyLimit,
+            request.DailyCostLimit, request.MonthlyCostLimit,
+            request.WarningThresholdPercent, request.IsActive);
+
+        await _db.SaveChangesAsync(ct);
+        return rule;
+    }
+
+    public async Task DeleteRuleAsync(
+        Guid policyId,
+        Guid ruleId,
+        Guid adminUserId,
+        CancellationToken ct = default)
+    {
+        var rule = await _db.UsagePolicyRules
+            .FirstOrDefaultAsync(r => r.Id == ruleId && r.UsagePolicyId == policyId, ct)
+            ?? throw new KeyNotFoundException($"Rule {ruleId} not found in policy {policyId}.");
+
+        _db.UsagePolicyRules.Remove(rule);
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task AssignPolicyToStudentAsync(
         Guid studentProfileId,
         Guid usagePolicyId,

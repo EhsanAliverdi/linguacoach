@@ -302,6 +302,171 @@ public sealed class UsageGovernanceDbTests : IAsyncLifetime
 
         Assert.Equal("Renamed Policy", updated.Name);
     }
+
+    // ── 8. Admin service: rule CRUD ───────────────────────────────────────────
+
+    [Fact]
+    public async Task AdminService_AddRule_CreatesRule()
+    {
+        var policy = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Rule Add Policy", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        var rule = await AdminSvc.AddRuleAsync(policy.Id,
+            new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.HardLimit,
+                UsageUnitType.Count, DailyLimit: 5, null, null, null, null),
+            Guid.NewGuid());
+
+        Assert.NotEqual(Guid.Empty, rule.Id);
+        Assert.Equal("writing.evaluate", rule.FeatureKey);
+        Assert.Equal(EnforcementMode.HardLimit, rule.EnforcementMode);
+        Assert.Equal(5, rule.DailyLimit);
+
+        var inDb = await Db.UsagePolicyRules.FindAsync(rule.Id);
+        Assert.NotNull(inDb);
+    }
+
+    [Fact]
+    public async Task AdminService_AddRule_DuplicateFeatureKey_Throws()
+    {
+        var policy = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Dup Rule Policy", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        await AdminSvc.AddRuleAsync(policy.Id,
+            new AddUsagePolicyRuleRequest("speaking.evaluate", true, EnforcementMode.TrackOnly,
+                UsageUnitType.Count, null, null, null, null, null),
+            Guid.NewGuid());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            AdminSvc.AddRuleAsync(policy.Id,
+                new AddUsagePolicyRuleRequest("speaking.evaluate", false, EnforcementMode.HardLimit,
+                    UsageUnitType.Count, null, null, null, null, null),
+                Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task AdminService_AddRule_PolicyNotFound_Throws()
+    {
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            AdminSvc.AddRuleAsync(Guid.NewGuid(),
+                new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.TrackOnly,
+                    UsageUnitType.Count, null, null, null, null, null),
+                Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task AdminService_UpdateRule_ChangesFields()
+    {
+        var policy = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Rule Update Policy", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        var rule = await AdminSvc.AddRuleAsync(policy.Id,
+            new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.TrackOnly,
+                UsageUnitType.Count, null, null, null, null, null),
+            Guid.NewGuid());
+
+        var updated = await AdminSvc.UpdateRuleAsync(policy.Id, rule.Id,
+            new UpdateUsagePolicyRuleRequest(false, EnforcementMode.HardLimit, UsageUnitType.Tokens,
+                DailyLimit: 10, null, MonthlyLimit: 50, null, null, WarningThresholdPercent: 70, IsActive: true),
+            Guid.NewGuid());
+
+        Assert.Equal(EnforcementMode.HardLimit, updated.EnforcementMode);
+        Assert.Equal(UsageUnitType.Tokens, updated.UnitType);
+        Assert.Equal(10, updated.DailyLimit);
+        Assert.Equal(50, updated.MonthlyLimit);
+        Assert.Equal(70, updated.WarningThresholdPercent);
+        Assert.False(updated.TrackingEnabled);
+    }
+
+    [Fact]
+    public async Task AdminService_UpdateRule_WrongPolicy_Throws()
+    {
+        var policy1 = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Policy One", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+        var policy2 = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Policy Two", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        var rule = await AdminSvc.AddRuleAsync(policy1.Id,
+            new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.TrackOnly,
+                UsageUnitType.Count, null, null, null, null, null),
+            Guid.NewGuid());
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            AdminSvc.UpdateRuleAsync(policy2.Id, rule.Id,
+                new UpdateUsagePolicyRuleRequest(true, EnforcementMode.TrackOnly, UsageUnitType.Count,
+                    null, null, null, null, null),
+                Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task AdminService_DeleteRule_RemovesFromDb()
+    {
+        var policy = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Rule Delete Policy", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        var rule = await AdminSvc.AddRuleAsync(policy.Id,
+            new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.TrackOnly,
+                UsageUnitType.Count, null, null, null, null, null),
+            Guid.NewGuid());
+
+        await AdminSvc.DeleteRuleAsync(policy.Id, rule.Id, Guid.NewGuid());
+
+        var inDb = await Db.UsagePolicyRules.FindAsync(rule.Id);
+        Assert.Null(inDb);
+    }
+
+    [Fact]
+    public async Task AdminService_DeleteRule_WrongPolicy_Throws()
+    {
+        var policy1 = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Del Policy One", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+        var policy2 = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Del Policy Two", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        var rule = await AdminSvc.AddRuleAsync(policy1.Id,
+            new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.TrackOnly,
+                UsageUnitType.Count, null, null, null, null, null),
+            Guid.NewGuid());
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            AdminSvc.DeleteRuleAsync(policy2.Id, rule.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task AdminService_EnableDisableRule_ViaUpdate()
+    {
+        var policy = await AdminSvc.CreateUsagePolicyAsync(
+            new CreateUsagePolicyRequest("Enable Disable Policy", null, UsagePolicyScopeType.Student, false, true, []),
+            Guid.NewGuid());
+
+        var rule = await AdminSvc.AddRuleAsync(policy.Id,
+            new AddUsagePolicyRuleRequest("writing.evaluate", true, EnforcementMode.TrackOnly,
+                UsageUnitType.Count, null, null, null, null, null, IsActive: true),
+            Guid.NewGuid());
+
+        // Disable
+        var disabled = await AdminSvc.UpdateRuleAsync(policy.Id, rule.Id,
+            new UpdateUsagePolicyRuleRequest(rule.TrackingEnabled, rule.EnforcementMode, rule.UnitType,
+                rule.DailyLimit, rule.WeeklyLimit, rule.MonthlyLimit,
+                rule.DailyCostLimit, rule.MonthlyCostLimit, rule.WarningThresholdPercent, IsActive: false),
+            Guid.NewGuid());
+        Assert.False(disabled.IsActive);
+
+        // Re-enable
+        var enabled = await AdminSvc.UpdateRuleAsync(policy.Id, rule.Id,
+            new UpdateUsagePolicyRuleRequest(rule.TrackingEnabled, rule.EnforcementMode, rule.UnitType,
+                rule.DailyLimit, rule.WeeklyLimit, rule.MonthlyLimit,
+                rule.DailyCostLimit, rule.MonthlyCostLimit, rule.WarningThresholdPercent, IsActive: true),
+            Guid.NewGuid());
+        Assert.True(enabled.IsActive);
+    }
 }
 
 /// <summary>
@@ -390,5 +555,255 @@ public sealed class UsageGovernanceEndpointTests : IClassFixture<UsageGovernance
         var payload = new { policyId = Guid.NewGuid(), reason = "" };
         var resp = await client.PutAsJsonAsync($"/api/admin/students/{Guid.NewGuid()}/usage-policy", payload);
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    // ── Rule CRUD endpoints ───────────────────────────────────────────────────
+
+    private async Task<(System.Net.Http.HttpClient client, Guid policyId)> CreatePolicyForRuleTestsAsync()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var policyPayload = new
+        {
+            name = "Rule EP Policy " + Guid.NewGuid().ToString("N")[..6],
+            description = (string?)null,
+            scopeType = "Student",
+            isDefault = false,
+            isActive = true,
+            rules = Array.Empty<object>()
+        };
+        var policyResp = await client.PostAsJsonAsync("/api/admin/usage-policies", policyPayload);
+        policyResp.EnsureSuccessStatusCode();
+        var policyJson = System.Text.Json.JsonDocument.Parse(await policyResp.Content.ReadAsStringAsync());
+        var policyId = Guid.Parse(policyJson.RootElement.GetProperty("id").GetString()!);
+        return (client, policyId);
+    }
+
+    [Fact]
+    public async Task Admin_AddRule_ReturnsCreated()
+    {
+        var (client, policyId) = await CreatePolicyForRuleTestsAsync();
+
+        var rulePayload = new
+        {
+            featureKey = "writing.evaluate",
+            trackingEnabled = true,
+            enforcementMode = "HardLimit",
+            unitType = "Count",
+            dailyLimit = 5,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+
+        var resp = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules", rulePayload);
+        Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
+        var body = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("writing.evaluate", body);
+    }
+
+    [Fact]
+    public async Task Admin_AddRule_DuplicateFeatureKey_Returns409()
+    {
+        var (client, policyId) = await CreatePolicyForRuleTestsAsync();
+
+        var rulePayload = new
+        {
+            featureKey = "speaking.evaluate",
+            trackingEnabled = true,
+            enforcementMode = "TrackOnly",
+            unitType = "Count",
+            dailyLimit = (int?)null,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+
+        var first = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules", rulePayload);
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+
+        var second = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules", rulePayload);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_AddRule_PolicyNotFound_Returns404()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var rulePayload = new
+        {
+            featureKey = "writing.evaluate",
+            trackingEnabled = true,
+            enforcementMode = "TrackOnly",
+            unitType = "Count",
+            dailyLimit = (int?)null,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+
+        var resp = await client.PostAsJsonAsync($"/api/admin/usage-policies/{Guid.NewGuid()}/rules", rulePayload);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_UpdateRule_ReturnsOk()
+    {
+        var (client, policyId) = await CreatePolicyForRuleTestsAsync();
+
+        var addPayload = new
+        {
+            featureKey = "lesson.generate",
+            trackingEnabled = true,
+            enforcementMode = "TrackOnly",
+            unitType = "Count",
+            dailyLimit = (int?)null,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+        var addResp = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules", addPayload);
+        addResp.EnsureSuccessStatusCode();
+        var addJson = System.Text.Json.JsonDocument.Parse(await addResp.Content.ReadAsStringAsync());
+        var ruleId = Guid.Parse(addJson.RootElement.GetProperty("id").GetString()!);
+
+        var updatePayload = new
+        {
+            trackingEnabled = false,
+            enforcementMode = "HardLimit",
+            unitType = "Tokens",
+            dailyLimit = 20,
+            weeklyLimit = (int?)null,
+            monthlyLimit = 100,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 70,
+            isActive = true
+        };
+        var updateResp = await client.PutAsJsonAsync(
+            $"/api/admin/usage-policies/{policyId}/rules/{ruleId}", updatePayload);
+        Assert.Equal(HttpStatusCode.OK, updateResp.StatusCode);
+        var body = await updateResp.Content.ReadAsStringAsync();
+        Assert.Contains("HardLimit", body);
+        Assert.Contains("Tokens", body);
+    }
+
+    [Fact]
+    public async Task Admin_UpdateRule_WrongPolicy_Returns404()
+    {
+        var (client, policyId) = await CreatePolicyForRuleTestsAsync();
+
+        var addPayload = new
+        {
+            featureKey = "writing.evaluate",
+            trackingEnabled = true,
+            enforcementMode = "TrackOnly",
+            unitType = "Count",
+            dailyLimit = (int?)null,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+        var addResp = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules", addPayload);
+        addResp.EnsureSuccessStatusCode();
+        var addJson = System.Text.Json.JsonDocument.Parse(await addResp.Content.ReadAsStringAsync());
+        var ruleId = Guid.Parse(addJson.RootElement.GetProperty("id").GetString()!);
+
+        var updatePayload = new
+        {
+            trackingEnabled = true,
+            enforcementMode = "TrackOnly",
+            unitType = "Count",
+            dailyLimit = (int?)null,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+        var resp = await client.PutAsJsonAsync(
+            $"/api/admin/usage-policies/{Guid.NewGuid()}/rules/{ruleId}", updatePayload);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_DeleteRule_ReturnsNoContent()
+    {
+        var (client, policyId) = await CreatePolicyForRuleTestsAsync();
+
+        var addPayload = new
+        {
+            featureKey = "tts.generate",
+            trackingEnabled = true,
+            enforcementMode = "TrackOnly",
+            unitType = "Count",
+            dailyLimit = (int?)null,
+            weeklyLimit = (int?)null,
+            monthlyLimit = (int?)null,
+            dailyCostLimit = (decimal?)null,
+            monthlyCostLimit = (decimal?)null,
+            warningThresholdPercent = 80,
+            isActive = true
+        };
+        var addResp = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules", addPayload);
+        addResp.EnsureSuccessStatusCode();
+        var addJson = System.Text.Json.JsonDocument.Parse(await addResp.Content.ReadAsStringAsync());
+        var ruleId = Guid.Parse(addJson.RootElement.GetProperty("id").GetString()!);
+
+        var delResp = await client.DeleteAsync($"/api/admin/usage-policies/{policyId}/rules/{ruleId}");
+        Assert.Equal(HttpStatusCode.NoContent, delResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_DeleteRule_NotFound_Returns404()
+    {
+        var (client, policyId) = await CreatePolicyForRuleTestsAsync();
+
+        var resp = await client.DeleteAsync(
+            $"/api/admin/usage-policies/{policyId}/rules/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_RuleEndpoints_NonAdmin_Returns403()
+    {
+        var (studentToken, _) = await _factory.CreateStudentAndGetTokenAsync("nonadminrule@test.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", studentToken);
+
+        var policyId = Guid.NewGuid();
+        var ruleId = Guid.NewGuid();
+
+        var postResp = await client.PostAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules",
+            new { featureKey = "x", trackingEnabled = true, enforcementMode = "TrackOnly", unitType = "Count", warningThresholdPercent = 80, isActive = true });
+        Assert.Equal(HttpStatusCode.Forbidden, postResp.StatusCode);
+
+        var putResp = await client.PutAsJsonAsync($"/api/admin/usage-policies/{policyId}/rules/{ruleId}",
+            new { trackingEnabled = true, enforcementMode = "TrackOnly", unitType = "Count", warningThresholdPercent = 80, isActive = true });
+        Assert.Equal(HttpStatusCode.Forbidden, putResp.StatusCode);
+
+        var delResp = await client.DeleteAsync($"/api/admin/usage-policies/{policyId}/rules/{ruleId}");
+        Assert.Equal(HttpStatusCode.Forbidden, delResp.StatusCode);
     }
 }

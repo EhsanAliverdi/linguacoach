@@ -58,6 +58,33 @@ export interface UpdateUsagePolicyRequest {
   isActive: boolean;
 }
 
+export interface AddUsagePolicyRuleRequest {
+  featureKey: string;
+  trackingEnabled: boolean;
+  enforcementMode: string;
+  unitType: string;
+  dailyLimit: number | null;
+  weeklyLimit: number | null;
+  monthlyLimit: number | null;
+  dailyCostLimit: number | null;
+  monthlyCostLimit: number | null;
+  warningThresholdPercent: number;
+  isActive: boolean;
+}
+
+export interface UpdateUsagePolicyRuleRequest {
+  trackingEnabled: boolean;
+  enforcementMode: string;
+  unitType: string;
+  dailyLimit: number | null;
+  weeklyLimit: number | null;
+  monthlyLimit: number | null;
+  dailyCostLimit: number | null;
+  monthlyCostLimit: number | null;
+  warningThresholdPercent: number;
+  isActive: boolean;
+}
+
 export interface UsageSummary {
   studentProfileId: string;
   period: string;
@@ -97,6 +124,18 @@ export class UsageGovernanceService {
 
   updateUsagePolicy(id: string, req: UpdateUsagePolicyRequest): Observable<UsagePolicy> {
     return this.http.put<UsagePolicy>(`/api/admin/usage-policies/${id}`, req);
+  }
+
+  addRule(policyId: string, req: AddUsagePolicyRuleRequest): Observable<UsagePolicyRule> {
+    return this.http.post<UsagePolicyRule>(`/api/admin/usage-policies/${policyId}/rules`, req);
+  }
+
+  updateRule(policyId: string, ruleId: string, req: UpdateUsagePolicyRuleRequest): Observable<UsagePolicyRule> {
+    return this.http.put<UsagePolicyRule>(`/api/admin/usage-policies/${policyId}/rules/${ruleId}`, req);
+  }
+
+  deleteRule(policyId: string, ruleId: string): Observable<void> {
+    return this.http.delete<void>(`/api/admin/usage-policies/${policyId}/rules/${ruleId}`);
   }
 
   assignStudentPolicy(studentId: string, policyId: string, reason: string | null): Observable<void> {

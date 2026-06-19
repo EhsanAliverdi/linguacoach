@@ -14,6 +14,11 @@ public interface IUsageGovernanceAdminService
     Task<UsagePolicy> CreateUsagePolicyAsync(CreateUsagePolicyRequest request, Guid adminUserId, CancellationToken ct = default);
     Task<UsagePolicy> UpdateUsagePolicyAsync(Guid id, UpdateUsagePolicyRequest request, Guid adminUserId, CancellationToken ct = default);
 
+    // Usage policy rules
+    Task<UsagePolicyRule> AddRuleAsync(Guid policyId, AddUsagePolicyRuleRequest request, Guid adminUserId, CancellationToken ct = default);
+    Task<UsagePolicyRule> UpdateRuleAsync(Guid policyId, Guid ruleId, UpdateUsagePolicyRuleRequest request, Guid adminUserId, CancellationToken ct = default);
+    Task DeleteRuleAsync(Guid policyId, Guid ruleId, Guid adminUserId, CancellationToken ct = default);
+
     // Student policy assignment
     Task AssignPolicyToStudentAsync(Guid studentProfileId, Guid usagePolicyId, Guid adminUserId, string? reason, CancellationToken ct = default);
     Task<UsagePolicy?> GetStudentEffectivePolicyAsync(Guid studentProfileId, CancellationToken ct = default);
@@ -35,6 +40,32 @@ public sealed record UpdateUsagePolicyRequest(
 
 public sealed record CreateUsagePolicyRuleRequest(
     string FeatureKey,
+    bool TrackingEnabled,
+    EnforcementMode EnforcementMode,
+    UsageUnitType UnitType,
+    long? DailyLimit,
+    long? WeeklyLimit,
+    long? MonthlyLimit,
+    decimal? DailyCostLimit,
+    decimal? MonthlyCostLimit,
+    int WarningThresholdPercent = 80,
+    bool IsActive = true);
+
+// Alias used by the per-rule add endpoint (same shape as create-time rule request).
+public sealed record AddUsagePolicyRuleRequest(
+    string FeatureKey,
+    bool TrackingEnabled,
+    EnforcementMode EnforcementMode,
+    UsageUnitType UnitType,
+    long? DailyLimit,
+    long? WeeklyLimit,
+    long? MonthlyLimit,
+    decimal? DailyCostLimit,
+    decimal? MonthlyCostLimit,
+    int WarningThresholdPercent = 80,
+    bool IsActive = true);
+
+public sealed record UpdateUsagePolicyRuleRequest(
     bool TrackingEnabled,
     EnforcementMode EnforcementMode,
     UsageUnitType UnitType,

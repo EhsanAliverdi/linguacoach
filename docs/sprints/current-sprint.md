@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-F)
+lastUpdated: 2026-06-19 (10R-G)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,39 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10R-G — Usage Policy Rule CRUD Backend Foundation** - complete (2026-06-19)
+
+Goal: add backend/domain/API support for individual usage policy rule create, update, and delete.
+
+### Delivered
+
+- `UsagePolicyRule.Update(...)` domain method with full validation (mirroring constructor invariants).
+- `AddUsagePolicyRuleRequest` and `UpdateUsagePolicyRuleRequest` application DTOs.
+- `AddRuleAsync`, `UpdateRuleAsync`, `DeleteRuleAsync` on `IUsageGovernanceAdminService` + implementation.
+- Duplicate-key guard in `AddRuleAsync`: one rule per `(policyId, featureKey)` enforced at application layer.
+- Three new admin API endpoints: `POST/PUT/DELETE /api/admin/usage-policies/{policyId}/rules[/{ruleId}]`.
+- `MapRule` helper on controller; all three endpoints admin-auth protected.
+- Frontend `UsageGovernanceService`: `addRule`, `updateRule`, `deleteRule` methods + two new request interfaces.
+- 4 unit tests, 16 integration tests (8 service + 8 endpoint), 3 Angular service tests — all pass.
+- No migration needed; no UI rule editor built yet.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1905/1905)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (670/670)
+
+### Remaining TODOs
+
+- `TODO-10R-RULE-MGMT-UI`: Inline rule editor UI in admin-usage-policies page (next phase).
+- `TODO-10R-RULE-MGMT-UNIQUE-CONSTRAINT`: Optional DB unique index on `(UsagePolicyId, FeatureKey)`.
+
+---
+
+## Previous sprint
 
 **Phase 10R-F — Usage Governance Admin UX Foundation** - complete (2026-06-19)
 

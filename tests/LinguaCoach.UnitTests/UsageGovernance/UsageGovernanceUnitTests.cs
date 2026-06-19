@@ -105,6 +105,64 @@ public sealed class UsageGovernanceUnitTests
         Assert.Equal(EnforcementMode.HardLimit, rule.EnforcementMode);
     }
 
+    // ── 3b. UsagePolicyRule.Update validation ─────────────────────────────────
+
+    [Fact]
+    public void UsagePolicyRule_Update_NegativeDailyLimit_Throws()
+    {
+        var rule = new UsagePolicyRule(Guid.NewGuid(), "writing.evaluate", true,
+            EnforcementMode.TrackOnly, UsageUnitType.Count, null, null, null, null, null, 80, true);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            rule.Update(true, EnforcementMode.HardLimit, UsageUnitType.Count,
+                dailyLimit: -1, null, null, null, null, 80, true));
+    }
+
+    [Fact]
+    public void UsagePolicyRule_Update_InvalidWarningThreshold_Throws()
+    {
+        var rule = new UsagePolicyRule(Guid.NewGuid(), "writing.evaluate", true,
+            EnforcementMode.TrackOnly, UsageUnitType.Count, null, null, null, null, null, 80, true);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            rule.Update(true, EnforcementMode.TrackOnly, UsageUnitType.Count,
+                null, null, null, null, null, warningThresholdPercent: 110, true));
+    }
+
+    [Fact]
+    public void UsagePolicyRule_Update_ValidFields_Succeeds()
+    {
+        var rule = new UsagePolicyRule(Guid.NewGuid(), "writing.evaluate", true,
+            EnforcementMode.TrackOnly, UsageUnitType.Count, null, null, null, null, null, 80, true);
+
+        rule.Update(false, EnforcementMode.HardLimit, UsageUnitType.Tokens,
+            dailyLimit: 10, weeklyLimit: 50, monthlyLimit: 100,
+            dailyCostLimit: 0.5m, monthlyCostLimit: 5m, warningThresholdPercent: 75, isActive: false);
+
+        Assert.Equal(EnforcementMode.HardLimit, rule.EnforcementMode);
+        Assert.Equal(UsageUnitType.Tokens, rule.UnitType);
+        Assert.Equal(10, rule.DailyLimit);
+        Assert.Equal(50, rule.WeeklyLimit);
+        Assert.Equal(100, rule.MonthlyLimit);
+        Assert.Equal(0.5m, rule.DailyCostLimit);
+        Assert.Equal(5m, rule.MonthlyCostLimit);
+        Assert.Equal(75, rule.WarningThresholdPercent);
+        Assert.False(rule.IsActive);
+        Assert.False(rule.TrackingEnabled);
+    }
+
+    [Fact]
+    public void UsagePolicyRule_Update_ClearsLimitsToNull()
+    {
+        var rule = new UsagePolicyRule(Guid.NewGuid(), "writing.evaluate", true,
+            EnforcementMode.HardLimit, UsageUnitType.Count, 10, 50, 100, null, null, 80, true);
+
+        rule.Update(true, EnforcementMode.TrackOnly, UsageUnitType.Count,
+            null, null, null, null, null, 80, true);
+
+        Assert.Null(rule.DailyLimit);
+        Assert.Null(rule.WeeklyLimit);
+        Assert.Null(rule.MonthlyLimit);
+    }
+
     // ── 4. QuotaDecision factory methods ─────────────────────────────────────
 
     [Fact]
