@@ -674,6 +674,152 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   });
 });
 
+// ── Admin CEFR management ─────────────────────────────────────────────────────
+
+describe('AdminStudentDetailComponent — admin CEFR management', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(cefrLevel: string | null = 'B2') {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ cefrLevel })));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('updateStudentCefr method exists on admin API service', () => {
+    setup();
+    expect(adminApi.updateStudentCefr).toBeDefined();
+  });
+
+  it('renders current CEFR badge when present', () => {
+    setup('B2');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('B2');
+  });
+
+  it('renders Not set empty state when CEFR is null', () => {
+    setup(null);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Not set');
+  });
+
+  it('Set CEFR button opens CEFR edit modal', () => {
+    setup('B2');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+
+    const btn = Array.from(html.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Set CEFR');
+    expect(btn).toBeTruthy();
+    btn?.click();
+    fixture.detectChanges();
+
+    expect(html.textContent).toContain('Set CEFR level');
+    expect(fixture.componentInstance.settingCefr()).toBeTrue();
+  });
+
+  it('selecting B2 and saving calls updateStudentCefr with cefrLevel B2', () => {
+    setup(null);
+    adminApi.updateStudentCefr.and.returnValue(of(undefined));
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.settingCefr.set(true);
+    comp.cefrForm = { cefrLevel: 'B2', reason: '' };
+    comp.saveSetCefr();
+
+    expect(adminApi.updateStudentCefr).toHaveBeenCalledWith('student-1', 'B2', undefined);
+  });
+
+  it('selecting Clear and saving calls updateStudentCefr with null', () => {
+    setup('B2');
+    adminApi.updateStudentCefr.and.returnValue(of(undefined));
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.settingCefr.set(true);
+    comp.cefrForm = { cefrLevel: '', reason: '' };
+    comp.saveSetCefr();
+
+    expect(adminApi.updateStudentCefr).toHaveBeenCalledWith('student-1', null, undefined);
+  });
+
+  it('on success, getStudent is called again', () => {
+    setup(null);
+    adminApi.updateStudentCefr.and.returnValue(of(undefined));
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const callsBefore = adminApi.getStudent.calls.count();
+
+    comp.settingCefr.set(true);
+    comp.cefrForm = { cefrLevel: 'C1', reason: '' };
+    comp.saveSetCefr();
+
+    expect(adminApi.getStudent.calls.count()).toBeGreaterThan(callsBefore);
+  });
+
+  it('on error, error message is set', () => {
+    setup(null);
+    adminApi.updateStudentCefr.and.returnValue(throwError(() => ({ error: { error: 'Invalid CEFR level.' } })));
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.settingCefr.set(true);
+    comp.cefrForm = { cefrLevel: 'Z9', reason: '' };
+    comp.saveSetCefr();
+
+    expect(comp.cefrError()).toBe('Invalid CEFR level.');
+  });
+
+  it('no student-authored CEFR edit controls introduced', () => {
+    setup('B2');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    // Student preferences slide-over must not contain CEFR edit controls
+    const comp = fixture.componentInstance;
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+    const slideOver = html.querySelector('sp-admin-slide-over');
+    expect(slideOver?.textContent).not.toContain('Set CEFR');
+  });
+});
+
 // ── Lifecycle controls ────────────────────────────────────────────────────────
 
 describe('AdminStudentDetailComponent — lifecycle controls', () => {

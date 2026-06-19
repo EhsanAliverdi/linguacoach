@@ -297,6 +297,27 @@ public sealed class AdminHandler :
         await _userManager.UpdateAsync(user);
     }
 
+    public async Task SetStudentCefrAsync(SetStudentCefrCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        var oldValue = profile.CefrLevel;
+
+        // Validates and normalises; throws ArgumentException for invalid values.
+        profile.AdminSetCefrLevel(command.CefrLevel);
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "SetCefr", "StudentProfile",
+            entityId: command.StudentProfileId.ToString(),
+            targetStudentId: command.StudentProfileId,
+            oldValueJson: oldValue is null ? "null" : $"\"{oldValue}\"",
+            newValueJson: profile.CefrLevel is null ? "null" : $"\"{profile.CefrLevel}\"",
+            reason: command.Reason));
+
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default)
     {
         var since = DateTime.UtcNow - window;

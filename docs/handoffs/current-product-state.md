@@ -12,6 +12,20 @@ Last updated: 2026-06-19
 
 ---
 
+## Admin CEFR management available (Phase 10Students-F-D)
+
+`PUT /api/admin/students/{id}/cefr` allows admins to set or clear a student's CEFR level from the admin student detail page. Valid values: A1, A2, B1, B2, C1, C2 (case-insensitive on input, stored normalised). Null or empty string clears the level.
+
+Admin student detail profile section now shows current CEFR as a badge (or "Not set"), a "Set CEFR" button opening a modal with the level dropdown and optional reason field, and helper text confirming students cannot edit this field.
+
+Each change writes an `AdminAuditLog` entry: action `SetCefr`, old/new value JSON, reason.
+
+No migration required. No student-facing changes. Placement logic unchanged. Student `UpdateLearningPreferences` continues to explicitly exclude `CefrLevel`.
+
+**Tests:** 743/743 Angular tests pass. Backend: 1925/1925 pass.
+
+---
+
 ## Dedicated student detail endpoint + onboarding progress complete (Phase 10Students-F-B)
 
 `GET /api/admin/students/{id}` is now a dedicated endpoint returning full student detail including onboarding progress (`StudentOnboardingProgressInfo`). Previously the component used the student list endpoint; it now calls the dedicated endpoint via `AdminApiService.getStudent(id)`.

@@ -346,6 +346,21 @@ public sealed class StudentProfile : BaseEntity
         CefrLevel = null;
     }
 
+    /// <summary>Admin action: set or clear CEFR level directly. Bypasses assessment flow.</summary>
+    public void AdminSetCefrLevel(string? level)
+    {
+        if (string.IsNullOrWhiteSpace(level))
+        {
+            CefrLevel = null;
+            return;
+        }
+        var normalised = level.Trim().ToUpperInvariant();
+        var valid = new[] { "A1", "A2", "B1", "B2", "C1", "C2" };
+        if (!valid.Contains(normalised))
+            throw new ArgumentException($"Invalid CEFR level '{level}'. Must be one of: A1, A2, B1, B2, C1, C2.", nameof(level));
+        CefrLevel = normalised;
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────────
 
     private void EnsureStepIsNext(OnboardingStep requestedStep)

@@ -198,6 +198,20 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpPut("students/{studentId:guid}/cefr")]
+    public async Task<IActionResult> SetStudentCefr(Guid studentId, [FromBody] SetStudentCefrRequest request, CancellationToken ct)
+    {
+        var adminId = GetCurrentUserId();
+        try
+        {
+            await _studentQuery.SetStudentCefrAsync(
+                new SetStudentCefrCommand(studentId, adminId, request.CefrLevel, request.Reason), ct);
+            return Ok();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found")) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpPost("students/{studentId:guid}/reset")]
     public async Task<IActionResult> ResetStudent(Guid studentId, [FromBody] ResetStudentRequest request, CancellationToken ct)
     {
@@ -462,6 +476,7 @@ public sealed record UpdateStudentProfileRequest(
     LinguaCoach.Domain.Enums.ProfessionalExperienceLevel? ProfessionalExperienceLevel = null,
     LinguaCoach.Domain.Enums.RoleFamiliarity? RoleFamiliarity = null);
 public sealed record ResetStudentPasswordRequest(string NewPassword, bool MustChangePassword = true);
+public sealed record SetStudentCefrRequest(string? CefrLevel, string? Reason = null);
 public sealed record ResetStudentRequest(
     StudentLifecycleStage TargetStage,
     bool ClearOnboardingAnswers,

@@ -473,4 +473,105 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    // ── SetStudentCefr ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SetStudentCefr_ValidLevel_Returns200_AndFieldUpdated()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"cefr_set_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr",
+            new { cefrLevel = "B2", reason = "Initial placement" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var detail = await _client.GetFromJsonAsync<JsonElement>($"/api/admin/students/{profileId}");
+        Assert.Equal("B2", detail.GetProperty("cefrLevel").GetString());
+    }
+
+    [Fact]
+    public async Task SetStudentCefr_ClearCefr_Returns200_AndFieldNull()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"cefr_clear_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        // First set a level
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr", new { cefrLevel = "A1" });
+
+        // Now clear it
+        var response = await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr",
+            new { cefrLevel = (string?)null });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var detail = await _client.GetFromJsonAsync<JsonElement>($"/api/admin/students/{profileId}");
+        Assert.True(
+            detail.GetProperty("cefrLevel").ValueKind == JsonValueKind.Null ||
+            detail.GetProperty("cefrLevel").ValueKind == JsonValueKind.Undefined);
+    }
+
+    [Fact]
+    public async Task SetStudentCefr_InvalidLevel_Returns400()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"cefr_invalid_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr",
+            new { cefrLevel = "Z9" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetStudentCefr_MissingStudent_Returns404()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.PutAsJsonAsync($"/api/admin/students/{Guid.NewGuid()}/cefr",
+            new { cefrLevel = "B1" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetStudentCefr_WritesAuditLog()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"cefr_audit_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileIdStr = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+        var profileId = Guid.Parse(profileIdStr!);
+
+        await _client.PutAsJsonAsync($"/api/admin/students/{profileId}/cefr",
+            new { cefrLevel = "C1", reason = "Test audit" });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoach.Persistence.LinguaCoachDbContext>();
+        var auditEntry = db.AdminAuditLogs
+            .Where(a => a.Action == "SetCefr" && a.TargetStudentId == profileId)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefault();
+
+        Assert.NotNull(auditEntry);
+        Assert.Equal("StudentProfile", auditEntry.EntityType);
+        Assert.Contains("C1", auditEntry.NewValueJson ?? "");
+        Assert.Equal("Test audit", auditEntry.Reason);
+    }
 }

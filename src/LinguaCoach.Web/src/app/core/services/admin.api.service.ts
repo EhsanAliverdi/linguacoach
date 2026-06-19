@@ -49,6 +49,9 @@ export class AdminApiService {
   resetStudent(studentProfileId: string, request: ResetStudentRequest): Observable<ResetStudentResponse> {
     return this.http.post<ResetStudentResponse>(`${this.api}/students/${studentProfileId}/reset`, request);
   }
+  updateStudentCefr(studentProfileId: string, cefrLevel: string | null, reason?: string): Observable<void> {
+    return this.http.put<void>(`${this.api}/students/${studentProfileId}/cefr`, { cefrLevel, reason: reason ?? null });
+  }
   getStats(): Observable<AdminStats> {
     return this.http.get<AdminStats>(`${this.api}/stats`);
   }

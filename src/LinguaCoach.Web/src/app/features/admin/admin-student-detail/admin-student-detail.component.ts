@@ -93,7 +93,17 @@ interface StudentEditForm {
             </div>
             <div>
               <dt>CEFR level</dt>
-              <dd>{{ s.cefrLevel || 'Not set' }}</dd>
+              <dd>
+                <span class="sp-admin-cefr-row">
+                  @if (s.cefrLevel) {
+                    <span class="sp-admin-badge sp-admin-badge-indigo">{{ s.cefrLevel }}</span>
+                  } @else {
+                    <span class="sp-admin-table-muted">Not set</span>
+                  }
+                  <button type="button" class="sp-admin-link-button" (click)="startSetCefr(s)">Set CEFR</button>
+                </span>
+                <p class="sp-admin-cefr-hint">CEFR is controlled by assessment and admin. Students cannot edit this.</p>
+              </dd>
             </div>
             <div>
               <dt>Career context</dt>
@@ -723,6 +733,44 @@ interface StudentEditForm {
         }
       </section>
     }
+    @if (settingCefr()) {
+      <div class="sp-admin-modal-backdrop" (click)="cancelSetCefr()"></div>
+      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="setCefrTitle">
+        <div class="sp-admin-modal-header">
+          <div>
+            <h2 id="setCefrTitle">Set CEFR level</h2>
+            @if (student(); as s) { <p class="sp-safe-text">{{ s.email }}</p> }
+          </div>
+          <button type="button" (click)="cancelSetCefr()" aria-label="Close set CEFR">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form (ngSubmit)="saveSetCefr()" class="sp-admin-edit-grid">
+          <label class="sp-admin-wide">
+            <span>CEFR level</span>
+            <select class="sp-input" [(ngModel)]="cefrForm.cefrLevel" name="cefrLevel">
+              @for (level of cefrLevels; track level.value) {
+                <option [value]="level.value">{{ level.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="sp-admin-wide">
+            <span>Reason (optional)</span>
+            <textarea class="sp-input" rows="2" [(ngModel)]="cefrForm.reason" name="reason"
+              placeholder="Why is this CEFR level being set?"></textarea>
+          </label>
+          @if (cefrError()) {
+            <div class="sp-admin-alert-error sp-admin-wide">{{ cefrError() }}</div>
+          }
+          <div class="sp-admin-modal-actions sp-admin-wide">
+            <button type="button" class="sp-button-ghost" (click)="cancelSetCefr()">Cancel</button>
+            <button type="submit" class="sp-admin-btn-primary" [disabled]="savingCefr()">
+              {{ savingCefr() ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
     @if (lifecycleAction()) {
       <div class="sp-admin-modal-backdrop" (click)="cancelLifecycleAction()"></div>
       <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycleActionTitle">
@@ -784,6 +832,8 @@ interface StudentEditForm {
     .sp-adm-prefs-list dt{font-size:12px;font-weight:800;color:#64748B;margin-bottom:2px;}
     .sp-adm-prefs-list dd{font-size:14px;color:#0F172A;}
     .sp-adm-prefs-list-ul{margin:0;padding-left:18px;font-size:14px;color:#0F172A;}
+    .sp-admin-cefr-row{display:flex;align-items:center;gap:8px;}
+    .sp-admin-cefr-hint{font-size:11px;color:#94A3B8;margin-top:4px;}
     @media(max-width:900px){
       .sp-admin-detail-grid{grid-template-columns:1fr;}
     }
@@ -884,6 +934,56 @@ export class AdminStudentDetailComponent implements OnInit {
   assignPolicyForm: { policyId: string; reason: string } = { policyId: '', reason: '' };
 
   prefsSlideOverOpen = signal(false);
+
+  settingCefr = signal(false);
+  savingCefr = signal(false);
+  cefrError = signal('');
+  cefrForm: { cefrLevel: string; reason: string } = { cefrLevel: '', reason: '' };
+
+  readonly cefrLevels = [
+    { value: '', label: 'Clear / Not set' },
+    { value: 'A1', label: 'A1' },
+    { value: 'A2', label: 'A2' },
+    { value: 'B1', label: 'B1' },
+    { value: 'B2', label: 'B2' },
+    { value: 'C1', label: 'C1' },
+    { value: 'C2', label: 'C2' },
+  ];
+
+  startSetCefr(student: AdminStudentDetail): void {
+    this.cefrForm = { cefrLevel: student.cefrLevel ?? '', reason: '' };
+    this.cefrError.set('');
+    this.settingCefr.set(true);
+  }
+
+  cancelSetCefr(): void {
+    this.settingCefr.set(false);
+    this.cefrError.set('');
+  }
+
+  saveSetCefr(): void {
+    const studentId = this.student()?.studentProfileId;
+    if (!studentId) return;
+
+    this.savingCefr.set(true);
+    this.cefrError.set('');
+
+    const cefrLevel = this.cefrForm.cefrLevel.trim() || null;
+    const reason = this.cefrForm.reason.trim() || undefined;
+
+    this.adminApi.updateStudentCefr(studentId, cefrLevel, reason).subscribe({
+      next: () => {
+        this.savingCefr.set(false);
+        this.settingCefr.set(false);
+        this.loadStudent(studentId);
+        this.toast.success(cefrLevel ? `CEFR level set to ${cefrLevel}` : 'CEFR level cleared');
+      },
+      error: (err: { error?: { error?: string } }) => {
+        this.savingCefr.set(false);
+        this.cefrError.set(err.error?.error ?? 'Could not update CEFR level.');
+      },
+    });
+  }
 
   lifecycleAction = signal<'reactivate' | 'pause' | 'unpause' | null>(null);
   savingLifecycleAction = signal(false);

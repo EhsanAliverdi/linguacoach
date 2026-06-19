@@ -54,6 +54,8 @@ public sealed record UnpauseStudentCommand(Guid StudentProfileId, Guid AdminUser
 
 public sealed record ResetStudentPasswordCommand(Guid StudentProfileId, string NewPassword, bool MustChangePassword = true);
 
+public sealed record SetStudentCefrCommand(Guid StudentProfileId, Guid AdminUserId, string? CefrLevel, string? Reason);
+
 public sealed record AdminStatsItem(
     int TotalStudents,
     int OnboardedStudents,
@@ -125,6 +127,7 @@ public interface IAdminStudentQuery
     Task<StudentListItem> PauseStudentAsync(PauseStudentCommand command, CancellationToken ct = default);
     Task<StudentListItem> UnpauseStudentAsync(UnpauseStudentCommand command, CancellationToken ct = default);
     Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default);
+    Task SetStudentCefrAsync(SetStudentCefrCommand command, CancellationToken ct = default);
     Task<ResetStudentResponse> ResetStudentAsync(ResetStudentCommand command, CancellationToken ct = default);
     Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default);
     Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default);

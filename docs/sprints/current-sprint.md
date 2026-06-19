@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-B)
+lastUpdated: 2026-06-19 (10Students-F-D)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,29 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10Students-F-D — Admin CEFR Management** - complete (2026-06-19)
+
+Goal: allow admins to set or clear a student's CEFR level from the admin student detail page. Students cannot edit their own CEFR.
+
+### Delivered
+
+- `AdminSetCefrLevel(string? level)` domain method on `StudentProfile`: normalises, validates, or clears CEFR.
+- `SetStudentCefrCommand` record and `SetStudentCefrAsync` in `IAdminStudentQuery` and `AdminHandler`.
+- `AdminHandler.SetStudentCefrAsync`: writes `AdminAuditLog` with action `SetCefr`, old/new value JSON, and reason.
+- `PUT /api/admin/students/{id}/cefr` in `AdminController` — admin-only, 200/400/404.
+- `SetStudentCefrRequest` DTO: `CefrLevel` (string|null) + optional `Reason`.
+- `AdminApiService.updateStudentCefr(id, cefrLevel, reason?)` in Angular service.
+- CEFR badge display with "Set CEFR" button in admin student detail profile section.
+- Modal with A1–C2 dropdown + "Clear / Not set" option + optional reason field.
+- On success: student detail reloaded, toast shown. On error: inline error in modal.
+- Helper text: "CEFR is controlled by assessment and admin. Students cannot edit this."
+- 5 backend integration tests + 9 frontend unit tests. All gates green.
+- No migration added. No student-facing changes. No placement logic touched.
+
+See: `docs/reviews/2026-06-19-phase-10students-f-d-admin-cefr-management-review.md`
+
+---
 
 **Phase 10Students-F-B — Dedicated Student Detail Endpoint + Onboarding Progress** - complete (2026-06-19)
 
