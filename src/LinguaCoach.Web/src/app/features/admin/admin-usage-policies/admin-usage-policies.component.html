@@ -6,10 +6,10 @@
   }
 </sp-admin-page-header>
 
+<sp-admin-page-body>
+
 @if (saveSuccess()) {
-  <sp-admin-card padding="sm">
-    <sp-admin-badge tone="success">{{ saveSuccess() }}</sp-admin-badge>
-  </sp-admin-card>
+  <sp-admin-alert variant="success">{{ saveSuccess() }}</sp-admin-alert>
 }
 
 @if (showForm()) {
@@ -18,32 +18,32 @@
       <sp-admin-error-state title="Policy save failed" [message]="saveError()" />
     }
 
-    <div class="sp-admin-form-stack">
+    <div class="sp-up-form-stack">
       <sp-admin-form-field label="Name">
-        <input class="sp-input" [ngModel]="formName()" (ngModelChange)="formName.set($event)" placeholder="Policy name" />
+        <sp-admin-input [ngModel]="formName()" (ngModelChange)="formName.set($event)" placeholder="Policy name" />
       </sp-admin-form-field>
       <sp-admin-form-field label="Description">
-        <input class="sp-input" [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)" placeholder="Optional description" />
+        <sp-admin-input [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)" placeholder="Optional description" />
       </sp-admin-form-field>
       @if (!editingId()) {
         <sp-admin-form-field label="Scope type">
-          <select class="sp-input" [ngModel]="formScopeType()" (ngModelChange)="formScopeType.set($event)">
-            <option value="Global">Global</option>
-            <option value="Student">Student</option>
-          </select>
+          <sp-admin-select
+            [ngModel]="formScopeType()"
+            (ngModelChange)="formScopeType.set($event)"
+            [options]="scopeTypeOptions" />
         </sp-admin-form-field>
       }
-      <div class="sp-admin-actions">
-        <label class="sp-admin-check">
-          <input type="checkbox" [ngModel]="formIsDefault()" (ngModelChange)="formIsDefault.set($event)" />
-          Default policy
-        </label>
-        <label class="sp-admin-check">
-          <input type="checkbox" [ngModel]="formIsActive()" (ngModelChange)="formIsActive.set($event)" />
-          Active
-        </label>
+      <div class="sp-up-cb-stack">
+        <sp-admin-checkbox
+          [ngModel]="formIsDefault()"
+          (ngModelChange)="formIsDefault.set($event)"
+          label="Default policy" />
+        <sp-admin-checkbox
+          [ngModel]="formIsActive()"
+          (ngModelChange)="formIsActive.set($event)"
+          label="Active" />
       </div>
-      <div class="sp-admin-actions">
+      <div class="sp-up-actions">
         <sp-admin-button (click)="save()" [loading]="saving()">
           {{ editingId() ? 'Update' : 'Create' }}
         </sp-admin-button>
@@ -60,7 +60,7 @@
 } @else if (policies().length === 0) {
   <sp-admin-empty-state message="No usage policies yet." />
 } @else {
-  <sp-admin-table>
+  <sp-admin-table variant="data" density="compact" minWidth="640px">
     <table>
       <thead>
         <tr>
@@ -99,3 +99,5 @@
     </table>
   </sp-admin-table>
 }
+
+</sp-admin-page-body>

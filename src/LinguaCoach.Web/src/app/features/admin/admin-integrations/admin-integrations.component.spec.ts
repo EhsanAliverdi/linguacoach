@@ -278,4 +278,32 @@ describe('AdminIntegrationsComponent', () => {
     fixture.detectChanges();
     expect(component.storageError()).toContain('Storage down');
   });
+
+  it('generation settings signal holds numeric values from API', async () => {
+    await setup();
+    const s = component.settings();
+    expect(s).toBeTruthy();
+    expect(typeof s!.readyLessonBufferSize).toBe('number');
+    expect(typeof s!.generationTimeoutSeconds).toBe('number');
+    expect(typeof s!.maxConcurrentGenerationJobs).toBe('number');
+  });
+
+  it('generation settings signal holds boolean values for checkbox fields', async () => {
+    await setup();
+    const s = component.settings();
+    expect(typeof s!.enableBackgroundGeneration).toBe('boolean');
+    expect(typeof s!.enableTtsGeneration).toBe('boolean');
+    expect(s!.enableBackgroundGeneration).toBeTrue();
+    expect(s!.enableTtsGeneration).toBeTrue();
+  });
+
+  it('passes numeric values to updateGenerationSettings payload on save', fakeAsync(async () => {
+    await setup();
+    component.saveSettings();
+    tick();
+    const payload: GenerationSettings = svc.updateGenerationSettings.calls.mostRecent().args[0];
+    expect(typeof payload.readyLessonBufferSize).toBe('number');
+    expect(typeof payload.ttsTimeoutSeconds).toBe('number');
+    expect(typeof payload.enableBackgroundGeneration).toBe('boolean');
+  }));
 });

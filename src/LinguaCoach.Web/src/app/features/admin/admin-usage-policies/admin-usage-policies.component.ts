@@ -9,14 +9,19 @@ import {
   UpdateUsagePolicyRequest,
 } from '../../../core/services/usage-governance.service';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
+  SpAdminCheckboxComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
+  SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminSelectComponent,
   SpAdminTableComponent,
 } from '../../../admin';
 
@@ -26,17 +31,27 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
+    SpAdminCheckboxComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
+    SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminSelectComponent,
     SpAdminTableComponent,
   ],
   templateUrl: './admin-usage-policies.component.html',
+  styles: [`
+    .sp-up-form-stack { display:flex; flex-direction:column; gap:14px; }
+    .sp-up-cb-stack { display:flex; flex-direction:column; gap:10px; }
+    .sp-up-actions { display:flex; gap:10px; }
+  `],
 })
 export class AdminUsagePoliciesComponent implements OnInit {
   policies = signal<UsagePolicy[]>([]);
@@ -55,6 +70,11 @@ export class AdminUsagePoliciesComponent implements OnInit {
   formScopeType = signal('Student');
   formIsDefault = signal(false);
   formIsActive = signal(true);
+
+  readonly scopeTypeOptions = [
+    { value: 'Global', label: 'Global' },
+    { value: 'Student', label: 'Student' },
+  ];
 
   constructor(private svc: UsageGovernanceService) {}
 

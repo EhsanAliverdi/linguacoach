@@ -162,4 +162,42 @@ describe('AdminUsagePoliciesComponent', () => {
     c.cancel();
     expect(c.showForm()).toBeFalse();
   });
+
+  // ── 9. Page body wrapper present ─────────────────────────────────────────
+
+  it('renders sp-admin-page-body wrapper', () => {
+    const fixture = TestBed.createComponent(AdminUsagePoliciesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('sp-admin-page-body')).toBeTruthy();
+  });
+
+  // ── 10. Scope type options available ─────────────────────────────────────
+
+  it('exposes scopeTypeOptions with Global and Student', () => {
+    const fixture = TestBed.createComponent(AdminUsagePoliciesComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    const values = c.scopeTypeOptions.map(o => o.value);
+    expect(values).toContain('Global');
+    expect(values).toContain('Student');
+  });
+
+  // ── 11. Create payload includes correct scope type ────────────────────────
+
+  it('includes formScopeType in create payload', () => {
+    svc.createUsagePolicy.and.returnValue(of(makePolicy({ id: 'new-id' })));
+    const fixture = TestBed.createComponent(AdminUsagePoliciesComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+
+    c.openCreate();
+    c.formName.set('Scoped Policy');
+    c.formScopeType.set('Global');
+    c.save();
+
+    expect(svc.createUsagePolicy).toHaveBeenCalledWith(
+      jasmine.objectContaining({ scopeType: 'Global' })
+    );
+  });
 });

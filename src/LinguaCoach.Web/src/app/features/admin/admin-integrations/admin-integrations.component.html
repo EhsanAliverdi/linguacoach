@@ -11,7 +11,7 @@
     }
 
     @if (storage(); as s) {
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="sp-int-form-grid">
         <sp-admin-form-field label="Provider">
           <sp-admin-input [value]="s.provider" [disabled]="true" />
         </sp-admin-form-field>
@@ -47,7 +47,7 @@
       </p>
     }
 
-    <div class="flex items-center gap-4 mt-4">
+    <div class="sp-int-test-row">
       <sp-admin-button variant="secondary" [loading]="testing()" [disabled]="testing()" (click)="testConnection()">
         Test connection
       </sp-admin-button>
@@ -72,50 +72,44 @@
     }
 
     @if (settings(); as s) {
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="sp-int-form-grid">
         <sp-admin-form-field label="Ready lesson buffer size">
-          <input type="number" [(ngModel)]="s.readyLessonBufferSize" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.readyLessonBufferSize" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Refill threshold">
-          <input type="number" [(ngModel)]="s.refillThreshold" min="0" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.refillThreshold" [min]="0" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Refill batch size">
-          <input type="number" [(ngModel)]="s.refillBatchSize" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.refillBatchSize" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Max generation attempts">
-          <input type="number" [(ngModel)]="s.maxGenerationAttempts" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.maxGenerationAttempts" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Generation timeout (s)">
-          <input type="number" [(ngModel)]="s.generationTimeoutSeconds" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.generationTimeoutSeconds" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="TTS timeout (s)">
-          <input type="number" [(ngModel)]="s.ttsTimeoutSeconds" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.ttsTimeoutSeconds" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Max concurrent generation jobs">
-          <input type="number" [(ngModel)]="s.maxConcurrentGenerationJobs" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.maxConcurrentGenerationJobs" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Max concurrent TTS jobs">
-          <input type="number" [(ngModel)]="s.maxConcurrentTtsJobs" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.maxConcurrentTtsJobs" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Practice ready per type">
-          <input type="number" [(ngModel)]="s.practiceGymReadyExercisesPerType" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.practiceGymReadyExercisesPerType" [min]="1" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Practice refill threshold">
-          <input type="number" [(ngModel)]="s.practiceGymRefillThresholdPerType" min="0" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.practiceGymRefillThresholdPerType" [min]="0" />
         </sp-admin-form-field>
         <sp-admin-form-field label="Practice refill count">
-          <input type="number" [(ngModel)]="s.practiceGymRefillCountPerType" min="1" class="sp-adm-num-input" />
+          <sp-admin-number-input [(ngModel)]="s.practiceGymRefillCountPerType" [min]="1" />
         </sp-admin-form-field>
       </div>
-      <div class="flex flex-col gap-2 mt-3">
-        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-          <input type="checkbox" [(ngModel)]="s.enableBackgroundGeneration" class="accent-blue-600 w-4 h-4" />
-          Background generation
-        </label>
-        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-          <input type="checkbox" [(ngModel)]="s.enableTtsGeneration" class="accent-blue-600 w-4 h-4" />
-          TTS generation
-        </label>
+      <div class="sp-int-cb-stack">
+        <sp-admin-checkbox [(ngModel)]="s.enableBackgroundGeneration" label="Background generation" />
+        <sp-admin-checkbox [(ngModel)]="s.enableTtsGeneration" label="TTS generation" />
       </div>
       <div class="mt-4">
         <sp-admin-button (click)="saveSettings()">Save</sp-admin-button>
@@ -138,7 +132,7 @@
         <sp-admin-stat-card label="Last success" [value]="b.summary.lastSuccessfulGenerationUtc ? (b.summary.lastSuccessfulGenerationUtc | date:'short')! : '-'" tone="success" size="sm" />
       </div>
 
-      <div class="flex items-end gap-3 mb-4 flex-wrap">
+      <div class="sp-int-generate-row">
         <sp-admin-form-field label="Generate lessons for student">
           <sp-admin-input placeholder="Student profile ID" [(ngModel)]="generateStudentId" />
         </sp-admin-form-field>

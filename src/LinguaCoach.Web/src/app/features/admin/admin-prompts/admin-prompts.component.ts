@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { PromptTemplateItem, PromptTemplateDetail } from '../../../core/models/admin.models';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
@@ -14,9 +15,11 @@ import {
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
+  SpAdminSelectComponent,
   SpAdminStatCardComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
@@ -31,6 +34,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
   imports: [
     CommonModule,
     FormsModule,
+    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
@@ -41,9 +45,11 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
+    SpAdminSelectComponent,
     SpAdminStatCardComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
@@ -65,13 +71,13 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
             <sp-admin-textarea [(ngModel)]="newContent" [rows]="8" placeholder="Prompt content with {{'{{variable}}'}} placeholders" />
           </sp-admin-form-field>
           <sp-admin-form-field label="Max input tokens">
-            <input [(ngModel)]="newMaxInput" type="number" class="sp-input" />
+            <sp-admin-number-input [(ngModel)]="newMaxInput" [min]="1" />
           </sp-admin-form-field>
           <sp-admin-form-field label="Max output tokens">
-            <input [(ngModel)]="newMaxOutput" type="number" class="sp-input" />
+            <sp-admin-number-input [(ngModel)]="newMaxOutput" [min]="1" />
           </sp-admin-form-field>
         </div>
-        @if (formError()) { <p class="sp-admin-text-error">{{ formError() }}</p> }
+        @if (formError()) { <sp-admin-alert variant="error">{{ formError() }}</sp-admin-alert> }
         <div class="sp-admin-action-row">
           <sp-admin-button (click)="createVersion()" [loading]="creating()">Create</sp-admin-button>
         </div>
@@ -98,11 +104,11 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
           <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key" />
         </sp-admin-form-field>
         <sp-admin-form-field filters label="Status" size="sm">
-          <select [ngModel]="statusFilter()" class="sp-input sp-admin-status-select" (ngModelChange)="setStatusFilter($event)">
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+          <sp-admin-select
+            [ngModel]="statusFilter()"
+            (ngModelChange)="setStatusFilter($event)"
+            [options]="statusFilterOptions"
+            size="sm" />
         </sp-admin-form-field>
         <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()" [loading]="loading()">Refresh</sp-admin-button>
       </sp-admin-filter-bar>
@@ -166,7 +172,6 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     .sp-admin-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
     .sp-admin-prompt-preview{font-size:12px;color:#334155;background:#F8FAFC;border-radius:8px;padding:12px;overflow:auto;max-height:220px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;}
     .sp-admin-state-wrap{display:grid;gap:12px;padding:16px;}
-    .sp-admin-status-select{min-width:150px;}
     @media (max-width: 1100px){.sp-admin-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
     @media (max-width: 640px){.sp-admin-metric-grid{grid-template-columns:1fr;}}
   `],
@@ -185,6 +190,12 @@ export class AdminPromptsComponent implements OnInit {
   page = signal(1);
   readonly pageSize = 12;
   newKey = ''; newContent = ''; newMaxInput = 800; newMaxOutput = 600;
+
+  readonly statusFilterOptions = [
+    { value: 'all', label: 'All statuses' },
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+  ];
 
   constructor(private adminApi: AdminApiService) {}
 

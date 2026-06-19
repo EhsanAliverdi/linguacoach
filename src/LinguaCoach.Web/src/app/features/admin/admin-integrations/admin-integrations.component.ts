@@ -12,9 +12,11 @@ import {
   SpAdminAlertComponent,
   SpAdminCardComponent,
   SpAdminBadgeComponent,
+  SpAdminCheckboxComponent,
   SpAdminCopyableTextComponent,
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
+  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
@@ -28,12 +30,14 @@ import {
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent, SpAdminTableComponent, SpAdminTruncatedTextComponent],
+  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCheckboxComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminNumberInputComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent, SpAdminTableComponent, SpAdminTruncatedTextComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
     .sp-admin-integration-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
-    .sp-adm-num-input{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
-    .sp-adm-num-input:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+    .sp-int-form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+    .sp-int-cb-stack{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+    .sp-int-test-row{display:flex;align-items:center;gap:16px;margin-top:16px;}
+    .sp-int-generate-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
   `],
 })
 export class AdminIntegrationsComponent implements OnInit {

@@ -15,6 +15,8 @@ export * from './components/filter-bar/sp-admin-filter-bar.component';
 export * from './components/form-field/sp-admin-form-field.component';
 export * from './components/header/sp-admin-header.component';
 export * from './components/input/sp-admin-input.component';
+export * from './components/number-input/sp-admin-number-input.component';
+export * from './components/checkbox/sp-admin-checkbox.component';
 export * from './components/kpi-card/sp-admin-kpi-card.component';
 export * from './components/layout/sp-admin-layout.component';
 export * from './components/loading-state/sp-admin-loading-state.component';
