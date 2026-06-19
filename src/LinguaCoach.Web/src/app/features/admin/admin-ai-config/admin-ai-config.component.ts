@@ -7,6 +7,7 @@ import { AiConfigCategoryItem, AiProviderCatalogItem, ModelTestStatus } from '..
 import {
   SpAdminBadgeComponent,
   SpAdminCardComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
   SpAdminErrorStateComponent,
@@ -55,7 +56,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
   template: `
     <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
@@ -65,8 +66,9 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       <sp-admin-error-state title="AI configuration unavailable" [message]="loadError()" />
     } @else {
 
+    <sp-admin-page-body>
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
-      <sp-admin-card title="LLM Categories" class="sp-admin-section-wrap">
+      <sp-admin-card title="LLM Categories">
         <p class="text-sm text-slate-500 mb-4">
           Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
         </p>
@@ -122,7 +124,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       </sp-admin-card>
 
       <!-- ── Section 2: TTS Categories ─────────────────────────────────── -->
-      <sp-admin-card title="Text-to-Speech" class="sp-admin-section-wrap">
+      <sp-admin-card title="Text-to-Speech">
         <p class="text-sm text-slate-500 mb-4">
           TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
         </p>
@@ -185,7 +187,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       </sp-admin-card>
 
       <!-- ── Section 3: Provider credentials ────────────────────────────── -->
-      <sp-admin-card title="Provider credentials" class="sp-admin-section-wrap">
+      <sp-admin-card title="Provider credentials">
         <p class="text-sm text-slate-500 mb-4">
           One API key per provider applies to all features using it.
           "Test connection" checks every model with the stored key.
@@ -327,10 +329,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+    </sp-admin-page-body>
     }
   `,
   styles: [`
-    .sp-admin-section-wrap { display: block; margin-bottom: 24px; }
     .sp-adm-native-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
     .sp-adm-native-select:disabled{opacity:0.55;cursor:not-allowed;background:#F9FAFB;color:#9CA3AF;}
     .sp-adm-native-select:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}

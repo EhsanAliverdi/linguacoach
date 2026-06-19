@@ -23,16 +23,14 @@ import { SpAdminThemeToggleComponent } from '../theme-toggle/sp-admin-theme-togg
   standalone: true,
   imports: [CommonModule, SpAdminThemeToggleComponent],
   template: `
-    <header class="sticky top-0 flex w-full bg-white border-gray-200 z-[99999] dark:border-gray-800 dark:bg-gray-900 xl:border-b">
-      <div class="flex flex-col items-center justify-between grow xl:flex-row xl:px-6">
-        <div class="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 xl:justify-normal xl:border-b-0 xl:px-0 lg:py-4">
+    <header class="sticky top-0 z-[999] flex h-16 w-full items-center border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900 xl:px-6">
+      <div class="flex w-full items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
           <ng-content />
         </div>
-        <div class="flex items-center justify-between w-full gap-4 px-5 py-4 xl:flex shadow-theme-md xl:justify-end xl:px-0 xl:shadow-none">
-          <div class="flex items-center gap-2 2xsm:gap-3">
-            <sp-admin-theme-toggle />
-            <ng-content select="[actions]" />
-          </div>
+        <div class="flex items-center gap-2">
+          <sp-admin-theme-toggle />
+          <ng-content select="[actions]" />
           <ng-content select="[user]" />
         </div>
       </div>

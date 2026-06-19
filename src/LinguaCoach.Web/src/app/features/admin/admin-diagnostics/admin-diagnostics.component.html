@@ -1,5 +1,6 @@
 <sp-admin-page-header title="Diagnostics" subtitle="System status, recent log events, and correlation ID lookup." />
 
+<sp-admin-page-body>
 <sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
   <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (click)="loadStatus()">
     Refresh
@@ -126,3 +127,4 @@
     }
   }
 </sp-admin-card>
+</sp-admin-page-body>

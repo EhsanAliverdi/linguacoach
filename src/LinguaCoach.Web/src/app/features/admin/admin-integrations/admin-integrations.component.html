@@ -2,8 +2,9 @@
   title="Integrations"
   subtitle="Object storage health and background lesson generation." />
 
+<sp-admin-page-body>
   <!-- ── MinIO / Object Storage ──────────────────────────────────────────── -->
-  <sp-admin-card title="MinIO / Object Storage" class="sp-admin-section-wrap">
+  <sp-admin-card title="MinIO / Object Storage">
 
     @if (storageError()) {
       <sp-admin-error-state title="Storage settings unavailable" [message]="storageError()" />
@@ -52,7 +53,7 @@
   </sp-admin-card>
 
   <!-- ── Generation settings ─────────────────────────────────────────────── -->
-  <sp-admin-card title="Lesson Buffer Settings" class="sp-admin-section-wrap">
+  <sp-admin-card title="Lesson Buffer Settings">
 
     @if (settingsError()) { <sp-admin-error-state title="Generation settings unavailable" [message]="settingsError()" /> }
     @if (settingsSaved()) { <p class="text-sm text-emerald-600 mb-3">Settings saved.</p> }
@@ -194,3 +195,4 @@
       </sp-admin-table>
     }
   </sp-admin-card>
+</sp-admin-page-body>

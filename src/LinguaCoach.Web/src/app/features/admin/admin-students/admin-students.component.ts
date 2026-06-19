@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent } from '../../../admin';
 
 interface StudentEditForm {
   firstName: string;
@@ -23,12 +23,13 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
     </sp-admin-page-header>
 
+    <sp-admin-page-body>
     <sp-admin-filter-bar>
       <label class="sp-admin-filter-toggle">
         <input type="checkbox" [(ngModel)]="includeArchived" (change)="load()" />
@@ -105,6 +106,8 @@ interface StudentEditForm {
         <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
       }
     }
+
+    </sp-admin-page-body>
 
     <sp-admin-modal
       [open]="!!editing()"

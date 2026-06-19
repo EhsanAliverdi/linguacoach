@@ -9,6 +9,7 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminTableComponent,
@@ -25,6 +26,7 @@ import {
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminLoadingStateComponent,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminTableComponent,
@@ -34,6 +36,7 @@ import {
       title="Exercise Types"
       subtitle="Control which exercise types can be used for future SpeakPath lessons and Practice Gym generation." />
 
+    <sp-admin-page-body>
       @if (error()) {
         <sp-admin-error-state title="Exercise types unavailable" [message]="error()!" />
       }
@@ -123,6 +126,7 @@ import {
         <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
       }
       }
+    </sp-admin-page-body>
   `,
   styles: [`
     .sp-admin-wide-cell { min-width: 240px; }

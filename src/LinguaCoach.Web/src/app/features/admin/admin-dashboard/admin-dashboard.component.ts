@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, AdminStats } from '../../../core/models/admin.models';
 import {
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminStatCardComponent,
   SpAdminCardComponent,
@@ -20,6 +21,7 @@ import {
   imports: [
     CommonModule,
     RouterLink,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminStatCardComponent,
     SpAdminCardComponent,
@@ -31,6 +33,8 @@ import {
   ],
   template: `
     <sp-admin-page-header title="Dashboard" subtitle="SpeakPath platform overview" />
+
+    <sp-admin-page-body>
 
     <!-- KPI cards -->
     <div class="sp-admin-kpi-grid">
@@ -129,7 +133,6 @@ import {
 
     <!-- Bottom row: AI status + analytics placeholders -->
     <div class="sp-admin-dash-bottom">
-
       <!-- AI system status -->
       <sp-admin-card title="AI System" variant="metric" padding="md">
         <span slot="actions" class="sp-admin-status-dot sp-admin-status-dot-green"></span>
@@ -174,12 +177,14 @@ import {
       </div>
 
     </div>
+
+    </sp-admin-page-body>
   `,
   styles: [`
-    .sp-admin-kpi-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
+    .sp-admin-kpi-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
     @media(min-width:1180px){ .sp-admin-kpi-grid { grid-template-columns: repeat(4,1fr); } }
 
-    .sp-admin-dash-grid { display: grid; gap: 24px; margin-bottom: 28px; }
+    .sp-admin-dash-grid { display: grid; gap: 24px; }
     @media(min-width:1180px){ .sp-admin-dash-grid { grid-template-columns: 1fr 1.3fr; align-items: start; } }
 
     .sp-admin-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

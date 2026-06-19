@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { SpAdminSidebarNavItemComponent } from './sidebar-nav-item/sp-admin-sidebar-nav-item.component';
+import { SpAdminSidebarSectionComponent } from './sidebar-section/sp-admin-sidebar-section.component';
+import { SpAdminUserMenuComponent } from './user-menu/sp-admin-user-menu.component';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   SpAdminFormFieldComponent,
@@ -1124,5 +1127,152 @@ describe('Phase 10X-J — admin wrapper variant API', () => {
     expect(fixture.nativeElement.querySelector('input')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('table')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Active');
+  });
+});
+
+// ─── Phase 10X-K-1: sidebar-nav-item, sidebar-section, user-menu ─────────────
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSidebarNavItemComponent],
+  template: `
+    <sp-admin-sidebar-nav-item label="Dashboard" route="/admin" [exact]="true" [collapsed]="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+    </sp-admin-sidebar-nav-item>
+  `,
+})
+class NavItemExpandedHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSidebarNavItemComponent],
+  template: `
+    <sp-admin-sidebar-nav-item label="Students" route="/admin/students" [collapsed]="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+    </sp-admin-sidebar-nav-item>
+  `,
+})
+class NavItemCollapsedHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSidebarSectionComponent],
+  template: `<sp-admin-sidebar-section label="Menu" [collapsed]="false" />`,
+})
+class SidebarSectionExpandedHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSidebarSectionComponent],
+  template: `<sp-admin-sidebar-section label="Menu" [collapsed]="true" />`,
+})
+class SidebarSectionCollapsedHostComponent {}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminUserMenuComponent],
+  template: `<sp-admin-user-menu email="admin@example.com" initial="A" (signOut)="signedOut = true" />`,
+})
+class UserMenuHostComponent {
+  signedOut = false;
+}
+
+describe('Phase 10X-K-1 — shell components', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([])],
+    });
+  });
+
+  // sp-admin-sidebar-nav-item expanded
+  it('nav-item renders label when not collapsed', () => {
+    const fixture = TestBed.createComponent(NavItemExpandedHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Dashboard');
+  });
+
+  it('nav-item renders an anchor element', () => {
+    const fixture = TestBed.createComponent(NavItemExpandedHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a')).not.toBeNull();
+  });
+
+  it('nav-item projects icon content', () => {
+    const fixture = TestBed.createComponent(NavItemExpandedHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('svg')).not.toBeNull();
+  });
+
+  // sp-admin-sidebar-nav-item collapsed
+  it('nav-item hides label text when collapsed', () => {
+    const fixture = TestBed.createComponent(NavItemCollapsedHostComponent);
+    fixture.detectChanges();
+    const text = fixture.nativeElement.querySelector('a')?.textContent?.trim() ?? '';
+    expect(text).not.toContain('Students');
+  });
+
+  it('nav-item exposes title attribute for tooltip when collapsed', () => {
+    const fixture = TestBed.createComponent(NavItemCollapsedHostComponent);
+    fixture.detectChanges();
+    const a: HTMLAnchorElement = fixture.nativeElement.querySelector('a');
+    expect(a.title).toBe('Students');
+  });
+
+  // sp-admin-sidebar-section expanded
+  it('sidebar-section renders label when not collapsed', () => {
+    const fixture = TestBed.createComponent(SidebarSectionExpandedHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Menu');
+  });
+
+  // sp-admin-sidebar-section collapsed
+  it('sidebar-section hides label when collapsed', () => {
+    const fixture = TestBed.createComponent(SidebarSectionCollapsedHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent.trim()).toBe('');
+  });
+
+  // sp-admin-user-menu
+  it('user-menu renders profile trigger button', () => {
+    const fixture = TestBed.createComponent(UserMenuHostComponent);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('button[aria-label="Profile menu"]');
+    expect(btn).not.toBeNull();
+  });
+
+  it('user-menu shows avatar initial', () => {
+    const fixture = TestBed.createComponent(UserMenuHostComponent);
+    fixture.detectChanges();
+    const btn: HTMLElement = fixture.nativeElement.querySelector('button[aria-label="Profile menu"]');
+    expect(btn.textContent?.trim()).toBe('A');
+  });
+
+  it('user-menu opens dropdown on avatar click', () => {
+    const fixture = TestBed.createComponent(UserMenuHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
+    fixture.nativeElement.querySelector('button[aria-label="Profile menu"]').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).not.toBeNull();
+  });
+
+  it('user-menu shows email in open dropdown', () => {
+    const fixture = TestBed.createComponent(UserMenuHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('button[aria-label="Profile menu"]').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('admin@example.com');
+  });
+
+  it('user-menu emits signOut when sign-out button clicked', () => {
+    const fixture = TestBed.createComponent(UserMenuHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('button[aria-label="Profile menu"]').click();
+    fixture.detectChanges();
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('[role="menuitem"]'));
+    const signOutBtn = buttons.find(b => b.textContent?.includes('Sign out'));
+    expect(signOutBtn).not.toBeNull();
+    signOutBtn!.click();
+    expect(fixture.componentInstance.signedOut).toBeTrue();
   });
 });

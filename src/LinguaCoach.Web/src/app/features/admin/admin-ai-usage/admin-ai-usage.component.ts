@@ -7,6 +7,7 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminStatCardComponent,
@@ -23,12 +24,19 @@ import {
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminLoadingStateComponent,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminStatCardComponent,
     SpAdminTableComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
+  styles: [`
+    .sp-admin-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media(min-width:900px){ .sp-admin-stat-grid { grid-template-columns: repeat(5, 1fr); } }
+    .sp-admin-two-col { display: grid; gap: 24px; }
+    @media(min-width:1100px){ .sp-admin-two-col { grid-template-columns: 1fr 1fr; align-items: start; } }
+  `],
 })
 export class AdminAiUsageComponent implements OnInit {
   summary = signal<AiUsageSummary | null>(null);

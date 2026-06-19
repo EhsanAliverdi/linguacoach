@@ -13,6 +13,7 @@ import {
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminStatCardComponent,
@@ -38,6 +39,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminStatCardComponent,
@@ -50,6 +52,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       <sp-admin-button (click)="toggleForm()">{{ showForm() ? 'Cancel' : 'New version' }}</sp-admin-button>
     </sp-admin-page-header>
 
+    <sp-admin-page-body>
     @if (showForm()) {
       <sp-admin-card title="Create new prompt version" variant="section" padding="md" [headerDivider]="true">
         <div class="sp-admin-field-grid">
@@ -154,10 +157,11 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
         }
       }
     </sp-admin-card>
+    </sp-admin-page-body>
   `,
   styles: [`
     .sp-admin-wide{grid-column:1/-1;}
-    .sp-admin-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px;}
+    .sp-admin-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
     .sp-admin-prompt-preview{font-size:12px;color:#334155;background:#F8FAFC;border-radius:8px;padding:12px;overflow:auto;max-height:220px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;}
     .sp-admin-state-wrap{display:grid;gap:12px;padding:16px;}
     .sp-admin-status-select{min-width:150px;}

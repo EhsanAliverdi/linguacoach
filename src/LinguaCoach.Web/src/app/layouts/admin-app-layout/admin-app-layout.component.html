@@ -32,106 +32,47 @@
     </a>
     <button (click)="closeDrawer()" aria-label="Close navigation"
       class="flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
   <!-- Drawer nav -->
   <nav class="flex-1 overflow-y-auto no-scrollbar px-3 py-4" aria-label="Mobile navigation">
     <div class="mb-4">
-      <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">Menu</p>
+      <sp-admin-sidebar-section label="Menu" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
-        <li>
-          <a routerLink="/admin" routerLinkActive="menu-item-active" [routerLinkActiveOptions]="{exact:true}"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            </span>
-            <span class="menu-item-text">Dashboard</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/students" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </span>
-            <span class="menu-item-text">Students</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/ai-config" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-            </span>
-            <span class="menu-item-text">AI Config</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/prompts" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </span>
-            <span class="menu-item-text">Prompts</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/usage" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            </span>
-            <span class="menu-item-text">AI Usage</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/exercise-types" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </span>
-            <span class="menu-item-text">Exercise Types</span>
-          </a>
-        </li>
+        <li><sp-admin-sidebar-nav-item label="Dashboard" route="/admin" [exact]="true" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Students" route="/admin/students" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="AI Config" route="/admin/ai-config" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Prompts" route="/admin/prompts" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="AI Usage" route="/admin/usage" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
     <div>
-      <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">System</p>
+      <sp-admin-sidebar-section label="System" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
-        <li>
-          <a routerLink="/admin/integrations" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-            </span>
-            <span class="menu-item-text">Integrations</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/diagnostics" routerLinkActive="menu-item-active"
-            class="menu-item group menu-item-inactive" (click)="closeDrawer()">
-            <span class="menu-item-icon-size menu-item-icon-inactive">
-              <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            </span>
-            <span class="menu-item-text">Diagnostics</span>
-          </a>
-        </li>
+        <li><sp-admin-sidebar-nav-item label="Integrations" route="/admin/integrations" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Diagnostics" route="/admin/diagnostics" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
   </nav>
-
-  <!-- Drawer footer -->
-  <div class="border-t border-gray-200 dark:border-gray-800 px-3 py-4 flex-shrink-0">
-    <button (click)="logout(); closeDrawer()"
-      class="menu-item group menu-item-inactive w-full text-left">
-      <span class="menu-item-icon-size menu-item-icon-inactive">
-        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </span>
-      <span class="menu-item-text">Sign out</span>
-    </button>
-  </div>
 </aside>
 
 <!-- ── Main shell ─────────────────────────────────────────────────────── -->
@@ -141,7 +82,8 @@
   <sp-admin-sidebar slot="sidebar" [collapsed]="collapsed()">
 
     <!-- Brand -->
-    <div class="flex items-center gap-3 px-2 py-5 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+    <div class="flex items-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0 h-16 px-4"
+      [class.justify-center]="collapsed()">
       <a routerLink="/admin" class="flex items-center gap-3 no-underline overflow-hidden">
         <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <defs>
@@ -167,104 +109,40 @@
     <!-- Nav -->
     <nav class="flex-1 overflow-y-auto no-scrollbar px-3 py-4" aria-label="Admin navigation">
       <div class="mb-4">
-        @if (!collapsed()) {
-          <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">Menu</p>
-        }
+        <sp-admin-sidebar-section label="Menu" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
-          <li>
-            <a routerLink="/admin" routerLinkActive="menu-item-active" [routerLinkActiveOptions]="{exact:true}"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Dashboard' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">Dashboard</span> }
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/students" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Students' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">Students</span> }
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/ai-config" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'AI Config' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">AI Config</span> }
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/prompts" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Prompts' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">Prompts</span> }
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/usage" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'AI Usage' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">AI Usage</span> }
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/exercise-types" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Exercise Types' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">Exercise Types</span> }
-            </a>
-          </li>
+          <li><sp-admin-sidebar-nav-item label="Dashboard" route="/admin" [exact]="true" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Students" route="/admin/students" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="AI Config" route="/admin/ai-config" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Prompts" route="/admin/prompts" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="AI Usage" route="/admin/usage" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>
       <div>
-        @if (!collapsed()) {
-          <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">System</p>
-        }
+        <sp-admin-sidebar-section label="System" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
-          <li>
-            <a routerLink="/admin/integrations" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Integrations' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">Integrations</span> }
-            </a>
-          </li>
-          <li>
-            <a routerLink="/admin/diagnostics" routerLinkActive="menu-item-active"
-              class="menu-item group menu-item-inactive" [title]="collapsed() ? 'Diagnostics' : ''">
-              <span class="menu-item-icon-size menu-item-icon-inactive">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-              </span>
-              @if (!collapsed()) { <span class="menu-item-text">Diagnostics</span> }
-            </a>
-          </li>
+          <li><sp-admin-sidebar-nav-item label="Integrations" route="/admin/integrations" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Diagnostics" route="/admin/diagnostics" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>
     </nav>
-
-    <!-- Sidebar footer -->
-    <div class="border-t border-gray-200 dark:border-gray-800 px-3 py-4 flex-shrink-0">
-      <button (click)="logout()"
-        class="menu-item group menu-item-inactive w-full text-left"
-        [title]="collapsed() ? 'Sign out' : ''">
-        <span class="menu-item-icon-size menu-item-icon-inactive">
-          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </span>
-        @if (!collapsed()) { <span class="menu-item-text">Sign out</span> }
-      </button>
-    </div>
 
   </sp-admin-sidebar>
 
@@ -273,43 +151,17 @@
 
     <!-- Mobile hamburger -->
     <button (click)="openDrawer()" class="xl:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" aria-label="Open navigation">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
 
     <!-- Desktop sidebar toggle -->
     <button (click)="toggleSidebar()" class="hidden xl:flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" [title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'" aria-label="Toggle sidebar">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
 
-    <!-- User menu in [user] slot -->
-    <div user class="relative">
-      <sp-admin-dropdown align="right" width="auto" [closeOnMenuClick]="true">
-        <button
-          trigger
-          class="sp-admin-avatar"
-          aria-label="Profile menu"
-        >{{ adminInitial() }}</button>
-
-        <div menu class="sp-admin-profile-menu" role="menu">
-          <div class="sp-admin-profile-summary">
-            <div class="sp-admin-profile-avatar">{{ adminInitial() }}</div>
-            <div class="sp-admin-profile-meta">
-              <div class="sp-admin-profile-email">{{ adminEmail() }}</div>
-              <div class="sp-admin-profile-role">Admin</div>
-            </div>
-          </div>
-          <div class="sp-admin-profile-divider"></div>
-          <span class="sp-admin-profile-item sp-admin-profile-item-disabled" title="Profile settings not available">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Profile
-          </span>
-          <div class="sp-admin-profile-divider"></div>
-          <button (click)="logout()" class="sp-admin-profile-item sp-admin-profile-signout" role="menuitem">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Sign out
-          </button>
-        </div>
-      </sp-admin-dropdown>
+    <!-- User menu -->
+    <div user>
+      <sp-admin-user-menu [email]="adminEmail()" [initial]="adminInitial()" (signOut)="logout()" />
     </div>
 
   </sp-admin-header>
