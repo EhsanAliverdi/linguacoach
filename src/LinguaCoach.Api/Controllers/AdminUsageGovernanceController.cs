@@ -180,8 +180,23 @@ public sealed class AdminUsageGovernanceController : ControllerBase
     [HttpGet("students/{studentId:guid}/usage-policy")]
     public async Task<IActionResult> GetStudentEffectivePolicy(Guid studentId, CancellationToken ct)
     {
-        var policy = await _governance.GetStudentEffectivePolicyAsync(studentId, ct);
-        return policy is null ? Ok(null) : Ok(MapPolicy(policy));
+        var result = await _governance.GetStudentEffectivePolicyAsync(studentId, ct);
+        if (result is null) return Ok(null);
+        return Ok(new
+        {
+            result.IsOverride,
+            result.AssignedAt,
+            result.AssignedByAdminUserId,
+            result.Reason,
+            Policy = MapPolicy(result.Policy),
+        });
+    }
+
+    [HttpDelete("students/{studentId:guid}/usage-policy")]
+    public async Task<IActionResult> RemoveStudentPolicy(Guid studentId, CancellationToken ct)
+    {
+        await _governance.RemoveStudentPolicyAssignmentAsync(studentId, AdminUserId, ct);
+        return NoContent();
     }
 
     // ── Student usage summary ────────────────────────────────────────────────

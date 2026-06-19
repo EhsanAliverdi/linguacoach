@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-H)
+lastUpdated: 2026-06-19 (10R-J)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,44 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10R-J — Student Usage Policy Assignment Admin UI** - complete (2026-06-19)
+
+Goal: allow admins to view, assign, and reset a student's usage policy from the student detail page.
+
+### Delivered
+
+- `RemoveStudentPolicyAssignmentAsync` on `IUsageGovernanceAdminService` and implementation — deactivates active assignment, writes audit log, safe no-op if none exists.
+- `StudentEffectivePolicyResult` record — wraps `UsagePolicy` with `IsOverride`, `AssignedAt`, `AssignedByAdminUserId`, `Reason`.
+- `GetStudentEffectivePolicyAsync` updated to return `StudentEffectivePolicyResult?` instead of bare `UsagePolicy?`.
+- `GET /api/admin/students/{id}/usage-policy` response extended with `isOverride`, `assignedAt`, `assignedByAdminUserId`, `reason` fields.
+- `DELETE /api/admin/students/{id}/usage-policy` endpoint added — 204 on success, safe no-op if no active assignment.
+- `StudentEffectivePolicy` TypeScript interface added to `usage-governance.service.ts`.
+- `getStudentEffectivePolicy(studentId)` and `removeStudentPolicy(studentId)` added to `UsageGovernanceService`.
+- Usage Policy section added to `admin-student-detail.component`: policy name, scope, override/default badge, assigned date, reason (when override), active rule count.
+- "Assign Policy" action: opens modal, loads active policies, lets admin pick policy and enter reason, calls `assignStudentPolicy`, refreshes.
+- "Reset to Default" action: visible only when override is active, confirm dialog, calls `removeStudentPolicy`, refreshes.
+- `admin-student-detail.component.spec.ts` created: 9 tests covering render, badge, modal open, assign call, assign error, remove confirm, remove cancel, remove error.
+- `TODO-10R-STUDENT-ASSIGN` closed.
+
+See: `docs/reviews/2026-06-19-phase-10r-j-student-usage-policy-assignment-admin-ui-review.md`
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors, 7 pre-existing warnings)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (681/681)
+
+### Remaining TODOs
+
+- `TODO-10R-RULE-MGMT-UNIQUE-CONSTRAINT`: Optional DB unique index on `(UsagePolicyId, FeatureKey)`.
+- `TODO-10U`: full AI usage/config redesign.
+- `TODO-10V`: prompt playground.
+
+---
+
+## Previous sprint
 
 **Phase 10R-H — Usage Policy Rule Editor Admin UI** - complete (2026-06-19)
 
@@ -91,7 +129,7 @@ Goal: make the Usage Policies admin page production-usable using existing API an
 ### Remaining TODOs
 
 - `TODO-10R-RULE-MGMT`: Rule create/edit/delete UI blocked until a per-rule API endpoint is added.
-- `TODO-10R-STUDENT-ASSIGN`: Student policy assignment list UI deferred.
+- ~~`TODO-10R-STUDENT-ASSIGN`~~: Done in Phase 10R-J.
 
 ---
 

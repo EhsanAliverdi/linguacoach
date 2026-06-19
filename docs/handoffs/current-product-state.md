@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-H)
+lastUpdated: 2026-06-19 (10R-J)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,23 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Student usage policy assignment admin UI complete (Phase 10R-J)
+
+Admins can now view, assign, and reset a student's usage policy from the student detail page.
+
+What changed:
+- New "Usage Policy" section on every student detail page.
+- Shows effective policy name, scope, and source badge (Student override vs. Global default).
+- "Assign Policy" button opens a modal — admin picks any active policy and optionally enters a reason. Saves immediately via `PUT /api/admin/students/{id}/usage-policy`.
+- "Reset to Default" button visible only when a student override is active. Requires confirm dialog. Calls new `DELETE /api/admin/students/{id}/usage-policy`.
+- If override is removed, student automatically falls back to the global default policy at next AI call.
+- Assignment and removal both written to `AdminAuditLog`.
+- `TODO-10R-STUDENT-ASSIGN` closed. 681/681 tests pass.
+
+See: `docs/reviews/2026-06-19-phase-10r-j-student-usage-policy-assignment-admin-ui-review.md`
 
 ---
 

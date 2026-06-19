@@ -21,7 +21,8 @@ public interface IUsageGovernanceAdminService
 
     // Student policy assignment
     Task AssignPolicyToStudentAsync(Guid studentProfileId, Guid usagePolicyId, Guid adminUserId, string? reason, CancellationToken ct = default);
-    Task<UsagePolicy?> GetStudentEffectivePolicyAsync(Guid studentProfileId, CancellationToken ct = default);
+    Task RemoveStudentPolicyAssignmentAsync(Guid studentProfileId, Guid adminUserId, CancellationToken ct = default);
+    Task<StudentEffectivePolicyResult?> GetStudentEffectivePolicyAsync(Guid studentProfileId, CancellationToken ct = default);
 }
 
 public sealed record CreateUsagePolicyRequest(
@@ -76,3 +77,10 @@ public sealed record UpdateUsagePolicyRuleRequest(
     decimal? MonthlyCostLimit,
     int WarningThresholdPercent = 80,
     bool IsActive = true);
+
+public sealed record StudentEffectivePolicyResult(
+    UsagePolicy Policy,
+    bool IsOverride,
+    DateTime? AssignedAt,
+    Guid? AssignedByAdminUserId,
+    string? Reason);

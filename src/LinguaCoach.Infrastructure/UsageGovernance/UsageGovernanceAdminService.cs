@@ -142,7 +142,6 @@ public sealed class UsageGovernanceAdminService : IUsageGovernanceAdminService
         string? reason,
         CancellationToken ct = default)
     {
-        // Deactivate any existing assignment
         var existing = await _db.StudentPolicyAssignments
             .Where(a => a.StudentProfileId == studentProfileId && a.IsActive)
             .ToListAsync(ct);
@@ -166,13 +165,40 @@ public sealed class UsageGovernanceAdminService : IUsageGovernanceAdminService
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task<UsagePolicy?> GetStudentEffectivePolicyAsync(Guid studentProfileId, CancellationToken ct = default)
+    public async Task RemoveStudentPolicyAssignmentAsync(
+        Guid studentProfileId,
+        Guid adminUserId,
+        CancellationToken ct = default)
+    {
+        var existing = await _db.StudentPolicyAssignments
+            .Where(a => a.StudentProfileId == studentProfileId && a.IsActive)
+            .ToListAsync(ct);
+
+        if (existing.Count == 0) return;
+
+        foreach (var a in existing)
+            a.Deactivate();
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            adminUserId, "RemoveUsagePolicyAssignment", "StudentPolicyAssignment",
+            entityId: studentProfileId.ToString(),
+            targetStudentId: studentProfileId,
+            newValueJson: null,
+            reason: "Admin removed student policy override, reverting to global default."));
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<StudentEffectivePolicyResult?> GetStudentEffectivePolicyAsync(
+        Guid studentProfileId,
+        CancellationToken ct = default)
     {
         var assignment = await _db.StudentPolicyAssignments
             .Where(a => a.StudentProfileId == studentProfileId && a.IsActive)
             .OrderByDescending(a => a.CreatedAt)
             .FirstOrDefaultAsync(ct);
 
+        bool isOverride = assignment is not null;
         Guid? policyId = assignment?.UsagePolicyId;
 
         if (policyId is null)
@@ -185,8 +211,17 @@ public sealed class UsageGovernanceAdminService : IUsageGovernanceAdminService
 
         if (policyId is null) return null;
 
-        return await _db.UsagePolicies
+        var policy = await _db.UsagePolicies
             .Include(p => p.Rules.Where(r => r.IsActive))
             .FirstOrDefaultAsync(p => p.Id == policyId, ct);
+
+        if (policy is null) return null;
+
+        return new StudentEffectivePolicyResult(
+            policy,
+            isOverride,
+            AssignedAt: assignment?.CreatedAt,
+            AssignedByAdminUserId: assignment?.AssignedByAdminUserId,
+            Reason: assignment?.Reason);
     }
 }

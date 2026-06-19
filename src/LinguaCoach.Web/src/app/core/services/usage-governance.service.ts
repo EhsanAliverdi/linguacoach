@@ -85,6 +85,14 @@ export interface UpdateUsagePolicyRuleRequest {
   isActive: boolean;
 }
 
+export interface StudentEffectivePolicy {
+  isOverride: boolean;
+  assignedAt: string | null;
+  assignedByAdminUserId: string | null;
+  reason: string | null;
+  policy: UsagePolicy;
+}
+
 export interface UsageSummary {
   studentProfileId: string;
   period: string;
@@ -140,6 +148,14 @@ export class UsageGovernanceService {
 
   assignStudentPolicy(studentId: string, policyId: string, reason: string | null): Observable<void> {
     return this.http.put<void>(`/api/admin/students/${studentId}/usage-policy`, { policyId, reason });
+  }
+
+  getStudentEffectivePolicy(studentId: string): Observable<StudentEffectivePolicy | null> {
+    return this.http.get<StudentEffectivePolicy | null>(`/api/admin/students/${studentId}/usage-policy`);
+  }
+
+  removeStudentPolicy(studentId: string): Observable<void> {
+    return this.http.delete<void>(`/api/admin/students/${studentId}/usage-policy`);
   }
 
   getStudentUsage(studentId: string, period: string = 'today'): Observable<UsageSummary> {

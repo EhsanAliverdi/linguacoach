@@ -8,6 +8,7 @@ import {
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
+import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
 
 interface StudentEditForm {
   firstName: string;
@@ -119,6 +120,61 @@ interface StudentEditForm {
         </section>
 
         <section class="sp-admin-table-card sp-admin-detail-card">
+          <div class="sp-admin-section-header-row">
+            <h2 class="sp-admin-card-title">Usage policy</h2>
+            <div class="sp-admin-row-actions">
+              <button type="button" class="sp-admin-link-button" (click)="startAssignPolicy()">Assign policy</button>
+              @if (effectivePolicy()?.isOverride) {
+                <button type="button" class="sp-admin-danger-link" (click)="confirmRemovePolicy()">Reset to default</button>
+              }
+            </div>
+          </div>
+          @if (policyLoading()) {
+            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+          } @else if (policyError()) {
+            <div class="sp-admin-alert-error">{{ policyError() }}</div>
+          } @else if (effectivePolicy()) {
+            @let ep = effectivePolicy()!;
+            <dl class="sp-admin-detail-list">
+              <div>
+                <dt>Policy name</dt>
+                <dd>{{ ep.policy.name }}</dd>
+              </div>
+              <div>
+                <dt>Scope</dt>
+                <dd>{{ ep.policy.scopeType }}</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd>
+                  <span class="sp-admin-badge" [class.sp-admin-badge-indigo]="ep.isOverride" [class.sp-admin-badge-slate]="!ep.isOverride">
+                    {{ ep.isOverride ? 'Student override' : 'Global default' }}
+                  </span>
+                </dd>
+              </div>
+              @if (ep.isOverride) {
+                <div>
+                  <dt>Assigned</dt>
+                  <dd>{{ ep.assignedAt | date:'mediumDate' }}</dd>
+                </div>
+                @if (ep.reason) {
+                  <div>
+                    <dt>Reason</dt>
+                    <dd class="sp-safe-text">{{ ep.reason }}</dd>
+                  </div>
+                }
+              }
+              <div>
+                <dt>Active rules</dt>
+                <dd>{{ ep.policy.rules.length }}</dd>
+              </div>
+            </dl>
+          } @else {
+            <p class="sp-admin-table-empty">No policy found. Set a global default policy to enforce limits.</p>
+          }
+        </section>
+
+        <section class="sp-admin-table-card sp-admin-detail-card">
           <h2 class="sp-admin-card-title">Learning memory</h2>
           @if (memoryLoading()) {
             <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
@@ -221,6 +277,47 @@ interface StudentEditForm {
           }
         </section>
       </div>
+    }
+
+    @if (assigningPolicy()) {
+      <div class="sp-admin-modal-backdrop" (click)="cancelAssignPolicy()"></div>
+      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="assignPolicyTitle">
+        <div class="sp-admin-modal-header">
+          <div>
+            <h2 id="assignPolicyTitle">Assign usage policy</h2>
+            @if (student(); as s) { <p class="sp-safe-text">{{ s.email }}</p> }
+          </div>
+          <button type="button" (click)="cancelAssignPolicy()" aria-label="Close assign policy">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form (ngSubmit)="saveAssignPolicy()" class="sp-admin-edit-grid">
+          <label class="sp-admin-wide">
+            <span>Policy</span>
+            <select class="sp-input" [(ngModel)]="assignPolicyForm.policyId" name="policyId">
+              <option value="">Select a policy...</option>
+              @for (p of availablePolicies(); track p.id) {
+                <option [value]="p.id">{{ p.name }}{{ p.isDefault ? ' (default)' : '' }}</option>
+              }
+            </select>
+          </label>
+          <label class="sp-admin-wide">
+            <span>Reason (optional)</span>
+            <textarea class="sp-input" rows="2" [(ngModel)]="assignPolicyForm.reason" name="reason"
+              placeholder="Why is this policy being assigned?"></textarea>
+          </label>
+          @if (assignPolicyError()) {
+            <div class="sp-admin-alert-error sp-admin-wide">{{ assignPolicyError() }}</div>
+          }
+          <div class="sp-admin-modal-actions sp-admin-wide">
+            <button type="button" class="sp-button-ghost" (click)="cancelAssignPolicy()">Cancel</button>
+            <button type="submit" class="sp-admin-btn-primary"
+              [disabled]="savingAssignPolicy() || !assignPolicyForm.policyId">
+              {{ savingAssignPolicy() ? 'Saving...' : 'Assign policy' }}
+            </button>
+          </div>
+        </form>
+      </section>
     }
 
     @if (editing(); as student) {
@@ -460,6 +557,8 @@ interface StudentEditForm {
   `,
   styles: [`
     .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .sp-admin-section-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;}
+    .sp-admin-section-header-row .sp-admin-card-title{margin-bottom:0;}
     .sp-admin-back-link{display:inline-block;margin-bottom:8px;font-size:13px;font-weight:700;color:#4338CA;text-decoration:none;}
     .sp-admin-row-actions{display:flex;align-items:center;gap:10px;white-space:nowrap;}
     .sp-admin-link-button,.sp-admin-danger-link{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;}
@@ -575,11 +674,22 @@ export class AdminStudentDetailComponent implements OnInit {
     { value: 4, label: 'Manages or trains others' },
   ];
 
+  effectivePolicy = signal<StudentEffectivePolicy | null>(null);
+  policyLoading = signal(true);
+  policyError = signal('');
+
+  availablePolicies = signal<UsagePolicy[]>([]);
+  assigningPolicy = signal(false);
+  savingAssignPolicy = signal(false);
+  assignPolicyError = signal('');
+  assignPolicyForm: { policyId: string; reason: string } = { policyId: '', reason: '' };
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private adminApi: AdminApiService,
     private toast: ToastService,
+    private governance: UsageGovernanceService,
   ) {}
 
   ngOnInit(): void {
@@ -592,6 +702,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadStudent(id);
     this.loadMemory(id);
     this.loadHistory(id);
+    this.loadPolicy(id);
   }
 
   private loadStudent(id: string): void {
@@ -806,6 +917,67 @@ export class AdminStudentDetailComponent implements OnInit {
         this.savingResetData.set(false);
         this.resetDataError.set(err.error?.error ?? 'Could not reset student data.');
       },
+    });
+  }
+
+  private loadPolicy(id: string): void {
+    this.policyLoading.set(true);
+    this.policyError.set('');
+    this.governance.getStudentEffectivePolicy(id).subscribe({
+      next: ep => { this.effectivePolicy.set(ep); this.policyLoading.set(false); },
+      error: () => { this.policyError.set('Could not load usage policy.'); this.policyLoading.set(false); },
+    });
+  }
+
+  startAssignPolicy(): void {
+    this.assignPolicyError.set('');
+    this.assignPolicyForm = { policyId: this.effectivePolicy()?.policy.id ?? '', reason: '' };
+    this.governance.listUsagePolicies().subscribe({
+      next: policies => {
+        this.availablePolicies.set(policies.filter(p => p.isActive));
+        this.assigningPolicy.set(true);
+      },
+      error: () => this.toast.error('Could not load policies.'),
+    });
+  }
+
+  cancelAssignPolicy(): void {
+    this.assigningPolicy.set(false);
+    this.assignPolicyError.set('');
+  }
+
+  saveAssignPolicy(): void {
+    const studentId = this.student()?.studentProfileId;
+    if (!studentId || !this.assignPolicyForm.policyId) return;
+
+    this.savingAssignPolicy.set(true);
+    this.assignPolicyError.set('');
+    this.governance.assignStudentPolicy(studentId, this.assignPolicyForm.policyId, this.assignPolicyForm.reason || null).subscribe({
+      next: () => {
+        this.savingAssignPolicy.set(false);
+        this.assigningPolicy.set(false);
+        this.toast.success('Usage policy assigned.');
+        this.loadPolicy(studentId);
+      },
+      error: err => {
+        this.savingAssignPolicy.set(false);
+        this.assignPolicyError.set(err.error?.message ?? 'Could not assign policy.');
+      },
+    });
+  }
+
+  confirmRemovePolicy(): void {
+    const studentId = this.student()?.studentProfileId;
+    if (!studentId) return;
+    const confirmed = window.confirm('Remove the student policy override? The student will revert to the global default policy.');
+    if (!confirmed) return;
+
+    this.governance.removeStudentPolicy(studentId).subscribe({
+      next: () => {
+        this.toast.success('Policy override removed. Student reverts to global default.');
+        this.loadPolicy(studentId);
+      },
+      error: err => this.toast.error(err.error?.message ?? 'Could not remove policy assignment.'),
     });
   }
 

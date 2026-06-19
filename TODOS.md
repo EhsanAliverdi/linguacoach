@@ -183,7 +183,7 @@ Each item includes context, motivation, and the phase where it was deferred.
 - ~~TODO-10R-RULE-MGMT backend~~: Rule CRUD backend (domain method, service methods, API endpoints) — **DONE in Phase 10R-G**.
 - ~~TODO-10R-RULE-MGMT-UI~~: Rule editor admin UI — **DONE in Phase 10R-H**. Modal add/edit/delete with full form, delete confirm, local state update.
 - TODO-10R-RULE-MGMT-UNIQUE-CONSTRAINT: Optional — promote duplicate-key guard from application layer to DB unique index on `(UsagePolicyId, FeatureKey)` via EF migration.
-- TODO-10R-STUDENT-ASSIGN: Student policy assignment list UI — deferred. API endpoint exists (`PUT /api/admin/students/{id}/usage-policy`).
+- ~~TODO-10R-STUDENT-ASSIGN~~: Student policy assignment UI — **DONE in Phase 10R-J**. Usage Policy section in student detail: view effective policy, assign override, reset to default. DELETE endpoint added. 681 Angular tests pass.
 - TODO-10U: full AI usage/config redesign on the admin design system. Wrapper variant API (10X-J) is now available.
 - TODO-10V: prompt playground on the admin design system. Wrapper variant API (10X-J) is now available.
 - TODO-10X-J-INPUT-NUMBER: implement `sp-admin-input-number` — numeric CVA wrapper for number|null inputs (currently remain native inside sp-admin-form-field).
