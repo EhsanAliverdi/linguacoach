@@ -45,6 +45,7 @@ export type SpAdminInputState = 'default' | 'error' | 'success' | 'disabled';
     />
   `,
   styles: [`
+    :host { display:block; min-width:0; }
     /* TailAdmin-backed: h-11 rounded-lg border border-gray-200 input pattern */
     .sp-adm-input { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid #e5e7eb; background:transparent; color:#111827; transition:border-color .15s, box-shadow .15s; }
     .sp-adm-input::placeholder { color:#9ca3af; }

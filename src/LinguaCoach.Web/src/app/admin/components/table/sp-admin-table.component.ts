@@ -37,14 +37,14 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       @if (loading) {
         <sp-admin-loading-state message="Loading records" />
       } @else if (columns.length === 0) {
-        <div [class]="scrollClass">
+        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
           <ng-content />
         </div>
       } @else if (!rows.length) {
         <sp-admin-empty-state [message]="emptyMessage" />
       } @else {
-        <div [class]="scrollClass">
-          <table class="sp-adm-table w-full border-collapse" [class.sp-adm-table-bordered]="variant === 'bordered'">
+        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
+          <table class="sp-adm-table w-full border-collapse" [style.min-width]="minWidth || null" [class.sp-adm-table-bordered]="variant === 'bordered'">
             @if (showHeader) {
               <thead [class]="theadClass" [class.sp-adm-thead-sticky]="stickyHeader">
                 <tr [class]="theadRowClass">
@@ -87,9 +87,10 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                     </td>
                   }
                   @for (column of columns; track column.key) {
-                    <td
+                  <td
                       [class]="tdClass(column)"
                       [style.text-align]="column.align || 'left'"
+                      [style.width]="column.width || null"
                     >{{ row[column.key] }}</td>
                   }
                   @if (hasActions) {
@@ -115,7 +116,87 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-table-bordered-v { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; }
     .sp-adm-table-striped-v  { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; }
 
-    .sp-adm-table-scroll  { overflow-x:auto; }
+    .sp-adm-table-scroll  { overflow-x:auto; width:100%; }
+    .sp-adm-table-scroll::-webkit-scrollbar { height:8px; }
+    .sp-adm-table-scroll::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:999px; }
+
+    :host ::ng-deep table {
+      width:100%;
+      min-width:var(--sp-admin-table-min-width, 720px);
+      border-collapse:separate;
+      border-spacing:0;
+      table-layout:auto;
+    }
+    :host ::ng-deep thead tr { border-bottom:1px solid #e5e7eb; }
+    :host ::ng-deep th {
+      padding:10px 16px;
+      background:#f9fafb;
+      color:#667085;
+      font-size:11px;
+      font-weight:700;
+      line-height:1.4;
+      text-align:left;
+      white-space:nowrap;
+      vertical-align:bottom;
+    }
+    :host ::ng-deep td {
+      padding:12px 16px;
+      color:#344054;
+      font-size:13px;
+      line-height:1.45;
+      vertical-align:middle;
+      border-bottom:1px solid #f1f5f9;
+      min-width:72px;
+    }
+    :host ::ng-deep tbody tr:last-child td { border-bottom:0; }
+    :host ::ng-deep tbody tr:hover td { background:#fcfcfd; }
+    :host ::ng-deep td:first-child,
+    :host ::ng-deep th:first-child { padding-left:20px; }
+    :host ::ng-deep td:last-child,
+    :host ::ng-deep th:last-child { padding-right:20px; }
+    :host ::ng-deep .sp-admin-table-muted,
+    :host ::ng-deep .sp-admin-muted { color:#667085; }
+    :host ::ng-deep .sp-admin-mono,
+    :host ::ng-deep .sp-admin-table-mono {
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      color:#475467;
+      word-break:break-all;
+    }
+    :host ::ng-deep .sp-admin-cap { text-transform:capitalize; }
+    :host ::ng-deep .sp-admin-wide-cell { min-width:240px; max-width:360px; }
+    :host ::ng-deep .sp-admin-table-truncate,
+    :host ::ng-deep .sp-admin-truncate {
+      max-width:260px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    :host ::ng-deep .sp-admin-table-wrap,
+    :host ::ng-deep .sp-admin-wrap {
+      max-width:420px;
+      white-space:normal;
+      overflow-wrap:anywhere;
+    }
+    :host ::ng-deep .sp-admin-table-num,
+    :host ::ng-deep .sp-admin-num {
+      text-align:right;
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+    }
+    :host ::ng-deep .sp-admin-actions {
+      min-width:128px;
+      white-space:nowrap;
+      text-align:right;
+    }
+    :host ::ng-deep .sp-admin-table-empty {
+      color:#98a2b3;
+    }
+
+    :host ::ng-deep .sp-adm-table-density-compact th { padding:8px 12px; }
+    :host ::ng-deep .sp-adm-table-density-compact td { padding:8px 12px; font-size:12px; }
+    :host ::ng-deep .sp-adm-table-density-spacious th { padding:14px 24px; }
+    :host ::ng-deep .sp-adm-table-density-spacious td { padding:18px 24px; font-size:14px; }
 
     /* Thead */
     .sp-adm-thead-basic  { }
@@ -183,6 +264,7 @@ export class SpAdminTableComponent {
   @Input() selectable = false;
   @Input() showHeader = true;
   @Input() stickyHeader = false;
+  @Input() minWidth = '720px';
   @Output() sortChange = new EventEmitter<SpAdminSortChange>();
   @Output() selectionChange = new EventEmitter<number[]>();
 
@@ -201,7 +283,7 @@ export class SpAdminTableComponent {
   }
 
   get scrollClass(): string {
-    return 'sp-adm-table-scroll overflow-x-auto';
+    return `sp-adm-table-scroll sp-adm-table-density-${this.density}`;
   }
 
   get theadClass(): string {

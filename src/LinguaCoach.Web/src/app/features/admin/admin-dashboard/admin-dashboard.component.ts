@@ -90,7 +90,7 @@ import {
             <a routerLink="/admin/create-student" class="sp-admin-link">Create first student</a>
           </div>
         } @else {
-          <sp-admin-table variant="data" density="compact">
+          <sp-admin-table variant="data" density="compact" minWidth="620px">
             <table>
               <thead>
                 <tr>

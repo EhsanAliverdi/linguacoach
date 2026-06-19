@@ -39,6 +39,7 @@ export type SpAdminTextareaState = 'default' | 'error' | 'success' | 'disabled';
     ></textarea>
   `,
   styles: [`
+    :host { display:block; min-width:0; }
     /* TailAdmin-backed: rounded-lg border border-gray-200 textarea pattern */
     .sp-adm-textarea { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid #e5e7eb; background:transparent; color:#111827; resize:vertical; transition:border-color .15s, box-shadow .15s; }
     .sp-adm-textarea::placeholder { color:#9ca3af; }

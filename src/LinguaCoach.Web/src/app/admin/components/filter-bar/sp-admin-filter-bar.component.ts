@@ -35,6 +35,25 @@ export type SpAdminFilterBarDensity = 'compact' | 'comfortable';
     .sp-adm-filter-inline   { flex-direction:row; flex-wrap:nowrap; align-items:center; }
     .sp-adm-filter-stacked  { flex-direction:column; align-items:flex-start; }
     .sp-adm-filter-responsive { flex-direction:row; flex-wrap:wrap; }
+    :host ::ng-deep [search],
+    :host ::ng-deep [filters] {
+      min-width:180px;
+    }
+    :host ::ng-deep [search] {
+      flex:1 1 240px;
+    }
+    :host ::ng-deep [filters] {
+      flex:0 1 220px;
+    }
+    @media (max-width: 640px) {
+      .sp-adm-filter-left,
+      .sp-adm-filter-right { width:100%; }
+      :host ::ng-deep [search],
+      :host ::ng-deep [filters],
+      :host ::ng-deep [actions] {
+        width:100%;
+      }
+    }
   `],
 })
 export class SpAdminFilterBarComponent {

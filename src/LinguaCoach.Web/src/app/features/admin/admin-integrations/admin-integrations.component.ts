@@ -10,18 +10,20 @@ import {
 } from '../../../core/services/admin-integrations.service';
 import {
   SpAdminCardComponent,
+  SpAdminBadgeComponent,
   SpAdminErrorStateComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminStatCardComponent,
+  SpAdminTableComponent,
 } from '../../../admin';
 
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminCardComponent, SpAdminErrorStateComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent],
+  imports: [CommonModule, FormsModule, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminErrorStateComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminStatCardComponent, SpAdminTableComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
     .sp-admin-integration-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
@@ -109,6 +111,17 @@ export class AdminIntegrationsComponent implements OnInit {
       next: () => this.loadBatches(),
       error: err => this.batchesError.set(err.error?.error ?? 'Could not cancel this batch.'),
     });
+  }
+
+  batchStatusTone(status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+    switch (status) {
+      case 'Completed': return 'success';
+      case 'Failed': return 'danger';
+      case 'Partial': return 'warning';
+      case 'Running': return 'info';
+      case 'Queued': return 'neutral';
+      default: return 'neutral';
+    }
   }
 
   generateLessons(): void {

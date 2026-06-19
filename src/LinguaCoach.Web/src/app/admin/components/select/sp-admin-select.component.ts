@@ -53,6 +53,7 @@ export type SpAdminSelectState = 'default' | 'error' | 'success' | 'disabled';
     </select>
   `,
   styles: [`
+    :host { display:block; min-width:0; }
     /* TailAdmin-backed: h-11 rounded-lg border border-gray-200 select pattern */
     .sp-adm-select { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid #e5e7eb; background:transparent; color:#111827; transition:border-color .15s, box-shadow .15s; }
     .sp-adm-select:focus { outline:none; border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.3); }

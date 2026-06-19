@@ -34,16 +34,16 @@ export type SpAdminFormFieldSize = 'sm' | 'md' | 'lg';
     /* TailAdmin-backed: block text-sm font-medium text-gray-700 label pattern */
 
     /* Vertical (default): label above, hint/error below */
-    .sp-adm-field-vertical { display:flex; flex-direction:column; gap:6px; }
+    .sp-adm-field-vertical { display:flex; flex-direction:column; gap:6px; min-width:0; }
 
     /* Horizontal: label left, control right */
-    .sp-adm-field-horizontal { display:grid; grid-template-columns:160px 1fr; align-items:start; gap:12px; }
+    .sp-adm-field-horizontal { display:grid; grid-template-columns:160px minmax(0,1fr); align-items:start; gap:12px; min-width:0; }
     .sp-adm-field-horizontal .sp-adm-field-label { padding-top:10px; }
     .sp-adm-field-horizontal .sp-adm-field-hint,
     .sp-adm-field-horizontal .sp-adm-field-error  { grid-column:2; margin-top:2px; }
 
     /* Inline: label + control on same line */
-    .sp-adm-field-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .sp-adm-field-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
     .sp-adm-field-inline .sp-adm-field-hint,
     .sp-adm-field-inline .sp-adm-field-error { width:100%; margin-top:2px; }
 

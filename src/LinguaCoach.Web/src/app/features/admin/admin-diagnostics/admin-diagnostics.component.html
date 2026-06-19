@@ -11,26 +11,26 @@
     <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
   } @else if (status()) {
     <div class="sp-admin-diagnostics-grid">
-      <sp-admin-stat-card label="Environment" [value]="status()!.environment" tone="neutral" size="sm" />
-      <sp-admin-stat-card label="Version" [value]="status()!.version" tone="neutral" size="sm" />
-      <sp-admin-stat-card label="Uptime" [value]="uptimeLabel(status()!.uptimeSeconds)" tone="info" size="sm" />
-      <sp-admin-stat-card label="Log level" [value]="status()!.logLevel" tone="neutral" size="sm" />
+      <sp-admin-stat-card label="Environment" [value]="status()!.environment" tone="neutral" size="sm"></sp-admin-stat-card>
+      <sp-admin-stat-card label="Version" [value]="status()!.version" tone="neutral" size="sm"></sp-admin-stat-card>
+      <sp-admin-stat-card label="Uptime" [value]="uptimeLabel(status()!.uptimeSeconds)" tone="info" size="sm"></sp-admin-stat-card>
+      <sp-admin-stat-card label="Log level" [value]="status()!.logLevel" tone="neutral" size="sm"></sp-admin-stat-card>
       <sp-admin-stat-card
         label="Database"
         [value]="status()!.database.reachable ? 'Reachable' : 'Unreachable'"
         [tone]="status()!.database.reachable ? 'success' : 'danger'"
-        size="sm" />
+        size="sm"></sp-admin-stat-card>
       <sp-admin-stat-card
         label="AI provider"
         [value]="status()!.ai.providerConfigured ? (status()!.ai.activeProvider ?? 'Configured') : 'Not configured'"
         [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'"
-        size="sm" />
+        size="sm"></sp-admin-stat-card>
       <sp-admin-stat-card
         label="Event buffer"
         [value]="status()!.diagnosticEventsEnabled ? (status()!.diagnosticEventCount + ' events') : 'Disabled'"
         [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'"
-        size="sm" />
-      <sp-admin-stat-card label="Server time" [value]="formatTime(status()!.serverTimeUtc)" tone="neutral" size="sm" />
+        size="sm"></sp-admin-stat-card>
+      <sp-admin-stat-card label="Server time" [value]="formatTime(status()!.serverTimeUtc)" tone="neutral" size="sm"></sp-admin-stat-card>
     </div>
   }
 </sp-admin-card>
@@ -93,9 +93,9 @@
     <sp-admin-empty-state [message]="filterLevel || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
   } @else {
     <div class="sp-admin-diagnostics-count">
-      Showing {{ events().length }} of {{ total() }} events. Most recent first.
+      Showing {{ pagedEvents().length }} of {{ events().length }} loaded events. Total matching events: {{ total() }}.
     </div>
-    <sp-admin-table variant="data" density="compact">
+    <sp-admin-table variant="data" density="compact" minWidth="980px">
       <table>
         <thead>
           <tr>
@@ -107,19 +107,22 @@
           </tr>
         </thead>
         <tbody>
-          @for (event of events(); track $index) {
+          @for (event of pagedEvents(); track $index) {
             <tr>
               <td class="sp-admin-mono">{{ formatTime(event.timestampUtc) }}</td>
               <td>
                 <sp-admin-badge [tone]="levelTone(event.level)">{{ event.level }}</sp-admin-badge>
               </td>
-              <td class="sp-admin-muted sp-admin-diagnostics-truncate" [title]="event.category">{{ event.category }}</td>
-              <td class="sp-admin-diagnostics-message" [title]="event.message">{{ event.message }}</td>
+              <td class="sp-admin-muted sp-admin-table-truncate" [title]="event.category">{{ event.category }}</td>
+              <td class="sp-admin-table-wrap" [title]="event.message">{{ event.message }}</td>
               <td class="sp-admin-mono">{{ event.correlationId ?? '-' }}</td>
             </tr>
           }
         </tbody>
       </table>
     </sp-admin-table>
+    @if (eventsTotalPages() > 1) {
+      <sp-admin-pagination [page]="eventsPage()" [totalPages]="eventsTotalPages()" (pageChange)="eventsPage.set($event)" />
+    }
   }
 </sp-admin-card>

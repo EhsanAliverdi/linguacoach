@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
@@ -13,6 +13,7 @@ import {
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
   SpAdminSelectComponent,
   SpAdminStatCardComponent,
   SpAdminTableComponent,
@@ -34,6 +35,7 @@ import {
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
     SpAdminSelectComponent,
     SpAdminStatCardComponent,
     SpAdminTableComponent,
@@ -62,6 +64,15 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   filterCorrelationId = '';
   filterQ = '';
   filterLimit = 100;
+  eventsPage = signal(1);
+  readonly eventsPageSize = 25;
+
+  eventsTotalPages = computed(() => Math.max(1, Math.ceil(this.events().length / this.eventsPageSize)));
+  pagedEvents = computed(() => {
+    const page = Math.min(this.eventsPage(), this.eventsTotalPages());
+    const start = (page - 1) * this.eventsPageSize;
+    return this.events().slice(start, start + this.eventsPageSize);
+  });
 
   autoRefresh = signal(false);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -117,6 +128,7 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       next: r => {
         this.events.set(r.items);
         this.total.set(r.total);
+        this.eventsPage.set(1);
         this.loadingEvents.set(false);
       },
       error: err => {

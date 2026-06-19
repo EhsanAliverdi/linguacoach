@@ -47,7 +47,7 @@ interface StudentEditForm {
     } @else if (error()) {
       <sp-admin-error-state title="Could not load students" [message]="error()" />
     } @else {
-      <sp-admin-table variant="data" density="compact">
+      <sp-admin-table variant="data" density="compact" minWidth="980px">
         <table class="sp-admin-table">
           <thead>
             <tr>
@@ -63,7 +63,7 @@ interface StudentEditForm {
           <tbody>
             @for (s of pagedStudents(); track s.studentProfileId) {
               <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
-                <td>
+                <td class="sp-admin-wide-cell">
                   <div class="sp-admin-student-name">{{ displayName(s) }}</div>
                   <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
                 </td>
@@ -80,9 +80,9 @@ interface StudentEditForm {
                     <span class="sp-admin-table-empty">-</span>
                   }
                 </td>
-                <td class="sp-admin-profile-cell">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
+                <td class="sp-admin-profile-cell sp-admin-table-wrap">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
                 <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
-                <td>
+                <td class="sp-admin-actions">
                   <sp-admin-table-actions>
                     <a [routerLink]="[s.studentProfileId]" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors block">View</a>
                     <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" (click)="startEdit(s)">Edit</button>

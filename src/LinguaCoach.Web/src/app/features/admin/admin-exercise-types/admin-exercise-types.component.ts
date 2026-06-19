@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { AdminService } from '../../../core/services/admin.service';
 import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
 import {
@@ -10,6 +10,7 @@ import {
   SpAdminErrorStateComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
   SpAdminTableComponent,
 } from '../../../admin';
 
@@ -25,6 +26,7 @@ import {
     SpAdminErrorStateComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
     SpAdminTableComponent,
   ],
   template: `
@@ -41,7 +43,7 @@ import {
       } @else if (exerciseTypes().length === 0) {
         <sp-admin-empty-state message="No exercise types found." />
       } @else {
-      <sp-admin-table>
+      <sp-admin-table variant="data" density="compact" minWidth="1240px">
         <table>
           <thead>
             <tr>
@@ -58,20 +60,20 @@ import {
             </tr>
           </thead>
           <tbody>
-            @for (type of exerciseTypes(); track type.key) {
+            @for (type of pagedExerciseTypes(); track type.key) {
               <tr>
-                <td class="sp-admin-wide-cell">
+                <td class="sp-admin-wide-cell sp-admin-table-wrap">
                   <strong>{{ type.displayName }}</strong>
                   <div class="sp-admin-mono">{{ type.key }}</div>
                   <div class="sp-admin-muted">{{ type.description }}</div>
                 </td>
-                <td>
+                <td class="sp-admin-table-truncate">
                   <span class="sp-admin-cap">{{ type.primarySkill }}</span>
                   @if (type.secondarySkills.length) {
                     <div class="sp-admin-muted">+ {{ type.secondarySkills.join(', ') }}</div>
                   }
                 </td>
-                <td>{{ type.category }}</td>
+                <td class="sp-admin-table-truncate">{{ type.category }}</td>
                 <td>
                   <sp-admin-badge [tone]="type.implementationStatus === 'ready' ? 'success' : 'warning'">
                     {{ type.implementationStatus === 'ready' ? 'Ready' : 'Not implemented' }}
@@ -117,6 +119,9 @@ import {
           </tbody>
         </table>
       </sp-admin-table>
+      @if (totalPages() > 1) {
+        <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
+      }
       }
   `,
   styles: [`
@@ -146,6 +151,15 @@ export class AdminExerciseTypesComponent implements OnInit {
   savingKey = signal<string | null>(null);
   error = signal<string | null>(null);
   loading = signal(true);
+  page = signal(1);
+  readonly pageSize = 20;
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.exerciseTypes().length / this.pageSize)));
+  pagedExerciseTypes = computed(() => {
+    const page = Math.min(this.page(), this.totalPages());
+    const start = (page - 1) * this.pageSize;
+    return this.exerciseTypes().slice(start, start + this.pageSize);
+  });
 
   constructor(private admin: AdminService) {}
 
@@ -156,7 +170,7 @@ export class AdminExerciseTypesComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.admin.listExerciseTypes().subscribe({
-      next: items => { this.exerciseTypes.set(items); this.loading.set(false); },
+      next: items => { this.exerciseTypes.set(items); this.page.set(1); this.loading.set(false); },
       error: () => { this.error.set('Could not load exercise types.'); this.loading.set(false); },
     });
   }

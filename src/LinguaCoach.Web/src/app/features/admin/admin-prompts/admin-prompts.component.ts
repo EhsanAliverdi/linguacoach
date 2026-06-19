@@ -112,7 +112,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       } @else if (filteredPrompts().length === 0) {
         <sp-admin-empty-state [message]="emptyMessage()" />
     } @else {
-        <sp-admin-table variant="data" density="compact">
+        <sp-admin-table variant="data" density="compact" minWidth="860px">
           <table>
             <thead>
               <tr>
@@ -126,15 +126,15 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
             <tbody>
               @for (p of pagedPrompts(); track p.id) {
                 <tr>
-                  <td class="sp-admin-table-mono">{{ p.key }}</td>
-                  <td>v{{ p.version }}</td>
+                  <td class="sp-admin-table-mono sp-admin-table-truncate" [title]="p.key">{{ p.key }}</td>
+                  <td class="sp-admin-num">v{{ p.version }}</td>
                   <td>
                     <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
                       {{ p.isActive ? 'Active' : 'Inactive' }}
                     </sp-admin-badge>
                   </td>
-                  <td class="sp-admin-table-muted">{{ tokenBudgetLabel(p) }}</td>
-                  <td>
+                  <td class="sp-admin-table-muted sp-admin-num">{{ tokenBudgetLabel(p) }}</td>
+                  <td class="sp-admin-actions">
                     <sp-admin-table-actions>
                       <button type="button" class="sp-adm-action-item" (click)="viewDetail(p.id)">View content</button>
                       @if (p.isActive) {

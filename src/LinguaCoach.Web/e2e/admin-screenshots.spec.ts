@@ -84,7 +84,8 @@ async function mockAdmin(page: Page) {
     const url = route.request().url();
     if (url.includes('/api/admin/students')
       || url.includes('/api/admin/ai/categories')
-      || url.includes('/api/admin/ai-providers')) {
+      || url.includes('/api/admin/ai-providers')
+      || url.includes('/api/admin/diagnostics')) {
       await route.fallback();
       return;
     }

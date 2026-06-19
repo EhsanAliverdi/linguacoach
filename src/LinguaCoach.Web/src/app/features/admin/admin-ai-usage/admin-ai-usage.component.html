@@ -20,7 +20,7 @@
       @if (summary()!.byProvider.length === 0) {
         <sp-admin-empty-state message="No calls yet." />
       } @else {
-        <sp-admin-table>
+        <sp-admin-table variant="data" density="compact" minWidth="520px">
           <table>
             <thead>
               <tr><th>Provider</th><th>Calls</th><th>OK</th><th>Fallback</th><th>Cost</th></tr>
@@ -28,11 +28,11 @@
             <tbody>
               @for (p of summary()!.byProvider; track p.provider) {
                 <tr>
-                  <td class="sp-admin-cap">{{ p.provider }}</td>
-                  <td>{{ p.calls }}</td>
-                  <td>{{ p.successful }}</td>
-                  <td>{{ p.fallback }}</td>
-                  <td>${{ p.costUsd.toFixed(4) }}</td>
+                  <td class="sp-admin-cap sp-admin-table-truncate">{{ p.provider }}</td>
+                  <td class="sp-admin-table-num">{{ p.calls }}</td>
+                  <td class="sp-admin-table-num">{{ p.successful }}</td>
+                  <td class="sp-admin-table-num">{{ p.fallback }}</td>
+                  <td class="sp-admin-table-num">${{ p.costUsd.toFixed(4) }}</td>
                 </tr>
               }
             </tbody>
@@ -45,7 +45,7 @@
       @if (summary()!.byFeature.length === 0) {
         <sp-admin-empty-state message="No calls yet." />
       } @else {
-        <sp-admin-table>
+        <sp-admin-table variant="data" density="compact" minWidth="520px">
           <table>
             <thead>
               <tr><th>Feature</th><th>Calls</th><th>OK</th><th>Cost</th></tr>
@@ -53,10 +53,10 @@
             <tbody>
               @for (f of summary()!.byFeature; track f.feature) {
                 <tr>
-                  <td>{{ featureLabel(f.feature) }}</td>
-                  <td>{{ f.calls }}</td>
-                  <td>{{ f.successful }}</td>
-                  <td>${{ f.costUsd.toFixed(4) }}</td>
+                  <td class="sp-admin-table-truncate" [title]="featureLabel(f.feature)">{{ featureLabel(f.feature) }}</td>
+                  <td class="sp-admin-table-num">{{ f.calls }}</td>
+                  <td class="sp-admin-table-num">{{ f.successful }}</td>
+                  <td class="sp-admin-table-num">${{ f.costUsd.toFixed(4) }}</td>
                 </tr>
               }
             </tbody>
@@ -75,7 +75,7 @@
   } @else if (recentItems().length === 0) {
     <sp-admin-empty-state message="No AI calls recorded yet. AI calls will appear here once the system is used." />
   } @else {
-    <sp-admin-table>
+    <sp-admin-table variant="data" density="compact" minWidth="1100px">
       <table>
         <thead>
           <tr>
@@ -93,9 +93,9 @@
           @for (item of pagedRecentItems(); track item.id) {
             <tr>
               <td class="sp-admin-mono">{{ formatTime(item.createdAt) }}</td>
-              <td>{{ featureLabel(item.featureKey) }}</td>
-              <td class="sp-admin-cap">{{ item.provider }}</td>
-              <td class="sp-admin-muted">{{ item.model }}</td>
+              <td class="sp-admin-table-truncate" [title]="featureLabel(item.featureKey)">{{ featureLabel(item.featureKey) }}</td>
+              <td class="sp-admin-cap sp-admin-table-truncate" [title]="item.provider">{{ item.provider }}</td>
+              <td class="sp-admin-muted sp-admin-table-truncate" [title]="item.model">{{ item.model }}</td>
               <td>
                 <sp-admin-badge [tone]="item.wasSuccessful ? 'success' : 'danger'">
                   {{ item.wasSuccessful ? 'OK' : 'Failed' }}
@@ -108,8 +108,8 @@
                   <span class="sp-admin-muted">-</span>
                 }
               </td>
-              <td class="sp-admin-muted">{{ item.durationMs }}ms</td>
-              <td class="sp-admin-mono">{{ item.correlationId ?? '-' }}</td>
+              <td class="sp-admin-num">{{ item.durationMs }}ms</td>
+              <td class="sp-admin-mono sp-admin-table-truncate" [title]="item.correlationId ?? '-'">{{ item.correlationId ?? '-' }}</td>
             </tr>
           }
         </tbody>
