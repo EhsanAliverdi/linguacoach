@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Claude Adapter — SpeakPath / LinguaCoach
 
 Before doing any work, read:
@@ -142,3 +146,136 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+---
+
+## Commands
+
+### Backend
+
+```bash
+# Run API locally (requires PostgreSQL or Docker)
+cd src/LinguaCoach.Api && dotnet run
+
+# Run all tests (SQLite in-memory, no PostgreSQL needed)
+dotnet test
+
+# Run a single test project
+dotnet test tests/LinguaCoach.UnitTests
+dotnet test tests/LinguaCoach.IntegrationTests
+dotnet test tests/LinguaCoach.ArchitectureTests
+
+# Run a single test by name filter
+dotnet test --filter "FullyQualifiedName~YourTestName"
+
+# Release build
+dotnet build --configuration Release
+dotnet test --configuration Release
+```
+
+### Frontend
+
+```bash
+cd src/LinguaCoach.Web
+
+# Dev server
+npm start                          # ng serve
+
+# Production build
+npm run build -- --configuration production
+
+# Unit tests (Karma/Jasmine, headless)
+npm test -- --watch=false --browsers=ChromeHeadless
+
+# Playwright E2E (run from web dir)
+npm run e2e                        # playwright test
+
+# Single Playwright spec
+npx playwright test e2e/admin-students-reset.spec.ts
+```
+
+### Docker
+
+```bash
+# Start API + PostgreSQL together (migrations run on startup)
+docker compose up --build
+
+# Teardown including volumes
+docker compose down -v
+```
+
+---
+
+## Architecture
+
+### Backend layers (Clean Architecture)
+
+```
+LinguaCoach.Domain         — Entities, enums, value objects. No EF Core, no ASP.NET.
+LinguaCoach.Application    — Use cases, interfaces (IAdminStudentQuery etc.), DTOs, queries/commands.
+LinguaCoach.Infrastructure — AI providers, email, external services. Implements Application interfaces.
+LinguaCoach.Persistence    — EF Core DbContext, Identity, migrations, query handlers.
+LinguaCoach.Api            — Controllers, middleware, JWT wiring, CORS, health checks.
+LinguaCoach.Worker         — Background jobs.
+LinguaCoach.Web            — Angular SPA (standalone components, Signals, Tailwind CSS).
+```
+
+Dependency rule: Domain ← Application ← {Infrastructure, Persistence} ← Api. No reverse deps.
+
+### Test projects
+
+```
+tests/LinguaCoach.UnitTests          — Domain/Application logic, mocked dependencies.
+tests/LinguaCoach.IntegrationTests   — API + EF Core against SQLite in-memory.
+tests/LinguaCoach.ArchitectureTests  — NetArchTest layer boundary enforcement.
+src/LinguaCoach.Web/e2e/             — Playwright browser tests.
+```
+
+### Learning model hierarchy
+
+```
+LearningPath → LearningModule → LearningSession → SessionExercise → LearningActivity → ActivityAttempt
+```
+
+Practice Gym uses `LearningActivity` directly, without a session.
+
+A completed activity = at least one `ActivityAttempt` submitted.
+Count `COUNT(DISTINCT LearningActivityId)`, not total attempt rows.
+
+### Frontend structure
+
+```
+src/app/features/          — Feature modules: admin/, activity/, assessment/, auth/,
+                             dashboard/, learning-path/, lesson/, onboarding/,
+                             placement/, practice/, profile/, progress/, speaking/, vocabulary/
+src/app/shared/student-ui/ — Shared student-facing UI components
+src/app/core/              — Services, models, guards, interceptors
+```
+
+Admin features live under `features/admin/` and use these shared wrappers:
+- `sp-admin-section-card`, `sp-admin-section-header`
+- `sp-admin-slide-over` (reusable slide-over panel)
+- `sp-admin-badge`, `sp-admin-code-pill`, `sp-admin-empty-state`
+
+Layout components: `PublicLayout`, `StudentAppLayout`, `AdminAppLayout`. Pages render content only; layouts own shell/sidebar/header.
+
+### AI flow
+
+```
+PostgreSQL → LearningPlanner / AiContextBuilder → IAiProvider → validated JSON → saved result → UI
+```
+
+AI receives compact bounded packets only. Every provider call is tracked with `featureKey`, `provider`, `model`, `userId`, `isFallback`, `wasSuccessful`, token counts, cost, and `correlationId`. Tests use fake/mock providers — never real AI.
+
+### Admin query/handler pattern
+
+Admin features follow `IAdminStudentQuery` → handler in `LinguaCoach.Infrastructure/Admin/` → controller in `LinguaCoach.Api/Controllers/`. DTOs are defined in `LinguaCoach.Application/Admin/`.
+
+### Key env vars
+
+| Var | Purpose |
+|-----|---------|
+| `ConnectionStrings__DefaultConnection` | PostgreSQL |
+| `JWT_KEY` | Must be ≥ 32 chars outside Development |
+| `AI__WritingFeedback__Provider` | `OpenAI`, `Gemini`, or `Anthropic` |
+| `OPENAI_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` | Per-provider keys |
