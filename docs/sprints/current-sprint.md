@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-J-T)
+lastUpdated: 2026-06-19 (10R-F)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,35 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10R-F — Usage Governance Admin UX Foundation** - complete (2026-06-19)
+
+Goal: make the Usage Policies admin page production-usable using existing API and admin design system wrappers.
+
+### Delivered
+
+- Summary stat cards: Total Policies, Active count, Default policy name.
+- Expandable rule detail rows: feature key (code pill), feature display name, enforcement mode badge (typed), unit type, active state, limit summary (daily/weekly/monthly count and cost).
+- Feature name lookup via computed `featureNameMap` from the feature definitions API.
+- Fixed `enforcementBadgeTone` return type to `SpAdminBadgeTone` (was unconstrained `string`).
+- Added `SpAdminStatCardComponent`, `SpAdminSectionCardComponent`, `SpAdminCodePillComponent`.
+- Scope type now shown as neutral badge. Description shown as muted subtitle in table row.
+- 9 new behavioral tests added; full suite 667/667 pass.
+
+### Gates
+
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (667/667)
+- Backend unchanged; .NET build/test not required.
+
+### Remaining TODOs
+
+- `TODO-10R-RULE-MGMT`: Rule create/edit/delete UI blocked until a per-rule API endpoint is added.
+- `TODO-10R-STUDENT-ASSIGN`: Student policy assignment list UI deferred.
+
+---
+
+## Previous sprint
 
 **Phase 10X-J-T — Frontend Test Cleanup: Remove Brittle CSS/Class Assertions** - complete (2026-06-19)
 

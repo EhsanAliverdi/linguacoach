@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Usage Policies"
-  subtitle="Define and manage quota policies for features and AI usage.">
+  subtitle="Define quota and enforcement rules for AI features. Policies are assigned globally or per student.">
   @if (!showForm()) {
     <sp-admin-button (click)="openCreate()">New Policy</sp-admin-button>
   }
@@ -12,19 +12,40 @@
   <sp-admin-alert variant="success">{{ saveSuccess() }}</sp-admin-alert>
 }
 
+<!-- Summary stat cards -->
+@if (!loading() && !error()) {
+  <div class="sp-up-stats">
+    <sp-admin-stat-card label="Total Policies" [value]="totalPolicies()" tone="indigo" />
+    <sp-admin-stat-card label="Active" [value]="activePolicies()" tone="success" />
+    <sp-admin-stat-card
+      label="Default Policy"
+      [value]="defaultPolicy()?.name ?? 'None'"
+      tone="violet" />
+  </div>
+}
+
+<!-- Create / edit form -->
 @if (showForm()) {
   <sp-admin-card [title]="editingId() ? 'Edit Policy' : 'New Policy'">
     @if (saveError()) {
-      <sp-admin-error-state title="Policy save failed" [message]="saveError()" />
+      <sp-admin-error-state title="Save failed" [message]="saveError()" />
     }
 
     <div class="sp-up-form-stack">
       <sp-admin-form-field label="Name">
-        <sp-admin-input [ngModel]="formName()" (ngModelChange)="formName.set($event)" placeholder="Policy name" />
+        <sp-admin-input
+          [ngModel]="formName()"
+          (ngModelChange)="formName.set($event)"
+          placeholder="Policy name" />
       </sp-admin-form-field>
+
       <sp-admin-form-field label="Description">
-        <sp-admin-input [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)" placeholder="Optional description" />
+        <sp-admin-input
+          [ngModel]="formDescription()"
+          (ngModelChange)="formDescription.set($event)"
+          placeholder="Optional description" />
       </sp-admin-form-field>
+
       @if (!editingId()) {
         <sp-admin-form-field label="Scope type">
           <sp-admin-select
@@ -33,19 +54,21 @@
             [options]="scopeTypeOptions" />
         </sp-admin-form-field>
       }
+
       <div class="sp-up-cb-stack">
         <sp-admin-checkbox
           [ngModel]="formIsDefault()"
           (ngModelChange)="formIsDefault.set($event)"
-          label="Default policy" />
+          label="Default policy — applied to all students without an explicit assignment" />
         <sp-admin-checkbox
           [ngModel]="formIsActive()"
           (ngModelChange)="formIsActive.set($event)"
           label="Active" />
       </div>
+
       <div class="sp-up-actions">
         <sp-admin-button (click)="save()" [loading]="saving()">
-          {{ editingId() ? 'Update' : 'Create' }}
+          {{ editingId() ? 'Update Policy' : 'Create Policy' }}
         </sp-admin-button>
         <sp-admin-button variant="ghost" (click)="cancel()">Cancel</sp-admin-button>
       </div>
@@ -53,51 +76,101 @@
   </sp-admin-card>
 }
 
+<!-- Policy list -->
 @if (loading()) {
   <sp-admin-loading-state message="Loading usage policies" />
 } @else if (error()) {
   <sp-admin-error-state title="Usage policies unavailable" [message]="error()" />
 } @else if (policies().length === 0) {
-  <sp-admin-empty-state message="No usage policies yet." />
+  <sp-admin-empty-state
+    message="No usage policies yet. Create one to start governing AI feature usage." />
 } @else {
-  <sp-admin-table variant="data" density="compact" minWidth="640px">
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Scope</th>
-          <th>Default</th>
-          <th>Active</th>
-          <th>Rules</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (p of policies(); track p.id) {
+  <sp-admin-section-card title="Policies">
+    <sp-admin-table variant="data" density="compact" minWidth="680px">
+      <table>
+        <thead>
           <tr>
-            <td><strong>{{ p.name }}</strong></td>
-            <td>{{ p.scopeType }}</td>
-            <td>
-              @if (p.isDefault) {
-                <sp-admin-badge tone="primary">Default</sp-admin-badge>
-              } @else {
-                <span class="sp-admin-muted">-</span>
-              }
-            </td>
-            <td>
-              <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'">
-                {{ p.isActive ? 'Active' : 'Inactive' }}
-              </sp-admin-badge>
-            </td>
-            <td class="sp-admin-muted">{{ p.rules.length }}</td>
-            <td>
-              <sp-admin-button variant="ghost" size="sm" (click)="openEdit(p)">Edit</sp-admin-button>
-            </td>
+            <th>Name</th>
+            <th>Scope</th>
+            <th>Status</th>
+            <th>Default</th>
+            <th>Rules</th>
+            <th>Actions</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </sp-admin-table>
+        </thead>
+        <tbody>
+          @for (p of policies(); track p.id) {
+            <tr>
+              <td><strong>{{ p.name }}</strong>
+                @if (p.description) {
+                  <div style="font-size:11px;color:var(--sp-admin-text-muted,#6b7280);margin-top:2px;">{{ p.description }}</div>
+                }
+              </td>
+              <td>
+                <sp-admin-badge tone="neutral">{{ p.scopeType }}</sp-admin-badge>
+              </td>
+              <td>
+                <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'">
+                  {{ p.isActive ? 'Active' : 'Inactive' }}
+                </sp-admin-badge>
+              </td>
+              <td>
+                @if (p.isDefault) {
+                  <sp-admin-badge tone="primary">Default</sp-admin-badge>
+                } @else {
+                  <span style="color:var(--sp-admin-text-muted,#9ca3af);font-size:12px;">—</span>
+                }
+              </td>
+              <td>
+                @if (p.rules.length > 0) {
+                  <button class="sp-up-expand-btn" (click)="toggleExpanded(p.id)">
+                    {{ p.rules.length }} rule{{ p.rules.length === 1 ? '' : 's' }}
+                    {{ expandedPolicyId() === p.id ? '▲' : '▼' }}
+                  </button>
+                } @else {
+                  <span style="color:var(--sp-admin-text-muted,#9ca3af);font-size:12px;">None</span>
+                }
+              </td>
+              <td>
+                <sp-admin-button variant="ghost" size="sm" (click)="openEdit(p)">Edit</sp-admin-button>
+              </td>
+            </tr>
+
+            <!-- Expanded rule detail row -->
+            @if (expandedPolicyId() === p.id && p.rules.length > 0) {
+              <tr class="sp-up-rules-row">
+                <td colspan="6">
+                  <div class="sp-up-rules-inner">
+                    @for (rule of p.rules; track rule.id) {
+                      <div class="sp-up-rule-row">
+                        <sp-admin-code-pill>{{ rule.featureKey }}</sp-admin-code-pill>
+                        <span style="font-size:12px;font-weight:500;">{{ featureName(rule.featureKey) }}</span>
+                        <sp-admin-badge [tone]="enforcementBadgeTone(rule.enforcementMode)">
+                          {{ rule.enforcementMode }}
+                        </sp-admin-badge>
+                        <sp-admin-badge tone="neutral">{{ rule.unitType }}</sp-admin-badge>
+                        @if (!rule.isActive) {
+                          <sp-admin-badge tone="neutral">Disabled</sp-admin-badge>
+                        }
+                        <div class="sp-up-rule-limits">
+                          @for (limit of ruleLimitSummary(rule); track limit) {
+                            <span class="sp-up-rule-limit">{{ limit }}</span>
+                          }
+                          @if (ruleLimitSummary(rule).length === 0) {
+                            <span class="sp-up-rule-limit">No limits set (track only)</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </sp-admin-table>
+  </sp-admin-section-card>
 }
 
 </sp-admin-page-body>

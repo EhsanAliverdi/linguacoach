@@ -1,19 +1,22 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   UsageGovernanceService,
   UsagePolicy,
+  UsagePolicyRule,
   FeatureDefinition,
   CreateUsagePolicyRequest,
   UpdateUsagePolicyRequest,
 } from '../../../core/services/usage-governance.service';
+import { SpAdminBadgeTone } from '../../../admin/components/badge/sp-admin-badge.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminCheckboxComponent,
+  SpAdminCodePillComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
@@ -21,7 +24,9 @@ import {
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminSectionCardComponent,
   SpAdminSelectComponent,
+  SpAdminStatCardComponent,
   SpAdminTableComponent,
 } from '../../../admin';
 
@@ -36,6 +41,7 @@ import {
     SpAdminButtonComponent,
     SpAdminCardComponent,
     SpAdminCheckboxComponent,
+    SpAdminCodePillComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
@@ -43,14 +49,26 @@ import {
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminSectionCardComponent,
     SpAdminSelectComponent,
+    SpAdminStatCardComponent,
     SpAdminTableComponent,
   ],
   templateUrl: './admin-usage-policies.component.html',
   styles: [`
+    .sp-up-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
     .sp-up-form-stack { display:flex; flex-direction:column; gap:14px; }
     .sp-up-cb-stack { display:flex; flex-direction:column; gap:10px; }
     .sp-up-actions { display:flex; gap:10px; }
+    .sp-up-rules-row td { padding-top:0 !important; background:var(--sp-admin-surface-alt, #f9fafb); }
+    .sp-up-rules-inner { padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
+    .sp-up-rule-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--sp-admin-border,#e5e7eb); }
+    .sp-up-rule-row:last-child { border-bottom:none; }
+    .sp-up-rule-limits { display:flex; flex-wrap:wrap; gap:6px; font-size:12px; color:var(--sp-admin-text-muted,#6b7280); }
+    .sp-up-rule-limit { background:var(--sp-admin-surface,#fff); border:1px solid var(--sp-admin-border,#e5e7eb); border-radius:6px; padding:2px 8px; }
+    .sp-up-no-rules { font-size:12px; color:var(--sp-admin-text-muted,#6b7280); padding:8px 0; }
+    .sp-up-expand-btn { background:none; border:none; cursor:pointer; color:var(--sp-admin-brand,#465fff); font-size:12px; padding:0; }
+    .sp-up-expand-btn:hover { text-decoration:underline; }
   `],
 })
 export class AdminUsagePoliciesComponent implements OnInit {
@@ -64,6 +82,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
 
   showForm = signal(false);
   editingId = signal<string | null>(null);
+  expandedPolicyId = signal<string | null>(null);
 
   formName = signal('');
   formDescription = signal('');
@@ -75,6 +94,18 @@ export class AdminUsagePoliciesComponent implements OnInit {
     { value: 'Global', label: 'Global' },
     { value: 'Student', label: 'Student' },
   ];
+
+  // Computed summary stats
+  totalPolicies = computed(() => this.policies().length);
+  activePolicies = computed(() => this.policies().filter(p => p.isActive).length);
+  defaultPolicy = computed(() => this.policies().find(p => p.isDefault) ?? null);
+
+  // Feature name lookup map
+  featureNameMap = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const f of this.features()) map[f.key] = f.name;
+    return map;
+  });
 
   constructor(private svc: UsageGovernanceService) {}
 
@@ -121,6 +152,10 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.showForm.set(false);
   }
 
+  toggleExpanded(policyId: string): void {
+    this.expandedPolicyId.set(this.expandedPolicyId() === policyId ? null : policyId);
+  }
+
   save(): void {
     const name = this.formName().trim();
     if (!name) { this.saveError.set('Name is required.'); return; }
@@ -157,10 +192,24 @@ export class AdminUsagePoliciesComponent implements OnInit {
     }
   }
 
-  enforcementBadgeColor(mode: string): string {
-    return mode === 'HardLimit' ? 'var(--sp-speaking)'
-      : mode === 'SoftWarning' ? 'var(--sp-warn)'
-      : mode === 'TrackOnly' ? 'var(--sp-success)'
-      : 'var(--sp-muted)';
+  featureName(key: string): string {
+    return this.featureNameMap()[key] ?? key;
+  }
+
+  enforcementBadgeTone(mode: string): SpAdminBadgeTone {
+    return mode === 'HardLimit' ? 'danger'
+      : mode === 'SoftWarning' ? 'warning'
+      : mode === 'TrackOnly' ? 'success'
+      : 'neutral';
+  }
+
+  ruleLimitSummary(rule: UsagePolicyRule): string[] {
+    const parts: string[] = [];
+    if (rule.dailyLimit != null) parts.push(`Daily: ${rule.dailyLimit}`);
+    if (rule.weeklyLimit != null) parts.push(`Weekly: ${rule.weeklyLimit}`);
+    if (rule.monthlyLimit != null) parts.push(`Monthly: ${rule.monthlyLimit}`);
+    if (rule.dailyCostLimit != null) parts.push(`Daily cost: $${rule.dailyCostLimit}`);
+    if (rule.monthlyCostLimit != null) parts.push(`Monthly cost: $${rule.monthlyCostLimit}`);
+    return parts;
   }
 }
