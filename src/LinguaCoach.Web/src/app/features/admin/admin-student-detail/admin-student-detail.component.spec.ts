@@ -51,6 +51,16 @@ function makeStudent(overrides: Partial<StudentListItem> = {}): StudentListItem 
     professionalExperienceLevel: null,
     roleFamiliarity: null,
     createdAt: '2026-01-01T00:00:00Z',
+    preferredName: null,
+    supportLanguageCode: null,
+    supportLanguageName: null,
+    difficultyPreference: null,
+    translationHelpPreference: null,
+    focusAreas: [],
+    customFocusArea: null,
+    learningGoals: [],
+    customLearningGoal: null,
+    learningPreferencesUpdatedAt: null,
     ...overrides,
   } as StudentListItem;
 }
@@ -237,5 +247,182 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
     comp.confirmRemovePolicy();
 
     expect(toast.error).toHaveBeenCalledWith('Server error');
+  });
+});
+
+// ── Student Preferences section ───────────────────────────────────────────────
+
+describe('AdminStudentDetailComponent — student preferences section', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  beforeEach(() => {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  });
+
+  it('renders Student preferences section heading', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Student preferences');
+  });
+
+  it('shows empty state when no preference fields are set', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Student has not set any learning preferences yet.');
+  });
+
+  it('renders preferred name when present', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({ preferredName: 'Alex' })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Alex');
+  });
+
+  it('renders support language when present', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({
+      supportLanguageCode: 'es',
+      supportLanguageName: 'Spanish',
+    })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Spanish');
+  });
+
+  it('renders focus areas when present', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({
+      focusAreas: ['Presentations', 'Emails', 'Meetings'],
+    })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Presentations');
+    expect(html.textContent).toContain('Emails');
+  });
+
+  it('renders custom focus area in slide-over when present', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({
+      customFocusArea: 'Technical writing',
+      focusAreas: ['Emails'],
+    })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Technical writing');
+  });
+
+  it('renders learning goals in slide-over when present', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({
+      learningGoals: ['Improve fluency', 'Business vocabulary'],
+      focusAreas: ['Emails'],
+    })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Improve fluency');
+  });
+
+  it('opens sp-admin-slide-over when View preferences is clicked', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({ preferredName: 'Jo' })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+
+    const btn = Array.from(html.querySelectorAll('button')).find(b => b.textContent?.trim() === 'View preferences');
+    expect(btn).toBeTruthy();
+    btn?.click();
+    fixture.detectChanges();
+
+    expect(html.querySelector('sp-admin-slide-over')).toBeTruthy();
+    const comp = fixture.componentInstance;
+    expect(comp.prefsSlideOverOpen()).toBeTrue();
+  });
+
+  it('slide-over shows full preference details when open', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({
+      preferredName: 'Jo',
+      supportLanguageName: 'French',
+      difficultyPreference: 'Challenging',
+      translationHelpPreference: 'Minimal',
+      focusAreas: ['Meetings'],
+      customFocusArea: 'Cold calls',
+      learningGoals: ['Fluency'],
+      customLearningGoal: 'Pass DELF B2',
+    })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Jo');
+    expect(html.textContent).toContain('French');
+    expect(html.textContent).toContain('Challenging');
+    expect(html.textContent).toContain('Minimal');
+    expect(html.textContent).toContain('Meetings');
+    expect(html.textContent).toContain('Cold calls');
+    expect(html.textContent).toContain('Fluency');
+    expect(html.textContent).toContain('Pass DELF B2');
+  });
+
+  it('slide-over shows empty state when no preferences set', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent()]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Student has not set any learning preferences yet.');
+  });
+
+  it('has no edit or save controls for student preferences', () => {
+    adminApi.listStudents.and.returnValue(of([makeStudent({ preferredName: 'Alex' })]));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    // The slide-over footer should have no save/submit buttons for preferences
+    const prefSlideOver = html.querySelector('sp-admin-slide-over');
+    const buttons = prefSlideOver ? Array.from(prefSlideOver.querySelectorAll('button')) : [];
+    const hasSave = buttons.some(b => /save|submit|edit/i.test(b.textContent ?? ''));
+    expect(hasSave).toBeFalse();
   });
 });

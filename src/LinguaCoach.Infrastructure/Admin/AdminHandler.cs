@@ -402,7 +402,17 @@ public sealed class AdminHandler :
             p.PreferredSessionDurationMinutes,
             p.ProfessionalExperienceLevel,
             p.RoleFamiliarity,
-            p.CreatedAt);
+            p.CreatedAt,
+            p.PreferredName,
+            p.SupportLanguageCode,
+            p.SupportLanguageName,
+            p.DifficultyPreference?.ToString(),
+            p.TranslationHelpPreference?.ToString(),
+            p.FocusAreas ?? [],
+            p.CustomFocusArea,
+            p.LearningGoals ?? [],
+            p.CustomLearningGoal,
+            p.LearningPreferencesUpdatedAt);
 
     // ── Prompt templates ──────────────────────────────────────────────────────
 

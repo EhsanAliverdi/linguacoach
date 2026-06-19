@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-J)
+lastUpdated: 2026-06-19 (10Students-F-A)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,20 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Admin read: student learning preferences complete (Phase 10Students-F-A)
+
+Admins can now view all student-set learning preferences from the student detail page. A "Student preferences" summary card shows preference fields inline. A "View preferences" button opens the new `sp-admin-slide-over` panel for full detail. Admin edit of preferences is intentionally not implemented.
+
+`sp-admin-slide-over` is now available as the design-system primitive for all admin secondary detail panels (student detail, policy editor, prompt preview, audit history).
+
+No new migration or endpoint was required. Preference fields were already returned by `GET /api/admin/students` (added in Phase 10R-J).
+
+**Tests:** 708/708 Angular tests pass. Backend: 1885 pass. `git diff --check`: clean.
+
+See: `docs/reviews/2026-06-19-phase-10students-f-a-admin-read-student-preferences-review.md`
 
 ---
 

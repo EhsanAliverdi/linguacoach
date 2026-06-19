@@ -9,6 +9,7 @@ import {
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
+import { SpAdminSlideOverComponent } from '../../../admin/components/slide-over/sp-admin-slide-over.component';
 
 interface StudentEditForm {
   firstName: string;
@@ -26,7 +27,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-student-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminSlideOverComponent],
   template: `
     <div class="sp-admin-page-header">
       <div class="sp-admin-header-row">
@@ -117,6 +118,43 @@ interface StudentEditForm {
               <dd>{{ s.createdAt | date:'mediumDate' }}</dd>
             </div>
           </dl>
+        </section>
+
+        <section class="sp-admin-table-card sp-admin-detail-card" aria-label="Student preferences">
+          <div class="sp-admin-section-header-row">
+            <h2 class="sp-admin-card-title">Student preferences</h2>
+            <button type="button" class="sp-admin-link-button" (click)="openPrefsSlideOver()">View preferences</button>
+          </div>
+          @if (hasAnyPreference(s)) {
+            <dl class="sp-admin-detail-list">
+              @if (s.preferredName) {
+                <div>
+                  <dt>Preferred name</dt>
+                  <dd>{{ s.preferredName }}</dd>
+                </div>
+              }
+              @if (s.supportLanguageName || s.supportLanguageCode) {
+                <div>
+                  <dt>Support language</dt>
+                  <dd>{{ s.supportLanguageName || s.supportLanguageCode }}</dd>
+                </div>
+              }
+              @if (s.difficultyPreference) {
+                <div>
+                  <dt>Difficulty</dt>
+                  <dd>{{ s.difficultyPreference }}</dd>
+                </div>
+              }
+              @if (s.focusAreas?.length) {
+                <div>
+                  <dt>Focus areas</dt>
+                  <dd>{{ s.focusAreas.slice(0, 3).join(', ') }}{{ s.focusAreas.length > 3 ? '…' : '' }}</dd>
+                </div>
+              }
+            </dl>
+          } @else {
+            <p class="sp-admin-table-empty">Student has not set any learning preferences yet.</p>
+          }
         </section>
 
         <section class="sp-admin-table-card sp-admin-detail-card">
@@ -277,6 +315,77 @@ interface StudentEditForm {
           }
         </section>
       </div>
+    }
+
+    @if (student(); as s) {
+      <sp-admin-slide-over
+        [open]="prefsSlideOverOpen()"
+        title="Student preferences"
+        [subtitle]="s.email"
+        size="md"
+        (closed)="closePrefsSlideOver()"
+      >
+        @if (hasAnyPreference(s)) {
+          <dl class="sp-admin-detail-list sp-adm-prefs-list">
+            <div>
+              <dt>Preferred name</dt>
+              <dd>{{ s.preferredName || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Support language</dt>
+              <dd>{{ s.supportLanguageName ? s.supportLanguageName + (s.supportLanguageCode ? ' (' + s.supportLanguageCode + ')' : '') : (s.supportLanguageCode || 'Not set') }}</dd>
+            </div>
+            <div>
+              <dt>Difficulty preference</dt>
+              <dd>{{ s.difficultyPreference || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Translation help</dt>
+              <dd>{{ s.translationHelpPreference || 'Not set' }}</dd>
+            </div>
+            <div>
+              <dt>Focus areas</dt>
+              <dd>
+                @if (s.focusAreas?.length) {
+                  <ul class="sp-adm-prefs-list-ul">
+                    @for (area of s.focusAreas; track area) { <li>{{ area }}</li> }
+                  </ul>
+                } @else { Not set }
+              </dd>
+            </div>
+            @if (s.customFocusArea) {
+              <div>
+                <dt>Custom focus area</dt>
+                <dd>{{ s.customFocusArea }}</dd>
+              </div>
+            }
+            <div>
+              <dt>Learning goals</dt>
+              <dd>
+                @if (s.learningGoals?.length) {
+                  <ul class="sp-adm-prefs-list-ul">
+                    @for (goal of s.learningGoals; track goal) { <li>{{ goal }}</li> }
+                  </ul>
+                } @else { Not set }
+              </dd>
+            </div>
+            @if (s.customLearningGoal) {
+              <div>
+                <dt>Custom learning goal</dt>
+                <dd>{{ s.customLearningGoal }}</dd>
+              </div>
+            }
+            @if (s.learningPreferencesUpdatedAt) {
+              <div>
+                <dt>Last updated</dt>
+                <dd>{{ s.learningPreferencesUpdatedAt | date:'mediumDate' }}</dd>
+              </div>
+            }
+          </dl>
+        } @else {
+          <p class="sp-admin-table-empty">Student has not set any learning preferences yet.</p>
+        }
+      </sp-admin-slide-over>
     }
 
     @if (assigningPolicy()) {
@@ -585,6 +694,10 @@ interface StudentEditForm {
     .sp-admin-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:22px;}
     .sp-admin-edit-grid label span{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;}
     .sp-admin-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:8px;}
+    .sp-adm-prefs-list{display:grid;gap:14px;}
+    .sp-adm-prefs-list dt{font-size:12px;font-weight:800;color:#64748B;margin-bottom:2px;}
+    .sp-adm-prefs-list dd{font-size:14px;color:#0F172A;}
+    .sp-adm-prefs-list-ul{margin:0;padding-left:18px;font-size:14px;color:#0F172A;}
     @media(max-width:900px){
       .sp-admin-detail-grid{grid-template-columns:1fr;}
     }
@@ -683,6 +796,25 @@ export class AdminStudentDetailComponent implements OnInit {
   savingAssignPolicy = signal(false);
   assignPolicyError = signal('');
   assignPolicyForm: { policyId: string; reason: string } = { policyId: '', reason: '' };
+
+  prefsSlideOverOpen = signal(false);
+
+  openPrefsSlideOver(): void { this.prefsSlideOverOpen.set(true); }
+  closePrefsSlideOver(): void { this.prefsSlideOverOpen.set(false); }
+
+  hasAnyPreference(s: StudentListItem): boolean {
+    return !!(
+      s.preferredName ||
+      s.supportLanguageCode ||
+      s.supportLanguageName ||
+      s.difficultyPreference ||
+      s.translationHelpPreference ||
+      s.focusAreas?.length ||
+      s.customFocusArea ||
+      s.learningGoals?.length ||
+      s.customLearningGoal
+    );
+  }
 
   constructor(
     private route: ActivatedRoute,

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-J)
+lastUpdated: 2026-06-19 (10Students-F-A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,39 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10Students-F-A — Admin Read: Student Learning Preferences** - complete (2026-06-19)
+
+Goal: surface student learning preferences to admins in a read-only view on the student detail page. Deliver `sp-admin-slide-over` as the design-system foundation for admin secondary detail panels.
+
+### Delivered
+
+- `sp-admin-slide-over` component added to admin design system (`src/app/admin/components/slide-over/`). Inputs: `open`, `title`, `subtitle`, `size` (sm/md/lg/xl), `loading`, `loadingMessage`, `error`, `errorTitle`, `closeOnBackdrop`. Output: `closed`. Slots: `[slot=header-actions]`, body, `[slot=footer]`. Escape and backdrop close. ARIA: `role=dialog`, `aria-modal`. Responsive.
+- Exported from `src/app/admin/index.ts` barrel.
+- "Student preferences" section added to `admin-student-detail.component`: summary card shows all preference fields; "View preferences" button opens slide-over with full detail.
+- `hasAnyPreference()` helper guards empty state.
+- No new backend endpoint or migration required — preference fields already returned by `GET /api/admin/students` from Phase 10R-J.
+- Admin edit of preferences intentionally not implemented (read-only scope).
+- 16 unit tests for `sp-admin-slide-over`. 6+ unit tests for preferences section in `admin-student-detail.component.spec.ts`.
+- Gap check review: `docs/reviews/2026-06-19-phase-10students-f-0-enterprise-student-management-gap-check.md`
+- Slide-over panel review: `docs/reviews/2026-06-19-phase-10students-f-foundation-admin-slide-over-panel-review.md`
+- Phase review: `docs/reviews/2026-06-19-phase-10students-f-a-admin-read-student-preferences-review.md`
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (708/708)
+
+### Remaining TODOs
+
+- `TODO-10X-DRAWER`: typed drawer payloads for student detail, usage policy editor, prompt preview.
+- `TODO-10X-DARKMODE`, `TODO-10X-MODAL`, `TODO-10X-TOAST`: admin shell polish items.
+- `TODO-10U`: full AI usage/config redesign.
+- `TODO-10V`: prompt playground.
+- Admin edit of student preferences: not scoped, requires product decision.
+
+---
 
 **Phase 10R-J — Student Usage Policy Assignment Admin UI** - complete (2026-06-19)
 
@@ -32,6 +65,7 @@ Goal: allow admins to view, assign, and reset a student's usage policy from the 
 - "Reset to Default" action: visible only when override is active, confirm dialog, calls `removeStudentPolicy`, refreshes.
 - `admin-student-detail.component.spec.ts` created: 9 tests covering render, badge, modal open, assign call, assign error, remove confirm, remove cancel, remove error.
 - `TODO-10R-STUDENT-ASSIGN` closed.
+- `StudentListItem` test fixtures in `admin-dashboard.component.spec.ts` and `admin-students.component.spec.ts` updated with new learning preferences fields (`preferredName`, `supportLanguageCode`, `supportLanguageName`, `difficultyPreference`, `translationHelpPreference`, `focusAreas`, `customFocusArea`, `learningGoals`, `customLearningGoal`, `learningPreferencesUpdatedAt`) — all 708 frontend tests passing.
 
 See: `docs/reviews/2026-06-19-phase-10r-j-student-usage-policy-assignment-admin-ui-review.md`
 
@@ -40,7 +74,7 @@ See: `docs/reviews/2026-06-19-phase-10r-j-student-usage-policy-assignment-admin-
 - `git diff --check`: PASS
 - `dotnet build --configuration Release`: PASS (0 errors, 7 pre-existing warnings)
 - `npm run build -- --configuration production`: PASS
-- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (681/681)
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (708/708)
 
 ### Remaining TODOs
 

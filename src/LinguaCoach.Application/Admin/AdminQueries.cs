@@ -21,7 +21,18 @@ public sealed record StudentListItem(
     int? PreferredSessionDurationMinutes,
     ProfessionalExperienceLevel? ProfessionalExperienceLevel,
     RoleFamiliarity? RoleFamiliarity,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    // Student-authored learning preferences (read-only for admin)
+    string? PreferredName,
+    string? SupportLanguageCode,
+    string? SupportLanguageName,
+    string? DifficultyPreference,
+    string? TranslationHelpPreference,
+    IReadOnlyList<string> FocusAreas,
+    string? CustomFocusArea,
+    IReadOnlyList<string> LearningGoals,
+    string? CustomLearningGoal,
+    DateTimeOffset? LearningPreferencesUpdatedAt);
 
 public sealed record UpdateStudentProfileCommand(
     Guid StudentProfileId,

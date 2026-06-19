@@ -29,6 +29,16 @@ const STUDENT: StudentListItem = {
   professionalExperienceLevel: null,
   roleFamiliarity: null,
   createdAt: '2026-01-15T00:00:00Z',
+  preferredName: null,
+  supportLanguageCode: null,
+  supportLanguageName: null,
+  difficultyPreference: null,
+  translationHelpPreference: null,
+  focusAreas: [],
+  customFocusArea: null,
+  learningGoals: [],
+  customLearningGoal: null,
+  learningPreferencesUpdatedAt: null,
 };
 
 const STUDENT_NO_CEFR: StudentListItem = {

@@ -34,6 +34,17 @@ export interface StudentListItem {
   professionalExperienceLevel: number | null;
   roleFamiliarity: number | null;
   createdAt: string;
+  // Student-authored learning preferences (read-only for admin)
+  preferredName: string | null;
+  supportLanguageCode: string | null;
+  supportLanguageName: string | null;
+  difficultyPreference: string | null;
+  translationHelpPreference: string | null;
+  focusAreas: string[];
+  customFocusArea: string | null;
+  learningGoals: string[];
+  customLearningGoal: string | null;
+  learningPreferencesUpdatedAt: string | null;
 }
 
 export interface UpdateStudentProfileRequest {
