@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-F)
+lastUpdated: 2026-06-20 (10Students-F-G)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,29 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
 
 ---
 
 ## Active sprint
+
+**Phase 10Students-F-G — Student List Filter Select UI** - complete (2026-06-20)
+
+Goal: add lifecycle stage, onboarding status, and CEFR level filter selects to the admin student list filter bar. Backend params were already wired in Phase 10Students-F-F.
+
+### Delivered
+
+- `filterLifecycleStage`, `filterOnboardingStatus`, `filterCefrLevel` signals added to `AdminStudentsComponent`.
+- Three `sp-admin-select` instances inserted in the filter bar for lifecycle stage (12 options), onboarding status (4 options), and CEFR level (A1–C2).
+- Each filter change resets page to 1 and calls `load()`. `load()` passes filters as `undefined` when empty.
+- Clear filters button: visible when any of searchTerm/lifecycleStage/onboardingStatus/cefrLevel is set. Clears all four, resets page to 1, does not touch `includeArchived`.
+- `SpAdminSelectComponent` added to component imports array.
+- 7 new tests + all 25 existing tests pass (32 total). Build green.
+- No backend change. No student-facing change. No bulk operations.
+
+See: `docs/reviews/2026-06-20-phase-10students-f-g-student-list-filter-select-ui-review.md`
+
+---
 
 **Phase 10Students-F-F — Server-Side Student Pagination, Filtering, Sorting** - complete (2026-06-19)
 

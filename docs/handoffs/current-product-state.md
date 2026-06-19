@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10Students-F-F)
+lastUpdated: 2026-06-20 (10Students-F-G)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,15 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
+
+---
+
+## Student list filter selects available in admin UI (Phase 10Students-F-G)
+
+Admin student list filter bar now has three filter selects: lifecycle stage (12 options), onboarding status (4 options), and CEFR level (A1–C2). Each filter change resets to page 1 and calls the backend. A "Clear filters" button appears when any of search/lifecycleStage/onboardingStatus/cefrLevel is active; clearing does not touch the "Show archived" toggle. Uses `sp-admin-select` component.
+
+**Tests:** 32/32 Angular tests pass (admin-students). No backend change.
 
 ---
 

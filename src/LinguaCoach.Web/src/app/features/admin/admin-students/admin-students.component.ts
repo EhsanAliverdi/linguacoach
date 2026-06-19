@@ -5,7 +5,8 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../admin';
+import type { SpAdminSelectOption } from '../../../admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
@@ -24,7 +25,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
@@ -41,6 +42,30 @@ interface StudentEditForm {
         placeholder="Search by email or name"
         [ngModel]="searchTerm()"
         (ngModelChange)="onSearchChange($event)" />
+      <sp-admin-select
+        [options]="lifecycleStageOptions"
+        placeholder="All lifecycle stages"
+        size="sm"
+        [fullWidth]="false"
+        [ngModel]="filterLifecycleStage()"
+        (ngModelChange)="onLifecycleStageChange($event)" />
+      <sp-admin-select
+        [options]="onboardingStatusOptions"
+        placeholder="All onboarding statuses"
+        size="sm"
+        [fullWidth]="false"
+        [ngModel]="filterOnboardingStatus()"
+        (ngModelChange)="onOnboardingStatusChange($event)" />
+      <sp-admin-select
+        [options]="cefrLevelOptions"
+        placeholder="All CEFR levels"
+        size="sm"
+        [fullWidth]="false"
+        [ngModel]="filterCefrLevel()"
+        (ngModelChange)="onCefrLevelChange($event)" />
+      @if (hasActiveFilters()) {
+        <sp-admin-button variant="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
+      }
       <span class="sp-admin-table-muted">{{ totalCount() }} total</span>
     </sp-admin-filter-bar>
 
@@ -362,6 +387,72 @@ export class AdminStudentsComponent implements OnInit {
   sortColumn = signal<'name' | 'onboarding' | 'joined'>('joined');
   sortDirection = signal<'asc' | 'desc'>('desc');
 
+  filterLifecycleStage = signal('');
+  filterOnboardingStatus = signal('');
+  filterCefrLevel = signal('');
+
+  readonly lifecycleStageOptions: SpAdminSelectOption[] = [
+    { value: 'Created', label: 'Created' },
+    { value: 'PasswordChangeRequired', label: 'Password change required' },
+    { value: 'OnboardingRequired', label: 'Onboarding required' },
+    { value: 'OnboardingInProgress', label: 'Onboarding in progress' },
+    { value: 'PlacementRequired', label: 'Placement required' },
+    { value: 'PlacementInProgress', label: 'Placement in progress' },
+    { value: 'PlacementCompleted', label: 'Placement completed' },
+    { value: 'CourseReady', label: 'Course ready' },
+    { value: 'InLesson', label: 'In lesson' },
+    { value: 'ActiveLearning', label: 'Active learning' },
+    { value: 'Paused', label: 'Paused' },
+    { value: 'Archived', label: 'Archived' },
+  ];
+
+  readonly onboardingStatusOptions: SpAdminSelectOption[] = [
+    { value: 'NotStarted', label: 'Not started' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'InProgress', label: 'In progress' },
+    { value: 'Complete', label: 'Complete' },
+  ];
+
+  readonly cefrLevelOptions: SpAdminSelectOption[] = [
+    { value: 'A1', label: 'A1 — Beginner' },
+    { value: 'A2', label: 'A2 — Elementary' },
+    { value: 'B1', label: 'B1 — Intermediate' },
+    { value: 'B2', label: 'B2 — Upper intermediate' },
+    { value: 'C1', label: 'C1 — Advanced' },
+    { value: 'C2', label: 'C2 — Mastery' },
+  ];
+
+  hasActiveFilters(): boolean {
+    return !!(this.searchTerm() || this.filterLifecycleStage() || this.filterOnboardingStatus() || this.filterCefrLevel());
+  }
+
+  onLifecycleStageChange(value: string): void {
+    this.filterLifecycleStage.set(value);
+    this.page.set(1);
+    this.load();
+  }
+
+  onOnboardingStatusChange(value: string): void {
+    this.filterOnboardingStatus.set(value);
+    this.page.set(1);
+    this.load();
+  }
+
+  onCefrLevelChange(value: string): void {
+    this.filterCefrLevel.set(value);
+    this.page.set(1);
+    this.load();
+  }
+
+  clearFilters(): void {
+    this.searchTerm.set('');
+    this.filterLifecycleStage.set('');
+    this.filterOnboardingStatus.set('');
+    this.filterCefrLevel.set('');
+    this.page.set(1);
+    this.load();
+  }
+
   private sortByParam(): string {
     switch (this.sortColumn()) {
       case 'name': return 'name';
@@ -482,6 +573,9 @@ export class AdminStudentsComponent implements OnInit {
       includeArchived: this.includeArchived,
       sortBy: this.sortByParam(),
       sortDir: this.sortDirection(),
+      lifecycleStage: this.filterLifecycleStage() || undefined,
+      onboardingStatus: this.filterOnboardingStatus() || undefined,
+      cefrLevel: this.filterCefrLevel() || undefined,
     }).subscribe({
       next: r => {
         this.students.set(r.items);

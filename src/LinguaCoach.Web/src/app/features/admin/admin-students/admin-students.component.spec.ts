@@ -317,6 +317,81 @@ describe('AdminStudentsComponent', () => {
     expect(component.sortIndicator('name')).toContain('▼');
   });
 
+  it('lifecycleStage filter calls listStudents with param and resets page', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.page.set(3);
+    adminApi.listStudents.calls.reset();
+    component.onLifecycleStageChange('CourseReady');
+    expect(component.page()).toBe(1);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.lifecycleStage).toBe('CourseReady');
+  });
+
+  it('onboardingStatus filter calls listStudents with param and resets page', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.page.set(2);
+    adminApi.listStudents.calls.reset();
+    component.onOnboardingStatusChange('Complete');
+    expect(component.page()).toBe(1);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.onboardingStatus).toBe('Complete');
+  });
+
+  it('cefrLevel filter calls listStudents with param and resets page', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.page.set(2);
+    adminApi.listStudents.calls.reset();
+    component.onCefrLevelChange('B2');
+    expect(component.page()).toBe(1);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.cefrLevel).toBe('B2');
+  });
+
+  it('clearFilters clears search and all filter params then calls listStudents', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.searchTerm.set('alice');
+    component.filterLifecycleStage.set('CourseReady');
+    component.filterOnboardingStatus.set('Complete');
+    component.filterCefrLevel.set('B2');
+    component.page.set(3);
+    adminApi.listStudents.calls.reset();
+    component.clearFilters();
+    expect(component.searchTerm()).toBe('');
+    expect(component.filterLifecycleStage()).toBe('');
+    expect(component.filterOnboardingStatus()).toBe('');
+    expect(component.filterCefrLevel()).toBe('');
+    expect(component.page()).toBe(1);
+    expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.lifecycleStage).toBeUndefined();
+    expect(call.onboardingStatus).toBeUndefined();
+    expect(call.cefrLevel).toBeUndefined();
+    expect(call.search).toBeUndefined();
+  });
+
+  it('clearFilters does not touch includeArchived', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.includeArchived = true;
+    adminApi.listStudents.calls.reset();
+    component.clearFilters();
+    const call = adminApi.listStudents.calls.mostRecent().args[0];
+    expect(call.includeArchived).toBeTrue();
+  });
+
+  it('hasActiveFilters returns false when no filters set', async () => {
+    await setup([STUDENT_ACTIVE]);
+    expect(component.hasActiveFilters()).toBeFalse();
+  });
+
+  it('hasActiveFilters returns true when any filter is set', async () => {
+    await setup([STUDENT_ACTIVE]);
+    component.filterLifecycleStage.set('CourseReady');
+    expect(component.hasActiveFilters()).toBeTrue();
+  });
+
   it('totalCount signal reflects server response', async () => {
     adminApi = makeAdminApi();
     adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 42, page: 1, pageSize: 25, totalPages: 2 }));
