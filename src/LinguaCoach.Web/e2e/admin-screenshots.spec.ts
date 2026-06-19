@@ -239,9 +239,8 @@ test('admin: students', async ({ page }) => {
   await page.getByRole('link', { name: 'Students', exact: true }).click();
   await page.waitForURL(/\/admin\/students/, { timeout: 5000 });
   await expect(page.getByRole('main')).toContainText('Create student');
-  // Row actions are inside sp-admin-table-actions dropdown (Phase 10X-F)
-  await expect(page.locator('.sp-adm-actions-trigger').first()).toBeVisible();
-  await page.locator('.sp-adm-actions-trigger').first().click();
+  await expect(page.getByRole('button', { name: 'Row actions' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Row actions' }).first().click();
   await expect(page.locator('[role="menu"] button, [role="menu"] a').filter({ hasText: 'Archive' }).first()).toBeVisible();
   await expect(page.locator('[role="menu"] button, [role="menu"] a').filter({ hasText: 'Edit' }).first()).toBeVisible();
   await page.keyboard.press('Escape');

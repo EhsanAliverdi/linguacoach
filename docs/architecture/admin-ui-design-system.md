@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 10:00
+lastUpdated: 2026-06-19 14:30
 owner: architecture
 supersedes:
 supersededBy:
@@ -535,6 +535,23 @@ CVA behavior (`[(ngModel)]`, `formControlName`, `setDisabledState`, touched-on-b
 - Layout-only utilities: `grid`, `flex`, `gap-*`, `col-span-*`, `w-full`, page-layout grids.
 - Page-local CSS for unique non-component behavior (action card links, stat grids, etc.).
 - `customClass` or `contentClass` escape hatches on wrappers — only when no typed input covers the need.
+
+## Frontend Testing Rule
+
+Frontend tests must not assert Tailwind, TailAdmin, BEM, wrapper implementation, border, radius,
+spacing, inline style, or exact CSS class names unless that class is explicitly documented as a
+public API.
+
+Angular specs should test rendering, visible text, inputs and outputs, ControlValueAccessor
+behavior, form values, disabled/loading state, emitted events, role/ARIA attributes, open/close
+behavior, sorting, pagination, and modal/dropdown behavior.
+
+Playwright tests should cover page behavior and smoke flows: page loads, visible text, roles,
+ARIA attributes, form interaction, navigation, disabled states, modal/dropdown behavior, and basic
+user flows. Do not assert Tailwind or TailAdmin class names in Playwright.
+
+Visual appearance regressions should be handled by a dedicated visual regression baseline, not by
+unit or Playwright assertions against implementation classes.
 
 ---
 

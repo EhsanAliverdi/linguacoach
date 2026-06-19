@@ -185,3 +185,4 @@ Each item includes context, motivation, and the phase where it was deferred.
 - TODO-10X-J-INPUT-NUMBER: implement `sp-admin-input-number` — numeric CVA wrapper for number|null inputs (currently remain native inside sp-admin-form-field).
 - TODO-10X-J-SELECT-OBJECT: implement `sp-admin-select-object` — select wrapper for non-string option values (number|null object selects remain native).
 - TODO-10X-J-DASHBOARD-MINITABLE: migrate dashboard recent-students mini-table from page-local CSS to sp-admin-table (projected mode).
+- TODO-10X-J-T-VISUAL-BASELINE: add a proper visual regression baseline for stable admin and student screens once the admin UI has settled. Do not replace this with unit or Playwright class assertions; use screenshot or visual tooling with approved baselines.

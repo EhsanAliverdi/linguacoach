@@ -147,7 +147,7 @@ test('mobile bottom nav is visible on mobile viewport', async ({ page }) => {
 
 // ── Profile chip selected states ───────────────────────────────────────────────
 
-test('profile page: selected learning goal chip has sp-pref-chip--on class', async ({ page }) => {
+test('profile page: selected learning goal chip is aria-pressed', async ({ page }) => {
   await withAuth(page);
   await mockProfile(page);
   await page.goto('/profile');
@@ -157,18 +157,16 @@ test('profile page: selected learning goal chip has sp-pref-chip--on class', asy
 
   const dayToDayChip = page.locator('[data-testid="goal-chip-Day-to-day English"]');
   await expect(dayToDayChip).toBeVisible();
-  await expect(dayToDayChip).toHaveClass(/sp-pref-chip--on/);
   await expect(dayToDayChip).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('profile page: unselected learning goal chip does not have sp-pref-chip--on class', async ({ page }) => {
+test('profile page: unselected learning goal chip is not aria-pressed', async ({ page }) => {
   await withAuth(page);
   await mockProfile(page);
   await page.goto('/profile');
 
   const travelChip = page.locator('[data-testid="goal-chip-Travel English"]');
   await expect(travelChip).toBeVisible();
-  await expect(travelChip).not.toHaveClass(/sp-pref-chip--on/);
   await expect(travelChip).toHaveAttribute('aria-pressed', 'false');
 });
 
@@ -178,9 +176,8 @@ test('profile page: clicking unselected chip selects it', async ({ page }) => {
   await page.goto('/profile');
 
   const travelChip = page.locator('[data-testid="goal-chip-Travel English"]');
-  await expect(travelChip).not.toHaveClass(/sp-pref-chip--on/);
+  await expect(travelChip).toHaveAttribute('aria-pressed', 'false');
   await travelChip.click();
-  await expect(travelChip).toHaveClass(/sp-pref-chip--on/);
   await expect(travelChip).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -190,7 +187,6 @@ test('profile page: difficulty Balanced chip is pre-selected', async ({ page }) 
   await page.goto('/profile');
 
   const balancedChip = page.locator('[data-testid="difficulty-balanced"]');
-  await expect(balancedChip).toHaveClass(/sp-pref-chip--on/);
   await expect(balancedChip).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -200,7 +196,7 @@ test('profile page: session length 20min chip is pre-selected', async ({ page })
   await page.goto('/profile');
 
   const chip20 = page.locator('[data-testid="session-length-20"]');
-  await expect(chip20).toHaveClass(/sp-pref-chip--on/);
+  await expect(chip20).toHaveAttribute('aria-pressed', 'true');
 });
 
 // ── Today page layout not broken on mobile ─────────────────────────────────────
@@ -214,7 +210,7 @@ test('today page layout is not broken on mobile', async ({ page }) => {
   await page.waitForLoadState('networkidle');
 
   // Dashboard content area renders
-  await expect(page.locator('.sp-student-content')).toBeVisible();
+  await expect(page.getByRole('main')).toBeVisible();
   // No horizontal overflow
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
@@ -243,7 +239,7 @@ test('desktop: Today page accessible via sidebar', async ({ page }) => {
   await page.goto('/dashboard');
   await page.waitForLoadState('networkidle');
   // Dashboard loaded — content area is visible (page wrapper exists)
-  await expect(page.locator('.sp-student-content')).toBeVisible();
+  await expect(page.getByRole('main')).toBeVisible();
   await expect(page).toHaveURL(/\/dashboard/);
 });
 

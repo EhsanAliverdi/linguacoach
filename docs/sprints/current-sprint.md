@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-I)
+lastUpdated: 2026-06-19 (10X-J-T)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,40 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10X-J-T — Frontend Test Cleanup: Remove Brittle CSS/Class Assertions** - complete (2026-06-19)
+
+Goal: clean up frontend tests that asserted Tailwind, TailAdmin, BEM, wrapper implementation,
+border/radius/spacing classes, inline styles, and other visual implementation details while the
+admin UI remains under active iteration.
+
+### Delivered
+
+- Angular specs now avoid brittle CSS/class assertions for admin wrappers, admin layout, student
+  chips/badges, profile chips, and wrapper-migration coverage.
+- Playwright tests now use accessible buttons, roles, `aria-pressed`, `data-testid`, visible text,
+  and smoke-flow assertions instead of Tailwind/TailAdmin/internal class selectors.
+- Removed style-only test cases that only checked CSS implementation details.
+- Kept behavior coverage for rendering, projected content, form/CVA binding, sorting events,
+  dropdown/modal open and close, row actions, navigation, and disabled/loading state.
+- Documented the frontend testing rule in `docs/architecture/admin-ui-design-system.md`.
+- Added TODO-10X-J-T-VISUAL-BASELINE for a future proper visual regression baseline.
+
+### Gates
+
+- Frontend gates required for this phase:
+  - `cd src/LinguaCoach.Web && npm ci`
+  - `cd src/LinguaCoach.Web && npm run build -- --configuration production`
+  - `cd src/LinguaCoach.Web && npm test -- --watch=false --browsers=ChromeHeadless`
+  - `npx playwright test --workers=1 --reporter=dot`
+  - `git diff --check`
+- Backend gates intentionally not run; this phase is frontend-only.
+
+### Review doc
+
+`docs/reviews/2026-06-18-phase-10x-j-t-frontend-test-cleanup-review.md`
+
+---
 
 **Phase 10X-I — Migrate Remaining Admin Forms and Modals to CVA Wrappers** - complete (2026-06-19)
 

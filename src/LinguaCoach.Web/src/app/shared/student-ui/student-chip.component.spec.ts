@@ -17,20 +17,6 @@ describe('StudentChipComponent', () => {
     expect(btn).toBeTruthy();
   });
 
-  it('does not have sp-pref-chip--on class when unselected', () => {
-    component.selected = false;
-    fixture.detectChanges();
-    const btn = fixture.nativeElement.querySelector('button');
-    expect(btn.classList).not.toContain('sp-pref-chip--on');
-  });
-
-  it('has sp-pref-chip--on class when selected', () => {
-    component.selected = true;
-    fixture.detectChanges();
-    const btn = fixture.nativeElement.querySelector('button');
-    expect(btn.classList).toContain('sp-pref-chip--on');
-  });
-
   it('sets aria-pressed=false when unselected', () => {
     component.selected = false;
     fixture.detectChanges();

@@ -207,30 +207,6 @@ describe('ProfileComponent', () => {
 
   // ── Chip selected states ────────────────────────────────────────────────────
 
-  it('selected learning goal chip has sp-pref-chip--on class', fakeAsync(() => {
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-    const chips = fixture.nativeElement.querySelectorAll('[data-testid="learning-goals-chips"] button');
-    const selectedChip = Array.from(chips as NodeListOf<HTMLButtonElement>).find(
-      (b: HTMLButtonElement) => b.textContent?.trim() === 'Day-to-day English'
-    );
-    expect(selectedChip).toBeTruthy();
-    expect(selectedChip!.classList).toContain('sp-pref-chip--on');
-  }));
-
-  it('unselected learning goal chip does not have sp-pref-chip--on class', fakeAsync(() => {
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-    const chips = fixture.nativeElement.querySelectorAll('[data-testid="learning-goals-chips"] button');
-    const unselectedChip = Array.from(chips as NodeListOf<HTMLButtonElement>).find(
-      (b: HTMLButtonElement) => b.textContent?.trim() === 'Travel English'
-    );
-    expect(unselectedChip).toBeTruthy();
-    expect(unselectedChip!.classList).not.toContain('sp-pref-chip--on');
-  }));
-
   it('selected chip has aria-pressed=true', fakeAsync(() => {
     const fixture = create();
     tick();
@@ -259,7 +235,7 @@ describe('ProfileComponent', () => {
     fixture.detectChanges();
     const balancedBtn = fixture.nativeElement.querySelector('[data-testid="difficulty-balanced"]');
     expect(balancedBtn).toBeTruthy();
-    expect(balancedBtn.classList).toContain('sp-pref-chip--on');
+    expect(balancedBtn.getAttribute('aria-pressed')).toBe('true');
   }));
 
   it('session length chip shows selected state for 20min', fakeAsync(() => {
@@ -268,7 +244,7 @@ describe('ProfileComponent', () => {
     fixture.detectChanges();
     const chip20 = fixture.nativeElement.querySelector('[data-testid="session-length-20"]');
     expect(chip20).toBeTruthy();
-    expect(chip20.classList).toContain('sp-pref-chip--on');
+    expect(chip20.getAttribute('aria-pressed')).toBe('true');
   }));
 
   // ── Loading/error states ────────────────────────────────────────────────────

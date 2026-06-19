@@ -325,6 +325,5 @@ test('Vocabulary is not in the top-level student sidebar nav', async ({ page }) 
   await page.goto('/dashboard');
 
   // Vocabulary must not appear as a nav link in the sidebar
-  const sidebar = page.locator('.sp-student-sidebar');
-  await expect(sidebar.getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
 });

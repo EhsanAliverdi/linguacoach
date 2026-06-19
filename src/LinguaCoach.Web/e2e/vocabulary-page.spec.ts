@@ -85,7 +85,7 @@ test('vocabulary is not a top-level sidebar nav item', async ({ page }) => {
   await page.goto('/dashboard');
   // Vocabulary is no longer a top-level sidebar item — only accessible from Practice/Progress
   await expect(page.getByTestId('nav-today')).toBeVisible();
-  await expect(page.locator('.sp-student-sidebar').getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
 });
 
 test('vocabulary page loads and shows empty state', async ({ page }) => {

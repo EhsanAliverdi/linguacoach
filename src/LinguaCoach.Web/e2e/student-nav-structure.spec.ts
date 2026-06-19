@@ -85,18 +85,17 @@ test('student sidebar shows Today, Journey, Practice, Progress, Profile', async 
   await mockDashboard(page);
   await page.goto('/dashboard');
 
-  const sidebar = page.locator('.sp-student-sidebar');
-  await expect(sidebar.getByTestId('nav-today')).toBeVisible();
-  await expect(sidebar.getByTestId('nav-journey')).toBeVisible();
-  await expect(sidebar.getByTestId('nav-practice')).toBeVisible();
-  await expect(sidebar.getByTestId('nav-progress')).toBeVisible();
-  await expect(sidebar.getByTestId('nav-profile')).toBeVisible();
+  await expect(page.getByTestId('nav-today')).toBeVisible();
+  await expect(page.getByTestId('nav-journey')).toBeVisible();
+  await expect(page.getByTestId('nav-practice')).toBeVisible();
+  await expect(page.getByTestId('nav-progress')).toBeVisible();
+  await expect(page.getByTestId('nav-profile')).toBeVisible();
 
-  await expect(sidebar.getByTestId('nav-today')).toContainText('Today');
-  await expect(sidebar.getByTestId('nav-journey')).toContainText('Journey');
-  await expect(sidebar.getByTestId('nav-practice')).toContainText('Practice');
-  await expect(sidebar.getByTestId('nav-progress')).toContainText('Progress');
-  await expect(sidebar.getByTestId('nav-profile')).toContainText('Profile');
+  await expect(page.getByTestId('nav-today')).toContainText('Today');
+  await expect(page.getByTestId('nav-journey')).toContainText('Journey');
+  await expect(page.getByTestId('nav-practice')).toContainText('Practice');
+  await expect(page.getByTestId('nav-progress')).toContainText('Progress');
+  await expect(page.getByTestId('nav-profile')).toContainText('Profile');
 });
 
 test('student sidebar does not show Dashboard label', async ({ page }) => {
@@ -104,8 +103,7 @@ test('student sidebar does not show Dashboard label', async ({ page }) => {
   await mockDashboard(page);
   await page.goto('/dashboard');
 
-  const sidebar = page.locator('.sp-student-sidebar');
-  await expect(sidebar.getByRole('link', { name: /^Dashboard$/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Dashboard$/i })).toHaveCount(0);
 });
 
 test('student sidebar does not show Vocabulary as a top-level nav item', async ({ page }) => {
@@ -113,8 +111,7 @@ test('student sidebar does not show Vocabulary as a top-level nav item', async (
   await mockDashboard(page);
   await page.goto('/dashboard');
 
-  const sidebar = page.locator('.sp-student-sidebar');
-  await expect(sidebar.getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
 });
 
 test('Practice nav item links to /practice', async ({ page }) => {

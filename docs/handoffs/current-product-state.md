@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10X-I)
+lastUpdated: 2026-06-19 (10X-J-T)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,24 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Frontend test cleanup complete (Phase 10X-J-T)
+
+Frontend tests no longer lock admin and student UI work to Tailwind, TailAdmin, BEM, wrapper
+implementation, border/radius/spacing, or inline style details unless a class is explicitly
+documented as a public API.
+
+What changed:
+- Angular specs now prefer text, roles, ARIA attributes, form/CVA values, emitted events,
+  open/close behavior, sorting events, and wrapper presence.
+- Playwright tests now prefer page behavior and smoke flows: accessible row-action buttons,
+  `aria-pressed` chip state, visible text, main landmarks, roles, and `data-testid` locators.
+- Style-only tests were removed. Useful tests were rewritten to keep behavior coverage.
+- Product behavior, API behavior, backend code, and UI functionality were unchanged.
+
+See: `docs/reviews/2026-06-18-phase-10x-j-t-frontend-test-cleanup-review.md`
 
 ---
 

@@ -1,4 +1,4 @@
-import { expect, test, Page } from '@playwright/test';
+import { expect, test, Page, Locator } from '@playwright/test';
 
 // ── Shared JWT helpers (mirrors admin-screenshots.spec.ts) ────────────────────
 
@@ -84,14 +84,24 @@ async function gotoStudents(page: Page) {
 }
 
 /**
- * Opens the first row's sp-admin-table-actions dropdown, then clicks the
+ * Opens the first row action dropdown, then clicks the
  * action item matching the given label.
- * Phase 10X-F: row actions moved into dropdown trigger (.sp-adm-actions-trigger).
  * Projected content buttons use text matching (not role=menuitem).
  */
 async function clickRowAction(page: Page, label: string) {
-  await page.locator('.sp-adm-actions-trigger').first().click();
+  await page.getByRole('button', { name: 'Row actions' }).first().click();
   await page.locator('[role="menu"] button, [role="menu"] a').filter({ hasText: label }).first().click();
+}
+
+function resetReason(dialog: Locator) {
+  return dialog.locator('textarea[placeholder="Why is this reset being performed?"]');
+}
+
+function resetConfirmEmail(dialog: Locator) {
+  return dialog
+    .locator('sp-admin-form-field')
+    .filter({ hasText: `Type the student email to confirm: ${STUDENT.email}` })
+    .locator('input');
 }
 
 test('admin: reset data modal opens with restart-onboarding preset by default', async ({ page }) => {
@@ -120,13 +130,13 @@ test('admin: reset data submit disabled until reason and confirm email are fille
   const submit = dialog.locator('button[type="submit"]');
   await expect(submit).toBeDisabled();
 
-  await dialog.locator('textarea[name="reason"]').fill('QA needs to rerun onboarding');
+  await resetReason(dialog).fill('QA needs to rerun onboarding');
   await expect(submit).toBeDisabled();
 
-  await dialog.locator('input[name="confirmEmail"]').fill('wrong@corp.com');
+  await resetConfirmEmail(dialog).fill('wrong@corp.com');
   await expect(submit).toBeDisabled();
 
-  await dialog.locator('input[name="confirmEmail"]').fill(STUDENT.email);
+  await resetConfirmEmail(dialog).fill(STUDENT.email);
   await expect(submit).toBeEnabled();
 });
 
@@ -157,8 +167,8 @@ test('admin: successful reset shows new stage, cleared items and reset log id', 
   await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
-  await dialog.locator('textarea[name="reason"]').fill('Stuck mid-onboarding after crash');
-  await dialog.locator('input[name="confirmEmail"]').fill(STUDENT.email);
+  await resetReason(dialog).fill('Stuck mid-onboarding after crash');
+  await resetConfirmEmail(dialog).fill(STUDENT.email);
   await dialog.locator('button[type="submit"]').click();
 
   await expect(dialog.getByText(/New stage: OnboardingRequired/)).toBeVisible();
@@ -179,11 +189,11 @@ test('admin: reset failure shows error message', async ({ page }) => {
   await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
-  await dialog.locator('textarea[name="reason"]').fill('Stuck mid-onboarding after crash');
-  await dialog.locator('input[name="confirmEmail"]').fill(STUDENT.email);
+  await resetReason(dialog).fill('Stuck mid-onboarding after crash');
+  await resetConfirmEmail(dialog).fill(STUDENT.email);
   await dialog.locator('button[type="submit"]').click();
 
-  await expect(dialog.locator('.sp-admin-alert-error')).toBeVisible();
+  await expect(dialog.getByText('Reason is required.')).toBeVisible();
 });
 
 test('admin: reset data modal can be cancelled', async ({ page }) => {
