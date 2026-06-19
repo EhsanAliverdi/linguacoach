@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpAdminEmptyStateComponent } from '../empty-state/sp-admin-empty-state.component';
+import { SpAdminErrorStateComponent } from '../error-state/sp-admin-error-state.component';
 import { SpAdminLoadingStateComponent } from '../loading-state/sp-admin-loading-state.component';
 
 export interface SpAdminTableColumn {
@@ -31,11 +32,13 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 @Component({
   selector: 'sp-admin-table',
   standalone: true,
-  imports: [CommonModule, SpAdminEmptyStateComponent, SpAdminLoadingStateComponent],
+  imports: [CommonModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent],
   template: `
     <div [class]="outerClasses">
       @if (loading) {
         <sp-admin-loading-state message="Loading records" />
+      } @else if (error) {
+        <sp-admin-error-state [title]="errorTitle" [message]="error" />
       } @else if (columns.length === 0) {
         <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
           <ng-content />
@@ -254,6 +257,8 @@ export class SpAdminTableComponent {
   @Input() columns: SpAdminTableColumn[] = [];
   @Input() rows: Record<string, unknown>[] = [];
   @Input() loading = false;
+  @Input() error = '';
+  @Input() errorTitle = 'Could not load data';
   @Input() emptyMessage = 'No records found.';
   @Input() sortColumn = '';
   @Input() sortDirection: SortDirection = 'asc';

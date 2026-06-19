@@ -139,11 +139,11 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
                   <td class="sp-admin-table-muted sp-admin-num">{{ tokenBudgetLabel(p) }}</td>
                   <td class="sp-admin-actions">
                     <sp-admin-table-actions>
-                      <button type="button" class="sp-adm-action-item" (click)="viewDetail(p.id)">View content</button>
+                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="viewDetail(p.id)">View content</button>
                       @if (p.isActive) {
-                        <button type="button" class="sp-adm-action-item" (click)="deactivate(p)" [disabled]="busyPromptId() === p.id">Deactivate</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item" (click)="deactivate(p)" [disabled]="busyPromptId() === p.id">Deactivate</button>
                       } @else {
-                        <button type="button" class="sp-adm-action-item" (click)="activate(p)" [disabled]="busyPromptId() === p.id">Activate</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item" (click)="activate(p)" [disabled]="busyPromptId() === p.id">Activate</button>
                       }
                     </sp-admin-table-actions>
                   </td>

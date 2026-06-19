@@ -48,62 +48,63 @@ interface StudentEditForm {
     } @else if (error()) {
       <sp-admin-error-state title="Could not load students" [message]="error()" />
     } @else {
-      <sp-admin-table variant="data" density="compact" minWidth="980px">
-        <table class="sp-admin-table">
-          <thead>
-            <tr>
-              <th class="sp-admin-sortable" (click)="setSort('name')">Student{{ sortIndicator('name') }}</th>
-              <th>Lifecycle</th>
-              <th class="sp-admin-sortable" (click)="setSort('onboarding')">Onboarding{{ sortIndicator('onboarding') }}</th>
-              <th>CEFR</th>
-              <th>Profile</th>
-              <th class="sp-admin-sortable" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of pagedStudents(); track s.studentProfileId) {
-              <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
-                <td class="sp-admin-wide-cell">
-                  <div class="sp-admin-student-name">{{ displayName(s) }}</div>
-                  <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
-                </td>
-                <td>
-                  <sp-admin-badge [tone]="s.lifecycleStage === 'Archived' ? 'neutral' : 'primary'">{{ s.lifecycleStage }}</sp-admin-badge>
-                </td>
-                <td>
-                  <sp-admin-badge [tone]="s.onboardingStatus === 'Complete' ? 'success' : 'warning'">{{ s.onboardingStatus }}</sp-admin-badge>
-                </td>
-                <td>
-                  @if (s.cefrLevel) {
-                    <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
-                  } @else {
-                    <span class="sp-admin-table-empty">-</span>
-                  }
-                </td>
-                <td class="sp-admin-profile-cell sp-admin-table-wrap">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
-                <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
-                <td class="sp-admin-actions">
-                  <sp-admin-table-actions>
-                    <a [routerLink]="[s.studentProfileId]" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors block">View</a>
-                    <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" (click)="startEdit(s)">Edit</button>
-                    @if (s.lifecycleStage !== 'Archived') {
-                      <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" (click)="startResetPassword(s)">Reset password</button>
-                      <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 transition-colors" (click)="startResetData(s)">Reset data</button>
-                      <button type="button" class="sp-adm-action-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 transition-colors" (click)="confirmArchive(s)">Archive</button>
-                    }
-                  </sp-admin-table-actions>
-                </td>
+      @if (filteredStudents().length === 0) {
+        <sp-admin-empty-state message="No students found." />
+      } @else {
+        <sp-admin-table variant="data" density="compact" minWidth="980px">
+          <table>
+            <thead>
+              <tr>
+                <th class="sp-admin-sortable" (click)="setSort('name')">Student{{ sortIndicator('name') }}</th>
+                <th>Lifecycle</th>
+                <th class="sp-admin-sortable" (click)="setSort('onboarding')">Onboarding{{ sortIndicator('onboarding') }}</th>
+                <th>CEFR</th>
+                <th>Profile</th>
+                <th class="sp-admin-sortable" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
+                <th>Actions</th>
               </tr>
-            }
-          </tbody>
-        </table>
-        @if (filteredStudents().length === 0) {
-          <sp-admin-empty-state message="No students found." />
+            </thead>
+            <tbody>
+              @for (s of pagedStudents(); track s.studentProfileId) {
+                <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
+                  <td class="sp-admin-wide-cell">
+                    <div class="sp-admin-student-name">{{ displayName(s) }}</div>
+                    <div class="sp-admin-table-muted sp-safe-text">{{ s.email }}</div>
+                  </td>
+                  <td>
+                    <sp-admin-badge [tone]="s.lifecycleStage === 'Archived' ? 'neutral' : 'primary'">{{ s.lifecycleStage }}</sp-admin-badge>
+                  </td>
+                  <td>
+                    <sp-admin-badge [tone]="s.onboardingStatus === 'Complete' ? 'success' : 'warning'">{{ s.onboardingStatus }}</sp-admin-badge>
+                  </td>
+                  <td>
+                    @if (s.cefrLevel) {
+                      <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
+                    } @else {
+                      <span class="sp-admin-table-empty">-</span>
+                    }
+                  </td>
+                  <td class="sp-admin-profile-cell sp-admin-table-wrap">{{ s.careerContext || s.learningGoal || 'Not set' }}</td>
+                  <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
+                  <td class="sp-admin-actions">
+                    <sp-admin-table-actions>
+                      <a role="menuitem" [routerLink]="[s.studentProfileId]" class="sp-adm-action-item">View</a>
+                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="startEdit(s)">Edit</button>
+                      @if (s.lifecycleStage !== 'Archived') {
+                        <button role="menuitem" type="button" class="sp-adm-action-item" (click)="startResetPassword(s)">Reset password</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="startResetData(s)">Reset data</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="confirmArchive(s)">Archive</button>
+                      }
+                    </sp-admin-table-actions>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+        @if (totalPages() > 1) {
+          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
         }
-      </sp-admin-table>
-      @if (totalPages() > 1) {
-        <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
       }
     }
 

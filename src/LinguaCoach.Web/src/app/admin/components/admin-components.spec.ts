@@ -429,6 +429,20 @@ class TableActionsHostComponent {
 
 @Component({
   standalone: true,
+  imports: [SpAdminTableActionsComponent],
+  template: `
+    <sp-admin-table-actions>
+      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="last = 'view'">View</button>
+      <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="last = 'delete'">Delete</button>
+    </sp-admin-table-actions>
+  `,
+})
+class TableActionsProjectedHostComponent {
+  last = '';
+}
+
+@Component({
+  standalone: true,
   imports: [SpAdminFilterBarComponent],
   template: `
     <sp-admin-filter-bar>
@@ -573,6 +587,44 @@ describe('admin wrapper components — Phase 10X-F', () => {
     const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('[role="menuitem"]');
     buttons[0].click();
     expect(fixture.componentInstance.last).toBe('View');
+  });
+
+  // sp-admin-table-actions — projected content (ng-content) path
+  it('table-actions projected content: trigger renders', () => {
+    const fixture = TestBed.createComponent(TableActionsProjectedHostComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('button[aria-label="Row actions"]')).not.toBeNull();
+  });
+
+  it('table-actions projected content: menu opens on trigger click', () => {
+    const fixture = TestBed.createComponent(TableActionsProjectedHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('button[aria-label="Row actions"]').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('View');
+    expect(fixture.nativeElement.textContent).toContain('Delete');
+  });
+
+  it('table-actions projected content: clicking item calls handler', () => {
+    const fixture = TestBed.createComponent(TableActionsProjectedHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('button[aria-label="Row actions"]').click();
+    fixture.detectChanges();
+    const items: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('[role="menuitem"]');
+    items[0].click();
+    expect(fixture.componentInstance.last).toBe('view');
+  });
+
+  it('table-actions projected content: menu closes on Escape', () => {
+    const fixture = TestBed.createComponent(TableActionsProjectedHostComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('button[aria-label="Row actions"]').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
   });
 
   // sp-admin-theme-toggle

@@ -83,8 +83,47 @@ export interface SpAdminTableAction {
     </div>
   `,
   styles: [`
-    /* TailAdmin-backed: absolute z-40 right-0 rounded-xl border border-gray-200 bg-white shadow-lg */
     :host { display: inline-block; }
+
+    /* Projected or generated menu items — common base */
+    :host ::ng-deep .sp-adm-action-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: #374151;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.1s, color 0.1s;
+      white-space: nowrap;
+    }
+    :host ::ng-deep .sp-adm-action-item:hover {
+      background: #f9fafb;
+      color: #111827;
+    }
+    :host ::ng-deep .sp-adm-action-item:focus-visible {
+      outline: 2px solid #6366f1;
+      outline-offset: -2px;
+    }
+    :host ::ng-deep .sp-adm-action-item.sp-adm-action-danger {
+      color: #dc2626;
+    }
+    :host ::ng-deep .sp-adm-action-item.sp-adm-action-danger:hover {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    :host ::ng-deep .sp-adm-action-item:disabled,
+    :host ::ng-deep .sp-adm-action-item[disabled],
+    :host ::ng-deep .sp-adm-action-item.sp-adm-action-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   `],
 })
 export class SpAdminTableActionsComponent {
