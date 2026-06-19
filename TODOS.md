@@ -181,7 +181,7 @@ Each item includes context, motivation, and the phase where it was deferred.
 - ~~TODO-10X-I~~: migrate remaining admin forms and modals to CVA wrappers — **DONE in Phase 10X-I** (2026-06-19). AI Config, Integrations, and all 3 student modals migrated. `sp-admin-modal maxWidth`, `sp-admin-input [value]`, and `sp-admin-layout <main>` added. Angular 421, .NET 1885 passed.
 - ~~TODO-10R-F~~: Usage Governance Admin UX Foundation — **DONE in Phase 10R-F** (stat cards, expandable rule detail, feature name lookup, admin wrappers).
 - ~~TODO-10R-RULE-MGMT backend~~: Rule CRUD backend (domain method, service methods, API endpoints) — **DONE in Phase 10R-G**.
-- TODO-10R-RULE-MGMT-UI: Build inline rule editor UI in admin-usage-policies page. Backend and frontend service are ready. Needs create/edit form in the expanded rule row using existing admin wrappers.
+- ~~TODO-10R-RULE-MGMT-UI~~: Rule editor admin UI — **DONE in Phase 10R-H**. Modal add/edit/delete with full form, delete confirm, local state update.
 - TODO-10R-RULE-MGMT-UNIQUE-CONSTRAINT: Optional — promote duplicate-key guard from application layer to DB unique index on `(UsagePolicyId, FeatureKey)` via EF migration.
 - TODO-10R-STUDENT-ASSIGN: Student policy assignment list UI — deferred. API endpoint exists (`PUT /api/admin/students/{id}/usage-policy`).
 - TODO-10U: full AI usage/config redesign on the admin design system. Wrapper variant API (10X-J) is now available.

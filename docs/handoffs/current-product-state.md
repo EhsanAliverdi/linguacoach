@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-G)
+lastUpdated: 2026-06-19 (10R-H)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,23 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-19
+
+---
+
+## Usage Policy Rule Editor admin UI complete (Phase 10R-H)
+
+Admins can now create, edit, and delete individual usage policy rules directly in the Usage Policies admin page.
+
+What changed:
+- "Add rule" button in each expanded policy row opens a modal rule editor.
+- Per-rule Edit and Delete buttons with modal forms and delete confirmation.
+- Feature select (from definitions API) falls back to free-text input if definitions unavailable.
+- Feature key is intentionally immutable on edit — shown as read-only with guidance to delete/re-add.
+- All rule fields editable: enforcement mode, unit type, daily/weekly/monthly/cost limits, warning threshold, tracking enabled, active.
+- Local state update on success — no full page reload; expanded row state preserved.
+- Build clean; 670/670 tests pass.
+
+See: `docs/reviews/2026-06-19-phase-10r-h-usage-policy-rule-editor-admin-ui-review.md`
 
 ---
 

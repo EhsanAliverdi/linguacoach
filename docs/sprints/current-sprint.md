@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 (10R-G)
+lastUpdated: 2026-06-19 (10R-H)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,27 @@ Last updated: 2026-06-19
 ---
 
 ## Active sprint
+
+**Phase 10R-H — Usage Policy Rule Editor Admin UI** - complete (2026-06-19)
+
+Goal: add admin UI for creating, editing, and deleting individual usage policy rules using the 10R-G backend.
+
+### Delivered
+
+- Rule editor modal (`sp-admin-modal variant="form"`) with full form: feature select/input, enforcement mode, unit type, all limit fields, warning threshold, tracking enabled, active toggles.
+- Delete confirmation modal (`sp-admin-modal variant="danger"`) with rule key display.
+- Add rule button in each expanded policy row. Edit/Delete buttons per rule row.
+- Signal-per-field form state; client-side validation with inline error display.
+- `openAddRule`, `openEditRule`, `closeRuleModal`, `saveRule`, `openDeleteRule`, `closeDeleteModal`, `confirmDelete` methods.
+- Local state helpers `addRuleInPlace`, `updateRuleInPlace`, `removeRuleInPlace` — no full reload after rule CRUD.
+- Feature key shown as read-only in edit mode with explanatory note.
+- Build: clean. Tests: 670/670.
+
+See: `docs/reviews/2026-06-19-phase-10r-h-usage-policy-rule-editor-admin-ui-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10R-G — Usage Policy Rule CRUD Backend Foundation** - complete (2026-06-19)
 

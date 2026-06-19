@@ -24,13 +24,12 @@
   </div>
 }
 
-<!-- Create / edit form -->
+<!-- Create / edit policy form -->
 @if (showForm()) {
   <sp-admin-card [title]="editingId() ? 'Edit Policy' : 'New Policy'">
     @if (saveError()) {
       <sp-admin-error-state title="Save failed" [message]="saveError()" />
     }
-
     <div class="sp-up-form-stack">
       <sp-admin-form-field label="Name">
         <sp-admin-input
@@ -38,14 +37,12 @@
           (ngModelChange)="formName.set($event)"
           placeholder="Policy name" />
       </sp-admin-form-field>
-
       <sp-admin-form-field label="Description">
         <sp-admin-input
           [ngModel]="formDescription()"
           (ngModelChange)="formDescription.set($event)"
           placeholder="Optional description" />
       </sp-admin-form-field>
-
       @if (!editingId()) {
         <sp-admin-form-field label="Scope type">
           <sp-admin-select
@@ -54,7 +51,6 @@
             [options]="scopeTypeOptions" />
         </sp-admin-form-field>
       }
-
       <div class="sp-up-cb-stack">
         <sp-admin-checkbox
           [ngModel]="formIsDefault()"
@@ -65,7 +61,6 @@
           (ngModelChange)="formIsActive.set($event)"
           label="Active" />
       </div>
-
       <div class="sp-up-actions">
         <sp-admin-button (click)="save()" [loading]="saving()">
           {{ editingId() ? 'Update Policy' : 'Create Policy' }}
@@ -101,7 +96,8 @@
         <tbody>
           @for (p of policies(); track p.id) {
             <tr>
-              <td><strong>{{ p.name }}</strong>
+              <td>
+                <strong>{{ p.name }}</strong>
                 @if (p.description) {
                   <div style="font-size:11px;color:var(--sp-admin-text-muted,#6b7280);margin-top:2px;">{{ p.description }}</div>
                 }
@@ -122,25 +118,24 @@
                 }
               </td>
               <td>
-                @if (p.rules.length > 0) {
-                  <button class="sp-up-expand-btn" (click)="toggleExpanded(p.id)">
-                    {{ p.rules.length }} rule{{ p.rules.length === 1 ? '' : 's' }}
-                    {{ expandedPolicyId() === p.id ? '▲' : '▼' }}
-                  </button>
-                } @else {
-                  <span style="color:var(--sp-admin-text-muted,#9ca3af);font-size:12px;">None</span>
-                }
+                <button class="sp-up-expand-btn" (click)="toggleExpanded(p.id)">
+                  {{ p.rules.length }} rule{{ p.rules.length === 1 ? '' : 's' }}
+                  {{ expandedPolicyId() === p.id ? '▲' : '▼' }}
+                </button>
               </td>
               <td>
                 <sp-admin-button variant="ghost" size="sm" (click)="openEdit(p)">Edit</sp-admin-button>
               </td>
             </tr>
 
-            <!-- Expanded rule detail row -->
-            @if (expandedPolicyId() === p.id && p.rules.length > 0) {
+            <!-- Expanded rule detail + add/edit/delete -->
+            @if (expandedPolicyId() === p.id) {
               <tr class="sp-up-rules-row">
                 <td colspan="6">
                   <div class="sp-up-rules-inner">
+                    @if (p.rules.length === 0) {
+                      <sp-admin-empty-state message="No rules defined for this policy." />
+                    }
                     @for (rule of p.rules; track rule.id) {
                       <div class="sp-up-rule-row">
                         <sp-admin-code-pill>{{ rule.featureKey }}</sp-admin-code-pill>
@@ -157,11 +152,18 @@
                             <span class="sp-up-rule-limit">{{ limit }}</span>
                           }
                           @if (ruleLimitSummary(rule).length === 0) {
-                            <span class="sp-up-rule-limit">No limits set (track only)</span>
+                            <span class="sp-up-rule-limit">No limits set</span>
                           }
+                        </div>
+                        <div class="sp-up-rule-actions">
+                          <sp-admin-button variant="ghost" size="sm" (click)="openEditRule(p.id, rule)">Edit</sp-admin-button>
+                          <sp-admin-button variant="ghost" size="sm" (click)="openDeleteRule(p.id, rule)">Delete</sp-admin-button>
                         </div>
                       </div>
                     }
+                    <div style="margin-top:8px;">
+                      <sp-admin-button size="sm" (click)="openAddRule(p.id)">+ Add rule</sp-admin-button>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -174,3 +176,140 @@
 }
 
 </sp-admin-page-body>
+
+<!-- ── Rule add/edit modal ─────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="ruleModalOpen()"
+  [title]="ruleModalTitle()"
+  size="lg"
+  variant="form"
+  (closed)="closeRuleModal()">
+
+  @if (ruleSaveError()) {
+    <sp-admin-alert variant="error">{{ ruleSaveError() }}</sp-admin-alert>
+  }
+
+  <div class="sp-up-form-stack">
+    @if (!ruleEditingId()) {
+      <sp-admin-form-field label="Feature">
+        @if (featureOptions().length > 0) {
+          <sp-admin-select
+            [ngModel]="ruleFeatureKey()"
+            (ngModelChange)="ruleFeatureKey.set($event)"
+            [options]="featureOptions()"
+            placeholder="Select feature" />
+        } @else {
+          <sp-admin-input
+            [ngModel]="ruleFeatureKey()"
+            (ngModelChange)="ruleFeatureKey.set($event)"
+            placeholder="e.g. writing.evaluate" />
+        }
+      </sp-admin-form-field>
+    } @else {
+      <sp-admin-form-field label="Feature">
+        <sp-admin-code-pill>{{ ruleFeatureKey() }}</sp-admin-code-pill>
+        <span style="font-size:12px;color:var(--sp-admin-text-muted,#6b7280);margin-left:6px;">Feature key cannot be changed. Delete and re-add to change.</span>
+      </sp-admin-form-field>
+    }
+
+    <div class="sp-up-rule-form-grid">
+      <sp-admin-form-field label="Enforcement mode">
+        <sp-admin-select
+          [ngModel]="ruleEnforcementMode()"
+          (ngModelChange)="ruleEnforcementMode.set($event)"
+          [options]="enforcementModeOptions" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Unit type">
+        <sp-admin-select
+          [ngModel]="ruleUnitType()"
+          (ngModelChange)="ruleUnitType.set($event)"
+          [options]="unitTypeOptions" />
+      </sp-admin-form-field>
+    </div>
+
+    <div class="sp-up-rule-limits-grid">
+      <sp-admin-form-field label="Daily limit">
+        <sp-admin-number-input
+          [ngModel]="ruleDailyLimit()"
+          (ngModelChange)="ruleDailyLimit.set($event)"
+          placeholder="No limit"
+          [min]="0" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Weekly limit">
+        <sp-admin-number-input
+          [ngModel]="ruleWeeklyLimit()"
+          (ngModelChange)="ruleWeeklyLimit.set($event)"
+          placeholder="No limit"
+          [min]="0" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Monthly limit">
+        <sp-admin-number-input
+          [ngModel]="ruleMonthlyLimit()"
+          (ngModelChange)="ruleMonthlyLimit.set($event)"
+          placeholder="No limit"
+          [min]="0" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Daily cost limit ($)">
+        <sp-admin-number-input
+          [ngModel]="ruleDailyCostLimit()"
+          (ngModelChange)="ruleDailyCostLimit.set($event)"
+          placeholder="No limit"
+          [min]="0" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Monthly cost limit ($)">
+        <sp-admin-number-input
+          [ngModel]="ruleMonthlyCostLimit()"
+          (ngModelChange)="ruleMonthlyCostLimit.set($event)"
+          placeholder="No limit"
+          [min]="0" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Warning threshold (%)">
+        <sp-admin-number-input
+          [ngModel]="ruleWarningThreshold()"
+          (ngModelChange)="ruleWarningThreshold.set($event)"
+          [min]="0"
+          [max]="100" />
+      </sp-admin-form-field>
+    </div>
+
+    <div class="sp-up-cb-stack">
+      <sp-admin-checkbox
+        [ngModel]="ruleTrackingEnabled()"
+        (ngModelChange)="ruleTrackingEnabled.set($event)"
+        label="Tracking enabled" />
+      <sp-admin-checkbox
+        [ngModel]="ruleIsActive()"
+        (ngModelChange)="ruleIsActive.set($event)"
+        label="Active" />
+    </div>
+  </div>
+
+  <div slot="footer">
+    <sp-admin-button variant="ghost" (click)="closeRuleModal()">Cancel</sp-admin-button>
+    <sp-admin-button (click)="saveRule()" [loading]="ruleSaving()">
+      {{ ruleEditingId() ? 'Update Rule' : 'Add Rule' }}
+    </sp-admin-button>
+  </div>
+</sp-admin-modal>
+
+<!-- ── Delete confirmation modal ─────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="deleteModalOpen()"
+  title="Delete Rule"
+  variant="danger"
+  size="sm"
+  (closed)="closeDeleteModal()">
+
+  @if (deleteError()) {
+    <sp-admin-alert variant="error">{{ deleteError() }}</sp-admin-alert>
+  }
+  <p style="font-size:14px;color:#374151;">
+    Delete rule for <sp-admin-code-pill>{{ deleteTargetRuleKey() }}</sp-admin-code-pill>?
+    This cannot be undone.
+  </p>
+
+  <div slot="footer">
+    <sp-admin-button variant="ghost" (click)="closeDeleteModal()">Cancel</sp-admin-button>
+    <sp-admin-button (click)="confirmDelete()" [loading]="deleteConfirming()">Delete</sp-admin-button>
+  </div>
+</sp-admin-modal>
