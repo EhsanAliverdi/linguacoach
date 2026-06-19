@@ -459,7 +459,8 @@ test('admin: diagnostics sidebar nav item present', async ({ page }) => {
   await adminLogin(page);
 
   // Diagnostics link should be in the DOM (may be collapsed/hidden in rail mode)
-  await page.waitForSelector('[routerlink="/admin/diagnostics"]', { state: 'attached', timeout: 5000 });
+  // [routerLink] renders as href="/admin/diagnostics" in the built app, not as a routerlink attribute
+  await page.waitForSelector('a[href="/admin/diagnostics"]', { state: 'attached', timeout: 5000 });
 });
 
 test('student dashboard: no unexpected console errors', async ({ page }) => {
