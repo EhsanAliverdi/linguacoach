@@ -48,6 +48,9 @@ public sealed record UpdateStudentProfileCommand(
     RoleFamiliarity? RoleFamiliarity);
 
 public sealed record ArchiveStudentCommand(Guid StudentProfileId);
+public sealed record ReactivateStudentCommand(Guid StudentProfileId, Guid AdminUserId);
+public sealed record PauseStudentCommand(Guid StudentProfileId, Guid AdminUserId);
+public sealed record UnpauseStudentCommand(Guid StudentProfileId, Guid AdminUserId);
 
 public sealed record ResetStudentPasswordCommand(Guid StudentProfileId, string NewPassword, bool MustChangePassword = true);
 
@@ -118,6 +121,9 @@ public interface IAdminStudentQuery
     Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentProfileId, CancellationToken ct = default);
     Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
     Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);
+    Task<StudentListItem> ReactivateStudentAsync(ReactivateStudentCommand command, CancellationToken ct = default);
+    Task<StudentListItem> PauseStudentAsync(PauseStudentCommand command, CancellationToken ct = default);
+    Task<StudentListItem> UnpauseStudentAsync(UnpauseStudentCommand command, CancellationToken ct = default);
     Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default);
     Task<ResetStudentResponse> ResetStudentAsync(ResetStudentCommand command, CancellationToken ct = default);
     Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default);

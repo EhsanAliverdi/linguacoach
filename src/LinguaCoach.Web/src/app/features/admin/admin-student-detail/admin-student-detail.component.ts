@@ -47,6 +47,15 @@ interface StudentEditForm {
               <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
               <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
             }
+            @if (s.lifecycleStage === 'Archived') {
+              <button type="button" class="sp-admin-link-button" (click)="startLifecycleAction('reactivate', s)">Reactivate</button>
+            }
+            @if (s.lifecycleStage === 'Paused') {
+              <button type="button" class="sp-admin-link-button" (click)="startLifecycleAction('unpause', s)">Unpause</button>
+            }
+            @if (s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Paused') {
+              <button type="button" class="sp-admin-danger-link" (click)="startLifecycleAction('pause', s)">Pause</button>
+            }
           </div>
         }
       </div>
@@ -714,6 +723,32 @@ interface StudentEditForm {
         }
       </section>
     }
+    @if (lifecycleAction()) {
+      <div class="sp-admin-modal-backdrop" (click)="cancelLifecycleAction()"></div>
+      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycleActionTitle">
+        <div class="sp-admin-modal-header">
+          <div>
+            <h2 id="lifecycleActionTitle">{{ lifecycleActionTitle() }}</h2>
+            @if (student(); as s) { <p class="sp-safe-text">{{ s.email }}</p> }
+          </div>
+          <button type="button" (click)="cancelLifecycleAction()" aria-label="Close">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="sp-admin-edit-grid">
+          <p class="sp-admin-wide">{{ lifecycleActionDescription() }}</p>
+          @if (lifecycleActionError()) {
+            <div class="sp-admin-alert-error sp-admin-wide">{{ lifecycleActionError() }}</div>
+          }
+          <div class="sp-admin-modal-actions sp-admin-wide">
+            <button type="button" class="sp-button-ghost" (click)="cancelLifecycleAction()">Cancel</button>
+            <button type="button" class="sp-admin-btn-primary" [disabled]="savingLifecycleAction()" (click)="confirmLifecycleAction()">
+              {{ savingLifecycleAction() ? 'Saving...' : lifecycleActionTitle() }}
+            </button>
+          </div>
+        </div>
+      </section>
+    }
   `,
   styles: [`
     .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
@@ -849,6 +884,66 @@ export class AdminStudentDetailComponent implements OnInit {
   assignPolicyForm: { policyId: string; reason: string } = { policyId: '', reason: '' };
 
   prefsSlideOverOpen = signal(false);
+
+  lifecycleAction = signal<'reactivate' | 'pause' | 'unpause' | null>(null);
+  savingLifecycleAction = signal(false);
+  lifecycleActionError = signal('');
+
+  lifecycleActionTitle(): string {
+    switch (this.lifecycleAction()) {
+      case 'reactivate': return 'Reactivate student';
+      case 'pause': return 'Pause student';
+      case 'unpause': return 'Unpause student';
+      default: return '';
+    }
+  }
+
+  lifecycleActionDescription(): string {
+    switch (this.lifecycleAction()) {
+      case 'reactivate': return 'This will reactivate the student and set their lifecycle stage to Onboarding Required.';
+      case 'pause': return 'This will pause the student. They will not be able to progress until unpaused.';
+      case 'unpause': return 'This will unpause the student and set their lifecycle stage to Onboarding Required.';
+      default: return '';
+    }
+  }
+
+  startLifecycleAction(action: 'reactivate' | 'pause' | 'unpause', _student: AdminStudentDetail): void {
+    this.lifecycleAction.set(action);
+    this.lifecycleActionError.set('');
+    this.savingLifecycleAction.set(false);
+  }
+
+  cancelLifecycleAction(): void {
+    this.lifecycleAction.set(null);
+    this.lifecycleActionError.set('');
+  }
+
+  confirmLifecycleAction(): void {
+    const action = this.lifecycleAction();
+    const studentId = this.student()?.studentProfileId;
+    if (!action || !studentId) return;
+
+    this.savingLifecycleAction.set(true);
+    this.lifecycleActionError.set('');
+
+    let call$;
+    if (action === 'reactivate') call$ = this.adminApi.reactivateStudent(studentId);
+    else if (action === 'pause') call$ = this.adminApi.pauseStudent(studentId);
+    else call$ = this.adminApi.unpauseStudent(studentId);
+
+    call$.subscribe({
+      next: () => {
+        this.savingLifecycleAction.set(false);
+        this.lifecycleAction.set(null);
+        this.loadStudent(studentId);
+        this.toast.success(`Student ${action}d successfully`);
+      },
+      error: (err: { error?: { error?: string } }) => {
+        this.savingLifecycleAction.set(false);
+        this.lifecycleActionError.set(err.error?.error ?? `Could not ${action} student.`);
+      },
+    });
+  }
 
   openPrefsSlideOver(): void { this.prefsSlideOverOpen.set(true); }
   closePrefsSlideOver(): void { this.prefsSlideOverOpen.set(false); }

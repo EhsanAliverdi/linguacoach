@@ -207,6 +207,76 @@ public sealed class AdminHandler :
         return ToStudentListItem(profile, user.Email ?? string.Empty);
     }
 
+    public async Task<StudentListItem> ReactivateStudentAsync(ReactivateStudentCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        if (profile.LifecycleStage != StudentLifecycleStage.Archived)
+            throw new InvalidOperationException("Student is not archived.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == profile.UserId, ct)
+            ?? throw new InvalidOperationException("Student user not found.");
+
+        profile.SetLifecycleStage(StudentLifecycleStage.OnboardingRequired);
+        user.EmailConfirmed = true;
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "Reactivate", "StudentProfile",
+            entityId: command.StudentProfileId.ToString(),
+            targetStudentId: command.StudentProfileId));
+
+        await _db.SaveChangesAsync(ct);
+        return ToStudentListItem(profile, user.Email ?? string.Empty);
+    }
+
+    public async Task<StudentListItem> PauseStudentAsync(PauseStudentCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        if (profile.LifecycleStage == StudentLifecycleStage.Archived)
+            throw new InvalidOperationException("Cannot pause an archived student.");
+
+        if (profile.LifecycleStage == StudentLifecycleStage.Paused)
+            throw new InvalidOperationException("Student is already paused.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == profile.UserId, ct)
+            ?? throw new InvalidOperationException("Student user not found.");
+
+        profile.SetLifecycleStage(StudentLifecycleStage.Paused);
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "Pause", "StudentProfile",
+            entityId: command.StudentProfileId.ToString(),
+            targetStudentId: command.StudentProfileId));
+
+        await _db.SaveChangesAsync(ct);
+        return ToStudentListItem(profile, user.Email ?? string.Empty);
+    }
+
+    public async Task<StudentListItem> UnpauseStudentAsync(UnpauseStudentCommand command, CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
+            ?? throw new InvalidOperationException("Student profile not found.");
+
+        if (profile.LifecycleStage != StudentLifecycleStage.Paused)
+            throw new InvalidOperationException("Student is not paused.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == profile.UserId, ct)
+            ?? throw new InvalidOperationException("Student user not found.");
+
+        profile.SetLifecycleStage(StudentLifecycleStage.OnboardingRequired);
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "Unpause", "StudentProfile",
+            entityId: command.StudentProfileId.ToString(),
+            targetStudentId: command.StudentProfileId));
+
+        await _db.SaveChangesAsync(ct);
+        return ToStudentListItem(profile, user.Email ?? string.Empty);
+    }
+
     public async Task ResetStudentPasswordAsync(ResetStudentPasswordCommand command, CancellationToken ct = default)
     {
         var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)

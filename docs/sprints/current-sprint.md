@@ -1929,3 +1929,27 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 - .NET: 1885 tests pass. Angular build clean. Playwright: pending (run from `src/LinguaCoach.Web`).
 
 **Not implemented:** 10R-F usage governance UX, 10U AI Usage redesign, 10V prompt playground, notification platform, enterprise auth/security, observability stack, billing, StudentProfile.CefrLevel migration, full placement engine, full mastery engine.
+
+---
+
+## Phase 10Students-F-C — Targeted Lifecycle Controls (2026-06-19)
+
+**Goal:** Add Pause, Unpause, and Reactivate admin lifecycle controls for students.
+
+**Delivered:**
+
+- `ReactivateStudentCommand`, `PauseStudentCommand`, `UnpauseStudentCommand` records (with `AdminUserId`)
+- `IAdminStudentQuery` extended with `ReactivateStudentAsync`, `PauseStudentAsync`, `UnpauseStudentAsync`
+- `AdminHandler` implements all three — each writes `AdminAuditLog` entry
+- Guard rules: Reactivate requires Archived; Pause rejects Archived/already Paused; Unpause requires Paused
+- Reactivate sets `user.EmailConfirmed = true`; Unpause/Reactivate both land on `OnboardingRequired`
+- `POST /api/admin/students/{id}/reactivate`, `/pause`, `/unpause` endpoints
+- Frontend service: `reactivateStudent`, `pauseStudent`, `unpauseStudent`
+- Detail component: context-sensitive buttons (Reactivate when Archived, Unpause when Paused, Pause otherwise)
+- Inline confirm modal with cancel/confirm/error/saving state; refreshes student on success
+- 9 new integration tests, 16 new frontend tests — all pass
+- No migration added (Paused enum value 10 already existed)
+
+**Not implemented:** audit log for Archive (pre-existing gap), window.confirm replacement for Archive/RemovePolicy.
+
+**Test counts:** .NET 680 integration + 1237 unit + 3 architecture = 1920 total. Angular 734.

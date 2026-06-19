@@ -332,4 +332,145 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    // ── Lifecycle controls ────────────────────────────────────────────────────
+
+    private async Task<(string adminToken, string profileId)> CreateArchivedStudentAsync()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"archived_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString()!;
+        var archiveResp = await _client.PostAsync($"/api/admin/students/{profileId}/archive", null);
+        Assert.Equal(HttpStatusCode.OK, archiveResp.StatusCode);
+        return (adminToken, profileId);
+    }
+
+    [Fact]
+    public async Task ReactivateStudent_ArchivedStudent_Returns200_AndRestoredLifecycle()
+    {
+        var (_, profileId) = await CreateArchivedStudentAsync();
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/reactivate", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("OnboardingRequired", body.GetProperty("lifecycleStage").GetString());
+    }
+
+    [Fact]
+    public async Task ReactivateStudent_NonArchivedStudent_Returns400()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"active_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/reactivate", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReactivateStudent_MissingStudent_Returns404()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.PostAsync($"/api/admin/students/{Guid.NewGuid()}/reactivate", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PauseStudent_ActiveStudent_Returns200_AndLifecyclePaused()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"pauseme_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/pause", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Paused", body.GetProperty("lifecycleStage").GetString());
+    }
+
+    [Fact]
+    public async Task PauseStudent_AlreadyPaused_Returns400()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"pausetwice_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+        await _client.PostAsync($"/api/admin/students/{profileId}/pause", null);
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/pause", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PauseStudent_ArchivedStudent_Returns400()
+    {
+        var (_, profileId) = await CreateArchivedStudentAsync();
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/pause", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UnpauseStudent_PausedStudent_Returns200_AndLifecycleRestored()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"unpauseme_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+        await _client.PostAsync($"/api/admin/students/{profileId}/pause", null);
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/unpause", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("OnboardingRequired", body.GetProperty("lifecycleStage").GetString());
+    }
+
+    [Fact]
+    public async Task UnpauseStudent_NonPausedStudent_Returns400()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var email = $"notpaused_{Guid.NewGuid():N}@test.com";
+        var createResp = await _client.PostAsJsonAsync("/api/admin/students",
+            new { email, temporaryPassword = "Student@1234" });
+        var profileId = (await createResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("studentProfileId").GetString();
+
+        var response = await _client.PostAsync($"/api/admin/students/{profileId}/unpause", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UnpauseStudent_MissingStudent_Returns404()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.PostAsync($"/api/admin/students/{Guid.NewGuid()}/unpause", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

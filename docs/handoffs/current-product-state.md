@@ -946,3 +946,7 @@ All `sp-admin-*` wrapper components now expose typed variant/size/density/layout
 **Tests:** 439 Angular unit tests pass. .NET 1885 pass. Angular build clean.
 
 **Known gaps (tracked):** `sp-admin-input-number`, `sp-admin-select-object`, dashboard mini-table, breadcrumb wrapper.
+
+## Phase 10Students-F-C — Targeted Lifecycle Controls, completed (2026-06-19)
+
+Admin can now Pause, Unpause, and Reactivate students from the student detail page. Each action has a guarded server-side transition, audit log entry, and inline confirm modal. Reactivate reverses archive (sets EmailConfirmed=true, stage=OnboardingRequired). Pause blocks active students. Unpause restores paused students to OnboardingRequired. No database migration required.

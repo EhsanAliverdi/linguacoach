@@ -146,6 +146,42 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
     }
 
+    [HttpPost("students/{studentId:guid}/reactivate")]
+    public async Task<IActionResult> ReactivateStudent(Guid studentId, CancellationToken ct)
+    {
+        var adminId = GetCurrentUserId();
+        try
+        {
+            return Ok(await _studentQuery.ReactivateStudentAsync(new ReactivateStudentCommand(studentId, adminId), ct));
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found")) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("students/{studentId:guid}/pause")]
+    public async Task<IActionResult> PauseStudent(Guid studentId, CancellationToken ct)
+    {
+        var adminId = GetCurrentUserId();
+        try
+        {
+            return Ok(await _studentQuery.PauseStudentAsync(new PauseStudentCommand(studentId, adminId), ct));
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found")) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("students/{studentId:guid}/unpause")]
+    public async Task<IActionResult> UnpauseStudent(Guid studentId, CancellationToken ct)
+    {
+        var adminId = GetCurrentUserId();
+        try
+        {
+            return Ok(await _studentQuery.UnpauseStudentAsync(new UnpauseStudentCommand(studentId, adminId), ct));
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found")) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpPost("students/{studentId:guid}/reset-password")]
     public async Task<IActionResult> ResetStudentPassword(Guid studentId, [FromBody] ResetStudentPasswordRequest request, CancellationToken ct)
     {

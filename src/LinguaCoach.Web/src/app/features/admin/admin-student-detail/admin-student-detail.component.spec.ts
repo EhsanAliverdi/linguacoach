@@ -673,3 +673,178 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     expect(html.textContent).toContain('Student preferences');
   });
 });
+
+// ── Lifecycle controls ────────────────────────────────────────────────────────
+
+describe('AdminStudentDetailComponent — lifecycle controls', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(lifecycleStage = 'CourseReady') {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'reactivateStudent', 'pauseStudent', 'unpauseStudent',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: lifecycleStage as any })));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('service has reactivateStudent method', () => {
+    setup('Archived');
+    expect(adminApi.reactivateStudent).toBeDefined();
+  });
+
+  it('service has pauseStudent method', () => {
+    setup();
+    expect(adminApi.pauseStudent).toBeDefined();
+  });
+
+  it('service has unpauseStudent method', () => {
+    setup('Paused');
+    expect(adminApi.unpauseStudent).toBeDefined();
+  });
+
+  it('shows Reactivate button when lifecycleStage is Archived', () => {
+    setup('Archived');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    expect(buttons.some(b => b.textContent?.trim() === 'Reactivate')).toBeTrue();
+  });
+
+  it('does not show Reactivate button when not Archived', () => {
+    setup('CourseReady');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    expect(buttons.some(b => b.textContent?.trim() === 'Reactivate')).toBeFalse();
+  });
+
+  it('shows Unpause button when lifecycleStage is Paused', () => {
+    setup('Paused');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    expect(buttons.some(b => b.textContent?.trim() === 'Unpause')).toBeTrue();
+  });
+
+  it('shows Pause button when not Archived and not Paused', () => {
+    setup('CourseReady');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    expect(buttons.some(b => b.textContent?.trim() === 'Pause')).toBeTrue();
+  });
+
+  it('does not show Pause button when Archived', () => {
+    setup('Archived');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    expect(buttons.some(b => b.textContent?.trim() === 'Pause')).toBeFalse();
+  });
+
+  it('shows confirm modal when Reactivate is clicked', () => {
+    setup('Archived');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    const btn = buttons.find(b => b.textContent?.trim() === 'Reactivate');
+    btn?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Reactivate student');
+  });
+
+  it('shows confirm modal when Pause is clicked', () => {
+    setup('CourseReady');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    const btn = buttons.find(b => b.textContent?.trim() === 'Pause');
+    btn?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Pause student');
+  });
+
+  it('calls reactivateStudent on confirm', () => {
+    setup('Archived');
+    adminApi.reactivateStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: 'OnboardingRequired' as any }) as any));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const s = comp.student()!;
+    comp.startLifecycleAction('reactivate', s);
+    fixture.detectChanges();
+    comp.confirmLifecycleAction();
+    expect(adminApi.reactivateStudent).toHaveBeenCalledWith('student-1');
+  });
+
+  it('calls pauseStudent on confirm', () => {
+    setup('CourseReady');
+    adminApi.pauseStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: 'Paused' as any }) as any));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const s = comp.student()!;
+    comp.startLifecycleAction('pause', s);
+    comp.confirmLifecycleAction();
+    expect(adminApi.pauseStudent).toHaveBeenCalledWith('student-1');
+  });
+
+  it('calls unpauseStudent on confirm', () => {
+    setup('Paused');
+    adminApi.unpauseStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: 'OnboardingRequired' as any }) as any));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const s = comp.student()!;
+    comp.startLifecycleAction('unpause', s);
+    comp.confirmLifecycleAction();
+    expect(adminApi.unpauseStudent).toHaveBeenCalledWith('student-1');
+  });
+
+  it('calls getStudent again after successful lifecycle action', () => {
+    setup('CourseReady');
+    adminApi.pauseStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: 'Paused' as any }) as any));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const callsBefore = adminApi.getStudent.calls.count();
+    comp.startLifecycleAction('pause', comp.student()!);
+    comp.confirmLifecycleAction();
+    expect(adminApi.getStudent.calls.count()).toBeGreaterThan(callsBefore);
+  });
+
+  it('shows error message on lifecycle action failure', () => {
+    setup('CourseReady');
+    adminApi.pauseStudent.and.returnValue(throwError(() => ({ error: { error: 'Cannot pause an archived student.' } })));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    comp.startLifecycleAction('pause', comp.student()!);
+    fixture.detectChanges();
+    comp.confirmLifecycleAction();
+    fixture.detectChanges();
+    expect(comp.lifecycleActionError()).toBe('Cannot pause an archived student.');
+  });
+});

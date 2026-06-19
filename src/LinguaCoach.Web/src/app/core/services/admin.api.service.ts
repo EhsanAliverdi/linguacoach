@@ -31,6 +31,15 @@ export class AdminApiService {
   archiveStudent(studentProfileId: string): Observable<StudentListItem> {
     return this.http.post<StudentListItem>(`${this.api}/students/${studentProfileId}/archive`, null);
   }
+  reactivateStudent(studentProfileId: string): Observable<StudentListItem> {
+    return this.http.post<StudentListItem>(`${this.api}/students/${studentProfileId}/reactivate`, {});
+  }
+  pauseStudent(studentProfileId: string): Observable<StudentListItem> {
+    return this.http.post<StudentListItem>(`${this.api}/students/${studentProfileId}/pause`, {});
+  }
+  unpauseStudent(studentProfileId: string): Observable<StudentListItem> {
+    return this.http.post<StudentListItem>(`${this.api}/students/${studentProfileId}/unpause`, {});
+  }
   getStudentLearningMemory(studentProfileId: string): Observable<AdminStudentLearningMemory> {
     return this.http.get<AdminStudentLearningMemory>(`${this.api}/students/${studentProfileId}/learning-memory`);
   }
