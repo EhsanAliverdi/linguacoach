@@ -214,8 +214,9 @@ describe('AdminAiUsageComponent', () => {
   it('default load calls getSummary without date params', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    // 'all' preset → no range → service called with undefined
-    expect(svc.getSummary).toHaveBeenCalledWith(undefined);
+    // 'all' preset → no range → service called with undefined range and empty column filter
+    const args = svc.getSummary.calls.mostRecent().args;
+    expect(args[0]).toBeUndefined();
   });
 
   it('default load calls getRecent without date params', () => {
@@ -229,11 +230,10 @@ describe('AdminAiUsageComponent', () => {
     fixture.detectChanges();
     svc.getSummary.calls.reset();
     fixture.componentInstance.onPeriodChange('7d');
-    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
-    expect(args).toBeTruthy();
-    expect(args!.from).toBeDefined();
-    // from should be a valid ISO string in the past
-    const from = new Date(args!.from!);
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range).toBeTruthy();
+    expect(range!.from).toBeDefined();
+    const from = new Date(range!.from!);
     expect(from.getTime()).toBeLessThan(Date.now());
   });
 
@@ -243,11 +243,10 @@ describe('AdminAiUsageComponent', () => {
     svc.getSummary.calls.reset();
     const before = Date.now();
     fixture.componentInstance.onPeriodChange('30d');
-    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
-    expect(args?.from).toBeDefined();
-    const fromMs = new Date(args!.from!).getTime();
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+    const fromMs = new Date(range!.from!).getTime();
     const expectedMs = before - 30 * 24 * 60 * 60 * 1000;
-    // Allow 5s tolerance for test execution time
     expect(Math.abs(fromMs - expectedMs)).toBeLessThan(5000);
   });
 
@@ -256,9 +255,9 @@ describe('AdminAiUsageComponent', () => {
     fixture.detectChanges();
     svc.getSummary.calls.reset();
     fixture.componentInstance.onPeriodChange('today');
-    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
-    expect(args?.from).toBeDefined();
-    const from = new Date(args!.from!);
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+    const from = new Date(range!.from!);
     const now = new Date();
     expect(from.getUTCFullYear()).toBe(now.getUTCFullYear());
     expect(from.getUTCMonth()).toBe(now.getUTCMonth());
@@ -272,9 +271,9 @@ describe('AdminAiUsageComponent', () => {
     fixture.detectChanges();
     svc.getSummary.calls.reset();
     fixture.componentInstance.onPeriodChange('month');
-    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
-    expect(args?.from).toBeDefined();
-    const from = new Date(args!.from!);
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+    const from = new Date(range!.from!);
     const now = new Date();
     expect(from.getUTCDate()).toBe(1);
     expect(from.getUTCMonth()).toBe(now.getUTCMonth());
@@ -621,5 +620,141 @@ describe('AdminAiUsageComponent', () => {
     const args = svc.getRecent.calls.mostRecent().args;
     expect((args[3] as { provider?: string; studentId?: string })?.provider).toBe('openai');
     expect((args[3] as { studentId?: string })?.studentId).toBe('uuid-student-1');
+  });
+
+  // ── summary filter alignment tests (10U-7) ─────────────────────────────────
+
+  it('onRecentProviderChange also reloads getSummary with provider filter', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onRecentProviderChange('openai');
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    const summaryFilters = svc.getSummary.calls.mostRecent().args[1] as { provider?: string } | undefined;
+    expect(summaryFilters?.provider).toBe('openai');
+  });
+
+  it('onRecentStatusChange also reloads getSummary with status filter', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onRecentStatusChange('failed');
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    const summaryFilters = svc.getSummary.calls.mostRecent().args[1] as { status?: string } | undefined;
+    expect(summaryFilters?.status).toBe('failed');
+  });
+
+  it('onRecentStudentChange also reloads getSummary with studentId filter', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onRecentStudentChange('uuid-student-x');
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    const summaryFilters = svc.getSummary.calls.mostRecent().args[1] as { studentId?: string } | undefined;
+    expect(summaryFilters?.studentId).toBe('uuid-student-x');
+  });
+
+  it('onRecentModelChange also reloads getSummary with model filter', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onRecentModelChange('gpt-4o-mini');
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    const summaryFilters = svc.getSummary.calls.mostRecent().args[1] as { model?: string } | undefined;
+    expect(summaryFilters?.model).toBe('gpt-4o-mini');
+  });
+
+  it('onRecentFeatureChange also reloads getSummary with featureKey filter', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onRecentFeatureChange('lesson_generation');
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    const summaryFilters = svc.getSummary.calls.mostRecent().args[1] as { featureKey?: string } | undefined;
+    expect(summaryFilters?.featureKey).toBe('lesson_generation');
+  });
+
+  it('clearRecentFilters reloads getSummary with no column filters', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentProviderFilter.set('openai');
+    c.recentStatusFilter.set('failed');
+    svc.getSummary.calls.reset();
+
+    c.clearRecentFilters();
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    const summaryFilters = svc.getSummary.calls.mostRecent().args[1] as { provider?: string; status?: string } | undefined;
+    expect(summaryFilters?.provider).toBeUndefined();
+    expect(summaryFilters?.status).toBeUndefined();
+  });
+
+  it('clearRecentFilters does not change the date period', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.onPeriodChange('7d');
+    svc.getSummary.calls.reset();
+
+    c.clearRecentFilters();
+
+    // period preset unchanged — range arg should still have a from date
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+  });
+
+  it('period change reloads getSummary and getRecent together', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    svc.getRecent.calls.reset();
+
+    fixture.componentInstance.onPeriodChange('30d');
+
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+  });
+
+  it('summary cards still render after filter alignment change', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ totalCalls: 5, totalInputTokens: 999 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card');
+    expect(cards.length).toBe(8);
+    expect(fixture.componentInstance.summary()!.totalInputTokens).toBe(999);
+  });
+
+  it('getSummary receives both date range and column filters when both active', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.onPeriodChange('7d');
+    svc.getSummary.calls.reset();
+
+    c.recentProviderFilter.set('anthropic');
+    c.onRecentStatusChange('success');
+
+    const call = svc.getSummary.calls.mostRecent();
+    const range   = call.args[0] as { from?: string } | undefined;
+    const filters = call.args[1] as { provider?: string; status?: string } | undefined;
+    expect(range?.from).toBeDefined();
+    expect(filters?.status).toBe('success');
+    expect(filters?.provider).toBe('anthropic');
   });
 });

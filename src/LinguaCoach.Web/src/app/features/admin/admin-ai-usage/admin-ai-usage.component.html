@@ -19,6 +19,9 @@
 } @else if (summaryError()) {
   <sp-admin-error-state title="Usage summary unavailable" [message]="summaryError()" />
 } @else if (summary()) {
+  @if (hasActiveRecentFilters()) {
+    <p class="sp-au-filter-note">Summary totals reflect active filters.</p>
+  }
   <div class="sp-au-stat-grid">
     <sp-admin-stat-card label="Total calls"     [value]="summary()!.totalCalls"                                   tone="indigo" />
     <sp-admin-stat-card label="Success rate"    [value]="summary()!.successRate + '%'"                            tone="green"  />

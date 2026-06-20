@@ -65,6 +65,7 @@ import {
     .sp-au-model  { margin-top: 2px; }
     .sp-au-badges { display: flex; flex-wrap: wrap; gap: 3px; }
     .sp-au-fail-reason { font-size: 11px; color: var(--sp-admin-danger, #dc2626); margin-top: 2px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sp-au-filter-note { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); margin: 0 0 8px; }
   `],
 })
 export class AdminAiUsageComponent implements OnInit {
@@ -161,25 +162,30 @@ export class AdminAiUsageComponent implements OnInit {
 
   load(): void {
     const range = this.buildRange(this.periodPreset());
+    const filters = this.buildColumnFilters();
     this.loadingSummary.set(true);
     this.summaryError.set('');
 
-    this.svc.getSummary(range).subscribe({
+    this.svc.getSummary(range, filters).subscribe({
       next: s => { this.summary.set(s); this.loadingSummary.set(false); },
       error: err => { this.summaryError.set(err.error?.error ?? 'Could not load summary.'); this.loadingSummary.set(false); },
     });
     this.loadRecent();
   }
 
-  loadRecent(): void {
-    const range = this.buildRange(this.periodPreset());
-    const filters: AiUsageRecentCallFilter = {
+  private buildColumnFilters(): AiUsageRecentCallFilter {
+    return {
       provider:   this.recentProviderFilter()  || undefined,
       model:      this.recentModelFilter()     || undefined,
       featureKey: this.recentFeatureFilter()   || undefined,
       status:     this.recentStatusFilter()    || undefined,
       studentId:  this.recentStudentFilter()   || undefined,
     };
+  }
+
+  loadRecent(): void {
+    const range   = this.buildRange(this.periodPreset());
+    const filters = this.buildColumnFilters();
     this.loadingRecent.set(true);
     this.recentError.set('');
 
@@ -208,31 +214,31 @@ export class AdminAiUsageComponent implements OnInit {
   onRecentProviderChange(value: string): void {
     this.recentProviderFilter.set(value);
     this.recentPage.set(1);
-    this.loadRecent();
+    this.load();
   }
 
   onRecentModelChange(value: string): void {
     this.recentModelFilter.set(value);
     this.recentPage.set(1);
-    this.loadRecent();
+    this.load();
   }
 
   onRecentFeatureChange(value: string): void {
     this.recentFeatureFilter.set(value);
     this.recentPage.set(1);
-    this.loadRecent();
+    this.load();
   }
 
   onRecentStatusChange(value: string): void {
     this.recentStatusFilter.set(value);
     this.recentPage.set(1);
-    this.loadRecent();
+    this.load();
   }
 
   onRecentStudentChange(value: string): void {
     this.recentStudentFilter.set(value);
     this.recentPage.set(1);
-    this.loadRecent();
+    this.load();
   }
 
   clearRecentFilters(): void {
@@ -247,7 +253,7 @@ export class AdminAiUsageComponent implements OnInit {
     this.recentStatusFilterValue = '';
     this.recentStudentFilterValue = '';
     this.recentPage.set(1);
-    this.loadRecent();
+    this.load();
   }
 
   hasActiveRecentFilters = computed(() =>

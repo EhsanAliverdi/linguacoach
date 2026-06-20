@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-6)
+lastUpdated: 2026-06-20 (10U-7)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,38 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10U-7 — AI Usage Summary Filter Alignment** - complete (2026-06-20)
+
+Goal: make summary cards and breakdowns respect the same column filters as recent calls (provider, model, featureKey, status, studentId, date range).
+
+### Delivered
+
+- `IAdminAiUsageHandler.GetSummaryAsync` accepts `AiUsageRecentFilter? columnFilter` (new second param).
+- `ApplyRecentFilter` renamed `ApplyColumnFilter` — shared by both `GetSummaryAsync` and `GetRecentAsync`.
+- `/summary` endpoint: added `provider`, `model`, `featureKey`, `status`, `studentId` query params; same validation (400 on invalid status, 400 on non-GUID studentId) as `/recent`.
+- `AiUsageService.getSummary(range?, filters?)` — forwards column filters to backend.
+- `buildColumnFilters()` private helper on component — reads filter signals once, used by both `load()` and `loadRecent()`.
+- All filter change handlers now call `load()` — reloads summary + recent together on every column filter change.
+- `clearRecentFilters()` calls `load()` — keeps date period unchanged.
+- Template: helper text "Summary totals reflect active filters." shown when any column filter is active.
+- Backend: +14 integration tests (`AiUsageSummaryFilterTests`). 759/759 integration.
+- Frontend: +10 new component tests; 3 existing updated for new `getSummary` 2-arg signature. 841/841 pass.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2010/2010)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (841/841)
+
+See: `docs/reviews/2026-06-20-phase-10u-7-ai-usage-summary-filter-alignment-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-6 — AI Usage Student Filter** - complete (2026-06-20)
 

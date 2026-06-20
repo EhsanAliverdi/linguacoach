@@ -31,7 +31,7 @@ public sealed record AiUsageRecentFilter(
 
 public interface IAdminAiUsageHandler
 {
-    Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? filter = null, CancellationToken ct = default);
+    Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, CancellationToken ct = default);
     Task<AiUsagePagedResult> GetRecentAsync(int page = 1, int pageSize = 25, AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? recentFilter = null, CancellationToken ct = default);
 }
 

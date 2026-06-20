@@ -10,10 +10,11 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
 
     public AiUsageHandler(LinguaCoachDbContext db) => _db = db;
 
-    public async Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? filter = null, CancellationToken ct = default)
+    public async Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, CancellationToken ct = default)
     {
         var query = _db.AiUsageLogs.AsNoTracking();
-        query = ApplyDateFilter(query, filter);
+        query = ApplyDateFilter(query, dateFilter);
+        query = ApplyColumnFilter(query, columnFilter);
         var logs = await query.ToListAsync(ct);
 
         var totalCalls = logs.Count;
@@ -66,7 +67,7 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
 
         var query = _db.AiUsageLogs.AsNoTracking();
         query = ApplyDateFilter(query, dateFilter);
-        query = ApplyRecentFilter(query, recentFilter);
+        query = ApplyColumnFilter(query, recentFilter);
 
         var totalCount = await query.CountAsync(ct);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
@@ -111,7 +112,8 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
     }
 
     // status: "success" = WasSuccessful && !IsFallback, "failed" = !WasSuccessful, "fallback" = IsFallback.
-    private static IQueryable<Domain.Entities.AiUsageLog> ApplyRecentFilter(
+    // Shared by GetSummaryAsync and GetRecentAsync — same filter semantics for both.
+    private static IQueryable<Domain.Entities.AiUsageLog> ApplyColumnFilter(
         IQueryable<Domain.Entities.AiUsageLog> query,
         AiUsageRecentFilter? filter)
     {

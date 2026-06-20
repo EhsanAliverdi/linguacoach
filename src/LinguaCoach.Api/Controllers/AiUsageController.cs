@@ -18,11 +18,35 @@ public sealed class AiUsageController : ControllerBase
     public async Task<IActionResult> GetSummary(
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
+        [FromQuery] string? provider = null,
+        [FromQuery] string? model = null,
+        [FromQuery] string? featureKey = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? studentId = null,
         CancellationToken ct = default)
     {
-        var filter = BuildFilter(from, to);
-        if (filter is null) return BadRequest(new { error = "from must be before to." });
-        var s = await _handler.GetSummaryAsync(filter, ct);
+        var dateFilter = BuildDateFilter(from, to);
+        if (dateFilter is null) return BadRequest(new { error = "from must be before to." });
+
+        Guid? parsedStudentId = null;
+        if (!string.IsNullOrWhiteSpace(studentId))
+        {
+            if (!Guid.TryParse(studentId, out var sid))
+                return BadRequest(new { error = $"Invalid studentId '{studentId}'. Must be a valid GUID." });
+            parsedStudentId = sid;
+        }
+
+        var columnFilter = new AiUsageRecentFilter(
+            Provider:   string.IsNullOrWhiteSpace(provider)   ? null : provider.Trim(),
+            Model:      string.IsNullOrWhiteSpace(model)      ? null : model.Trim(),
+            FeatureKey: string.IsNullOrWhiteSpace(featureKey) ? null : featureKey.Trim(),
+            Status:     string.IsNullOrWhiteSpace(status)     ? null : status.Trim(),
+            StudentId:  parsedStudentId);
+
+        if (columnFilter.HasInvalidStatus)
+            return BadRequest(new { error = $"Invalid status '{status}'. Valid values: success, failed, fallback." });
+
+        var s = await _handler.GetSummaryAsync(dateFilter, columnFilter, ct);
         return Ok(new
         {
             totalCalls = s.TotalCalls,
@@ -67,7 +91,7 @@ public sealed class AiUsageController : ControllerBase
         [FromQuery] string? studentId = null,
         CancellationToken ct = default)
     {
-        var dateFilter = BuildFilter(from, to);
+        var dateFilter = BuildDateFilter(from, to);
         if (dateFilter is null) return BadRequest(new { error = "from must be before to." });
 
         Guid? parsedStudentId = null;
@@ -117,7 +141,7 @@ public sealed class AiUsageController : ControllerBase
 
     // Returns null when both dates supplied and from >= to (invalid range → 400).
     // Converts unspecified DateTime Kind to UTC.
-    private static AiUsageDateFilter? BuildFilter(DateTime? from, DateTime? to)
+    private static AiUsageDateFilter? BuildDateFilter(DateTime? from, DateTime? to)
     {
         var utcFrom = from.HasValue ? DateTime.SpecifyKind(from.Value, DateTimeKind.Utc) : (DateTime?)null;
         var utcTo   = to.HasValue   ? DateTime.SpecifyKind(to.Value,   DateTimeKind.Utc) : (DateTime?)null;
