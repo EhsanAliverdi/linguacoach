@@ -49,13 +49,29 @@ async function mockAdmin(page: Page, resetHandler?: (route: import('@playwright/
     });
   });
   await page.route('**/api/admin/students*', async route => {
-    if (route.request().method() !== 'GET') {
+    const method = route.request().method();
+    const url = route.request().url();
+    if (method !== 'GET') {
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ studentProfileId: 'x', userId: 'y' }) });
       return;
     }
+    // Student detail endpoint: /api/admin/students/{id} (not the list)
+    if (/\/api\/admin\/students\/[^\/]+$/.test(url) && !url.includes('?')) {
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ ...STUDENT, preferredName: null, supportLanguageCode: null, supportLanguageName: null, difficultyPreference: null, translationHelpPreference: null, focusAreas: null, customFocusArea: null, learningGoals: null, customLearningGoal: null, learningPreferencesUpdatedAt: null, onboardingProgress: null }),
+      });
+      return;
+    }
+    // Audit history endpoint
+    if (url.includes('/audit-history')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+      return;
+    }
+    // List endpoint — return PagedResponse shape
     await route.fulfill({
       status: 200, contentType: 'application/json',
-      body: JSON.stringify([STUDENT]),
+      body: JSON.stringify({ items: [STUDENT], totalCount: 1, page: 1, totalPages: 1 }),
     });
   });
   await page.route('**/api/admin/**', async route => {
