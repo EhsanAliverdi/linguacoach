@@ -3,6 +3,17 @@
   subtitle="Token usage, cost, provider performance, and fallback rates." />
 
 <sp-admin-page-body>
+<sp-admin-filter-bar density="compact">
+  <sp-admin-select
+    filters
+    size="sm"
+    placeholder="All time"
+    [options]="periodOptions"
+    [(ngModel)]="periodPresetValue"
+    (ngModelChange)="onPeriodChange($event)"
+    aria-label="Filter by time period" />
+</sp-admin-filter-bar>
+
 @if (loadingSummary()) {
   <sp-admin-loading-state message="Loading usage summary" />
 } @else if (summaryError()) {

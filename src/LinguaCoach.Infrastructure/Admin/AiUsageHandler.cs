@@ -10,9 +10,11 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
 
     public AiUsageHandler(LinguaCoachDbContext db) => _db = db;
 
-    public async Task<AiUsageSummaryDto> GetSummaryAsync(CancellationToken ct = default)
+    public async Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? filter = null, CancellationToken ct = default)
     {
-        var logs = await _db.AiUsageLogs.AsNoTracking().ToListAsync(ct);
+        var query = _db.AiUsageLogs.AsNoTracking();
+        query = ApplyDateFilter(query, filter);
+        var logs = await query.ToListAsync(ct);
 
         var totalCalls = logs.Count;
         var successful = logs.Count(l => l.WasSuccessful);
@@ -57,9 +59,11 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
     }
 
     public async Task<IReadOnlyList<AiUsageRecentItem>> GetRecentAsync(
-        int limit = 100, CancellationToken ct = default)
+        int limit = 100, AiUsageDateFilter? filter = null, CancellationToken ct = default)
     {
-        var items = await _db.AiUsageLogs.AsNoTracking()
+        var query = _db.AiUsageLogs.AsNoTracking();
+        query = ApplyDateFilter(query, filter);
+        var items = await query
             .OrderByDescending(l => l.CreatedAt)
             .Take(Math.Clamp(limit, 1, 500))
             .ToListAsync(ct);
@@ -79,5 +83,18 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             CostUsd: l.CostUsd,
             DurationMs: l.DurationMs,
             CorrelationId: l.CorrelationId)).ToList();
+    }
+
+    // From is inclusive (>=), To is exclusive (<). UTC assumed for both.
+    private static IQueryable<Domain.Entities.AiUsageLog> ApplyDateFilter(
+        IQueryable<Domain.Entities.AiUsageLog> query,
+        AiUsageDateFilter? filter)
+    {
+        if (filter is null) return query;
+        if (filter.From.HasValue)
+            query = query.Where(l => l.CreatedAt >= filter.From.Value);
+        if (filter.To.HasValue)
+            query = query.Where(l => l.CreatedAt < filter.To.Value);
+        return query;
     }
 }

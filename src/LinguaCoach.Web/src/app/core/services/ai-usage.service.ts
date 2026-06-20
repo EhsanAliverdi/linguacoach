@@ -38,16 +38,26 @@ export interface AiUsageRecentItem {
   correlationId: string | null;
 }
 
+export interface AiUsageDateRange {
+  from?: string; // ISO-8601 UTC
+  to?: string;   // ISO-8601 UTC
+}
+
 @Injectable({ providedIn: 'root' })
 export class AiUsageService {
   constructor(private http: HttpClient) {}
 
-  getSummary(): Observable<AiUsageSummary> {
-    return this.http.get<AiUsageSummary>('/api/admin/ai-usage/summary');
+  getSummary(range?: AiUsageDateRange): Observable<AiUsageSummary> {
+    let params = new HttpParams();
+    if (range?.from) params = params.set('from', range.from);
+    if (range?.to)   params = params.set('to',   range.to);
+    return this.http.get<AiUsageSummary>('/api/admin/ai-usage/summary', { params });
   }
 
-  getRecent(limit = 100): Observable<AiUsageRecentResponse> {
-    const params = new HttpParams().set('limit', limit.toString());
+  getRecent(limit = 100, range?: AiUsageDateRange): Observable<AiUsageRecentResponse> {
+    let params = new HttpParams().set('limit', limit.toString());
+    if (range?.from) params = params.set('from', range.from);
+    if (range?.to)   params = params.set('to',   range.to);
     return this.http.get<AiUsageRecentResponse>('/api/admin/ai-usage/recent', { params });
   }
 }

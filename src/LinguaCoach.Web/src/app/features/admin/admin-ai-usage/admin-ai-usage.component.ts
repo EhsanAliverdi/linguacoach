@@ -1,7 +1,9 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
+
+export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
+import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange } from '../../../core/services/ai-usage.service';
 import {
   SpAdminBadgeComponent,
   SpAdminCardComponent,
@@ -71,6 +73,17 @@ export class AdminAiUsageComponent implements OnInit {
   recentPage = signal(1);
   readonly recentPageSize = 25;
 
+  periodPreset = signal<PeriodPreset>('all');
+  periodPresetValue: PeriodPreset = 'all';
+
+  readonly periodOptions = [
+    { value: 'all',   label: 'All time' },
+    { value: 'today', label: 'Today' },
+    { value: '7d',    label: 'Last 7 days' },
+    { value: '30d',   label: 'Last 30 days' },
+    { value: 'month', label: 'This month' },
+  ];
+
   providerFilter = signal('');
   statusFilter = signal('');
   providerFilterValue = '';
@@ -112,14 +125,30 @@ export class AdminAiUsageComponent implements OnInit {
   constructor(private svc: AiUsageService) {}
 
   ngOnInit(): void {
-    this.svc.getSummary().subscribe({
+    this.load();
+  }
+
+  load(): void {
+    const range = this.buildRange(this.periodPreset());
+    this.loadingSummary.set(true);
+    this.loadingRecent.set(true);
+    this.summaryError.set('');
+    this.recentError.set('');
+
+    this.svc.getSummary(range).subscribe({
       next: s => { this.summary.set(s); this.loadingSummary.set(false); },
       error: err => { this.summaryError.set(err.error?.error ?? 'Could not load summary.'); this.loadingSummary.set(false); },
     });
-    this.svc.getRecent(100).subscribe({
+    this.svc.getRecent(100, range).subscribe({
       next: r => { this.recentItems.set(r.items); this.recentPage.set(1); this.loadingRecent.set(false); },
       error: err => { this.recentError.set(err.error?.error ?? 'Could not load recent calls.'); this.loadingRecent.set(false); },
     });
+  }
+
+  onPeriodChange(value: PeriodPreset): void {
+    this.periodPreset.set(value);
+    this.recentPage.set(1);
+    this.load();
   }
 
   onProviderFilterChange(value: string): void {
@@ -130,6 +159,30 @@ export class AdminAiUsageComponent implements OnInit {
   onStatusFilterChange(value: string): void {
     this.statusFilter.set(value);
     this.recentPage.set(1);
+  }
+
+  buildRange(preset: PeriodPreset): AiUsageDateRange | undefined {
+    const now = new Date();
+    switch (preset) {
+      case 'today': {
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        return { from: start.toISOString() };
+      }
+      case '7d': {
+        const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return { from: start.toISOString() };
+      }
+      case '30d': {
+        const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return { from: start.toISOString() };
+      }
+      case 'month': {
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        return { from: start.toISOString() };
+      }
+      default:
+        return undefined;
+    }
   }
 
   formatDateTime(iso: string): string {

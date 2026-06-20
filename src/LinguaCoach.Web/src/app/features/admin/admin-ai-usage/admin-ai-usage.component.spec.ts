@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { AdminAiUsageComponent } from './admin-ai-usage.component';
+import { AdminAiUsageComponent, PeriodPreset } from './admin-ai-usage.component';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
 
 function makeSummary(overrides: Partial<AiUsageSummary> = {}): AiUsageSummary {
@@ -205,5 +205,113 @@ describe('AdminAiUsageComponent', () => {
     expect(opts.length).toBe(2);
     expect(opts[0].value).toBe('anthropic');
     expect(opts[1].value).toBe('openai');
+  });
+
+  // ── period preset tests ─────────────────────────────────────────────────────
+
+  it('default load calls getSummary without date params', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    // 'all' preset → no range → service called with undefined
+    expect(svc.getSummary).toHaveBeenCalledWith(undefined);
+  });
+
+  it('default load calls getRecent without date params', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(svc.getRecent).toHaveBeenCalledWith(100, undefined);
+  });
+
+  it('onPeriodChange to last7days passes a from date to getSummary', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    fixture.componentInstance.onPeriodChange('7d');
+    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(args).toBeTruthy();
+    expect(args!.from).toBeDefined();
+    // from should be a valid ISO string in the past
+    const from = new Date(args!.from!);
+    expect(from.getTime()).toBeLessThan(Date.now());
+  });
+
+  it('onPeriodChange to last30days passes a from date approximately 30 days ago', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    const before = Date.now();
+    fixture.componentInstance.onPeriodChange('30d');
+    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(args?.from).toBeDefined();
+    const fromMs = new Date(args!.from!).getTime();
+    const expectedMs = before - 30 * 24 * 60 * 60 * 1000;
+    // Allow 5s tolerance for test execution time
+    expect(Math.abs(fromMs - expectedMs)).toBeLessThan(5000);
+  });
+
+  it('onPeriodChange to today passes UTC start of today', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    fixture.componentInstance.onPeriodChange('today');
+    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(args?.from).toBeDefined();
+    const from = new Date(args!.from!);
+    const now = new Date();
+    expect(from.getUTCFullYear()).toBe(now.getUTCFullYear());
+    expect(from.getUTCMonth()).toBe(now.getUTCMonth());
+    expect(from.getUTCDate()).toBe(now.getUTCDate());
+    expect(from.getUTCHours()).toBe(0);
+    expect(from.getUTCMinutes()).toBe(0);
+  });
+
+  it('onPeriodChange to month passes UTC start of current month', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    fixture.componentInstance.onPeriodChange('month');
+    const args = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(args?.from).toBeDefined();
+    const from = new Date(args!.from!);
+    const now = new Date();
+    expect(from.getUTCDate()).toBe(1);
+    expect(from.getUTCMonth()).toBe(now.getUTCMonth());
+  });
+
+  it('onPeriodChange resets recentPage to 1', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentPage.set(3);
+    c.onPeriodChange('7d');
+    expect(c.recentPage()).toBe(1);
+  });
+
+  it('buildRange returns undefined for all preset', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    expect(fixture.componentInstance.buildRange('all')).toBeUndefined();
+  });
+
+  it('buildRange returns object with from for 7d preset', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const range = fixture.componentInstance.buildRange('7d');
+    expect(range).toBeDefined();
+    expect(range!.from).toBeDefined();
+    expect(range!.to).toBeUndefined();
+  });
+
+  it('renders period preset select in filter bar', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-filter-bar')).toBeTruthy();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-select').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('summary cards reflect filtered response data', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ totalCalls: 3, totalCostUsd: 0.009 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.summary()!.totalCalls).toBe(3);
+    expect(fixture.componentInstance.summary()!.totalCostUsd).toBe(0.009);
   });
 });

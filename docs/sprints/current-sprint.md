@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-1/10U-2)
+lastUpdated: 2026-06-20 (10U-3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,37 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10U-3 — AI Usage Date Filtering** - complete (2026-06-20)
+
+Goal: add `from`/`to` UTC date-range filtering to the AI usage summary and recent endpoints; add period preset select (All time, Today, Last 7 days, Last 30 days, This month) to the Angular admin usage page.
+
+### Delivered
+
+- `AiUsageDateFilter` record in Application layer: `From` (inclusive `>=`), `To` (exclusive `<`), `IsInverted` guard.
+- `IAdminAiUsageHandler` interface: both methods accept optional `AiUsageDateFilter`.
+- `AiUsageHandler`: `ApplyDateFilter` helper wires filter into EF Core LINQ query.
+- `AiUsageController`: `from`/`to` query params on both `/summary` and `/recent`; returns 400 when range is invalid (From >= To).
+- `AiUsageDateRange` interface in Angular service; both `getSummary` and `getRecent` forward range as HTTP query params.
+- `PeriodPreset` type exported from component; `periodOptions`, `buildRange()`, `onPeriodChange()`, `load()` added to component.
+- Period preset `sp-admin-select` in `sp-admin-filter-bar` above stat grid.
+- Backend: +12 integration tests (`AiUsageDateFilterTests`). 1967/1967 pass.
+- Frontend: +11 component tests (period preset coverage). 805/805 pass. Both builds clean.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1967/1967)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (805/805)
+
+See: `docs/reviews/2026-06-20-phase-10u-3-ai-usage-date-filtering-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-1/10U-2 — AI Pricing Config Seed + Usage Token Totals** - complete (2026-06-20)
 

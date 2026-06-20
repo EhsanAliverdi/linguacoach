@@ -15,9 +15,14 @@ public sealed class AiUsageController : ControllerBase
     public AiUsageController(IAdminAiUsageHandler handler) => _handler = handler;
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetSummary(CancellationToken ct)
+    public async Task<IActionResult> GetSummary(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        CancellationToken ct = default)
     {
-        var s = await _handler.GetSummaryAsync(ct);
+        var filter = BuildFilter(from, to);
+        if (filter is null) return BadRequest(new { error = "from must be before to." });
+        var s = await _handler.GetSummaryAsync(filter, ct);
         return Ok(new
         {
             totalCalls = s.TotalCalls,
@@ -50,9 +55,15 @@ public sealed class AiUsageController : ControllerBase
     }
 
     [HttpGet("recent")]
-    public async Task<IActionResult> GetRecent([FromQuery] int limit = 100, CancellationToken ct = default)
+    public async Task<IActionResult> GetRecent(
+        [FromQuery] int limit = 100,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        CancellationToken ct = default)
     {
-        var items = await _handler.GetRecentAsync(limit, ct);
+        var filter = BuildFilter(from, to);
+        if (filter is null) return BadRequest(new { error = "from must be before to." });
+        var items = await _handler.GetRecentAsync(limit, filter, ct);
         return Ok(new
         {
             total = items.Count,
@@ -74,5 +85,15 @@ public sealed class AiUsageController : ControllerBase
                 correlationId = i.CorrelationId,
             }),
         });
+    }
+
+    // Returns null when both dates supplied and from >= to (invalid range → 400).
+    // Converts unspecified DateTime Kind to UTC.
+    private static AiUsageDateFilter? BuildFilter(DateTime? from, DateTime? to)
+    {
+        var utcFrom = from.HasValue ? DateTime.SpecifyKind(from.Value, DateTimeKind.Utc) : (DateTime?)null;
+        var utcTo   = to.HasValue   ? DateTime.SpecifyKind(to.Value,   DateTimeKind.Utc) : (DateTime?)null;
+        var filter  = new AiUsageDateFilter(utcFrom, utcTo);
+        return filter.IsInverted ? null : filter;
     }
 }

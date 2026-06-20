@@ -2,10 +2,22 @@ namespace LinguaCoach.Application.Admin;
 
 public sealed record GetAiUsageSummaryQuery;
 
+/// <summary>
+/// Inclusive start / exclusive end date filter for AI usage queries.
+/// Both nullable — omit either to leave that boundary open.
+/// </summary>
+public sealed record AiUsageDateFilter(DateTime? From, DateTime? To)
+{
+    public static readonly AiUsageDateFilter None = new(null, null);
+
+    /// <summary>Returns true when From >= To (both non-null), which is always an empty result set.</summary>
+    public bool IsInverted => From.HasValue && To.HasValue && From.Value >= To.Value;
+}
+
 public interface IAdminAiUsageHandler
 {
-    Task<AiUsageSummaryDto> GetSummaryAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<AiUsageRecentItem>> GetRecentAsync(int limit = 100, CancellationToken ct = default);
+    Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? filter = null, CancellationToken ct = default);
+    Task<IReadOnlyList<AiUsageRecentItem>> GetRecentAsync(int limit = 100, AiUsageDateFilter? filter = null, CancellationToken ct = default);
 }
 
 public sealed record AiUsageSummaryDto(
