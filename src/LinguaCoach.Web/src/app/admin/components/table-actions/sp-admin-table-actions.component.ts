@@ -66,6 +66,7 @@ export interface SpAdminTableAction {
           #menuRef
           role="menu"
           class="sp-adm-actions-menu"
+          style="position:fixed;display:flex;flex-direction:column;"
           [style.top.px]="menuTop"
           [style.left.px]="menuLeft"
           (click)="isOpen = false"
