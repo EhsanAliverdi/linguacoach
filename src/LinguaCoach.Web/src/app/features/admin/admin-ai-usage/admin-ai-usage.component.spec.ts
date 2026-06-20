@@ -111,57 +111,51 @@ describe('AdminAiUsageComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-filter-bar')).toBeTruthy();
   });
 
-  it('filters recent calls by provider', () => {
-    svc.getRecent.and.returnValue(of({ items: [
-      makeRecentItem({ id: '1', provider: 'anthropic' }),
-      makeRecentItem({ id: '2', provider: 'openai' }),
-    ], totalCount: 2, page: 1, pageSize: 25, totalPages: 1 }));
+  it('onRecentProviderChange triggers getRecent with provider filter', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     const c = fixture.componentInstance;
     fixture.detectChanges();
+    svc.getRecent.calls.reset();
 
-    c.onProviderFilterChange('openai');
-    fixture.detectChanges();
-    expect(c.filteredRecentItems().length).toBe(1);
-    expect(c.filteredRecentItems()[0].provider).toBe('openai');
+    c.onRecentProviderChange('openai');
+
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { provider?: string })?.provider).toBe('openai');
   });
 
-  it('filters recent calls by status: failed', () => {
-    svc.getRecent.and.returnValue(of({ items: [
-      makeRecentItem({ id: '1', wasSuccessful: true }),
-      makeRecentItem({ id: '2', wasSuccessful: false }),
-    ], totalCount: 2, page: 1, pageSize: 25, totalPages: 1 }));
+  it('onRecentStatusChange triggers getRecent with status filter', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     const c = fixture.componentInstance;
     fixture.detectChanges();
+    svc.getRecent.calls.reset();
 
-    c.onStatusFilterChange('failed');
-    expect(c.filteredRecentItems().length).toBe(1);
-    expect(c.filteredRecentItems()[0].wasSuccessful).toBeFalse();
+    c.onRecentStatusChange('failed');
+
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { status?: string })?.status).toBe('failed');
   });
 
-  it('filters recent calls by status: fallback', () => {
-    svc.getRecent.and.returnValue(of({ items: [
-      makeRecentItem({ id: '1', isFallback: false }),
-      makeRecentItem({ id: '2', isFallback: true }),
-    ], totalCount: 2, page: 1, pageSize: 25, totalPages: 1 }));
+  it('onRecentStatusChange to fallback triggers getRecent with fallback status', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     const c = fixture.componentInstance;
     fixture.detectChanges();
+    svc.getRecent.calls.reset();
 
-    c.onStatusFilterChange('fallback');
-    expect(c.filteredRecentItems().length).toBe(1);
-    expect(c.filteredRecentItems()[0].isFallback).toBeTrue();
+    c.onRecentStatusChange('fallback');
+
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { status?: string })?.status).toBe('fallback');
   });
 
   it('resets page to 1 when provider filter changes', () => {
-    svc.getRecent.and.returnValue(of({ items: [makeRecentItem()], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     const c = fixture.componentInstance;
     fixture.detectChanges();
 
     c.recentPage.set(2);
-    c.onProviderFilterChange('anthropic');
+    c.onRecentProviderChange('anthropic');
     expect(c.recentPage()).toBe(1);
   });
 
@@ -219,7 +213,7 @@ describe('AdminAiUsageComponent', () => {
   it('default load calls getRecent without date params', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    expect(svc.getRecent).toHaveBeenCalledWith(1, 25, undefined);
+    expect(svc.getRecent).toHaveBeenCalledWith(1, 25, undefined, jasmine.anything());
   });
 
   it('onPeriodChange to last7days passes a from date to getSummary', () => {
@@ -320,7 +314,7 @@ describe('AdminAiUsageComponent', () => {
   it('getRecent is called with page=1 and pageSize=25 on init', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    expect(svc.getRecent).toHaveBeenCalledWith(1, 25, undefined);
+    expect(svc.getRecent).toHaveBeenCalledWith(1, 25, undefined, jasmine.anything());
   });
 
   it('recentTotalPages signal is set from server response', () => {
@@ -357,7 +351,7 @@ describe('AdminAiUsageComponent', () => {
     svc.getRecent.calls.reset();
     fixture.componentInstance.onRecentPageChange(3);
     expect(fixture.componentInstance.recentPage()).toBe(3);
-    expect(svc.getRecent).toHaveBeenCalledWith(3, 25, undefined);
+    expect(svc.getRecent).toHaveBeenCalledWith(3, 25, undefined, jasmine.anything());
   });
 
   it('onPeriodChange resets page to 1 then calls getRecent with page=1', () => {
@@ -382,5 +376,138 @@ describe('AdminAiUsageComponent', () => {
     expect(fixture.componentInstance.recentItems().length).toBe(2);
     expect(fixture.componentInstance.recentItems()[0].id).toBe('x1');
     expect(fixture.componentInstance.recentItems()[1].id).toBe('x2');
+  });
+
+  // ── server-side filter tests ────────────────────────────────────────────────
+
+  it('onRecentProviderChange sets filter signal, resets page to 1, calls getRecent', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentPage.set(3);
+    svc.getRecent.calls.reset();
+
+    c.onRecentProviderChange('anthropic');
+
+    expect(c.recentProviderFilter()).toBe('anthropic');
+    expect(c.recentPage()).toBe(1);
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect(args[0]).toBe(1);
+    expect((args[3] as { provider?: string })?.provider).toBe('anthropic');
+  });
+
+  it('onRecentModelChange sets filter signal and calls getRecent', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getRecent.calls.reset();
+
+    c.onRecentModelChange('gpt-4o-mini');
+
+    expect(c.recentModelFilter()).toBe('gpt-4o-mini');
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { model?: string })?.model).toBe('gpt-4o-mini');
+  });
+
+  it('onRecentFeatureChange sets filter signal and calls getRecent', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getRecent.calls.reset();
+
+    c.onRecentFeatureChange('lesson_generation');
+
+    expect(c.recentFeatureFilter()).toBe('lesson_generation');
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { featureKey?: string })?.featureKey).toBe('lesson_generation');
+  });
+
+  it('onRecentStatusChange sets filter signal and calls getRecent', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getRecent.calls.reset();
+
+    c.onRecentStatusChange('failed');
+
+    expect(c.recentStatusFilter()).toBe('failed');
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { status?: string })?.status).toBe('failed');
+  });
+
+  it('clearRecentFilters clears all filter signals and reloads page 1', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentProviderFilter.set('openai');
+    c.recentStatusFilter.set('failed');
+    c.recentPage.set(3);
+    svc.getRecent.calls.reset();
+
+    c.clearRecentFilters();
+
+    expect(c.recentProviderFilter()).toBe('');
+    expect(c.recentModelFilter()).toBe('');
+    expect(c.recentFeatureFilter()).toBe('');
+    expect(c.recentStatusFilter()).toBe('');
+    expect(c.recentPage()).toBe(1);
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { provider?: string })?.provider).toBeUndefined();
+    expect((args[3] as { status?: string })?.status).toBeUndefined();
+  });
+
+  it('hasActiveRecentFilters is false when no filters set', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.hasActiveRecentFilters()).toBeFalse();
+  });
+
+  it('hasActiveRecentFilters is true when provider filter set', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentProviderFilter.set('openai');
+    expect(c.hasActiveRecentFilters()).toBeTrue();
+  });
+
+  it('pagination preserves active filters when page changes', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentProviderFilter.set('anthropic');
+    c.recentStatusFilter.set('success');
+    svc.getRecent.calls.reset();
+
+    c.onRecentPageChange(2);
+
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect(args[0]).toBe(2);
+    expect((args[3] as { provider?: string })?.provider).toBe('anthropic');
+    expect((args[3] as { status?: string })?.status).toBe('success');
+  });
+
+  it('period change resets page to 1 and preserves active filters on reload', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentProviderFilter.set('openai');
+    c.recentPage.set(3);
+    svc.getRecent.calls.reset();
+
+    c.onPeriodChange('7d');
+
+    expect(c.recentPage()).toBe(1);
+    const recentCall = svc.getRecent.calls.mostRecent();
+    expect(recentCall.args[0]).toBe(1);
+    expect((recentCall.args[3] as { provider?: string })?.provider).toBe('openai');
+  });
+
+  it('empty state renders when recentItems is empty after filter', () => {
+    svc.getRecent.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-empty-state')).toBeTruthy();
   });
 });

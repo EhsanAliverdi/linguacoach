@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-4)
+lastUpdated: 2026-06-20 (10U-5)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,41 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10U-5 — AI Usage Recent Calls Filters** - complete (2026-06-20)
+
+Goal: server-side provider/model/featureKey/status filters for the AI Usage recent calls table.
+
+### Delivered
+
+- `AiUsageRecentFilter` record in Application layer with `HasInvalidStatus` guard.
+- `IAdminAiUsageHandler.GetRecentAsync` updated to accept `AiUsageRecentFilter`.
+- `AiUsageHandler.ApplyRecentFilter`: filters applied after date filter, before count/skip/take.
+- `/recent` endpoint: `provider`, `model`, `featureKey`, `status` query params; 400 on invalid status.
+- Status semantics: `success` = WasSuccessful && !IsFallback; `failed` = !WasSuccessful; `fallback` = IsFallback.
+- `AiUsageRecentCallFilter` interface in Angular service; `getRecent` 4th param.
+- Four-filter bar above recent calls table: provider, model, feature, status selects. "Clear filters" button when any filter active.
+- Filter option sources: provider from summary.byProvider + items; model from items; feature from summary.byFeature + items.
+- `clearRecentFilters` clears column filters only; does not reset date period.
+- Pagination preserves active filters on page change.
+- Summary totals unchanged — not affected by column filters.
+- Backend: +12 integration tests (`AiUsageRecentFilterTests`). 1988/1988 pass.
+- Frontend: +10 component tests (12 new, 3 replaced). 823/823 pass. Both builds clean.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1988/1988)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (823/823)
+
+See: `docs/reviews/2026-06-20-phase-10u-5-ai-usage-recent-calls-filters-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-4 — AI Usage Recent Calls Pagination** - complete (2026-06-20)
 

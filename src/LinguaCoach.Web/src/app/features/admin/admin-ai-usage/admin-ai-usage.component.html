@@ -113,29 +113,42 @@
     <sp-admin-loading-state message="Loading recent calls" />
   } @else if (recentError()) {
     <sp-admin-error-state title="Recent calls unavailable" [message]="recentError()" />
-  } @else if (recentItems().length === 0) {
-    <sp-admin-empty-state message="No AI calls recorded yet. AI calls will appear here once the system is used." />
   } @else {
     <sp-admin-filter-bar density="compact">
       <sp-admin-select
-        filters
-        size="sm"
+        filters size="sm"
         placeholder="All providers"
         [options]="providerOptions()"
-        [(ngModel)]="providerFilterValue"
-        (ngModelChange)="onProviderFilterChange($event)"
+        [(ngModel)]="recentProviderFilterValue"
+        (ngModelChange)="onRecentProviderChange($event)"
         aria-label="Filter by provider" />
       <sp-admin-select
-        filters
-        size="sm"
+        filters size="sm"
+        placeholder="All models"
+        [options]="modelOptions()"
+        [(ngModel)]="recentModelFilterValue"
+        (ngModelChange)="onRecentModelChange($event)"
+        aria-label="Filter by model" />
+      <sp-admin-select
+        filters size="sm"
+        placeholder="All features"
+        [options]="featureOptions()"
+        [(ngModel)]="recentFeatureFilterValue"
+        (ngModelChange)="onRecentFeatureChange($event)"
+        aria-label="Filter by feature" />
+      <sp-admin-select
+        filters size="sm"
         placeholder="All statuses"
         [options]="recentStatusOptions"
-        [(ngModel)]="statusFilterValue"
-        (ngModelChange)="onStatusFilterChange($event)"
+        [(ngModel)]="recentStatusFilterValue"
+        (ngModelChange)="onRecentStatusChange($event)"
         aria-label="Filter by status" />
+      @if (hasActiveRecentFilters()) {
+        <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
+      }
     </sp-admin-filter-bar>
 
-    @if (filteredRecentItems().length === 0) {
+    @if (recentItems().length === 0) {
       <sp-admin-empty-state message="No calls match your filters." />
     } @else {
       <sp-admin-table variant="data" density="compact" minWidth="1080px">

@@ -14,10 +14,24 @@ public sealed record AiUsageDateFilter(DateTime? From, DateTime? To)
     public bool IsInverted => From.HasValue && To.HasValue && From.Value >= To.Value;
 }
 
+/// <summary>
+/// Column filters for recent-call queries. All fields are optional; null/empty = no filter applied.
+/// Status values: "success" = WasSuccessful and not fallback, "failed" = not WasSuccessful, "fallback" = IsFallback.
+/// </summary>
+public sealed record AiUsageRecentFilter(
+    string? Provider = null,
+    string? Model = null,
+    string? FeatureKey = null,
+    string? Status = null)
+{
+    public static readonly string[] ValidStatuses = ["success", "failed", "fallback"];
+    public bool HasInvalidStatus => Status is not null && !ValidStatuses.Contains(Status, StringComparer.OrdinalIgnoreCase);
+}
+
 public interface IAdminAiUsageHandler
 {
     Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? filter = null, CancellationToken ct = default);
-    Task<AiUsagePagedResult> GetRecentAsync(int page = 1, int pageSize = 25, AiUsageDateFilter? filter = null, CancellationToken ct = default);
+    Task<AiUsagePagedResult> GetRecentAsync(int page = 1, int pageSize = 25, AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? recentFilter = null, CancellationToken ct = default);
 }
 
 public sealed record AiUsagePagedResult(

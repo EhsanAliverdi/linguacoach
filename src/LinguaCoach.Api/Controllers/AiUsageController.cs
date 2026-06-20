@@ -60,11 +60,25 @@ public sealed class AiUsageController : ControllerBase
         [FromQuery] int pageSize = 25,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
+        [FromQuery] string? provider = null,
+        [FromQuery] string? model = null,
+        [FromQuery] string? featureKey = null,
+        [FromQuery] string? status = null,
         CancellationToken ct = default)
     {
-        var filter = BuildFilter(from, to);
-        if (filter is null) return BadRequest(new { error = "from must be before to." });
-        var result = await _handler.GetRecentAsync(page, pageSize, filter, ct);
+        var dateFilter = BuildFilter(from, to);
+        if (dateFilter is null) return BadRequest(new { error = "from must be before to." });
+
+        var recentFilter = new AiUsageRecentFilter(
+            Provider:   string.IsNullOrWhiteSpace(provider)   ? null : provider.Trim(),
+            Model:      string.IsNullOrWhiteSpace(model)      ? null : model.Trim(),
+            FeatureKey: string.IsNullOrWhiteSpace(featureKey) ? null : featureKey.Trim(),
+            Status:     string.IsNullOrWhiteSpace(status)     ? null : status.Trim());
+
+        if (recentFilter.HasInvalidStatus)
+            return BadRequest(new { error = $"Invalid status '{status}'. Valid values: success, failed, fallback." });
+
+        var result = await _handler.GetRecentAsync(page, pageSize, dateFilter, recentFilter, ct);
         return Ok(new
         {
             items = result.Items.Select(i => new

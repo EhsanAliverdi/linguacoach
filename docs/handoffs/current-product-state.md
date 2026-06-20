@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-4)
+lastUpdated: 2026-06-20 (10U-5)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,20 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-20
+
+---
+
+## AI Usage recent calls server-side filters (Phase 10U-5)
+
+`GET /api/admin/ai-usage/recent` now accepts `provider`, `model`, `featureKey`, and `status` query params in addition to `from`/`to`/`page`/`pageSize`. Filters apply before count and pagination so `totalCount`/`totalPages` reflect the filtered universe. Invalid `status` returns 400.
+
+Status semantics: `success` = WasSuccessful and not fallback; `failed` = not WasSuccessful; `fallback` = IsFallback (may also be successful).
+
+Admin AI Usage page: four-filter bar above the recent calls table (provider, model, feature, status). Changing any filter resets to page 1 and reloads. "Clear filters" button appears when any filter is active; clearing resets column filters only and does not reset the date period. Pagination preserves active filters.
+
+Summary stat cards are not affected by column filters.
+
+**Tests:** 823/823 Angular tests pass. Backend: 1988/1988 pass (12 new filter integration tests).
 
 ---
 

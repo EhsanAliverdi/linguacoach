@@ -3,9 +3,10 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange } from '../../../core/services/ai-usage.service';
+import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter } from '../../../core/services/ai-usage.service';
 import {
   SpAdminBadgeComponent,
+  SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminCodePillComponent,
   SpAdminCopyableTextComponent,
@@ -29,6 +30,7 @@ import {
     CommonModule,
     FormsModule,
     SpAdminBadgeComponent,
+    SpAdminButtonComponent,
     SpAdminCardComponent,
     SpAdminCodePillComponent,
     SpAdminCopyableTextComponent,
@@ -86,36 +88,48 @@ export class AdminAiUsageComponent implements OnInit {
     { value: 'month', label: 'This month' },
   ];
 
-  providerFilter = signal('');
-  statusFilter = signal('');
-  providerFilterValue = '';
-  statusFilterValue = '';
+  // Server-side recent-call filters
+  recentProviderFilter = signal('');
+  recentModelFilter = signal('');
+  recentFeatureFilter = signal('');
+  recentStatusFilter = signal('');
+
+  // Two-way bound values for sp-admin-select
+  recentProviderFilterValue = '';
+  recentModelFilterValue = '';
+  recentFeatureFilterValue = '';
+  recentStatusFilterValue = '';
 
   readonly recentStatusOptions = [
-    { value: 'ok',       label: 'OK' },
+    { value: 'success',  label: 'Success' },
     { value: 'failed',   label: 'Failed' },
     { value: 'fallback', label: 'Fallback' },
   ];
 
+  // Provider options derived from summary byProvider (populated after summary loads)
   providerOptions = computed(() => {
-    const providers = new Set<string>();
-    for (const item of this.recentItems()) {
-      if (item.provider) providers.add(item.provider);
-    }
-    return Array.from(providers).sort().map(p => ({ value: p, label: p }));
+    const fromSummary = (this.summary()?.byProvider ?? []).map(p => p.provider);
+    const fromItems   = this.recentItems().map(i => i.provider);
+    const all = new Set([...fromSummary, ...fromItems]);
+    return Array.from(all).sort().map(p => ({ value: p, label: p }));
   });
 
-  filteredRecentItems = computed(() => {
-    const provider = this.providerFilter();
-    const status = this.statusFilter();
-    return this.recentItems().filter(item => {
-      if (provider && item.provider !== provider) return false;
-      if (status === 'ok'       && !item.wasSuccessful)  return false;
-      if (status === 'failed'   && item.wasSuccessful)   return false;
-      if (status === 'fallback' && !item.isFallback)     return false;
-      return true;
-    });
+  // Model options derived from loaded recent items
+  modelOptions = computed(() => {
+    const models = new Set(this.recentItems().map(i => i.model).filter(Boolean));
+    return Array.from(models).sort().map(m => ({ value: m, label: m }));
   });
+
+  // Feature options derived from summary byFeature
+  featureOptions = computed(() => {
+    const fromSummary = (this.summary()?.byFeature ?? []).map(f => f.feature);
+    const fromItems   = this.recentItems().map(i => i.featureKey);
+    const all = new Set([...fromSummary, ...fromItems]);
+    return Array.from(all).sort().map(f => ({ value: f, label: this.featureLabel(f) }));
+  });
+
+  // Items already filtered server-side; expose directly for template
+  filteredRecentItems = computed(() => this.recentItems());
 
   constructor(private svc: AiUsageService) {}
 
@@ -137,10 +151,16 @@ export class AdminAiUsageComponent implements OnInit {
 
   loadRecent(): void {
     const range = this.buildRange(this.periodPreset());
+    const filters: AiUsageRecentCallFilter = {
+      provider:   this.recentProviderFilter() || undefined,
+      model:      this.recentModelFilter()    || undefined,
+      featureKey: this.recentFeatureFilter()  || undefined,
+      status:     this.recentStatusFilter()   || undefined,
+    };
     this.loadingRecent.set(true);
     this.recentError.set('');
 
-    this.svc.getRecent(this.recentPage(), this.recentPageSize, range).subscribe({
+    this.svc.getRecent(this.recentPage(), this.recentPageSize, range, filters).subscribe({
       next: r => {
         this.recentItems.set(r.items);
         this.recentTotalCount.set(r.totalCount);
@@ -162,15 +182,49 @@ export class AdminAiUsageComponent implements OnInit {
     this.loadRecent();
   }
 
-  onProviderFilterChange(value: string): void {
-    this.providerFilter.set(value);
+  onRecentProviderChange(value: string): void {
+    this.recentProviderFilter.set(value);
     this.recentPage.set(1);
+    this.loadRecent();
   }
 
-  onStatusFilterChange(value: string): void {
-    this.statusFilter.set(value);
+  onRecentModelChange(value: string): void {
+    this.recentModelFilter.set(value);
     this.recentPage.set(1);
+    this.loadRecent();
   }
+
+  onRecentFeatureChange(value: string): void {
+    this.recentFeatureFilter.set(value);
+    this.recentPage.set(1);
+    this.loadRecent();
+  }
+
+  onRecentStatusChange(value: string): void {
+    this.recentStatusFilter.set(value);
+    this.recentPage.set(1);
+    this.loadRecent();
+  }
+
+  clearRecentFilters(): void {
+    this.recentProviderFilter.set('');
+    this.recentModelFilter.set('');
+    this.recentFeatureFilter.set('');
+    this.recentStatusFilter.set('');
+    this.recentProviderFilterValue = '';
+    this.recentModelFilterValue = '';
+    this.recentFeatureFilterValue = '';
+    this.recentStatusFilterValue = '';
+    this.recentPage.set(1);
+    this.loadRecent();
+  }
+
+  hasActiveRecentFilters = computed(() =>
+    !!this.recentProviderFilter() ||
+    !!this.recentModelFilter()    ||
+    !!this.recentFeatureFilter()  ||
+    !!this.recentStatusFilter());
+
 
   buildRange(preset: PeriodPreset): AiUsageDateRange | undefined {
     const now = new Date();

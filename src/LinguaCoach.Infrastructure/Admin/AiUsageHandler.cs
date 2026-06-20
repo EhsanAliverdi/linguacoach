@@ -59,13 +59,14 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
     }
 
     public async Task<AiUsagePagedResult> GetRecentAsync(
-        int page = 1, int pageSize = 25, AiUsageDateFilter? filter = null, CancellationToken ct = default)
+        int page = 1, int pageSize = 25, AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? recentFilter = null, CancellationToken ct = default)
     {
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = _db.AiUsageLogs.AsNoTracking();
-        query = ApplyDateFilter(query, filter);
+        query = ApplyDateFilter(query, dateFilter);
+        query = ApplyRecentFilter(query, recentFilter);
 
         var totalCount = await query.CountAsync(ct);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
@@ -106,6 +107,28 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             query = query.Where(l => l.CreatedAt >= filter.From.Value);
         if (filter.To.HasValue)
             query = query.Where(l => l.CreatedAt < filter.To.Value);
+        return query;
+    }
+
+    // status: "success" = WasSuccessful && !IsFallback, "failed" = !WasSuccessful, "fallback" = IsFallback.
+    private static IQueryable<Domain.Entities.AiUsageLog> ApplyRecentFilter(
+        IQueryable<Domain.Entities.AiUsageLog> query,
+        AiUsageRecentFilter? filter)
+    {
+        if (filter is null) return query;
+        if (!string.IsNullOrEmpty(filter.Provider))
+            query = query.Where(l => l.ProviderName == filter.Provider);
+        if (!string.IsNullOrEmpty(filter.Model))
+            query = query.Where(l => l.ModelName == filter.Model);
+        if (!string.IsNullOrEmpty(filter.FeatureKey))
+            query = query.Where(l => l.FeatureKey == filter.FeatureKey);
+        if (!string.IsNullOrEmpty(filter.Status))
+        {
+            var s = filter.Status.ToLowerInvariant();
+            if (s == "success")  query = query.Where(l => l.WasSuccessful && !l.IsFallback);
+            if (s == "failed")   query = query.Where(l => !l.WasSuccessful);
+            if (s == "fallback") query = query.Where(l => l.IsFallback);
+        }
         return query;
     }
 }

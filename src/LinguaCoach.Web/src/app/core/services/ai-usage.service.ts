@@ -46,6 +46,13 @@ export interface AiUsageDateRange {
   to?: string;   // ISO-8601 UTC
 }
 
+export interface AiUsageRecentCallFilter {
+  provider?: string;
+  model?: string;
+  featureKey?: string;
+  status?: string; // 'success' | 'failed' | 'fallback'
+}
+
 @Injectable({ providedIn: 'root' })
 export class AiUsageService {
   constructor(private http: HttpClient) {}
@@ -57,12 +64,16 @@ export class AiUsageService {
     return this.http.get<AiUsageSummary>('/api/admin/ai-usage/summary', { params });
   }
 
-  getRecent(page = 1, pageSize = 25, range?: AiUsageDateRange): Observable<AiUsageRecentResponse> {
+  getRecent(page = 1, pageSize = 25, range?: AiUsageDateRange, filters?: AiUsageRecentCallFilter): Observable<AiUsageRecentResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
-    if (range?.from) params = params.set('from', range.from);
-    if (range?.to)   params = params.set('to',   range.to);
+    if (range?.from)        params = params.set('from',       range.from);
+    if (range?.to)          params = params.set('to',         range.to);
+    if (filters?.provider)  params = params.set('provider',   filters.provider);
+    if (filters?.model)     params = params.set('model',      filters.model);
+    if (filters?.featureKey) params = params.set('featureKey', filters.featureKey);
+    if (filters?.status)    params = params.set('status',     filters.status);
     return this.http.get<AiUsageRecentResponse>('/api/admin/ai-usage/recent', { params });
   }
 }
