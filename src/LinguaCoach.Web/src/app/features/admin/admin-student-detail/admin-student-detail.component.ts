@@ -549,46 +549,41 @@ interface StudentEditForm {
       </sp-admin-slide-over>
     }
 
-    @if (assigningPolicy()) {
-      <div class="sp-admin-modal-backdrop" (click)="cancelAssignPolicy()"></div>
-      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="assignPolicyTitle">
-        <div class="sp-admin-modal-header">
-          <div>
-            <h2 id="assignPolicyTitle">Assign usage policy</h2>
-            @if (student(); as s) { <p class="sp-safe-text">{{ s.email }}</p> }
-          </div>
-          <button type="button" (click)="cancelAssignPolicy()" aria-label="Close assign policy">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    <sp-admin-slide-over
+      [open]="assigningPolicy()"
+      title="Assign usage policy"
+      [subtitle]="student()?.email ?? ''"
+      size="sm"
+      [stackIndex]="1"
+      (closed)="cancelAssignPolicy()"
+    >
+      <form (ngSubmit)="saveAssignPolicy()" class="sp-admin-edit-grid">
+        <label class="sp-admin-wide">
+          <span>Policy</span>
+          <select class="sp-input" [(ngModel)]="assignPolicyForm.policyId" name="policyId">
+            <option value="">Select a policy...</option>
+            @for (p of availablePolicies(); track p.id) {
+              <option [value]="p.id">{{ p.name }}{{ p.isDefault ? ' (default)' : '' }}</option>
+            }
+          </select>
+        </label>
+        <label class="sp-admin-wide">
+          <span>Reason (optional)</span>
+          <textarea class="sp-input" rows="2" [(ngModel)]="assignPolicyForm.reason" name="reason"
+            placeholder="Why is this policy being assigned?"></textarea>
+        </label>
+        @if (assignPolicyError()) {
+          <div class="sp-admin-alert-error sp-admin-wide">{{ assignPolicyError() }}</div>
+        }
+        <div class="sp-admin-modal-actions sp-admin-wide">
+          <button type="button" class="sp-button-ghost" (click)="cancelAssignPolicy()">Cancel</button>
+          <button type="submit" class="sp-admin-btn-primary"
+            [disabled]="savingAssignPolicy() || !assignPolicyForm.policyId">
+            {{ savingAssignPolicy() ? 'Saving...' : 'Assign policy' }}
           </button>
         </div>
-        <form (ngSubmit)="saveAssignPolicy()" class="sp-admin-edit-grid">
-          <label class="sp-admin-wide">
-            <span>Policy</span>
-            <select class="sp-input" [(ngModel)]="assignPolicyForm.policyId" name="policyId">
-              <option value="">Select a policy...</option>
-              @for (p of availablePolicies(); track p.id) {
-                <option [value]="p.id">{{ p.name }}{{ p.isDefault ? ' (default)' : '' }}</option>
-              }
-            </select>
-          </label>
-          <label class="sp-admin-wide">
-            <span>Reason (optional)</span>
-            <textarea class="sp-input" rows="2" [(ngModel)]="assignPolicyForm.reason" name="reason"
-              placeholder="Why is this policy being assigned?"></textarea>
-          </label>
-          @if (assignPolicyError()) {
-            <div class="sp-admin-alert-error sp-admin-wide">{{ assignPolicyError() }}</div>
-          }
-          <div class="sp-admin-modal-actions sp-admin-wide">
-            <button type="button" class="sp-button-ghost" (click)="cancelAssignPolicy()">Cancel</button>
-            <button type="submit" class="sp-admin-btn-primary"
-              [disabled]="savingAssignPolicy() || !assignPolicyForm.policyId">
-              {{ savingAssignPolicy() ? 'Saving...' : 'Assign policy' }}
-            </button>
-          </div>
-        </form>
-      </section>
-    }
+      </form>
+    </sp-admin-slide-over>
 
     @if (editing(); as student) {
       <div class="sp-admin-modal-backdrop" (click)="cancelEdit()"></div>
@@ -824,44 +819,39 @@ interface StudentEditForm {
         }
       </section>
     }
-    @if (settingCefr()) {
-      <div class="sp-admin-modal-backdrop" (click)="cancelSetCefr()"></div>
-      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="setCefrTitle">
-        <div class="sp-admin-modal-header">
-          <div>
-            <h2 id="setCefrTitle">Set CEFR level</h2>
-            @if (student(); as s) { <p class="sp-safe-text">{{ s.email }}</p> }
-          </div>
-          <button type="button" (click)="cancelSetCefr()" aria-label="Close set CEFR">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    <sp-admin-slide-over
+      [open]="settingCefr()"
+      title="Set CEFR level"
+      [subtitle]="student()?.email ?? ''"
+      size="sm"
+      [stackIndex]="1"
+      (closed)="cancelSetCefr()"
+    >
+      <form (ngSubmit)="saveSetCefr()" class="sp-admin-edit-grid">
+        <label class="sp-admin-wide">
+          <span>CEFR level</span>
+          <select class="sp-input" [(ngModel)]="cefrForm.cefrLevel" name="cefrLevel">
+            @for (level of cefrLevels; track level.value) {
+              <option [value]="level.value">{{ level.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="sp-admin-wide">
+          <span>Reason (optional)</span>
+          <textarea class="sp-input" rows="2" [(ngModel)]="cefrForm.reason" name="reason"
+            placeholder="Why is this CEFR level being set?"></textarea>
+        </label>
+        @if (cefrError()) {
+          <div class="sp-admin-alert-error sp-admin-wide">{{ cefrError() }}</div>
+        }
+        <div class="sp-admin-modal-actions sp-admin-wide">
+          <button type="button" class="sp-button-ghost" (click)="cancelSetCefr()">Cancel</button>
+          <button type="submit" class="sp-admin-btn-primary" [disabled]="savingCefr()">
+            {{ savingCefr() ? 'Saving...' : 'Save' }}
           </button>
         </div>
-        <form (ngSubmit)="saveSetCefr()" class="sp-admin-edit-grid">
-          <label class="sp-admin-wide">
-            <span>CEFR level</span>
-            <select class="sp-input" [(ngModel)]="cefrForm.cefrLevel" name="cefrLevel">
-              @for (level of cefrLevels; track level.value) {
-                <option [value]="level.value">{{ level.label }}</option>
-              }
-            </select>
-          </label>
-          <label class="sp-admin-wide">
-            <span>Reason (optional)</span>
-            <textarea class="sp-input" rows="2" [(ngModel)]="cefrForm.reason" name="reason"
-              placeholder="Why is this CEFR level being set?"></textarea>
-          </label>
-          @if (cefrError()) {
-            <div class="sp-admin-alert-error sp-admin-wide">{{ cefrError() }}</div>
-          }
-          <div class="sp-admin-modal-actions sp-admin-wide">
-            <button type="button" class="sp-button-ghost" (click)="cancelSetCefr()">Cancel</button>
-            <button type="submit" class="sp-admin-btn-primary" [disabled]="savingCefr()">
-              {{ savingCefr() ? 'Saving...' : 'Save' }}
-            </button>
-          </div>
-        </form>
-      </section>
-    }
+      </form>
+    </sp-admin-slide-over>
     @if (lifecycleAction()) {
       <div class="sp-admin-modal-backdrop" (click)="cancelLifecycleAction()"></div>
       <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycleActionTitle">

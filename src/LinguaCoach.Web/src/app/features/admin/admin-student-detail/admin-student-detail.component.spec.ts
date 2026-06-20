@@ -1127,3 +1127,128 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     expect(hasEditDelete).toBeFalse();
   });
 });
+
+// ── 10X-L: Set CEFR uses sp-admin-slide-over (not legacy modal div) ───────────
+
+describe('AdminStudentDetailComponent — 10X-L: Set CEFR slide-over', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup() {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ cefrLevel: 'B1' })));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('Set CEFR button sets settingCefr to true (opens slide-over)', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+
+    const btn = Array.from(html.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Set CEFR');
+    expect(btn).toBeTruthy();
+    btn?.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.settingCefr()).toBeTrue();
+  });
+
+  it('Set CEFR panel title is visible in DOM after opening', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.startSetCefr(comp.student()!);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Set CEFR level');
+  });
+
+  it('cancelSetCefr sets settingCefr to false (closes slide-over)', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.startSetCefr(comp.student()!);
+    fixture.detectChanges();
+    expect(comp.settingCefr()).toBeTrue();
+
+    comp.cancelSetCefr();
+    fixture.detectChanges();
+    expect(comp.settingCefr()).toBeFalse();
+  });
+
+  it('no legacy sp-admin-modal-backdrop div rendered for CEFR (slide-over used instead)', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.startSetCefr(comp.student()!);
+    fixture.detectChanges();
+
+    // The old pattern rendered a .sp-admin-modal-backdrop div separately.
+    // With the slide-over, the backdrop is internal to sp-admin-slide-over.
+    // This test verifies no raw .sp-admin-modal-backdrop exists for the CEFR flow.
+    const rawBackdrops = fixture.nativeElement.querySelectorAll('.sp-admin-modal-backdrop');
+    expect(rawBackdrops.length).toBe(0);
+  });
+
+  it('saving CEFR calls updateStudentCefr on the service', () => {
+    setup();
+    adminApi.updateStudentCefr.and.returnValue(of(undefined));
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.settingCefr.set(true);
+    comp.cefrForm = { cefrLevel: 'C1', reason: 'Reassessment' };
+    comp.saveSetCefr();
+
+    expect(adminApi.updateStudentCefr).toHaveBeenCalledWith('student-1', 'C1', 'Reassessment');
+  });
+
+  it('View preferences slide-over still uses sp-admin-slide-over', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    comp.openPrefsSlideOver();
+    fixture.detectChanges();
+
+    expect(comp.prefsSlideOverOpen()).toBeTrue();
+    // sp-admin-slide-over element must be present in DOM
+    const slideOvers = fixture.nativeElement.querySelectorAll('sp-admin-slide-over');
+    expect(slideOvers.length).toBeGreaterThan(0);
+  });
+});

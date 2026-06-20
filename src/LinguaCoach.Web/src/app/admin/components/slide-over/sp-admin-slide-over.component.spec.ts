@@ -97,6 +97,23 @@ class SizedHostComponent {
   size: 'sm' | 'md' | 'lg' | 'xl' = 'lg';
 }
 
+// ── host: backdrop opt-in ─────────────────────────────────────────────────────
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSlideOverComponent],
+  template: `
+    <sp-admin-slide-over [open]="open" title="Backdrop" [closeOnBackdrop]="true" (closed)="onClose()">
+      <p>Body</p>
+    </sp-admin-slide-over>
+  `,
+})
+class BackdropOptInHostComponent {
+  open = true;
+  closed = false;
+  onClose() { this.closed = true; }
+}
+
 // ── tests ─────────────────────────────────────────────────────────────────────
 
 describe('SpAdminSlideOverComponent', () => {
@@ -124,6 +141,13 @@ describe('SpAdminSlideOverComponent', () => {
     const dialog: HTMLElement = fixture.nativeElement.querySelector('[role="dialog"]');
     expect(dialog).not.toBeNull();
     expect(dialog.getAttribute('aria-label')).toBe('Student Preferences');
+  });
+
+  it('dialog element has aria-modal="true"', () => {
+    const fixture = TestBed.createComponent(BasicHostComponent);
+    fixture.detectChanges();
+    const dialog: HTMLElement = fixture.nativeElement.querySelector('[role="dialog"]');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
   });
 
   it('renders close button with aria-label', () => {
@@ -209,7 +233,28 @@ describe('SpAdminSlideOverComponent', () => {
     expect(aside.style.width).toBe('768px');
   });
 
-  it('does not emit closed on backdrop click when closeOnBackdrop is false', () => {
+  // ── closeOnBackdrop behaviour ───────────────────────────────────────────────
+
+  it('closeOnBackdrop defaults to false', () => {
+    const fixture = TestBed.createComponent(BasicHostComponent);
+    fixture.detectChanges();
+    // Access the SpAdminSlideOverComponent instance from the child debug element
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminSlideOverComponent;
+    expect(comp.closeOnBackdrop).toBeFalse();
+  });
+
+  it('does NOT emit closed on backdrop click when closeOnBackdrop is false (default)', () => {
+    const fixture = TestBed.createComponent(BasicHostComponent);
+    fixture.detectChanges();
+    // Default: closeOnBackdrop=false
+    const backdrop: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-so-backdrop');
+    expect(backdrop).not.toBeNull();
+    backdrop.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.closed).toBeFalse();
+  });
+
+  it('does not emit closed on backdrop click when closeOnBackdrop is explicitly false', () => {
     const fixture = TestBed.createComponent(BasicHostComponent);
     fixture.detectChanges();
     const comp = fixture.debugElement.children[0].componentInstance as SpAdminSlideOverComponent;
@@ -220,12 +265,38 @@ describe('SpAdminSlideOverComponent', () => {
     expect(fixture.componentInstance.closed).toBeFalse();
   });
 
-  it('emits closed on backdrop click when closeOnBackdrop is true (default)', () => {
-    const fixture = TestBed.createComponent(BasicHostComponent);
+  it('emits closed on backdrop click when closeOnBackdrop is true', () => {
+    const fixture = TestBed.createComponent(BackdropOptInHostComponent);
     fixture.detectChanges();
     const backdrop: HTMLElement = fixture.nativeElement.querySelector('.sp-adm-so-backdrop');
     expect(backdrop).not.toBeNull();
     backdrop.click();
+    fixture.detectChanges();
     expect(fixture.componentInstance.closed).toBeTrue();
+  });
+
+  // ── stackIndex / z-index ───────────────────────────────────────────────────
+
+  it('panelZ returns 1001 for default stackIndex=0', () => {
+    const fixture = TestBed.createComponent(BasicHostComponent);
+    fixture.detectChanges();
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminSlideOverComponent;
+    expect(comp.panelZ).toBe(1001);
+  });
+
+  it('panelZ increases with stackIndex', () => {
+    const fixture = TestBed.createComponent(BasicHostComponent);
+    fixture.detectChanges();
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminSlideOverComponent;
+    comp.stackIndex = 1;
+    expect(comp.panelZ).toBe(1051);
+  });
+
+  it('backdropZ is one less than panelZ', () => {
+    const fixture = TestBed.createComponent(BasicHostComponent);
+    fixture.detectChanges();
+    const comp = fixture.debugElement.children[0].componentInstance as SpAdminSlideOverComponent;
+    comp.stackIndex = 2;
+    expect(comp.backdropZ).toBe(comp.panelZ - 1);
   });
 });

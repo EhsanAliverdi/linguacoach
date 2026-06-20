@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10Students-F-G)
+lastUpdated: 2026-06-20 (10X-L)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,16 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-20
+
+---
+
+## Admin shared UI: slide-over and table-action fixes (Phase 10X-L)
+
+`sp-admin-slide-over` now renders above the entire admin shell (z-index 1000+, up from 400). Backdrop click no longer closes panels by default (`closeOnBackdrop` default changed to `false`). Stacked panels are supported via `[stackIndex]` input. Set CEFR and Assign Policy flows on `/admin/students/{id}` now use `sp-admin-slide-over` instead of a centred modal div. The three-dot action menu on admin tables no longer causes vertical scroll when opened near the bottom of the table; menu is now rendered `position:fixed` relative to the viewport.
+
+No product behaviour changed for end users. Admin-only change.
+
+**Tests:** 791/791 Angular tests pass. No backend change. No Playwright run (no pre-existing Playwright coverage for these flows).
 
 ---
 

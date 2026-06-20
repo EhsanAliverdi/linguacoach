@@ -5,6 +5,9 @@ import {
   EventEmitter,
   ElementRef,
   HostListener,
+  ViewChild,
+  AfterViewInit,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -17,6 +20,11 @@ export interface SpAdminTableAction {
 /**
  * Generic row action dropdown for admin tables.
  * Based on TailAdmin table-dropdown pattern (shared/components/common/table-dropdown).
+ *
+ * The dropdown menu is rendered with position:fixed, coordinates computed from
+ * the trigger button's getBoundingClientRect(). This escapes any overflow:hidden/auto
+ * ancestor (e.g., a scrollable table container) so the menu never causes the table
+ * to scroll when it opens near the bottom of the viewport.
  *
  * Usage:
  *   <sp-admin-table-actions [actions]="rowActions" (actionClick)="onAction($event, row)" />
@@ -35,6 +43,7 @@ export interface SpAdminTableAction {
     <div class="sp-adm-row-actions relative inline-block">
       <!-- Trigger: three-dot button matching TailAdmin table-dropdown button style -->
       <button
+        #triggerRef
         type="button"
         class="sp-adm-actions-trigger flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
         [attr.aria-expanded]="isOpen"
@@ -48,11 +57,17 @@ export interface SpAdminTableAction {
       </button>
 
       @if (isOpen) {
-        <!-- TailAdmin dropdown panel: absolute z-40 right-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-lg -->
+        <!--
+          Menu rendered with position:fixed + top/left from getBoundingClientRect().
+          This escapes overflow:hidden table containers and prevents scroll-on-open.
+          Flips upward automatically when near the bottom of the viewport.
+        -->
         <div
           #menuRef
           role="menu"
-          class="absolute z-40 right-0 mt-1 w-44 rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900 py-1"
+          class="sp-adm-actions-menu"
+          [style.top.px]="menuTop"
+          [style.left.px]="menuLeft"
           (click)="isOpen = false"
         >
           @if (actions.length > 0) {
@@ -60,16 +75,9 @@ export interface SpAdminTableAction {
               <button
                 type="button"
                 role="menuitem"
-                class="sp-adm-action-item w-full text-left px-4 py-2 text-sm transition-colors"
-                [class.text-red-600]="action.danger"
-                [class.hover:bg-red-50]="action.danger"
-                [class.dark:hover:bg-red-900]="action.danger"
-                [class.text-gray-700]="!action.danger"
-                [class.dark:text-gray-300]="!action.danger"
-                [class.hover:bg-gray-50]="!action.danger"
-                [class.dark:hover:bg-gray-800]="!action.danger"
-                [class.opacity-40]="action.disabled"
-                [class.cursor-not-allowed]="action.disabled"
+                class="sp-adm-action-item"
+                [class.sp-adm-action-danger]="action.danger"
+                [class.sp-adm-action-disabled]="action.disabled"
                 [disabled]="action.disabled || false"
                 (click)="onActionClick(action, $event)"
               >{{ action.label }}</button>
@@ -85,8 +93,27 @@ export interface SpAdminTableAction {
   styles: [`
     :host { display: inline-block; }
 
-    /* Projected or generated menu items — common base */
-    :host ::ng-deep .sp-adm-action-item {
+    /* Fixed-positioned dropdown panel — escapes any overflow:hidden/auto ancestor */
+    .sp-adm-actions-menu {
+      position: fixed;
+      width: 176px;      /* w-44 = 11rem = 176px */
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 4px 0;
+      z-index: 500;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .sp-adm-actions-menu {
+        background: #111827;
+        border-color: #1f2937;
+      }
+    }
+
+    /* Menu items — common base */
+    .sp-adm-action-item {
       display: block;
       width: 100%;
       text-align: left;
@@ -102,27 +129,32 @@ export interface SpAdminTableAction {
       transition: background 0.1s, color 0.1s;
       white-space: nowrap;
     }
-    :host ::ng-deep .sp-adm-action-item:hover {
+    .sp-adm-action-item:hover {
       background: #f9fafb;
       color: #111827;
     }
-    :host ::ng-deep .sp-adm-action-item:focus-visible {
+    .sp-adm-action-item:focus-visible {
       outline: 2px solid #6366f1;
       outline-offset: -2px;
     }
-    :host ::ng-deep .sp-adm-action-item.sp-adm-action-danger {
+    .sp-adm-action-item.sp-adm-action-danger {
       color: #dc2626;
     }
-    :host ::ng-deep .sp-adm-action-item.sp-adm-action-danger:hover {
+    .sp-adm-action-item.sp-adm-action-danger:hover {
       background: #fef2f2;
       color: #b91c1c;
     }
-    :host ::ng-deep .sp-adm-action-item:disabled,
-    :host ::ng-deep .sp-adm-action-item[disabled],
-    :host ::ng-deep .sp-adm-action-item.sp-adm-action-disabled {
+    .sp-adm-action-item.sp-adm-action-disabled,
+    .sp-adm-action-item:disabled {
       opacity: 0.4;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    /* Dark mode item overrides */
+    @media (prefers-color-scheme: dark) {
+      .sp-adm-action-item { color: #d1d5db; }
+      .sp-adm-action-item:hover { background: #1f2937; color: #f9fafb; }
     }
   `],
 })
@@ -130,13 +162,51 @@ export class SpAdminTableActionsComponent {
   @Input() actions: SpAdminTableAction[] = [];
   @Output() actionClick = new EventEmitter<SpAdminTableAction>();
 
-  isOpen = false;
+  @ViewChild('triggerRef') triggerRef!: ElementRef<HTMLButtonElement>;
 
-  constructor(private elRef: ElementRef<HTMLElement>) {}
+  isOpen = false;
+  menuTop = 0;
+  menuLeft = 0;
+
+  /** Approximate menu height used for upward-flip calculation. */
+  private readonly MENU_HEIGHT_ESTIMATE = 200;
+  /** Gap between trigger bottom and menu top. */
+  private readonly MENU_GAP = 4;
+  /** Menu width matches .sp-adm-actions-menu width (176px). */
+  private readonly MENU_WIDTH = 176;
+
+  constructor(
+    private elRef: ElementRef<HTMLElement>,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   toggle(event: MouseEvent): void {
     event.stopPropagation();
+    if (!this.isOpen) {
+      this.computeMenuPosition();
+    }
     this.isOpen = !this.isOpen;
+  }
+
+  /**
+   * Compute fixed coordinates for the dropdown from the trigger's bounding rect.
+   * Opens below the trigger by default; flips upward if near viewport bottom.
+   */
+  private computeMenuPosition(): void {
+    if (!this.triggerRef) return;
+    const rect = this.triggerRef.nativeElement.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+
+    // Flip upward if not enough space below
+    if (spaceBelow < this.MENU_HEIGHT_ESTIMATE && rect.top > this.MENU_HEIGHT_ESTIMATE) {
+      this.menuTop = rect.top - this.MENU_HEIGHT_ESTIMATE;
+    } else {
+      this.menuTop = rect.bottom + this.MENU_GAP;
+    }
+
+    // Right-align with trigger; clamp to viewport left edge
+    this.menuLeft = Math.max(0, rect.right - this.MENU_WIDTH);
   }
 
   onActionClick(action: SpAdminTableAction, event: MouseEvent): void {
@@ -153,6 +223,12 @@ export class SpAdminTableActionsComponent {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.isOpen) this.isOpen = false;
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onWindowScroll(): void {
+    // Close on any scroll to keep position accurate
     if (this.isOpen) this.isOpen = false;
   }
 }

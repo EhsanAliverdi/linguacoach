@@ -12,10 +12,15 @@ const SIZE_MAP: Record<SpAdminSlideOverSize, string> = {
   xl:  '768px',
 };
 
+/** Base z-index for the first (non-stacked) slide-over backdrop. */
+const Z_BASE = 1000;
+/** Each additional stacked panel gets this many extra z-index units. */
+const Z_STACK_STEP = 50;
+
 /**
- * Slide-over panel that appears within the admin content area (not full-screen fixed).
- * Use for detail/edit/view secondary flows: student preferences, audit history,
- * rule editing, prompt preview, entity detail panels.
+ * Slide-over panel rendered at fixed position, above the entire admin shell
+ * (header, sidebar, any drawers). z-index base is 1000; each stacked panel
+ * receives a higher index via stackIndex input.
  *
  * Slots:
  *   [slot=header-actions]  — buttons rendered in the panel header, beside the title
@@ -31,7 +36,8 @@ const SIZE_MAP: Record<SpAdminSlideOverSize, string> = {
  *   loadingMessage  — message shown in loading state
  *   error           — error message string; shows error state block in body when set
  *   errorTitle      — title for the error block (default: 'Something went wrong')
- *   closeOnBackdrop — whether clicking the backdrop closes the panel (default: true)
+ *   closeOnBackdrop — whether clicking the backdrop closes the panel (default: false)
+ *   stackIndex      — stacking depth (0=first, 1=second …); each level adds 50 to z-index
  *
  * Outputs:
  *   closed — emits void when the panel should close
@@ -44,12 +50,14 @@ const SIZE_MAP: Record<SpAdminSlideOverSize, string> = {
     @if (open) {
       <div
         class="sp-adm-so-backdrop"
+        [style.z-index]="backdropZ"
         (click)="closeOnBackdrop && close()"
         aria-hidden="true"
       ></div>
       <aside
         class="sp-adm-so-panel"
         [style.width]="panelWidth"
+        [style.z-index]="panelZ"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="title"
@@ -96,16 +104,19 @@ const SIZE_MAP: Record<SpAdminSlideOverSize, string> = {
     }
   `,
   styles: [`
-    /* Backdrop: light tint, covers page body only (positioned relative to stacking context) */
+    /* Backdrop: covers entire viewport including admin header and sidebar.
+       z-index is set dynamically via [style.z-index] (base 1000 + stackIndex*50).
+       The static fallback here ensures correct rendering in SSR / test contexts. */
     .sp-adm-so-backdrop {
       position: fixed;
       inset: 0;
       background: rgba(107, 114, 128, 0.3);
       backdrop-filter: blur(2px);
-      z-index: 400;
+      z-index: 1000;
     }
 
-    /* Panel: slides from right edge of viewport, sits above backdrop */
+    /* Panel: slides from right edge of viewport, sits above backdrop.
+       z-index is set dynamically via [style.z-index] (base 1001 + stackIndex*50). */
     .sp-adm-so-panel {
       position: fixed;
       top: 0;
@@ -115,7 +126,7 @@ const SIZE_MAP: Record<SpAdminSlideOverSize, string> = {
       background: #fff;
       border-left: 1px solid #e5e7eb;
       box-shadow: -4px 0 32px rgba(0, 0, 0, 0.10);
-      z-index: 401;
+      z-index: 1001;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -240,11 +251,26 @@ export class SpAdminSlideOverComponent {
   @Input() loadingMessage = 'Loading';
   @Input() error = '';
   @Input() errorTitle = 'Something went wrong';
-  @Input() closeOnBackdrop = true;
+  /** Whether clicking the backdrop closes the panel. Defaults to false. */
+  @Input() closeOnBackdrop = false;
+  /**
+   * Stacking depth for layered panels. 0 = outermost (default).
+   * Each increment raises both backdrop and panel z-index by Z_STACK_STEP,
+   * so a second slide-over opened on top should receive stackIndex=1.
+   */
+  @Input() stackIndex = 0;
   @Output() closed = new EventEmitter<void>();
 
   get panelWidth(): string {
     return SIZE_MAP[this.size] ?? '480px';
+  }
+
+  get backdropZ(): number {
+    return Z_BASE + this.stackIndex * Z_STACK_STEP;
+  }
+
+  get panelZ(): number {
+    return Z_BASE + this.stackIndex * Z_STACK_STEP + 1;
   }
 
   close(): void {

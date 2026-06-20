@@ -81,7 +81,7 @@ Remaining adapter work (10X-F): table sorting, dropdown, theme toggle, full filt
 
 New wrappers added:
 - `sp-admin-dropdown` — TailAdmin `absolute z-40 rounded-xl border border-gray-200 bg-white shadow-lg` dropdown. Trigger/menu content projection. Click-outside + Escape close. `align` (left/right) and `width` (sm/md/lg) inputs.
-- `sp-admin-table-actions` — Row action dropdown based on TailAdmin table-dropdown pattern. Three-dot trigger button. Supports generic `[actions]` array API with `(actionClick)` output, or full content projection for per-row conditional actions. Danger item red styling.
+- `sp-admin-table-actions` — Row action dropdown based on TailAdmin table-dropdown pattern. Three-dot trigger button. Supports generic `[actions]` array API with `(actionClick)` output, or full content projection for per-row conditional actions. Danger item red styling. **Phase 10X-L:** dropdown now uses `position:fixed` + `getBoundingClientRect()` so it escapes any `overflow:hidden/auto` table container. No vertical scroll on open. Flips upward near viewport bottom.
 - `sp-admin-theme-toggle` — Admin-only dark/light toggle based on TailAdmin `ThemeToggleButtonComponent`. Uses `AdminThemeService` (stores preference in `adminTheme` localStorage key, isolated from student UI). Sun/moon SVG icons.
 - `AdminThemeService` — admin-scoped theme service. Mirrors TailAdmin `ThemeService` pattern. Does not use student-UI theme.
 
@@ -530,8 +530,17 @@ Purpose-built for admin secondary detail/edit flows (student preferences, audit 
 
 Use `sp-admin-slide-over` (not `sp-admin-drawer`) for admin entity detail/edit panels going forward.
 
+**Phase 10X-L changes:**
+- z-index raised to 1000 (backdrop) / 1001 (panel) — above admin header, sidebar, and drawers.
+- `closeOnBackdrop` default changed from `true` to `false`. Callers must opt in with `[closeOnBackdrop]="true"`.
+- New `[stackIndex]` input (default 0): each stacked panel gets `stackIndex * 50` added to z-index. Use `stackIndex=1` for a slide-over that opens on top of another.
+- Escape key closes the panel (unchanged).
+- Accessibility: `role="dialog"`, `aria-modal="true"`, `[attr.aria-label]="title"`, close button `aria-label="Close panel"` (unchanged, confirmed correct).
+
 ```html
 <!-- size: sm (360px) | md (480px) | lg (600px) | xl (768px) -->
+<!-- closeOnBackdrop defaults to false — add [closeOnBackdrop]="true" to opt in -->
+<!-- stackIndex: 0 = first panel (default), 1 = second stacked on top, etc. -->
 <sp-admin-slide-over
   [open]="panelOpen"
   title="Student Preferences"
@@ -539,6 +548,7 @@ Use `sp-admin-slide-over` (not `sp-admin-drawer`) for admin entity detail/edit p
   size="lg"
   [loading]="loading"
   [error]="errorMessage"
+  [stackIndex]="0"
   (closed)="panelOpen = false"
 >
   <!-- optional header action buttons -->

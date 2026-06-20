@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10Students-F-G)
+lastUpdated: 2026-06-20 (10X-L)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,22 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10X-L — Shared Admin Overlay, Slide-Over, and Table Action Fixes** - complete (2026-06-20)
+
+Goal: fix shared admin UI issues on /admin/students and /admin/students/{id} at the shared component level.
+
+### Delivered
+
+- `sp-admin-slide-over`: `closeOnBackdrop` default changed `true` → `false`. z-index raised from 400/401 to 1000/1001. New `stackIndex` input for stacked panels (each level adds 50 to z-index). Bindings applied via `[style.z-index]`. Escape key and accessibility already correct.
+- `admin-student-detail`: Set CEFR flow converted from `.sp-admin-modal` centered div to `sp-admin-slide-over` (size=sm, stackIndex=1). Assign policy flow converted the same way. View preferences already used slide-over; confirmed intact. Edit student / Reset password / Reset data / Lifecycle modals left as-is (destructive/high-stakes; out of scope).
+- `sp-admin-table-actions`: dropdown now uses `position:fixed` + `getBoundingClientRect()`. Escapes overflow parents in table containers. Flip-up logic when near viewport bottom. Closes on window scroll. Removes the vertical scroll-on-open bug.
+- Specs: slide-over spec updated (closeOnBackdrop=false default, backdrop/escape tests, stacking tests). Student detail spec: new 10X-L describe block with 6 targeted tests. Table-actions spec created from scratch (18 tests).
+- 791/791 tests pass. Build green. No backend change. No product behaviour changed.
+
+See: `docs/reviews/2026-06-20-phase-10x-l-shared-admin-overlay-slide-over-table-actions-review.md`
+
+---
 
 **Phase 10Students-F-G — Student List Filter Select UI** - complete (2026-06-20)
 
