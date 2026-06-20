@@ -143,6 +143,15 @@
         [(ngModel)]="recentStatusFilterValue"
         (ngModelChange)="onRecentStatusChange($event)"
         aria-label="Filter by status" />
+      @if (studentOptions().length > 0) {
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All students"
+          [options]="studentOptions()"
+          [(ngModel)]="recentStudentFilterValue"
+          (ngModelChange)="onRecentStudentChange($event)"
+          aria-label="Filter by student" />
+      }
       @if (hasActiveRecentFilters()) {
         <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
       }

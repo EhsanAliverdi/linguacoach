@@ -22,7 +22,8 @@ public sealed record AiUsageRecentFilter(
     string? Provider = null,
     string? Model = null,
     string? FeatureKey = null,
-    string? Status = null)
+    string? Status = null,
+    Guid? StudentId = null)
 {
     public static readonly string[] ValidStatuses = ["success", "failed", "fallback"];
     public bool HasInvalidStatus => Status is not null && !ValidStatuses.Contains(Status, StringComparer.OrdinalIgnoreCase);

@@ -193,11 +193,16 @@ describe('admin wrapper migration', () => {
       byProvider: [],
       byFeature: [],
     }));
-    svc.getRecent.and.returnValue(of({ items: [] }));
+    svc.getRecent.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 1 }));
 
     TestBed.configureTestingModule({
       imports: [AdminAiUsageComponent],
-      providers: [{ provide: AiUsageService, useValue: svc }],
+      providers: [
+        { provide: AiUsageService, useValue: svc },
+        { provide: AdminApiService, useValue: adminApi },
+      ],
     });
 
     const fixture = TestBed.createComponent(AdminAiUsageComponent);

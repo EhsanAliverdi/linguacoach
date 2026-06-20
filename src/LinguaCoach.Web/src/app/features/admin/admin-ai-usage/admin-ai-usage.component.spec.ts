@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AdminAiUsageComponent, PeriodPreset } from './admin-ai-usage.component';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
+import { AdminApiService } from '../../../core/services/admin.api.service';
 
 function makeSummary(overrides: Partial<AiUsageSummary> = {}): AiUsageSummary {
   return {
@@ -42,15 +43,22 @@ function makeRecentItem(overrides: Partial<AiUsageRecentItem> = {}): AiUsageRece
 
 describe('AdminAiUsageComponent', () => {
   let svc: jasmine.SpyObj<AiUsageService>;
+  let adminApi: jasmine.SpyObj<AdminApiService>;
 
   beforeEach(() => {
     svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent']);
     svc.getSummary.and.returnValue(of(makeSummary()));
     svc.getRecent.and.returnValue(of({ items: [makeRecentItem()], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
 
+    adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 1 }));
+
     TestBed.configureTestingModule({
       imports: [AdminAiUsageComponent],
-      providers: [{ provide: AiUsageService, useValue: svc }],
+      providers: [
+        { provide: AiUsageService, useValue: svc },
+        { provide: AdminApiService, useValue: adminApi },
+      ],
     });
   });
 
@@ -509,5 +517,109 @@ describe('AdminAiUsageComponent', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-empty-state')).toBeTruthy();
+  });
+
+  // ── student filter tests ────────────────────────────────────────────────────
+
+  it('loadStudentOptions is called on init', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(adminApi.listStudents).toHaveBeenCalledWith({ pageSize: 50 });
+  });
+
+  it('studentOptions signal is populated from adminApi response', () => {
+    adminApi.listStudents.and.returnValue(of({
+      items: [
+        { studentProfileId: 'uuid-1', email: 'alice@example.com', displayName: 'Alice' },
+        { studentProfileId: 'uuid-2', email: 'bob@example.com', displayName: null },
+      ],
+      totalCount: 2, page: 1, pageSize: 50, totalPages: 1,
+    } as any));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const opts = fixture.componentInstance.studentOptions();
+    expect(opts.length).toBe(2);
+    expect(opts[0].value).toBe('uuid-1');
+    expect(opts[0].label).toContain('Alice');
+    expect(opts[1].label).toBe('bob@example.com');
+  });
+
+  it('onRecentStudentChange sets studentFilter signal, resets page to 1, calls getRecent', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentPage.set(3);
+    svc.getRecent.calls.reset();
+
+    c.onRecentStudentChange('uuid-student-1');
+
+    expect(c.recentStudentFilter()).toBe('uuid-student-1');
+    expect(c.recentPage()).toBe(1);
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { studentId?: string })?.studentId).toBe('uuid-student-1');
+  });
+
+  it('clearRecentFilters clears student filter signal', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentStudentFilter.set('uuid-student-1');
+    svc.getRecent.calls.reset();
+
+    c.clearRecentFilters();
+
+    expect(c.recentStudentFilter()).toBe('');
+    expect(c.recentStudentFilterValue).toBe('');
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { studentId?: string })?.studentId).toBeUndefined();
+  });
+
+  it('hasActiveRecentFilters is true when student filter set', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentStudentFilter.set('uuid-student-1');
+    expect(c.hasActiveRecentFilters()).toBeTrue();
+  });
+
+  it('pagination preserves student filter when page changes', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentStudentFilter.set('uuid-student-1');
+    svc.getRecent.calls.reset();
+
+    c.onRecentPageChange(2);
+
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect(args[0]).toBe(2);
+    expect((args[3] as { studentId?: string })?.studentId).toBe('uuid-student-1');
+  });
+
+  it('service sends studentId param when student filter active', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getRecent.calls.reset();
+
+    c.onRecentStudentChange('uuid-abc');
+
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { studentId?: string })?.studentId).toBe('uuid-abc');
+  });
+
+  it('existing provider filter still works alongside student filter', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentStudentFilter.set('uuid-student-1');
+    svc.getRecent.calls.reset();
+
+    c.onRecentProviderChange('openai');
+
+    const args = svc.getRecent.calls.mostRecent().args;
+    expect((args[3] as { provider?: string; studentId?: string })?.provider).toBe('openai');
+    expect((args[3] as { studentId?: string })?.studentId).toBe('uuid-student-1');
   });
 });

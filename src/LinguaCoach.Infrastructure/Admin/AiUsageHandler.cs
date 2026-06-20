@@ -129,6 +129,8 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             if (s == "failed")   query = query.Where(l => !l.WasSuccessful);
             if (s == "fallback") query = query.Where(l => l.IsFallback);
         }
+        if (filter.StudentId.HasValue)
+            query = query.Where(l => l.StudentProfileId == filter.StudentId.Value);
         return query;
     }
 }

@@ -4,6 +4,8 @@ export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter } from '../../../core/services/ai-usage.service';
+import { AdminApiService } from '../../../core/services/admin.api.service';
+import { StudentListItem } from '../../../core/models/admin.models';
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
@@ -93,12 +95,17 @@ export class AdminAiUsageComponent implements OnInit {
   recentModelFilter = signal('');
   recentFeatureFilter = signal('');
   recentStatusFilter = signal('');
+  recentStudentFilter = signal('');
 
   // Two-way bound values for sp-admin-select
   recentProviderFilterValue = '';
   recentModelFilterValue = '';
   recentFeatureFilterValue = '';
   recentStatusFilterValue = '';
+  recentStudentFilterValue = '';
+
+  // Student options loaded on init from admin student list
+  studentOptions = signal<{ value: string; label: string }[]>([]);
 
   readonly recentStatusOptions = [
     { value: 'success',  label: 'Success' },
@@ -131,10 +138,25 @@ export class AdminAiUsageComponent implements OnInit {
   // Items already filtered server-side; expose directly for template
   filteredRecentItems = computed(() => this.recentItems());
 
-  constructor(private svc: AiUsageService) {}
+  constructor(private svc: AiUsageService, private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
+    this.loadStudentOptions();
     this.load();
+  }
+
+  private loadStudentOptions(): void {
+    this.adminApi.listStudents({ pageSize: 50 }).subscribe({
+      next: r => {
+        this.studentOptions.set(
+          r.items.map((s: StudentListItem) => ({
+            value: s.studentProfileId,
+            label: s.displayName ? `${s.displayName} (${s.email})` : s.email,
+          }))
+        );
+      },
+      error: () => { /* silently ignore — student filter will just be empty */ },
+    });
   }
 
   load(): void {
@@ -152,10 +174,11 @@ export class AdminAiUsageComponent implements OnInit {
   loadRecent(): void {
     const range = this.buildRange(this.periodPreset());
     const filters: AiUsageRecentCallFilter = {
-      provider:   this.recentProviderFilter() || undefined,
-      model:      this.recentModelFilter()    || undefined,
-      featureKey: this.recentFeatureFilter()  || undefined,
-      status:     this.recentStatusFilter()   || undefined,
+      provider:   this.recentProviderFilter()  || undefined,
+      model:      this.recentModelFilter()     || undefined,
+      featureKey: this.recentFeatureFilter()   || undefined,
+      status:     this.recentStatusFilter()    || undefined,
+      studentId:  this.recentStudentFilter()   || undefined,
     };
     this.loadingRecent.set(true);
     this.recentError.set('');
@@ -206,15 +229,23 @@ export class AdminAiUsageComponent implements OnInit {
     this.loadRecent();
   }
 
+  onRecentStudentChange(value: string): void {
+    this.recentStudentFilter.set(value);
+    this.recentPage.set(1);
+    this.loadRecent();
+  }
+
   clearRecentFilters(): void {
     this.recentProviderFilter.set('');
     this.recentModelFilter.set('');
     this.recentFeatureFilter.set('');
     this.recentStatusFilter.set('');
+    this.recentStudentFilter.set('');
     this.recentProviderFilterValue = '';
     this.recentModelFilterValue = '';
     this.recentFeatureFilterValue = '';
     this.recentStatusFilterValue = '';
+    this.recentStudentFilterValue = '';
     this.recentPage.set(1);
     this.loadRecent();
   }
@@ -223,7 +254,8 @@ export class AdminAiUsageComponent implements OnInit {
     !!this.recentProviderFilter() ||
     !!this.recentModelFilter()    ||
     !!this.recentFeatureFilter()  ||
-    !!this.recentStatusFilter());
+    !!this.recentStatusFilter()   ||
+    !!this.recentStudentFilter());
 
 
   buildRange(preset: PeriodPreset): AiUsageDateRange | undefined {

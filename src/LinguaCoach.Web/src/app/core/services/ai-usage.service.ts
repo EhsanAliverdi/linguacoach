@@ -51,6 +51,7 @@ export interface AiUsageRecentCallFilter {
   model?: string;
   featureKey?: string;
   status?: string; // 'success' | 'failed' | 'fallback'
+  studentId?: string; // UUID string
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,10 +71,11 @@ export class AiUsageService {
       .set('pageSize', pageSize.toString());
     if (range?.from)        params = params.set('from',       range.from);
     if (range?.to)          params = params.set('to',         range.to);
-    if (filters?.provider)  params = params.set('provider',   filters.provider);
-    if (filters?.model)     params = params.set('model',      filters.model);
+    if (filters?.provider)   params = params.set('provider',   filters.provider);
+    if (filters?.model)      params = params.set('model',      filters.model);
     if (filters?.featureKey) params = params.set('featureKey', filters.featureKey);
-    if (filters?.status)    params = params.set('status',     filters.status);
+    if (filters?.status)     params = params.set('status',     filters.status);
+    if (filters?.studentId)  params = params.set('studentId',  filters.studentId);
     return this.http.get<AiUsageRecentResponse>('/api/admin/ai-usage/recent', { params });
   }
 }

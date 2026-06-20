@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-5)
+lastUpdated: 2026-06-20 (10U-6)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,36 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10U-6 — AI Usage Student Filter** - complete (2026-06-20)
+
+Goal: server-side `studentId` filter on the AI Usage recent calls endpoint; student select in the filter bar loaded from `adminApi.listStudents`.
+
+### Delivered
+
+- `AiUsageRecentFilter` record: added `StudentId` (nullable Guid).
+- `AiUsageHandler.ApplyRecentFilter`: LINQ `Where(l => l.StudentProfileId == filter.StudentId.Value)` clause.
+- `/recent` endpoint: `studentId` query param; 400 on non-GUID; unknown GUID returns empty paged result.
+- `AiUsageRecentCallFilter` Angular interface: added `studentId?: string`.
+- `AdminAiUsageComponent`: `studentOptions` signal loaded from `adminApi.listStudents({ pageSize: 50 })` on init; `onRecentStudentChange`; `clearRecentFilters` includes student; `hasActiveRecentFilters` includes student.
+- Template: student select rendered conditionally on `studentOptions().length > 0`.
+- Backend: +8 integration tests (`AiUsageStudentFilterTests`). Real student profile rows created via `CreateStudentAndGetTokenAsync` + DB join to resolve `StudentProfile.Id`. 745/745 integration + 1248/1248 unit + 3/3 arch.
+- Frontend: +8 component tests. `admin-wrapper-migration.spec.ts` AI Usage test updated with `AdminApiService` mock. 831/831 pass.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1996/1996)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (831/831)
+
+See: `docs/reviews/2026-06-20-phase-10u-6-ai-usage-student-filter-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-5 — AI Usage Recent Calls Filters** - complete (2026-06-20)
 
