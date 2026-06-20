@@ -25,6 +25,9 @@ public sealed class AiUsageController : ControllerBase
             failedCalls = s.FailedCalls,
             fallbackCalls = s.FallbackCalls,
             totalCostUsd = s.TotalCostUsd,
+            totalInputTokens = s.TotalInputTokens,
+            totalOutputTokens = s.TotalOutputTokens,
+            totalTokens = s.TotalTokens,
             successRate = s.TotalCalls > 0
                 ? Math.Round((double)s.SuccessfulCalls / s.TotalCalls * 100, 1)
                 : 0,

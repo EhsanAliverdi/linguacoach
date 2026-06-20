@@ -10,6 +10,9 @@ function makeSummary(overrides: Partial<AiUsageSummary> = {}): AiUsageSummary {
     failedCalls: 1,
     fallbackCalls: 2,
     totalCostUsd: 0.0123,
+    totalInputTokens: 4000,
+    totalOutputTokens: 1500,
+    totalTokens: 5500,
     successRate: 90,
     byProvider: [{ provider: 'anthropic', calls: 10, successful: 9, fallback: 2, costUsd: 0.0123 }],
     byFeature: [{ feature: 'lesson_generation', calls: 10, successful: 9, costUsd: 0.0123 }],
@@ -61,7 +64,31 @@ describe('AdminAiUsageComponent', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
     const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card');
-    expect(cards.length).toBe(5);
+    expect(cards.length).toBe(8);
+  });
+
+  it('renders input token stat card', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card'));
+    const labels = cards.map(c => c.getAttribute('label') ?? c.getAttribute('ng-reflect-label') ?? c.textContent ?? '');
+    expect(labels.some(l => l.toLowerCase().includes('input token'))).toBeTrue();
+  });
+
+  it('renders output token stat card', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card'));
+    const labels = cards.map(c => c.getAttribute('label') ?? c.getAttribute('ng-reflect-label') ?? c.textContent ?? '');
+    expect(labels.some(l => l.toLowerCase().includes('output token'))).toBeTrue();
+  });
+
+  it('renders total token stat card', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card'));
+    const labels = cards.map(c => c.getAttribute('label') ?? c.getAttribute('ng-reflect-label') ?? c.textContent ?? '');
+    expect(labels.some(l => l.toLowerCase().includes('total token'))).toBeTrue();
   });
 
   it('renders provider and feature summary tables', () => {

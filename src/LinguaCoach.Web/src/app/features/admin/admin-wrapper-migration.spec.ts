@@ -188,6 +188,7 @@ describe('admin wrapper migration', () => {
       successRate: 100,
       totalInputTokens: 1,
       totalOutputTokens: 1,
+      totalTokens: 2,
       totalCostUsd: 0,
       byProvider: [],
       byFeature: [],

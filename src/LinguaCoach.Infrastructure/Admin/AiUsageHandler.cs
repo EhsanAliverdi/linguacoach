@@ -19,6 +19,8 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
         var failed = logs.Count(l => !l.WasSuccessful);
         var fallback = logs.Count(l => l.IsFallback);
         var totalCost = logs.Sum(l => l.CostUsd);
+        var totalInputTokens = logs.Sum(l => (long)l.InputTokens);
+        var totalOutputTokens = logs.Sum(l => (long)l.OutputTokens);
 
         var byProvider = logs
             .GroupBy(l => l.ProviderName)
@@ -47,6 +49,9 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             FailedCalls: failed,
             FallbackCalls: fallback,
             TotalCostUsd: totalCost,
+            TotalInputTokens: totalInputTokens,
+            TotalOutputTokens: totalOutputTokens,
+            TotalTokens: totalInputTokens + totalOutputTokens,
             ByProvider: byProvider,
             ByFeature: byFeature);
     }

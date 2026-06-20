@@ -9,11 +9,14 @@
   <sp-admin-error-state title="Usage summary unavailable" [message]="summaryError()" />
 } @else if (summary()) {
   <div class="sp-au-stat-grid">
-    <sp-admin-stat-card label="Total calls"    [value]="summary()!.totalCalls"                    tone="indigo" />
-    <sp-admin-stat-card label="Success rate"   [value]="summary()!.successRate + '%'"             tone="green"  />
-    <sp-admin-stat-card label="Failed calls"   [value]="summary()!.failedCalls"                   tone="amber"  />
-    <sp-admin-stat-card label="Fallback calls" [value]="summary()!.fallbackCalls"                 tone="violet" />
-    <sp-admin-stat-card label="Total cost"     [value]="'$' + summary()!.totalCostUsd.toFixed(4)" tone="teal"   />
+    <sp-admin-stat-card label="Total calls"     [value]="summary()!.totalCalls"                                   tone="indigo" />
+    <sp-admin-stat-card label="Success rate"    [value]="summary()!.successRate + '%'"                            tone="green"  />
+    <sp-admin-stat-card label="Failed calls"    [value]="summary()!.failedCalls"                                  tone="amber"  />
+    <sp-admin-stat-card label="Fallback calls"  [value]="summary()!.fallbackCalls"                                tone="violet" />
+    <sp-admin-stat-card label="Total cost"      [value]="'$' + summary()!.totalCostUsd.toFixed(4)"               tone="teal"   />
+    <sp-admin-stat-card label="Input tokens"    [value]="formatTokens(summary()!.totalInputTokens)"   tone="indigo" />
+    <sp-admin-stat-card label="Output tokens"   [value]="formatTokens(summary()!.totalOutputTokens)"  tone="indigo" />
+    <sp-admin-stat-card label="Total tokens"    [value]="formatTokens(summary()!.totalTokens)"        tone="indigo" />
   </div>
 
   <div class="sp-au-two-col">

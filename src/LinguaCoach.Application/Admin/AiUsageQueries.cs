@@ -14,6 +14,9 @@ public sealed record AiUsageSummaryDto(
     int FailedCalls,
     int FallbackCalls,
     decimal TotalCostUsd,
+    long TotalInputTokens,
+    long TotalOutputTokens,
+    long TotalTokens,
     IReadOnlyList<AiUsageByProvider> ByProvider,
     IReadOnlyList<AiUsageByFeature> ByFeature);
 

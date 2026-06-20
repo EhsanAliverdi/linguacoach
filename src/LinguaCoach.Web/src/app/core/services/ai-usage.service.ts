@@ -8,6 +8,9 @@ export interface AiUsageSummary {
   failedCalls: number;
   fallbackCalls: number;
   totalCostUsd: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalTokens: number;
   successRate: number;
   byProvider: { provider: string; calls: number; successful: number; fallback: number; costUsd: number }[];
   byFeature: { feature: string; calls: number; successful: number; costUsd: number }[];

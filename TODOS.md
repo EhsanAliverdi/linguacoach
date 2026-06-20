@@ -121,6 +121,7 @@ Each item includes context, motivation, and the phase where it was deferred.
 **Why:** `EstimatedCost` is currently set by callers who may use stale or placeholder values. Cost estimates may diverge from real provider invoices. Required before any billing feature goes live.
 **Context:** All `UsageEvent` records have `Provider` and `Model` fields. A pricing table lookup at record time would give consistent cost tracking.
 **Deferred from:** Phase 10R, 2026-06-18.
+**Partial fix:** Phase 10U-1 (2026-06-20) added operational pricing defaults to `appsettings.json` for 12 models across OpenAI, Gemini, and Anthropic. `AiUsageLog.CostUsd` is now non-zero for those models. A DB pricing table (admin-editable, deploy-free updates) is deferred to 10U-8.
 
 ### TODO-020 — Monthly and weekly limit enforcement
 **What:** Implement `WeeklyLimit` and `MonthlyLimit` checks in `UsageQuotaService.CheckAsync`.
@@ -195,3 +196,10 @@ Each item includes context, motivation, and the phase where it was deferred.
 - ~~TODO-10X-L~~: fix shared admin overlay/slide-over/table-action bugs — **DONE in Phase 10X-L** (2026-06-20). `sp-admin-slide-over` z-index raised to 1000+, `closeOnBackdrop` default changed to false, `stackIndex` input added for stacked panels. Set CEFR and Assign Policy flows converted from centred modal to `sp-admin-slide-over`. Table-actions dropdown fixed with `position:fixed` + `getBoundingClientRect()` to escape overflow parents. 791 Angular tests pass.
 - TODO-10X-L-MODAL-MIGRATE: convert remaining admin-student-detail modals (Edit student, Reset password, Reset data, Lifecycle confirm) from `.sp-admin-modal` pattern to `sp-admin-slide-over` or a dedicated confirm component. Deferred — these are high-stakes destructive flows; convert in a focused modal-cleanup sprint.
 - TODO-10X-TABLE-ACTIONS-CDK: if Angular CDK is adopted, migrate `sp-admin-table-actions` dropdown to `CdkOverlay` with `FlexibleConnectedPositionStrategy` for more robust portal-based positioning.
+- TODO-10U-GAP-1: Add `OriginalProviderName` and `OriginalModelName` (nullable string) to `AiUsageLog`. Set when `IsFallback=true` so the primary that failed is auditable. Requires migration + `AiExecutionService` change. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-2: Add `AttemptNumber` (int, default 1) to `AiUsageLog`. Increment per retry in `AiExecutionService`. Enables: "what % of calls required 2+ attempts?" Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-3: Add `PromptKey` (string?) and `PromptVersion` (int?) to `AiUsageLog`. Pass from prompt-rendering layer. Enables prompt A/B cost/quality analysis. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-4: Add `LearningActivityId` (Guid?) and `LearningSessionId` (Guid?) to `AiUsageLog`. Set where available from caller context. Enables per-session cost tracing. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-5: Add `AdminUserId` (Guid?) to `AiUsageLog` for admin-initiated calls (test connection, category test). Required for multi-tenant billing isolation. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-6: Split `AiUsageLog.CostUsd` into `InputCostUsd` + `OutputCostUsd` for per-component cost auditing. High effort (migration + all call sites). Defer until pricing admin table (10U-8) is in place. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-7: Add `RequestType` enum column to `AiUsageLog` (`Llm`, `Tts`, `Stt`). Enables filtering and cost breakdown by modality without string prefix matching on `FeatureKey`. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.

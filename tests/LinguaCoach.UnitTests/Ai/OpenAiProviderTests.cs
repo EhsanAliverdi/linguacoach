@@ -69,4 +69,79 @@ public sealed class OpenAiProviderTests
 
         pricing.Should().BeNull();
     }
+
+    [Theory]
+    [InlineData("gpt-4o",      0.0025,  0.01)]
+    [InlineData("gpt-4o-mini", 0.00015, 0.0006)]
+    [InlineData("gpt-4.1",     0.002,   0.008)]
+    public void Pricing_DefaultAppsettingsValues_BindCorrectlyForOpenAi(
+        string model, decimal expectedInput, decimal expectedOutput)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"OpenAI:Pricing:{model}:InputPer1KTokens"]  = expectedInput.ToString(),
+                [$"OpenAI:Pricing:{model}:OutputPer1KTokens"] = expectedOutput.ToString(),
+            })
+            .Build();
+
+        var pricing = AiPricingOptions.GetOpenAiPricing(configuration, model);
+
+        pricing.Should().NotBeNull();
+        pricing!.InputPer1KTokens.Should().Be(expectedInput);
+        pricing.OutputPer1KTokens.Should().Be(expectedOutput);
+    }
+
+    [Theory]
+    [InlineData("gemini-2.0-flash",      0.0001,   0.0004)]
+    [InlineData("gemini-1.5-pro",        0.00125,  0.005)]
+    public void Pricing_DefaultAppsettingsValues_BindCorrectlyForGemini(
+        string model, decimal expectedInput, decimal expectedOutput)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"Gemini:Pricing:{model}:InputPer1KTokens"]  = expectedInput.ToString(),
+                [$"Gemini:Pricing:{model}:OutputPer1KTokens"] = expectedOutput.ToString(),
+            })
+            .Build();
+
+        var pricing = AiPricingOptions.GetGeminiPricing(configuration, model);
+
+        pricing.Should().NotBeNull();
+        pricing!.InputPer1KTokens.Should().Be(expectedInput);
+        pricing.OutputPer1KTokens.Should().Be(expectedOutput);
+    }
+
+    [Theory]
+    [InlineData("claude-sonnet-4-6",          0.003,  0.015)]
+    [InlineData("claude-haiku-4-5-20251001",  0.0008, 0.004)]
+    public void Pricing_DefaultAppsettingsValues_BindCorrectlyForAnthropic(
+        string model, decimal expectedInput, decimal expectedOutput)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"Anthropic:Pricing:{model}:InputPer1KTokens"]  = expectedInput.ToString(),
+                [$"Anthropic:Pricing:{model}:OutputPer1KTokens"] = expectedOutput.ToString(),
+            })
+            .Build();
+
+        var pricing = AiPricingOptions.GetProviderPricing(configuration, "Anthropic", model);
+
+        pricing.Should().NotBeNull();
+        pricing!.InputPer1KTokens.Should().Be(expectedInput);
+        pricing.OutputPer1KTokens.Should().Be(expectedOutput);
+    }
+
+    [Fact]
+    public void Pricing_NonZeroConfig_ProducesNonZeroCost()
+    {
+        var pricing = new AiModelPricing(InputPer1KTokens: 0.003m, OutputPer1KTokens: 0.015m);
+
+        var cost = AiPricingOptions.EstimateCostUsd(1000, 500, pricing);
+
+        cost.Should().BeGreaterThan(0);
+        cost.Should().Be(0.003m + 0.0075m);
+    }
 }

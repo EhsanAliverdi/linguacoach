@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10Students-F-H)
+lastUpdated: 2026-06-20 (10U-1/10U-2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,36 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10U-1/10U-2 — AI Pricing Config Seed + Usage Token Totals** - complete (2026-06-20)
+
+Goal: fix silent $0 AI cost bug (missing pricing config keys) and surface token totals on /admin/usage summary cards.
+
+### Delivered
+
+- `appsettings.json`: Added `OpenAI:Pricing`, `Gemini:Pricing`, `Anthropic:Pricing` sections with per-model pricing for 12 models. Unblocks `AiUsageLog.CostUsd` from always being $0. Values are operational defaults — override in production via env secrets.
+- `AiUsageSummaryDto`: Extended with `TotalInputTokens`, `TotalOutputTokens`, `TotalTokens` (long).
+- `AiUsageHandler`: Aggregates token totals from `AiUsageLog` rows.
+- `AiUsageController`: Exposes token fields in summary JSON (additive, no breaking change).
+- Angular `AiUsageSummary` interface: Updated with three token fields.
+- `/admin/usage` summary grid: Three new stat cards (Input tokens / Output tokens / Total tokens). Grid updated to 4-col at 900px, 8-col at 1200px.
+- Backend tests: +11 (pricing Theory tests + summary DTO tests). 1955/1955 pass.
+- Frontend tests: +3 (token card assertions). 794/794 pass. Both builds clean.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1955/1955)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (794/794)
+
+See: `docs/reviews/2026-06-20-phase-10u-1-2-ai-pricing-config-token-totals-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10Students-F-H — Student Management Final Validation** - complete (2026-06-20)
 
