@@ -72,6 +72,8 @@ export class AdminAiUsageComponent implements OnInit {
   recentError = signal('');
   recentPage = signal(1);
   readonly recentPageSize = 25;
+  recentTotalCount = signal(0);
+  recentTotalPages = signal(1);
 
   periodPreset = signal<PeriodPreset>('all');
   periodPresetValue: PeriodPreset = 'all';
@@ -115,13 +117,6 @@ export class AdminAiUsageComponent implements OnInit {
     });
   });
 
-  recentTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredRecentItems().length / this.recentPageSize)));
-  pagedRecentItems = computed(() => {
-    const page = Math.min(this.recentPage(), this.recentTotalPages());
-    const start = (page - 1) * this.recentPageSize;
-    return this.filteredRecentItems().slice(start, start + this.recentPageSize);
-  });
-
   constructor(private svc: AiUsageService) {}
 
   ngOnInit(): void {
@@ -131,16 +126,27 @@ export class AdminAiUsageComponent implements OnInit {
   load(): void {
     const range = this.buildRange(this.periodPreset());
     this.loadingSummary.set(true);
-    this.loadingRecent.set(true);
     this.summaryError.set('');
-    this.recentError.set('');
 
     this.svc.getSummary(range).subscribe({
       next: s => { this.summary.set(s); this.loadingSummary.set(false); },
       error: err => { this.summaryError.set(err.error?.error ?? 'Could not load summary.'); this.loadingSummary.set(false); },
     });
-    this.svc.getRecent(100, range).subscribe({
-      next: r => { this.recentItems.set(r.items); this.recentPage.set(1); this.loadingRecent.set(false); },
+    this.loadRecent();
+  }
+
+  loadRecent(): void {
+    const range = this.buildRange(this.periodPreset());
+    this.loadingRecent.set(true);
+    this.recentError.set('');
+
+    this.svc.getRecent(this.recentPage(), this.recentPageSize, range).subscribe({
+      next: r => {
+        this.recentItems.set(r.items);
+        this.recentTotalCount.set(r.totalCount);
+        this.recentTotalPages.set(r.totalPages);
+        this.loadingRecent.set(false);
+      },
       error: err => { this.recentError.set(err.error?.error ?? 'Could not load recent calls.'); this.loadingRecent.set(false); },
     });
   }
@@ -149,6 +155,11 @@ export class AdminAiUsageComponent implements OnInit {
     this.periodPreset.set(value);
     this.recentPage.set(1);
     this.load();
+  }
+
+  onRecentPageChange(page: number): void {
+    this.recentPage.set(page);
+    this.loadRecent();
   }
 
   onProviderFilterChange(value: string): void {

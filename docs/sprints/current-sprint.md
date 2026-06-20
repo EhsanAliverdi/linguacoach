@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-3)
+lastUpdated: 2026-06-20 (10U-4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,40 @@ Last updated: 2026-06-20
 ---
 
 ## Active sprint
+
+**Phase 10U-4 — AI Usage Recent Calls Pagination** - complete (2026-06-20)
+
+Goal: server-side pagination for the AI Usage recent calls/history list to handle enterprise-scale logs.
+
+### Delivered
+
+- `AiUsagePagedResult` record in Application layer: `Items`, `TotalCount`, `Page`, `PageSize`, `TotalPages`.
+- `IAdminAiUsageHandler.GetRecentAsync(page, pageSize, filter)`: replaced old `limit` param.
+- `AiUsageHandler`: `CountAsync` + `Skip`/`Take` with page clamp (never exceeds totalPages) and pageSize clamp (1–100).
+- `AiUsageController /recent`: replaced `limit` with `page`/`pageSize`; response envelope is `{ items, totalCount, page, pageSize, totalPages }`.
+- Angular `AiUsageRecentResponse` interface updated to paged shape.
+- `AiUsageService.getRecent(page, pageSize, range?)` signature.
+- Component: `loadRecent()` extracted; `onRecentPageChange()` added; `recentTotalCount`/`recentTotalPages` signals driven by server response; client-side slice removed.
+- Template: iterates `filteredRecentItems()` (current page); pagination wired to `onRecentPageChange`.
+- Summary totals unaffected — `GetSummaryAsync` unchanged.
+- Date filter + pagination compose correctly — filter applied before count/skip/take.
+- Backend: +10 integration tests (`AiUsagePaginationTests`). 1977/1977 pass.
+- Frontend: +8 component tests. 813/813 pass. Both builds clean.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (1977/1977)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (813/813)
+
+See: `docs/reviews/2026-06-20-phase-10u-4-ai-usage-recent-calls-pagination-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-3 — AI Usage Date Filtering** - complete (2026-06-20)
 

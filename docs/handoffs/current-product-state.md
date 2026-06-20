@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10Students-F-H)
+lastUpdated: 2026-06-20 (10U-4)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,32 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-20
+
+---
+
+## AI Usage recent calls server-side pagination (Phase 10U-4)
+
+`GET /api/admin/ai-usage/recent` now returns a paged envelope `{ items, totalCount, page, pageSize, totalPages }` instead of a flat `{ total, items }`. Breaking change to the recent-calls endpoint shape.
+
+Query params accepted: `page` (default 1), `pageSize` (default 25, max 100 — enforced server-side), `from`/`to` (ISO-8601 UTC, from 10U-3). The `/summary` endpoint is unchanged.
+
+Admin AI Usage page: pagination is now server-driven. Changing the page calls `GET /recent?page=N&pageSize=25` with the active date range. Changing the period preset resets to page 1. `sp-admin-pagination` is shown when `totalPages > 1`. Date filtering (period preset select from 10U-3) and pagination compose correctly — `totalCount`/`totalPages` reflect the filtered universe.
+
+Summary stat cards (total calls, cost, tokens, by-provider, by-feature) are independent from recent-call pagination and always reflect the full date-filtered dataset.
+
+**Tests:** 813/813 Angular tests pass. Backend: 1977/1977 pass (10 new pagination integration tests).
+
+---
+
+## AI Usage date filtering (Phase 10U-3)
+
+`GET /api/admin/ai-usage/summary` and `/recent` both accept `from`/`to` UTC query params. Admin AI Usage page has a period preset select above the stat grid: All time, Today, Last 7 days, Last 30 days, This month.
+
+---
+
+## AI Usage token totals and pricing config seed (Phase 10U-1/10U-2)
+
+`GET /api/admin/ai-usage/summary` now includes `totalInputTokens`, `totalOutputTokens`, `totalTokens`. Admin AI Usage page shows three new stat cards for these. `appsettings.json` now has `OpenAI:Pricing`, `Gemini:Pricing`, `Anthropic:Pricing` sections with per-model pricing — unblocks `AiUsageLog.CostUsd` from always being $0.
 
 ---
 

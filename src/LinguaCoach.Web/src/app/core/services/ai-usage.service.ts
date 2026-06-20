@@ -17,8 +17,11 @@ export interface AiUsageSummary {
 }
 
 export interface AiUsageRecentResponse {
-  total: number;
   items: AiUsageRecentItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface AiUsageRecentItem {
@@ -54,8 +57,10 @@ export class AiUsageService {
     return this.http.get<AiUsageSummary>('/api/admin/ai-usage/summary', { params });
   }
 
-  getRecent(limit = 100, range?: AiUsageDateRange): Observable<AiUsageRecentResponse> {
-    let params = new HttpParams().set('limit', limit.toString());
+  getRecent(page = 1, pageSize = 25, range?: AiUsageDateRange): Observable<AiUsageRecentResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
     if (range?.from) params = params.set('from', range.from);
     if (range?.to)   params = params.set('to',   range.to);
     return this.http.get<AiUsageRecentResponse>('/api/admin/ai-usage/recent', { params });

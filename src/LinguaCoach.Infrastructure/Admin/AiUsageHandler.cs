@@ -58,17 +58,26 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             ByFeature: byFeature);
     }
 
-    public async Task<IReadOnlyList<AiUsageRecentItem>> GetRecentAsync(
-        int limit = 100, AiUsageDateFilter? filter = null, CancellationToken ct = default)
+    public async Task<AiUsagePagedResult> GetRecentAsync(
+        int page = 1, int pageSize = 25, AiUsageDateFilter? filter = null, CancellationToken ct = default)
     {
+        page     = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = _db.AiUsageLogs.AsNoTracking();
         query = ApplyDateFilter(query, filter);
-        var items = await query
+
+        var totalCount = await query.CountAsync(ct);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+        page = Math.Min(page, totalPages);
+
+        var rows = await query
             .OrderByDescending(l => l.CreatedAt)
-            .Take(Math.Clamp(limit, 1, 500))
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(ct);
 
-        return items.Select(l => new AiUsageRecentItem(
+        var items = rows.Select(l => new AiUsageRecentItem(
             Id: l.Id,
             CreatedAt: l.CreatedAt,
             StudentProfileId: l.StudentProfileId,
@@ -83,6 +92,8 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             CostUsd: l.CostUsd,
             DurationMs: l.DurationMs,
             CorrelationId: l.CorrelationId)).ToList();
+
+        return new AiUsagePagedResult(items, totalCount, page, pageSize, totalPages);
     }
 
     // From is inclusive (>=), To is exclusive (<). UTC assumed for both.

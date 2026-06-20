@@ -17,8 +17,15 @@ public sealed record AiUsageDateFilter(DateTime? From, DateTime? To)
 public interface IAdminAiUsageHandler
 {
     Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? filter = null, CancellationToken ct = default);
-    Task<IReadOnlyList<AiUsageRecentItem>> GetRecentAsync(int limit = 100, AiUsageDateFilter? filter = null, CancellationToken ct = default);
+    Task<AiUsagePagedResult> GetRecentAsync(int page = 1, int pageSize = 25, AiUsageDateFilter? filter = null, CancellationToken ct = default);
 }
+
+public sealed record AiUsagePagedResult(
+    IReadOnlyList<AiUsageRecentItem> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages);
 
 public sealed record AiUsageSummaryDto(
     int TotalCalls,

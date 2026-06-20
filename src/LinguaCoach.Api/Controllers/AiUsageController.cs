@@ -56,18 +56,18 @@ public sealed class AiUsageController : ControllerBase
 
     [HttpGet("recent")]
     public async Task<IActionResult> GetRecent(
-        [FromQuery] int limit = 100,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
         CancellationToken ct = default)
     {
         var filter = BuildFilter(from, to);
         if (filter is null) return BadRequest(new { error = "from must be before to." });
-        var items = await _handler.GetRecentAsync(limit, filter, ct);
+        var result = await _handler.GetRecentAsync(page, pageSize, filter, ct);
         return Ok(new
         {
-            total = items.Count,
-            items = items.Select(i => new
+            items = result.Items.Select(i => new
             {
                 id = i.Id,
                 createdAt = i.CreatedAt,
@@ -84,6 +84,10 @@ public sealed class AiUsageController : ControllerBase
                 durationMs = i.DurationMs,
                 correlationId = i.CorrelationId,
             }),
+            totalCount = result.TotalCount,
+            page = result.Page,
+            pageSize = result.PageSize,
+            totalPages = result.TotalPages,
         });
     }
 

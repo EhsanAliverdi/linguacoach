@@ -153,7 +153,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of pagedRecentItems(); track item.id) {
+            @for (item of filteredRecentItems(); track item.id) {
               <tr>
                 <td class="sp-au-mono sp-au-time">{{ formatDateTime(item.createdAt) }}</td>
                 <td class="sp-au-feature">
@@ -199,7 +199,7 @@
         <sp-admin-pagination
           [page]="recentPage()"
           [totalPages]="recentTotalPages()"
-          (pageChange)="recentPage.set($event)" />
+          (pageChange)="onRecentPageChange($event)" />
       }
     }
   }
