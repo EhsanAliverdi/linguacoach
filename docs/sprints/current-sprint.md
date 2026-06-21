@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10V-3B)
+lastUpdated: 2026-06-21 (10W-1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,68 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10W-1 — Backend Notification Foundation** - complete (2026-06-21)
+
+Goal: domain entities, EF persistence, Application service abstraction, Infrastructure implementation, migration, DI registration, and full test coverage for the notification platform foundation.
+
+### Delivered
+
+- 4 new domain enums: `NotificationChannel`, `NotificationStatus`, `NotificationSeverity`, `NotificationCategory`.
+- 2 new domain entities: `Notification` (factory method, state transitions), `NotificationOutboxItem` (attempt tracking, retry backoff).
+- `INotificationService` interface in `LinguaCoach.Application.Notifications` with `QueueAsync`, `QueueInAppAsync`, `QueueEmailAsync`, `QueueSmsAsync`.
+- `NotificationService` implementation in `LinguaCoach.Infrastructure.Notifications`.
+- EF configurations: `NotificationConfiguration`, `NotificationOutboxItemConfiguration`. Enums stored as strings.
+- `LinguaCoachDbContext` extended with `Notifications` and `NotificationOutboxItems` DbSets.
+- Migration `T54_NotificationFoundation`: tables `notifications`, `notification_outbox_items`, 6 indexes.
+- `INotificationService` registered as scoped in `DependencyInjection`.
+- 20 unit tests (`NotificationEntityTests`) + 13 integration tests (`NotificationServiceTests`).
+- No external email/SMS delivery. No API endpoints. No frontend changes. No dispatch worker.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2108/2108 — 3 arch + 1278 unit + 827 integration; +28)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (896/896)
+
+See: `docs/reviews/2026-06-21-phase-10w-1-backend-notification-foundation-review.md`
+
+---
+
+## Previous sprint
+
+**Phase 10W-0 — Enterprise Notification Platform Gap Check** - complete (2026-06-21)
+
+Goal: audit existing notification/email/SMS/in-app capability and define the 10W roadmap.
+
+### Delivered
+
+- Full gap check across all notification-related areas: email, in-app, SMS, event producers, data model, enterprise requirements.
+- Review saved: `docs/reviews/2026-06-21-phase-10w-0-enterprise-notification-platform-gap-check.md`
+- TODOS.md updated with `TODO-10W-1` through `TODO-10W-FINAL` entries.
+- No code changes. Audit only.
+
+### Findings summary
+
+- Email: not implemented. No IEmailSender, no SMTP config, no reset-password email flow.
+- In-app: UI placeholder only. `NotificationDropdownComponent` has hard-coded demo items, no backend.
+- SMS: not implemented.
+- Only existing delivery: transient `ToastService` (auto-dismiss, no persistence).
+- All job failures and AI alerts are logged via `ILogger` only — no user delivery.
+- Zero entity/table for persistent notifications.
+
+### Gates
+
+- No code changed. `git diff --check`: not required.
+- Audit-only phase.
+
+See: `docs/reviews/2026-06-21-phase-10w-0-enterprise-notification-platform-gap-check.md`
+
+---
+
+## Previous sprint
 
 **Phase 10V-3B — AI Pricing Zero-Cost Alert UI** - complete (2026-06-21)
 

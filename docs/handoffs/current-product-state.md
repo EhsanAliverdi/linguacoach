@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10V-FINAL)
+lastUpdated: 2026-06-21 (10W-1)
 owner: product
 supersedes:
 supersededBy:
@@ -9,6 +9,23 @@ supersededBy:
 # SpeakPath — Current Product State
 
 Last updated: 2026-06-21
+
+---
+
+## Enterprise Notification Platform — backend foundation complete (Phase 10W-1, 2026-06-21)
+
+Backend notification foundation is in place. Entities, migration, service abstraction, and DI registration are done. No external delivery, no API, no UI yet.
+
+- **Domain:** `Notification`, `NotificationOutboxItem` entities. 4 enums: `NotificationChannel`, `NotificationStatus`, `NotificationSeverity`, `NotificationCategory`.
+- **Application:** `INotificationService` with `QueueInAppAsync`, `QueueEmailAsync`, `QueueSmsAsync`, `QueueAsync`.
+- **Persistence:** `notifications` + `notification_outbox_items` tables (migration `T54_NotificationFoundation`). 6 indexes.
+- **Behavior:** Queuing any channel creates a `Notification` row + a `NotificationOutboxItem` row. No external dispatch yet.
+- **Tests:** 2108/2108 .NET (3 arch + 1278 unit + 827 integration).
+
+Gap check: `docs/reviews/2026-06-21-phase-10w-0-enterprise-notification-platform-gap-check.md`
+Foundation review: `docs/reviews/2026-06-21-phase-10w-1-backend-notification-foundation-review.md`
+
+Next: Phase 10W-2 — in-app notification APIs + dispatch worker.
 
 ---
 

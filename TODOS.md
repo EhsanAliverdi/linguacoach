@@ -195,6 +195,20 @@ Each item includes context, motivation, and the phase where it was deferred.
 - TODO-10X-J-SELECT-OBJECT: implement `sp-admin-select-object` — select wrapper for non-string option values (number|null object selects remain native).
 - TODO-10X-J-DASHBOARD-MINITABLE: migrate dashboard recent-students mini-table from page-local CSS to sp-admin-table (projected mode).
 - TODO-10X-J-T-VISUAL-BASELINE: add a proper visual regression baseline for stable admin and student screens once the admin UI has settled. Do not replace this with unit or Playwright class assertions; use screenshot or visual tooling with approved baselines.
+
+---
+
+## Enterprise Notification Platform (Phase 10W — roadmap defined 2026-06-21)
+
+Gap check: docs/reviews/2026-06-21-phase-10w-0-enterprise-notification-platform-gap-check.md
+
+- ~~TODO-10W-1~~: Backend notification foundation — **DONE in Phase 10W-1** (2026-06-21). `Notification` + `NotificationOutboxItem` entities, `INotificationService`, `NotificationService`, migration `T54_NotificationFoundation`, DI registration. 20 unit tests + 13 integration tests. 2108/2108 .NET pass.
+- TODO-10W-2: In-app notification APIs — `GET /api/notifications` (paged, unread-first), `PATCH /api/notifications/{id}/read`, `PATCH /api/notifications/read-all`, `GET /api/notifications/unread-count`. Admin: `GET /api/admin/notifications`. Integration tests.
+- TODO-10W-3: Bell UI — wire Angular `NotificationDropdownComponent` to live notification APIs. Real read/unread state. Polling (30 s). Replace demo items with live data. Admin bell separate endpoint.
+- TODO-10W-4: Email provider + reset password wiring — `IEmailSender` interface (Application), `SmtpEmailSender` + `SendGridSender` (Infrastructure), `LoggingEmailSender` (tests). Wire reset-password token flow (ASP.NET Identity `GeneratePasswordResetTokenAsync`, time-limited single-use). Wire student-created email (temp password delivery). Config: `Email__Provider`, `Email__Smtp__*`, `Email__SendGrid__ApiKey`.
+- TODO-10W-5: Templates and preferences — `NotificationTemplate` entity + migration. `INotificationTemplateRenderer` (Liquid or Handlebars). Admin CRUD for templates. `NotificationPreference` per-user per-channel. Opt-out respected in dispatch worker.
+- TODO-10W-6: SMS provider — `ISmsProvider` interface. `TwilioSmsProvider` implementation. Config: `Sms__Provider`, `Sms__Twilio__*`. Wire one SMS producer: quota warning. Rate limiting per user per day. Opt-in required (STOP compliance).
+- TODO-10W-FINAL: Notification platform audit — delivery audit log review, security/PII audit, unsubscribe compliance, load test dispatch worker.
 - ~~TODO-10Students-F-F~~: server-side student pagination, filtering, sorting — **DONE in Phase 10Students-F-F** (2026-06-19). `GET /api/admin/students` now returns `PagedResponse<StudentListItem>`. Query params: page, pageSize, search, includeArchived, lifecycleStage, onboardingStatus, cefrLevel, sortBy, sortDir. Admin students component is server-driven. 756 Angular + 1944 .NET tests pass.
 - ~~TODO-10Students-F-G~~: add lifecycle/onboardingStatus/cefrLevel filter selects to the admin students filter bar UI — **DONE in Phase 10Students-F-G** (2026-06-20). Three `sp-admin-select` instances wired into filter bar. Clear filters button. 32 Angular tests pass.
 - ~~TODO-10X-L~~: fix shared admin overlay/slide-over/table-action bugs — **DONE in Phase 10X-L** (2026-06-20). `sp-admin-slide-over` z-index raised to 1000+, `closeOnBackdrop` default changed to false, `stackIndex` input added for stacked panels. Set CEFR and Assign Policy flows converted from centred modal to `sp-admin-slide-over`. Table-actions dropdown fixed with `position:fixed` + `getBoundingClientRect()` to escape overflow parents. 791 Angular tests pass.

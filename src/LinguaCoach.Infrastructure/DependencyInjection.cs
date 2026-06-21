@@ -1,5 +1,7 @@
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Activity.Evaluators;
+using LinguaCoach.Application.Notifications;
+using LinguaCoach.Infrastructure.Notifications;
 using LinguaCoach.Infrastructure.Activity.Evaluators;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Assessment;
@@ -78,6 +80,9 @@ public static class DependencyInjection
         services.AddScoped<Jobs.AudioCleanupJob>();
         services.AddScoped<Jobs.PracticeGymBufferRefillJob>();
         services.AddScoped<Jobs.PracticeGymGenerationJob>();
+
+        // Notifications
+        services.AddScoped<INotificationService, NotificationService>();
 
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
