@@ -135,10 +135,9 @@ Each item includes context, motivation, and the phase where it was deferred.
 **Context:** `GET /api/admin/students/{id}/usage` exists for admins. A student-facing equivalent under `/api/usage` would power the widget.
 **Deferred from:** Phase 10R, 2026-06-18.
 
-### TODO-022 — CSV export of usage data
-**What:** Admin endpoint to export `StudentUsageDaily` aggregates as CSV for a date range, optionally filtered by student or feature key.
-**Why:** Admins need cost reporting for billing reconciliation. The `UsageEvent` ledger is the source of truth but is not currently queryable from the UI.
-**Deferred from:** Phase 10R, 2026-06-18.
+### ~~TODO-022~~ — CSV export of usage data — **DONE in Phase 10U-8** (2026-06-21)
+
+`GET /api/admin/ai-usage/export.csv` delivers filtered `AiUsageLog` rows as RFC 4180 CSV. Columns: `CreatedAt, Provider, Model, FeatureKey, StudentId, WasSuccessful, IsFallback, FailureReason, InputTokens, OutputTokens, TotalTokens, CostUsd, DurationMs, CorrelationId`. Accepts all column filters (provider, model, featureKey, status, studentId) and date range. No pagination — returns up to 10,000 rows newest-first. Note: this is `AiUsageLog`-based, not `StudentUsageDaily`. A `StudentUsageDaily` export remains a future option if needed for billing reconciliation at the aggregate level.
 
 ### TODO-023 — Near-quota notification
 **What:** Send email/push notification when a student reaches 80% of a HardLimit quota. Use the `WarningThresholdPercent` field on `UsagePolicyRule`.
@@ -185,7 +184,7 @@ Each item includes context, motivation, and the phase where it was deferred.
 - ~~TODO-10R-RULE-MGMT-UI~~: Rule editor admin UI — **DONE in Phase 10R-H**. Modal add/edit/delete with full form, delete confirm, local state update.
 - TODO-10R-RULE-MGMT-UNIQUE-CONSTRAINT: Optional — promote duplicate-key guard from application layer to DB unique index on `(UsagePolicyId, FeatureKey)` via EF migration.
 - ~~TODO-10R-STUDENT-ASSIGN~~: Student policy assignment UI — **DONE in Phase 10R-J**. Usage Policy section in student detail: view effective policy, assign override, reset to default. DELETE endpoint added. 681 Angular tests pass.
-- TODO-10U: full AI usage/config redesign on the admin design system. Wrapper variant API (10X-J) is now available.
+- ~~TODO-10U~~: full AI usage/config redesign on the admin design system — **DONE in Phases 10U-1 through 10U-10** (2026-06-20/21). Summary cards, date filtering, recent calls pagination + filters, student filter, summary filter alignment, CSV export, daily trend table, custom date range picker. Deferred: pricing admin UI, timezone selector, row cap config, student typeahead, charts, alerts, TODO-10U-GAP-1 through GAP-7.
 - TODO-10V: prompt playground on the admin design system. Wrapper variant API (10X-J) is now available.
 - TODO-10X-J-INPUT-NUMBER: implement `sp-admin-input-number` — numeric CVA wrapper for number|null inputs (currently remain native inside sp-admin-form-field).
 - TODO-10X-J-SELECT-OBJECT: implement `sp-admin-select-object` — select wrapper for non-string option values (number|null object selects remain native).
@@ -201,5 +200,5 @@ Each item includes context, motivation, and the phase where it was deferred.
 - TODO-10U-GAP-3: Add `PromptKey` (string?) and `PromptVersion` (int?) to `AiUsageLog`. Pass from prompt-rendering layer. Enables prompt A/B cost/quality analysis. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
 - TODO-10U-GAP-4: Add `LearningActivityId` (Guid?) and `LearningSessionId` (Guid?) to `AiUsageLog`. Set where available from caller context. Enables per-session cost tracing. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
 - TODO-10U-GAP-5: Add `AdminUserId` (Guid?) to `AiUsageLog` for admin-initiated calls (test connection, category test). Required for multi-tenant billing isolation. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
-- TODO-10U-GAP-6: Split `AiUsageLog.CostUsd` into `InputCostUsd` + `OutputCostUsd` for per-component cost auditing. High effort (migration + all call sites). Defer until pricing admin table (10U-8) is in place. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+- TODO-10U-GAP-6: Split `AiUsageLog.CostUsd` into `InputCostUsd` + `OutputCostUsd` for per-component cost auditing. High effort (migration + all call sites). Defer until a pricing admin UI is implemented. Note: 10U-8 became CSV export, not pricing admin; pricing admin UI remains deferred. Identified in Phase 10U-1/10U-2 enterprise gap audit.
 - TODO-10U-GAP-7: Add `RequestType` enum column to `AiUsageLog` (`Llm`, `Tts`, `Stt`). Enables filtering and cost breakdown by modality without string prefix matching on `FeatureKey`. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.

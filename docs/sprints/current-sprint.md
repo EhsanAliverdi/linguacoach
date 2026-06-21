@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10U-10)
+lastUpdated: 2026-06-21 (10U-FINAL)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,33 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10U-FINAL — AI Usage / AI Config Closure Audit** - complete (2026-06-21)
+
+Goal: final validation and documentation pass for the full 10U work. No new features. Small fixes and doc updates only.
+
+### Audit findings
+
+- Backend: no bugs found. All four endpoints (summary, recent, trends, export.csv) correctly apply date filter + column filters. `ApplyDateFilter` (from ≥, to <, UTC) and `ApplyColumnFilter` (provider, model, featureKey, status, studentId) are shared and consistent across all handlers.
+- Frontend: no bugs found. `buildRange('custom')` correctly converts `yyyy-MM-dd` to UTC exclusive upper bound. `clearRecentFilters` correctly preserves custom date range. `applyCustomRange` guards both required + from ≤ to before calling API.
+- Pricing: `AiPricingOptions` reads `{Provider}:Pricing:{ModelName}:InputPer1KTokens/OutputPer1KTokens` from config — matches `appsettings.json` exactly. No hardcoded pricing in production C#.
+- Playwright: no AI Usage Playwright tests exist — no Playwright run.
+- TODOS.md: `TODO-10U` marked done; `TODO-022` marked done with note; `TODO-10U-GAP-6` stale reference to "10U-8 pricing admin" corrected.
+- `docs/handoffs/current-product-state.md`: updated to 10U-FINAL with full feature summary.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2041/2041 — 3 arch + 1248 unit + 790 integration)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (872/872)
+
+See: `docs/reviews/2026-06-21-phase-10u-final-ai-usage-config-closure-audit.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-10 — AI Usage Custom Date Range Picker** - complete (2026-06-21)
 

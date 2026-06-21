@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-5)
+lastUpdated: 2026-06-21 (10U-FINAL)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,25 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
+
+---
+
+## AI Usage admin — full feature closure (Phases 10U-1 through 10U-10, closed 2026-06-21)
+
+Admin AI Usage page (`/admin/ai-usage`) is fully functional:
+
+- **Summary cards**: total calls, success rate, failed, fallback, cost, input/output/total tokens. All respect active filters.
+- **Filter bar**: period preset (All time, Today, Last 7 days, Last 30 days, This month, Custom range). Custom range shows From/To date inputs + Apply/Clear dates; frontend validates both required and from ≤ to before calling APIs.
+- **Column filters**: provider, model, feature key, status (success/failed/fallback), student (GUID). All filters compose with date range. Invalid status → 400. Invalid studentId GUID → 400.
+- **Recent calls table**: server-side pagination (25/page, max 100), newest-first, paged envelope with `totalCount`/`totalPages`. Changing any filter resets to page 1. Empty/loading/error states.
+- **CSV export**: `GET /api/admin/ai-usage/export.csv` — all active filters, up to 10,000 rows, RFC 4180, `Content-Disposition: attachment`. Columns: `CreatedAt, Provider, Model, FeatureKey, StudentId, WasSuccessful, IsFallback, FailureReason, InputTokens, OutputTokens, TotalTokens, CostUsd, DurationMs, CorrelationId`.
+- **Daily trend table**: `GET /api/admin/ai-usage/trends` — grouped by calendar day (client-side), zero-fills missing days within a date range, all filters applied. Columns: Date, Calls, Success, Failed, Fallback, Tokens, Cost.
+- **AI Pricing config**: `appsettings.json` holds pricing for 12 models (5 OpenAI, 4 Gemini, 3 Anthropic). Read by `AiPricingOptions.GetProviderPricing`. No hardcoded pricing in production C#. Pricing admin UI remains deferred.
+
+Deferred: pricing admin UI, timezone selector, row cap config, student typeahead, charts/alerts, `AiUsageLog` schema extensions (GAP-1 through GAP-7).
+
+**Tests (at closure):** 2041/2041 .NET, 872/872 Angular. All builds clean.
 
 ---
 
