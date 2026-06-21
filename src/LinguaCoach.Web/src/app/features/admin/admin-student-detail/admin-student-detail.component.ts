@@ -44,6 +44,7 @@ interface StudentEditForm {
             <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
             @if (s.lifecycleStage !== 'Archived') {
               <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
+              <button type="button" class="sp-admin-link-button" (click)="sendResetLink(s)" [disabled]="sendingResetLink()">Send reset link</button>
               <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
               <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
             }
@@ -956,6 +957,9 @@ export class AdminStudentDetailComponent implements OnInit {
   resetSuccessPassword = signal('');
   resetForm = { newPassword: '', mustChangePassword: true };
 
+  sendingResetLink = signal(false);
+  resetLinkSent = signal(false);
+
   resettingData = signal<AdminStudentDetail | null>(null);
   savingResetData = signal(false);
   resetDataError = signal('');
@@ -1344,6 +1348,23 @@ export class AdminStudentDetailComponent implements OnInit {
       error: err => {
         this.savingReset.set(false);
         this.resetError.set(err.error?.error ?? 'Could not reset password.');
+      },
+    });
+  }
+
+  sendResetLink(student: AdminStudentDetail): void {
+    this.sendingResetLink.set(true);
+    this.resetLinkSent.set(false);
+
+    this.adminApi.sendStudentResetLink(student.studentProfileId).subscribe({
+      next: () => {
+        this.sendingResetLink.set(false);
+        this.resetLinkSent.set(true);
+        this.toast.success(`Reset link sent to ${student.email}`);
+      },
+      error: () => {
+        this.sendingResetLink.set(false);
+        this.toast.error('Could not send reset link.');
       },
     });
   }

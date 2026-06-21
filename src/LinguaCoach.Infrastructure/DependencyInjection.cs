@@ -107,6 +107,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ILoginHandler, LoginHandler>();
         services.AddScoped<IChangePasswordHandler, ChangePasswordHandler>();
+        services.AddScoped<IPasswordResetService, PasswordResetHandler>();
 
         // Admin
         services.AddScoped<ICreateStudentHandler, CreateStudentHandler>();

@@ -59,6 +59,9 @@ export class AdminApiService {
   resetStudentPassword(studentProfileId: string, newPassword: string, mustChangePassword = true): Observable<void> {
     return this.http.post<void>(`${this.api}/students/${studentProfileId}/reset-password`, { newPassword, mustChangePassword });
   }
+  sendStudentResetLink(studentProfileId: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/students/${studentProfileId}/send-reset-link`, null);
+  }
   resetStudent(studentProfileId: string, request: ResetStudentRequest): Observable<ResetStudentResponse> {
     return this.http.post<ResetStudentResponse>(`${this.api}/students/${studentProfileId}/reset`, request);
   }

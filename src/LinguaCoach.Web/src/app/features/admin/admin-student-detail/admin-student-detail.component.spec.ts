@@ -1252,3 +1252,68 @@ describe('AdminStudentDetailComponent — 10X-L: Set CEFR slide-over', () => {
     expect(slideOvers.length).toBeGreaterThan(0);
   });
 });
+
+describe('AdminStudentDetailComponent — send reset link', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let toast: jasmine.SpyObj<ToastService>;
+  let comp: AdminStudentDetailComponent;
+
+  function setup() {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory', 'updateStudent', 'archiveStudent', 'resetStudentPassword',
+      'resetStudent', 'sendStudentResetLink',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    const governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+
+    const student = makeStudentDetail();
+    adminApi.getStudent.and.returnValue(of(student));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([]));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: ToastService, useValue: toast },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    comp = fixture.componentInstance;
+    fixture.detectChanges();
+  }
+
+  it('calls sendStudentResetLink and shows success toast', () => {
+    setup();
+    adminApi.sendStudentResetLink.and.returnValue(of(undefined));
+    const student = comp.student()!;
+
+    comp.sendResetLink(student);
+
+    expect(adminApi.sendStudentResetLink).toHaveBeenCalledWith(student.studentProfileId);
+    expect(toast.success).toHaveBeenCalledWith(`Reset link sent to ${student.email}`);
+    expect(comp.resetLinkSent()).toBeTrue();
+    expect(comp.sendingResetLink()).toBeFalse();
+  });
+
+  it('shows error toast and resets loading when send fails', () => {
+    setup();
+    adminApi.sendStudentResetLink.and.returnValue(throwError(() => new Error('fail')));
+    const student = comp.student()!;
+
+    comp.sendResetLink(student);
+
+    expect(toast.error).toHaveBeenCalledWith('Could not send reset link.');
+    expect(comp.resetLinkSent()).toBeFalse();
+    expect(comp.sendingResetLink()).toBeFalse();
+  });
+});

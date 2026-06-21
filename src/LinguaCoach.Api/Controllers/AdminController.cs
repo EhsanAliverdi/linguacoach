@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Auth;
 using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ public sealed class AdminController : ControllerBase
     private readonly IAdminAiConfigHandler _aiConfigHandler;
     private readonly IExerciseTypeCatalogService _exerciseTypes;
     private readonly LinguaCoach.Application.LearningPath.IStudentMemoryQuery _memoryQuery;
+    private readonly IPasswordResetService _passwordReset;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
@@ -26,7 +28,8 @@ public sealed class AdminController : ControllerBase
         IAdminCurriculumHandler curriculumHandler,
         IAdminAiConfigHandler aiConfigHandler,
         IExerciseTypeCatalogService exerciseTypes,
-        LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery)
+        LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery,
+        IPasswordResetService passwordReset)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
@@ -35,6 +38,7 @@ public sealed class AdminController : ControllerBase
         _aiConfigHandler = aiConfigHandler;
         _exerciseTypes = exerciseTypes;
         _memoryQuery = memoryQuery;
+        _passwordReset = passwordReset;
     }
 
 
@@ -218,6 +222,29 @@ public sealed class AdminController : ControllerBase
         {
             await _studentQuery.ResetStudentPasswordAsync(
                 new ResetStudentPasswordCommand(studentId, request.NewPassword, request.MustChangePassword), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Admin triggers a token-based reset-link email for the student.
+    /// Token is generated and emailed; it is never returned to the admin.
+    /// </summary>
+    [HttpPost("students/{studentId:guid}/send-reset-link")]
+    public async Task<IActionResult> SendStudentResetLink(Guid studentId, CancellationToken ct)
+    {
+        var adminId = GetCurrentUserId();
+        if (adminId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            await _passwordReset.SendResetLinkAsync(
+                new SendPasswordResetLinkCommand(studentId, adminId), ct);
             return NoContent();
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))

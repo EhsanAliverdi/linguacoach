@@ -11,11 +11,16 @@ public sealed class AuthController : ControllerBase
 {
     private readonly ILoginHandler _loginHandler;
     private readonly IChangePasswordHandler _changePasswordHandler;
+    private readonly IPasswordResetService _passwordReset;
 
-    public AuthController(ILoginHandler loginHandler, IChangePasswordHandler changePasswordHandler)
+    public AuthController(
+        ILoginHandler loginHandler,
+        IChangePasswordHandler changePasswordHandler,
+        IPasswordResetService passwordReset)
     {
         _loginHandler = loginHandler;
         _changePasswordHandler = changePasswordHandler;
+        _passwordReset = passwordReset;
     }
 
     [HttpPost("login")]
@@ -51,6 +56,31 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Public endpoint — no auth required. Accepts userId + token from reset link,
+    /// validates token via ASP.NET Identity, and sets new password.
+    /// Returns generic errors to avoid information leakage.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
+    {
+        if (request.NewPassword != request.ConfirmPassword)
+            return BadRequest(new { error = "Passwords do not match." });
+
+        var result = await _passwordReset.CompleteResetAsync(
+            new CompletePasswordResetCommand(
+                request.UserId,
+                request.Token,
+                request.NewPassword,
+                request.ConfirmPassword), ct);
+
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error ?? "The reset link is invalid or has expired." });
+
+        return NoContent();
+    }
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
@@ -58,3 +88,4 @@ public sealed class AuthController : ControllerBase
 
 public sealed record LoginRequest(string Email, string Password);
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+public sealed record ResetPasswordRequest(string UserId, string Token, string NewPassword, string ConfirmPassword);

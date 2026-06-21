@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import {
-  LoginRequest, LoginResponse, ChangePasswordRequest
+  LoginRequest, LoginResponse, ChangePasswordRequest, ResetPasswordRequest
 } from '../models/auth.models';
 import { TokenService } from './token.service';
 import { environment } from '../../../environments/environment';
@@ -28,6 +28,10 @@ export class AuthService {
     return this.http.post<void>(`${this.api}/auth/change-password`, request).pipe(
       tap(() => this.tokenService.setMustChangePassword(false))
     );
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<void> {
+    return this.http.post<void>(`${this.api}/auth/reset-password`, request);
   }
 
   logout(): void {

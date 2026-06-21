@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-4)
+lastUpdated: 2026-06-21 (10W-4B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,35 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10W-4B — Token-Based Password Reset Link** - complete (2026-06-21)
+
+Goal: admin triggers a password reset link email to a student. Student clicks link and sets new password via a public Angular page. Token never returned to admin, never stored in logs or metadata.
+
+### Delivered
+
+- `IPasswordResetService` + `SendPasswordResetLinkCommand` + `CompletePasswordResetCommand` + `CompletePasswordResetResult` in `LinguaCoach.Application/Auth/`.
+- `PasswordResetHandler` in `LinguaCoach.Infrastructure/Auth/`: generates ASP.NET Identity token, Base64Url-encodes it, builds reset link with `PublicApp:BaseUrl`, queues email outbox item. Token never logged. Generic error returned on failure (no info leak).
+- `POST /api/admin/students/{id}/send-reset-link` (admin auth required). Returns 204.
+- `POST /api/auth/reset-password` (public, no auth). Validates passwords match, calls `CompleteResetAsync`, clears `MustChangePassword` on success. Generic errors on all failure paths.
+- `PublicApp:BaseUrl` added to `appsettings.json` (default `http://localhost:4200`).
+- DI: `services.AddScoped<IPasswordResetService, PasswordResetHandler>()`.
+- Frontend: `ResetPasswordComponent` at `/reset-password` — reads `userId`+`token` from query params, validates, calls `auth.resetPassword()`. Success/error states with signals.
+- Admin: `sendResetLink(student)` method + `sendingResetLink`/`resetLinkSent` signals in `AdminStudentDetailComponent`. "Send reset link" button in student detail header actions.
+- `AdminApiService.sendStudentResetLink()` added.
+- `AuthService.resetPassword()` + `ResetPasswordRequest` model added.
+- Frontend specs: `reset-password.component.spec.ts` (7 tests), `admin-student-detail` describe block (2 tests).
+- Backend integration tests: `PasswordResetEndpointTests.cs` (8 tests — auth gates, outbox queued, body contains link, metadata safety, generic errors).
+- Gates: `dotnet build Release` clean, `dotnet test Release` 2159/2159 pass, `npm run build --configuration production` clean, `npm test` 925/925 pass.
+
+### Security invariants
+
+- Token not logged, not in notification metadata, not returned to admin.
+- Public endpoint returns identical generic error for user-not-found, bad token, and expired token.
+- Raw password never emailed or stored.
+- Admin endpoint requires admin role JWT.
+
+---
 
 **Phase 10W-4 — Email Provider + Reset Password Wiring + Dispatch Job** - complete (2026-06-21)
 
