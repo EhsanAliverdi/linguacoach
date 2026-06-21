@@ -74,6 +74,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -7,6 +7,8 @@ import {
   AdminNotificationListQuery, AdminOutboxListQuery,
   AdminSendNotificationResult,
   AdminNotificationConfigStatus, AdminTestEmailResult,
+  AdminTemplateItem, AdminCreateTemplateRequest, AdminUpdateTemplateRequest,
+  AdminTemplatePreviewResult,
 } from '../../../core/models/admin.models';
 import {
   SpAdminBadgeComponent, SpAdminBadgeTone,
@@ -79,7 +81,7 @@ export class AdminNotificationsComponent implements OnInit {
   outboxStatusFilter = '';
   outboxFailedOnly = false;
 
-  activeTab: 'notifications' | 'outbox' | 'config' = 'notifications';
+  activeTab: 'notifications' | 'outbox' | 'config' | 'templates' = 'notifications';
 
   retryingId = signal<string | null>(null);
   cancellingId = signal<string | null>(null);
@@ -345,6 +347,162 @@ export class AdminNotificationsComponent implements OnInit {
       case 'deferred': return 'neutral';
       default: return 'warning';
     }
+  }
+
+  // ── Templates tab ──────────────────────────────────────────────────────────
+
+  templatesLoading = signal(false);
+  templatesError = signal('');
+  templates = signal<AdminTemplateItem[]>([]);
+  templatesTotal = signal(0);
+  templatesPage = signal(1);
+  readonly templatesPageSize = 20;
+  templatesTotalPages = computed(() => Math.max(1, Math.ceil(this.templatesTotal() / this.templatesPageSize)));
+
+  templateChannelFilter = '';
+  templateCategoryFilter = '';
+  templateActiveFilter = '';
+  templateSearch = '';
+
+  // slide-over for create/edit
+  templateFormOpen = signal(false);
+  templateFormMode: 'create' | 'edit' = 'create';
+  templateFormLoading = signal(false);
+  templateFormError = signal('');
+  templateFormSuccess = signal('');
+  editingTemplateId = '';
+
+  tplKey = '';
+  tplChannel = 'InApp';
+  tplName = '';
+  tplSubject = '';
+  tplTitle = '';
+  tplBody = '';
+  tplCategory = 'System';
+  tplSeverity = 'Info';
+  tplDescription = '';
+  tplSupportedVars = '';
+
+  // preview
+  previewLoading = signal(false);
+  previewResult = signal<AdminTemplatePreviewResult | null>(null);
+  previewError = signal('');
+  previewVariablesJson = '{}';
+
+  readonly templateActiveOptions: SpAdminSelectOption[] = [
+    { value: 'true', label: 'Active only' },
+    { value: 'false', label: 'Inactive only' },
+  ];
+
+  onTemplatesTabActivated(): void {
+    if (!this.templates().length && !this.templatesLoading()) this.loadTemplates();
+  }
+
+  loadTemplates(): void {
+    this.templatesLoading.set(true);
+    this.templatesError.set('');
+    this.adminApi.listNotificationTemplates({
+      page: this.templatesPage(),
+      pageSize: this.templatesPageSize,
+      channel: this.templateChannelFilter || undefined,
+      category: this.templateCategoryFilter || undefined,
+      isActive: this.templateActiveFilter === 'true' ? true : this.templateActiveFilter === 'false' ? false : undefined,
+      search: this.templateSearch || undefined,
+    }).subscribe({
+      next: (res) => { this.templates.set(res.items); this.templatesTotal.set(res.totalCount); this.templatesLoading.set(false); },
+      error: () => { this.templatesError.set('Could not load templates.'); this.templatesLoading.set(false); },
+    });
+  }
+
+  applyTemplateFilters(): void { this.templatesPage.set(1); this.loadTemplates(); }
+  onTemplatesPage(page: number): void { this.templatesPage.set(page); this.loadTemplates(); }
+
+  openCreateTemplate(): void {
+    this.templateFormMode = 'create';
+    this.editingTemplateId = '';
+    this.tplKey = ''; this.tplChannel = 'InApp'; this.tplName = '';
+    this.tplSubject = ''; this.tplTitle = ''; this.tplBody = '';
+    this.tplCategory = 'System'; this.tplSeverity = 'Info';
+    this.tplDescription = ''; this.tplSupportedVars = '';
+    this.templateFormError.set(''); this.templateFormSuccess.set('');
+    this.previewResult.set(null); this.previewError.set(''); this.previewVariablesJson = '{}';
+    this.templateFormOpen.set(true);
+  }
+
+  openEditTemplate(t: AdminTemplateItem): void {
+    this.templateFormMode = 'edit';
+    this.editingTemplateId = t.id;
+    this.tplKey = t.templateKey; this.tplChannel = t.channel; this.tplName = t.name;
+    this.tplSubject = t.subject ?? ''; this.tplTitle = t.title ?? ''; this.tplBody = t.body;
+    this.tplCategory = t.category; this.tplSeverity = t.severity;
+    this.tplDescription = t.description ?? ''; this.tplSupportedVars = t.supportedVariablesJson ?? '';
+    this.templateFormError.set(''); this.templateFormSuccess.set('');
+    this.previewResult.set(null); this.previewError.set(''); this.previewVariablesJson = '{}';
+    this.templateFormOpen.set(true);
+  }
+
+  closeTemplateForm(): void { this.templateFormOpen.set(false); }
+
+  submitTemplateForm(): void {
+    this.templateFormError.set(''); this.templateFormSuccess.set('');
+    if (!this.tplName.trim()) { this.templateFormError.set('Name is required.'); return; }
+    if (!this.tplBody.trim()) { this.templateFormError.set('Body is required.'); return; }
+
+    this.templateFormLoading.set(true);
+
+    if (this.templateFormMode === 'create') {
+      if (!this.tplKey.trim()) { this.templateFormError.set('Template key is required.'); this.templateFormLoading.set(false); return; }
+      const req: AdminCreateTemplateRequest = {
+        templateKey: this.tplKey.trim(), channel: this.tplChannel,
+        name: this.tplName.trim(), body: this.tplBody.trim(),
+        subject: this.tplSubject.trim() || null, title: this.tplTitle.trim() || null,
+        category: this.tplCategory, severity: this.tplSeverity,
+        description: this.tplDescription.trim() || null,
+        supportedVariablesJson: this.tplSupportedVars.trim() || null,
+      };
+      this.adminApi.createNotificationTemplate(req).subscribe({
+        next: () => { this.templateFormLoading.set(false); this.templateFormSuccess.set('Template created.'); this.loadTemplates(); },
+        error: (err) => {
+          this.templateFormLoading.set(false);
+          this.templateFormError.set(err?.error?.error ?? 'Could not create template.');
+        },
+      });
+    } else {
+      const req: AdminUpdateTemplateRequest = {
+        name: this.tplName.trim(), body: this.tplBody.trim(),
+        subject: this.tplSubject.trim() || null, title: this.tplTitle.trim() || null,
+        category: this.tplCategory, severity: this.tplSeverity,
+        description: this.tplDescription.trim() || null,
+        supportedVariablesJson: this.tplSupportedVars.trim() || null,
+      };
+      this.adminApi.updateNotificationTemplate(this.editingTemplateId, req).subscribe({
+        next: () => { this.templateFormLoading.set(false); this.templateFormSuccess.set('Template updated.'); this.loadTemplates(); },
+        error: (err) => {
+          this.templateFormLoading.set(false);
+          this.templateFormError.set(err?.error?.error ?? 'Could not update template.');
+        },
+      });
+    }
+  }
+
+  deactivateTemplate(t: AdminTemplateItem): void {
+    this.adminApi.deactivateNotificationTemplate(t.id).subscribe({
+      next: () => this.loadTemplates(),
+      error: () => this.templatesError.set('Could not deactivate template.'),
+    });
+  }
+
+  previewTemplate(): void {
+    if (!this.editingTemplateId) return;
+    let vars: Record<string, string> = {};
+    try { vars = JSON.parse(this.previewVariablesJson || '{}'); } catch { this.previewError.set('Variables must be valid JSON.'); return; }
+    this.previewLoading.set(true);
+    this.previewError.set('');
+    this.previewResult.set(null);
+    this.adminApi.previewNotificationTemplate(this.editingTemplateId, vars).subscribe({
+      next: (r) => { this.previewResult.set(r); this.previewLoading.set(false); },
+      error: () => { this.previewError.set('Preview failed.'); this.previewLoading.set(false); },
+    });
   }
 
   // ── Formatting helpers ─────────────────────────────────────────────────────

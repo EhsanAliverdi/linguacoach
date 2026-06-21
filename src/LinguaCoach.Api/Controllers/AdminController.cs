@@ -21,6 +21,7 @@ public sealed class AdminController : ControllerBase
     private readonly LinguaCoach.Application.LearningPath.IStudentMemoryQuery _memoryQuery;
     private readonly IPasswordResetService _passwordReset;
     private readonly IAdminNotificationHandler _notificationHandler;
+    private readonly IAdminTemplateHandler _templateHandler;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
@@ -31,7 +32,8 @@ public sealed class AdminController : ControllerBase
         IExerciseTypeCatalogService exerciseTypes,
         LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery,
         IPasswordResetService passwordReset,
-        IAdminNotificationHandler notificationHandler)
+        IAdminNotificationHandler notificationHandler,
+        IAdminTemplateHandler templateHandler)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
@@ -42,6 +44,7 @@ public sealed class AdminController : ControllerBase
         _memoryQuery = memoryQuery;
         _passwordReset = passwordReset;
         _notificationHandler = notificationHandler;
+        _templateHandler = templateHandler;
     }
 
 
@@ -681,6 +684,109 @@ public sealed class AdminController : ControllerBase
         return Ok(result);
     }
 
+    // ── Notification templates ─────────────────────────────────────────────────
+
+    [HttpGet("notifications/templates")]
+    public async Task<IActionResult> ListNotificationTemplates(
+        [FromQuery] string? channel,
+        [FromQuery] string? category,
+        [FromQuery] bool? isActive,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _templateHandler.ListTemplatesAsync(
+            new AdminTemplateListQuery(page, pageSize, channel, category, isActive, search), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("notifications/templates/{id:guid}")]
+    public async Task<IActionResult> GetNotificationTemplate(Guid id, CancellationToken ct)
+    {
+        var item = await _templateHandler.GetTemplateAsync(id, ct);
+        return item is null ? NotFound() : Ok(item);
+    }
+
+    [HttpPost("notifications/templates")]
+    public async Task<IActionResult> CreateNotificationTemplate(
+        [FromBody] AdminCreateTemplateRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.TemplateKey))
+            return BadRequest(new { error = "TemplateKey is required." });
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest(new { error = "Name is required." });
+        if (string.IsNullOrWhiteSpace(request.Body))
+            return BadRequest(new { error = "Body is required." });
+        if (string.IsNullOrWhiteSpace(request.Channel))
+            return BadRequest(new { error = "Channel is required." });
+
+        try
+        {
+            var result = await _templateHandler.CreateTemplateAsync(
+                new AdminCreateTemplateCommand(
+                    request.TemplateKey.Trim(), request.Channel.Trim(),
+                    request.Name.Trim(), request.Body.Trim(),
+                    request.Category ?? "System", request.Severity ?? "Info",
+                    request.Subject?.Trim(), request.Title?.Trim(),
+                    request.Description?.Trim(), request.SupportedVariablesJson?.Trim()),
+                GetCurrentUserId(), ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    [HttpPut("notifications/templates/{id:guid}")]
+    public async Task<IActionResult> UpdateNotificationTemplate(
+        Guid id, [FromBody] AdminUpdateTemplateRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest(new { error = "Name is required." });
+        if (string.IsNullOrWhiteSpace(request.Body))
+            return BadRequest(new { error = "Body is required." });
+
+        try
+        {
+            var result = await _templateHandler.UpdateTemplateAsync(
+                id, new AdminUpdateTemplateCommand(
+                    request.Name.Trim(), request.Body.Trim(),
+                    request.Category ?? "System", request.Severity ?? "Info",
+                    request.Subject?.Trim(), request.Title?.Trim(),
+                    request.Description?.Trim(), request.SupportedVariablesJson?.Trim()),
+                GetCurrentUserId(), ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("notifications/templates/{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateNotificationTemplate(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _templateHandler.DeactivateTemplateAsync(id, GetCurrentUserId(), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("notifications/templates/{id:guid}/preview")]
+    public async Task<IActionResult> PreviewNotificationTemplate(
+        Guid id, [FromBody] AdminTemplatePreviewApiRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _templateHandler.PreviewTemplateAsync(
+                id, new AdminTemplatePreviewRequest(
+                    request.Variables ?? new Dictionary<string, string>()),
+                ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
@@ -769,3 +875,28 @@ public sealed record AdminSendNotificationRequest(
     string? Severity = "Info",
     string? DeepLinkUrl = null,
     DateTime? ExpiresAtUtc = null);
+
+public sealed record AdminCreateTemplateRequest(
+    string TemplateKey,
+    string Channel,
+    string Name,
+    string Body,
+    string? Subject = null,
+    string? Title = null,
+    string? Category = "System",
+    string? Severity = "Info",
+    string? Description = null,
+    string? SupportedVariablesJson = null);
+
+public sealed record AdminUpdateTemplateRequest(
+    string Name,
+    string Body,
+    string? Subject = null,
+    string? Title = null,
+    string? Category = "System",
+    string? Severity = "Info",
+    string? Description = null,
+    string? SupportedVariablesJson = null);
+
+public sealed record AdminTemplatePreviewApiRequest(
+    Dictionary<string, string>? Variables = null);

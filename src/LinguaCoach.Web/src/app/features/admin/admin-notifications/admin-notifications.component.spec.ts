@@ -6,6 +6,7 @@ import {
   AdminNotificationItem, AdminOutboxItem, PagedResponse,
   AdminSendNotificationResult,
   AdminNotificationConfigStatus, AdminTestEmailResult,
+  AdminTemplateItem, AdminTemplatePreviewResult,
 } from '../../../core/models/admin.models';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -50,7 +51,11 @@ describe('AdminNotificationsComponent', () => {
       'retryOutboxItem', 'cancelOutboxItem',
       'sendAdminNotification', 'listStudents',
       'getNotificationConfig', 'testEmail',
+      'listNotificationTemplates', 'createNotificationTemplate',
+      'updateNotificationTemplate', 'deactivateNotificationTemplate',
+      'previewNotificationTemplate',
     ]);
+    apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([])));
     apiSpy.listAdminNotifications.and.returnValue(of(pagedOf([makeNotif()])));
     apiSpy.listAdminOutbox.and.returnValue(of(pagedOf([makeOutbox()])));
     apiSpy.listStudents.and.returnValue(of(pagedOf([])));
@@ -379,6 +384,172 @@ describe('AdminNotificationsComponent', () => {
 
   it('config signal starts null', () => {
     expect(component.config()).toBeNull();
+  });
+
+  // ── Templates tab ─────────────────────────────────────────────────────────
+
+  const makeTemplate = (overrides: Partial<AdminTemplateItem> = {}): AdminTemplateItem => ({
+    id: 't1', templateKey: 'test.key', channel: 'InApp', name: 'Test Template',
+    subject: null, title: 'Hi', body: 'Hello {{Name}}',
+    category: 'Admin', severity: 'Info', isActive: true, version: 1,
+    supportedVariablesJson: null, description: null,
+    createdAtUtc: new Date().toISOString(), updatedAtUtc: null,
+    ...overrides,
+  });
+
+  it('onTemplatesTabActivated loads templates when list is empty', () => {
+    apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([makeTemplate()])));
+    component.onTemplatesTabActivated();
+    expect(apiSpy.listNotificationTemplates).toHaveBeenCalled();
+    expect(component.templates().length).toBe(1);
+  });
+
+  it('onTemplatesTabActivated does not reload when templates already loaded', () => {
+    component.templates.set([makeTemplate()]);
+    component.onTemplatesTabActivated();
+    expect(apiSpy.listNotificationTemplates).not.toHaveBeenCalled();
+  });
+
+  it('loadTemplates sets error on failure', () => {
+    apiSpy.listNotificationTemplates.and.returnValue(throwError(() => new Error('fail')));
+    component.loadTemplates();
+    expect(component.templatesError()).toBe('Could not load templates.');
+  });
+
+  it('applyTemplateFilters resets page and reloads', () => {
+    apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([])));
+    component.templatesPage.set(3);
+    component.applyTemplateFilters();
+    expect(component.templatesPage()).toBe(1);
+    expect(apiSpy.listNotificationTemplates).toHaveBeenCalled();
+  });
+
+  it('openCreateTemplate resets form fields and opens slide-over', () => {
+    component.tplKey = 'old.key';
+    component.tplName = 'Old name';
+    component.openCreateTemplate();
+    expect(component.templateFormOpen()).toBeTrue();
+    expect(component.templateFormMode).toBe('create');
+    expect(component.tplKey).toBe('');
+    expect(component.tplName).toBe('');
+    expect(component.tplChannel).toBe('InApp');
+  });
+
+  it('openEditTemplate populates fields from template', () => {
+    const t = makeTemplate({ id: 'abc', templateKey: 'foo.bar', channel: 'Email', subject: 'Subj' });
+    component.openEditTemplate(t);
+    expect(component.templateFormOpen()).toBeTrue();
+    expect(component.templateFormMode).toBe('edit');
+    expect(component.editingTemplateId).toBe('abc');
+    expect(component.tplKey).toBe('foo.bar');
+    expect(component.tplSubject).toBe('Subj');
+  });
+
+  it('closeTemplateForm closes the slide-over', () => {
+    component.templateFormOpen.set(true);
+    component.closeTemplateForm();
+    expect(component.templateFormOpen()).toBeFalse();
+  });
+
+  it('submitTemplateForm sets error if name is blank', () => {
+    component.openCreateTemplate();
+    component.tplKey = 'test.key';
+    component.tplName = '';
+    component.tplBody = 'B';
+    component.submitTemplateForm();
+    expect(component.templateFormError()).toContain('Name');
+  });
+
+  it('submitTemplateForm sets error if body is blank', () => {
+    component.openCreateTemplate();
+    component.tplKey = 'test.key';
+    component.tplName = 'N';
+    component.tplBody = '';
+    component.submitTemplateForm();
+    expect(component.templateFormError()).toContain('Body');
+  });
+
+  it('submitTemplateForm sets error if key is blank (create mode)', () => {
+    component.openCreateTemplate();
+    component.tplKey = '';
+    component.tplName = 'N';
+    component.tplBody = 'B';
+    component.submitTemplateForm();
+    expect(component.templateFormError()).toContain('key');
+  });
+
+  it('submitTemplateForm (create) calls createNotificationTemplate', () => {
+    apiSpy.createNotificationTemplate.and.returnValue(of(makeTemplate()));
+    apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([makeTemplate()])));
+    component.openCreateTemplate();
+    component.tplKey = 'test.new';
+    component.tplName = 'New';
+    component.tplBody = 'Body';
+    component.tplTitle = 'Title';
+    component.submitTemplateForm();
+    expect(apiSpy.createNotificationTemplate).toHaveBeenCalledWith(jasmine.objectContaining({
+      templateKey: 'test.new', name: 'New', body: 'Body',
+    }));
+    expect(component.templateFormSuccess()).toContain('created');
+  });
+
+  it('submitTemplateForm (edit) calls updateNotificationTemplate', () => {
+    const t = makeTemplate({ id: 'edit-id' });
+    apiSpy.updateNotificationTemplate.and.returnValue(of(t));
+    apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([t])));
+    component.openEditTemplate(t);
+    component.tplName = 'Updated name';
+    component.tplBody = 'New body';
+    component.submitTemplateForm();
+    expect(apiSpy.updateNotificationTemplate).toHaveBeenCalledWith('edit-id', jasmine.objectContaining({
+      name: 'Updated name', body: 'New body',
+    }));
+    expect(component.templateFormSuccess()).toContain('updated');
+  });
+
+  it('deactivateTemplate calls deactivateNotificationTemplate and reloads', () => {
+    apiSpy.deactivateNotificationTemplate.and.returnValue(of(undefined as any));
+    apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([])));
+    component.deactivateTemplate(makeTemplate());
+    expect(apiSpy.deactivateNotificationTemplate).toHaveBeenCalledWith('t1');
+    expect(apiSpy.listNotificationTemplates).toHaveBeenCalled();
+  });
+
+  it('previewTemplate does not call sendAdminNotification', () => {
+    const result: AdminTemplatePreviewResult = {
+      succeeded: true, renderedSubject: null, renderedTitle: 'Hi Alice',
+      renderedBody: 'Hello Alice', missingVariables: [],
+    };
+    apiSpy.previewNotificationTemplate.and.returnValue(of(result));
+    const t = makeTemplate({ id: 'prev-id' });
+    component.openEditTemplate(t);
+    component.previewVariablesJson = '{"Name":"Alice"}';
+    component.previewTemplate();
+    expect(apiSpy.previewNotificationTemplate).toHaveBeenCalledWith('prev-id', { Name: 'Alice' });
+    expect(apiSpy.sendAdminNotification).not.toHaveBeenCalled();
+    expect(component.previewResult()!.renderedBody).toBe('Hello Alice');
+  });
+
+  it('previewTemplate sets error on invalid JSON', () => {
+    const t = makeTemplate({ id: 'pj-id' });
+    component.openEditTemplate(t);
+    component.previewVariablesJson = 'not-json';
+    component.previewTemplate();
+    expect(apiSpy.previewNotificationTemplate).not.toHaveBeenCalled();
+    expect(component.previewError()).toContain('JSON');
+  });
+
+  it('previewTemplate does nothing when no editingTemplateId', () => {
+    component.templateFormMode = 'create';
+    component.editingTemplateId = '';
+    component.previewTemplate();
+    expect(apiSpy.previewNotificationTemplate).not.toHaveBeenCalled();
+  });
+
+  it('templates tab does not add SMS send UI', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.innerHTML).not.toContain('sms-send');
+    expect(el.innerHTML).not.toContain('sms-form');
   });
 
   it('does not expose send-notification template UI', () => {

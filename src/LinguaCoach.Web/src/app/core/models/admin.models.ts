@@ -457,6 +457,67 @@ export interface AdminSendNotificationResult {
   errors: string[];
 }
 
+// ── Notification templates ────────────────────────────────────────────────────
+
+export interface AdminTemplateItem {
+  id: string;
+  templateKey: string;
+  channel: string;
+  name: string;
+  subject: string | null;
+  title: string | null;
+  body: string;
+  category: string;
+  severity: string;
+  isActive: boolean;
+  version: number;
+  supportedVariablesJson: string | null;
+  description: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
+}
+
+export interface AdminTemplateListQuery {
+  page?: number;
+  pageSize?: number;
+  channel?: string;
+  category?: string;
+  isActive?: boolean;
+  search?: string;
+}
+
+export interface AdminCreateTemplateRequest {
+  templateKey: string;
+  channel: string;
+  name: string;
+  body: string;
+  subject?: string | null;
+  title?: string | null;
+  category?: string;
+  severity?: string;
+  description?: string | null;
+  supportedVariablesJson?: string | null;
+}
+
+export interface AdminUpdateTemplateRequest {
+  name: string;
+  body: string;
+  subject?: string | null;
+  title?: string | null;
+  category?: string;
+  severity?: string;
+  description?: string | null;
+  supportedVariablesJson?: string | null;
+}
+
+export interface AdminTemplatePreviewResult {
+  succeeded: boolean;
+  renderedSubject: string | null;
+  renderedTitle: string | null;
+  renderedBody: string;
+  missingVariables: string[];
+}
+
 export interface UpdateExerciseTypeRequest {
   isEnabled?: boolean;
   supportsPracticeGym?: boolean;

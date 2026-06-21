@@ -31,6 +31,14 @@
       [class.text-gray-500]="activeTab !== 'config'"
       (click)="activeTab = 'config'; onConfigTabActivated()"
     >Configuration</button>
+    <button
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class.border-blue-600]="activeTab === 'templates'"
+      [class.text-blue-600]="activeTab === 'templates'"
+      [class.border-transparent]="activeTab !== 'templates'"
+      [class.text-gray-500]="activeTab !== 'templates'"
+      (click)="activeTab = 'templates'; onTemplatesTabActivated()"
+    >Templates</button>
   </div>
 
   <!-- ── Notifications tab ──────────────────────────────────────────────────── -->
@@ -338,6 +346,238 @@
       <sp-admin-empty-state message="No configuration loaded." />
     }
   }
+
+  <!-- ── Templates tab ────────────────────────────────────────────────────── -->
+  @if (activeTab === 'templates') {
+    <sp-admin-card>
+      <sp-admin-filter-bar density="compact">
+        <sp-admin-input
+          filters size="sm"
+          placeholder="Search key / name…"
+          [(ngModel)]="templateSearch"
+          (keyup.enter)="applyTemplateFilters()"
+          aria-label="Search templates" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All channels"
+          [options]="channelOptions"
+          [(ngModel)]="templateChannelFilter"
+          (ngModelChange)="applyTemplateFilters()"
+          aria-label="Filter by channel" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All categories"
+          [options]="categoryOptions"
+          [(ngModel)]="templateCategoryFilter"
+          (ngModelChange)="applyTemplateFilters()"
+          aria-label="Filter by category" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All states"
+          [options]="templateActiveOptions"
+          [(ngModel)]="templateActiveFilter"
+          (ngModelChange)="applyTemplateFilters()"
+          aria-label="Filter by active state" />
+        <sp-admin-button size="sm" (clicked)="openCreateTemplate()" aria-label="Create template">New template</sp-admin-button>
+      </sp-admin-filter-bar>
+
+      @if (templatesLoading()) {
+        <sp-admin-loading-state message="Loading templates…" />
+      } @else if (templatesError()) {
+        <sp-admin-error-state [message]="templatesError()" (retry)="loadTemplates()" />
+      } @else if (templates().length === 0) {
+        <sp-admin-empty-state message="No templates found." />
+      } @else {
+        <sp-admin-table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Channel</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Severity</th>
+              <th>Active</th>
+              <th>Version</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of templates(); track t.id) {
+              <tr>
+                <td class="font-mono text-xs">{{ t.templateKey }}</td>
+                <td><sp-admin-badge tone="neutral">{{ t.channel }}</sp-admin-badge></td>
+                <td>{{ t.name }}</td>
+                <td>{{ t.category }}</td>
+                <td><sp-admin-badge [tone]="severityTone(t.severity)">{{ t.severity }}</sp-admin-badge></td>
+                <td>
+                  <sp-admin-badge [tone]="t.isActive ? 'success' : 'neutral'">
+                    {{ t.isActive ? 'Active' : 'Inactive' }}
+                  </sp-admin-badge>
+                </td>
+                <td>{{ t.version }}</td>
+                <td>{{ t.updatedAtUtc ? timeAgo(t.updatedAtUtc) : '—' }}</td>
+                <td>
+                  <div class="flex gap-2">
+                    <button
+                      class="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
+                      (click)="openEditTemplate(t)"
+                      type="button"
+                    >Edit</button>
+                    @if (t.isActive) {
+                      <button
+                        class="text-xs px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50"
+                        (click)="deactivateTemplate(t)"
+                        type="button"
+                      >Deactivate</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </sp-admin-table>
+
+        @if (templatesTotalPages() > 1) {
+          <sp-admin-pagination
+            [page]="templatesPage()"
+            [totalPages]="templatesTotalPages()"
+            (pageChange)="onTemplatesPage($event)" />
+        }
+      }
+    </sp-admin-card>
+  }
+
+  <!-- ── Template create/edit slide-over ───────────────────────────────────── -->
+  <sp-admin-slide-over
+    [open]="templateFormOpen()"
+    [title]="templateFormMode === 'create' ? 'Create Template' : 'Edit Template'"
+    [subtitle]="'Manage notification template content. Use ' + '{{VarName}}' + ' placeholders.'"
+    size="md"
+    (closed)="closeTemplateForm()"
+  >
+    <div class="flex flex-col gap-4 p-1">
+
+      @if (templateFormMode === 'create') {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Template key <span class="text-red-500">*</span></label>
+          <sp-admin-input size="sm" placeholder="account.password_reset" [(ngModel)]="tplKey" aria-label="Template key" />
+          <p class="text-xs text-gray-400 mt-1">Stable dot-separated key, e.g. account.password_reset</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Channel <span class="text-red-500">*</span></label>
+          <sp-admin-select size="sm" [options]="channelOptions" [(ngModel)]="tplChannel" aria-label="Channel" />
+        </div>
+      } @else {
+        <div class="text-xs text-gray-500 font-mono bg-gray-50 rounded px-3 py-2">
+          {{ tplKey }} / {{ tplChannel }}
+        </div>
+      }
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+        <sp-admin-input size="sm" placeholder="Template display name" [(ngModel)]="tplName" aria-label="Template name" />
+      </div>
+
+      @if (tplChannel === 'Email' || tplChannel === 'Sms') {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Subject <span class="text-red-500">*</span></label>
+          <sp-admin-input size="sm" placeholder="Email subject line" [(ngModel)]="tplSubject" aria-label="Subject" />
+        </div>
+      }
+
+      @if (tplChannel === 'InApp') {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+          <sp-admin-input size="sm" placeholder="In-app notification title" [(ngModel)]="tplTitle" aria-label="Title" />
+        </div>
+      }
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Body <span class="text-red-500">*</span></label>
+        <textarea
+          class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm focus:border-blue-300 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none font-mono"
+          rows="5"
+          [placeholder]="'Body content. Use ' + '{{' + 'VarName' + '}}' + ' placeholders.'"
+          [(ngModel)]="tplBody"
+          aria-label="Body"
+        ></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <sp-admin-select size="sm" [options]="categoryOptions" [(ngModel)]="tplCategory" aria-label="Category" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+          <sp-admin-select size="sm" [options]="severityOptions" [(ngModel)]="tplSeverity" aria-label="Severity" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-gray-400 font-normal">(optional)</span></label>
+        <sp-admin-input size="sm" placeholder="Internal description" [(ngModel)]="tplDescription" aria-label="Description" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Supported variables JSON <span class="text-gray-400 font-normal">(optional)</span></label>
+        <sp-admin-input size="sm" placeholder='["DisplayName","ResetLink"]' [(ngModel)]="tplSupportedVars" aria-label="Supported variables" />
+      </div>
+
+      @if (templateFormError()) {
+        <p class="text-sm text-red-600" role="alert">{{ templateFormError() }}</p>
+      }
+      @if (templateFormSuccess()) {
+        <p class="text-sm text-green-600" role="status">{{ templateFormSuccess() }}</p>
+      }
+
+      <!-- Preview (edit mode only) -->
+      @if (templateFormMode === 'edit') {
+        <div class="border-t border-gray-100 pt-4">
+          <h4 class="text-sm font-semibold text-gray-700 mb-2">Preview</h4>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Variables (JSON)</label>
+            <textarea
+              class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-xs focus:border-blue-300 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none font-mono"
+              rows="2"
+              placeholder='{"DisplayName": "Alice"}'
+              [(ngModel)]="previewVariablesJson"
+              aria-label="Preview variables JSON"
+            ></textarea>
+          </div>
+          <sp-admin-button size="sm" variant="secondary" [disabled]="previewLoading()" (clicked)="previewTemplate()" class="mt-2">
+            {{ previewLoading() ? 'Rendering…' : 'Preview' }}
+          </sp-admin-button>
+          @if (previewError()) {
+            <p class="text-xs text-red-600 mt-1" role="alert">{{ previewError() }}</p>
+          }
+          @if (previewResult()) {
+            <div class="mt-3 bg-gray-50 rounded p-3 text-xs space-y-2">
+              @if (previewResult()!.renderedSubject) {
+                <div><span class="text-gray-500">Subject:</span> {{ previewResult()!.renderedSubject }}</div>
+              }
+              @if (previewResult()!.renderedTitle) {
+                <div><span class="text-gray-500">Title:</span> {{ previewResult()!.renderedTitle }}</div>
+              }
+              <div><span class="text-gray-500">Body:</span></div>
+              <pre class="whitespace-pre-wrap break-words">{{ previewResult()!.renderedBody }}</pre>
+              @if (previewResult()!.missingVariables.length > 0) {
+                <p class="text-amber-600">Missing variables: {{ previewResult()!.missingVariables.join(', ') }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div slot="footer" class="flex justify-end gap-3">
+      <sp-admin-button variant="secondary" (clicked)="closeTemplateForm()">Cancel</sp-admin-button>
+      <sp-admin-button [disabled]="templateFormLoading()" (clicked)="submitTemplateForm()">
+        {{ templateFormLoading() ? 'Saving…' : (templateFormMode === 'create' ? 'Create' : 'Save changes') }}
+      </sp-admin-button>
+    </div>
+  </sp-admin-slide-over>
 
   <!-- ── Send notification slide-over ─────────────────────────────────────── -->
   <sp-admin-slide-over

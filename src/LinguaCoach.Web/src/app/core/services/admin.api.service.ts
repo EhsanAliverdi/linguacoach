@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+  AdminTemplateItem, AdminTemplateListQuery,
+  AdminCreateTemplateRequest, AdminUpdateTemplateRequest, AdminTemplatePreviewResult,
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
   CareerProfileItem, CurriculumWordItem,
   AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
@@ -208,6 +210,40 @@ export class AdminApiService {
 
   sendAdminNotification(request: AdminSendNotificationRequest): Observable<AdminSendNotificationResult> {
     return this.http.post<AdminSendNotificationResult>(`${this.api}/notifications/send`, request);
+  }
+
+  // Notification templates
+  listNotificationTemplates(query: AdminTemplateListQuery = {}): Observable<PagedResponse<AdminTemplateItem>> {
+    const params = new URLSearchParams();
+    if (query.page !== undefined) params.set('page', String(query.page));
+    if (query.pageSize !== undefined) params.set('pageSize', String(query.pageSize));
+    if (query.channel) params.set('channel', query.channel);
+    if (query.category) params.set('category', query.category);
+    if (query.isActive !== undefined) params.set('isActive', String(query.isActive));
+    if (query.search) params.set('search', query.search);
+    const qs = params.toString();
+    return this.http.get<PagedResponse<AdminTemplateItem>>(`${this.api}/notifications/templates${qs ? '?' + qs : ''}`);
+  }
+
+  getNotificationTemplate(id: string): Observable<AdminTemplateItem> {
+    return this.http.get<AdminTemplateItem>(`${this.api}/notifications/templates/${id}`);
+  }
+
+  createNotificationTemplate(request: AdminCreateTemplateRequest): Observable<AdminTemplateItem> {
+    return this.http.post<AdminTemplateItem>(`${this.api}/notifications/templates`, request);
+  }
+
+  updateNotificationTemplate(id: string, request: AdminUpdateTemplateRequest): Observable<AdminTemplateItem> {
+    return this.http.put<AdminTemplateItem>(`${this.api}/notifications/templates/${id}`, request);
+  }
+
+  deactivateNotificationTemplate(id: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/notifications/templates/${id}/deactivate`, null);
+  }
+
+  previewNotificationTemplate(id: string, variables: Record<string, string>): Observable<AdminTemplatePreviewResult> {
+    return this.http.post<AdminTemplatePreviewResult>(
+      `${this.api}/notifications/templates/${id}/preview`, { variables });
   }
 
   getNotificationConfig(): Observable<AdminNotificationConfigStatus> {
