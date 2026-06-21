@@ -98,6 +98,36 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
         return new AiUsagePagedResult(items, totalCount, page, pageSize, totalPages);
     }
 
+    public async Task<IReadOnlyList<AiUsageRecentItem>> GetExportAsync(
+        AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null,
+        int maxRows = 10_000, CancellationToken ct = default)
+    {
+        var query = _db.AiUsageLogs.AsNoTracking();
+        query = ApplyDateFilter(query, dateFilter);
+        query = ApplyColumnFilter(query, columnFilter);
+
+        var rows = await query
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(maxRows)
+            .ToListAsync(ct);
+
+        return rows.Select(l => new AiUsageRecentItem(
+            Id: l.Id,
+            CreatedAt: l.CreatedAt,
+            StudentProfileId: l.StudentProfileId,
+            FeatureKey: l.FeatureKey,
+            Provider: l.ProviderName,
+            Model: l.ModelName,
+            IsFallback: l.IsFallback,
+            WasSuccessful: l.WasSuccessful,
+            FailureReason: l.FailureReason,
+            InputTokens: l.InputTokens,
+            OutputTokens: l.OutputTokens,
+            CostUsd: l.CostUsd,
+            DurationMs: l.DurationMs,
+            CorrelationId: l.CorrelationId)).ToList();
+    }
+
     // From is inclusive (>=), To is exclusive (<). UTC assumed for both.
     private static IQueryable<Domain.Entities.AiUsageLog> ApplyDateFilter(
         IQueryable<Domain.Entities.AiUsageLog> query,

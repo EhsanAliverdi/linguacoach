@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-20 (10U-7)
+lastUpdated: 2026-06-21 (10U-8)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,42 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
 ---
 
 ## Active sprint
+
+**Phase 10U-8 — AI Usage CSV Export** - complete (2026-06-21)
+
+Goal: CSV export of AI usage recent calls using the currently active filters, for admin reporting and reconciliation.
+
+### Delivered
+
+- `IAdminAiUsageHandler.GetExportAsync(dateFilter, columnFilter, maxRows)` — new method.
+- `AiUsageHandler.GetExportAsync`: reuses `ApplyDateFilter` + `ApplyColumnFilter`; `Take(10_000)` cap; newest-first sort.
+- `GET /api/admin/ai-usage/export.csv`: same filter params as `/summary` and `/recent`; same 400 validation. `BuildCsv` + `CsvEscape` helpers (RFC 4180). `text/csv` + `Content-Disposition: attachment; filename=ai-usage-{timestamp}.csv`.
+- CSV columns: `CreatedAt, Provider, Model, FeatureKey, StudentId, WasSuccessful, IsFallback, FailureReason, InputTokens, OutputTokens, TotalTokens, CostUsd, DurationMs, CorrelationId`. No PII beyond opaque StudentId GUID.
+- `AiUsageService.exportUsageCsv(range?, filters?)` returns `Observable<Blob>`. No page/pageSize.
+- Component: `exporting` + `exportError` signals; `exportCsv()` triggers browser download via `URL.createObjectURL` + anchor click (no `file-saver` dep); `SpAdminAlertComponent` shows error on failure.
+- Template: "Export CSV" / "Exporting…" button in filter bar; error alert above recent calls card.
+- Backend: +16 integration tests (`AiUsageExportTests`). 775/775 integration.
+- Frontend: +6 component tests. 847/847 pass. Both builds clean.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2026/2026)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (847/847)
+
+See: `docs/reviews/2026-06-20-phase-10u-8-ai-usage-csv-export-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-7 — AI Usage Summary Filter Alignment** - complete (2026-06-20)
 

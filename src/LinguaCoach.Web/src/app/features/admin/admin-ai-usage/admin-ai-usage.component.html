@@ -112,6 +112,9 @@
 }
 
 <sp-admin-card title="Recent calls">
+  @if (exportError()) {
+    <sp-admin-alert variant="error">{{ exportError() }}</sp-admin-alert>
+  }
   @if (loadingRecent()) {
     <sp-admin-loading-state message="Loading recent calls" />
   } @else if (recentError()) {
@@ -158,6 +161,9 @@
       @if (hasActiveRecentFilters()) {
         <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
       }
+      <sp-admin-button size="sm" variant="secondary" [disabled]="exporting()" (click)="exportCsv()">
+        {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+      </sp-admin-button>
     </sp-admin-filter-bar>
 
     @if (recentItems().length === 0) {

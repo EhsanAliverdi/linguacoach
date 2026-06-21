@@ -139,6 +139,77 @@ public sealed class AiUsageController : ControllerBase
         });
     }
 
+    [HttpGet("export.csv")]
+    public async Task<IActionResult> ExportCsv(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? provider = null,
+        [FromQuery] string? model = null,
+        [FromQuery] string? featureKey = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? studentId = null,
+        CancellationToken ct = default)
+    {
+        var dateFilter = BuildDateFilter(from, to);
+        if (dateFilter is null) return BadRequest(new { error = "from must be before to." });
+
+        Guid? parsedStudentId = null;
+        if (!string.IsNullOrWhiteSpace(studentId))
+        {
+            if (!Guid.TryParse(studentId, out var sid))
+                return BadRequest(new { error = $"Invalid studentId '{studentId}'. Must be a valid GUID." });
+            parsedStudentId = sid;
+        }
+
+        var columnFilter = new AiUsageRecentFilter(
+            Provider:   string.IsNullOrWhiteSpace(provider)   ? null : provider.Trim(),
+            Model:      string.IsNullOrWhiteSpace(model)      ? null : model.Trim(),
+            FeatureKey: string.IsNullOrWhiteSpace(featureKey) ? null : featureKey.Trim(),
+            Status:     string.IsNullOrWhiteSpace(status)     ? null : status.Trim(),
+            StudentId:  parsedStudentId);
+
+        if (columnFilter.HasInvalidStatus)
+            return BadRequest(new { error = $"Invalid status '{status}'. Valid values: success, failed, fallback." });
+
+        var rows = await _handler.GetExportAsync(dateFilter, columnFilter, maxRows: 10_000, ct);
+
+        var csv = BuildCsv(rows);
+        var filename = $"ai-usage-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+        return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", filename);
+    }
+
+    private static string BuildCsv(IReadOnlyList<Application.Admin.AiUsageRecentItem> rows)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("CreatedAt,Provider,Model,FeatureKey,StudentId,WasSuccessful,IsFallback,FailureReason,InputTokens,OutputTokens,TotalTokens,CostUsd,DurationMs,CorrelationId");
+        foreach (var r in rows)
+        {
+            sb.Append(CsvEscape(r.CreatedAt.ToString("O"))); sb.Append(',');
+            sb.Append(CsvEscape(r.Provider));                sb.Append(',');
+            sb.Append(CsvEscape(r.Model));                   sb.Append(',');
+            sb.Append(CsvEscape(r.FeatureKey));              sb.Append(',');
+            sb.Append(CsvEscape(r.StudentProfileId?.ToString() ?? "")); sb.Append(',');
+            sb.Append(r.WasSuccessful ? "true" : "false");  sb.Append(',');
+            sb.Append(r.IsFallback    ? "true" : "false");  sb.Append(',');
+            sb.Append(CsvEscape(r.FailureReason ?? ""));    sb.Append(',');
+            sb.Append(r.InputTokens);                        sb.Append(',');
+            sb.Append(r.OutputTokens);                       sb.Append(',');
+            sb.Append(r.InputTokens + r.OutputTokens);       sb.Append(',');
+            sb.Append(r.CostUsd.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)); sb.Append(',');
+            sb.Append(r.DurationMs);                         sb.Append(',');
+            sb.AppendLine(CsvEscape(r.CorrelationId ?? ""));
+        }
+        return sb.ToString();
+    }
+
+    // RFC 4180: wrap in quotes if value contains comma, quote, or newline; double up internal quotes.
+    private static string CsvEscape(string value)
+    {
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+            return $"\"{value.Replace("\"", "\"\"")}\"";
+        return value;
+    }
+
     // Returns null when both dates supplied and from >= to (invalid range → 400).
     // Converts unspecified DateTime Kind to UTC.
     private static AiUsageDateFilter? BuildDateFilter(DateTime? from, DateTime? to)

@@ -70,6 +70,18 @@ export class AiUsageService {
     return this.http.get<AiUsageSummary>('/api/admin/ai-usage/summary', { params });
   }
 
+  exportUsageCsv(range?: AiUsageDateRange, filters?: AiUsageRecentCallFilter): Observable<Blob> {
+    let params = new HttpParams();
+    if (range?.from)          params = params.set('from',       range.from);
+    if (range?.to)            params = params.set('to',         range.to);
+    if (filters?.provider)    params = params.set('provider',   filters.provider);
+    if (filters?.model)       params = params.set('model',      filters.model);
+    if (filters?.featureKey)  params = params.set('featureKey', filters.featureKey);
+    if (filters?.status)      params = params.set('status',     filters.status);
+    if (filters?.studentId)   params = params.set('studentId',  filters.studentId);
+    return this.http.get('/api/admin/ai-usage/export.csv', { params, responseType: 'blob' });
+  }
+
   getRecent(page = 1, pageSize = 25, range?: AiUsageDateRange, filters?: AiUsageRecentCallFilter): Observable<AiUsageRecentResponse> {
     let params = new HttpParams()
       .set('page', page.toString())

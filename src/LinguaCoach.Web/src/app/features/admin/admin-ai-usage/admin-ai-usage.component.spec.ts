@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { AdminAiUsageComponent, PeriodPreset } from './admin-ai-usage.component';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
@@ -46,9 +46,10 @@ describe('AdminAiUsageComponent', () => {
   let adminApi: jasmine.SpyObj<AdminApiService>;
 
   beforeEach(() => {
-    svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent']);
+    svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent', 'exportUsageCsv']);
     svc.getSummary.and.returnValue(of(makeSummary()));
     svc.getRecent.and.returnValue(of({ items: [makeRecentItem()], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
+    svc.exportUsageCsv.and.returnValue(of(new Blob(['header\nrow1'], { type: 'text/csv' })));
 
     adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 1 }));
@@ -756,5 +757,90 @@ describe('AdminAiUsageComponent', () => {
     expect(range?.from).toBeDefined();
     expect(filters?.status).toBe('success');
     expect(filters?.provider).toBe('anthropic');
+  });
+
+  // ── export CSV tests (10U-8) ───────────────────────────────────────────────
+
+  it('exportCsv calls exportUsageCsv with current filters', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentProviderFilter.set('openai');
+    c.recentStatusFilter.set('success');
+
+    c.exportCsv();
+
+    expect(svc.exportUsageCsv).toHaveBeenCalledTimes(1);
+    const args = svc.exportUsageCsv.calls.mostRecent().args;
+    const filters = args[1] as { provider?: string; status?: string } | undefined;
+    expect(filters?.provider).toBe('openai');
+    expect(filters?.status).toBe('success');
+  });
+
+  it('exportCsv sends date range but no page or pageSize', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.onPeriodChange('7d');
+
+    c.exportCsv();
+
+    const args = svc.exportUsageCsv.calls.mostRecent().args;
+    const range = args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+    // exportUsageCsv takes only (range, filters) — no page/pageSize
+    expect(args.length).toBe(2);
+  });
+
+  it('exportCsv sets exporting signal to true then false on success', () => {
+    // Stub a synchronous observable so we can check state transitions
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    // After exportCsv resolves (sync observable), exporting should be false
+    c.exportCsv();
+    expect(c.exporting()).toBeFalse();
+  });
+
+  it('export button is disabled while exporting', () => {
+    // Make exportUsageCsv return a never-resolving observable to hold exporting=true
+    svc.exportUsageCsv.and.returnValue(new Subject<Blob>());
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.exportCsv();
+    fixture.detectChanges();
+
+    const btn = Array.from(fixture.nativeElement.querySelectorAll('sp-admin-button') as NodeListOf<Element>)
+      .find(b => b.textContent?.includes('Exporting'));
+    expect(btn).toBeTruthy();
+  });
+
+  it('exportCsv shows error alert on failure', () => {
+    svc.exportUsageCsv.and.returnValue(throwError(() => ({ error: { error: 'Export failed' } })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.exportCsv();
+    fixture.detectChanges();
+
+    expect(c.exportError()).toBe('Export failed');
+    expect(fixture.nativeElement.querySelector('sp-admin-alert')).toBeTruthy();
+  });
+
+  it('exportCsv passes student filter to service', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentStudentFilter.set('uuid-student-export');
+
+    c.exportCsv();
+
+    const args = svc.exportUsageCsv.calls.mostRecent().args;
+    const filters = args[1] as { studentId?: string } | undefined;
+    expect(filters?.studentId).toBe('uuid-student-export');
   });
 });

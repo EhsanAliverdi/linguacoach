@@ -1,12 +1,13 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 
 export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter } from '../../../core/services/ai-usage.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem } from '../../../core/models/admin.models';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
@@ -31,6 +32,7 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
@@ -105,6 +107,10 @@ export class AdminAiUsageComponent implements OnInit {
   recentStatusFilterValue = '';
   recentStudentFilterValue = '';
 
+  // Export state
+  exporting = signal(false);
+  exportError = signal('');
+
   // Student options loaded on init from admin student list
   studentOptions = signal<{ value: string; label: string }[]>([]);
 
@@ -139,6 +145,8 @@ export class AdminAiUsageComponent implements OnInit {
   // Items already filtered server-side; expose directly for template
   filteredRecentItems = computed(() => this.recentItems());
 
+  private readonly doc = inject<Document>(DOCUMENT);
+
   constructor(private svc: AiUsageService, private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
@@ -157,6 +165,31 @@ export class AdminAiUsageComponent implements OnInit {
         );
       },
       error: () => { /* silently ignore — student filter will just be empty */ },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.exportError.set('');
+    const range   = this.buildRange(this.periodPreset());
+    const filters = this.buildColumnFilters();
+    this.svc.exportUsageCsv(range, filters).subscribe({
+      next: blob => {
+        const url  = URL.createObjectURL(blob);
+        const link = this.doc.createElement('a');
+        const now  = new Date();
+        const ts   = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+        link.href     = url;
+        link.download = `ai-usage-${ts}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: err => {
+        this.exportError.set(err.error?.error ?? 'Export failed. Please try again.');
+        this.exporting.set(false);
+      },
     });
   }
 
