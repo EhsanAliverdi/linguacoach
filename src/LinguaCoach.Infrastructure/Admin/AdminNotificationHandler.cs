@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
@@ -12,15 +13,18 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
 {
     private readonly LinguaCoachDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<AdminNotificationHandler> _logger;
 
     public AdminNotificationHandler(
         LinguaCoachDbContext db,
         UserManager<ApplicationUser> userManager,
+        INotificationService notificationService,
         ILogger<AdminNotificationHandler> logger)
     {
         _db = db;
         _userManager = userManager;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -188,6 +192,106 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         _logger.LogInformation(
             "Admin {AdminId} cancelled outbox item {OutboxId}.",
             adminUserId, outboxItemId);
+    }
+
+    public async Task<AdminSendNotificationResult> SendNotificationAsync(
+        AdminSendNotificationCommand command, Guid adminUserId, CancellationToken ct = default)
+    {
+        // Validate channels — SMS deferred to 10W-6.
+        var errors = new List<string>();
+        var channelsQueued = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var parsedChannels = new List<NotificationChannel>();
+        foreach (var ch in command.Channels)
+        {
+            if (!Enum.TryParse<NotificationChannel>(ch, ignoreCase: true, out var parsed))
+            {
+                errors.Add($"Unknown channel '{ch}'.");
+                continue;
+            }
+            if (parsed == NotificationChannel.Sms)
+            {
+                errors.Add("SMS channel is not yet supported. It will be available in a future release.");
+                continue;
+            }
+            parsedChannels.Add(parsed);
+        }
+
+        if (parsedChannels.Count == 0)
+            throw new InvalidOperationException(
+                errors.Count > 0
+                    ? string.Join(" ", errors)
+                    : "At least one supported channel (InApp, Email) is required.");
+
+        if (!Enum.TryParse<NotificationCategory>(command.Category, ignoreCase: true, out var category))
+            throw new InvalidOperationException($"Unknown category '{command.Category}'.");
+
+        if (!Enum.TryParse<NotificationSeverity>(command.Severity, ignoreCase: true, out var severity))
+            throw new InvalidOperationException($"Unknown severity '{command.Severity}'.");
+
+        if (command.ExpiresAtUtc.HasValue && command.ExpiresAtUtc.Value <= DateTime.UtcNow)
+            throw new InvalidOperationException("ExpiresAtUtc must be a future date.");
+
+        int queued = 0;
+        int skipped = 0;
+
+        foreach (var userId in command.RecipientUserIds)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null)
+            {
+                errors.Add($"User {userId} not found.");
+                skipped++;
+                continue;
+            }
+
+            foreach (var channel in parsedChannels)
+            {
+                try
+                {
+                    switch (channel)
+                    {
+                        case NotificationChannel.InApp:
+                            await _notificationService.QueueInAppAsync(
+                                userId, command.Title, command.Body,
+                                category, severity,
+                                command.DeepLinkUrl, command.ExpiresAtUtc, ct);
+                            break;
+
+                        case NotificationChannel.Email:
+                            await _notificationService.QueueEmailAsync(
+                                userId, command.Title, command.Body,
+                                category, severity,
+                                command.DeepLinkUrl, command.ExpiresAtUtc, ct);
+                            break;
+                    }
+                    channelsQueued.Add(channel.ToString());
+                    queued++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Admin {AdminId}: failed to queue {Channel} notification for user {UserId}.",
+                        adminUserId, channel, userId);
+                    errors.Add($"Failed to queue {channel} for user {userId}: {ex.Message}");
+                    skipped++;
+                }
+            }
+        }
+
+        _logger.LogInformation(
+            "Admin {AdminId} sent notification: category={Category} severity={Severity} " +
+            "recipients={Count} queued={Queued} skipped={Skipped} channels={Channels}.",
+            adminUserId, command.Category, command.Severity,
+            command.RecipientUserIds.Count, queued, skipped,
+            string.Join(",", channelsQueued));
+
+        return new AdminSendNotificationResult(
+            RequestedRecipientCount: command.RecipientUserIds.Count,
+            QueuedCount: queued,
+            SkippedCount: skipped,
+            ChannelsQueued: channelsQueued.ToList(),
+            Errors: errors);
     }
 
     private async Task<Dictionary<string, string>> BuildEmailMapAsync(

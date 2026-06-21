@@ -1,5 +1,8 @@
 <sp-admin-page-body>
   <sp-admin-page-header title="Notification Center" subtitle="Inspect and manage notification records and delivery queue.">
+    <div slot="header-actions">
+      <sp-admin-button (clicked)="openSendForm()" aria-label="Send notification">Send notification</sp-admin-button>
+    </div>
   </sp-admin-page-header>
 
   <!-- Tab bar -->
@@ -200,4 +203,130 @@
       }
     </sp-admin-card>
   }
+
+  <!-- ── Send notification slide-over ─────────────────────────────────────── -->
+  <sp-admin-slide-over
+    [open]="sendOpen()"
+    title="Send Notification"
+    subtitle="Queue a notification to a student via InApp or Email."
+    size="md"
+    (closed)="closeSendForm()"
+  >
+    <div class="flex flex-col gap-5 p-1">
+
+      <!-- Recipient lookup -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Recipient email</label>
+        <div class="flex gap-2">
+          <sp-admin-input
+            size="sm"
+            placeholder="student@example.com"
+            [(ngModel)]="sendRecipientEmail"
+            (keyup.enter)="lookupRecipient()"
+            aria-label="Recipient email" />
+          <sp-admin-button
+            variant="secondary"
+            size="sm"
+            [disabled]="studentSearchLoading()"
+            (clicked)="lookupRecipient()"
+          >{{ studentSearchLoading() ? 'Searching…' : 'Lookup' }}</sp-admin-button>
+        </div>
+        @if (sendResolvedEmail) {
+          <p class="mt-1 text-xs text-green-600">Recipient: {{ sendResolvedEmail }}</p>
+        }
+        @if (studentSearchError()) {
+          <p class="mt-1 text-xs text-red-600" role="alert">{{ studentSearchError() }}</p>
+        }
+      </div>
+
+      <!-- Channels -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Channels</label>
+        <div class="flex flex-col gap-2">
+          <sp-admin-checkbox
+            label="In-App"
+            [(ngModel)]="sendChannelInApp"
+            aria-label="InApp channel" />
+          <sp-admin-checkbox
+            label="Email (queued — sent by dispatch job)"
+            [(ngModel)]="sendChannelEmail"
+            aria-label="Email channel" />
+          <p class="text-xs text-gray-500">
+            SMS is not yet available. Email requires a configured email provider and is queued, not sent immediately.
+          </p>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+        <sp-admin-input
+          size="sm"
+          placeholder="Notification title"
+          [(ngModel)]="sendTitle"
+          aria-label="Notification title" />
+      </div>
+
+      <!-- Body -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Body <span class="text-red-500">*</span></label>
+        <textarea
+          class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm focus:border-blue-300 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none"
+          rows="4"
+          placeholder="Notification body…"
+          [(ngModel)]="sendBody"
+          aria-label="Notification body"
+        ></textarea>
+      </div>
+
+      <!-- Category + Severity -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <sp-admin-select
+            size="sm"
+            [options]="categoryOptions"
+            [(ngModel)]="sendCategory"
+            aria-label="Notification category" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+          <sp-admin-select
+            size="sm"
+            [options]="severityOptions"
+            [(ngModel)]="sendSeverity"
+            aria-label="Notification severity" />
+        </div>
+      </div>
+
+      <!-- Deep link (optional) -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Deep link URL <span class="text-gray-400 font-normal">(optional)</span></label>
+        <sp-admin-input
+          size="sm"
+          placeholder="/dashboard"
+          [(ngModel)]="sendDeepLink"
+          aria-label="Deep link URL" />
+      </div>
+
+      <!-- Feedback -->
+      @if (sendError()) {
+        <p class="text-sm text-red-600" role="alert">{{ sendError() }}</p>
+      }
+      @if (sendSuccess()) {
+        <p class="text-sm text-green-600" role="status">{{ sendSuccess() }}</p>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div slot="footer" class="flex justify-end gap-3">
+      <sp-admin-button variant="secondary" (clicked)="closeSendForm()">Cancel</sp-admin-button>
+      <sp-admin-button
+        [disabled]="sending()"
+        (clicked)="submitSend()"
+        aria-label="Submit send notification"
+      >{{ sending() ? 'Sending…' : 'Send notification' }}</sp-admin-button>
+    </div>
+  </sp-admin-slide-over>
+
 </sp-admin-page-body>

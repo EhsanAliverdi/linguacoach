@@ -13,6 +13,7 @@ import {
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
   AdminNotificationListQuery, AdminOutboxListQuery,
+  AdminSendNotificationRequest, AdminSendNotificationResult,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -202,5 +203,9 @@ export class AdminApiService {
 
   cancelOutboxItem(id: string): Observable<void> {
     return this.http.post<void>(`${this.api}/notifications/outbox/${id}/cancel`, null);
+  }
+
+  sendAdminNotification(request: AdminSendNotificationRequest): Observable<AdminSendNotificationResult> {
+    return this.http.post<AdminSendNotificationResult>(`${this.api}/notifications/send`, request);
   }
 }

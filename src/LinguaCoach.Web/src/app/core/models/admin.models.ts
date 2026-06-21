@@ -398,6 +398,25 @@ export interface AdminOutboxListQuery {
   failedOnly?: boolean;
 }
 
+export interface AdminSendNotificationRequest {
+  recipientUserIds: string[];
+  channels: string[];
+  title: string;
+  body: string;
+  category?: string;
+  severity?: string;
+  deepLinkUrl?: string | null;
+  expiresAtUtc?: string | null;
+}
+
+export interface AdminSendNotificationResult {
+  requestedRecipientCount: number;
+  queuedCount: number;
+  skippedCount: number;
+  channelsQueued: string[];
+  errors: string[];
+}
+
 export interface UpdateExerciseTypeRequest {
   isEnabled?: boolean;
   supportsPracticeGym?: boolean;

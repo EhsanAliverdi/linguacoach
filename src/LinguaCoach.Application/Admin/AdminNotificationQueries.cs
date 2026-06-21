@@ -56,6 +56,25 @@ public sealed record AdminOutboxItem(
     DateTime? ProcessedAtUtc,
     string? LastError);
 
+// ── Send command + result ─────────────────────────────────────────────────────
+
+public sealed record AdminSendNotificationCommand(
+    IReadOnlyList<Guid> RecipientUserIds,
+    IReadOnlyList<string> Channels,
+    string Title,
+    string Body,
+    string Category,
+    string Severity,
+    string? DeepLinkUrl,
+    DateTime? ExpiresAtUtc);
+
+public sealed record AdminSendNotificationResult(
+    int RequestedRecipientCount,
+    int QueuedCount,
+    int SkippedCount,
+    IReadOnlyList<string> ChannelsQueued,
+    IReadOnlyList<string> Errors);
+
 // ── Interface ─────────────────────────────────────────────────────────────────
 
 public interface IAdminNotificationHandler
@@ -69,4 +88,7 @@ public interface IAdminNotificationHandler
     Task RetryOutboxItemAsync(Guid outboxItemId, Guid adminUserId, CancellationToken ct = default);
 
     Task CancelOutboxItemAsync(Guid outboxItemId, Guid adminUserId, CancellationToken ct = default);
+
+    Task<AdminSendNotificationResult> SendNotificationAsync(
+        AdminSendNotificationCommand command, Guid adminUserId, CancellationToken ct = default);
 }

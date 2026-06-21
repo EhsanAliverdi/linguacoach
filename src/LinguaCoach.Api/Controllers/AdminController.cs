@@ -626,6 +626,42 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpPost("notifications/send")]
+    public async Task<IActionResult> SendNotification(
+        [FromBody] AdminSendNotificationRequest request, CancellationToken ct)
+    {
+        if (request.RecipientUserIds is null || request.RecipientUserIds.Count == 0)
+            return BadRequest(new { error = "At least one recipient is required." });
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new { error = "Title is required." });
+
+        if (string.IsNullOrWhiteSpace(request.Body))
+            return BadRequest(new { error = "Body is required." });
+
+        if (request.Channels is null || request.Channels.Count == 0)
+            return BadRequest(new { error = "At least one channel is required." });
+
+        try
+        {
+            var command = new AdminSendNotificationCommand(
+                RecipientUserIds: request.RecipientUserIds,
+                Channels: request.Channels,
+                Title: request.Title.Trim(),
+                Body: request.Body.Trim(),
+                Category: request.Category ?? "Admin",
+                Severity: request.Severity ?? "Info",
+                DeepLinkUrl: request.DeepLinkUrl,
+                ExpiresAtUtc: request.ExpiresAtUtc);
+
+            var result = await _notificationHandler.SendNotificationAsync(
+                command, GetCurrentUserId(), ct);
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
@@ -702,3 +738,13 @@ public sealed record UpdateExerciseTypeRequest(
     int? MinOptionsPerItem = null,
     int? DefaultOptionsPerItem = null,
     int? MaxOptionsPerItem = null);
+
+public sealed record AdminSendNotificationRequest(
+    List<Guid> RecipientUserIds,
+    List<string> Channels,
+    string Title,
+    string Body,
+    string? Category = "Admin",
+    string? Severity = "Info",
+    string? DeepLinkUrl = null,
+    DateTime? ExpiresAtUtc = null);
