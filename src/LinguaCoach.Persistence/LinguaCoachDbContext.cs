@@ -69,6 +69,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<UsageEvent> UsageEvents => Set<UsageEvent>();
     public DbSet<StudentUsageDaily> StudentUsageDaily => Set<StudentUsageDaily>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+    public DbSet<AiModelPricingOverride> AiModelPricingOverrides => Set<AiModelPricingOverride>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

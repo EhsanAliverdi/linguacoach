@@ -90,6 +90,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminPromptHandler, AdminHandler>();
         services.AddScoped<IAdminCurriculumHandler, AdminHandler>();
         services.AddScoped<IAdminAiConfigHandler, AdminHandler>();
+        services.AddScoped<IAiPricingResolver, AiPricingResolver>();
         services.AddScoped<IExerciseTypeCatalogService, ExerciseTypeCatalogService>();
         services.AddScoped<IExerciseTypeRegistry, ExerciseTypeRegistry>();
         services.AddScoped<IPracticeGymPoolService, PracticeGymPoolService>();

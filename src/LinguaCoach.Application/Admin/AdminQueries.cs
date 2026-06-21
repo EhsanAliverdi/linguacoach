@@ -315,6 +315,10 @@ public interface IAdminAiConfigHandler
     Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default);
     Task<CategoryTestResult> TestCategoryAsync(string categoryKey, CancellationToken ct = default);
     IReadOnlyList<AiModelPricingItem> ListPricing();
+    Task<IReadOnlyList<AiModelPricingOverrideItem>> ListPricingOverridesAsync(CancellationToken ct = default);
+    Task<AiModelPricingOverrideItem> CreatePricingOverrideAsync(CreatePricingOverrideCommand command, CancellationToken ct = default);
+    Task<AiModelPricingOverrideItem> UpdatePricingOverrideAsync(UpdatePricingOverrideCommand command, CancellationToken ct = default);
+    Task DeactivatePricingOverrideAsync(DeactivatePricingOverrideCommand command, CancellationToken ct = default);
 }
 
 // ── AI model pricing ─────────────────────────────────────────────────────────
@@ -327,6 +331,49 @@ public sealed record AiModelPricingItem(
     string Currency,
     string Source,
     bool IsConfigured);
+
+// ── AI model pricing overrides ────────────────────────────────────────────────
+
+public sealed record AiModelPricingOverrideItem(
+    Guid Id,
+    string ProviderName,
+    string ModelName,
+    decimal InputPricePer1KTokens,
+    decimal OutputPricePer1KTokens,
+    string Currency,
+    bool IsActive,
+    DateTime EffectiveFromUtc,
+    DateTime? EffectiveToUtc,
+    string? Notes,
+    DateTime CreatedAtUtc,
+    DateTime? UpdatedAtUtc,
+    Guid? CreatedByAdminUserId,
+    Guid? UpdatedByAdminUserId);
+
+public sealed record CreatePricingOverrideCommand(
+    string ProviderName,
+    string ModelName,
+    decimal InputPricePer1KTokens,
+    decimal OutputPricePer1KTokens,
+    string Currency,
+    DateTime EffectiveFromUtc,
+    DateTime? EffectiveToUtc,
+    string? Notes,
+    Guid AdminUserId);
+
+public sealed record UpdatePricingOverrideCommand(
+    Guid Id,
+    decimal InputPricePer1KTokens,
+    decimal OutputPricePer1KTokens,
+    string Currency,
+    DateTime EffectiveFromUtc,
+    DateTime? EffectiveToUtc,
+    string? Notes,
+    Guid AdminUserId);
+
+public sealed record DeactivatePricingOverrideCommand(
+    Guid Id,
+    Guid AdminUserId);
 
 // ── AI config categories ──────────────────────────────────────────────────────
 

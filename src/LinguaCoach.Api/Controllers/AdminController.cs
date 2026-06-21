@@ -480,6 +480,61 @@ public sealed class AdminController : ControllerBase
     public IActionResult ListAiPricing()
         => Ok(_aiConfigHandler.ListPricing());
 
+    [HttpGet("ai/pricing/overrides")]
+    public async Task<IActionResult> ListPricingOverrides(CancellationToken ct)
+        => Ok(await _aiConfigHandler.ListPricingOverridesAsync(ct));
+
+    [HttpPost("ai/pricing/overrides")]
+    public async Task<IActionResult> CreatePricingOverride([FromBody] CreatePricingOverrideRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.CreatePricingOverrideAsync(
+                new CreatePricingOverrideCommand(
+                    request.ProviderName, request.ModelName,
+                    request.InputPricePer1KTokens, request.OutputPricePer1KTokens,
+                    request.Currency ?? "USD",
+                    request.EffectiveFromUtc ?? DateTime.UtcNow,
+                    request.EffectiveToUtc,
+                    request.Notes,
+                    GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPut("ai/pricing/overrides/{id:guid}")]
+    public async Task<IActionResult> UpdatePricingOverride(Guid id, [FromBody] UpdatePricingOverrideRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _aiConfigHandler.UpdatePricingOverrideAsync(
+                new UpdatePricingOverrideCommand(
+                    id,
+                    request.InputPricePer1KTokens, request.OutputPricePer1KTokens,
+                    request.Currency ?? "USD",
+                    request.EffectiveFromUtc ?? DateTime.UtcNow,
+                    request.EffectiveToUtc,
+                    request.Notes,
+                    GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpDelete("ai/pricing/overrides/{id:guid}")]
+    public async Task<IActionResult> DeactivatePricingOverride(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _aiConfigHandler.DeactivatePricingOverrideAsync(
+                new DeactivatePricingOverrideCommand(id, GetCurrentUserId()), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
@@ -529,6 +584,22 @@ public sealed record SetProviderEndpointRequest(string? ApiEndpoint);
 public sealed record AddProviderModelRequest(string ModelName);
 public sealed record TestProviderModelRequest(string ModelName);
 public sealed record UpdateAiCategoryRequest(string? ProviderName, string? ModelName, string? VoiceName = null);
+public sealed record CreatePricingOverrideRequest(
+    string ProviderName,
+    string ModelName,
+    decimal InputPricePer1KTokens,
+    decimal OutputPricePer1KTokens,
+    string? Currency = "USD",
+    DateTime? EffectiveFromUtc = null,
+    DateTime? EffectiveToUtc = null,
+    string? Notes = null);
+public sealed record UpdatePricingOverrideRequest(
+    decimal InputPricePer1KTokens,
+    decimal OutputPricePer1KTokens,
+    string? Currency = "USD",
+    DateTime? EffectiveFromUtc = null,
+    DateTime? EffectiveToUtc = null,
+    string? Notes = null);
 
 public sealed record UpdateExerciseTypeRequest(
     bool? IsEnabled,

@@ -2426,3 +2426,29 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 **Test counts:** .NET 795 integration + 1248 unit + 3 arch = 2046 total. Angular 880.
 
 **Not implemented:** missing-model detection (10V-3), DB-backed editable pricing (10V-2), prompt playground (10V).
+
+---
+
+## Phase 10V-2 — AI Pricing Override Backend Foundation (2026-06-21)
+
+**Goal:** Add DB-backed AI model pricing overrides with full CRUD API and a pricing resolver service.
+
+**Delivered:**
+
+- `AiModelPricingOverride` domain entity with validation, Update/Deactivate methods, and audit fields
+- EF configuration + migration `T53_AiModelPricingOverrides` (table `ai_model_pricing_overrides`)
+- `IAiPricingResolver` / `AiPricingResolver`: DB override first, config fallback, null third
+- `IAdminAiConfigHandler` extended with 4 pricing override methods
+- `AdminHandler` implements: `ListPricingOverridesAsync`, `CreatePricingOverrideAsync`, `UpdatePricingOverrideAsync`, `DeactivatePricingOverrideAsync`
+- Endpoints: `GET/POST /api/admin/ai/pricing/overrides`, `PUT/DELETE /api/admin/ai/pricing/overrides/{id}`
+- Audit log entries on create/update/deactivate
+- Soft-delete (deactivate) pattern consistent with project style
+- `IAiPricingResolver` registered in DI
+- 13 integration tests + 11 domain unit tests; all pass
+- Provider runtime cost calculation NOT changed (deferred to 10V-3 for safety)
+- Config fallback preserved; no historical cost recalculation
+- No frontend edit UI added
+
+**Test counts:** .NET 810 integration + 1260 unit + 3 arch = 2073 total. Angular 880.
+
+**Not implemented:** provider runtime wiring (10V-3), frontend override UI, zero-cost alert, unique override constraint.

@@ -860,6 +860,86 @@ public sealed class AdminHandler :
         return results.OrderBy(r => r.ProviderName).ThenBy(r => r.ModelName).ToList();
     }
 
+    public async Task<IReadOnlyList<AiModelPricingOverrideItem>> ListPricingOverridesAsync(CancellationToken ct = default)
+    {
+        var overrides = await _db.AiModelPricingOverrides
+            .OrderBy(o => o.ProviderName).ThenBy(o => o.ModelName).ThenByDescending(o => o.EffectiveFromUtc)
+            .ToListAsync(ct);
+        return overrides.Select(ToPricingOverrideItem).ToList();
+    }
+
+    public async Task<AiModelPricingOverrideItem> CreatePricingOverrideAsync(CreatePricingOverrideCommand command, CancellationToken ct = default)
+    {
+        var entity = new AiModelPricingOverride(
+            command.ProviderName,
+            command.ModelName,
+            command.InputPricePer1KTokens,
+            command.OutputPricePer1KTokens,
+            command.Currency,
+            command.EffectiveFromUtc,
+            command.EffectiveToUtc,
+            command.Notes,
+            command.AdminUserId);
+
+        _db.AiModelPricingOverrides.Add(entity);
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "CreatePricingOverride", "AiModelPricingOverride",
+            entityId: entity.Id.ToString(),
+            newValueJson: JsonSerializer.Serialize(new { command.ProviderName, command.ModelName, command.InputPricePer1KTokens, command.OutputPricePer1KTokens })));
+
+        await _db.SaveChangesAsync(ct);
+        return ToPricingOverrideItem(entity);
+    }
+
+    public async Task<AiModelPricingOverrideItem> UpdatePricingOverrideAsync(UpdatePricingOverrideCommand command, CancellationToken ct = default)
+    {
+        var entity = await _db.AiModelPricingOverrides.FirstOrDefaultAsync(o => o.Id == command.Id, ct)
+            ?? throw new InvalidOperationException($"Pricing override '{command.Id}' not found.");
+
+        var oldJson = JsonSerializer.Serialize(new { entity.InputPricePer1KTokens, entity.OutputPricePer1KTokens });
+
+        entity.Update(
+            command.InputPricePer1KTokens,
+            command.OutputPricePer1KTokens,
+            command.Currency,
+            command.EffectiveFromUtc,
+            command.EffectiveToUtc,
+            command.Notes,
+            command.AdminUserId);
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "UpdatePricingOverride", "AiModelPricingOverride",
+            entityId: entity.Id.ToString(),
+            oldValueJson: oldJson,
+            newValueJson: JsonSerializer.Serialize(new { command.InputPricePer1KTokens, command.OutputPricePer1KTokens })));
+
+        await _db.SaveChangesAsync(ct);
+        return ToPricingOverrideItem(entity);
+    }
+
+    public async Task DeactivatePricingOverrideAsync(DeactivatePricingOverrideCommand command, CancellationToken ct = default)
+    {
+        var entity = await _db.AiModelPricingOverrides.FirstOrDefaultAsync(o => o.Id == command.Id, ct)
+            ?? throw new InvalidOperationException($"Pricing override '{command.Id}' not found.");
+
+        entity.Deactivate(command.AdminUserId);
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            command.AdminUserId, "DeactivatePricingOverride", "AiModelPricingOverride",
+            entityId: entity.Id.ToString()));
+
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private static AiModelPricingOverrideItem ToPricingOverrideItem(AiModelPricingOverride o) =>
+        new(o.Id, o.ProviderName, o.ModelName,
+            o.InputPricePer1KTokens, o.OutputPricePer1KTokens,
+            o.Currency, o.IsActive,
+            o.EffectiveFromUtc, o.EffectiveToUtc,
+            o.Notes, o.CreatedAt, o.UpdatedAtUtc,
+            o.CreatedByAdminUserId, o.UpdatedByAdminUserId);
+
     public async Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default)
     {
         var category = await _db.AiConfigCategories
