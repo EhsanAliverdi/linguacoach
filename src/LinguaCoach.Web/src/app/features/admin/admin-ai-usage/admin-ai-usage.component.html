@@ -111,6 +111,63 @@
   </div>
 }
 
+<sp-admin-card title="Usage trend">
+  @if (loadingTrends()) {
+    <sp-admin-loading-state message="Loading trend" />
+  } @else if (trendError()) {
+    <sp-admin-error-state title="Trend unavailable" [message]="trendError()" />
+  } @else if (trendBuckets().length === 0) {
+    <sp-admin-empty-state message="No trend data for selected filters." />
+  } @else {
+    <sp-admin-table variant="data" density="compact" minWidth="640px">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th class="sp-au-num-th">Calls</th>
+            <th class="sp-au-num-th">Success</th>
+            <th class="sp-au-num-th">Failed</th>
+            <th class="sp-au-num-th">Fallback</th>
+            <th class="sp-au-num-th">Tokens</th>
+            <th class="sp-au-num-th">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of trendBuckets(); track b.date) {
+            <tr [class.sp-au-trend-zero]="b.callCount === 0">
+              <td class="sp-au-mono sp-au-time">{{ b.date }}</td>
+              <td class="sp-au-num">{{ b.callCount | number }}</td>
+              <td class="sp-au-num">
+                @if (b.successCount > 0) {
+                  <sp-admin-badge tone="success">{{ b.successCount }}</sp-admin-badge>
+                } @else {
+                  <span class="sp-au-muted">0</span>
+                }
+              </td>
+              <td class="sp-au-num">
+                @if (b.failureCount > 0) {
+                  <sp-admin-badge tone="danger">{{ b.failureCount }}</sp-admin-badge>
+                } @else {
+                  <span class="sp-au-muted">0</span>
+                }
+              </td>
+              <td class="sp-au-num">
+                @if (b.fallbackCount > 0) {
+                  <sp-admin-badge tone="warning">{{ b.fallbackCount }}</sp-admin-badge>
+                } @else {
+                  <span class="sp-au-muted">0</span>
+                }
+              </td>
+              <td class="sp-au-num sp-au-mono">{{ b.totalTokens | number }}</td>
+              <td class="sp-au-num sp-au-mono">${{ b.costUsd.toFixed(4) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </sp-admin-table>
+  }
+</sp-admin-card>
+
 <sp-admin-card title="Recent calls">
   @if (exportError()) {
     <sp-admin-alert variant="error">{{ exportError() }}</sp-admin-alert>

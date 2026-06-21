@@ -179,7 +179,8 @@ describe('admin wrapper migration', () => {
   });
 
   it('AI Usage page renders table and card wrappers', () => {
-    const svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent']);
+    const svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent', 'getTrends']);
+    svc.getTrends.and.returnValue(of([]));
     svc.getSummary.and.returnValue(of({
       totalCalls: 1,
       successfulCalls: 1,

@@ -34,6 +34,7 @@ public interface IAdminAiUsageHandler
     Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, CancellationToken ct = default);
     Task<AiUsagePagedResult> GetRecentAsync(int page = 1, int pageSize = 25, AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? recentFilter = null, CancellationToken ct = default);
     Task<IReadOnlyList<AiUsageRecentItem>> GetExportAsync(AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, int maxRows = 10_000, CancellationToken ct = default);
+    Task<IReadOnlyList<AiUsageTrendBucket>> GetTrendsAsync(AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, CancellationToken ct = default);
 }
 
 public sealed record AiUsagePagedResult(
@@ -66,6 +67,17 @@ public sealed record AiUsageByFeature(
     string Feature,
     int Calls,
     int Successful,
+    decimal CostUsd);
+
+public sealed record AiUsageTrendBucket(
+    DateOnly Date,
+    int CallCount,
+    int SuccessCount,
+    int FailureCount,
+    int FallbackCount,
+    long InputTokens,
+    long OutputTokens,
+    long TotalTokens,
     decimal CostUsd);
 
 public sealed record AiUsageRecentItem(

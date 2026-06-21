@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10U-8)
+lastUpdated: 2026-06-21 (10U-9)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,37 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10U-9 — AI Usage Trend Summary** - complete (2026-06-21)
+
+Goal: lightweight daily trend table on the AI Usage admin page, reusing all existing filters and date period presets.
+
+### Delivered
+
+- `AiUsageTrendBucket` DTO record in `LinguaCoach.Application/Admin/AiUsageQueries.cs`.
+- `IAdminAiUsageHandler.GetTrendsAsync(dateFilter, columnFilter)` — new interface method.
+- `AiUsageHandler.GetTrendsAsync`: client-side grouping by `DateOnly.FromDateTime(l.CreatedAt)`; reuses `ApplyDateFilter` + `ApplyColumnFilter`; zero-fills missing dates within `From→To` range when >= 2 real buckets exist.
+- `GET /api/admin/ai-usage/trends`: same filter params and 400 validation as `/summary`, `/recent`, `/export.csv`. Returns `date (yyyy-MM-dd)`, `callCount`, `successCount`, `failureCount`, `fallbackCount`, `inputTokens`, `outputTokens`, `totalTokens`, `costUsd`.
+- `AiUsageTrendBucket` interface + `getTrends(range?, filters?)` in `AiUsageService`.
+- Component: `trendBuckets`, `loadingTrends`, `trendError` signals; `loadTrends()` called from `load()` on every filter/period change and clear.
+- Template: "Usage trend" `sp-admin-card` with loading/error/empty/data states; zero-count rows muted via `.sp-au-trend-zero`.
+- Backend: +15 integration tests (`AiUsageTrendTests`). 790/790 integration.
+- Frontend: +11 component tests (loading/error/empty/data/filter-reload/clear/period). 858/858 pass. Both builds clean.
+- No migration. No provider routing change. No usage governance change.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2041/2041)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (858/858)
+
+See: `docs/reviews/2026-06-21-phase-10u-9-ai-usage-trend-summary-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-8 — AI Usage CSV Export** - complete (2026-06-21)
 

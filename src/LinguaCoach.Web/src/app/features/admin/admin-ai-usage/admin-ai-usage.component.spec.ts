@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError, Subject } from 'rxjs';
 import { AdminAiUsageComponent, PeriodPreset } from './admin-ai-usage.component';
-import { AiUsageService, AiUsageSummary, AiUsageRecentItem } from '../../../core/services/ai-usage.service';
+import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageTrendBucket } from '../../../core/services/ai-usage.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 
 function makeSummary(overrides: Partial<AiUsageSummary> = {}): AiUsageSummary {
@@ -46,10 +46,11 @@ describe('AdminAiUsageComponent', () => {
   let adminApi: jasmine.SpyObj<AdminApiService>;
 
   beforeEach(() => {
-    svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent', 'exportUsageCsv']);
+    svc = jasmine.createSpyObj('AiUsageService', ['getSummary', 'getRecent', 'exportUsageCsv', 'getTrends']);
     svc.getSummary.and.returnValue(of(makeSummary()));
     svc.getRecent.and.returnValue(of({ items: [makeRecentItem()], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
     svc.exportUsageCsv.and.returnValue(of(new Blob(['header\nrow1'], { type: 'text/csv' })));
+    svc.getTrends.and.returnValue(of([] as AiUsageTrendBucket[]));
 
     adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 1 }));
@@ -842,5 +843,111 @@ describe('AdminAiUsageComponent', () => {
     const args = svc.exportUsageCsv.calls.mostRecent().args;
     const filters = args[1] as { studentId?: string } | undefined;
     expect(filters?.studentId).toBe('uuid-student-export');
+  });
+
+  // ── trend tests (10U-9) ────────────────────────────────────────────────────
+
+  it('getTrends is called on init', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(svc.getTrends).toHaveBeenCalledTimes(1);
+  });
+
+  it('trend section shows empty state when no buckets', () => {
+    svc.getTrends.and.returnValue(of([]));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.trendBuckets().length).toBe(0);
+    expect(fixture.nativeElement.querySelector('sp-admin-empty-state')).toBeTruthy();
+  });
+
+  it('trend section shows buckets when data loaded', () => {
+    const buckets: AiUsageTrendBucket[] = [
+      { date: '2025-03-10', callCount: 5, successCount: 4, failureCount: 1, fallbackCount: 0, inputTokens: 100, outputTokens: 50, totalTokens: 150, costUsd: 0.01 },
+      { date: '2025-03-11', callCount: 3, successCount: 3, failureCount: 0, fallbackCount: 0, inputTokens: 60, outputTokens: 30, totalTokens: 90, costUsd: 0.005 },
+    ];
+    svc.getTrends.and.returnValue(of(buckets));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.trendBuckets().length).toBe(2);
+    const rows = fixture.nativeElement.querySelectorAll('tbody tr');
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('getTrends is called with current filters', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getTrends.calls.reset();
+
+    c.recentProviderFilter.set('openai');
+    c.onRecentStatusChange('success');
+
+    const args = svc.getTrends.calls.mostRecent().args;
+    const filters = args[1] as { provider?: string; status?: string } | undefined;
+    expect(filters?.provider).toBe('openai');
+    expect(filters?.status).toBe('success');
+  });
+
+  it('onRecentProviderChange reloads getTrends', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getTrends.calls.reset();
+
+    fixture.componentInstance.onRecentProviderChange('anthropic');
+
+    expect(svc.getTrends).toHaveBeenCalledTimes(1);
+  });
+
+  it('onPeriodChange reloads getTrends', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getTrends.calls.reset();
+
+    fixture.componentInstance.onPeriodChange('7d');
+
+    expect(svc.getTrends).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearRecentFilters reloads getTrends', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getTrends.calls.reset();
+
+    fixture.componentInstance.clearRecentFilters();
+
+    expect(svc.getTrends).toHaveBeenCalledTimes(1);
+  });
+
+  it('getTrends sends date range from period preset', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getTrends.calls.reset();
+
+    fixture.componentInstance.onPeriodChange('7d');
+
+    const range = svc.getTrends.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+  });
+
+  it('trend loading state sets loadingTrends signal', () => {
+    svc.getTrends.and.returnValue(new Subject<AiUsageTrendBucket[]>());
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.loadingTrends()).toBeTrue();
+  });
+
+  it('trend error state sets trendError signal', () => {
+    svc.getTrends.and.returnValue(throwError(() => ({ error: { error: 'Trend error' } })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.trendError()).toBe('Trend error');
+  });
+
+  it('trend section shows error state on failure', () => {
+    svc.getTrends.and.returnValue(throwError(() => ({ error: { error: 'Trend error' } })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('sp-admin-error-state')).toBeTruthy();
   });
 });

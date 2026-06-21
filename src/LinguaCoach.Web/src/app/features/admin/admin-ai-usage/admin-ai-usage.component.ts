@@ -3,7 +3,7 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 
 export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month';
 import { FormsModule } from '@angular/forms';
-import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter } from '../../../core/services/ai-usage.service';
+import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter, AiUsageTrendBucket } from '../../../core/services/ai-usage.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem } from '../../../core/models/admin.models';
 import {
@@ -68,6 +68,7 @@ import {
     .sp-au-badges { display: flex; flex-wrap: wrap; gap: 3px; }
     .sp-au-fail-reason { font-size: 11px; color: var(--sp-admin-danger, #dc2626); margin-top: 2px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sp-au-filter-note { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); margin: 0 0 8px; }
+    .sp-au-trend-zero td { color: var(--sp-admin-muted, #9ca3af); }
   `],
 })
 export class AdminAiUsageComponent implements OnInit {
@@ -110,6 +111,11 @@ export class AdminAiUsageComponent implements OnInit {
   // Export state
   exporting = signal(false);
   exportError = signal('');
+
+  // Trend state
+  trendBuckets = signal<AiUsageTrendBucket[]>([]);
+  loadingTrends = signal(false);
+  trendError = signal('');
 
   // Student options loaded on init from admin student list
   studentOptions = signal<{ value: string; label: string }[]>([]);
@@ -204,6 +210,7 @@ export class AdminAiUsageComponent implements OnInit {
       error: err => { this.summaryError.set(err.error?.error ?? 'Could not load summary.'); this.loadingSummary.set(false); },
     });
     this.loadRecent();
+    this.loadTrends();
   }
 
   private buildColumnFilters(): AiUsageRecentCallFilter {
@@ -230,6 +237,17 @@ export class AdminAiUsageComponent implements OnInit {
         this.loadingRecent.set(false);
       },
       error: err => { this.recentError.set(err.error?.error ?? 'Could not load recent calls.'); this.loadingRecent.set(false); },
+    });
+  }
+
+  loadTrends(): void {
+    const range   = this.buildRange(this.periodPreset());
+    const filters = this.buildColumnFilters();
+    this.loadingTrends.set(true);
+    this.trendError.set('');
+    this.svc.getTrends(range, filters).subscribe({
+      next: buckets => { this.trendBuckets.set(buckets); this.loadingTrends.set(false); },
+      error: err    => { this.trendError.set(err.error?.error ?? 'Could not load trends.'); this.loadingTrends.set(false); },
     });
   }
 

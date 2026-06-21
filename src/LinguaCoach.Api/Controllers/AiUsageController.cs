@@ -139,6 +139,53 @@ public sealed class AiUsageController : ControllerBase
         });
     }
 
+    [HttpGet("trends")]
+    public async Task<IActionResult> GetTrends(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? provider = null,
+        [FromQuery] string? model = null,
+        [FromQuery] string? featureKey = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? studentId = null,
+        CancellationToken ct = default)
+    {
+        var dateFilter = BuildDateFilter(from, to);
+        if (dateFilter is null) return BadRequest(new { error = "from must be before to." });
+
+        Guid? parsedStudentId = null;
+        if (!string.IsNullOrWhiteSpace(studentId))
+        {
+            if (!Guid.TryParse(studentId, out var sid))
+                return BadRequest(new { error = $"Invalid studentId '{studentId}'. Must be a valid GUID." });
+            parsedStudentId = sid;
+        }
+
+        var columnFilter = new AiUsageRecentFilter(
+            Provider:   string.IsNullOrWhiteSpace(provider)   ? null : provider.Trim(),
+            Model:      string.IsNullOrWhiteSpace(model)      ? null : model.Trim(),
+            FeatureKey: string.IsNullOrWhiteSpace(featureKey) ? null : featureKey.Trim(),
+            Status:     string.IsNullOrWhiteSpace(status)     ? null : status.Trim(),
+            StudentId:  parsedStudentId);
+
+        if (columnFilter.HasInvalidStatus)
+            return BadRequest(new { error = $"Invalid status '{status}'. Valid values: success, failed, fallback." });
+
+        var buckets = await _handler.GetTrendsAsync(dateFilter, columnFilter, ct);
+        return Ok(buckets.Select(b => new
+        {
+            date          = b.Date.ToString("yyyy-MM-dd"),
+            callCount     = b.CallCount,
+            successCount  = b.SuccessCount,
+            failureCount  = b.FailureCount,
+            fallbackCount = b.FallbackCount,
+            inputTokens   = b.InputTokens,
+            outputTokens  = b.OutputTokens,
+            totalTokens   = b.TotalTokens,
+            costUsd       = b.CostUsd,
+        }));
+    }
+
     [HttpGet("export.csv")]
     public async Task<IActionResult> ExportCsv(
         [FromQuery] DateTime? from = null,

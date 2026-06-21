@@ -98,6 +98,60 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
         return new AiUsagePagedResult(items, totalCount, page, pageSize, totalPages);
     }
 
+    public async Task<IReadOnlyList<AiUsageTrendBucket>> GetTrendsAsync(
+        AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, CancellationToken ct = default)
+    {
+        var query = _db.AiUsageLogs.AsNoTracking();
+        query = ApplyDateFilter(query, dateFilter);
+        query = ApplyColumnFilter(query, columnFilter);
+
+        var logs = await query
+            .Select(l => new
+            {
+                Date        = DateOnly.FromDateTime(l.CreatedAt),
+                WasSuccess  = l.WasSuccessful,
+                IsFallback  = l.IsFallback,
+                InputTokens = l.InputTokens,
+                OutputTokens= l.OutputTokens,
+                CostUsd     = l.CostUsd,
+            })
+            .ToListAsync(ct);
+
+        // Group client-side so DateOnly grouping works consistently across DB providers.
+        var grouped = logs
+            .GroupBy(l => l.Date)
+            .Select(g => new AiUsageTrendBucket(
+                Date:         g.Key,
+                CallCount:    g.Count(),
+                SuccessCount: g.Count(l => l.WasSuccess && !l.IsFallback),
+                FailureCount: g.Count(l => !l.WasSuccess),
+                FallbackCount:g.Count(l => l.IsFallback),
+                InputTokens:  g.Sum(l => (long)l.InputTokens),
+                OutputTokens: g.Sum(l => (long)l.OutputTokens),
+                TotalTokens:  g.Sum(l => (long)l.InputTokens + l.OutputTokens),
+                CostUsd:      g.Sum(l => l.CostUsd)))
+            .OrderBy(b => b.Date)
+            .ToList();
+
+        // Zero-fill missing dates within the requested range.
+        if (dateFilter?.From.HasValue == true && grouped.Count >= 2)
+        {
+            var startDate = DateOnly.FromDateTime(dateFilter.From!.Value);
+            var endDate   = DateOnly.FromDateTime(dateFilter.To.HasValue ? dateFilter.To.Value.AddDays(-1) : DateTime.UtcNow);
+            var filled    = new List<AiUsageTrendBucket>();
+            var map       = grouped.ToDictionary(b => b.Date);
+            for (var d = startDate; d <= endDate; d = d.AddDays(1))
+            {
+                filled.Add(map.TryGetValue(d, out var bucket)
+                    ? bucket
+                    : new AiUsageTrendBucket(d, 0, 0, 0, 0, 0, 0, 0, 0m));
+            }
+            return filled;
+        }
+
+        return grouped;
+    }
+
     public async Task<IReadOnlyList<AiUsageRecentItem>> GetExportAsync(
         AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null,
         int maxRows = 10_000, CancellationToken ct = default)

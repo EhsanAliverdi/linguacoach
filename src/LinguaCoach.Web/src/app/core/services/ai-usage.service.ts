@@ -46,6 +46,18 @@ export interface AiUsageDateRange {
   to?: string;   // ISO-8601 UTC
 }
 
+export interface AiUsageTrendBucket {
+  date: string;          // 'yyyy-MM-dd'
+  callCount: number;
+  successCount: number;
+  failureCount: number;
+  fallbackCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  costUsd: number;
+}
+
 export interface AiUsageRecentCallFilter {
   provider?: string;
   model?: string;
@@ -68,6 +80,18 @@ export class AiUsageService {
     if (filters?.status)      params = params.set('status',     filters.status);
     if (filters?.studentId)   params = params.set('studentId',  filters.studentId);
     return this.http.get<AiUsageSummary>('/api/admin/ai-usage/summary', { params });
+  }
+
+  getTrends(range?: AiUsageDateRange, filters?: AiUsageRecentCallFilter): Observable<AiUsageTrendBucket[]> {
+    let params = new HttpParams();
+    if (range?.from)          params = params.set('from',       range.from);
+    if (range?.to)            params = params.set('to',         range.to);
+    if (filters?.provider)    params = params.set('provider',   filters.provider);
+    if (filters?.model)       params = params.set('model',      filters.model);
+    if (filters?.featureKey)  params = params.set('featureKey', filters.featureKey);
+    if (filters?.status)      params = params.set('status',     filters.status);
+    if (filters?.studentId)   params = params.set('studentId',  filters.studentId);
+    return this.http.get<AiUsageTrendBucket[]>('/api/admin/ai-usage/trends', { params });
   }
 
   exportUsageCsv(range?: AiUsageDateRange, filters?: AiUsageRecentCallFilter): Observable<Blob> {
