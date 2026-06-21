@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-1)
+lastUpdated: 2026-06-21 (10W-2)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,19 @@ supersededBy:
 Last updated: 2026-06-21
 
 ---
+
+## Enterprise Notification Platform — APIs + dispatch foundation complete (Phase 10W-2, 2026-06-21)
+
+In-app notification APIs are live for authenticated users. Outbox dispatch processes InApp items end-to-end; Email/SMS safely queued.
+
+- **APIs:** `GET /api/notifications` (paged, filtered, expires-excluded, archived-excluded), `GET /api/notifications/unread-count`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all`, `POST /api/notifications/{id}/archive`.
+- **Filters:** `unreadOnly`, `category`, `severity`. Invalid values return 400. Current-user isolation enforced.
+- **Dispatch:** `INotificationDispatchService.DispatchDueAsync` — InApp items delivered, Email/SMS items skipped with error until 10W-4/10W-6.
+- **Tests:** 2131/2131 .NET (3 arch + 1278 unit + 850 integration).
+- **Bell UI:** still hard-coded demo dropdown — wiring to live APIs is 10W-3.
+
+Foundation review: `docs/reviews/2026-06-21-phase-10w-1-backend-notification-foundation-review.md`
+API review: `docs/reviews/2026-06-21-phase-10w-2-in-app-notification-apis-dispatch-foundation-review.md`
 
 ## Enterprise Notification Platform — backend foundation complete (Phase 10W-1, 2026-06-21)
 

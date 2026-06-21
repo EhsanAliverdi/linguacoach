@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-1)
+lastUpdated: 2026-06-21 (10W-2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,33 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10W-2 — In-App Notification APIs + Dispatch Foundation** - complete (2026-06-21)
+
+Goal: authenticated current-user notification APIs, paged listing with filters, mark-read/read-all/archive, and outbox dispatch service (InApp delivered; Email/SMS safely skipped).
+
+### Delivered
+
+- `NotificationDto`, `PagedNotificationResult`, `NotificationListQuery` in Application layer.
+- `INotificationQueryService` / `NotificationQueryService`: list (paged, filtered, expires-excluded, archived-excluded), unread-count, mark-read, mark-all-read, archive. Current-user isolation enforced.
+- `INotificationDispatchService` / `NotificationDispatchService`: processes due outbox items in batches. InApp → delivered. Email/SMS → skipped with error (no provider yet).
+- `NotificationsController`: 5 endpoints — `GET /api/notifications`, `GET /api/notifications/unread-count`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all`, `POST /api/notifications/{id}/archive`.
+- 16 API integration tests + 9 dispatch tests (+25 total).
+- No migration. No frontend changes. No external email/SMS delivery.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2131/2131 — 3 arch + 1278 unit + 850 integration; +23)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (896/896)
+
+See: `docs/reviews/2026-06-21-phase-10w-2-in-app-notification-apis-dispatch-foundation-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10W-1 — Backend Notification Foundation** - complete (2026-06-21)
 

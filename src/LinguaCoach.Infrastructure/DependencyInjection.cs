@@ -83,6 +83,8 @@ public static class DependencyInjection
 
         // Notifications
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationQueryService, NotificationQueryService>();
+        services.AddScoped<INotificationDispatchService, NotificationDispatchService>();
 
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
