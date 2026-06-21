@@ -33,7 +33,7 @@ public sealed class NotificationServiceTests : IAsyncLifetime
     private LinguaCoachDbContext Db => _db!;
 
     private INotificationService Svc => new NotificationService(
-        Db, NullLogger<NotificationService>.Instance);
+        Db, new NotificationPreferenceService(Db), NullLogger<NotificationService>.Instance);
 
     private static Guid UserId() => Guid.NewGuid();
 
@@ -153,30 +153,27 @@ public sealed class NotificationServiceTests : IAsyncLifetime
     // ── QueueSmsAsync ─────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task QueueSms_CreatesNotificationAndOutboxItem()
+    public async Task QueueSms_IsSkippedByPreferenceLayer_SmsDeferred()
     {
+        // SMS is permanently disabled via INotificationPreferenceService.
+        // QueueSmsAsync should silently skip — no notification or outbox row created.
         var userId = UserId();
 
         await Svc.QueueSmsAsync(userId, "Quota warning", "80% used",
             NotificationCategory.BillingUsage, NotificationSeverity.Warning);
 
-        var notif = await Db.Notifications.SingleAsync();
-        Assert.Equal(NotificationChannel.Sms, notif.Channel);
-        Assert.Equal(NotificationStatus.Queued, notif.Status);
-
-        var outbox = await Db.NotificationOutboxItems.SingleAsync();
-        Assert.Equal(NotificationChannel.Sms, outbox.Channel);
-        Assert.Equal(0, outbox.AttemptCount);
+        Assert.Equal(0, await Db.Notifications.CountAsync());
+        Assert.Equal(0, await Db.NotificationOutboxItems.CountAsync());
     }
 
     [Fact]
-    public async Task QueueSms_NoExternalDelivery_InThisPhase()
+    public async Task QueueSms_NoOutboxItem_WhenDeferred()
     {
+        // SMS deferred: no outbox row is written.
         await Svc.QueueSmsAsync(UserId(), "T", "B",
             NotificationCategory.BillingUsage, NotificationSeverity.Info);
 
-        var outbox = await Db.NotificationOutboxItems.SingleAsync();
-        Assert.Null(outbox.ProcessedAtUtc);
+        Assert.Equal(0, await Db.NotificationOutboxItems.CountAsync());
     }
 
     // ── QueueAsync (generic) ──────────────────────────────────────────────────

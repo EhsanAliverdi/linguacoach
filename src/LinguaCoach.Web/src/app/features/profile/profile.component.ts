@@ -12,6 +12,11 @@ import {
   StudentProfileResponse,
   UpdateLearningPreferencesRequest,
 } from '../../core/services/profile.service';
+import {
+  NotificationPreferencesService,
+  NotificationPreferenceItem,
+  UpdateNotificationPreferenceRequest,
+} from '../../core/services/notification-preferences.service';
 
 const PREDEFINED_LEARNING_GOALS = [
   'Day-to-day English',
@@ -230,6 +235,68 @@ const SUPPORT_LANGUAGES = [
         </div>
       </div>
 
+      <!-- Section 7: Notification preferences -->
+      <div class="sp-section-h"><h3>Notification preferences</h3></div>
+      <div class="sp-card" style="padding:18px;margin-bottom:16px" data-testid="notification-prefs-section">
+        @if (prefsLoading()) {
+          <div style="font-size:13px;color:var(--sp-muted)" data-testid="prefs-loading">Loading preferences...</div>
+        }
+        @if (!prefsLoading()) {
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px" data-testid="prefs-table">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:6px 8px;color:var(--sp-muted);font-weight:600;border-bottom:1px solid var(--sp-border)">Category</th>
+                  <th style="text-align:center;padding:6px 8px;color:var(--sp-muted);font-weight:600;border-bottom:1px solid var(--sp-border)">In-App</th>
+                  <th style="text-align:center;padding:6px 8px;color:var(--sp-muted);font-weight:600;border-bottom:1px solid var(--sp-border)">Email</th>
+                  <th style="text-align:center;padding:6px 8px;color:var(--sp-muted);font-weight:600;border-bottom:1px solid var(--sp-border)">SMS</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of prefRows(); track row.category) {
+                  <tr style="border-bottom:1px solid var(--sp-border)">
+                    <td style="padding:8px;font-weight:600;color:var(--sp-ink)">
+                      {{ row.category }}
+                      @if (row.isRequired) {
+                        <span style="font-size:10px;font-weight:700;color:var(--sp-brand);margin-left:4px" data-testid="required-badge">Required</span>
+                      }
+                    </td>
+                    <td style="text-align:center;padding:8px">
+                      <input type="checkbox"
+                        [checked]="getPref(row.category, 'InApp')"
+                        [disabled]="isPrefRequired(row.category, 'InApp')"
+                        (change)="setPref(row.category, 'InApp', $any($event.target).checked)"
+                        [attr.data-testid]="'pref-inapp-' + row.category"
+                      />
+                    </td>
+                    <td style="text-align:center;padding:8px">
+                      <input type="checkbox"
+                        [checked]="getPref(row.category, 'Email')"
+                        [disabled]="isPrefRequired(row.category, 'Email')"
+                        (change)="setPref(row.category, 'Email', $any($event.target).checked)"
+                        [attr.data-testid]="'pref-email-' + row.category"
+                      />
+                    </td>
+                    <td style="text-align:center;padding:8px">
+                      <span style="font-size:11px;color:var(--sp-faint)" data-testid="sms-coming-soon">Coming soon</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (prefsSaveError()) {
+            <div style="margin-top:10px;font-size:12px;color:#991B1B" data-testid="prefs-error">{{ prefsSaveError() }}</div>
+          }
+          <button
+            (click)="savePrefs()"
+            [disabled]="prefsSaving()"
+            data-testid="save-prefs-button"
+            style="margin-top:12px;padding:10px 20px;border-radius:var(--sp-r-md);background:var(--sp-grad-brand);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer"
+          >{{ prefsSaving() ? 'Saving...' : 'Save notification preferences' }}</button>
+        }
+      </div>
+
       <!-- Save / error / success -->
       @if (errorMessage()) {
         <div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:var(--sp-r-md);padding:12px 16px;font-size:13px;color:#991B1B;margin-bottom:14px" data-testid="error-message">
@@ -271,6 +338,23 @@ export class ProfileComponent implements OnInit {
   saving = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
+
+  // Notification preferences state
+  allPrefs = signal<NotificationPreferenceItem[]>([]);
+  prefsLoading = signal(true);
+  prefsSaving = signal(false);
+  prefsSaveError = signal<string | null>(null);
+  // Local edits: category+channel -> isEnabled
+  private prefEdits = new Map<string, boolean>();
+
+  prefRows = computed(() => {
+    const seen = new Set<string>();
+    return this.allPrefs().filter(p => {
+      if (seen.has(p.category)) return false;
+      seen.add(p.category);
+      return true;
+    });
+  });
 
   form: {
     preferredName: string | null;
@@ -315,6 +399,7 @@ export class ProfileComponent implements OnInit {
   constructor(
     public auth: AuthService,
     private profileService: ProfileService,
+    private notifPrefsService: NotificationPreferencesService,
   ) {}
 
   ngOnInit(): void {
@@ -337,6 +422,47 @@ export class ProfileComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
+      },
+    });
+
+    this.notifPrefsService.getPreferences().subscribe({
+      next: prefs => {
+        this.allPrefs.set(prefs);
+        this.prefEdits.clear();
+        prefs.forEach(p => this.prefEdits.set(`${p.category}:${p.channel}`, p.isEnabled));
+        this.prefsLoading.set(false);
+      },
+      error: () => this.prefsLoading.set(false),
+    });
+  }
+
+  getPref(category: string, channel: string): boolean {
+    return this.prefEdits.get(`${category}:${channel}`) ?? true;
+  }
+
+  isPrefRequired(category: string, channel: string): boolean {
+    return this.allPrefs().find(p => p.category === category && p.channel === channel)?.isRequired ?? false;
+  }
+
+  setPref(category: string, channel: string, value: boolean): void {
+    this.prefEdits.set(`${category}:${channel}`, value);
+  }
+
+  savePrefs(): void {
+    this.prefsSaving.set(true);
+    this.prefsSaveError.set(null);
+
+    const updates: UpdateNotificationPreferenceRequest[] = [];
+    this.prefEdits.forEach((isEnabled, key) => {
+      const [category, channel] = key.split(':');
+      updates.push({ category, channel, isEnabled });
+    });
+
+    this.notifPrefsService.updatePreferences(updates).subscribe({
+      next: () => this.prefsSaving.set(false),
+      error: () => {
+        this.prefsSaving.set(false);
+        this.prefsSaveError.set('Could not save notification preferences. Please try again.');
       },
     });
   }

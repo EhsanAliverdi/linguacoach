@@ -51,7 +51,7 @@ public sealed class NotificationDispatchTests : IAsyncLifetime
     private LinguaCoachDbContext Db => _db!;
 
     private INotificationService NotifSvc => new NotificationService(
-        Db, NullLogger<NotificationService>.Instance);
+        Db, new NotificationPreferenceService(Db), NullLogger<NotificationService>.Instance);
 
     // InApp/SMS tests use DisabledEmailSender — no real email needed.
     private INotificationDispatchService DispatchSvc => new NotificationDispatchService(
@@ -117,19 +117,18 @@ public sealed class NotificationDispatchTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Dispatch_SmsItem_NotSentExternally_MarkedFailed()
+    public async Task Dispatch_SmsItem_NotQueued_WhenSmsDeferred()
     {
+        // SMS is blocked by INotificationPreferenceService — no outbox row is written.
+        // Nothing to dispatch: both Processed and Skipped are 0.
         await NotifSvc.QueueSmsAsync(UserId(), "T", "B",
             NotificationCategory.BillingUsage, NotificationSeverity.Warning);
 
         var result = await DispatchSvc.DispatchDueAsync();
 
         Assert.Equal(0, result.Processed);
-        Assert.Equal(1, result.Skipped);
-
-        var outbox = await Db.NotificationOutboxItems.SingleAsync();
-        Assert.Equal(NotificationStatus.Failed, outbox.Status);
-        Assert.False(string.IsNullOrEmpty(outbox.LastError));
+        Assert.Equal(0, result.Skipped);
+        Assert.Equal(0, await Db.NotificationOutboxItems.CountAsync());
     }
 
     // ── Retry behavior ────────────────────────────────────────────────────────

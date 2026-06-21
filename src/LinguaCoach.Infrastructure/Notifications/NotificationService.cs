@@ -10,16 +10,32 @@ namespace LinguaCoach.Infrastructure.Notifications;
 public sealed class NotificationService : INotificationService
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly INotificationPreferenceService _preferences;
     private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(LinguaCoachDbContext db, ILogger<NotificationService> logger)
+    public NotificationService(
+        LinguaCoachDbContext db,
+        INotificationPreferenceService preferences,
+        ILogger<NotificationService> logger)
     {
         _db = db;
+        _preferences = preferences;
         _logger = logger;
     }
 
     public async Task QueueAsync(NotificationRequest request, CancellationToken ct = default)
     {
+        var enabled = await _preferences.IsChannelEnabledAsync(
+            request.RecipientUserId, request.Category, request.Channel, ct);
+
+        if (!enabled)
+        {
+            _logger.LogDebug(
+                "Notification skipped due to user preference: {Channel}/{Category} for user {UserId}.",
+                request.Channel, request.Category, request.RecipientUserId);
+            return;
+        }
+
         var notification = Notification.Create(
             request.RecipientUserId,
             request.Title,

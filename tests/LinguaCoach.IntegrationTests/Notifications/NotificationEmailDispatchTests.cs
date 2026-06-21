@@ -60,7 +60,7 @@ public sealed class NotificationEmailDispatchTests : IAsyncLifetime
     private UserManager<ApplicationUser> UserMgr => _userManager!;
 
     private INotificationService NotifSvc => new NotificationService(
-        Db, NullLogger<NotificationService>.Instance);
+        Db, new NotificationPreferenceService(Db), NullLogger<NotificationService>.Instance);
 
     private INotificationDispatchService DispatchSvc(IEmailSender emailSender) =>
         new NotificationDispatchService(Db, emailSender, UserMgr, NullLogger<NotificationDispatchService>.Instance);

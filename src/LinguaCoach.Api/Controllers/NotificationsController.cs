@@ -12,8 +12,15 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class NotificationsController : ControllerBase
 {
     private readonly INotificationQueryService _query;
+    private readonly INotificationPreferenceService _preferences;
 
-    public NotificationsController(INotificationQueryService query) => _query = query;
+    public NotificationsController(
+        INotificationQueryService query,
+        INotificationPreferenceService preferences)
+    {
+        _query = query;
+        _preferences = preferences;
+    }
 
     [HttpGet]
     public async Task<IActionResult> List(
@@ -95,6 +102,37 @@ public sealed class NotificationsController : ControllerBase
         if (userId == Guid.Empty) return Unauthorized();
 
         await _query.ArchiveAsync(id, userId, ct);
+        return NoContent();
+    }
+
+    [HttpGet("preferences")]
+    public async Task<IActionResult> GetPreferences(CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var prefs = await _preferences.GetPreferencesAsync(userId, ct);
+        return Ok(prefs.Select(p => new
+        {
+            category = p.Category.ToString(),
+            channel = p.Channel.ToString(),
+            isEnabled = p.IsEnabled,
+            isRequired = p.IsRequired,
+        }));
+    }
+
+    [HttpPut("preferences")]
+    public async Task<IActionResult> UpdatePreferences(
+        [FromBody] List<UpdateNotificationPreferenceRequest> body,
+        CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        if (body is null || body.Count == 0)
+            return BadRequest(new { error = "At least one preference is required." });
+
+        await _preferences.UpdatePreferencesAsync(userId, body, ct);
         return NoContent();
     }
 

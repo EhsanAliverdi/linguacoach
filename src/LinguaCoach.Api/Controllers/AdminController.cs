@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Auth;
+using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,7 @@ public sealed class AdminController : ControllerBase
     private readonly IPasswordResetService _passwordReset;
     private readonly IAdminNotificationHandler _notificationHandler;
     private readonly IAdminTemplateHandler _templateHandler;
+    private readonly INotificationPreferenceService _notificationPreferences;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
@@ -33,7 +35,8 @@ public sealed class AdminController : ControllerBase
         LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery,
         IPasswordResetService passwordReset,
         IAdminNotificationHandler notificationHandler,
-        IAdminTemplateHandler templateHandler)
+        IAdminTemplateHandler templateHandler,
+        INotificationPreferenceService notificationPreferences)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
@@ -45,6 +48,7 @@ public sealed class AdminController : ControllerBase
         _passwordReset = passwordReset;
         _notificationHandler = notificationHandler;
         _templateHandler = templateHandler;
+        _notificationPreferences = notificationPreferences;
     }
 
 
@@ -785,6 +789,22 @@ public sealed class AdminController : ControllerBase
             return Ok(result);
         }
         catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    // ── Notification preferences (admin read) ─────────────────────────────────
+
+    [HttpGet("notifications/preferences/{userId:guid}")]
+    public async Task<IActionResult> GetStudentNotificationPreferences(
+        Guid userId, CancellationToken ct = default)
+    {
+        var prefs = await _notificationPreferences.GetPreferencesAsync(userId, ct);
+        return Ok(prefs.Select(p => new
+        {
+            category = p.Category.ToString(),
+            channel = p.Channel.ToString(),
+            isEnabled = p.IsEnabled,
+            isRequired = p.IsRequired,
+        }));
     }
 
     private Guid GetCurrentUserId()

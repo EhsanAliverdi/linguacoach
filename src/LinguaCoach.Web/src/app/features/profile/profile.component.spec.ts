@@ -3,6 +3,16 @@ import { of, throwError } from 'rxjs';
 import { ProfileComponent } from './profile.component';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService, StudentProfileResponse } from '../../core/services/profile.service';
+import { NotificationPreferencesService, NotificationPreferenceItem } from '../../core/services/notification-preferences.service';
+
+const MOCK_PREFS: NotificationPreferenceItem[] = [
+  { category: 'Account', channel: 'InApp', isEnabled: true, isRequired: true },
+  { category: 'Account', channel: 'Email', isEnabled: true, isRequired: true },
+  { category: 'Account', channel: 'Sms', isEnabled: false, isRequired: true },
+  { category: 'Learning', channel: 'InApp', isEnabled: true, isRequired: false },
+  { category: 'Learning', channel: 'Email', isEnabled: true, isRequired: false },
+  { category: 'Learning', channel: 'Sms', isEnabled: false, isRequired: false },
+];
 
 const MOCK_PROFILE: StudentProfileResponse = {
   profileId: 'profile-123',
@@ -28,6 +38,7 @@ const MOCK_PROFILE: StudentProfileResponse = {
 describe('ProfileComponent', () => {
   let profileService: jasmine.SpyObj<ProfileService>;
   let authService: jasmine.SpyObj<AuthService>;
+  let notifPrefsService: jasmine.SpyObj<NotificationPreferencesService>;
 
   beforeEach(() => {
     profileService = jasmine.createSpyObj('ProfileService', ['getProfile', 'updatePreferences']);
@@ -38,11 +49,16 @@ describe('ProfileComponent', () => {
       currentUser: () => ({ email: 'jane@example.com', role: 'Student', mustChangePassword: false }),
     });
 
+    notifPrefsService = jasmine.createSpyObj('NotificationPreferencesService', ['getPreferences', 'updatePreferences']);
+    notifPrefsService.getPreferences.and.returnValue(of(MOCK_PREFS));
+    notifPrefsService.updatePreferences.and.returnValue(of(undefined));
+
     TestBed.configureTestingModule({
       imports: [ProfileComponent],
       providers: [
         { provide: ProfileService, useValue: profileService },
         { provide: AuthService, useValue: authService },
+        { provide: NotificationPreferencesService, useValue: notifPrefsService },
       ],
     });
   });
@@ -257,4 +273,103 @@ describe('ProfileComponent', () => {
     // This checks the loading signal is reset after
     expect(fixture.componentInstance.loading()).toBeFalse();
   });
+
+  // ── Notification preferences ──────────────────────────────────────────────
+
+  it('loads notification preferences on init', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(notifPrefsService.getPreferences).toHaveBeenCalled();
+    expect(fixture.componentInstance.allPrefs().length).toBeGreaterThan(0);
+  }));
+
+  it('renders notification preferences section', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const section = fixture.nativeElement.querySelector('[data-testid="notification-prefs-section"]');
+    expect(section).toBeTruthy();
+  }));
+
+  it('renders prefs table after loading', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const table = fixture.nativeElement.querySelector('[data-testid="prefs-table"]');
+    expect(table).toBeTruthy();
+  }));
+
+  it('shows SMS as coming soon (not a checkbox)', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const smsEl = fixture.nativeElement.querySelector('[data-testid="sms-coming-soon"]');
+    expect(smsEl).toBeTruthy();
+    expect(smsEl.textContent).toContain('Coming soon');
+  }));
+
+  it('required category shows Required badge', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('[data-testid="required-badge"]');
+    expect(badge).toBeTruthy();
+  }));
+
+  it('getPref returns true for enabled preference', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.getPref('Learning', 'InApp')).toBeTrue();
+  }));
+
+  it('setPref updates local state', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    fixture.componentInstance.setPref('Learning', 'Email', false);
+    expect(fixture.componentInstance.getPref('Learning', 'Email')).toBeFalse();
+  }));
+
+  it('savePrefs calls updatePreferences', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    fixture.componentInstance.savePrefs();
+    tick();
+    expect(notifPrefsService.updatePreferences).toHaveBeenCalled();
+  }));
+
+  it('savePrefs shows error on failure', fakeAsync(() => {
+    notifPrefsService.updatePreferences.and.returnValue(throwError(() => new Error('fail')));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    fixture.componentInstance.savePrefs();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.prefsSaveError()).toBeTruthy();
+  }));
+
+  it('isPrefRequired returns true for Account category', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.isPrefRequired('Account', 'InApp')).toBeTrue();
+  }));
+
+  it('isPrefRequired returns false for Learning category', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.isPrefRequired('Learning', 'InApp')).toBeFalse();
+  }));
+
+  it('prefsLoading is false after preferences load', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.prefsLoading()).toBeFalse();
+  }));
 });

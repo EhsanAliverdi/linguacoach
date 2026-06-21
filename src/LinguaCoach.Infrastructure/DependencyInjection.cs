@@ -82,6 +82,7 @@ public static class DependencyInjection
         services.AddScoped<Jobs.PracticeGymGenerationJob>();
 
         // Notifications
+        services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationQueryService, NotificationQueryService>();
         services.AddScoped<INotificationDispatchService, NotificationDispatchService>();

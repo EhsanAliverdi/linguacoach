@@ -38,7 +38,7 @@ public sealed class NotificationApiTests : IClassFixture<NotificationApiTestFact
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var svc = new NotificationService(db, NullLogger<NotificationService>.Instance);
+        var svc = new NotificationService(db, new NotificationPreferenceService(db), NullLogger<NotificationService>.Instance);
         await svc.QueueInAppAsync(_userId, title, body, cat, sev, expiresAtUtc: expiresAtUtc);
         var notif = db.Notifications.OrderByDescending(n => n.CreatedAtUtc).First();
         return notif.Id;
@@ -69,7 +69,7 @@ public sealed class NotificationApiTests : IClassFixture<NotificationApiTestFact
         // Queue a notification for a different user directly
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var svc = new NotificationService(db, NullLogger<NotificationService>.Instance);
+        var svc = new NotificationService(db, new NotificationPreferenceService(db), NullLogger<NotificationService>.Instance);
         await svc.QueueInAppAsync(Guid.NewGuid(), "OtherUser", "Body",
             NotificationCategory.System, NotificationSeverity.Info);
 
@@ -205,7 +205,7 @@ public sealed class NotificationApiTests : IClassFixture<NotificationApiTestFact
         // Create a notification for a different user
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var svc = new NotificationService(db, NullLogger<NotificationService>.Instance);
+        var svc = new NotificationService(db, new NotificationPreferenceService(db), NullLogger<NotificationService>.Instance);
         await svc.QueueInAppAsync(Guid.NewGuid(), "Other", "Body",
             NotificationCategory.System, NotificationSeverity.Info);
         var otherId = db.Notifications.OrderByDescending(n => n.CreatedAtUtc).First().Id;
@@ -258,7 +258,7 @@ public sealed class NotificationApiTests : IClassFixture<NotificationApiTestFact
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var svc = new NotificationService(db, NullLogger<NotificationService>.Instance);
+        var svc = new NotificationService(db, new NotificationPreferenceService(db), NullLogger<NotificationService>.Instance);
         var otherId2 = Guid.NewGuid();
         await svc.QueueInAppAsync(otherId2, "OtherA", "Body",
             NotificationCategory.System, NotificationSeverity.Info);
