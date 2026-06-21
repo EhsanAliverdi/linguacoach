@@ -11,6 +11,8 @@ import {
   StudentAuditHistoryItem,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
+  AdminNotificationItem, AdminOutboxItem,
+  AdminNotificationListQuery, AdminOutboxListQuery,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -160,5 +162,45 @@ export class AdminApiService {
 
   deactivateAiPricingOverride(id: string): Observable<void> {
     return this.http.delete<void>(`${this.api}/ai/pricing/overrides/${id}`);
+  }
+
+  // Notification center
+  listAdminNotifications(query: AdminNotificationListQuery = {}): Observable<PagedResponse<AdminNotificationItem>> {
+    const params = new URLSearchParams();
+    if (query.page !== undefined) params.set('page', String(query.page));
+    if (query.pageSize !== undefined) params.set('pageSize', String(query.pageSize));
+    if (query.recipientUserId) params.set('recipientUserId', query.recipientUserId);
+    if (query.channel) params.set('channel', query.channel);
+    if (query.status) params.set('status', query.status);
+    if (query.category) params.set('category', query.category);
+    if (query.severity) params.set('severity', query.severity);
+    if (query.from) params.set('from', query.from);
+    if (query.to) params.set('to', query.to);
+    if (query.search) params.set('search', query.search);
+    const qs = params.toString();
+    return this.http.get<PagedResponse<AdminNotificationItem>>(`${this.api}/notifications${qs ? '?' + qs : ''}`);
+  }
+
+  listAdminOutbox(query: AdminOutboxListQuery = {}): Observable<PagedResponse<AdminOutboxItem>> {
+    const params = new URLSearchParams();
+    if (query.page !== undefined) params.set('page', String(query.page));
+    if (query.pageSize !== undefined) params.set('pageSize', String(query.pageSize));
+    if (query.recipientUserId) params.set('recipientUserId', query.recipientUserId);
+    if (query.channel) params.set('channel', query.channel);
+    if (query.status) params.set('status', query.status);
+    if (query.from) params.set('from', query.from);
+    if (query.to) params.set('to', query.to);
+    if (query.dueOnly) params.set('dueOnly', 'true');
+    if (query.failedOnly) params.set('failedOnly', 'true');
+    const qs = params.toString();
+    return this.http.get<PagedResponse<AdminOutboxItem>>(`${this.api}/notifications/outbox${qs ? '?' + qs : ''}`);
+  }
+
+  retryOutboxItem(id: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/notifications/outbox/${id}/retry`, null);
+  }
+
+  cancelOutboxItem(id: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/notifications/outbox/${id}/cancel`, null);
   }
 }

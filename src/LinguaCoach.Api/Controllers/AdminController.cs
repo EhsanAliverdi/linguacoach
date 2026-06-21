@@ -20,6 +20,7 @@ public sealed class AdminController : ControllerBase
     private readonly IExerciseTypeCatalogService _exerciseTypes;
     private readonly LinguaCoach.Application.LearningPath.IStudentMemoryQuery _memoryQuery;
     private readonly IPasswordResetService _passwordReset;
+    private readonly IAdminNotificationHandler _notificationHandler;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
@@ -29,7 +30,8 @@ public sealed class AdminController : ControllerBase
         IAdminAiConfigHandler aiConfigHandler,
         IExerciseTypeCatalogService exerciseTypes,
         LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery,
-        IPasswordResetService passwordReset)
+        IPasswordResetService passwordReset,
+        IAdminNotificationHandler notificationHandler)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
@@ -39,6 +41,7 @@ public sealed class AdminController : ControllerBase
         _exerciseTypes = exerciseTypes;
         _memoryQuery = memoryQuery;
         _passwordReset = passwordReset;
+        _notificationHandler = notificationHandler;
     }
 
 
@@ -560,6 +563,67 @@ public sealed class AdminController : ControllerBase
             return NoContent();
         }
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
+    // ── Admin notification center ────────────────────────────────────────────
+
+    [HttpGet("notifications")]
+    public async Task<IActionResult> ListNotifications(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? recipientUserId = null,
+        [FromQuery] string? channel = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? category = null,
+        [FromQuery] string? severity = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? search = null,
+        CancellationToken ct = default)
+    {
+        var result = await _notificationHandler.ListNotificationsAsync(new AdminNotificationListQuery(
+            page, pageSize, recipientUserId, channel, status, category, severity, from, to, search), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("notifications/outbox")]
+    public async Task<IActionResult> ListOutbox(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? recipientUserId = null,
+        [FromQuery] string? channel = null,
+        [FromQuery] string? status = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] bool dueOnly = false,
+        [FromQuery] bool failedOnly = false,
+        CancellationToken ct = default)
+    {
+        var result = await _notificationHandler.ListOutboxAsync(new AdminOutboxListQuery(
+            page, pageSize, recipientUserId, channel, status, from, to, dueOnly, failedOnly), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("notifications/outbox/{id:guid}/retry")]
+    public async Task<IActionResult> RetryOutboxItem(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _notificationHandler.RetryOutboxItemAsync(id, GetCurrentUserId(), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPost("notifications/outbox/{id:guid}/cancel")]
+    public async Task<IActionResult> CancelOutboxItem(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _notificationHandler.CancelOutboxItemAsync(id, GetCurrentUserId(), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     private Guid GetCurrentUserId()

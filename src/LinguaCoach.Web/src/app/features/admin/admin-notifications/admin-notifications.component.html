@@ -1,0 +1,203 @@
+<sp-admin-page-body>
+  <sp-admin-page-header title="Notification Center" subtitle="Inspect and manage notification records and delivery queue.">
+  </sp-admin-page-header>
+
+  <!-- Tab bar -->
+  <div class="flex gap-2 mb-4 border-b border-gray-200">
+    <button
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class.border-blue-600]="activeTab === 'notifications'"
+      [class.text-blue-600]="activeTab === 'notifications'"
+      [class.border-transparent]="activeTab !== 'notifications'"
+      [class.text-gray-500]="activeTab !== 'notifications'"
+      (click)="activeTab = 'notifications'"
+    >Notifications</button>
+    <button
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class.border-blue-600]="activeTab === 'outbox'"
+      [class.text-blue-600]="activeTab === 'outbox'"
+      [class.border-transparent]="activeTab !== 'outbox'"
+      [class.text-gray-500]="activeTab !== 'outbox'"
+      (click)="activeTab = 'outbox'"
+    >Delivery Queue</button>
+  </div>
+
+  <!-- ── Notifications tab ──────────────────────────────────────────────────── -->
+  @if (activeTab === 'notifications') {
+    <sp-admin-card>
+      <sp-admin-filter-bar density="compact">
+        <sp-admin-input
+          filters size="sm"
+          placeholder="Search title / body…"
+          [(ngModel)]="notifSearch"
+          (keyup.enter)="applyNotifFilters()"
+          aria-label="Search notifications" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All channels"
+          [options]="channelOptions"
+          [(ngModel)]="notifChannelFilter"
+          (ngModelChange)="applyNotifFilters()"
+          aria-label="Filter by channel" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All statuses"
+          [options]="notifStatusOptions"
+          [(ngModel)]="notifStatusFilter"
+          (ngModelChange)="applyNotifFilters()"
+          aria-label="Filter by status" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All categories"
+          [options]="categoryOptions"
+          [(ngModel)]="notifCategoryFilter"
+          (ngModelChange)="applyNotifFilters()"
+          aria-label="Filter by category" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All severities"
+          [options]="severityOptions"
+          [(ngModel)]="notifSeverityFilter"
+          (ngModelChange)="applyNotifFilters()"
+          aria-label="Filter by severity" />
+      </sp-admin-filter-bar>
+
+      @if (notifLoading()) {
+        <sp-admin-loading-state message="Loading notifications…" />
+      } @else if (notifError()) {
+        <sp-admin-error-state [message]="notifError()" (retry)="loadNotifications()" />
+      } @else if (notifications().length === 0) {
+        <sp-admin-empty-state message="No notifications found." />
+      } @else {
+        <sp-admin-table>
+          <thead>
+            <tr>
+              <th>Recipient</th>
+              <th>Title</th>
+              <th>Channel</th>
+              <th>Category</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Read</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of notifications(); track item.id) {
+              <tr>
+                <td>{{ item.recipientEmail }}</td>
+                <td>{{ item.title }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.channel }}</sp-admin-badge></td>
+                <td>{{ item.category }}</td>
+                <td><sp-admin-badge [tone]="severityTone(item.severity)">{{ item.severity }}</sp-admin-badge></td>
+                <td><sp-admin-badge [tone]="statusTone(item.status)">{{ item.status }}</sp-admin-badge></td>
+                <td>{{ timeAgo(item.createdAtUtc) }}</td>
+                <td>{{ item.readAtUtc ? timeAgo(item.readAtUtc) : '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </sp-admin-table>
+
+        @if (notifTotalPages() > 1) {
+          <sp-admin-pagination
+            [page]="notifPage()"
+            [totalPages]="notifTotalPages()"
+            (pageChange)="onNotifPage($event)" />
+        }
+      }
+    </sp-admin-card>
+  }
+
+  <!-- ── Outbox / delivery queue tab ──────────────────────────────────────── -->
+  @if (activeTab === 'outbox') {
+    <sp-admin-card>
+      <sp-admin-filter-bar density="compact">
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All channels"
+          [options]="channelOptions"
+          [(ngModel)]="outboxChannelFilter"
+          (ngModelChange)="applyOutboxFilters()"
+          aria-label="Filter by channel" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All statuses"
+          [options]="outboxStatusOptions"
+          [(ngModel)]="outboxStatusFilter"
+          (ngModelChange)="applyOutboxFilters()"
+          aria-label="Filter by status" />
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="outboxFailedOnly" (change)="applyOutboxFilters()" aria-label="Failed only" />
+          Failed only
+        </label>
+      </sp-admin-filter-bar>
+
+      @if (outboxLoading()) {
+        <sp-admin-loading-state message="Loading delivery queue…" />
+      } @else if (outboxError()) {
+        <sp-admin-error-state [message]="outboxError()" (retry)="loadOutbox()" />
+      } @else if (outbox().length === 0) {
+        <sp-admin-empty-state message="No outbox items found." />
+      } @else {
+        <sp-admin-table>
+          <thead>
+            <tr>
+              <th>Recipient</th>
+              <th>Channel</th>
+              <th>Status</th>
+              <th>Attempts</th>
+              <th>Created</th>
+              <th>Last attempt</th>
+              <th>Next attempt</th>
+              <th>Last error</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of outbox(); track item.id) {
+              <tr>
+                <td>{{ item.recipientEmail }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.channel }}</sp-admin-badge></td>
+                <td><sp-admin-badge [tone]="statusTone(item.status)">{{ item.status }}</sp-admin-badge></td>
+                <td>{{ item.attemptCount }}</td>
+                <td>{{ timeAgo(item.createdAtUtc) }}</td>
+                <td>{{ item.lastAttemptAtUtc ? timeAgo(item.lastAttemptAtUtc) : '—' }}</td>
+                <td>{{ item.nextAttemptAtUtc ? timeAgo(item.nextAttemptAtUtc) : '—' }}</td>
+                <td class="text-xs text-red-600 max-w-[200px] truncate" [title]="item.lastError ?? ''">
+                  {{ item.lastError ?? '—' }}
+                </td>
+                <td>
+                  <div class="flex gap-2">
+                    @if (canRetry(item)) {
+                      <button
+                        class="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                        [disabled]="retryingId() === item.id"
+                        (click)="retry(item)"
+                        type="button"
+                      >{{ retryingId() === item.id ? 'Retrying…' : 'Retry' }}</button>
+                    }
+                    @if (canCancel(item)) {
+                      <button
+                        class="text-xs px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        [disabled]="cancellingId() === item.id"
+                        (click)="cancel(item)"
+                        type="button"
+                      >{{ cancellingId() === item.id ? 'Cancelling…' : 'Cancel' }}</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </sp-admin-table>
+
+        @if (outboxTotalPages() > 1) {
+          <sp-admin-pagination
+            [page]="outboxPage()"
+            [totalPages]="outboxTotalPages()"
+            (pageChange)="onOutboxPage($event)" />
+        }
+      }
+    </sp-admin-card>
+  }
+</sp-admin-page-body>

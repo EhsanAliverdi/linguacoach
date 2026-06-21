@@ -66,4 +66,10 @@ public sealed class NotificationOutboxItem : BaseEntity
         Status = NotificationStatus.Queued;
         NextAttemptAtUtc = DateTime.UtcNow;
     }
+
+    public void MarkCancelled()
+    {
+        Status = NotificationStatus.Archived;
+        ProcessedAtUtc = DateTime.UtcNow;
+    }
 }

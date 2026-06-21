@@ -340,6 +340,64 @@ export interface AdminStudentDetail {
   onboardingProgress: StudentOnboardingProgressInfo | null;
 }
 
+// ── Admin notification center ──────────────────────────────────────────────
+
+export interface AdminNotificationItem {
+  id: string;
+  recipientUserId: string;
+  recipientEmail: string;
+  title: string;
+  body: string;
+  channel: string;
+  category: string;
+  severity: string;
+  status: string;
+  deepLinkUrl: string | null;
+  createdAtUtc: string;
+  readAtUtc: string | null;
+  expiresAtUtc: string | null;
+}
+
+export interface AdminOutboxItem {
+  id: string;
+  notificationId: string | null;
+  recipientUserId: string;
+  recipientEmail: string;
+  channel: string;
+  status: string;
+  attemptCount: number;
+  createdAtUtc: string;
+  nextAttemptAtUtc: string | null;
+  lastAttemptAtUtc: string | null;
+  processedAtUtc: string | null;
+  lastError: string | null;
+}
+
+export interface AdminNotificationListQuery {
+  page?: number;
+  pageSize?: number;
+  recipientUserId?: string;
+  channel?: string;
+  status?: string;
+  category?: string;
+  severity?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+}
+
+export interface AdminOutboxListQuery {
+  page?: number;
+  pageSize?: number;
+  recipientUserId?: string;
+  channel?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  dueOnly?: boolean;
+  failedOnly?: boolean;
+}
+
 export interface UpdateExerciseTypeRequest {
   isEnabled?: boolean;
   supportsPracticeGym?: boolean;
