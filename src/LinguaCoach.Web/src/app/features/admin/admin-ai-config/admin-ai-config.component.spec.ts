@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { of, throwError } from 'rxjs';
 import { AdminAiConfigComponent } from './admin-ai-config.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AiConfigCategoryItem, AiProviderCatalogItem } from '../../../core/models/admin.models';
+import { AiConfigCategoryItem, AiModelPricingItem, AiProviderCatalogItem } from '../../../core/models/admin.models';
 
 const CAT_LLM: AiConfigCategoryItem = {
   id: 'cat-1',
@@ -31,6 +31,11 @@ const CAT_UNSET: AiConfigCategoryItem = {
   voiceName: null,
 };
 
+const PRICING_ROWS: AiModelPricingItem[] = [
+  { providerName: 'anthropic', modelName: 'claude-sonnet-4-6', inputPer1KTokens: 0.003, outputPer1KTokens: 0.015, currency: 'USD', source: 'Configuration', isConfigured: true },
+  { providerName: 'openai', modelName: 'gpt-4o', inputPer1KTokens: 0.0025, outputPer1KTokens: 0.01, currency: 'USD', source: 'Configuration', isConfigured: true },
+];
+
 const PROVIDER: AiProviderCatalogItem = {
   providerName: 'anthropic',
   models: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
@@ -46,10 +51,12 @@ const PROVIDER: AiProviderCatalogItem = {
 function makeAdminApi(
   categories: AiConfigCategoryItem[] = [CAT_LLM, CAT_TTS],
   catalog: AiProviderCatalogItem[] = [PROVIDER],
+  pricing: AiModelPricingItem[] = PRICING_ROWS,
 ) {
   return {
     listAiCategories: jasmine.createSpy('listAiCategories').and.returnValue(of(categories)),
     listAiProviders: jasmine.createSpy('listAiProviders').and.returnValue(of(catalog)),
+    listAiPricing: jasmine.createSpy('listAiPricing').and.returnValue(of(pricing)),
     updateAiCategory: jasmine.createSpy('updateAiCategory').and.returnValue(of(CAT_LLM)),
     testAiCategory: jasmine.createSpy('testAiCategory').and.returnValue(of({ ok: true, latencyMs: 200, error: null })),
     setProviderApiKey: jasmine.createSpy('setProviderApiKey').and.returnValue(of(PROVIDER)),
@@ -278,5 +285,66 @@ describe('AdminAiConfigComponent', () => {
     const keys = component.ttsCategories().map(cs => cs.item.categoryKey);
     expect(keys).toContain('tts.listening');
     expect(keys).not.toContain('llm.default');
+  });
+
+  // ── Pricing panel ──────────────────────────────────────────────────────────
+
+  it('calls listAiPricing on init', async () => {
+    await setup();
+    expect(adminApi.listAiPricing).toHaveBeenCalledTimes(1);
+  });
+
+  it('populates pricing signal after load', async () => {
+    await setup();
+    expect(component.pricing().length).toBe(2);
+  });
+
+  it('pricingByProvider groups rows by provider', async () => {
+    await setup();
+    const groups = component.pricingByProvider();
+    const providers = groups.map(g => g.provider);
+    expect(providers).toContain('anthropic');
+    expect(providers).toContain('openai');
+  });
+
+  it('renders pricing section heading', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('Model Pricing');
+  });
+
+  it('renders read-only configuration note', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('read-only');
+  });
+
+  it('renders model names in pricing table', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('claude-sonnet-4-6');
+    expect(fixture.nativeElement.textContent).toContain('gpt-4o');
+  });
+
+  it('renders empty state when no pricing rows', async () => {
+    adminApi = makeAdminApi([CAT_LLM], [PROVIDER], []);
+    await TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminAiConfigComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No pricing configured');
+  });
+
+  it('does not render edit buttons in pricing section', async () => {
+    await setup();
+    const pricingSection = (fixture.nativeElement as HTMLElement)
+      .querySelector('sp-admin-card[title="Model Pricing"], sp-admin-card');
+    // No edit/save buttons should appear for pricing rows
+    const text = fixture.nativeElement.textContent as string;
+    // Pricing section note present, no "Edit pricing" or "Save pricing" text
+    expect(text).not.toContain('Edit pricing');
+    expect(text).not.toContain('Save pricing');
   });
 });

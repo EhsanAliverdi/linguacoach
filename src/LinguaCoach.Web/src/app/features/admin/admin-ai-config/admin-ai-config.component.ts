@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AiConfigCategoryItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
+import { AiConfigCategoryItem, AiModelPricingItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -12,6 +12,7 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
+  SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
@@ -58,7 +59,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCodePillComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
+  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCodePillComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
   template: `
     <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
 
@@ -314,6 +315,49 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+      <!-- ── Section 4: Model Pricing ─────────────────────────────────────── -->
+      <sp-admin-card title="Model Pricing">
+        <sp-admin-alert variant="info" class="mb-4">
+          Pricing is read-only and loaded from configuration. Admin overrides will be added in a later phase.
+        </sp-admin-alert>
+
+        @if (pricing().length === 0) {
+          <sp-admin-empty-state title="No pricing configured" message="Add pricing entries to appsettings.json under OpenAI:Pricing, Gemini:Pricing, or Anthropic:Pricing." />
+        } @else {
+          @for (group of pricingByProvider(); track group.provider) {
+            <div class="mb-6">
+              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{{ group.provider }}</div>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
+                    <th class="pb-2 pr-4 font-medium">Model</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Input / 1K tokens</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Output / 1K tokens</th>
+                    <th class="pb-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of group.rows; track row.modelName) {
+                    <tr class="border-b border-slate-100 last:border-0">
+                      <td class="py-2 pr-4 font-mono text-xs text-slate-800">{{ row.modelName }}</td>
+                      <td class="py-2 pr-4 text-right text-slate-700">\${{ row.inputPer1KTokens.toFixed(5) }} {{ row.currency }}</td>
+                      <td class="py-2 pr-4 text-right text-slate-700">\${{ row.outputPer1KTokens.toFixed(5) }} {{ row.currency }}</td>
+                      <td class="py-2">
+                        @if (row.isConfigured) {
+                          <sp-admin-badge tone="success">Configured</sp-admin-badge>
+                        } @else {
+                          <sp-admin-badge tone="warning">Missing</sp-admin-badge>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      </sp-admin-card>
+
     }
     </sp-admin-page-body>
   `,
@@ -327,14 +371,19 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 export class AdminAiConfigComponent implements OnInit {
   categories = signal<CategoryState[]>([]);
   providers = signal<ProviderState[]>([]);
+  pricing = signal<AiModelPricingItem[]>([]);
   loading = signal(true);
   loadError = signal('');
 
   constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
-    forkJoin({ categories: this.adminApi.listAiCategories(), catalog: this.adminApi.listAiProviders() }).subscribe({
-      next: ({ categories, catalog }) => {
+    forkJoin({
+      categories: this.adminApi.listAiCategories(),
+      catalog: this.adminApi.listAiProviders(),
+      pricing: this.adminApi.listAiPricing(),
+    }).subscribe({
+      next: ({ categories, catalog, pricing }) => {
         this.categories.set(categories.map(item => ({
           item,
           saving: false, saved: false, error: '',
@@ -355,6 +404,7 @@ export class AdminAiConfigComponent implements OnInit {
           addModelBusy: false,
           addModelError: '',
         })));
+        this.pricing.set(pricing);
         this.loading.set(false);
       },
       error: err => {
@@ -362,6 +412,18 @@ export class AdminAiConfigComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  pricingByProvider(): { provider: string; rows: AiModelPricingItem[] }[] {
+    const map = new Map<string, AiModelPricingItem[]>();
+    for (const row of this.pricing()) {
+      const list = map.get(row.providerName) ?? [];
+      list.push(row);
+      map.set(row.providerName, list);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([provider, rows]) => ({ provider, rows }));
   }
 
   llmCategories(): CategoryState[] {

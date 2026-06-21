@@ -9,7 +9,7 @@ import {
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
   StudentAuditHistoryItem,
-  StudentListQuery, PagedResponse,
+  StudentListQuery, PagedResponse, AiModelPricingItem,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -134,5 +134,10 @@ export class AdminApiService {
   }
   testAiCategory(categoryKey: string): Observable<CategoryTestResult> {
     return this.http.post<CategoryTestResult>(`${this.api}/ai/categories/${categoryKey}/test`, null);
+  }
+
+  // AI model pricing
+  listAiPricing(): Observable<AiModelPricingItem[]> {
+    return this.http.get<AiModelPricingItem[]>(`${this.api}/ai/pricing`);
   }
 }

@@ -232,6 +232,82 @@ public sealed class AiConfigEndpointTests : IClassFixture<ApiTestFactory>
         var lower = modelName.ToLowerInvariant();
         return lower.StartsWith("tts-") || lower.Contains("-tts") || lower == "cosyvoice-v2";
     }
+
+    // ── Pricing endpoint ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListAiPricing_Unauthenticated_Returns401()
+    {
+        var response = await _factory.CreateClient().GetAsync("/api/admin/ai/pricing");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListAiPricing_AsStudent_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"pricing403_{Guid.NewGuid():N}@t.com");
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai/pricing");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListAiPricing_AsAdmin_ReturnsConfiguredRows()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai/pricing");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rows = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var list = rows.EnumerateArray().ToList();
+        Assert.NotEmpty(list);
+
+        var providers = list.Select(r => r.GetProperty("providerName").GetString()).ToList();
+        Assert.Contains("openai", providers);
+        Assert.Contains("gemini", providers);
+        Assert.Contains("anthropic", providers);
+    }
+
+    [Fact]
+    public async Task ListAiPricing_AsAdmin_RowsHaveRequiredFields()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai/pricing");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rows = (await response.Content.ReadFromJsonAsync<JsonElement>()).EnumerateArray().ToList();
+
+        foreach (var row in rows)
+        {
+            Assert.True(row.TryGetProperty("providerName", out _), "missing providerName");
+            Assert.True(row.TryGetProperty("modelName", out _), "missing modelName");
+            Assert.True(row.TryGetProperty("inputPer1KTokens", out _), "missing inputPer1KTokens");
+            Assert.True(row.TryGetProperty("outputPer1KTokens", out _), "missing outputPer1KTokens");
+            Assert.True(row.TryGetProperty("currency", out var currency), "missing currency");
+            Assert.Equal("USD", currency.GetString());
+            Assert.True(row.TryGetProperty("source", out var source), "missing source");
+            Assert.Equal("Configuration", source.GetString());
+            Assert.True(row.TryGetProperty("isConfigured", out var configured), "missing isConfigured");
+            Assert.True(configured.GetBoolean());
+        }
+    }
+
+    [Fact]
+    public async Task ListAiPricing_AsAdmin_OpenAiGpt4oPriceMatchesConfig()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(token).GetAsync("/api/admin/ai/pricing");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rows = (await response.Content.ReadFromJsonAsync<JsonElement>()).EnumerateArray().ToList();
+
+        var gpt4o = rows.FirstOrDefault(r =>
+            r.GetProperty("providerName").GetString() == "openai" &&
+            r.GetProperty("modelName").GetString() == "gpt-4o");
+
+        Assert.True(gpt4o.ValueKind != JsonValueKind.Undefined, "gpt-4o pricing row not found");
+        Assert.Equal(0.0025m, gpt4o.GetProperty("inputPer1KTokens").GetDecimal());
+        Assert.Equal(0.01m, gpt4o.GetProperty("outputPer1KTokens").GetDecimal());
+    }
 }
 
 public sealed class AiTestWithFakeTesterFactory : ApiTestFactory

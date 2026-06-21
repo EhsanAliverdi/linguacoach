@@ -9,6 +9,7 @@ using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,7 @@ public sealed class AdminHandler :
     private readonly IAiProviderResolver _providerResolver;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<AdminHandler> _logger;
+    private readonly IConfiguration _configuration;
 
     public AdminHandler(
         LinguaCoachDbContext db,
@@ -35,7 +37,8 @@ public sealed class AdminHandler :
         IAiProviderResolver providerResolver,
         IServiceProvider services,
         IFileStorageService fileStorage,
-        ILogger<AdminHandler> logger)
+        ILogger<AdminHandler> logger,
+        IConfiguration configuration)
     {
         _db = db;
         _userManager = userManager;
@@ -44,6 +47,7 @@ public sealed class AdminHandler :
         _services = services;
         _fileStorage = fileStorage;
         _logger = logger;
+        _configuration = configuration;
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -827,6 +831,33 @@ public sealed class AdminHandler :
     {
         var categories = await _db.AiConfigCategories.OrderBy(c => c.CategoryKey).ToListAsync(ct);
         return categories.Select(ToCategoryItem).ToList();
+    }
+
+    public IReadOnlyList<AiModelPricingItem> ListPricing()
+    {
+        var providers = new[] { "OpenAI", "Gemini", "Anthropic", "Qwen" };
+        var results = new List<AiModelPricingItem>();
+
+        foreach (var provider in providers)
+        {
+            var section = _configuration.GetSection($"{provider}:Pricing");
+            foreach (var modelSection in section.GetChildren())
+            {
+                var input = modelSection.GetValue<decimal?>("InputPer1KTokens");
+                var output = modelSection.GetValue<decimal?>("OutputPer1KTokens");
+                var isConfigured = input.HasValue && output.HasValue && input >= 0 && output >= 0;
+                results.Add(new AiModelPricingItem(
+                    ProviderName: provider.ToLowerInvariant(),
+                    ModelName: modelSection.Key,
+                    InputPer1KTokens: input ?? 0m,
+                    OutputPer1KTokens: output ?? 0m,
+                    Currency: "USD",
+                    Source: "Configuration",
+                    IsConfigured: isConfigured));
+            }
+        }
+
+        return results.OrderBy(r => r.ProviderName).ThenBy(r => r.ModelName).ToList();
     }
 
     public async Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default)

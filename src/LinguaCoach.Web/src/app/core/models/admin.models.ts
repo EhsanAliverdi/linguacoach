@@ -196,6 +196,16 @@ export interface AiConfigCategoryItem {
   voiceName: string | null;
 }
 
+export interface AiModelPricingItem {
+  providerName: string;
+  modelName: string;
+  inputPer1KTokens: number;
+  outputPer1KTokens: number;
+  currency: string;
+  source: string;
+  isConfigured: boolean;
+}
+
 export interface UpdateAiCategoryRequest {
   providerName?: string | null;
   modelName?: string | null;

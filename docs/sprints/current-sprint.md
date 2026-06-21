@@ -2385,3 +2385,44 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 **Not implemented:** audit log for Archive (pre-existing gap), window.confirm replacement for Archive/RemovePolicy.
 
 **Test counts:** .NET 680 integration + 1237 unit + 3 architecture = 1920 total. Angular 734.
+
+---
+
+## Phase 10V-0 — AI Pricing Admin Gap Check (2026-06-21)
+
+**Goal:** Audit current AI pricing configuration to define the smallest safe path to admin-manageable pricing.
+
+**Delivered:**
+
+- Full gap audit: pricing source, admin UI gap, persistence gap, risk areas, migration impact.
+- Review saved: `docs/reviews/2026-06-21-phase-10v-0-ai-pricing-admin-gap-check.md`
+- Confirmed: pricing is config-only (`appsettings.json` via `AiPricingOptions`), not admin-editable.
+- Confirmed: `AiConfigCategory` and `AiProviderConfig` entities have no pricing fields.
+- Confirmed: zero-cost logs occur silently when model not found in config.
+- Recommended design: hybrid config seed + `AiModelPricingOverride` DB table.
+- Recommended next: 10V-1 = read-only pricing visibility (no migration), 10V-2 = DB-backed editable pricing.
+- No code changed. `git diff --check`: clean.
+
+**Not implemented:** 10V-1 read-only panel, 10V-2 pricing CRUD, 10V-3 zero-cost alert, prompt playground.
+
+---
+
+## Phase 10V-1 — Read-Only AI Pricing Panel (2026-06-21)
+
+**Goal:** Expose config-based AI model pricing in the admin UI for visibility. No migration, no DB writes.
+
+**Delivered:**
+
+- `GET /api/admin/ai/pricing` endpoint — reads all provider pricing from `IConfiguration`, returns `AiModelPricingItem[]`
+- `AiModelPricingItem` DTO: `providerName`, `modelName`, `inputPer1KTokens`, `outputPer1KTokens`, `currency`, `source`, `isConfigured`
+- `IAdminAiConfigHandler.ListPricing()` added; implemented in `AdminHandler` with `IConfiguration` injection
+- Admin AI Config page: Section 4 "Model Pricing" — read-only table grouped by provider, info alert, empty state
+- `listAiPricing()` added to `AdminApiService`, `AiModelPricingItem` added to `admin.models.ts`
+- 5 new backend integration tests (401/403/200/fields/spot-check price value)
+- 8 new frontend unit tests; 2 existing mocks fixed
+- No migration. No pricing calculation change. No provider routing change.
+- All gates pass: 2046 .NET tests, 880 Angular tests, prod build clean.
+
+**Test counts:** .NET 795 integration + 1248 unit + 3 arch = 2046 total. Angular 880.
+
+**Not implemented:** missing-model detection (10V-3), DB-backed editable pricing (10V-2), prompt playground (10V).

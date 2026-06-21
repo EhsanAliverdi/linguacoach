@@ -314,7 +314,19 @@ public interface IAdminAiConfigHandler
     Task<IReadOnlyList<AiConfigCategoryItem>> ListCategoriesAsync(CancellationToken ct = default);
     Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default);
     Task<CategoryTestResult> TestCategoryAsync(string categoryKey, CancellationToken ct = default);
+    IReadOnlyList<AiModelPricingItem> ListPricing();
 }
+
+// ── AI model pricing ─────────────────────────────────────────────────────────
+
+public sealed record AiModelPricingItem(
+    string ProviderName,
+    string ModelName,
+    decimal InputPer1KTokens,
+    decimal OutputPer1KTokens,
+    string Currency,
+    string Source,
+    bool IsConfigured);
 
 // ── AI config categories ──────────────────────────────────────────────────────
 
