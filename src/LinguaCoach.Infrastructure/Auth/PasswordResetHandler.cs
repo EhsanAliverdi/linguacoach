@@ -24,6 +24,7 @@ public sealed class PasswordResetHandler : IPasswordResetService
     private readonly LinguaCoachDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly INotificationService _notifications;
+    private readonly INotificationTemplateRenderer _templateRenderer;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PasswordResetHandler> _logger;
 
@@ -31,12 +32,14 @@ public sealed class PasswordResetHandler : IPasswordResetService
         LinguaCoachDbContext db,
         UserManager<ApplicationUser> userManager,
         INotificationService notifications,
+        INotificationTemplateRenderer templateRenderer,
         IConfiguration configuration,
         ILogger<PasswordResetHandler> logger)
     {
         _db = db;
         _userManager = userManager;
         _notifications = notifications;
+        _templateRenderer = templateRenderer;
         _configuration = configuration;
         _logger = logger;
     }
@@ -60,23 +63,67 @@ public sealed class PasswordResetHandler : IPasswordResetService
         var baseUrl = _configuration["PublicApp:BaseUrl"]?.TrimEnd('/')
             ?? "http://localhost:4200";
 
+        var appName = _configuration["PublicApp:AppName"] ?? "SpeakPath";
+
         var resetLink = $"{baseUrl}/reset-password?userId={Uri.EscapeDataString(user.Id.ToString())}&token={Uri.EscapeDataString(encodedToken)}";
 
         _logger.LogInformation(
             "Password reset link generated for user {UserId} by admin {AdminId}.",
             user.Id, command.AdminUserId);
 
+        var displayName = !string.IsNullOrWhiteSpace(user.Email) ? user.Email : "Student";
+
+        var (emailSubject, emailBody) = await ResolveResetEmailContentAsync(
+            resetLink, appName, displayName, ct);
+
         // Queue email — body contains the link but NOT the raw token value separately.
         // If queueing fails, rethrow so the admin knows the request didn't fully complete.
         await _notifications.QueueEmailAsync(
             recipientUserId: profile.UserId,
-            title: "Reset your SpeakPath password",
-            body: $"An administrator has requested a password reset for your SpeakPath account. " +
-                  $"Click the link below to set a new password. This link expires after use.\n\n{resetLink}\n\n" +
-                  $"If you did not request this, please contact your administrator.",
+            title: emailSubject,
+            body: emailBody,
             category: NotificationCategory.Account,
             severity: NotificationSeverity.Info,
             ct: ct);
+    }
+
+    private async Task<(string Subject, string Body)> ResolveResetEmailContentAsync(
+        string resetLink, string appName, string displayName, CancellationToken ct)
+    {
+        var template = await _db.NotificationTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t =>
+                t.TemplateKey == "account.password_reset" &&
+                t.Channel == Domain.Enums.NotificationChannel.Email &&
+                t.IsActive, ct);
+
+        if (template is null)
+        {
+            _logger.LogWarning(
+                "Active template 'account.password_reset'/Email not found. Using fallback content.");
+            return (
+                "Reset your SpeakPath password",
+                $"An administrator has requested a password reset for your SpeakPath account. " +
+                $"Click the link below to set a new password. This link expires after use.\n\n{resetLink}\n\n" +
+                $"If you did not request this, please contact your administrator."
+            );
+        }
+
+        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["DisplayName"] = displayName,
+            ["ResetLink"] = resetLink,
+            ["AppName"] = appName,
+        };
+
+        var rendered = _templateRenderer.Render(template.Subject, template.Title, template.Body, variables);
+
+        if (rendered.MissingVariables.Count > 0)
+            _logger.LogWarning(
+                "Template 'account.password_reset'/Email has missing variables: {Vars}",
+                string.Join(", ", rendered.MissingVariables));
+
+        return (rendered.RenderedSubject ?? "Reset your password", rendered.RenderedBody);
     }
 
     public async Task<CompletePasswordResetResult> CompleteResetAsync(

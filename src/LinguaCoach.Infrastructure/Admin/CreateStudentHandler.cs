@@ -5,6 +5,8 @@ using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Admin;
@@ -14,17 +16,23 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly LinguaCoachDbContext _db;
     private readonly INotificationService _notifications;
+    private readonly INotificationTemplateRenderer _templateRenderer;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<CreateStudentHandler> _logger;
 
     public CreateStudentHandler(
         UserManager<ApplicationUser> userManager,
         LinguaCoachDbContext db,
         INotificationService notifications,
+        INotificationTemplateRenderer templateRenderer,
+        IConfiguration configuration,
         ILogger<CreateStudentHandler> logger)
     {
         _userManager = userManager;
         _db = db;
         _notifications = notifications;
+        _templateRenderer = templateRenderer;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -86,10 +94,13 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
         // If queueing fails, log and continue — student creation still succeeds.
         try
         {
+            var (emailSubject, emailBody) = await ResolveStudentCreatedEmailContentAsync(
+                user.Email!, command.DisplayName, ct);
+
             await _notifications.QueueEmailAsync(
                 recipientUserId: user.Id,
-                title: "Welcome to SpeakPath",
-                body: "Your SpeakPath account has been created. Please log in with the credentials provided by your administrator. You will be prompted to set a new password on first login.",
+                title: emailSubject,
+                body: emailBody,
                 category: NotificationCategory.Account,
                 severity: NotificationSeverity.Info,
                 ct: ct);
@@ -102,5 +113,49 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
         }
 
         return new CreateStudentResult(profile.Id, user.Id);
+    }
+
+    private async Task<(string Subject, string Body)> ResolveStudentCreatedEmailContentAsync(
+        string email, string? displayName, CancellationToken ct)
+    {
+        var template = await _db.NotificationTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t =>
+                t.TemplateKey == "account.student_created" &&
+                t.Channel == NotificationChannel.Email &&
+                t.IsActive, ct);
+
+        var appName = _configuration["PublicApp:AppName"] ?? "SpeakPath";
+        var baseUrl = _configuration["PublicApp:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+        var loginUrl = $"{baseUrl}/login";
+
+        if (template is null)
+        {
+            _logger.LogWarning(
+                "Active template 'account.student_created'/Email not found. Using fallback content.");
+            return (
+                "Welcome to SpeakPath",
+                "Your SpeakPath account has been created. Please log in with the credentials provided by your administrator. You will be prompted to set a new password on first login."
+            );
+        }
+
+        var resolvedDisplayName = !string.IsNullOrWhiteSpace(displayName) ? displayName : email;
+
+        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["DisplayName"] = resolvedDisplayName,
+            ["AppName"] = appName,
+            ["LoginUrl"] = loginUrl,
+            ["AppUrl"] = baseUrl,
+        };
+
+        var rendered = _templateRenderer.Render(template.Subject, template.Title, template.Body, variables);
+
+        if (rendered.MissingVariables.Count > 0)
+            _logger.LogWarning(
+                "Template 'account.student_created'/Email has missing variables: {Vars}",
+                string.Join(", ", rendered.MissingVariables));
+
+        return (rendered.RenderedSubject ?? $"Welcome to {appName}", rendered.RenderedBody);
     }
 }
