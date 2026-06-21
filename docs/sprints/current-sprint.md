@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-2)
+lastUpdated: 2026-06-21 (10W-3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,30 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10W-3 — Live Notification Bell UI Wiring** - complete (2026-06-21)
+
+Goal: replace hard-coded demo notification dropdown with live Angular service + signals-based component wired to the Phase 10W-2 notification APIs.
+
+### Delivered
+
+- `NotificationService` (`core/services/notification.service.ts`): wraps all 5 backend endpoints (`list`, `getUnreadCount`, `markRead`, `markAllRead`, `archive`). Exports `NotificationItem`, `NotificationListResponse`, `UnreadCountResponse`.
+- `NotificationDropdownComponent` rewritten: signals-based state (`notifications`, `unreadCount`, `loading`, `error`, `hasUnread`). Loading/error/empty/list states via `@if`/`@else if`/`@for`. Unread badge on bell. Mark-all-read. Per-item archive. Deep-link navigation.
+- Demo data (Terry Franci, Nganter App etc.) fully removed from template.
+- 6 service spec tests + 16 component spec tests.
+- Two bugs fixed: Angular template parse error from `[class.dark:bg-blue-900\/10]` binding; ChunkLoadError from dynamic `import('rxjs')` in spec.
+
+### Gates
+
+- `git diff --check`: PASS
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (916/916)
+
+See: `docs/reviews/2026-06-21-phase-10w-3-live-notification-bell-ui-wiring-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10W-2 — In-App Notification APIs + Dispatch Foundation** - complete (2026-06-21)
 
