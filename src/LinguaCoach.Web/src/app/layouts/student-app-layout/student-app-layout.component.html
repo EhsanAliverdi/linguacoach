@@ -89,13 +89,8 @@
         <div class="sp-streak-pill">
           🔥 <span>{{ streakDays() }} {{ streakDays() === 1 ? 'day' : 'days' }}</span>
         </div>
-        <!-- Notification bell -->
-        <button class="sp-header-icon-btn" aria-label="Notifications">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-        </button>
+        <!-- Notification bell (live dropdown — sp-notification-dropdown is app-owned committed source) -->
+        <sp-notification-dropdown></sp-notification-dropdown>
         <!-- Avatar + profile flyout -->
         <div style="position:relative">
           <button

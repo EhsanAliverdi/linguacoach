@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { NotificationDropdownComponent } from '../../shared/notifications/notification-dropdown/notification-dropdown.component';
 
 const STORAGE_KEY = 'speakpath.sidebarCollapsed';
 
 @Component({
   selector: 'app-student-app-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, NotificationDropdownComponent],
   templateUrl: './student-app-layout.component.html',
   styleUrls: ['./student-app-layout.component.css'],
 })

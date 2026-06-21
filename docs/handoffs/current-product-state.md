@@ -20,7 +20,7 @@ In-app notification APIs are live for authenticated users. Outbox dispatch proce
 - **Filters:** `unreadOnly`, `category`, `severity`. Invalid values return 400. Current-user isolation enforced.
 - **Dispatch:** `INotificationDispatchService.DispatchDueAsync` — InApp items delivered, Email/SMS items skipped with error until 10W-4/10W-6.
 - **Tests:** 2131/2131 .NET (3 arch + 1278 unit + 850 integration).
-- **Bell UI:** still hard-coded demo dropdown — wiring to live APIs is 10W-3.
+- **Bell UI:** live notification dropdown at `src/app/shared/notifications/notification-dropdown/` (committed, selector `sp-notification-dropdown`). Wired into `StudentAppLayoutComponent`. Gitignored vendor template no longer depended on (10W-4C).
 
 Foundation review: `docs/reviews/2026-06-21-phase-10w-1-backend-notification-foundation-review.md`
 API review: `docs/reviews/2026-06-21-phase-10w-2-in-app-notification-apis-dispatch-foundation-review.md`

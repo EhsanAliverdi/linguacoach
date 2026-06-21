@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-4B)
+lastUpdated: 2026-06-21 (10W-4C)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,21 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10W-4C — Notification Dropdown Source Control Fix** - complete (2026-06-21)
+
+Goal: move live notification bell/dropdown from gitignored vendor template path into committed app source so it survives a fresh clone.
+
+### Delivered
+
+- `NotificationDropdownComponent` at `src/app/shared/notifications/notification-dropdown/` (committed, selector `sp-notification-dropdown`).
+- Full 10W-3 behavior: live list, unread count, mark read, mark all read, archive/dismiss, loading/empty/error/retry states, deep-link navigation.
+- Click-outside via `@HostListener` — no dependency on gitignored `DropdownComponent`.
+- `StudentAppLayoutComponent` updated: imports + uses `<sp-notification-dropdown>` replacing static bell button.
+- 17 new frontend unit tests. Gates: `npm run build` clean, 942/942 Angular tests pass.
+- Gitignored `src/app/templates/` no longer depended on by any committed code.
+
+---
 
 **Phase 10W-4B — Token-Based Password Reset Link** - complete (2026-06-21)
 
