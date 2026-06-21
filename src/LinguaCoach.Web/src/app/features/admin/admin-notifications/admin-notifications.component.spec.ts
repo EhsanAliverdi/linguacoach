@@ -5,6 +5,7 @@ import { of, throwError } from 'rxjs';
 import {
   AdminNotificationItem, AdminOutboxItem, PagedResponse,
   AdminSendNotificationResult,
+  AdminNotificationConfigStatus, AdminTestEmailResult,
 } from '../../../core/models/admin.models';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -48,6 +49,7 @@ describe('AdminNotificationsComponent', () => {
       'listAdminNotifications', 'listAdminOutbox',
       'retryOutboxItem', 'cancelOutboxItem',
       'sendAdminNotification', 'listStudents',
+      'getNotificationConfig', 'testEmail',
     ]);
     apiSpy.listAdminNotifications.and.returnValue(of(pagedOf([makeNotif()])));
     apiSpy.listAdminOutbox.and.returnValue(of(pagedOf([makeOutbox()])));
@@ -297,6 +299,86 @@ describe('AdminNotificationsComponent', () => {
     const call = apiSpy.sendAdminNotification.calls.mostRecent().args[0];
     expect(call.channels).not.toContain('Sms');
     expect(call.channels).not.toContain('SMS');
+  });
+
+  // ── Config tab ─────────────────────────────────────────────────────────────
+
+  const makeConfig = (overrides: Partial<AdminNotificationConfigStatus> = {}): AdminNotificationConfigStatus => ({
+    inApp: { channel: 'InApp', enabled: true, statusLabel: 'Enabled' },
+    email: {
+      enabled: false, configured: false, statusLabel: 'Disabled',
+      host: null, port: 587, fromAddress: null, fromDisplayName: null,
+      useSsl: false, hasUsername: false, hasPassword: false,
+    },
+    sms: { channel: 'Sms', enabled: false, statusLabel: 'Deferred' },
+    dispatchJob: { enabled: true, intervalDescription: 'Every 2 minutes', batchSize: 50 },
+    ...overrides,
+  });
+
+  it('loadConfig calls getNotificationConfig and populates config signal', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.loadConfig();
+    expect(apiSpy.getNotificationConfig).toHaveBeenCalled();
+    expect(component.config()).toBeTruthy();
+    expect(component.config()!.inApp.enabled).toBeTrue();
+  });
+
+  it('loadConfig sets configError on failure', () => {
+    apiSpy.getNotificationConfig.and.returnValue(throwError(() => new Error('fail')));
+    component.loadConfig();
+    expect(component.configError()).toBe('Could not load configuration.');
+    expect(component.config()).toBeNull();
+  });
+
+  it('onConfigTabActivated calls loadConfig only when config is null', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.config.set(null);
+    component.onConfigTabActivated();
+    expect(apiSpy.getNotificationConfig).toHaveBeenCalledTimes(1);
+    // second call should not reload
+    component.onConfigTabActivated();
+    expect(apiSpy.getNotificationConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('sendTestEmail calls testEmail with trimmed address', () => {
+    const result: AdminTestEmailResult = { succeeded: true, wasSkipped: false, message: 'Sent.' };
+    apiSpy.testEmail.and.returnValue(of(result));
+    component.testEmailAddress = '  test@example.com  ';
+    component.sendTestEmail();
+    expect(apiSpy.testEmail).toHaveBeenCalledWith('test@example.com');
+    expect(component.testEmailResult()!.succeeded).toBeTrue();
+  });
+
+  it('sendTestEmail does nothing when address is blank', () => {
+    component.testEmailAddress = '   ';
+    component.sendTestEmail();
+    expect(apiSpy.testEmail).not.toHaveBeenCalled();
+  });
+
+  it('sendTestEmail sets failure result on API error', () => {
+    apiSpy.testEmail.and.returnValue(throwError(() => new Error('fail')));
+    component.testEmailAddress = 'test@example.com';
+    component.sendTestEmail();
+    expect(component.testEmailResult()!.succeeded).toBeFalse();
+    expect(component.testEmailResult()!.message).toBe('Request failed.');
+  });
+
+  it('configTone returns success for Enabled and Configured', () => {
+    expect(component.configTone('Enabled')).toBe('success');
+    expect(component.configTone('Configured')).toBe('success');
+  });
+
+  it('configTone returns neutral for Disabled and Deferred', () => {
+    expect(component.configTone('Disabled')).toBe('neutral');
+    expect(component.configTone('Deferred')).toBe('neutral');
+  });
+
+  it('configTone returns warning for unknown labels', () => {
+    expect(component.configTone('Misconfigured')).toBe('warning');
+  });
+
+  it('config signal starts null', () => {
+    expect(component.config()).toBeNull();
   });
 
   it('does not expose send-notification template UI', () => {

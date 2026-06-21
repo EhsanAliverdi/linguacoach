@@ -23,6 +23,14 @@
       [class.text-gray-500]="activeTab !== 'outbox'"
       (click)="activeTab = 'outbox'"
     >Delivery Queue</button>
+    <button
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class.border-blue-600]="activeTab === 'config'"
+      [class.text-blue-600]="activeTab === 'config'"
+      [class.border-transparent]="activeTab !== 'config'"
+      [class.text-gray-500]="activeTab !== 'config'"
+      (click)="activeTab = 'config'; onConfigTabActivated()"
+    >Configuration</button>
   </div>
 
   <!-- ── Notifications tab ──────────────────────────────────────────────────── -->
@@ -202,6 +210,133 @@
         }
       }
     </sp-admin-card>
+  }
+
+  <!-- ── Configuration tab ────────────────────────────────────────────────── -->
+  @if (activeTab === 'config') {
+    @if (configLoading()) {
+      <sp-admin-loading-state message="Loading configuration…" />
+    } @else if (configError()) {
+      <sp-admin-error-state [message]="configError()" (retry)="loadConfig()" />
+    } @else if (config()) {
+
+      <!-- Channel status cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        <!-- InApp -->
+        <sp-admin-card>
+          <div class="p-4">
+            <p class="text-xs text-gray-500 mb-1">In-App</p>
+            <sp-admin-badge [tone]="configTone(config()!.inApp.statusLabel)">{{ config()!.inApp.statusLabel }}</sp-admin-badge>
+          </div>
+        </sp-admin-card>
+
+        <!-- Email -->
+        <sp-admin-card>
+          <div class="p-4">
+            <p class="text-xs text-gray-500 mb-1">Email</p>
+            <sp-admin-badge [tone]="configTone(config()!.email.statusLabel)">{{ config()!.email.statusLabel }}</sp-admin-badge>
+          </div>
+        </sp-admin-card>
+
+        <!-- SMS -->
+        <sp-admin-card>
+          <div class="p-4">
+            <p class="text-xs text-gray-500 mb-1">SMS</p>
+            <sp-admin-badge [tone]="configTone(config()!.sms.statusLabel)">{{ config()!.sms.statusLabel }}</sp-admin-badge>
+          </div>
+        </sp-admin-card>
+
+        <!-- Dispatch job -->
+        <sp-admin-card>
+          <div class="p-4">
+            <p class="text-xs text-gray-500 mb-1">Dispatch Job</p>
+            <sp-admin-badge [tone]="configTone(config()!.dispatchJob.enabled ? 'Enabled' : 'Disabled')">
+              {{ config()!.dispatchJob.enabled ? 'Enabled' : 'Disabled' }}
+            </sp-admin-badge>
+            <p class="text-xs text-gray-400 mt-1">{{ config()!.dispatchJob.intervalDescription }} · batch {{ config()!.dispatchJob.batchSize }}</p>
+          </div>
+        </sp-admin-card>
+
+      </div>
+
+      <!-- Email config detail -->
+      <sp-admin-card>
+        <div class="p-5">
+          <h3 class="text-sm font-semibold text-gray-800 mb-4">Email Configuration</h3>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Host</dt>
+              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.email.host ?? '(not set)' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Port</dt>
+              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.email.port }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">From address</dt>
+              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.email.fromAddress ?? '(not set)' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">From display name</dt>
+              <dd class="text-gray-800 text-xs mt-0.5">{{ config()!.email.fromDisplayName ?? '(not set)' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">SSL</dt>
+              <dd class="mt-0.5">
+                <sp-admin-badge [tone]="config()!.email.useSsl ? 'success' : 'neutral'">{{ config()!.email.useSsl ? 'Yes' : 'No' }}</sp-admin-badge>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Username</dt>
+              <dd class="mt-0.5">
+                <sp-admin-badge [tone]="config()!.email.hasUsername ? 'success' : 'neutral'">{{ config()!.email.hasUsername ? 'Configured' : 'Not set' }}</sp-admin-badge>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Password</dt>
+              <dd class="mt-0.5">
+                <sp-admin-badge [tone]="config()!.email.hasPassword ? 'success' : 'neutral'">{{ config()!.email.hasPassword ? 'Configured' : 'Not set' }}</sp-admin-badge>
+              </dd>
+            </div>
+          </dl>
+          <p class="mt-4 text-xs text-gray-400">Email configuration is managed via appsettings. Changes require a redeploy.</p>
+        </div>
+      </sp-admin-card>
+
+      <!-- Test email -->
+      <sp-admin-card>
+        <div class="p-5">
+          <h3 class="text-sm font-semibold text-gray-800 mb-3">Send Test Email</h3>
+          <div class="flex gap-2 items-start">
+            <sp-admin-input
+              size="sm"
+              placeholder="recipient@example.com"
+              [(ngModel)]="testEmailAddress"
+              (keyup.enter)="sendTestEmail()"
+              aria-label="Test email recipient" />
+            <sp-admin-button
+              size="sm"
+              variant="secondary"
+              [disabled]="testEmailLoading() || !testEmailAddress.trim()"
+              (clicked)="sendTestEmail()"
+            >{{ testEmailLoading() ? 'Sending…' : 'Send test' }}</sp-admin-button>
+          </div>
+          @if (testEmailResult()) {
+            <p class="mt-2 text-sm"
+               [class.text-green-600]="testEmailResult()!.succeeded"
+               [class.text-amber-600]="testEmailResult()!.wasSkipped && !testEmailResult()!.succeeded"
+               [class.text-red-600]="!testEmailResult()!.succeeded && !testEmailResult()!.wasSkipped"
+               role="status">
+              {{ testEmailResult()!.message }}
+            </p>
+          }
+        </div>
+      </sp-admin-card>
+
+    } @else {
+      <sp-admin-empty-state message="No configuration loaded." />
+    }
   }
 
   <!-- ── Send notification slide-over ─────────────────────────────────────── -->

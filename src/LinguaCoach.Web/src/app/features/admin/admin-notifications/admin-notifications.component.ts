@@ -6,6 +6,7 @@ import {
   AdminNotificationItem, AdminOutboxItem,
   AdminNotificationListQuery, AdminOutboxListQuery,
   AdminSendNotificationResult,
+  AdminNotificationConfigStatus, AdminTestEmailResult,
 } from '../../../core/models/admin.models';
 import {
   SpAdminBadgeComponent, SpAdminBadgeTone,
@@ -78,10 +79,19 @@ export class AdminNotificationsComponent implements OnInit {
   outboxStatusFilter = '';
   outboxFailedOnly = false;
 
-  activeTab: 'notifications' | 'outbox' = 'notifications';
+  activeTab: 'notifications' | 'outbox' | 'config' = 'notifications';
 
   retryingId = signal<string | null>(null);
   cancellingId = signal<string | null>(null);
+
+  // ── Config tab ─────────────────────────────────────────────────────────────
+  configLoading = signal(false);
+  configError = signal('');
+  config = signal<AdminNotificationConfigStatus | null>(null);
+
+  testEmailAddress = '';
+  testEmailLoading = signal(false);
+  testEmailResult = signal<AdminTestEmailResult | null>(null);
 
   // ── Send notification slide-over ───────────────────────────────────────────
   sendOpen = signal(false);
@@ -296,6 +306,45 @@ export class AdminNotificationsComponent implements OnInit {
         this.sendError.set('Could not send notification. Please try again.');
       },
     });
+  }
+
+  // ── Config tab ─────────────────────────────────────────────────────────────
+
+  loadConfig(): void {
+    this.configLoading.set(true);
+    this.configError.set('');
+    this.adminApi.getNotificationConfig().subscribe({
+      next: (cfg) => { this.config.set(cfg); this.configLoading.set(false); },
+      error: () => { this.configError.set('Could not load configuration.'); this.configLoading.set(false); },
+    });
+  }
+
+  onConfigTabActivated(): void {
+    if (!this.config()) this.loadConfig();
+  }
+
+  sendTestEmail(): void {
+    const addr = this.testEmailAddress.trim();
+    if (!addr) return;
+    this.testEmailLoading.set(true);
+    this.testEmailResult.set(null);
+    this.adminApi.testEmail(addr).subscribe({
+      next: (result) => { this.testEmailResult.set(result); this.testEmailLoading.set(false); },
+      error: () => {
+        this.testEmailResult.set({ succeeded: false, wasSkipped: false, message: 'Request failed.' });
+        this.testEmailLoading.set(false);
+      },
+    });
+  }
+
+  configTone(label: string): 'success' | 'warning' | 'danger' | 'neutral' {
+    switch (label.toLowerCase()) {
+      case 'enabled':
+      case 'configured': return 'success';
+      case 'disabled':
+      case 'deferred': return 'neutral';
+      default: return 'warning';
+    }
   }
 
   // ── Formatting helpers ─────────────────────────────────────────────────────

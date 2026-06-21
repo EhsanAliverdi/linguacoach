@@ -75,6 +75,41 @@ public sealed record AdminSendNotificationResult(
     IReadOnlyList<string> ChannelsQueued,
     IReadOnlyList<string> Errors);
 
+// ── Config status ─────────────────────────────────────────────────────────────
+
+public sealed record AdminNotificationConfigStatus(
+    AdminChannelStatus InApp,
+    AdminEmailConfigStatus Email,
+    AdminChannelStatus Sms,
+    AdminDispatchJobStatus DispatchJob);
+
+public sealed record AdminChannelStatus(
+    string Channel,
+    bool Enabled,
+    string StatusLabel);
+
+public sealed record AdminEmailConfigStatus(
+    bool Enabled,
+    bool Configured,
+    string StatusLabel,
+    string? Host,
+    int Port,
+    string? FromAddress,
+    string? FromDisplayName,
+    bool UseSsl,
+    bool HasUsername,
+    bool HasPassword);
+
+public sealed record AdminDispatchJobStatus(
+    bool Enabled,
+    string IntervalDescription,
+    int BatchSize);
+
+public sealed record AdminTestEmailResult(
+    bool Succeeded,
+    bool WasSkipped,
+    string? Message);
+
 // ── Interface ─────────────────────────────────────────────────────────────────
 
 public interface IAdminNotificationHandler
@@ -91,4 +126,8 @@ public interface IAdminNotificationHandler
 
     Task<AdminSendNotificationResult> SendNotificationAsync(
         AdminSendNotificationCommand command, Guid adminUserId, CancellationToken ct = default);
+
+    Task<AdminNotificationConfigStatus> GetConfigStatusAsync(CancellationToken ct = default);
+
+    Task<AdminTestEmailResult> TestEmailAsync(string toAddress, Guid adminUserId, CancellationToken ct = default);
 }

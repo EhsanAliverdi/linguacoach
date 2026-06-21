@@ -398,6 +398,46 @@ export interface AdminOutboxListQuery {
   failedOnly?: boolean;
 }
 
+// ── Notification configuration ────────────────────────────────────────────────
+
+export interface AdminChannelStatus {
+  channel: string;
+  enabled: boolean;
+  statusLabel: string;
+}
+
+export interface AdminEmailConfigStatus {
+  enabled: boolean;
+  configured: boolean;
+  statusLabel: string;
+  host: string | null;
+  port: number;
+  fromAddress: string | null;
+  fromDisplayName: string | null;
+  useSsl: boolean;
+  hasUsername: boolean;
+  hasPassword: boolean;
+}
+
+export interface AdminDispatchJobStatus {
+  enabled: boolean;
+  intervalDescription: string;
+  batchSize: number;
+}
+
+export interface AdminNotificationConfigStatus {
+  inApp: AdminChannelStatus;
+  email: AdminEmailConfigStatus;
+  sms: AdminChannelStatus;
+  dispatchJob: AdminDispatchJobStatus;
+}
+
+export interface AdminTestEmailResult {
+  succeeded: boolean;
+  wasSkipped: boolean;
+  message: string | null;
+}
+
 export interface AdminSendNotificationRequest {
   recipientUserIds: string[];
   channels: string[];

@@ -1,11 +1,13 @@
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Notifications;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Infrastructure.Admin;
 
@@ -14,17 +16,23 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
     private readonly LinguaCoachDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly INotificationService _notificationService;
+    private readonly IEmailSender _emailSender;
+    private readonly EmailOptions _emailOptions;
     private readonly ILogger<AdminNotificationHandler> _logger;
 
     public AdminNotificationHandler(
         LinguaCoachDbContext db,
         UserManager<ApplicationUser> userManager,
         INotificationService notificationService,
+        IEmailSender emailSender,
+        IOptions<EmailOptions> emailOptions,
         ILogger<AdminNotificationHandler> logger)
     {
         _db = db;
         _userManager = userManager;
         _notificationService = notificationService;
+        _emailSender = emailSender;
+        _emailOptions = emailOptions.Value;
         _logger = logger;
     }
 
@@ -292,6 +300,76 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
             SkippedCount: skipped,
             ChannelsQueued: channelsQueued.ToList(),
             Errors: errors);
+    }
+
+    public Task<AdminNotificationConfigStatus> GetConfigStatusAsync(CancellationToken ct = default)
+    {
+        var emailConfigured = _emailOptions.Enabled
+            && !string.IsNullOrWhiteSpace(_emailOptions.Host)
+            && !string.IsNullOrWhiteSpace(_emailOptions.FromAddress);
+
+        var emailLabel = !_emailOptions.Enabled
+            ? "Disabled"
+            : emailConfigured
+                ? "Configured"
+                : "Misconfigured";
+
+        var status = new AdminNotificationConfigStatus(
+            InApp: new AdminChannelStatus("InApp", Enabled: true, StatusLabel: "Enabled"),
+            Email: new AdminEmailConfigStatus(
+                Enabled: _emailOptions.Enabled,
+                Configured: emailConfigured,
+                StatusLabel: emailLabel,
+                Host: string.IsNullOrWhiteSpace(_emailOptions.Host) ? null : _emailOptions.Host,
+                Port: _emailOptions.Port,
+                FromAddress: string.IsNullOrWhiteSpace(_emailOptions.FromAddress) ? null : _emailOptions.FromAddress,
+                FromDisplayName: string.IsNullOrWhiteSpace(_emailOptions.FromDisplayName) ? null : _emailOptions.FromDisplayName,
+                UseSsl: _emailOptions.UseSsl,
+                HasUsername: !string.IsNullOrWhiteSpace(_emailOptions.Username),
+                HasPassword: !string.IsNullOrWhiteSpace(_emailOptions.Password)),
+            Sms: new AdminChannelStatus("Sms", Enabled: false, StatusLabel: "Deferred"),
+            DispatchJob: new AdminDispatchJobStatus(
+                Enabled: true,
+                IntervalDescription: "Every 2 minutes",
+                BatchSize: 50));
+
+        return Task.FromResult(status);
+    }
+
+    public async Task<AdminTestEmailResult> TestEmailAsync(
+        string toAddress, Guid adminUserId, CancellationToken ct = default)
+    {
+        _logger.LogInformation(
+            "Admin {AdminId} requested test email to {To}.",
+            adminUserId, toAddress);
+
+        if (!_emailOptions.Enabled || string.IsNullOrWhiteSpace(_emailOptions.Host))
+        {
+            return new AdminTestEmailResult(
+                Succeeded: false,
+                WasSkipped: true,
+                Message: "Email is disabled or not configured. Enable it in appsettings Email section.");
+        }
+
+        var message = new EmailMessage(
+            ToAddress: toAddress,
+            ToDisplayName: toAddress,
+            Subject: "SpeakPath — Test Email",
+            BodyHtml: "<p>This is a test email from SpeakPath admin. If you received this, email delivery is working.</p>",
+            BodyText: "This is a test email from SpeakPath admin. If you received this, email delivery is working.");
+
+        var result = await _emailSender.SendAsync(message, ct);
+
+        _logger.LogInformation(
+            "Admin {AdminId} test email to {To}: succeeded={S} skipped={Sk}.",
+            adminUserId, toAddress, result.Succeeded, result.WasSkipped);
+
+        return new AdminTestEmailResult(
+            Succeeded: result.Succeeded,
+            WasSkipped: result.WasSkipped,
+            Message: result.Succeeded
+                ? $"Test email sent successfully to {toAddress}."
+                : result.Error ?? (result.WasSkipped ? "Email sender is disabled." : "Send failed."));
     }
 
     private async Task<Dictionary<string, string>> BuildEmailMapAsync(

@@ -14,6 +14,7 @@ import {
   AdminNotificationItem, AdminOutboxItem,
   AdminNotificationListQuery, AdminOutboxListQuery,
   AdminSendNotificationRequest, AdminSendNotificationResult,
+  AdminNotificationConfigStatus, AdminTestEmailResult,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -207,5 +208,14 @@ export class AdminApiService {
 
   sendAdminNotification(request: AdminSendNotificationRequest): Observable<AdminSendNotificationResult> {
     return this.http.post<AdminSendNotificationResult>(`${this.api}/notifications/send`, request);
+  }
+
+  getNotificationConfig(): Observable<AdminNotificationConfigStatus> {
+    return this.http.get<AdminNotificationConfigStatus>(`${this.api}/notifications/config`);
+  }
+
+  testEmail(toAddress: string): Observable<AdminTestEmailResult> {
+    return this.http.post<AdminTestEmailResult>(
+      `${this.api}/notifications/config/email/test`, { toAddress });
   }
 }

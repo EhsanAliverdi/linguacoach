@@ -662,6 +662,25 @@ public sealed class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpGet("notifications/config")]
+    public async Task<IActionResult> GetNotificationConfig(CancellationToken ct)
+    {
+        var status = await _notificationHandler.GetConfigStatusAsync(ct);
+        return Ok(status);
+    }
+
+    [HttpPost("notifications/config/email/test")]
+    public async Task<IActionResult> TestEmailConfig(
+        [FromBody] AdminTestEmailRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.ToAddress))
+            return BadRequest(new { error = "ToAddress is required." });
+
+        var result = await _notificationHandler.TestEmailAsync(
+            request.ToAddress.Trim(), GetCurrentUserId(), ct);
+        return Ok(result);
+    }
+
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
@@ -738,6 +757,8 @@ public sealed record UpdateExerciseTypeRequest(
     int? MinOptionsPerItem = null,
     int? DefaultOptionsPerItem = null,
     int? MaxOptionsPerItem = null);
+
+public sealed record AdminTestEmailRequest(string ToAddress);
 
 public sealed record AdminSendNotificationRequest(
     List<Guid> RecipientUserIds,
