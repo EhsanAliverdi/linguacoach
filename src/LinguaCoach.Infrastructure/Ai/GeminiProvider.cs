@@ -13,12 +13,14 @@ public sealed class GeminiProvider : IAiProvider
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<GeminiProvider> _logger;
+    private readonly IAiPricingResolver _pricingResolver;
 
-    public GeminiProvider(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiProvider> logger)
+    public GeminiProvider(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiProvider> logger, IAiPricingResolver pricingResolver)
     {
         _httpClient = httpClient;
         _configuration = configuration;
         _logger = logger;
+        _pricingResolver = pricingResolver;
     }
 
     public string ProviderName => "gemini";
@@ -112,12 +114,12 @@ public sealed class GeminiProvider : IAiProvider
 
         var inputTokens = parsed?.UsageMetadata?.PromptTokenCount ?? 0;
         var outputTokens = parsed?.UsageMetadata?.CandidatesTokenCount ?? 0;
-        var pricing = AiPricingOptions.GetGeminiPricing(_configuration, modelToUse);
-        var cost = pricing is null
+        var resolved = await _pricingResolver.ResolveAsync(ProviderName, modelToUse, ct);
+        var cost = resolved is null
             ? 0m
-            : AiPricingOptions.EstimateCostUsd(inputTokens, outputTokens, pricing);
+            : (inputTokens / 1000m) * resolved.InputPer1KTokens + (outputTokens / 1000m) * resolved.OutputPer1KTokens;
 
-        if (pricing is null)
+        if (resolved is null)
         {
             _logger.LogInformation(
                 "Gemini call complete: key={Key} input={Input} output={Output}; pricing is not configured for model {Model}, so cost was not estimated.",

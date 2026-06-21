@@ -1,9 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AiConfigCategoryItem, AiModelPricingItem, AiProviderCatalogItem, ModelTestStatus } from '../../../core/models/admin.models';
+import {
+  AiConfigCategoryItem, AiModelPricingItem, AiModelPricingOverrideItem,
+  AiProviderCatalogItem, ModelTestStatus,
+  CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
+} from '../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -29,6 +33,21 @@ interface CategoryState {
   editingVoice: string | null;
   testBusy: boolean;
   testResult: string;
+}
+
+interface OverrideFormState {
+  mode: 'create' | 'edit';
+  id: string | null;
+  providerName: string;
+  modelName: string;
+  inputPricePer1KTokens: number | null;
+  outputPricePer1KTokens: number | null;
+  currency: string;
+  effectiveFromUtc: string;
+  effectiveToUtc: string;
+  notes: string;
+  busy: boolean;
+  error: string;
 }
 
 interface ProviderState {
@@ -317,9 +336,9 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
       <!-- ── Section 4: Model Pricing ─────────────────────────────────────── -->
       <sp-admin-card title="Model Pricing">
-        <sp-admin-alert variant="info" class="mb-4">
-          Pricing is read-only and loaded from configuration. Admin overrides will be added in a later phase.
-        </sp-admin-alert>
+        <!-- Config pricing (read-only) -->
+        <p class="text-sm font-semibold text-slate-700 mb-2">Config pricing</p>
+        <p class="text-xs text-slate-500 mb-4">Read from appsettings.json. Add DB overrides below to change runtime pricing without redeploying.</p>
 
         @if (pricing().length === 0) {
           <sp-admin-empty-state title="No pricing configured" message="Add pricing entries to appsettings.json under OpenAI:Pricing, Gemini:Pricing, or Anthropic:Pricing." />
@@ -331,8 +350,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                 <thead>
                   <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
                     <th class="pb-2 pr-4 font-medium">Model</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Input / 1K tokens</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Output / 1K tokens</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Input / 1K</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Output / 1K</th>
                     <th class="pb-2 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -340,8 +359,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
                   @for (row of group.rows; track row.modelName) {
                     <tr class="border-b border-slate-100 last:border-0">
                       <td class="py-2 pr-4 font-mono text-xs text-slate-800">{{ row.modelName }}</td>
-                      <td class="py-2 pr-4 text-right text-slate-700">\${{ row.inputPer1KTokens.toFixed(5) }} {{ row.currency }}</td>
-                      <td class="py-2 pr-4 text-right text-slate-700">\${{ row.outputPer1KTokens.toFixed(5) }} {{ row.currency }}</td>
+                      <td class="py-2 pr-4 text-right text-slate-700">\${{ row.inputPer1KTokens.toFixed(5) }}</td>
+                      <td class="py-2 pr-4 text-right text-slate-700">\${{ row.outputPer1KTokens.toFixed(5) }}</td>
                       <td class="py-2">
                         @if (row.isConfigured) {
                           <sp-admin-badge tone="success">Configured</sp-admin-badge>
@@ -356,6 +375,105 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
             </div>
           }
         }
+
+        <!-- DB overrides -->
+        <div class="mt-6 pt-6 border-t border-slate-200">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-700">Pricing overrides</p>
+              <p class="text-xs text-slate-500">DB overrides take precedence over config at runtime. Active overrides with a valid effective range are applied.</p>
+            </div>
+            @if (!overrideForm()) {
+              <sp-admin-button size="sm" (click)="openCreateOverride()">Add override</sp-admin-button>
+            }
+          </div>
+
+          <!-- Create / edit form -->
+          @if (overrideForm(); as f) {
+            <div class="rounded-xl border border-blue-200 bg-blue-50 p-5 mb-4">
+              <p class="text-sm font-semibold text-slate-800 mb-4">{{ f.mode === 'create' ? 'New override' : 'Edit override' }}</p>
+              <div class="grid gap-3 sm:grid-cols-2 mb-3">
+                <sp-admin-form-field label="Provider">
+                  <sp-admin-input [(ngModel)]="f.providerName" placeholder="openai / gemini / anthropic" [disabled]="f.mode === 'edit'" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Model">
+                  <sp-admin-input [(ngModel)]="f.modelName" placeholder="gpt-4o" [disabled]="f.mode === 'edit'" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Input price / 1K tokens">
+                  <sp-admin-input type="number" [(ngModel)]="f.inputPricePer1KTokens" placeholder="0.002" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Output price / 1K tokens">
+                  <sp-admin-input type="number" [(ngModel)]="f.outputPricePer1KTokens" placeholder="0.008" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Currency">
+                  <sp-admin-input [(ngModel)]="f.currency" placeholder="USD" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Effective from (UTC)">
+                  <input type="datetime-local" [(ngModel)]="f.effectiveFromUtc" class="sp-adm-native-select" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Effective to (UTC, optional)">
+                  <input type="datetime-local" [(ngModel)]="f.effectiveToUtc" class="sp-adm-native-select" />
+                </sp-admin-form-field>
+                <sp-admin-form-field label="Notes (optional)">
+                  <sp-admin-input [(ngModel)]="f.notes" placeholder="e.g. Q3 rate change" />
+                </sp-admin-form-field>
+              </div>
+              <div class="flex items-center gap-3">
+                <sp-admin-button [loading]="f.busy" [disabled]="f.busy" (click)="saveOverride()">{{ f.mode === 'create' ? 'Create' : 'Save' }}</sp-admin-button>
+                <sp-admin-button variant="neutral" appearance="ghost" size="sm" [disabled]="f.busy" (click)="cancelOverrideForm()">Cancel</sp-admin-button>
+                @if (f.error) { <span class="text-xs text-red-600">{{ f.error }}</span> }
+              </div>
+            </div>
+          }
+
+          <!-- Overrides table -->
+          @if (overrides().length === 0) {
+            <sp-admin-empty-state title="No overrides" message="No DB pricing overrides exist. Config pricing is used." />
+          } @else {
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 text-left text-xs text-slate-500">
+                  <th class="pb-2 pr-3 font-medium">Provider</th>
+                  <th class="pb-2 pr-3 font-medium">Model</th>
+                  <th class="pb-2 pr-3 font-medium text-right">Input / 1K</th>
+                  <th class="pb-2 pr-3 font-medium text-right">Output / 1K</th>
+                  <th class="pb-2 pr-3 font-medium">From</th>
+                  <th class="pb-2 pr-3 font-medium">Status</th>
+                  <th class="pb-2 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (o of overrides(); track o.id) {
+                  <tr class="border-b border-slate-100 last:border-0" [class.opacity-40]="!o.isActive">
+                    <td class="py-2 pr-3 font-mono text-xs">{{ o.providerName }}</td>
+                    <td class="py-2 pr-3 font-mono text-xs">{{ o.modelName }}</td>
+                    <td class="py-2 pr-3 text-right">\${{ o.inputPricePer1KTokens.toFixed(5) }}</td>
+                    <td class="py-2 pr-3 text-right">\${{ o.outputPricePer1KTokens.toFixed(5) }}</td>
+                    <td class="py-2 pr-3 text-xs text-slate-500">{{ o.effectiveFromUtc | date:'yyyy-MM-dd HH:mm' : 'UTC' }}</td>
+                    <td class="py-2 pr-3">
+                      @if (o.isActive) {
+                        <sp-admin-badge tone="success">Active</sp-admin-badge>
+                      } @else {
+                        <sp-admin-badge tone="neutral">Inactive</sp-admin-badge>
+                      }
+                    </td>
+                    <td class="py-2">
+                      <div class="flex items-center gap-2">
+                        @if (o.isActive) {
+                          <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="openEditOverride(o)">Edit</sp-admin-button>
+                          <sp-admin-button variant="danger" appearance="ghost" size="sm"
+                            [loading]="deactivateBusy() === o.id"
+                            [disabled]="deactivateBusy() === o.id"
+                            (click)="deactivateOverride(o.id)">Deactivate</sp-admin-button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
       </sp-admin-card>
 
     }
@@ -372,6 +490,9 @@ export class AdminAiConfigComponent implements OnInit {
   categories = signal<CategoryState[]>([]);
   providers = signal<ProviderState[]>([]);
   pricing = signal<AiModelPricingItem[]>([]);
+  overrides = signal<AiModelPricingOverrideItem[]>([]);
+  overrideForm = signal<OverrideFormState | null>(null);
+  deactivateBusy = signal<string | null>(null);
   loading = signal(true);
   loadError = signal('');
 
@@ -382,8 +503,9 @@ export class AdminAiConfigComponent implements OnInit {
       categories: this.adminApi.listAiCategories(),
       catalog: this.adminApi.listAiProviders(),
       pricing: this.adminApi.listAiPricing(),
+      overrides: this.adminApi.listAiPricingOverrides(),
     }).subscribe({
-      next: ({ categories, catalog, pricing }) => {
+      next: ({ categories, catalog, pricing, overrides }) => {
         this.categories.set(categories.map(item => ({
           item,
           saving: false, saved: false, error: '',
@@ -405,12 +527,121 @@ export class AdminAiConfigComponent implements OnInit {
           addModelError: '',
         })));
         this.pricing.set(pricing);
+        this.overrides.set(overrides);
         this.loading.set(false);
       },
       error: err => {
         this.loadError.set(err.error?.error ?? 'Could not load AI configuration.');
         this.loading.set(false);
       },
+    });
+  }
+
+  // ── Override management ────────────────────────────────────────────────────
+
+  private toDatetimeLocal(utcStr: string | null): string {
+    if (!utcStr) return '';
+    const d = new Date(utcStr);
+    return d.toISOString().slice(0, 16);
+  }
+
+  private fromDatetimeLocal(local: string): string {
+    if (!local) return '';
+    return new Date(local).toISOString();
+  }
+
+  openCreateOverride(): void {
+    const now = new Date();
+    now.setSeconds(0, 0);
+    this.overrideForm.set({
+      mode: 'create', id: null,
+      providerName: '', modelName: '',
+      inputPricePer1KTokens: null, outputPricePer1KTokens: null,
+      currency: 'USD',
+      effectiveFromUtc: now.toISOString().slice(0, 16),
+      effectiveToUtc: '', notes: '',
+      busy: false, error: '',
+    });
+  }
+
+  openEditOverride(o: AiModelPricingOverrideItem): void {
+    this.overrideForm.set({
+      mode: 'edit', id: o.id,
+      providerName: o.providerName, modelName: o.modelName,
+      inputPricePer1KTokens: o.inputPricePer1KTokens,
+      outputPricePer1KTokens: o.outputPricePer1KTokens,
+      currency: o.currency,
+      effectiveFromUtc: this.toDatetimeLocal(o.effectiveFromUtc),
+      effectiveToUtc: this.toDatetimeLocal(o.effectiveToUtc),
+      notes: o.notes ?? '',
+      busy: false, error: '',
+    });
+  }
+
+  cancelOverrideForm(): void {
+    this.overrideForm.set(null);
+  }
+
+  saveOverride(): void {
+    const f = this.overrideForm();
+    if (!f) return;
+    if (!f.providerName.trim() || !f.modelName.trim()) {
+      this.overrideForm.set({ ...f, error: 'Provider and model are required.' });
+      return;
+    }
+    if (f.inputPricePer1KTokens === null || f.outputPricePer1KTokens === null ||
+        f.inputPricePer1KTokens < 0 || f.outputPricePer1KTokens < 0) {
+      this.overrideForm.set({ ...f, error: 'Prices must be >= 0.' });
+      return;
+    }
+    this.overrideForm.set({ ...f, busy: true, error: '' });
+
+    if (f.mode === 'create') {
+      const cmd: CreatePricingOverrideRequest = {
+        providerName: f.providerName.trim(),
+        modelName: f.modelName.trim(),
+        inputPricePer1KTokens: f.inputPricePer1KTokens,
+        outputPricePer1KTokens: f.outputPricePer1KTokens,
+        currency: f.currency || 'USD',
+        effectiveFromUtc: this.fromDatetimeLocal(f.effectiveFromUtc),
+        effectiveToUtc: f.effectiveToUtc ? this.fromDatetimeLocal(f.effectiveToUtc) : null,
+        notes: f.notes || null,
+      };
+      this.adminApi.createAiPricingOverride(cmd).subscribe({
+        next: created => {
+          this.overrides.update(list => [created, ...list]);
+          this.overrideForm.set(null);
+        },
+        error: err => this.overrideForm.set({ ...f, busy: false, error: err.error?.error ?? err.error?.title ?? 'Failed to create override.' }),
+      });
+    } else {
+      const cmd: UpdatePricingOverrideRequest = {
+        inputPricePer1KTokens: f.inputPricePer1KTokens,
+        outputPricePer1KTokens: f.outputPricePer1KTokens,
+        currency: f.currency || 'USD',
+        effectiveFromUtc: this.fromDatetimeLocal(f.effectiveFromUtc),
+        effectiveToUtc: f.effectiveToUtc ? this.fromDatetimeLocal(f.effectiveToUtc) : null,
+        notes: f.notes || null,
+      };
+      this.adminApi.updateAiPricingOverride(f.id!, cmd).subscribe({
+        next: updated => {
+          this.overrides.update(list => list.map(o => o.id === updated.id ? updated : o));
+          this.overrideForm.set(null);
+        },
+        error: err => this.overrideForm.set({ ...f, busy: false, error: err.error?.error ?? err.error?.title ?? 'Failed to update override.' }),
+      });
+    }
+  }
+
+  deactivateOverride(id: string): void {
+    if (!confirm('Deactivate this pricing override?')) return;
+    this.deactivateBusy.set(id);
+    this.adminApi.deactivateAiPricingOverride(id).subscribe({
+      next: () => {
+        this.overrides.update(list => list.map(o => o.id === id ? { ...o, isActive: false } : o));
+        this.deactivateBusy.set(null);
+      },
+      error: () => this.deactivateBusy.set(null),
     });
   }
 

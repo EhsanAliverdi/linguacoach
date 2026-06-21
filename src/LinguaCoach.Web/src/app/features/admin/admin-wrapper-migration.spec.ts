@@ -157,7 +157,7 @@ describe('admin wrapper migration', () => {
   });
 
   it('AI Config page renders with wrapper cards', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing', 'listAiPricingOverrides']);
     adminApi.listAiCategories.and.returnValue(of([
       { categoryKey: 'llm.default', displayName: 'Default LLM', providerName: 'fake', modelName: null, voiceName: null },
       { categoryKey: 'tts.listening', displayName: 'Listening TTS', providerName: 'fake', modelName: null, voiceName: null },
@@ -166,6 +166,7 @@ describe('admin wrapper migration', () => {
       { providerName: 'fake', hasApiKey: false, apiEndpoint: null, models: ['fake'], modelTests: [] },
     ]));
     adminApi.listAiPricing.and.returnValue(of([]));
+    adminApi.listAiPricingOverrides.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [AdminAiConfigComponent],
@@ -389,7 +390,7 @@ describe('admin wrapper migration', () => {
 
 describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration', () => {
   function makeAdminApi() {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing', 'listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing', 'listAiPricingOverrides', 'listStudents']);
     adminApi.listAiCategories.and.returnValue(of([
       { categoryKey: 'llm.default', displayName: 'Default LLM', providerName: 'fake', modelName: null, voiceName: null },
       { categoryKey: 'tts.listening', displayName: 'Listening TTS', providerName: 'openai', modelName: 'tts-1', voiceName: 'onyx' },
@@ -398,6 +399,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
       { providerName: 'openai', hasApiKey: true, apiEndpoint: null, models: ['gpt-4o'], modelTests: [] },
     ]));
     adminApi.listAiPricing.and.returnValue(of([]));
+    adminApi.listAiPricingOverrides.and.returnValue(of([]));
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
     return adminApi;
   }

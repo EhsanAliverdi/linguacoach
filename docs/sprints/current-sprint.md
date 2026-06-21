@@ -2452,3 +2452,59 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 **Test counts:** .NET 810 integration + 1260 unit + 3 arch = 2073 total. Angular 880.
 
 **Not implemented:** provider runtime wiring (10V-3), frontend override UI, zero-cost alert, unique override constraint.
+
+---
+
+## Phase 10V-3 — AI Pricing Runtime Resolver Wiring + Override Management UI (2026-06-21)
+
+**Goal:** Wire `IAiPricingResolver` into all three AI providers for runtime cost calculation, and add override management UI to AI Config page.
+
+**Delivered:**
+
+**Part A — Runtime resolver wiring:**
+- `IAiPricingResolver` injected into `OpenAiProvider`, `GeminiProvider`, `AnthropicProvider`
+- Direct `AiPricingOptions.GetOpenAiPricing` / `GetGeminiPricing` / `GetProviderPricing` calls replaced with `await _pricingResolver.ResolveAsync(ProviderName, modelToUse, ct)`
+- Cost formula: `(inputTokens / 1000m) * resolved.InputPer1KTokens + (outputTokens / 1000m) * resolved.OutputPer1KTokens`
+- Missing pricing still logs 0m cost — no throw, unchanged behavior
+- No DI changes needed — `IAiPricingResolver` already registered as scoped in 10V-2
+- Unit test helpers `NullPricingResolver` / `NullPricingResolverForResolver` added to fix two existing test fixtures
+
+**Part B — Zero-cost visibility:**
+- Deferred. Existing null-cost log messages sufficient. Tracked as `TODO-10V-3B`.
+
+**Part C — Frontend override management UI:**
+- `AiModelPricingOverrideItem`, `CreatePricingOverrideRequest`, `UpdatePricingOverrideRequest` added to `admin.models.ts`
+- `listAiPricingOverrides`, `createAiPricingOverride`, `updateAiPricingOverride`, `deactivateAiPricingOverride` added to `AdminApiService`
+- AI Config Section 4 extended: config pricing table (read-only, unchanged) + DB overrides table + inline create/edit form + deactivate with confirm
+- Validation: provider required, model required, prices >= 0, effectiveTo after effectiveFrom when provided
+- After create/edit/deactivate: signal updated in place (no full reload needed)
+- 11 new frontend tests; existing mocks in `admin-wrapper-migration.spec.ts` and `admin-ai-config.component.spec.ts` updated
+
+**Constraints respected:**
+- No provider routing change
+- No usage governance change
+- No historical AiUsageLog recalculation
+- No new migration
+- No AI Config page redesign
+
+**Test counts:** .NET 810 integration + 1260 unit + 3 arch = 2073 total. Angular 891.
+
+**Not implemented:** zero-cost alert UI (TODO-10V-3B), unique override constraint (TODO-10V-UNIQUE-CONSTRAINT).
+
+---
+
+## Phase 10V-FINAL — AI Pricing Admin Closure Audit (2026-06-21)
+
+**Goal:** Close 10V cleanly — verify 10V-3 commit, fix missing docs, run final audit.
+
+**Delivered:**
+
+- TODOS.md: `TODO-10V-3` marked done; `TODO-10V-3B` (zero-cost alert) added as new deferred item
+- `docs/sprints/current-sprint.md`: 10V-3 and 10V-FINAL sections added
+- `docs/reviews/2026-06-21-phase-10v-3-ai-pricing-runtime-and-override-ui-review.md`: created in 10V-3
+- `docs/reviews/2026-06-21-phase-10v-final-ai-pricing-admin-closure-audit.md`: created in this phase
+- All gates verified green before commit
+
+**Remaining AI pricing TODOs:**
+- `TODO-10V-3B`: zero-cost alert UI in AI Usage or AI Config
+- `TODO-10V-UNIQUE-CONSTRAINT`: optional unique index on `(ProviderName, ModelName, EffectiveFromUtc)`

@@ -6,8 +6,16 @@ using FluentAssertions;
 
 namespace LinguaCoach.UnitTests.Ai;
 
+file sealed class NullPricingResolver : IAiPricingResolver
+{
+    public Task<ResolvedModelPricing?> ResolveAsync(string providerName, string modelName, CancellationToken ct = default)
+        => Task.FromResult<ResolvedModelPricing?>(null);
+}
+
 public sealed class OpenAiProviderTests
 {
+    private static readonly IAiPricingResolver _nullResolver = new NullPricingResolver();
+
     [Fact]
     public async Task CompleteAsync_WithoutApiKey_ReturnsControlledConfigurationException()
     {
@@ -17,7 +25,7 @@ public sealed class OpenAiProviderTests
                 ["OpenAI:ApiKey"] = ""
             })
             .Build();
-        var provider = new OpenAiProvider(configuration, NullLogger<OpenAiProvider>.Instance);
+        var provider = new OpenAiProvider(configuration, NullLogger<OpenAiProvider>.Instance, _nullResolver);
         var request = new AiRequest("test.prompt", "Hello", 100);
 
         var exception = await Assert.ThrowsAsync<AiConfigurationUnavailableException>(

@@ -10,6 +10,7 @@ import {
   AdminStudentDetail,
   StudentAuditHistoryItem,
   StudentListQuery, PagedResponse, AiModelPricingItem,
+  AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -139,5 +140,22 @@ export class AdminApiService {
   // AI model pricing
   listAiPricing(): Observable<AiModelPricingItem[]> {
     return this.http.get<AiModelPricingItem[]>(`${this.api}/ai/pricing`);
+  }
+
+  // AI pricing overrides
+  listAiPricingOverrides(): Observable<AiModelPricingOverrideItem[]> {
+    return this.http.get<AiModelPricingOverrideItem[]>(`${this.api}/ai/pricing/overrides`);
+  }
+
+  createAiPricingOverride(cmd: CreatePricingOverrideRequest): Observable<AiModelPricingOverrideItem> {
+    return this.http.post<AiModelPricingOverrideItem>(`${this.api}/ai/pricing/overrides`, cmd);
+  }
+
+  updateAiPricingOverride(id: string, cmd: UpdatePricingOverrideRequest): Observable<AiModelPricingOverrideItem> {
+    return this.http.put<AiModelPricingOverrideItem>(`${this.api}/ai/pricing/overrides/${id}`, cmd);
+  }
+
+  deactivateAiPricingOverride(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.api}/ai/pricing/overrides/${id}`);
   }
 }

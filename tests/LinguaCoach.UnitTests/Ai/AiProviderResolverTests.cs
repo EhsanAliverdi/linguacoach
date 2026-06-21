@@ -11,6 +11,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LinguaCoach.UnitTests.Ai;
 
+file sealed class NullPricingResolverForResolver : IAiPricingResolver
+{
+    public Task<ResolvedModelPricing?> ResolveAsync(string providerName, string modelName, CancellationToken ct = default)
+        => Task.FromResult<ResolvedModelPricing?>(null);
+}
+
 public sealed class AiProviderResolverTests
 {
     [Fact]
@@ -90,6 +96,7 @@ public sealed class AiProviderResolverTests
         services.AddSingleton(NullLogger<GeminiProvider>.Instance);
         services.AddSingleton(NullLogger<AnthropicProvider>.Instance);
         services.AddSingleton(NullLogger<QwenProvider>.Instance);
+        services.AddSingleton<IAiPricingResolver>(new NullPricingResolverForResolver());
         services.AddSingleton<OpenAiProvider>();
         services.AddHttpClient<GeminiProvider>();
         services.AddSingleton<AnthropicProvider>();

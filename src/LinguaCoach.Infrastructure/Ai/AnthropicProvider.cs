@@ -11,11 +11,13 @@ public sealed class AnthropicProvider : IAiProvider
     private const string DefaultModel = "claude-sonnet-4-6";
     private readonly IConfiguration _configuration;
     private readonly ILogger<AnthropicProvider> _logger;
+    private readonly IAiPricingResolver _pricingResolver;
 
-    public AnthropicProvider(IConfiguration configuration, ILogger<AnthropicProvider> logger)
+    public AnthropicProvider(IConfiguration configuration, ILogger<AnthropicProvider> logger, IAiPricingResolver pricingResolver)
     {
         _configuration = configuration;
         _logger = logger;
+        _pricingResolver = pricingResolver;
     }
 
     public string ProviderName => "anthropic";
@@ -65,12 +67,12 @@ public sealed class AnthropicProvider : IAiProvider
 
         var inputTokens = result.Usage?.InputTokens ?? 0;
         var outputTokens = result.Usage?.OutputTokens ?? 0;
-        var pricing = AiPricingOptions.GetProviderPricing(_configuration, "Anthropic", modelToUse);
-        var cost = pricing is null
+        var resolved = await _pricingResolver.ResolveAsync(ProviderName, modelToUse, ct);
+        var cost = resolved is null
             ? 0m
-            : AiPricingOptions.EstimateCostUsd(inputTokens, outputTokens, pricing);
+            : (inputTokens / 1000m) * resolved.InputPer1KTokens + (outputTokens / 1000m) * resolved.OutputPer1KTokens;
 
-        if (pricing is null)
+        if (resolved is null)
         {
             _logger.LogInformation(
                 "Anthropic call complete: key={Key} input={Input} output={Output}; pricing not configured for model {Model}.",

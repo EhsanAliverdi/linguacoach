@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { of, throwError } from 'rxjs';
 import { AdminAiConfigComponent } from './admin-ai-config.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AiConfigCategoryItem, AiModelPricingItem, AiProviderCatalogItem } from '../../../core/models/admin.models';
+import { AiConfigCategoryItem, AiModelPricingItem, AiModelPricingOverrideItem, AiProviderCatalogItem } from '../../../core/models/admin.models';
 
 const CAT_LLM: AiConfigCategoryItem = {
   id: 'cat-1',
@@ -57,6 +57,7 @@ function makeAdminApi(
     listAiCategories: jasmine.createSpy('listAiCategories').and.returnValue(of(categories)),
     listAiProviders: jasmine.createSpy('listAiProviders').and.returnValue(of(catalog)),
     listAiPricing: jasmine.createSpy('listAiPricing').and.returnValue(of(pricing)),
+    listAiPricingOverrides: jasmine.createSpy('listAiPricingOverrides').and.returnValue(of([])),
     updateAiCategory: jasmine.createSpy('updateAiCategory').and.returnValue(of(CAT_LLM)),
     testAiCategory: jasmine.createSpy('testAiCategory').and.returnValue(of({ ok: true, latencyMs: 200, error: null })),
     setProviderApiKey: jasmine.createSpy('setProviderApiKey').and.returnValue(of(PROVIDER)),
@@ -314,7 +315,7 @@ describe('AdminAiConfigComponent', () => {
 
   it('renders read-only configuration note', async () => {
     await setup();
-    expect(fixture.nativeElement.textContent).toContain('read-only');
+    expect(fixture.nativeElement.textContent).toContain('Config pricing');
   });
 
   it('renders model names in pricing table', async () => {
@@ -346,5 +347,106 @@ describe('AdminAiConfigComponent', () => {
     // Pricing section note present, no "Edit pricing" or "Save pricing" text
     expect(text).not.toContain('Edit pricing');
     expect(text).not.toContain('Save pricing');
+  });
+
+  // ── Pricing override panel ─────────────────────────────────────────────────
+
+  it('calls listAiPricingOverrides on init', async () => {
+    await setup();
+    expect(adminApi.listAiPricingOverrides).toHaveBeenCalledTimes(1);
+  });
+
+  it('overrides signal is empty on init when no overrides exist', async () => {
+    await setup();
+    expect(component.overrides().length).toBe(0);
+  });
+
+  it('renders Pricing overrides section heading', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('Pricing overrides');
+  });
+
+  it('renders empty state when no overrides', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('No overrides');
+  });
+
+  it('renders Add override button when form is closed', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('Add override');
+  });
+
+  it('openCreateOverride sets overrideForm to create mode', async () => {
+    await setup();
+    component.openCreateOverride();
+    expect(component.overrideForm()).not.toBeNull();
+    expect(component.overrideForm()!.mode).toBe('create');
+  });
+
+  it('cancelOverrideForm clears the form', async () => {
+    await setup();
+    component.openCreateOverride();
+    component.cancelOverrideForm();
+    expect(component.overrideForm()).toBeNull();
+  });
+
+  it('saveOverride with empty provider sets error', async () => {
+    await setup();
+    component.openCreateOverride();
+    const f = component.overrideForm()!;
+    component['overrideForm'].set({ ...f, providerName: '', modelName: 'gpt-4o', inputPricePer1KTokens: 0.002, outputPricePer1KTokens: 0.008 });
+    component.saveOverride();
+    expect(component.overrideForm()!.error).toContain('Provider and model are required');
+  });
+
+  it('saveOverride with negative price sets error', async () => {
+    await setup();
+    component.openCreateOverride();
+    const f = component.overrideForm()!;
+    component['overrideForm'].set({ ...f, providerName: 'openai', modelName: 'gpt-4o', inputPricePer1KTokens: -1, outputPricePer1KTokens: 0.008 });
+    component.saveOverride();
+    expect(component.overrideForm()!.error).toContain('Prices must be');
+  });
+
+  it('openEditOverride sets form to edit mode with override data', async () => {
+    await setup();
+    const override: AiModelPricingOverrideItem = {
+      id: 'test-id', providerName: 'openai', modelName: 'gpt-4o',
+      inputPricePer1KTokens: 0.005, outputPricePer1KTokens: 0.015,
+      currency: 'USD', isActive: true,
+      effectiveFromUtc: '2026-01-01T00:00:00Z', effectiveToUtc: null,
+      notes: 'test note', createdAtUtc: '2026-01-01T00:00:00Z',
+      updatedAtUtc: null, createdByAdminUserId: null, updatedByAdminUserId: null,
+    };
+    component.openEditOverride(override);
+    const f = component.overrideForm()!;
+    expect(f.mode).toBe('edit');
+    expect(f.id).toBe('test-id');
+    expect(f.inputPricePer1KTokens).toBe(0.005);
+    expect(f.notes).toBe('test note');
+  });
+
+  it('overrides with active entry renders Edit and Deactivate buttons', async () => {
+    const override: AiModelPricingOverrideItem = {
+      id: 'ov-1', providerName: 'openai', modelName: 'gpt-4o',
+      inputPricePer1KTokens: 0.002, outputPricePer1KTokens: 0.008,
+      currency: 'USD', isActive: true,
+      effectiveFromUtc: '2026-01-01T00:00:00Z', effectiveToUtc: null,
+      notes: null, createdAtUtc: '2026-01-01T00:00:00Z',
+      updatedAtUtc: null, createdByAdminUserId: null, updatedByAdminUserId: null,
+    };
+    adminApi = makeAdminApi();
+    adminApi.listAiPricingOverrides.and.returnValue(of([override]));
+    await TestBed.configureTestingModule({
+      imports: [AdminAiConfigComponent],
+      providers: [{ provide: AdminApiService, useValue: adminApi }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminAiConfigComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Edit');
+    expect(fixture.nativeElement.textContent).toContain('Deactivate');
   });
 });

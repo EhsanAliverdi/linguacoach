@@ -206,6 +206,43 @@ export interface AiModelPricingItem {
   isConfigured: boolean;
 }
 
+export interface AiModelPricingOverrideItem {
+  id: string;
+  providerName: string;
+  modelName: string;
+  inputPricePer1KTokens: number;
+  outputPricePer1KTokens: number;
+  currency: string;
+  isActive: boolean;
+  effectiveFromUtc: string;
+  effectiveToUtc: string | null;
+  notes: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
+  createdByAdminUserId: string | null;
+  updatedByAdminUserId: string | null;
+}
+
+export interface CreatePricingOverrideRequest {
+  providerName: string;
+  modelName: string;
+  inputPricePer1KTokens: number;
+  outputPricePer1KTokens: number;
+  currency: string;
+  effectiveFromUtc: string;
+  effectiveToUtc?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdatePricingOverrideRequest {
+  inputPricePer1KTokens: number;
+  outputPricePer1KTokens: number;
+  currency: string;
+  effectiveFromUtc: string;
+  effectiveToUtc?: string | null;
+  notes?: string | null;
+}
+
 export interface UpdateAiCategoryRequest {
   providerName?: string | null;
   modelName?: string | null;

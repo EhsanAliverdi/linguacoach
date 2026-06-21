@@ -21,11 +21,13 @@ public sealed class OpenAiProvider : IAiProvider
     private readonly ApiKeyCredential? _credential;
     private readonly IConfiguration _configuration;
     private readonly ILogger<OpenAiProvider> _logger;
+    private readonly IAiPricingResolver _pricingResolver;
 
-    public OpenAiProvider(IConfiguration configuration, ILogger<OpenAiProvider> logger)
+    public OpenAiProvider(IConfiguration configuration, ILogger<OpenAiProvider> logger, IAiPricingResolver pricingResolver)
     {
         _logger = logger;
         _configuration = configuration;
+        _pricingResolver = pricingResolver;
 
         _model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
         var apiKey = configuration["OpenAI:ApiKey"]
@@ -90,12 +92,12 @@ public sealed class OpenAiProvider : IAiProvider
 
         var inputTokens = completion.Usage.InputTokenCount;
         var outputTokens = completion.Usage.OutputTokenCount;
-        var pricing = AiPricingOptions.GetOpenAiPricing(_configuration, modelToUse);
-        var cost = pricing is null
+        var resolved = await _pricingResolver.ResolveAsync(ProviderName, modelToUse, ct);
+        var cost = resolved is null
             ? 0m
-            : AiPricingOptions.EstimateCostUsd(inputTokens, outputTokens, pricing);
+            : (inputTokens / 1000m) * resolved.InputPer1KTokens + (outputTokens / 1000m) * resolved.OutputPer1KTokens;
 
-        if (pricing is null)
+        if (resolved is null)
         {
             _logger.LogInformation(
                 "OpenAI call complete: key={Key} input={Input} output={Output}; pricing is not configured for model {Model}, so cost was not estimated.",
