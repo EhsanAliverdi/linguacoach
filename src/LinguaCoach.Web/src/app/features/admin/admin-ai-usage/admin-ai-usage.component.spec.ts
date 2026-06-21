@@ -15,6 +15,8 @@ function makeSummary(overrides: Partial<AiUsageSummary> = {}): AiUsageSummary {
     totalOutputTokens: 1500,
     totalTokens: 5500,
     successRate: 90,
+    zeroCostCallCount: 0,
+    zeroCostTotalTokens: 0,
     byProvider: [{ provider: 'anthropic', calls: 10, successful: 9, fallback: 2, costUsd: 0.0123 }],
     byFeature: [{ feature: 'lesson_generation', calls: 10, successful: 9, costUsd: 0.0123 }],
     ...overrides,
@@ -1163,5 +1165,59 @@ describe('AdminAiUsageComponent', () => {
 
     const filters = svc.getSummary.calls.mostRecent().args[1] as { provider?: string } | undefined;
     expect(filters?.provider).toBe('openai');
+  });
+
+  // ── zero-cost alert ────────────────────────────────────────────────────────
+
+  it('zero-cost alert renders when zeroCostCallCount > 0', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ zeroCostCallCount: 2, zeroCostTotalTokens: 500 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-alert[variant="warning"]');
+    expect(alert).toBeTruthy();
+  });
+
+  it('zero-cost alert is absent when zeroCostCallCount is 0', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ zeroCostCallCount: 0, zeroCostTotalTokens: 0 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-alert[variant="warning"]');
+    expect(alert).toBeNull();
+  });
+
+  it('zero-cost alert is absent when summary is not yet loaded', () => {
+    svc.getSummary.and.returnValue(new Subject<AiUsageSummary>().asObservable());
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-alert[variant="warning"]');
+    expect(alert).toBeNull();
+  });
+
+  it('zero-cost alert updates when filter reload returns non-zero count', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ zeroCostCallCount: 0, zeroCostTotalTokens: 0 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    svc.getSummary.and.returnValue(of(makeSummary({ zeroCostCallCount: 4, zeroCostTotalTokens: 1200 })));
+    c.onRecentProviderChange('openai');
+    fixture.detectChanges();
+
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-alert[variant="warning"]');
+    expect(alert).toBeTruthy();
+  });
+
+  it('zero-cost alert disappears when filter reload returns zero count', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ zeroCostCallCount: 3, zeroCostTotalTokens: 900 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    svc.getSummary.and.returnValue(of(makeSummary({ zeroCostCallCount: 0, zeroCostTotalTokens: 0 })));
+    c.onRecentProviderChange('anthropic');
+    fixture.detectChanges();
+
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-alert[variant="warning"]');
+    expect(alert).toBeNull();
   });
 });

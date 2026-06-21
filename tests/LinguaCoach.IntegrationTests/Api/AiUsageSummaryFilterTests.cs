@@ -318,4 +318,85 @@ public sealed class AiUsageSummaryFilterTests : IClassFixture<ApiTestFactory>
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(0, body.GetProperty("totalCalls").GetInt32());
     }
+
+    // ── zero-cost fields ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Summary_ZeroCostCallCount_IncludesCostZeroWithTokens()
+    {
+        var token = await SeedAndGetTokenAsync();
+        // Log 2: cost=0, input=20, output=0 — but output=0 means total tokens=20 > 0, so it counts.
+        var resp = await AdminClient(token).GetAsync("/api/admin/ai-usage/summary");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        // At minimum Log 2 (cost=0, tokens=20) should be counted.
+        Assert.True(body.GetProperty("zeroCostCallCount").GetInt32() >= 1,
+            "Expected at least 1 zero-cost call (Log 2: cost=0, inputTokens=20)");
+        Assert.True(body.GetProperty("zeroCostTotalTokens").GetInt64() >= 20,
+            "Expected zeroCostTotalTokens >= 20");
+    }
+
+    [Fact]
+    public async Task Summary_ZeroCostCallCount_ExcludesNonZeroCostCalls()
+    {
+        var token = await SeedAndGetTokenAsync();
+        // Filter to ProviderA only — Logs 1+3 both have cost > 0.
+        var resp = await AdminClient(token).GetAsync(
+            $"/api/admin/ai-usage/summary?provider={ProviderA}");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(0, body.GetProperty("zeroCostCallCount").GetInt32());
+        Assert.Equal(0, body.GetProperty("zeroCostTotalTokens").GetInt64());
+    }
+
+    [Fact]
+    public async Task Summary_ZeroCostCallCount_RespectsDateFilter()
+    {
+        var token = await SeedAndGetTokenAsync();
+        // A future date range should yield 0 zero-cost calls.
+        var future = Encode(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc).ToString("O"));
+        var resp = await AdminClient(token).GetAsync(
+            $"/api/admin/ai-usage/summary?from={future}");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(0, body.GetProperty("zeroCostCallCount").GetInt32());
+        Assert.Equal(0, body.GetProperty("zeroCostTotalTokens").GetInt64());
+    }
+
+    [Fact]
+    public async Task Summary_ZeroCostCallCount_RespectsProviderFilter()
+    {
+        var token = await SeedAndGetTokenAsync();
+        // Filter to ProviderB — Log 2 (cost=0, tokens=20) and Log 4 (cost>0) match.
+        // Only Log 2 should be counted as zero-cost.
+        var resp = await AdminClient(token).GetAsync(
+            $"/api/admin/ai-usage/summary?provider={ProviderB}");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.True(body.GetProperty("zeroCostCallCount").GetInt32() >= 1);
+        Assert.True(body.GetProperty("zeroCostTotalTokens").GetInt64() >= 20);
+    }
+
+    [Fact]
+    public async Task Summary_ZeroCostFields_PresentInResponse()
+    {
+        var token = await SeedAndGetTokenAsync();
+        var resp = await AdminClient(token).GetAsync("/api/admin/ai-usage/summary");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.True(body.TryGetProperty("zeroCostCallCount", out _),
+            "Expected zeroCostCallCount in response");
+        Assert.True(body.TryGetProperty("zeroCostTotalTokens", out _),
+            "Expected zeroCostTotalTokens in response");
+    }
 }

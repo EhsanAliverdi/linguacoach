@@ -57,6 +57,14 @@
     <sp-admin-stat-card label="Output tokens"   [value]="formatTokens(summary()!.totalOutputTokens)"  tone="indigo" />
     <sp-admin-stat-card label="Total tokens"    [value]="formatTokens(summary()!.totalTokens)"        tone="indigo" />
   </div>
+  @if (summary()!.zeroCostCallCount > 0) {
+    <sp-admin-alert variant="warning">
+      {{ summary()!.zeroCostCallCount }} AI call{{ summary()!.zeroCostCallCount === 1 ? '' : 's' }} in this filtered range
+      {{ summary()!.zeroCostCallCount === 1 ? 'was' : 'were' }} logged with $0 cost
+      ({{ formatTokens(summary()!.zeroCostTotalTokens) }} tokens).
+      This usually means pricing was missing at the time of the call.
+    </sp-admin-alert>
+  }
 
   <div class="sp-au-two-col">
     <sp-admin-card title="By provider">

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10U-FINAL)
+lastUpdated: 2026-06-21 (10V-3B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,35 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10V-3B — AI Pricing Zero-Cost Alert UI** - complete (2026-06-21)
+
+Goal: admin visibility for missing-pricing / zero-cost AI calls in the filtered AI Usage summary.
+
+### Delivered
+
+- `AiUsageSummaryDto` extended with `ZeroCostCallCount` and `ZeroCostTotalTokens`.
+- `AiUsageHandler.GetSummaryAsync` computes zero-cost rows: `CostUsd == 0 AND (InputTokens + OutputTokens) > 0`. Respects all active filters (date, provider, model, featureKey, status, studentId).
+- `AiUsageController` summary endpoint exposes `zeroCostCallCount` and `zeroCostTotalTokens` in JSON.
+- `AiUsageSummary` TypeScript interface extended with both fields.
+- AI Usage page template: `sp-admin-alert variant="warning"` shown when `zeroCostCallCount > 0`. Alert includes call count, token total, and explanation. Disappears when count is 0. Updates on every filter/date reload.
+- No migration. No pricing calculation change. No provider routing change. No usage governance change. No historical recalculation.
+- Backend: +5 integration tests (`AiUsageSummaryFilterTests`), +2 unit tests (`AiUsageSummaryTests`).
+- Frontend: +5 Karma tests (`admin-ai-usage.component.spec.ts`). `makeSummary` factory updated with zero-cost defaults.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2080/2080 — 3 arch + 1262 unit + 815 integration)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (896/896)
+
+See: `docs/reviews/2026-06-21-phase-10v-3b-ai-pricing-zero-cost-alert-ui-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-FINAL — AI Usage / AI Config Closure Audit** - complete (2026-06-21)
 

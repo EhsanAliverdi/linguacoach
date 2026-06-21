@@ -46,6 +46,12 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             .OrderByDescending(x => x.Calls)
             .ToList();
 
+        var zeroCostLogs = logs
+            .Where(l => l.CostUsd == 0m && (l.InputTokens + l.OutputTokens) > 0)
+            .ToList();
+        var zeroCostCallCount   = zeroCostLogs.Count;
+        var zeroCostTotalTokens = zeroCostLogs.Sum(l => (long)l.InputTokens + l.OutputTokens);
+
         return new AiUsageSummaryDto(
             TotalCalls: totalCalls,
             SuccessfulCalls: successful,
@@ -56,7 +62,9 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             TotalOutputTokens: totalOutputTokens,
             TotalTokens: totalInputTokens + totalOutputTokens,
             ByProvider: byProvider,
-            ByFeature: byFeature);
+            ByFeature: byFeature,
+            ZeroCostCallCount: zeroCostCallCount,
+            ZeroCostTotalTokens: zeroCostTotalTokens);
     }
 
     public async Task<AiUsagePagedResult> GetRecentAsync(

@@ -54,7 +54,9 @@ public sealed record AiUsageSummaryDto(
     long TotalOutputTokens,
     long TotalTokens,
     IReadOnlyList<AiUsageByProvider> ByProvider,
-    IReadOnlyList<AiUsageByFeature> ByFeature);
+    IReadOnlyList<AiUsageByFeature> ByFeature,
+    int ZeroCostCallCount,
+    long ZeroCostTotalTokens);
 
 public sealed record AiUsageByProvider(
     string Provider,

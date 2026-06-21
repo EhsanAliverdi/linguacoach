@@ -75,6 +75,8 @@ public sealed class AiUsageController : ControllerBase
                 successful = f.Successful,
                 costUsd = f.CostUsd,
             }),
+            zeroCostCallCount = s.ZeroCostCallCount,
+            zeroCostTotalTokens = s.ZeroCostTotalTokens,
         });
     }
 
