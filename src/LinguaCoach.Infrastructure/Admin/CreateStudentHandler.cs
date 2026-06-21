@@ -1,9 +1,11 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Admin;
 
@@ -11,11 +13,19 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly LinguaCoachDbContext _db;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<CreateStudentHandler> _logger;
 
-    public CreateStudentHandler(UserManager<ApplicationUser> userManager, LinguaCoachDbContext db)
+    public CreateStudentHandler(
+        UserManager<ApplicationUser> userManager,
+        LinguaCoachDbContext db,
+        INotificationService notifications,
+        ILogger<CreateStudentHandler> logger)
     {
         _userManager = userManager;
         _db = db;
+        _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task<CreateStudentResult> HandleAsync(CreateStudentCommand command, CancellationToken ct = default)
@@ -71,6 +81,25 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
 
         _db.StudentProfiles.Add(profile);
         await _db.SaveChangesAsync(ct);
+
+        // Queue welcome/account-created email. Does not include the temporary password.
+        // If queueing fails, log and continue — student creation still succeeds.
+        try
+        {
+            await _notifications.QueueEmailAsync(
+                recipientUserId: user.Id,
+                title: "Welcome to SpeakPath",
+                body: "Your SpeakPath account has been created. Please log in with the credentials provided by your administrator. You will be prompted to set a new password on first login.",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Info,
+                ct: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to queue welcome email notification for new student {UserId}. Creation still succeeded.",
+                user.Id);
+        }
 
         return new CreateStudentResult(profile.Id, user.Id);
     }

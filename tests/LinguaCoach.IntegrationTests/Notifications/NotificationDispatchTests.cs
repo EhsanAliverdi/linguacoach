@@ -2,9 +2,13 @@ using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Notifications;
 using LinguaCoach.Persistence;
+using LinguaCoach.Persistence.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.IntegrationTests.Notifications;
 
@@ -12,6 +16,7 @@ public sealed class NotificationDispatchTests : IAsyncLifetime
 {
     private SqliteConnection? _connection;
     private LinguaCoachDbContext? _db;
+    private UserManager<ApplicationUser>? _userManager;
 
     public async Task InitializeAsync()
     {
@@ -22,10 +27,23 @@ public sealed class NotificationDispatchTests : IAsyncLifetime
             .Options;
         _db = new LinguaCoachDbContext(options);
         await _db.Database.EnsureCreatedAsync();
+
+        var userStore = new UserStore<ApplicationUser, IdentityRole<Guid>, LinguaCoachDbContext, Guid>(_db);
+        _userManager = new UserManager<ApplicationUser>(
+            userStore,
+            Options.Create(new IdentityOptions()),
+            new PasswordHasher<ApplicationUser>(),
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
+            new UpperInvariantLookupNormalizer(),
+            new IdentityErrorDescriber(),
+            null!,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
     }
 
     public async Task DisposeAsync()
     {
+        _userManager?.Dispose();
         if (_db is not null) await _db.DisposeAsync();
         if (_connection is not null) await _connection.DisposeAsync();
     }
@@ -35,8 +53,12 @@ public sealed class NotificationDispatchTests : IAsyncLifetime
     private INotificationService NotifSvc => new NotificationService(
         Db, NullLogger<NotificationService>.Instance);
 
+    // InApp/SMS tests use DisabledEmailSender — no real email needed.
     private INotificationDispatchService DispatchSvc => new NotificationDispatchService(
-        Db, NullLogger<NotificationDispatchService>.Instance);
+        Db,
+        new DisabledEmailSender(NullLogger<DisabledEmailSender>.Instance),
+        _userManager!,
+        NullLogger<NotificationDispatchService>.Instance);
 
     private static Guid UserId() => Guid.NewGuid();
 

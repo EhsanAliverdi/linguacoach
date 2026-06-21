@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Notifications;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Entities;
@@ -29,6 +30,7 @@ public sealed class AdminHandler :
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<AdminHandler> _logger;
     private readonly IConfiguration _configuration;
+    private readonly INotificationService _notifications;
 
     public AdminHandler(
         LinguaCoachDbContext db,
@@ -38,7 +40,8 @@ public sealed class AdminHandler :
         IServiceProvider services,
         IFileStorageService fileStorage,
         ILogger<AdminHandler> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        INotificationService notifications)
     {
         _db = db;
         _userManager = userManager;
@@ -48,6 +51,7 @@ public sealed class AdminHandler :
         _fileStorage = fileStorage;
         _logger = logger;
         _configuration = configuration;
+        _notifications = notifications;
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
@@ -424,6 +428,25 @@ public sealed class AdminHandler :
 
         user.MustChangePassword = command.MustChangePassword;
         await _userManager.UpdateAsync(user);
+
+        // Queue email notification — does not include the raw password.
+        // If queueing fails, log a warning but do not fail the reset operation.
+        try
+        {
+            await _notifications.QueueEmailAsync(
+                recipientUserId: profile.UserId,
+                title: "Your SpeakPath password has been reset",
+                body: "An administrator has reset your password. Please log in with your new credentials. You will be prompted to change your password on first login.",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Info,
+                ct: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to queue password-reset email notification for user {UserId}. Reset still succeeded.",
+                profile.UserId);
+        }
     }
 
     public async Task SetStudentCefrAsync(SetStudentCefrCommand command, CancellationToken ct = default)

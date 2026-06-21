@@ -86,6 +86,23 @@ public static class DependencyInjection
         services.AddScoped<INotificationQueryService, NotificationQueryService>();
         services.AddScoped<INotificationDispatchService, NotificationDispatchService>();
 
+        // Email sender — DisabledEmailSender when Email:Enabled is false/missing; SmtpEmailSender otherwise.
+        // App never crashes at startup due to missing email config.
+        if (configuration is not null)
+            services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        else
+            services.Configure<EmailOptions>(_ => { });
+
+        services.AddScoped<SmtpEmailSender>();
+        services.AddScoped<DisabledEmailSender>();
+        services.AddScoped<IEmailSender>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+            return opts.Enabled && !string.IsNullOrWhiteSpace(opts.Host)
+                ? sp.GetRequiredService<SmtpEmailSender>()
+                : sp.GetRequiredService<DisabledEmailSender>();
+        });
+
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ILoginHandler, LoginHandler>();
@@ -241,6 +258,7 @@ public static class DependencyInjection
             services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
         services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
         services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
+        services.AddScoped<Jobs.NotificationDispatchJob>();
 
         // Practice Gym suggestion service (Phase 10O)
         services.AddScoped<IPracticeGymSuggestionService, LinguaCoach.Infrastructure.PracticeGym.PracticeGymSuggestionService>();

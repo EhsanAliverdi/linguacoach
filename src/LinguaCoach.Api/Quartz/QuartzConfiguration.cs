@@ -81,6 +81,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{ReadinessPoolReplenishmentJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(20).RepeatForever()));
 
+            // Notification dispatch — every 2 minutes.
+            var dispatchKey = new JobKey(NotificationDispatchJob.JobName);
+            q.AddJob<NotificationDispatchJob>(opts => opts.WithIdentity(dispatchKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(dispatchKey)
+                .WithIdentity($"{NotificationDispatchJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(2).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());

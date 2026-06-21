@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-3)
+lastUpdated: 2026-06-21 (10W-4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,41 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10W-4 — Email Provider + Reset Password Wiring + Dispatch Job** - complete (2026-06-21)
+
+Goal: add email delivery foundation and wire password reset / student creation emails through the notification/outbox pipeline. Add Quartz dispatch job. Keep SMS deferred.
+
+### Delivered
+
+- `IEmailSender` + `EmailMessage` + `EmailSendResult` in Application layer.
+- `EmailOptions` (bound from `"Email"` config section; `Enabled=false` by default — no startup crash if unconfigured).
+- `DisabledEmailSender` (safe no-op; used when email not configured).
+- `SmtpEmailSender` (via `System.Net.Mail`; returns Skipped if disabled/no-host; catches all SMTP exceptions — never throws).
+- `IEmailSender` registered in DI: SmtpEmailSender if `Enabled && Host` set, else DisabledEmailSender.
+- `NotificationDispatchService` extended: Email outbox items resolved via `UserManager`, sent via `IEmailSender`. Success → Delivered. Skipped → counted as skipped. Failed → counted as failed. SMS still skipped.
+- `NotificationDispatchJob` (Quartz, `[DisallowConcurrentExecution]`, every 2 minutes, persisted).
+- `AdminHandler.ResetStudentPasswordAsync` queues email notification after reset — body does NOT include raw password.
+- `CreateStudentHandler.HandleAsync` queues welcome email after student creation — body does NOT include temp password.
+- Both operations tolerate notification queue failure (log warning, continue).
+- Appsettings `"Email"` section with safe disabled defaults.
+- 11 unit tests + 11 integration/dispatch/job tests (+20 new); existing dispatch tests updated for new constructor.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: PASS (0 errors)
+- `dotnet test --configuration Release`: PASS (2150/2150 — 3 arch + 1287 unit + 860 integration; +20)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (916/916)
+
+No migration added. No frontend changes.
+
+See: `docs/reviews/2026-06-21-phase-10w-4-email-provider-reset-password-dispatch-job-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10W-3 — Live Notification Bell UI Wiring** - complete (2026-06-21)
 
