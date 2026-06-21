@@ -12,7 +12,32 @@
     [(ngModel)]="periodPresetValue"
     (ngModelChange)="onPeriodChange($event)"
     aria-label="Filter by time period" />
+  @if (periodPreset() === 'custom') {
+    <sp-admin-input
+      filters
+      type="date"
+      size="sm"
+      placeholder="From"
+      [(ngModel)]="customFromValue"
+      (ngModelChange)="customFrom.set($event)"
+      aria-label="Custom range from date" />
+    <sp-admin-input
+      filters
+      type="date"
+      size="sm"
+      placeholder="To"
+      [(ngModel)]="customToValue"
+      (ngModelChange)="customTo.set($event)"
+      aria-label="Custom range to date" />
+    <sp-admin-button size="sm" variant="primary" (click)="applyCustomRange()">Apply</sp-admin-button>
+    @if (customFrom() || customTo()) {
+      <sp-admin-button size="sm" variant="ghost" (click)="clearCustomRange()">Clear dates</sp-admin-button>
+    }
+  }
 </sp-admin-filter-bar>
+@if (customRangeError()) {
+  <sp-admin-alert variant="error">{{ customRangeError() }}</sp-admin-alert>
+}
 
 @if (loadingSummary()) {
   <sp-admin-loading-state message="Loading usage summary" />

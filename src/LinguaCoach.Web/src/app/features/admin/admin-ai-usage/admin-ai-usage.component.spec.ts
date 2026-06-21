@@ -950,4 +950,218 @@ describe('AdminAiUsageComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('sp-admin-error-state')).toBeTruthy();
   });
+
+  // ── custom date range tests (10U-10) ──────────────────────────────────────
+
+  it('Custom range option exists in periodOptions', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const opts = fixture.componentInstance.periodOptions;
+    expect(opts.some(o => o.value === 'custom')).toBeTrue();
+  });
+
+  it('selecting Custom range does not call load immediately', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    svc.getRecent.calls.reset();
+    svc.getTrends.calls.reset();
+
+    fixture.componentInstance.onPeriodChange('custom');
+
+    expect(svc.getSummary).not.toHaveBeenCalled();
+    expect(svc.getRecent).not.toHaveBeenCalled();
+    expect(svc.getTrends).not.toHaveBeenCalled();
+  });
+
+  it('applyCustomRange with missing from shows validation error and does not call API', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('');
+    c.customTo.set('2025-03-15');
+    c.applyCustomRange();
+
+    expect(c.customRangeError()).toBeTruthy();
+    expect(svc.getSummary).not.toHaveBeenCalled();
+  });
+
+  it('applyCustomRange with missing to shows validation error and does not call API', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('');
+    c.applyCustomRange();
+
+    expect(c.customRangeError()).toBeTruthy();
+    expect(svc.getSummary).not.toHaveBeenCalled();
+  });
+
+  it('applyCustomRange with from after to shows validation error', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-20');
+    c.customTo.set('2025-03-10');
+    c.applyCustomRange();
+
+    expect(c.customRangeError()).toBeTruthy();
+    expect(svc.getSummary).not.toHaveBeenCalled();
+  });
+
+  it('applyCustomRange with valid range calls summary/recent/trends', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+    svc.getRecent.calls.reset();
+    svc.getTrends.calls.reset();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.applyCustomRange();
+
+    expect(c.customRangeError()).toBe('');
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+    expect(svc.getRecent).toHaveBeenCalledTimes(1);
+    expect(svc.getTrends).toHaveBeenCalledTimes(1);
+  });
+
+  it('applyCustomRange resets recent page to 1', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    c.recentPage.set(3);
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.applyCustomRange();
+
+    expect(c.recentPage()).toBe(1);
+  });
+
+  it('applyCustomRange passes from/to in the date range argument', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.applyCustomRange();
+
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string; to?: string } | undefined;
+    expect(range?.from).toContain('2025-03-10');
+    expect(range?.to).toContain('2025-03-16'); // exclusive upper bound: day+1
+  });
+
+  it('buildRange for custom returns undefined when from or to missing', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.periodPreset.set('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('');
+
+    expect(c.buildRange('custom')).toBeUndefined();
+  });
+
+  it('exportCsv uses custom date range when custom preset active', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.applyCustomRange();
+    svc.exportUsageCsv.calls.reset();
+
+    c.exportCsv();
+
+    const range = svc.exportUsageCsv.calls.mostRecent().args[0] as { from?: string; to?: string } | undefined;
+    expect(range?.from).toContain('2025-03-10');
+  });
+
+  it('switching from custom to preset hides date error and reloads', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-20');
+    c.customTo.set('2025-03-10');
+    c.applyCustomRange();
+    expect(c.customRangeError()).toBeTruthy();
+
+    svc.getSummary.calls.reset();
+    c.onPeriodChange('7d');
+
+    expect(c.customRangeError()).toBe('');
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearCustomRange clears from/to and error', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.customRangeError.set('some error');
+
+    c.clearCustomRange();
+
+    expect(c.customFrom()).toBe('');
+    expect(c.customTo()).toBe('');
+    expect(c.customRangeError()).toBe('');
+  });
+
+  it('existing preset period still calls load correctly after custom was used', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.applyCustomRange();
+
+    svc.getSummary.calls.reset();
+    c.onPeriodChange('30d');
+
+    const range = svc.getSummary.calls.mostRecent().args[0] as { from?: string } | undefined;
+    expect(range?.from).toBeDefined();
+    expect(c.customRangeError()).toBe('');
+  });
+
+  it('column filters still apply alongside custom date range', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onPeriodChange('custom');
+    c.customFrom.set('2025-03-10');
+    c.customTo.set('2025-03-15');
+    c.recentProviderFilter.set('openai');
+    c.applyCustomRange();
+
+    const filters = svc.getSummary.calls.mostRecent().args[1] as { provider?: string } | undefined;
+    expect(filters?.provider).toBe('openai');
+  });
 });

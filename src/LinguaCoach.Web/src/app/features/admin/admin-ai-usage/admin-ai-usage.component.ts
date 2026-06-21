@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 
-export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month';
+export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month' | 'custom';
 import { FormsModule } from '@angular/forms';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter, AiUsageTrendBucket } from '../../../core/services/ai-usage.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
@@ -16,6 +16,7 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
+  SpAdminInputComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -41,6 +42,7 @@ import {
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
+    SpAdminInputComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
@@ -87,12 +89,20 @@ export class AdminAiUsageComponent implements OnInit {
   periodPresetValue: PeriodPreset = 'all';
 
   readonly periodOptions = [
-    { value: 'all',   label: 'All time' },
-    { value: 'today', label: 'Today' },
-    { value: '7d',    label: 'Last 7 days' },
-    { value: '30d',   label: 'Last 30 days' },
-    { value: 'month', label: 'This month' },
+    { value: 'all',    label: 'All time' },
+    { value: 'today',  label: 'Today' },
+    { value: '7d',     label: 'Last 7 days' },
+    { value: '30d',    label: 'Last 30 days' },
+    { value: 'month',  label: 'This month' },
+    { value: 'custom', label: 'Custom range' },
   ];
+
+  // Custom date range (yyyy-MM-dd strings from <input type="date">)
+  customFrom = signal('');
+  customTo = signal('');
+  customFromValue = '';
+  customToValue = '';
+  customRangeError = signal('');
 
   // Server-side recent-call filters
   recentProviderFilter = signal('');
@@ -254,7 +264,34 @@ export class AdminAiUsageComponent implements OnInit {
   onPeriodChange(value: PeriodPreset): void {
     this.periodPreset.set(value);
     this.recentPage.set(1);
+    if (value !== 'custom') {
+      this.customRangeError.set('');
+      this.load();
+    }
+  }
+
+  applyCustomRange(): void {
+    const from = this.customFrom();
+    const to   = this.customTo();
+    if (!from || !to) {
+      this.customRangeError.set('Both From and To dates are required.');
+      return;
+    }
+    if (from > to) {
+      this.customRangeError.set('From date must be on or before To date.');
+      return;
+    }
+    this.customRangeError.set('');
+    this.recentPage.set(1);
     this.load();
+  }
+
+  clearCustomRange(): void {
+    this.customFrom.set('');
+    this.customTo.set('');
+    this.customFromValue = '';
+    this.customToValue = '';
+    this.customRangeError.set('');
   }
 
   onRecentPageChange(page: number): void {
@@ -333,6 +370,16 @@ export class AdminAiUsageComponent implements OnInit {
       case 'month': {
         const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
         return { from: start.toISOString() };
+      }
+      case 'custom': {
+        const from = this.customFrom();
+        const to   = this.customTo();
+        if (!from || !to) return undefined;
+        // From: start of the chosen day UTC. To: start of the day after (exclusive upper bound).
+        const fromDate = new Date(from + 'T00:00:00Z');
+        const [y, m, d] = to.split('-').map(Number);
+        const toDate = new Date(Date.UTC(y, m - 1, d + 1));
+        return { from: fromDate.toISOString(), to: toDate.toISOString() };
       }
       default:
         return undefined;

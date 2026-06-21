@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10U-9)
+lastUpdated: 2026-06-21 (10U-10)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,38 @@ Last updated: 2026-06-21
 ---
 
 ## Active sprint
+
+**Phase 10U-10 — AI Usage Custom Date Range Picker** - complete (2026-06-21)
+
+Goal: add Custom range period option to AI Usage admin page so admins can inspect any chosen date window.
+
+### Delivered
+
+- `PeriodPreset` extended with `'custom'`.
+- `SpAdminInputComponent` added to component imports.
+- `customFrom`, `customTo`, `customRangeError` signals; `customFromValue`/`customToValue` two-way-bind mirrors.
+- `periodOptions` extended with `{ value: 'custom', label: 'Custom range' }`.
+- `onPeriodChange('custom')` defers reload until Apply; switching away clears error and reloads with preset.
+- `applyCustomRange()`: validates both required, from <= to; calls `load()` on valid input; resets page to 1.
+- `clearCustomRange()`: resets all custom date state.
+- `buildRange('custom')`: from = `T00:00:00Z`, to = start of day+1 (exclusive, consistent with 10U-3).
+- Template: From/To `sp-admin-input type="date"` + Apply/Clear dates buttons shown when `periodPreset() === 'custom'`; `sp-admin-alert` for validation error.
+- No backend changes. No migration. No provider routing change. No usage governance change.
+- Frontend: +13 new tests. 872/872 pass. Production build clean.
+
+### Gates
+
+- `git diff --check`: PASS
+- `dotnet build --configuration Release`: not run (no backend changes)
+- `dotnet test --configuration Release`: not run (no backend changes)
+- `npm run build -- --configuration production`: PASS
+- `npm test -- --watch=false --browsers=ChromeHeadless`: PASS (872/872)
+
+See: `docs/reviews/2026-06-21-phase-10u-10-ai-usage-custom-date-range-picker-review.md`
+
+---
+
+## Previous sprint
 
 **Phase 10U-9 — AI Usage Trend Summary** - complete (2026-06-21)
 
