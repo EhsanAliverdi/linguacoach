@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-22 (10W-FINAL)
+lastUpdated: 2026-06-23 (10W-FINAL-2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,51 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ---
 
 ## Active sprint
+
+**Phase 10W-FINAL-2 — Notification Platform Re-closure Audit** — complete (2026-06-23)
+
+Re-audit after 10W-5C-2 through 10W-5C-5 (DB config, secret encryption, key persistence, key-at-rest cert protection). One stale comment corrected in `AdminNotificationHandler.cs`. All 24 audit checks pass. 2291 .NET / 1004 Angular tests pass. Platform is production-ready for in-app and email on single-host Docker.
+
+Review: docs/reviews/2026-06-23-phase-10w-final-2-notification-platform-reclosure-audit.md
+
+---
+
+**Phase 10W-5C-5 — Data Protection Key-at-Rest Certificate Protection** — complete (2026-06-23)
+
+`DataProtectionKeyMode` enum (None/Certificate). `ProtectKeysWithCertificate` when mode=Certificate. PFX file via `X509CertificateLoader` or Windows store thumbprint. Fail-fast on misconfiguration. `.gitignore` updated for `*.pfx`/`*.p12`. 10 new unit tests. 2291 .NET / 1004 Angular pass.
+
+Review: docs/reviews/2026-06-23-phase-10w-5c-5-data-protection-key-encryption-hardening-review.md
+
+---
+
+**Phase 10W-5C-4 — Data Protection Key Persistence** — complete (2026-06-23)
+
+`NotificationKeyProtectionOptions` bound from `DataProtection` appsettings section. `PersistKeysToFileSystem` at DI registration time. Directory auto-created; degrades gracefully on error. Docker `dp_keys` named volume. `.gitignore` updated. 5 new unit tests. 2281 .NET / 1004 Angular pass.
+
+Review: docs/reviews/2026-06-23-phase-10w-5c-4-data-protection-key-persistence-review.md
+
+---
+
+**Phase 10W-5C-3 — Runtime Notification Config Resolver + Secret Encryption** — complete (2026-06-23)
+
+`ISecretProtector`/`DataProtectionSecretProtector` (ASP.NET Core Data Protection). `INotificationChannelConfigResolver`/`NotificationChannelConfigResolver` (DB wins over appsettings). `SmtpEmailSender` decoupled from `IOptions<EmailOptions>` — resolves config at send time. `TestEmailAsync` uses resolver. Base64 fallback on unprotect for backward compat. 7 new unit tests. 2276 .NET / 1004 Angular pass.
+
+Review: docs/reviews/2026-06-23-phase-10w-5c-3-runtime-config-resolver-secret-encryption-review.md
+
+---
+
+**Phase 10W-5C-2 — DB-Backed Notification Channel Configuration** — complete (2026-06-23)
+
+`NotificationChannelConfig` entity + migration `T57`. Hybrid config resolution (DB wins, appsettings fallback). `GET notifications/config` returns V2 with `source` field. `PUT /email`, `/sms`, `/in-app` endpoints. Secrets write-only (hasPassword/hasApiKey booleans only in API). Admin UI editable forms, source badge, secret replace-only UX. 25 backend integration + 9 frontend tests. 978 .NET integration / 1004 Angular pass.
+
+Review: docs/reviews/2026-06-22-phase-10w-5c-2-db-backed-notification-channel-configuration-review.md
+
+---
 
 **Phase 10W-FINAL — Notification Platform Closure Audit** — complete (2026-06-22)
 

@@ -477,8 +477,8 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
             _db.NotificationChannelConfigs.Add(config);
         }
 
-        // Encrypt secret if provided (use Base64 for now — TODO: swap for real encryption once
-        // encryption infrastructure is added. Secret is never returned to the frontend.)
+        // Protect secret with ASP.NET Core Data Protection (ISecretProtector).
+        // Secret is never returned to the frontend — hasPassword bool only in API responses.
         string? encryptedSecret = null;
         if (!string.IsNullOrWhiteSpace(command.NewSecret))
             encryptedSecret = _secretProtector.Protect(command.NewSecret);
