@@ -49,6 +49,11 @@ npm-debug.log*
 ## Data Protection keys (never commit — loss of keys = loss of encrypted DB secrets)
 app-data/data-protection-keys/
 
+## Data Protection certificates (never commit private key material)
+*.pfx
+*.p12
+app-data/certs/
+
 ## IDE
 .idea/
 *.swp

@@ -84,18 +84,24 @@ public static class DependencyInjection
 
         // Secret protection (ASP.NET Core Data Protection)
         // Keys are persisted to a configurable directory (DataProtection:KeysPath).
-        // The directory is created at startup if it does not exist.
+        // Key-at-rest encryption is optional (DataProtection:KeyProtectionMode).
         // Production: mount the keys directory as a persistent volume (see docker-compose.yml).
-        // See: docs/reviews/2026-06-23-phase-10w-5c-4-data-protection-key-persistence-review.md
+        // See: docs/reviews/2026-06-23-phase-10w-5c-5-data-protection-key-encryption-hardening-review.md
         if (configuration is not null)
             services.Configure<NotificationKeyProtectionOptions>(configuration.GetSection(NotificationKeyProtectionOptions.SectionName));
         else
             services.Configure<NotificationKeyProtectionOptions>(_ => { });
 
-        // Read keys path at registration time so PersistKeysToFileSystem can be called on the host DI builder.
+        // Read all DP config at registration time — PersistKeysToFileSystem/ProtectKeysWith* must be
+        // called on the IDataProtectionBuilder before the container is built.
         var dpKeysPath = configuration?["DataProtection:KeysPath"] ?? "./app-data/data-protection-keys";
         var dpAppName = configuration?["DataProtection:ApplicationName"];
         if (string.IsNullOrWhiteSpace(dpAppName)) dpAppName = "SpeakPath";
+
+        var dpMode = Enum.TryParse<DataProtectionKeyMode>(
+            configuration?["DataProtection:KeyProtectionMode"], ignoreCase: true, out var parsedMode)
+            ? parsedMode
+            : DataProtectionKeyMode.None;
 
         var dpDir = Path.IsPathRooted(dpKeysPath)
             ? new DirectoryInfo(dpKeysPath)
@@ -110,8 +116,46 @@ public static class DependencyInjection
         catch
         {
             // Directory creation failed — keys remain in-memory (ephemeral).
-            // A startup warning is logged by DataProtectionSecretProtector at first use.
-            // App continues rather than failing hard here.
+            // App continues rather than failing hard; issue is visible via startup logs.
+        }
+
+        if (dpMode == DataProtectionKeyMode.Certificate)
+        {
+            var certPath = configuration?["DataProtection:CertificatePath"];
+            var certPassword = configuration?["DataProtection:CertificatePassword"];
+            var certThumbprint = configuration?["DataProtection:CertificateThumbprint"];
+
+            System.Security.Cryptography.X509Certificates.X509Certificate2? cert = null;
+
+            if (!string.IsNullOrWhiteSpace(certPath))
+            {
+                if (!File.Exists(certPath))
+                    throw new InvalidOperationException(
+                        $"DataProtection:KeyProtectionMode is Certificate but the certificate file was not found: {certPath}");
+                cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader
+                    .LoadPkcs12FromFile(certPath, certPassword,
+                        System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.MachineKeySet);
+            }
+            else if (!string.IsNullOrWhiteSpace(certThumbprint) && OperatingSystem.IsWindows())
+            {
+                using var store = new System.Security.Cryptography.X509Certificates.X509Store(
+                    System.Security.Cryptography.X509Certificates.StoreLocation.LocalMachine);
+                store.Open(System.Security.Cryptography.X509Certificates.OpenFlags.ReadOnly);
+                var found = store.Certificates.Find(
+                    System.Security.Cryptography.X509Certificates.X509FindType.FindByThumbprint,
+                    certThumbprint, validOnly: false);
+                if (found.Count == 0)
+                    throw new InvalidOperationException(
+                        $"DataProtection:KeyProtectionMode is Certificate but no certificate with thumbprint '{certThumbprint}' was found in LocalMachine store.");
+                cert = found[0];
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "DataProtection:KeyProtectionMode is Certificate but neither CertificatePath nor CertificateThumbprint (Windows only) is configured.");
+            }
+
+            dpRegistration.ProtectKeysWithCertificate(cert);
         }
 
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();

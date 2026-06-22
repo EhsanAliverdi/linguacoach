@@ -69,11 +69,18 @@ services:
       FileStorage__Minio__SignedUrlExpiryMinutes: "${MINIO_SIGNED_URL_EXPIRY_MINUTES:-10}"
       # Background jobs (Quartz)
       BackgroundJobs__Enabled: "${BACKGROUND_JOBS_ENABLED:-true}"
-      # Data Protection key persistence.
+      # Data Protection key persistence + optional at-rest encryption.
       # Keys encrypt notification channel secrets stored in the DB.
       # MUST map to a persistent volume — lost keys = unreadable DB secrets.
+      # KeyProtectionMode: None (dev default) | Certificate (production recommended).
+      # For Certificate mode, also set CertificatePath + CertificatePassword
+      # (or CertificateThumbprint on Windows) and mount the cert file into the container.
       DataProtection__KeysPath: "/app/data-protection-keys"
       DataProtection__ApplicationName: "SpeakPath"
+      DataProtection__KeyProtectionMode: "${DP_KEY_PROTECTION_MODE:-None}"
+      DataProtection__CertificatePath: "${DP_CERTIFICATE_PATH:-}"
+      DataProtection__CertificatePassword: "${DP_CERTIFICATE_PASSWORD:-}"
+      DataProtection__CertificateThumbprint: "${DP_CERTIFICATE_THUMBPRINT:-}"
     volumes:
       - audio_data:/app/audio-data
       - dp_keys:/app/data-protection-keys

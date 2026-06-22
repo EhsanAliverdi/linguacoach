@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10W-5C-4)
+lastUpdated: 2026-06-23 (10W-5C-5)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-23 (10W-5C-4)
+Last updated: 2026-06-23 (10W-5C-5)
 
 ---
 
@@ -19,7 +19,7 @@ All 14 notification sub-phases are complete and verified. 2246 .NET / 1011 Angul
 ### Channels delivered
 
 - **In-App:** live bell dropdown, unread count, mark read/all, archive. User-isolated. Committed component.
-- **Email:** SMTP provider, SmtpEmailSender (resolves config at send time via `INotificationChannelConfigResolver`), NotificationDispatchJob (Quartz, every 2 min, batchSize=50). SMTP credentials never returned to frontend. Secrets encrypted at rest with ASP.NET Core Data Protection; keys persisted to `dp_keys` Docker volume.
+- **Email:** SMTP provider, SmtpEmailSender (resolves config at send time via `INotificationChannelConfigResolver`), NotificationDispatchJob (Quartz, every 2 min, batchSize=50). SMTP credentials never returned to frontend. Secrets encrypted at rest with ASP.NET Core Data Protection; keys persisted to `dp_keys` Docker volume; keys optionally encrypted via X.509 certificate (`KeyProtectionMode=Certificate`).
 - **SMS:** foundation only — `ISmsSender` / `DisabledSmsSender` / `SmsOptions`. No real provider. Phone number collection deferred.
 
 ### Admin notification center
@@ -51,7 +51,7 @@ All 14 notification sub-phases are complete and verified. 2246 .NET / 1011 Angul
 - `TODO-10W-5D-UNIQUE-CONSTRAINT`: DB unique index on `(template_key, channel)` for active templates.
 - `TODO-10W-PHONE`: phone number collection and verification.
 - `TODO-10W-SMS-PROVIDER`: real Twilio/other SMS sender (requires TODO-10W-PHONE).
-- `TODO-10W-DP-KEY-ENCRYPT`: encrypt the Data Protection key ring XML at rest (DPAPI / Azure KV) for hardened deployments.
+- `TODO-10W-DP-CLOUD-KMS`: multi-instance production deployments need `PersistKeysToDbContext` or a cloud KMS (Azure KV / AWS Secrets Manager). Deferred until horizontal scaling is needed.
 - `TODO-10W-5D-UNIQUE-CONSTRAINT`: DB unique index on `(template_key, channel)` for active templates.
 - `TODO-10W-PHONE`: phone number collection and verification.
 - `TODO-10W-SMS-PROVIDER`: real Twilio/other SMS sender (requires TODO-10W-PHONE).
@@ -59,6 +59,7 @@ All 14 notification sub-phases are complete and verified. 2246 .NET / 1011 Angul
 Closure audit: `docs/reviews/2026-06-22-phase-10w-final-notification-platform-closure-audit.md`
 DB config + secret encryption review: `docs/reviews/2026-06-23-phase-10w-5c-3-runtime-config-resolver-secret-encryption-review.md`
 Key persistence review: `docs/reviews/2026-06-23-phase-10w-5c-4-data-protection-key-persistence-review.md`
+Key encryption hardening review: `docs/reviews/2026-06-23-phase-10w-5c-5-data-protection-key-encryption-hardening-review.md`
 
 ---
 
