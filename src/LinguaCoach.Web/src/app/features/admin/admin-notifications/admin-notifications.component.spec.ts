@@ -5,7 +5,8 @@ import { of, throwError } from 'rxjs';
 import {
   AdminNotificationItem, AdminOutboxItem, PagedResponse,
   AdminSendNotificationResult,
-  AdminNotificationConfigStatus, AdminTestEmailResult,
+  AdminNotificationConfigStatusV2, AdminTestEmailResult,
+  AdminUpdateConfigResult,
   AdminTemplateItem, AdminTemplatePreviewResult,
 } from '../../../core/models/admin.models';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -51,6 +52,7 @@ describe('AdminNotificationsComponent', () => {
       'retryOutboxItem', 'cancelOutboxItem',
       'sendAdminNotification', 'listStudents',
       'getNotificationConfig', 'testEmail',
+      'updateEmailConfig', 'updateSmsConfig', 'updateInAppConfig',
       'listNotificationTemplates', 'createNotificationTemplate',
       'updateNotificationTemplate', 'deactivateNotificationTemplate',
       'previewNotificationTemplate',
@@ -308,7 +310,7 @@ describe('AdminNotificationsComponent', () => {
 
   // ── Config tab ─────────────────────────────────────────────────────────────
 
-  const makeConfig = (overrides: Partial<AdminNotificationConfigStatus> = {}): AdminNotificationConfigStatus => ({
+  const makeConfig = (overrides: Partial<AdminNotificationConfigStatusV2> = {}): AdminNotificationConfigStatusV2 => ({
     inApp: { channel: 'InApp', enabled: true, statusLabel: 'Enabled' },
     email: {
       enabled: false, configured: false, statusLabel: 'Disabled',
@@ -317,7 +319,12 @@ describe('AdminNotificationsComponent', () => {
     },
     sms: { enabled: false, configured: false, statusLabel: 'Deferred', provider: null, senderId: null, hasApiKey: false },
     dispatchJob: { enabled: true, intervalDescription: 'Every 2 minutes', batchSize: 50 },
+    source: 'AppSettings',
     ...overrides,
+  });
+
+  const makeUpdateResult = (overrides: Partial<AdminUpdateConfigResult> = {}): AdminUpdateConfigResult => ({
+    succeeded: true, message: 'Saved.', source: 'Database', ...overrides,
   });
 
   it('loadConfig calls getNotificationConfig and populates config signal', () => {
@@ -384,6 +391,70 @@ describe('AdminNotificationsComponent', () => {
 
   it('config signal starts null', () => {
     expect(component.config()).toBeNull();
+  });
+
+  it('loadConfig syncs emailForm from loaded config', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig({
+      email: { enabled: true, configured: true, statusLabel: 'Configured',
+               host: 'smtp.test.com', port: 465, fromAddress: 'a@b.com',
+               fromDisplayName: 'Test', useSsl: true, hasUsername: true, hasPassword: true },
+    })));
+    component.loadConfig();
+    expect(component.emailForm.isEnabled).toBeTrue();
+    expect(component.emailForm.host).toBe('smtp.test.com');
+    expect(component.emailForm.port).toBe(465);
+    expect(component.emailForm.fromAddress).toBe('a@b.com');
+  });
+
+  it('saveEmailConfig calls updateEmailConfig without exposing newSecret in signal', () => {
+    apiSpy.updateEmailConfig.and.returnValue(of(makeUpdateResult()));
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.emailForm.isEnabled = false;
+    component.emailForm.newSecret = 'my-secret';
+    component.saveEmailConfig();
+    expect(apiSpy.updateEmailConfig).toHaveBeenCalledWith(jasmine.objectContaining({ isEnabled: false }));
+    // After save, newSecret is cleared from form
+    expect(component.emailForm.newSecret).toBe('');
+    expect(component.emailSaveSuccess()).toBe('Saved.');
+  });
+
+  it('saveEmailConfig shows error on failure', () => {
+    apiSpy.updateEmailConfig.and.returnValue(throwError(() => ({ error: { error: 'Host required.' } })));
+    component.emailForm.isEnabled = true;
+    component.saveEmailConfig();
+    expect(component.emailSaveError()).toBe('Host required.');
+  });
+
+  it('saveSmsConfig calls updateSmsConfig and clears newSecret', () => {
+    apiSpy.updateSmsConfig.and.returnValue(of(makeUpdateResult({ message: 'SMS saved.' })));
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.smsForm.isEnabled = false;
+    component.smsForm.newSecret = 'api-key';
+    component.saveSmsConfig();
+    expect(apiSpy.updateSmsConfig).toHaveBeenCalled();
+    expect(component.smsForm.newSecret).toBe('');
+    expect(component.smsSaveSuccess()).toBe('SMS saved.');
+  });
+
+  it('saveInAppConfig calls updateInAppConfig', () => {
+    apiSpy.updateInAppConfig.and.returnValue(of(makeUpdateResult({ message: 'InApp saved.' })));
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.inAppForm.isEnabled = true;
+    component.saveInAppConfig();
+    expect(apiSpy.updateInAppConfig).toHaveBeenCalledWith({ isEnabled: true });
+    expect(component.inAppSaveSuccess()).toBe('InApp saved.');
+  });
+
+  it('sourceTone returns success for Database, info for Mixed, neutral for AppSettings', () => {
+    expect(component.sourceTone('Database')).toBe('success');
+    expect(component.sourceTone('Mixed')).toBe('info');
+    expect(component.sourceTone('AppSettings')).toBe('neutral');
+  });
+
+  it('config response with source field is accepted', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig({ source: 'Database' })));
+    component.loadConfig();
+    expect(component.config()!.source).toBe('Database');
   });
 
   // ── Templates tab ─────────────────────────────────────────────────────────

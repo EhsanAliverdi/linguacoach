@@ -16,7 +16,9 @@ import {
   AdminNotificationItem, AdminOutboxItem,
   AdminNotificationListQuery, AdminOutboxListQuery,
   AdminSendNotificationRequest, AdminSendNotificationResult,
-  AdminNotificationConfigStatus, AdminTestEmailResult,
+  AdminNotificationConfigStatus, AdminNotificationConfigStatusV2, AdminTestEmailResult,
+  AdminUpdateEmailConfigRequest, AdminUpdateSmsConfigRequest, AdminUpdateInAppConfigRequest,
+  AdminUpdateConfigResult,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -246,8 +248,20 @@ export class AdminApiService {
       `${this.api}/notifications/templates/${id}/preview`, { variables });
   }
 
-  getNotificationConfig(): Observable<AdminNotificationConfigStatus> {
-    return this.http.get<AdminNotificationConfigStatus>(`${this.api}/notifications/config`);
+  getNotificationConfig(): Observable<AdminNotificationConfigStatusV2> {
+    return this.http.get<AdminNotificationConfigStatusV2>(`${this.api}/notifications/config`);
+  }
+
+  updateEmailConfig(req: AdminUpdateEmailConfigRequest): Observable<AdminUpdateConfigResult> {
+    return this.http.put<AdminUpdateConfigResult>(`${this.api}/notifications/config/email`, req);
+  }
+
+  updateSmsConfig(req: AdminUpdateSmsConfigRequest): Observable<AdminUpdateConfigResult> {
+    return this.http.put<AdminUpdateConfigResult>(`${this.api}/notifications/config/sms`, req);
+  }
+
+  updateInAppConfig(req: AdminUpdateInAppConfigRequest): Observable<AdminUpdateConfigResult> {
+    return this.http.put<AdminUpdateConfigResult>(`${this.api}/notifications/config/in-app`, req);
   }
 
   testEmail(toAddress: string): Observable<AdminTestEmailResult> {

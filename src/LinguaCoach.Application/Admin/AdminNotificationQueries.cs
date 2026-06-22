@@ -118,6 +118,54 @@ public sealed record AdminTestEmailResult(
     bool WasSkipped,
     string? Message);
 
+// ── Config source ─────────────────────────────────────────────────────────────
+
+public enum NotificationConfigSource
+{
+    AppSettings,
+    Database,
+    Mixed,
+}
+
+// ── Config status (extended with source) ─────────────────────────────────────
+
+public sealed record AdminNotificationConfigStatusV2(
+    AdminChannelStatus InApp,
+    AdminEmailConfigStatus Email,
+    AdminSmsConfigStatus Sms,
+    AdminDispatchJobStatus DispatchJob,
+    string Source);   // "AppSettings" | "Database" | "Mixed"
+
+// ── Update commands ───────────────────────────────────────────────────────────
+
+public sealed record AdminUpdateEmailConfigCommand(
+    bool IsEnabled,
+    string? Host,
+    int? Port,
+    bool? UseSsl,
+    string? FromAddress,
+    string? FromDisplayName,
+    string? Username,
+    /// <summary>New plaintext secret. Null = leave unchanged.</summary>
+    string? NewSecret,
+    /// <summary>Explicitly clear the stored secret.</summary>
+    bool ClearSecret);
+
+public sealed record AdminUpdateSmsConfigCommand(
+    bool IsEnabled,
+    string? Provider,
+    string? SenderId,
+    string? NewSecret,
+    bool ClearSecret);
+
+public sealed record AdminUpdateInAppConfigCommand(
+    bool IsEnabled);
+
+public sealed record AdminUpdateConfigResult(
+    bool Succeeded,
+    string Message,
+    string Source);
+
 // ── Interface ─────────────────────────────────────────────────────────────────
 
 public interface IAdminNotificationHandler
@@ -136,6 +184,17 @@ public interface IAdminNotificationHandler
         AdminSendNotificationCommand command, Guid adminUserId, CancellationToken ct = default);
 
     Task<AdminNotificationConfigStatus> GetConfigStatusAsync(CancellationToken ct = default);
+
+    Task<AdminNotificationConfigStatusV2> GetConfigStatusV2Async(CancellationToken ct = default);
+
+    Task<AdminUpdateConfigResult> UpdateEmailConfigAsync(
+        AdminUpdateEmailConfigCommand command, Guid adminUserId, CancellationToken ct = default);
+
+    Task<AdminUpdateConfigResult> UpdateSmsConfigAsync(
+        AdminUpdateSmsConfigCommand command, Guid adminUserId, CancellationToken ct = default);
+
+    Task<AdminUpdateConfigResult> UpdateInAppConfigAsync(
+        AdminUpdateInAppConfigCommand command, Guid adminUserId, CancellationToken ct = default);
 
     Task<AdminTestEmailResult> TestEmailAsync(string toAddress, Guid adminUserId, CancellationToken ct = default);
 }

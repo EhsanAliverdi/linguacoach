@@ -6,7 +6,9 @@ import {
   AdminNotificationItem, AdminOutboxItem,
   AdminNotificationListQuery, AdminOutboxListQuery,
   AdminSendNotificationResult,
-  AdminNotificationConfigStatus, AdminTestEmailResult,
+  AdminNotificationConfigStatusV2, AdminTestEmailResult,
+  AdminUpdateEmailConfigRequest, AdminUpdateSmsConfigRequest, AdminUpdateInAppConfigRequest,
+  AdminUpdateConfigResult,
   AdminTemplateItem, AdminCreateTemplateRequest, AdminUpdateTemplateRequest,
   AdminTemplatePreviewResult,
 } from '../../../core/models/admin.models';
@@ -89,11 +91,46 @@ export class AdminNotificationsComponent implements OnInit {
   // ── Config tab ─────────────────────────────────────────────────────────────
   configLoading = signal(false);
   configError = signal('');
-  config = signal<AdminNotificationConfigStatus | null>(null);
+  config = signal<AdminNotificationConfigStatusV2 | null>(null);
 
   testEmailAddress = '';
   testEmailLoading = signal(false);
   testEmailResult = signal<AdminTestEmailResult | null>(null);
+
+  // Email edit form
+  emailEditOpen = signal(false);
+  emailSaving = signal(false);
+  emailSaveError = signal('');
+  emailSaveSuccess = signal('');
+  emailForm = {
+    isEnabled: false,
+    host: '',
+    port: 587,
+    useSsl: true,
+    fromAddress: '',
+    fromDisplayName: 'SpeakPath',
+    username: '',
+    newSecret: '',
+    clearSecret: false,
+  };
+
+  // SMS edit form
+  smsSaving = signal(false);
+  smsSaveError = signal('');
+  smsSaveSuccess = signal('');
+  smsForm = {
+    isEnabled: false,
+    provider: '',
+    senderId: '',
+    newSecret: '',
+    clearSecret: false,
+  };
+
+  // InApp edit form
+  inAppSaving = signal(false);
+  inAppSaveError = signal('');
+  inAppSaveSuccess = signal('');
+  inAppForm = { isEnabled: true };
 
   // ── Send notification slide-over ───────────────────────────────────────────
   sendOpen = signal(false);
@@ -316,13 +353,111 @@ export class AdminNotificationsComponent implements OnInit {
     this.configLoading.set(true);
     this.configError.set('');
     this.adminApi.getNotificationConfig().subscribe({
-      next: (cfg) => { this.config.set(cfg); this.configLoading.set(false); },
+      next: (cfg) => {
+        this.config.set(cfg);
+        this.configLoading.set(false);
+        // Sync form values from loaded config
+        this.emailForm.isEnabled = cfg.email.enabled;
+        this.emailForm.host = cfg.email.host ?? '';
+        this.emailForm.port = cfg.email.port;
+        this.emailForm.useSsl = cfg.email.useSsl;
+        this.emailForm.fromAddress = cfg.email.fromAddress ?? '';
+        this.emailForm.fromDisplayName = cfg.email.fromDisplayName ?? 'SpeakPath';
+        this.emailForm.username = '';
+        this.emailForm.newSecret = '';
+        this.emailForm.clearSecret = false;
+        this.smsForm.isEnabled = cfg.sms.enabled;
+        this.smsForm.provider = cfg.sms.provider ?? '';
+        this.smsForm.senderId = cfg.sms.senderId ?? '';
+        this.smsForm.newSecret = '';
+        this.smsForm.clearSecret = false;
+        this.inAppForm.isEnabled = cfg.inApp.enabled;
+      },
       error: () => { this.configError.set('Could not load configuration.'); this.configLoading.set(false); },
     });
   }
 
   onConfigTabActivated(): void {
     if (!this.config()) this.loadConfig();
+  }
+
+  openEmailEdit(): void {
+    this.emailEditOpen.set(true);
+    this.emailSaveError.set('');
+    this.emailSaveSuccess.set('');
+  }
+
+  saveEmailConfig(): void {
+    this.emailSaving.set(true);
+    this.emailSaveError.set('');
+    this.emailSaveSuccess.set('');
+    const req: AdminUpdateEmailConfigRequest = {
+      isEnabled: this.emailForm.isEnabled,
+      host: this.emailForm.host || null,
+      port: this.emailForm.port || null,
+      useSsl: this.emailForm.useSsl,
+      fromAddress: this.emailForm.fromAddress || null,
+      fromDisplayName: this.emailForm.fromDisplayName || null,
+      username: this.emailForm.username || null,
+      newSecret: this.emailForm.newSecret || null,
+      clearSecret: this.emailForm.clearSecret,
+    };
+    this.adminApi.updateEmailConfig(req).subscribe({
+      next: (result: AdminUpdateConfigResult) => {
+        this.emailSaving.set(false);
+        this.emailSaveSuccess.set(result.message);
+        this.emailForm.newSecret = '';
+        this.emailForm.clearSecret = false;
+        this.loadConfig();
+      },
+      error: (err) => {
+        this.emailSaving.set(false);
+        this.emailSaveError.set(err?.error?.error ?? 'Could not save email configuration.');
+      },
+    });
+  }
+
+  saveSmsConfig(): void {
+    this.smsSaving.set(true);
+    this.smsSaveError.set('');
+    this.smsSaveSuccess.set('');
+    const req: AdminUpdateSmsConfigRequest = {
+      isEnabled: this.smsForm.isEnabled,
+      provider: this.smsForm.provider || null,
+      senderId: this.smsForm.senderId || null,
+      newSecret: this.smsForm.newSecret || null,
+      clearSecret: this.smsForm.clearSecret,
+    };
+    this.adminApi.updateSmsConfig(req).subscribe({
+      next: (result: AdminUpdateConfigResult) => {
+        this.smsSaving.set(false);
+        this.smsSaveSuccess.set(result.message);
+        this.smsForm.newSecret = '';
+        this.smsForm.clearSecret = false;
+        this.loadConfig();
+      },
+      error: (err) => {
+        this.smsSaving.set(false);
+        this.smsSaveError.set(err?.error?.error ?? 'Could not save SMS configuration.');
+      },
+    });
+  }
+
+  saveInAppConfig(): void {
+    this.inAppSaving.set(true);
+    this.inAppSaveError.set('');
+    this.inAppSaveSuccess.set('');
+    this.adminApi.updateInAppConfig({ isEnabled: this.inAppForm.isEnabled }).subscribe({
+      next: (result: AdminUpdateConfigResult) => {
+        this.inAppSaving.set(false);
+        this.inAppSaveSuccess.set(result.message);
+        this.loadConfig();
+      },
+      error: () => {
+        this.inAppSaving.set(false);
+        this.inAppSaveError.set('Could not save InApp configuration.');
+      },
+    });
   }
 
   sendTestEmail(): void {
@@ -346,6 +481,14 @@ export class AdminNotificationsComponent implements OnInit {
       case 'disabled':
       case 'deferred': return 'neutral';
       default: return 'warning';
+    }
+  }
+
+  sourceTone(source: string): 'success' | 'info' | 'neutral' {
+    switch (source) {
+      case 'Database': return 'success';
+      case 'Mixed': return 'info';
+      default: return 'neutral';
     }
   }
 

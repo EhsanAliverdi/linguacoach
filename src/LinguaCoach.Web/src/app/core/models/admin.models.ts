@@ -441,6 +441,40 @@ export interface AdminNotificationConfigStatus {
   dispatchJob: AdminDispatchJobStatus;
 }
 
+export interface AdminNotificationConfigStatusV2 extends AdminNotificationConfigStatus {
+  source: 'AppSettings' | 'Database' | 'Mixed';
+}
+
+export interface AdminUpdateEmailConfigRequest {
+  isEnabled: boolean;
+  host?: string | null;
+  port?: number | null;
+  useSsl?: boolean | null;
+  fromAddress?: string | null;
+  fromDisplayName?: string | null;
+  username?: string | null;
+  newSecret?: string | null;
+  clearSecret?: boolean;
+}
+
+export interface AdminUpdateSmsConfigRequest {
+  isEnabled: boolean;
+  provider?: string | null;
+  senderId?: string | null;
+  newSecret?: string | null;
+  clearSecret?: boolean;
+}
+
+export interface AdminUpdateInAppConfigRequest {
+  isEnabled: boolean;
+}
+
+export interface AdminUpdateConfigResult {
+  succeeded: boolean;
+  message: string;
+  source: string;
+}
+
 export interface AdminTestEmailResult {
   succeeded: boolean;
   wasSkipped: boolean;

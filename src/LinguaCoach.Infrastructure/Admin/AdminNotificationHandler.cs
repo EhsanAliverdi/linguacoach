@@ -1,5 +1,6 @@
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Notifications;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Notifications;
 using LinguaCoach.Persistence;
@@ -380,6 +381,180 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
                 ? $"Test email sent successfully to {toAddress}."
                 : result.Error ?? (result.WasSkipped ? "Email sender is disabled." : "Send failed."));
     }
+
+    // ── GetConfigStatusV2 ─────────────────────────────────────────────────────
+
+    public async Task<AdminNotificationConfigStatusV2> GetConfigStatusV2Async(CancellationToken ct = default)
+    {
+        var dbConfigs = await _db.NotificationChannelConfigs.AsNoTracking().ToListAsync(ct);
+        var dbEmail = dbConfigs.FirstOrDefault(c => c.Channel == "Email");
+        var dbSms   = dbConfigs.FirstOrDefault(c => c.Channel == "Sms");
+        var dbInApp = dbConfigs.FirstOrDefault(c => c.Channel == "InApp");
+
+        bool hasDbEmail  = dbEmail is not null;
+        bool hasDbSms    = dbSms   is not null;
+        bool hasDbInApp  = dbInApp is not null;
+
+        // Email
+        bool emailEnabled  = hasDbEmail ? dbEmail!.IsEnabled  : _emailOptions.Enabled;
+        string? emailHost  = hasDbEmail ? dbEmail!.Host        : (_emailOptions.Host.Length > 0 ? _emailOptions.Host : null);
+        string? emailFrom  = hasDbEmail ? dbEmail!.FromAddress : (_emailOptions.FromAddress.Length > 0 ? _emailOptions.FromAddress : null);
+        string? emailDisp  = hasDbEmail ? dbEmail!.FromDisplayName : _emailOptions.FromDisplayName;
+        int emailPort      = hasDbEmail ? (dbEmail!.Port ?? _emailOptions.Port) : _emailOptions.Port;
+        bool emailSsl      = hasDbEmail ? (dbEmail!.UseSsl ?? _emailOptions.UseSsl) : _emailOptions.UseSsl;
+        bool emailHasUser  = hasDbEmail
+            ? !string.IsNullOrWhiteSpace(dbEmail!.Username)
+            : !string.IsNullOrWhiteSpace(_emailOptions.Username);
+        bool emailHasPass  = hasDbEmail
+            ? dbEmail!.HasSecret
+            : !string.IsNullOrWhiteSpace(_emailOptions.Password);
+        bool emailConfigured = emailEnabled && !string.IsNullOrWhiteSpace(emailHost) && !string.IsNullOrWhiteSpace(emailFrom);
+        string emailLabel  = !emailEnabled ? "Disabled" : emailConfigured ? "Configured" : "Misconfigured";
+
+        // SMS
+        bool smsEnabled    = hasDbSms ? dbSms!.IsEnabled : _smsOptions.Enabled;
+        string? smsProv    = hasDbSms ? dbSms!.Provider   : (_smsOptions.Provider.Length > 0 ? _smsOptions.Provider : null);
+        string? smsSender  = hasDbSms ? dbSms!.SenderId   : (_smsOptions.SenderId.Length > 0 ? _smsOptions.SenderId : null);
+        bool smsHasKey     = hasDbSms ? dbSms!.HasSecret  : _smsOptions.HasApiKey;
+        bool smsConfigured = smsEnabled && !string.IsNullOrWhiteSpace(smsProv) && smsHasKey;
+        string smsLabel    = !smsEnabled ? "Disabled" : smsConfigured ? "Configured" : "Misconfigured";
+
+        // InApp
+        bool inAppEnabled = hasDbInApp ? dbInApp!.IsEnabled : true;
+
+        // Source
+        string source = (hasDbEmail || hasDbSms || hasDbInApp)
+            ? ((!hasDbEmail && _emailOptions.Enabled) || (!hasDbSms && _smsOptions.Enabled)
+                ? NotificationConfigSource.Mixed.ToString()
+                : NotificationConfigSource.Database.ToString())
+            : NotificationConfigSource.AppSettings.ToString();
+
+        return new AdminNotificationConfigStatusV2(
+            InApp: new AdminChannelStatus("InApp", inAppEnabled, inAppEnabled ? "Enabled" : "Disabled"),
+            Email: new AdminEmailConfigStatus(
+                emailEnabled, emailConfigured, emailLabel,
+                emailHost, emailPort, emailFrom, emailDisp,
+                emailSsl, emailHasUser, emailHasPass),
+            Sms: new AdminSmsConfigStatus(
+                smsEnabled, smsConfigured, smsLabel,
+                smsProv, smsSender, smsHasKey),
+            DispatchJob: new AdminDispatchJobStatus(Enabled: true, IntervalDescription: "Every 2 minutes", BatchSize: 50),
+            Source: source);
+    }
+
+    // ── UpdateEmailConfig ─────────────────────────────────────────────────────
+
+    public async Task<AdminUpdateConfigResult> UpdateEmailConfigAsync(
+        AdminUpdateEmailConfigCommand command, Guid adminUserId, CancellationToken ct = default)
+    {
+        // Validate
+        if (command.IsEnabled)
+        {
+            if (string.IsNullOrWhiteSpace(command.Host))
+                throw new ArgumentException("Host is required when email is enabled.");
+            if (command.Port is null or <= 0 or > 65535)
+                throw new ArgumentException("Port must be between 1 and 65535.");
+            if (string.IsNullOrWhiteSpace(command.FromAddress) || !command.FromAddress.Contains('@'))
+                throw new ArgumentException("A valid From address is required when email is enabled.");
+        }
+
+        var config = await _db.NotificationChannelConfigs
+            .FirstOrDefaultAsync(c => c.Channel == "Email", ct);
+
+        if (config is null)
+        {
+            config = NotificationChannelConfig.Create("Email");
+            _db.NotificationChannelConfigs.Add(config);
+        }
+
+        // Encrypt secret if provided (use Base64 for now — TODO: swap for real encryption once
+        // encryption infrastructure is added. Secret is never returned to the frontend.)
+        string? encryptedSecret = null;
+        if (!string.IsNullOrWhiteSpace(command.NewSecret))
+            encryptedSecret = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(command.NewSecret));
+
+        config.UpdateEmail(
+            command.IsEnabled,
+            command.Host?.Trim(),
+            command.Port,
+            command.UseSsl,
+            command.FromAddress?.Trim(),
+            command.FromDisplayName?.Trim(),
+            command.Username?.Trim(),
+            encryptedSecret,
+            command.ClearSecret,
+            adminUserId);
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Admin {AdminId} updated Email channel config: enabled={E} host={H}.",
+            adminUserId, command.IsEnabled, command.Host);
+
+        return new AdminUpdateConfigResult(true, "Email configuration saved.", NotificationConfigSource.Database.ToString());
+    }
+
+    // ── UpdateSmsConfig ───────────────────────────────────────────────────────
+
+    public async Task<AdminUpdateConfigResult> UpdateSmsConfigAsync(
+        AdminUpdateSmsConfigCommand command, Guid adminUserId, CancellationToken ct = default)
+    {
+        var config = await _db.NotificationChannelConfigs
+            .FirstOrDefaultAsync(c => c.Channel == "Sms", ct);
+
+        if (config is null)
+        {
+            config = NotificationChannelConfig.Create("Sms");
+            _db.NotificationChannelConfigs.Add(config);
+        }
+
+        string? encryptedSecret = null;
+        if (!string.IsNullOrWhiteSpace(command.NewSecret))
+            encryptedSecret = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(command.NewSecret));
+
+        config.UpdateSms(
+            command.IsEnabled,
+            command.Provider?.Trim(),
+            command.SenderId?.Trim(),
+            encryptedSecret,
+            command.ClearSecret,
+            adminUserId);
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Admin {AdminId} updated SMS channel config: enabled={E} provider={P}.",
+            adminUserId, command.IsEnabled, command.Provider);
+
+        return new AdminUpdateConfigResult(true,
+            "SMS configuration saved. Real SMS provider is not yet implemented.",
+            NotificationConfigSource.Database.ToString());
+    }
+
+    // ── UpdateInAppConfig ─────────────────────────────────────────────────────
+
+    public async Task<AdminUpdateConfigResult> UpdateInAppConfigAsync(
+        AdminUpdateInAppConfigCommand command, Guid adminUserId, CancellationToken ct = default)
+    {
+        var config = await _db.NotificationChannelConfigs
+            .FirstOrDefaultAsync(c => c.Channel == "InApp", ct);
+
+        if (config is null)
+        {
+            config = NotificationChannelConfig.Create("InApp");
+            _db.NotificationChannelConfigs.Add(config);
+        }
+
+        config.UpdateInApp(command.IsEnabled, adminUserId);
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Admin {AdminId} updated InApp channel config: enabled={E}.", adminUserId, command.IsEnabled);
+
+        return new AdminUpdateConfigResult(true, "InApp configuration saved.", NotificationConfigSource.Database.ToString());
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task<Dictionary<string, string>> BuildEmailMapAsync(
         IEnumerable<string> userIds, CancellationToken ct)

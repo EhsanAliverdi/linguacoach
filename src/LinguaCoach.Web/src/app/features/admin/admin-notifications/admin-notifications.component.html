@@ -228,34 +228,33 @@
       <sp-admin-error-state [message]="configError()" (retry)="loadConfig()" />
     } @else if (config()) {
 
+      <!-- Source badge -->
+      <div class="flex items-center gap-2 mb-4">
+        <span class="text-xs text-gray-500">Config source:</span>
+        <sp-admin-badge [tone]="sourceTone(config()!.source)">{{ config()!.source }}</sp-admin-badge>
+        <button class="ml-auto text-xs text-blue-600 hover:underline" (click)="loadConfig()">Refresh</button>
+      </div>
+
       <!-- Channel status cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-        <!-- InApp -->
         <sp-admin-card>
           <div class="p-4">
             <p class="text-xs text-gray-500 mb-1">In-App</p>
             <sp-admin-badge [tone]="configTone(config()!.inApp.statusLabel)">{{ config()!.inApp.statusLabel }}</sp-admin-badge>
           </div>
         </sp-admin-card>
-
-        <!-- Email -->
         <sp-admin-card>
           <div class="p-4">
             <p class="text-xs text-gray-500 mb-1">Email</p>
             <sp-admin-badge [tone]="configTone(config()!.email.statusLabel)">{{ config()!.email.statusLabel }}</sp-admin-badge>
           </div>
         </sp-admin-card>
-
-        <!-- SMS -->
         <sp-admin-card>
           <div class="p-4">
             <p class="text-xs text-gray-500 mb-1">SMS</p>
             <sp-admin-badge [tone]="configTone(config()!.sms.statusLabel)">{{ config()!.sms.statusLabel }}</sp-admin-badge>
           </div>
         </sp-admin-card>
-
-        <!-- Dispatch job -->
         <sp-admin-card>
           <div class="p-4">
             <p class="text-xs text-gray-500 mb-1">Dispatch Job</p>
@@ -265,80 +264,110 @@
             <p class="text-xs text-gray-400 mt-1">{{ config()!.dispatchJob.intervalDescription }} · batch {{ config()!.dispatchJob.batchSize }}</p>
           </div>
         </sp-admin-card>
-
       </div>
 
-      <!-- Email config detail -->
+      <!-- In-App config -->
       <sp-admin-card>
         <div class="p-5">
-          <h3 class="text-sm font-semibold text-gray-800 mb-4">Email Configuration</h3>
-          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div>
-              <dt class="text-xs text-gray-500">Host</dt>
-              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.email.host ?? '(not set)' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">Port</dt>
-              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.email.port }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">From address</dt>
-              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.email.fromAddress ?? '(not set)' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">From display name</dt>
-              <dd class="text-gray-800 text-xs mt-0.5">{{ config()!.email.fromDisplayName ?? '(not set)' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">SSL</dt>
-              <dd class="mt-0.5">
-                <sp-admin-badge [tone]="config()!.email.useSsl ? 'success' : 'neutral'">{{ config()!.email.useSsl ? 'Yes' : 'No' }}</sp-admin-badge>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">Username</dt>
-              <dd class="mt-0.5">
-                <sp-admin-badge [tone]="config()!.email.hasUsername ? 'success' : 'neutral'">{{ config()!.email.hasUsername ? 'Configured' : 'Not set' }}</sp-admin-badge>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">Password</dt>
-              <dd class="mt-0.5">
-                <sp-admin-badge [tone]="config()!.email.hasPassword ? 'success' : 'neutral'">{{ config()!.email.hasPassword ? 'Configured' : 'Not set' }}</sp-admin-badge>
-              </dd>
-            </div>
-          </dl>
-          <p class="mt-4 text-xs text-gray-400">Email configuration is managed via appsettings. Changes require a redeploy.</p>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-800">In-App Channel</h3>
+          </div>
+          <div class="flex items-center gap-4">
+            <sp-admin-checkbox [(ngModel)]="inAppForm.isEnabled" label="Enabled" />
+            <sp-admin-button size="sm" variant="secondary" [disabled]="inAppSaving()" (clicked)="saveInAppConfig()">
+              {{ inAppSaving() ? 'Saving…' : 'Save' }}
+            </sp-admin-button>
+          </div>
+          @if (inAppSaveSuccess()) {
+            <p class="mt-2 text-sm text-green-600" role="status">{{ inAppSaveSuccess() }}</p>
+          }
+          @if (inAppSaveError()) {
+            <p class="mt-2 text-sm text-red-600" role="alert">{{ inAppSaveError() }}</p>
+          }
+          <p class="mt-3 text-xs text-gray-400">Account and System notifications cannot be blocked even if InApp is disabled.</p>
         </div>
       </sp-admin-card>
 
-      <!-- SMS config detail -->
+      <!-- Email config -->
+      <sp-admin-card>
+        <div class="p-5">
+          <h3 class="text-sm font-semibold text-gray-800 mb-4">Email Configuration (SMTP)</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div class="sm:col-span-2">
+              <sp-admin-checkbox [(ngModel)]="emailForm.isEnabled" label="Enabled" />
+            </div>
+            <sp-admin-input size="sm" label="Host" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" />
+            <sp-admin-input size="sm" label="Port" type="number" placeholder="587" [(ngModel)]="emailForm.port" />
+            <sp-admin-input size="sm" label="From address" placeholder="noreply@example.com" [(ngModel)]="emailForm.fromAddress" />
+            <sp-admin-input size="sm" label="From display name" placeholder="SpeakPath" [(ngModel)]="emailForm.fromDisplayName" />
+            <sp-admin-input size="sm" label="Username" placeholder="smtp-username" [(ngModel)]="emailForm.username" />
+            <div>
+              <sp-admin-input size="sm" label="Password (replace)" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="emailForm.newSecret" />
+              <div class="mt-1 flex items-center gap-2">
+                <sp-admin-badge [tone]="config()!.email.hasPassword ? 'success' : 'neutral'">
+                  {{ config()!.email.hasPassword ? 'Password configured' : 'No password stored' }}
+                </sp-admin-badge>
+                @if (config()!.email.hasPassword) {
+                  <sp-admin-checkbox [(ngModel)]="emailForm.clearSecret" label="Clear stored password" />
+                }
+              </div>
+            </div>
+            <div class="sm:col-span-2">
+              <sp-admin-checkbox [(ngModel)]="emailForm.useSsl" label="Use SSL/TLS" />
+            </div>
+          </div>
+
+          <div class="flex gap-2 items-center">
+            <sp-admin-button size="sm" [disabled]="emailSaving()" (clicked)="saveEmailConfig()">
+              {{ emailSaving() ? 'Saving…' : 'Save email config' }}
+            </sp-admin-button>
+          </div>
+          @if (emailSaveSuccess()) {
+            <p class="mt-2 text-sm text-green-600" role="status">{{ emailSaveSuccess() }}</p>
+          }
+          @if (emailSaveError()) {
+            <p class="mt-2 text-sm text-red-600" role="alert">{{ emailSaveError() }}</p>
+          }
+        </div>
+      </sp-admin-card>
+
+      <!-- SMS config -->
       <sp-admin-card>
         <div class="p-5">
           <h3 class="text-sm font-semibold text-gray-800 mb-4">SMS Configuration</h3>
-          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div>
-              <dt class="text-xs text-gray-500">Provider</dt>
-              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.sms.provider || '(not set)' }}</dd>
+          <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4">
+            Real SMS provider is not yet implemented. You can save configuration, but sending is disabled.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div class="sm:col-span-2">
+              <sp-admin-checkbox [(ngModel)]="smsForm.isEnabled" label="Enabled (no-op until provider implemented)" />
             </div>
+            <sp-admin-input size="sm" label="Provider" placeholder="e.g. Twilio" [(ngModel)]="smsForm.provider" />
+            <sp-admin-input size="sm" label="Sender ID" placeholder="SpeakPath" [(ngModel)]="smsForm.senderId" />
             <div>
-              <dt class="text-xs text-gray-500">Sender ID</dt>
-              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.sms.senderId || '(not set)' }}</dd>
+              <sp-admin-input size="sm" label="API key (replace)" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="smsForm.newSecret" />
+              <div class="mt-1 flex items-center gap-2">
+                <sp-admin-badge [tone]="config()!.sms.hasApiKey ? 'success' : 'neutral'">
+                  {{ config()!.sms.hasApiKey ? 'API key configured' : 'No key stored' }}
+                </sp-admin-badge>
+                @if (config()!.sms.hasApiKey) {
+                  <sp-admin-checkbox [(ngModel)]="smsForm.clearSecret" label="Clear stored key" />
+                }
+              </div>
             </div>
-            <div>
-              <dt class="text-xs text-gray-500">API Key</dt>
-              <dd class="mt-0.5">
-                <sp-admin-badge [tone]="config()!.sms.hasApiKey ? 'success' : 'neutral'">{{ config()!.sms.hasApiKey ? 'Configured' : 'Not set' }}</sp-admin-badge>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs text-gray-500">Status</dt>
-              <dd class="mt-0.5">
-                <sp-admin-badge [tone]="configTone(config()!.sms.statusLabel)">{{ config()!.sms.statusLabel }}</sp-admin-badge>
-              </dd>
-            </div>
-          </dl>
-          <p class="mt-4 text-xs text-gray-400">SMS is not yet active. Set Sms:Enabled=true and provider credentials to activate. Phone number collection is a future phase.</p>
+          </div>
+          <div class="flex gap-2 items-center">
+            <sp-admin-button size="sm" variant="secondary" [disabled]="smsSaving()" (clicked)="saveSmsConfig()">
+              {{ smsSaving() ? 'Saving…' : 'Save SMS config' }}
+            </sp-admin-button>
+          </div>
+          @if (smsSaveSuccess()) {
+            <p class="mt-2 text-sm text-green-600" role="status">{{ smsSaveSuccess() }}</p>
+          }
+          @if (smsSaveError()) {
+            <p class="mt-2 text-sm text-red-600" role="alert">{{ smsSaveError() }}</p>
+          }
         </div>
       </sp-admin-card>
 

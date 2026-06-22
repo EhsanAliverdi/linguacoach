@@ -672,8 +672,56 @@ public sealed class AdminController : ControllerBase
     [HttpGet("notifications/config")]
     public async Task<IActionResult> GetNotificationConfig(CancellationToken ct)
     {
-        var status = await _notificationHandler.GetConfigStatusAsync(ct);
+        var status = await _notificationHandler.GetConfigStatusV2Async(ct);
         return Ok(status);
+    }
+
+    [HttpPut("notifications/config/email")]
+    public async Task<IActionResult> UpdateEmailConfig(
+        [FromBody] AdminUpdateEmailConfigRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _notificationHandler.UpdateEmailConfigAsync(
+                new AdminUpdateEmailConfigCommand(
+                    request.IsEnabled,
+                    request.Host,
+                    request.Port,
+                    request.UseSsl,
+                    request.FromAddress,
+                    request.FromDisplayName,
+                    request.Username,
+                    request.NewSecret,
+                    request.ClearSecret),
+                GetCurrentUserId(), ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPut("notifications/config/sms")]
+    public async Task<IActionResult> UpdateSmsConfig(
+        [FromBody] AdminUpdateSmsConfigRequest request, CancellationToken ct)
+    {
+        var result = await _notificationHandler.UpdateSmsConfigAsync(
+            new AdminUpdateSmsConfigCommand(
+                request.IsEnabled,
+                request.Provider,
+                request.SenderId,
+                request.NewSecret,
+                request.ClearSecret),
+            GetCurrentUserId(), ct);
+        return Ok(result);
+    }
+
+    [HttpPut("notifications/config/in-app")]
+    public async Task<IActionResult> UpdateInAppConfig(
+        [FromBody] AdminUpdateInAppConfigRequest request, CancellationToken ct)
+    {
+        var result = await _notificationHandler.UpdateInAppConfigAsync(
+            new AdminUpdateInAppConfigCommand(request.IsEnabled),
+            GetCurrentUserId(), ct);
+        return Ok(result);
     }
 
     [HttpPost("notifications/config/email/test")]
@@ -885,6 +933,26 @@ public sealed record UpdateExerciseTypeRequest(
     int? MaxOptionsPerItem = null);
 
 public sealed record AdminTestEmailRequest(string ToAddress);
+
+public sealed record AdminUpdateEmailConfigRequest(
+    bool IsEnabled,
+    string? Host = null,
+    int? Port = null,
+    bool? UseSsl = null,
+    string? FromAddress = null,
+    string? FromDisplayName = null,
+    string? Username = null,
+    string? NewSecret = null,
+    bool ClearSecret = false);
+
+public sealed record AdminUpdateSmsConfigRequest(
+    bool IsEnabled,
+    string? Provider = null,
+    string? SenderId = null,
+    string? NewSecret = null,
+    bool ClearSecret = false);
+
+public sealed record AdminUpdateInAppConfigRequest(bool IsEnabled);
 
 public sealed record AdminSendNotificationRequest(
     List<Guid> RecipientUserIds,

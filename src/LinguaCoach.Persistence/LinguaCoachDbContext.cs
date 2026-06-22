@@ -76,6 +76,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<NotificationChannelConfig> NotificationChannelConfigs => Set<NotificationChannelConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
