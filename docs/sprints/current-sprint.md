@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-4C)
+lastUpdated: 2026-06-22 (10W-FINAL)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,51 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
 
 ---
 
 ## Active sprint
+
+**Phase 10W-FINAL — Notification Platform Closure Audit** — complete (2026-06-22)
+
+Full audit of the 10W notification platform. All 14 sub-phases verified closed. 2246 .NET + 1011 Angular tests pass. No bugs found. Docs updated. Deferred TODOs: TODO-10W-5D-UNIQUE-CONSTRAINT, TODO-10W-PHONE, TODO-10W-SMS-PROVIDER.
+
+Review: docs/reviews/2026-06-22-phase-10w-final-notification-platform-closure-audit.md
+
+---
+
+**Phase 10W-6 — SMS Provider Foundation** — complete (2026-06-22)
+
+`ISmsSender` / `SmsMessage` / `SmsSendResult` abstraction. `DisabledSmsSender` always skips safely. `SmsOptions` config class (ApiKey never returned to frontend, `HasApiKey` bool only). `AdminSmsConfigStatus` DTO. `NotificationDispatchService` wired with `ISmsSender`. Admin config tab shows SMS detail card.
+
+Review: docs/reviews/2026-06-22-phase-10w-6-sms-provider-foundation-review.md
+
+---
+
+**Phase 10W-PREFS — Notification Preferences Foundation** — complete (2026-06-22)
+
+`NotificationPreference` entity + migration T56. `INotificationPreferenceService`. Account/System categories required (cannot be disabled). SMS deferred (always false). User GET/PUT API. Admin read API. Profile section with category×channel table, SMS "Coming soon", required badge, save. 12 backend + 11 frontend tests.
+
+Review: docs/reviews/2026-06-22-phase-10w-prefs-notification-preferences-foundation-review.md
+
+---
+
+**Phase 10W-5D-RESET-INTEGRATION — System emails use templates** — complete (2026-06-22)
+
+`PasswordResetHandler` and `CreateStudentHandler` use `account.password_reset` / `account.student_created` Email templates. Safe fallback to hard-coded content when template missing/inactive. Token never in metadata/audit/log/API response.
+
+Review: docs/reviews/2026-06-22-phase-10w-5d-reset-template-integration-review.md
+
+---
+
+**Phase 10W-5D — Notification Templates Foundation** — complete (2026-06-22)
+
+`NotificationTemplate` entity + migration T55. `INotificationTemplateRenderer` (`{{VarName}}` replacement). `IAdminTemplateHandler` CRUD + preview. 4 default templates seeded. Admin Templates tab: list, create/edit slide-over, preview panel.
+
+Review: docs/reviews/2026-06-22-phase-10w-5d-notification-templates-foundation-review.md
+
+---
 
 **Phase 10W-4C — Notification Dropdown Source Control Fix** - complete (2026-06-21)
 

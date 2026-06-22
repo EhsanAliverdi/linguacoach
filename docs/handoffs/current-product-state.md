@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-21 (10W-2)
+lastUpdated: 2026-06-22 (10W-FINAL)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,51 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
+
+---
+
+## Enterprise Notification Platform — FULLY CLOSED (Phase 10W-FINAL, 2026-06-22)
+
+All 14 notification sub-phases are complete and verified. 2246 .NET / 1011 Angular tests pass. Platform is production-ready.
+
+### Channels delivered
+
+- **In-App:** live bell dropdown, unread count, mark read/all, archive. User-isolated. Committed component.
+- **Email:** SMTP provider, DisabledEmailSender safe default, NotificationDispatchJob (Quartz, every 2 min, batchSize=50). SMTP credentials never returned to frontend.
+- **SMS:** foundation only — `ISmsSender` / `DisabledSmsSender` / `SmsOptions`. No real provider. Phone number collection deferred.
+
+### Admin notification center
+
+- Notifications list (filter by channel/status/category/severity/search, pagination).
+- Delivery queue (filter by channel/status/failed-only, retry/cancel actions).
+- Configuration tab (InApp/Email/SMS/dispatch status, SMTP safe fields, SMS safe fields, test-email).
+- Send notification slide-over (InApp + Email channels, recipient lookup, title/body/category/severity/deep-link).
+- Templates tab (CRUD, preview, 4 seeded defaults).
+
+### Templates
+
+4 seeded templates: `account.password_reset`/Email, `account.student_created`/Email, `admin.manual_notification`/InApp, `admin.manual_notification`/Email. Simple `{{VarName}}` substitution. Missing variables logged + left visible in output. Password reset and student-created emails use templates with hard-coded fallback.
+
+### Preferences
+
+`notification_preferences` table (migration T56). Per-user category×channel preferences. Account/System categories required (cannot be disabled). SMS always deferred (returns false). User API GET/PUT. Admin read API. Profile section with required/coming-soon indicators.
+
+### Security invariants
+
+- Password reset token: never logged, never stored in metadata, never returned to admin, generic error on failure.
+- SMTP password: `HasPassword` bool only in admin config DTO.
+- SMS ApiKey: `HasApiKey` bool only in admin config DTO.
+- User isolation: all notification queries filter `RecipientUserId == userId`.
+- Email not sent inline during requests — always queued to outbox.
+
+### Deferred
+
+- `TODO-10W-5D-UNIQUE-CONSTRAINT`: DB unique index on `(template_key, channel)` for active templates.
+- `TODO-10W-PHONE`: phone number collection and verification.
+- `TODO-10W-SMS-PROVIDER`: real Twilio/other SMS sender (requires TODO-10W-PHONE).
+
+Closure audit: `docs/reviews/2026-06-22-phase-10w-final-notification-platform-closure-audit.md`
 
 ---
 
