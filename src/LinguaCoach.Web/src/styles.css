@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @source "./**/*.{html,ts}";
-@import "./app/admin/tokens/admin-tokens.css";
+@import "./app/design-system/admin/tokens/admin-tokens.css";
 
 /* ── TailAdmin Layout One: design tokens + utility classes ──────────────── */
 @custom-variant dark (&:is(.dark *));

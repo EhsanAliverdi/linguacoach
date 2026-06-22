@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-19 14:30
+lastUpdated: 2026-06-22 00:00
 owner: architecture
 supersedes:
 supersededBy:
@@ -35,7 +35,7 @@ SpeakPath admin wrapper components (sp-admin-*)
 SpeakPath admin feature pages
 ```
 
-Feature pages must import from `src/app/admin`.
+Feature pages must import from `src/app/design-system/admin`.
 They must not reference TailAdmin internals directly.
 They must not copy TailAdmin page markup or utility class lists.
 If TailAdmin source is later licensed, all TailAdmin-specific markup belongs inside
@@ -121,7 +121,7 @@ Updated wrappers:
 - This does not affect student-facing pages, which use their own light theme.
 - Full dark-mode scoping (admin-only class boundary) is a TODO for 10X-G+.
 
-Feature pages must import from `src/app/admin`.
+Feature pages must import from `src/app/design-system/admin`.
 They must not reference `templates/` directly.
 They must not copy TailAdmin page markup or repeat long utility class lists.
 
@@ -239,15 +239,27 @@ src/LinguaCoach.Web/src/app/
         src/app/shared/components/          <- UI primitive reference
         src/app/pages/                      <- demo pages — reference only, never import
         package.json                        <- TailAdmin deps — do NOT merge into SpeakPath
-  admin/
-    tokens/admin-tokens.css
-    components/**                           <- sp-admin-* wrapper components
-    services/**
-    index.ts
+  design-system/
+    admin/
+      tokens/admin-tokens.css
+      components/**                         <- sp-admin-* wrapper components
+      services/**
+      utils/**
+      layouts/
+        admin-app-layout/
+      index.ts
+    student/
+      components/**                         <- student-ui shared components
+      notification-dropdown/
+      layouts/
+        student-app-layout/
+    public/
+      layouts/
+        public-layout/
 ```
 
 `src/app/templates/tailadmin` is the vendor reference boundary.
-`src/app/admin` is the SpeakPath adapter/wrapper layer.
+`src/app/design-system/admin` is the SpeakPath adapter/wrapper layer.
 No TailAdmin source is imported into SpeakPath app build paths.
 Angular's compiler ignores `templates/` — it is not referenced in `tsconfig.app.json` or any import.
 
@@ -304,7 +316,7 @@ Feature pages should prefer wrappers first.
 
 ## Services
 
-Admin service facades live in `src/app/admin/services`.
+Admin service facades live in `src/app/design-system/admin/services`.
 
 - `AdminToastService` wraps the shared toast service.
 - `AdminModalService` stores confirm-dialog requests.

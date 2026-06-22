@@ -245,18 +245,24 @@ Count `COUNT(DISTINCT LearningActivityId)`, not total attempt rows.
 ### Frontend structure
 
 ```
-src/app/features/          — Feature modules: admin/, activity/, assessment/, auth/,
-                             dashboard/, learning-path/, lesson/, onboarding/,
-                             placement/, practice/, profile/, progress/, speaking/, vocabulary/
-src/app/shared/student-ui/ — Shared student-facing UI components
-src/app/core/              — Services, models, guards, interceptors
+src/app/design-system/
+  admin/    — sp-admin-* wrapper components, services, tokens, utils,
+              + layouts/admin-app-layout/
+  student/  — student-ui components, notification-dropdown,
+              + layouts/student-app-layout/
+  public/   — layouts/public-layout/ (only, for now)
+
+src/app/features/
+  admin/    — admin feature pages (unchanged)
+  student/  — activity, assessment, dashboard, learning-path, lesson,
+              onboarding, placement, practice, profile, progress,
+              speaking, vocabulary
+  public/   — landing, auth
+
+src/app/core/ — Services, models, guards, interceptors
 ```
 
-Admin features live under `features/admin/` and use these shared wrappers:
-- `sp-admin-section-card`, `sp-admin-section-header`
-- `sp-admin-slide-over` (reusable slide-over panel)
-- `sp-admin-badge`, `sp-admin-code-pill`, `sp-admin-empty-state`
-
+Admin feature pages import from `src/app/design-system/admin`.
 Layout components: `PublicLayout`, `StudentAppLayout`, `AdminAppLayout`. Pages render content only; layouts own shell/sidebar/header.
 
 ### AI flow

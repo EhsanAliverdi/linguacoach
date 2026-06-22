@@ -21,7 +21,7 @@ import {
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 interface CategoryState {
   item: AiConfigCategoryItem;

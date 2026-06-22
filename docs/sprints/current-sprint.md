@@ -60,7 +60,7 @@ Goal: move live notification bell/dropdown from gitignored vendor template path 
 
 ### Delivered
 
-- `NotificationDropdownComponent` at `src/app/shared/notifications/notification-dropdown/` (committed, selector `sp-notification-dropdown`).
+- `NotificationDropdownComponent` at `src/app/design-system/student/notification-dropdown/` (committed, selector `sp-notification-dropdown`).
 - Full 10W-3 behavior: live list, unread count, mark read, mark all read, archive/dismiss, loading/empty/error/retry states, deep-link navigation.
 - Click-outside via `@HostListener` — no dependency on gitignored `DropdownComponent`.
 - `StudentAppLayoutComponent` updated: imports + uses `<sp-notification-dropdown>` replacing static bell button.

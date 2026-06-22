@@ -5,9 +5,9 @@ import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../admin';
-import type { SpAdminSelectOption } from '../../../admin';
-import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../admin/utils/admin-badge.utils';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../design-system/admin';
+import type { SpAdminSelectOption } from '../../../design-system/admin';
+import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
   firstName: string;

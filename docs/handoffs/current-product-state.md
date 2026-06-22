@@ -64,7 +64,7 @@ In-app notification APIs are live for authenticated users. Outbox dispatch proce
 - **Filters:** `unreadOnly`, `category`, `severity`. Invalid values return 400. Current-user isolation enforced.
 - **Dispatch:** `INotificationDispatchService.DispatchDueAsync` — InApp items delivered, Email/SMS items skipped with error until 10W-4/10W-6.
 - **Tests:** 2131/2131 .NET (3 arch + 1278 unit + 850 integration).
-- **Bell UI:** live notification dropdown at `src/app/shared/notifications/notification-dropdown/` (committed, selector `sp-notification-dropdown`). Wired into `StudentAppLayoutComponent`. Gitignored vendor template no longer depended on (10W-4C).
+- **Bell UI:** live notification dropdown at `src/app/design-system/student/notification-dropdown/` (committed, selector `sp-notification-dropdown`). Wired into `StudentAppLayoutComponent`. Gitignored vendor template no longer depended on (10W-4C).
 
 Foundation review: `docs/reviews/2026-06-21-phase-10w-1-backend-notification-foundation-review.md`
 API review: `docs/reviews/2026-06-21-phase-10w-2-in-app-notification-apis-dispatch-foundation-review.md`
@@ -473,8 +473,8 @@ shell CSS (sidebar, nav items, header, drawer, profile flyout) reaches child com
 Before this fix, the CSS existed but was blocked by Angular's default emulated encapsulation.
 All admin pages now render with sidebar left, content right, header sticky — matching TailAdmin Layout One.
 
-- Admin tokens: `src/app/admin/tokens/admin-tokens.css`.
-- Barrel: `src/app/admin/index.ts`.
+- Admin tokens: `src/app/design-system/admin/tokens/admin-tokens.css`.
+- Barrel: `src/app/design-system/admin/index.ts`.
 - Shell wrappers: `sp-admin-layout`, `sp-admin-sidebar`, `sp-admin-header`.
 - Page wrappers: page header, card, stat card, button, badge, table, state components, form controls, pagination, filter bar, modal, drawer, and toast outlet.
 - Service foundations: admin toast, modal confirm state, drawer state.
@@ -1118,7 +1118,7 @@ Frontend-only phase. No product behaviour, API contracts, or backend logic chang
 **Practice Gym CSS:**
 - `var(--sp-primary)` references (non-existent token) replaced with `var(--sp-brand)`.
 
-**Shared student UI components (`src/app/shared/student-ui/`):**
+**Shared student UI components (`src/app/design-system/student/`):**
 - `StudentChipComponent` (`sp-chip`) — reusable toggle chip.
 - `StudentBadgeComponent` (`sp-badge`) — reusable badge with variant input.
 

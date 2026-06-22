@@ -24,7 +24,7 @@ import {
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTextareaComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 type PromptStatusFilter = 'all' | 'active' | 'inactive';
 

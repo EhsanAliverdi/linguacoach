@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs';
-import { ToastHostComponent } from './core/components/toast-host/toast-host.component';
+import { ToastHostComponent } from './design-system/student/toast-host/toast-host.component';
 
 @Component({
   selector: 'app-root',

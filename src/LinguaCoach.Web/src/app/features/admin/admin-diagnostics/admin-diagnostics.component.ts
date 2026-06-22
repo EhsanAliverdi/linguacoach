@@ -23,8 +23,8 @@ import {
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
-} from '../../../admin';
-import { eventLevelLabel } from '../../../admin/utils/admin-badge.utils';
+} from '../../../design-system/admin';
+import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
 
 @Component({
   selector: 'app-admin-diagnostics',

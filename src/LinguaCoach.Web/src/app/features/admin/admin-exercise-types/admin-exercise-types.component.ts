@@ -19,7 +19,7 @@ import {
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-exercise-types',

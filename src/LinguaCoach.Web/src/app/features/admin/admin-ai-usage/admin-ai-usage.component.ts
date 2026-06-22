@@ -25,7 +25,7 @@ import {
   SpAdminStatCardComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-ai-usage',

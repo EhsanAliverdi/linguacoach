@@ -26,7 +26,7 @@ import {
   SpAdminSelectComponent, SpAdminSelectOption,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-notifications',

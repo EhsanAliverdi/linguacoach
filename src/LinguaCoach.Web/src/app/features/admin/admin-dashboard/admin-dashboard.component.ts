@@ -13,8 +13,8 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminLoadingStateComponent,
   SpAdminTableComponent,
-} from '../../../admin';
-import { onboardingLabel, onboardingTone } from '../../../admin/utils/admin-badge.utils';
+} from '../../../design-system/admin';
+import { onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
 @Component({
   selector: 'app-admin-dashboard',

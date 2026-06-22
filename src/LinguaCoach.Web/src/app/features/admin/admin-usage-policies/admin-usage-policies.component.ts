@@ -11,7 +11,7 @@ import {
   AddUsagePolicyRuleRequest,
   UpdateUsagePolicyRuleRequest,
 } from '../../../core/services/usage-governance.service';
-import { SpAdminBadgeTone } from '../../../admin/components/badge/sp-admin-badge.component';
+import { SpAdminBadgeTone } from '../../../design-system/admin/components/badge/sp-admin-badge.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -32,7 +32,7 @@ import {
   SpAdminSelectComponent,
   SpAdminStatCardComponent,
   SpAdminTableComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-usage-policies',

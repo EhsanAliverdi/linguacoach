@@ -20,7 +20,7 @@ import {
   SpAdminLoadingStateComponent,
   SpAdminPageHeaderComponent,
   SpAdminTableComponent,
-} from '../../../admin';
+} from '../../../design-system/admin';
 
 type View = 'list' | 'edit' | 'create' | 'preview';
 

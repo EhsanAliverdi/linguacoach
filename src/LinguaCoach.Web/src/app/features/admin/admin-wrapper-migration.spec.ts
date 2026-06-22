@@ -8,7 +8,7 @@ import {
   SpAdminSidebarComponent,
   SpAdminHeaderComponent,
   SpAdminToastOutletComponent,
-} from '../../admin';
+} from '../../design-system/admin';
 import { AuthService } from '../../core/services/auth.service';
 import { signal } from '@angular/core';
 

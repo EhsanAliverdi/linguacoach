@@ -10,7 +10,7 @@ import {
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
-import { SpAdminSlideOverComponent } from '../../../admin/components/slide-over/sp-admin-slide-over.component';
+import { SpAdminSlideOverComponent } from '../../../design-system/admin/components/slide-over/sp-admin-slide-over.component';
 
 interface StudentEditForm {
   firstName: string;
