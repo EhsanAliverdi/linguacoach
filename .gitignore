@@ -46,6 +46,9 @@ npm-debug.log*
 ## Secrets
 .env
 
+## Data Protection keys (never commit — loss of keys = loss of encrypted DB secrets)
+app-data/data-protection-keys/
+
 ## IDE
 .idea/
 *.swp

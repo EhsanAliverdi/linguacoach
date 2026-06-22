@@ -69,8 +69,14 @@ services:
       FileStorage__Minio__SignedUrlExpiryMinutes: "${MINIO_SIGNED_URL_EXPIRY_MINUTES:-10}"
       # Background jobs (Quartz)
       BackgroundJobs__Enabled: "${BACKGROUND_JOBS_ENABLED:-true}"
+      # Data Protection key persistence.
+      # Keys encrypt notification channel secrets stored in the DB.
+      # MUST map to a persistent volume — lost keys = unreadable DB secrets.
+      DataProtection__KeysPath: "/app/data-protection-keys"
+      DataProtection__ApplicationName: "SpeakPath"
     volumes:
       - audio_data:/app/audio-data
+      - dp_keys:/app/data-protection-keys
     depends_on:
       db:
         condition: service_healthy
@@ -91,3 +97,4 @@ volumes:
   postgres_data:
   audio_data:
   minio_data:
+  dp_keys:

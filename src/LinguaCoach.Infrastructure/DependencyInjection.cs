@@ -83,11 +83,37 @@ public static class DependencyInjection
         services.AddScoped<Jobs.PracticeGymGenerationJob>();
 
         // Secret protection (ASP.NET Core Data Protection)
-        // Keys default to the host environment's key ring.
-        // Production deployments should configure PersistKeysToFileSystem or a cloud provider.
-        // See: docs/reviews/2026-06-22-phase-10w-5c-3-runtime-config-resolver-secret-encryption-review.md
-        services.AddDataProtection()
-            .SetApplicationName("LinguaCoach");
+        // Keys are persisted to a configurable directory (DataProtection:KeysPath).
+        // The directory is created at startup if it does not exist.
+        // Production: mount the keys directory as a persistent volume (see docker-compose.yml).
+        // See: docs/reviews/2026-06-23-phase-10w-5c-4-data-protection-key-persistence-review.md
+        if (configuration is not null)
+            services.Configure<NotificationKeyProtectionOptions>(configuration.GetSection(NotificationKeyProtectionOptions.SectionName));
+        else
+            services.Configure<NotificationKeyProtectionOptions>(_ => { });
+
+        // Read keys path at registration time so PersistKeysToFileSystem can be called on the host DI builder.
+        var dpKeysPath = configuration?["DataProtection:KeysPath"] ?? "./app-data/data-protection-keys";
+        var dpAppName = configuration?["DataProtection:ApplicationName"];
+        if (string.IsNullOrWhiteSpace(dpAppName)) dpAppName = "SpeakPath";
+
+        var dpDir = Path.IsPathRooted(dpKeysPath)
+            ? new DirectoryInfo(dpKeysPath)
+            : new DirectoryInfo(Path.Combine(AppContext.BaseDirectory, dpKeysPath));
+
+        var dpRegistration = services.AddDataProtection().SetApplicationName(dpAppName);
+        try
+        {
+            if (!dpDir.Exists) dpDir.Create();
+            dpRegistration.PersistKeysToFileSystem(dpDir);
+        }
+        catch
+        {
+            // Directory creation failed — keys remain in-memory (ephemeral).
+            // A startup warning is logged by DataProtectionSecretProtector at first use.
+            // App continues rather than failing hard here.
+        }
+
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
 
         // Runtime notification channel config resolver (DB override → appsettings fallback)
