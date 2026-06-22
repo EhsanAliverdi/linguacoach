@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10W-FINAL-2)
+lastUpdated: 2026-06-23 (10Auth-F-0)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-0 — Enterprise Auth/Security Gap Check** — complete (2026-06-23)
+
+Audit of authentication, authorization, password, session, token, reset-password, and account-security implementation. No code changes. Roadmap defined for 10Auth-F-1 through 10Auth-F-FINAL. Critical gap: no brute-force/lockout protection. Next phase: 10Auth-F-1 (lockout + rate limiting + password policy hardening, ~1 day, no migration).
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap-check.md
+
+---
 
 **Phase 10W-FINAL-2 — Notification Platform Re-closure Audit** — complete (2026-06-23)
 

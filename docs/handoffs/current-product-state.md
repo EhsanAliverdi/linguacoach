@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10W-FINAL-2)
+lastUpdated: 2026-06-23 (10Auth-F-0)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,35 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-23 (10W-FINAL-2)
+Last updated: 2026-06-23 (10Auth-F-0)
+
+---
+
+## Enterprise Auth/Security — GAP CHECK COMPLETE (Phase 10Auth-F-0, 2026-06-23)
+
+Auth/security audit complete. No code changes. Roadmap defined.
+
+### Current auth model
+
+- ASP.NET Core Identity + JWT Bearer (24-hour access token, no refresh tokens).
+- Admin/Student roles. Force-password-change middleware. Token-based reset links.
+- Generic error responses (no enumeration). Secrets never exposed to frontend.
+
+### Critical gap
+
+No brute-force/lockout protection on `/api/auth/login`. No auth event audit log. No session revocation.
+
+### Roadmap
+
+- **10Auth-F-1** (next): lockout config, login rate limiting, password policy hardening, security headers. ~1 day, no migration.
+- **10Auth-F-2**: auth event audit log (`AuthAuditEvent` entity, migration T58).
+- **10Auth-F-3**: security notifications (password changed, account locked, reset requested).
+- **10Auth-F-4**: refresh token / session management (migration T59, short-lived JWT, HttpOnly refresh cookie).
+- **10Auth-F-5**: Google OAuth / external login.
+- **10Auth-F-6**: admin security settings UI.
+- **10Auth-F-FINAL**: closure audit.
+
+Gap check review: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap-check.md
 
 ---
 

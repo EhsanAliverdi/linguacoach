@@ -238,3 +238,17 @@ Gap check: docs/reviews/2026-06-21-phase-10w-0-enterprise-notification-platform-
 - TODO-10U-GAP-5: Add `AdminUserId` (Guid?) to `AiUsageLog` for admin-initiated calls (test connection, category test). Required for multi-tenant billing isolation. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
 - TODO-10U-GAP-6: Split `AiUsageLog.CostUsd` into `InputCostUsd` + `OutputCostUsd` for per-component cost auditing. High effort (migration + all call sites). Defer until a pricing admin UI is implemented. Note: 10U-8 became CSV export, not pricing admin; pricing admin UI remains deferred. Identified in Phase 10U-1/10U-2 enterprise gap audit.
 - TODO-10U-GAP-7: Add `RequestType` enum column to `AiUsageLog` (`Llm`, `Tts`, `Stt`). Enables filtering and cost breakdown by modality without string prefix matching on `FeatureKey`. Requires migration. Identified in Phase 10U-1/10U-2 enterprise gap audit.
+
+---
+
+## Enterprise Auth / Security (Phase 10Auth-F — roadmap defined 2026-06-23)
+
+Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap-check.md
+
+- TODO-10Auth-F-1: Auth security baseline — enable ASP.NET Identity lockout (`MaxFailedAccessAttempts=5`, `LockoutTimeSpan=15min`), add rate limiter policy "AuthLogin" (IP-scoped, 10 req / 5 min) on `POST /api/auth/login`, add rate limiter policy "AuthReset" on reset endpoints, strengthen password policy (`MinLength=10`, `RequireUppercase=true`, `RequireNonAlphanumeric=true`), add security response headers middleware (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), integration tests for lockout + rate limiting. No migration, no UI change. ~1 day.
+- TODO-10Auth-F-2: Auth event audit log — `AuthAuditEvent` entity + migration `T58_AuthAuditEvents` (userId, eventType, ipAddress, userAgent, outcome, createdAt). Log login success/failure/lockout, password change, reset request/completion. `GET /api/admin/students/{id}/auth-events` (paginated). Admin UI: auth events tab in student detail.
+- TODO-10Auth-F-3: Security notifications — notify student on password changed (in-app + email), reset link sent (in-app), account locked (in-app + email). Notify admin on repeated failures / lockout. New templates: `auth.password_changed`, `auth.account_locked`, `auth.reset_requested`. No migration (uses existing notification platform).
+- TODO-10Auth-F-4: Refresh token / session management — `RefreshToken` entity + migration `T59_RefreshTokens` (userId, tokenHash, issuedAt, expiresAt, revokedAt, ipAddress, userAgent). `POST /api/auth/refresh`, `POST /api/auth/logout`. JWT expiry reduced to 15 min; 30-day sliding refresh token in HttpOnly cookie. Admin `GET/DELETE /api/admin/students/{id}/sessions`. Angular token-refresh interceptor.
+- TODO-10Auth-F-5: Google OAuth / external login foundation — `AddGoogle` to Identity, OAuth callback Angular page, Google sign-in button. Uses existing `AspNetUserLogins` schema table (no new migration).
+- TODO-10Auth-F-6: Admin security settings UI — password/lockout policy config page, force-lock/unlock/force-reset buttons in student detail, system-wide auth event log view.
+- TODO-10Auth-F-FINAL: Auth/security closure audit — all 10Auth-F sub-phases verified, security invariants confirmed, integration test gate passed, docs updated.
