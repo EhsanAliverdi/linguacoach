@@ -13,17 +13,20 @@ public sealed class NotificationDispatchService : INotificationDispatchService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IEmailSender _emailSender;
+    private readonly ISmsSender _smsSender;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<NotificationDispatchService> _logger;
 
     public NotificationDispatchService(
         LinguaCoachDbContext db,
         IEmailSender emailSender,
+        ISmsSender smsSender,
         UserManager<ApplicationUser> userManager,
         ILogger<NotificationDispatchService> logger)
     {
         _db = db;
         _emailSender = emailSender;
+        _smsSender = smsSender;
         _userManager = userManager;
         _logger = logger;
     }
@@ -82,10 +85,34 @@ public sealed class NotificationDispatchService : INotificationDispatchService
                         failed++;
                     }
                 }
+                else if (item.Channel == NotificationChannel.Sms)
+                {
+                    var result = await SendSmsAsync(item, ct);
+                    if (result.Succeeded)
+                    {
+                        if (item.NotificationId.HasValue)
+                        {
+                            var notif = await _db.Notifications
+                                .FirstOrDefaultAsync(n => n.Id == item.NotificationId.Value, ct);
+                            notif?.MarkDelivered();
+                        }
+                        item.RecordAttempt(true);
+                        processed++;
+                    }
+                    else if (result.WasSkipped)
+                    {
+                        item.RecordAttempt(false, result.Error);
+                        skipped++;
+                    }
+                    else
+                    {
+                        item.RecordAttempt(false, result.Error);
+                        failed++;
+                    }
+                }
                 else
                 {
-                    // SMS: not yet supported (10W-6).
-                    item.RecordAttempt(false, $"No provider registered for channel {item.Channel}. Deferred to 10W-6.");
+                    item.RecordAttempt(false, $"No provider registered for channel {item.Channel}.");
                     skipped++;
                 }
             }
@@ -105,6 +132,38 @@ public sealed class NotificationDispatchService : INotificationDispatchService
             processed, skipped, failed);
 
         return new DispatchResult(processed, skipped, failed);
+    }
+
+    private async Task<SmsSendResult> SendSmsAsync(
+        LinguaCoach.Domain.Entities.NotificationOutboxItem item,
+        CancellationToken ct)
+    {
+        // Resolve recipient phone number from Identity (PhoneNumber field).
+        var user = await _userManager.FindByIdAsync(item.RecipientUserId.ToString());
+        if (user is null || string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            _logger.LogWarning(
+                "SMS dispatch: no phone number found for user {UserId}, outbox item {Id}",
+                item.RecipientUserId, item.Id);
+            return SmsSendResult.Skipped("Recipient phone number not found.");
+        }
+
+        string body = string.Empty;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(item.PayloadJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("body", out var bodyProp))
+                body = bodyProp.GetString() ?? body;
+            else if (root.TryGetProperty("title", out var titleProp))
+                body = titleProp.GetString() ?? body;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _logger.LogWarning(ex, "Could not parse payload JSON for SMS outbox item {Id}", item.Id);
+        }
+
+        return await _smsSender.SendAsync(new SmsMessage(user.PhoneNumber, body), ct);
     }
 
     private async Task<EmailSendResult> SendEmailAsync(

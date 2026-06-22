@@ -312,6 +312,36 @@
         </div>
       </sp-admin-card>
 
+      <!-- SMS config detail -->
+      <sp-admin-card>
+        <div class="p-5">
+          <h3 class="text-sm font-semibold text-gray-800 mb-4">SMS Configuration</h3>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Provider</dt>
+              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.sms.provider || '(not set)' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Sender ID</dt>
+              <dd class="text-gray-800 font-mono text-xs mt-0.5">{{ config()!.sms.senderId || '(not set)' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">API Key</dt>
+              <dd class="mt-0.5">
+                <sp-admin-badge [tone]="config()!.sms.hasApiKey ? 'success' : 'neutral'">{{ config()!.sms.hasApiKey ? 'Configured' : 'Not set' }}</sp-admin-badge>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Status</dt>
+              <dd class="mt-0.5">
+                <sp-admin-badge [tone]="configTone(config()!.sms.statusLabel)">{{ config()!.sms.statusLabel }}</sp-admin-badge>
+              </dd>
+            </div>
+          </dl>
+          <p class="mt-4 text-xs text-gray-400">SMS is not yet active. Set Sms:Enabled=true and provider credentials to activate. Phone number collection is a future phase.</p>
+        </div>
+      </sp-admin-card>
+
       <!-- Test email -->
       <sp-admin-card>
         <div class="p-5">

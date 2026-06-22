@@ -18,6 +18,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
     private readonly INotificationService _notificationService;
     private readonly IEmailSender _emailSender;
     private readonly EmailOptions _emailOptions;
+    private readonly SmsOptions _smsOptions;
     private readonly ILogger<AdminNotificationHandler> _logger;
 
     public AdminNotificationHandler(
@@ -26,6 +27,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         INotificationService notificationService,
         IEmailSender emailSender,
         IOptions<EmailOptions> emailOptions,
+        IOptions<SmsOptions> smsOptions,
         ILogger<AdminNotificationHandler> logger)
     {
         _db = db;
@@ -33,6 +35,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         _notificationService = notificationService;
         _emailSender = emailSender;
         _emailOptions = emailOptions.Value;
+        _smsOptions = smsOptions.Value;
         _logger = logger;
     }
 
@@ -327,7 +330,13 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
                 UseSsl: _emailOptions.UseSsl,
                 HasUsername: !string.IsNullOrWhiteSpace(_emailOptions.Username),
                 HasPassword: !string.IsNullOrWhiteSpace(_emailOptions.Password)),
-            Sms: new AdminChannelStatus("Sms", Enabled: false, StatusLabel: "Deferred"),
+            Sms: new AdminSmsConfigStatus(
+                Enabled: _smsOptions.Enabled,
+                Configured: _smsOptions.IsConfigured,
+                StatusLabel: !_smsOptions.Enabled ? "Disabled" : _smsOptions.IsConfigured ? "Configured" : "Misconfigured",
+                Provider: string.IsNullOrWhiteSpace(_smsOptions.Provider) ? null : _smsOptions.Provider,
+                SenderId: string.IsNullOrWhiteSpace(_smsOptions.SenderId) ? null : _smsOptions.SenderId,
+                HasApiKey: _smsOptions.HasApiKey),
             DispatchJob: new AdminDispatchJobStatus(
                 Enabled: true,
                 IntervalDescription: "Every 2 minutes",

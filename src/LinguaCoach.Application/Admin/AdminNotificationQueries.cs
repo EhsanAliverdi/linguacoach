@@ -80,7 +80,7 @@ public sealed record AdminSendNotificationResult(
 public sealed record AdminNotificationConfigStatus(
     AdminChannelStatus InApp,
     AdminEmailConfigStatus Email,
-    AdminChannelStatus Sms,
+    AdminSmsConfigStatus Sms,
     AdminDispatchJobStatus DispatchJob);
 
 public sealed record AdminChannelStatus(
@@ -99,6 +99,14 @@ public sealed record AdminEmailConfigStatus(
     bool UseSsl,
     bool HasUsername,
     bool HasPassword);
+
+public sealed record AdminSmsConfigStatus(
+    bool Enabled,
+    bool Configured,
+    string StatusLabel,
+    string? Provider,
+    string? SenderId,
+    bool HasApiKey);
 
 public sealed record AdminDispatchJobStatus(
     bool Enabled,

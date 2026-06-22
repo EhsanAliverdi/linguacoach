@@ -104,6 +104,16 @@ public static class DependencyInjection
                 : sp.GetRequiredService<DisabledEmailSender>();
         });
 
+        // SMS sender — DisabledSmsSender when Sms:Enabled is false/missing.
+        // App never crashes at startup due to missing SMS config.
+        if (configuration is not null)
+            services.Configure<SmsOptions>(configuration.GetSection(SmsOptions.SectionName));
+        else
+            services.Configure<SmsOptions>(_ => { });
+
+        services.AddScoped<DisabledSmsSender>();
+        services.AddScoped<ISmsSender>(sp => sp.GetRequiredService<DisabledSmsSender>());
+
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ILoginHandler, LoginHandler>();

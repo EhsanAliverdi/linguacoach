@@ -315,7 +315,7 @@ describe('AdminNotificationsComponent', () => {
       host: null, port: 587, fromAddress: null, fromDisplayName: null,
       useSsl: false, hasUsername: false, hasPassword: false,
     },
-    sms: { channel: 'Sms', enabled: false, statusLabel: 'Deferred' },
+    sms: { enabled: false, configured: false, statusLabel: 'Deferred', provider: null, senderId: null, hasApiKey: false },
     dispatchJob: { enabled: true, intervalDescription: 'Every 2 minutes', batchSize: 50 },
     ...overrides,
   });

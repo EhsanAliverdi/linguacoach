@@ -425,10 +425,19 @@ export interface AdminDispatchJobStatus {
   batchSize: number;
 }
 
+export interface AdminSmsConfigStatus {
+  enabled: boolean;
+  configured: boolean;
+  statusLabel: string;
+  provider: string | null;
+  senderId: string | null;
+  hasApiKey: boolean;
+}
+
 export interface AdminNotificationConfigStatus {
   inApp: AdminChannelStatus;
   email: AdminEmailConfigStatus;
-  sms: AdminChannelStatus;
+  sms: AdminSmsConfigStatus;
   dispatchJob: AdminDispatchJobStatus;
 }
 

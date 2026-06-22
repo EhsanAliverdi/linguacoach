@@ -57,6 +57,7 @@ public sealed class NotificationDispatchTests : IAsyncLifetime
     private INotificationDispatchService DispatchSvc => new NotificationDispatchService(
         Db,
         new DisabledEmailSender(NullLogger<DisabledEmailSender>.Instance),
+        new DisabledSmsSender(),
         _userManager!,
         NullLogger<NotificationDispatchService>.Instance);
 

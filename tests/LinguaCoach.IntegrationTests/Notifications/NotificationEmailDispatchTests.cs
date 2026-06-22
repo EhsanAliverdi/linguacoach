@@ -63,7 +63,7 @@ public sealed class NotificationEmailDispatchTests : IAsyncLifetime
         Db, new NotificationPreferenceService(Db), NullLogger<NotificationService>.Instance);
 
     private INotificationDispatchService DispatchSvc(IEmailSender emailSender) =>
-        new NotificationDispatchService(Db, emailSender, UserMgr, NullLogger<NotificationDispatchService>.Instance);
+        new NotificationDispatchService(Db, emailSender, new DisabledSmsSender(), UserMgr, NullLogger<NotificationDispatchService>.Instance);
 
     private async Task<ApplicationUser> CreateUserAsync(string email = "student@example.com")
     {
