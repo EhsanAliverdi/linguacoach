@@ -8,12 +8,31 @@ namespace LinguaCoach.UnitTests.Notifications;
 
 public sealed class EmailSenderTests
 {
+    private sealed class FakeResolver(ResolvedEmailConfig config) : INotificationChannelConfigResolver
+    {
+        public Task<ResolvedEmailConfig> ResolveEmailAsync(CancellationToken ct = default) => Task.FromResult(config);
+        public Task<ResolvedSmsConfig> ResolveSmsAsync(CancellationToken ct = default) =>
+            Task.FromResult(new ResolvedSmsConfig(false, null, null, null, "AppSettings"));
+    }
+
     private static EmailMessage SampleMessage() => new(
         ToAddress: "student@example.com",
         ToDisplayName: "Student",
         Subject: "Test",
         BodyHtml: "<p>Hello</p>",
         BodyText: "Hello");
+
+    private static INotificationChannelConfigResolver ResolverWith(ResolvedEmailConfig config) => new FakeResolver(config);
+
+    private static ResolvedEmailConfig DisabledConfig() => new(
+        IsEnabled: false, Host: "", Port: 587, UseSsl: false,
+        FromAddress: null, FromDisplayName: null,
+        Username: null, PlaintextSecret: null, Source: "AppSettings");
+
+    private static ResolvedEmailConfig EnabledNoHostConfig() => new(
+        IsEnabled: true, Host: "", Port: 587, UseSsl: false,
+        FromAddress: "a@b.com", FromDisplayName: null,
+        Username: null, PlaintextSecret: null, Source: "AppSettings");
 
     // ── DisabledEmailSender ───────────────────────────────────────────────────
 
@@ -71,13 +90,12 @@ public sealed class EmailSenderTests
         opts.FromDisplayName.Should().Be("SpeakPath");
     }
 
-    // ── SmtpEmailSender — disabled config returns Skipped without network call ──
+    // ── SmtpEmailSender — disabled/unconfigured returns Skipped without network call ──
 
     [Fact]
     public async Task SmtpSender_WhenDisabled_ReturnsSkipped_NoNetworkCall()
     {
-        var opts = Options.Create(new EmailOptions { Enabled = false, Host = "" });
-        var sender = new SmtpEmailSender(opts, NullLogger<SmtpEmailSender>.Instance);
+        var sender = new SmtpEmailSender(ResolverWith(DisabledConfig()), NullLogger<SmtpEmailSender>.Instance);
 
         var result = await sender.SendAsync(SampleMessage());
 
@@ -88,8 +106,22 @@ public sealed class EmailSenderTests
     [Fact]
     public async Task SmtpSender_WhenEnabledButNoHost_ReturnsSkipped()
     {
-        var opts = Options.Create(new EmailOptions { Enabled = true, Host = "" });
-        var sender = new SmtpEmailSender(opts, NullLogger<SmtpEmailSender>.Instance);
+        var sender = new SmtpEmailSender(ResolverWith(EnabledNoHostConfig()), NullLogger<SmtpEmailSender>.Instance);
+
+        var result = await sender.SendAsync(SampleMessage());
+
+        result.Succeeded.Should().BeFalse();
+        result.WasSkipped.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SmtpSender_WhenEnabledButNoFromAddress_ReturnsSkipped()
+    {
+        var config = new ResolvedEmailConfig(
+            IsEnabled: true, Host: "smtp.test.com", Port: 587, UseSsl: false,
+            FromAddress: null, FromDisplayName: null,
+            Username: null, PlaintextSecret: null, Source: "Database");
+        var sender = new SmtpEmailSender(ResolverWith(config), NullLogger<SmtpEmailSender>.Instance);
 
         var result = await sender.SendAsync(SampleMessage());
 

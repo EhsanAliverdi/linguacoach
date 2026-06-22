@@ -48,6 +48,7 @@ using LinguaCoach.Application.Profile;
 using LinguaCoach.Application.Storage;
 using LinguaCoach.Infrastructure.Profile;
 using LinguaCoach.Infrastructure.Storage;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -81,6 +82,17 @@ public static class DependencyInjection
         services.AddScoped<Jobs.PracticeGymBufferRefillJob>();
         services.AddScoped<Jobs.PracticeGymGenerationJob>();
 
+        // Secret protection (ASP.NET Core Data Protection)
+        // Keys default to the host environment's key ring.
+        // Production deployments should configure PersistKeysToFileSystem or a cloud provider.
+        // See: docs/reviews/2026-06-22-phase-10w-5c-3-runtime-config-resolver-secret-encryption-review.md
+        services.AddDataProtection()
+            .SetApplicationName("LinguaCoach");
+        services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
+
+        // Runtime notification channel config resolver (DB override → appsettings fallback)
+        services.AddScoped<INotificationChannelConfigResolver, NotificationChannelConfigResolver>();
+
         // Notifications
         services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
         services.AddScoped<INotificationService, NotificationService>();
@@ -96,13 +108,9 @@ public static class DependencyInjection
 
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<DisabledEmailSender>();
-        services.AddScoped<IEmailSender>(sp =>
-        {
-            var opts = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
-            return opts.Enabled && !string.IsNullOrWhiteSpace(opts.Host)
-                ? sp.GetRequiredService<SmtpEmailSender>()
-                : sp.GetRequiredService<DisabledEmailSender>();
-        });
+        // SmtpEmailSender now resolves config at send time via INotificationChannelConfigResolver.
+        // We always register SmtpEmailSender as IEmailSender — it skips safely when disabled/unconfigured.
+        services.AddScoped<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
 
         // SMS sender — DisabledSmsSender when Sms:Enabled is false/missing.
         // App never crashes at startup due to missing SMS config.

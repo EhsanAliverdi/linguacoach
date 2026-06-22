@@ -20,6 +20,8 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
     private readonly IEmailSender _emailSender;
     private readonly EmailOptions _emailOptions;
     private readonly SmsOptions _smsOptions;
+    private readonly ISecretProtector _secretProtector;
+    private readonly INotificationChannelConfigResolver _configResolver;
     private readonly ILogger<AdminNotificationHandler> _logger;
 
     public AdminNotificationHandler(
@@ -29,6 +31,8 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         IEmailSender emailSender,
         IOptions<EmailOptions> emailOptions,
         IOptions<SmsOptions> smsOptions,
+        ISecretProtector secretProtector,
+        INotificationChannelConfigResolver configResolver,
         ILogger<AdminNotificationHandler> logger)
     {
         _db = db;
@@ -37,6 +41,8 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         _emailSender = emailSender;
         _emailOptions = emailOptions.Value;
         _smsOptions = smsOptions.Value;
+        _secretProtector = secretProtector;
+        _configResolver = configResolver;
         _logger = logger;
     }
 
@@ -353,12 +359,16 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
             "Admin {AdminId} requested test email to {To}.",
             adminUserId, toAddress);
 
-        if (!_emailOptions.Enabled || string.IsNullOrWhiteSpace(_emailOptions.Host))
+        // Resolve effective config (DB override → appsettings fallback)
+        var resolved = await _configResolver.ResolveEmailAsync(ct);
+
+        if (!resolved.IsEnabled || string.IsNullOrWhiteSpace(resolved.Host))
         {
             return new AdminTestEmailResult(
                 Succeeded: false,
                 WasSkipped: true,
-                Message: "Email is disabled or not configured. Enable it in appsettings Email section.");
+                Message: $"Email is disabled or not configured (source: {resolved.Source}). " +
+                         "Enable it via the Configuration tab or in appsettings.");
         }
 
         var message = new EmailMessage(
@@ -371,8 +381,8 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         var result = await _emailSender.SendAsync(message, ct);
 
         _logger.LogInformation(
-            "Admin {AdminId} test email to {To}: succeeded={S} skipped={Sk}.",
-            adminUserId, toAddress, result.Succeeded, result.WasSkipped);
+            "Admin {AdminId} test email to {To}: succeeded={S} skipped={Sk} source={Source}.",
+            adminUserId, toAddress, result.Succeeded, result.WasSkipped, resolved.Source);
 
         return new AdminTestEmailResult(
             Succeeded: result.Succeeded,
@@ -471,7 +481,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         // encryption infrastructure is added. Secret is never returned to the frontend.)
         string? encryptedSecret = null;
         if (!string.IsNullOrWhiteSpace(command.NewSecret))
-            encryptedSecret = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(command.NewSecret));
+            encryptedSecret = _secretProtector.Protect(command.NewSecret);
 
         config.UpdateEmail(
             command.IsEnabled,
@@ -510,7 +520,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
 
         string? encryptedSecret = null;
         if (!string.IsNullOrWhiteSpace(command.NewSecret))
-            encryptedSecret = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(command.NewSecret));
+            encryptedSecret = _secretProtector.Protect(command.NewSecret);
 
         config.UpdateSms(
             command.IsEnabled,

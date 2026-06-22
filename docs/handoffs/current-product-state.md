@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-22 (10W-FINAL)
+lastUpdated: 2026-06-23 (10W-5C-3)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ---
 
@@ -19,14 +19,14 @@ All 14 notification sub-phases are complete and verified. 2246 .NET / 1011 Angul
 ### Channels delivered
 
 - **In-App:** live bell dropdown, unread count, mark read/all, archive. User-isolated. Committed component.
-- **Email:** SMTP provider, DisabledEmailSender safe default, NotificationDispatchJob (Quartz, every 2 min, batchSize=50). SMTP credentials never returned to frontend.
+- **Email:** SMTP provider, SmtpEmailSender (resolves config at send time via `INotificationChannelConfigResolver`), NotificationDispatchJob (Quartz, every 2 min, batchSize=50). SMTP credentials never returned to frontend.
 - **SMS:** foundation only — `ISmsSender` / `DisabledSmsSender` / `SmsOptions`. No real provider. Phone number collection deferred.
 
 ### Admin notification center
 
 - Notifications list (filter by channel/status/category/severity/search, pagination).
 - Delivery queue (filter by channel/status/failed-only, retry/cancel actions).
-- Configuration tab (InApp/Email/SMS/dispatch status, SMTP safe fields, SMS safe fields, test-email).
+- Configuration tab (InApp/Email/SMS/dispatch status, SMTP safe fields, SMS safe fields, test-email). DB-backed channel config with editable forms (Phase 10W-5C-2/5C-3). Secrets protected with ASP.NET Core Data Protection. `hasPassword`/`hasApiKey` booleans only in API responses.
 - Send notification slide-over (InApp + Email channels, recipient lookup, title/body/category/severity/deep-link).
 - Templates tab (CRUD, preview, 4 seeded defaults).
 
@@ -51,8 +51,10 @@ All 14 notification sub-phases are complete and verified. 2246 .NET / 1011 Angul
 - `TODO-10W-5D-UNIQUE-CONSTRAINT`: DB unique index on `(template_key, channel)` for active templates.
 - `TODO-10W-PHONE`: phone number collection and verification.
 - `TODO-10W-SMS-PROVIDER`: real Twilio/other SMS sender (requires TODO-10W-PHONE).
+- `TODO-10W-5C-3-KEY-PERSISTENCE`: configure Data Protection key persistence (file system / cloud KMS) before production deploy — currently ephemeral.
 
 Closure audit: `docs/reviews/2026-06-22-phase-10w-final-notification-platform-closure-audit.md`
+DB config + secret encryption review: `docs/reviews/2026-06-23-phase-10w-5c-3-runtime-config-resolver-secret-encryption-review.md`
 
 ---
 
