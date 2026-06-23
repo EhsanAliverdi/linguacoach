@@ -92,6 +92,12 @@ public static class DependencyInjection
         else
             services.Configure<NotificationKeyProtectionOptions>(_ => { });
 
+        // External login config — safe defaults: all providers disabled
+        if (configuration is not null)
+            services.Configure<GoogleExternalLoginOptions>(configuration.GetSection(GoogleExternalLoginOptions.SectionName));
+        else
+            services.Configure<GoogleExternalLoginOptions>(_ => { });
+
         // Read all DP config at registration time — PersistKeysToFileSystem/ProtectKeysWith* must be
         // called on the IDataProtectionBuilder before the container is built.
         var dpKeysPath = configuration?["DataProtection:KeysPath"] ?? "./app-data/data-protection-keys";
@@ -195,6 +201,8 @@ public static class DependencyInjection
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+        services.AddScoped<IExternalLoginService, ExternalLoginService>();
         services.AddScoped<ILoginHandler, LoginHandler>();
         services.AddScoped<IChangePasswordHandler, ChangePasswordHandler>();
         services.AddScoped<IPasswordResetService, PasswordResetHandler>();

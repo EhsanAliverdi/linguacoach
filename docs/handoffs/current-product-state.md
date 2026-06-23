@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-4)
+lastUpdated: 2026-06-23 (10Auth-F-5)
 owner: product
 supersedes:
 supersededBy:
@@ -64,16 +64,32 @@ Auth/security audit complete. No code changes. Roadmap defined.
 - Raw tokens never stored, logged, or audited — only SHA-256 hash stored.
 - 6 new audit event types: `RefreshTokenIssued`, `RefreshTokenRotated`, `RefreshTokenRevoked`, `RefreshTokenReuseDetected`, `LogoutSucceeded`, `AllSessionsRevoked`.
 
+### Google OAuth / external login foundation (10Auth-F-5, 2026-06-23)
+
+- `IGoogleTokenValidator` abstraction — testable without real Google API; `GoogleTokenValidator` uses `Google.Apis.Auth.GoogleJsonWebSignature`.
+- `IExternalLoginService` / `ExternalLoginService` — validates Google ID token, links account via Identity `AspNetUserLogins`, issues JWT + refresh token using existing services.
+- `GoogleExternalLoginOptions` bound from `Authentication:ExternalProviders:Google`. Defaults: `Enabled=false`, no public auto-provisioning, no domain restriction.
+- No new migration — uses existing `AspNetUserLogins` table from Identity.
+- Account linking: auto-link by verified email when `AllowAutoLinkByEmail=true`; reject unknown users by default.
+- Domain restriction: `AllowedDomains` list checked against Google `hd` claim.
+- Admin accounts never auto-created via Google login.
+- Endpoint: `POST /api/auth/external/google` (anonymous, `AuthExternalLogin` rate limiter — 20/5min/IP).
+- Login response shape identical to local login (`token`, `role`, `mustChangePassword`, `refreshToken`, `refreshExpiresAtUtc`).
+- Raw Google ID token never stored, logged, or in audit metadata.
+- 7 new audit event types: `ExternalLoginSucceeded`, `ExternalLoginFailed`, `ExternalLoginLinked`, `ExternalLoginRejected`, `ExternalProviderDisabled`, `ExternalEmailUnverified`, `ExternalDomainRejected`.
+- Notifications: `account.external_login_linked` (InApp + Email) queued when account linked.
+- 20 new integration tests. `FakeGoogleTokenValidator` injected via DI — no real Google API calls in tests.
+
 ### Remaining gaps
 
-No OAuth. No admin security UI. No Angular session UI. SMS security notifications deferred (no real SMS provider).
+No Angular Google sign-in button. No admin security settings UI. No SMS security notifications. No enterprise SSO/SAML/OIDC.
 
 ### Roadmap
 
 - **10Auth-F-2** (done): auth event audit log (`AuthSecurityEvent` entity, migration T58, admin endpoint, 16 tests).
-- **10Auth-F-3**: security notifications (password changed, account locked, reset requested).
-- **10Auth-F-4**: refresh token / session management (migration T59, short-lived JWT, HttpOnly refresh cookie).
-- **10Auth-F-5**: Google OAuth / external login.
+- **10Auth-F-3** (done): security notifications (password changed, account locked, reset requested).
+- **10Auth-F-4** (done): refresh token / session management (migration T59, rotation, reuse detection).
+- **10Auth-F-5** (done): Google OAuth / external login foundation (no migration, 20 tests).
 - **10Auth-F-6**: admin security settings UI.
 - **10Auth-F-FINAL**: closure audit.
 

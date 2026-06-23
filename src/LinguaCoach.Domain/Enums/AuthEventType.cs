@@ -18,4 +18,11 @@ public enum AuthEventType
     RefreshTokenReuseDetected,
     LogoutSucceeded,
     AllSessionsRevoked,
+    ExternalLoginSucceeded,
+    ExternalLoginFailed,
+    ExternalLoginLinked,
+    ExternalLoginRejected,
+    ExternalProviderDisabled,
+    ExternalEmailUnverified,
+    ExternalDomainRejected,
 }

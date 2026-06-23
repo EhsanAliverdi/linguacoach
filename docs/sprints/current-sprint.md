@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-4)
+lastUpdated: 2026-06-23 (10Auth-F-5)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-5 — Google OAuth / External Login Foundation** — complete (2026-06-23)
+
+`IGoogleTokenValidator` abstraction (testable without real Google API calls), `IExternalLoginService`, `ExternalLoginService` (link/provision/issue JWT + refresh tokens). `GoogleExternalLoginOptions` bound from `Authentication:ExternalProviders:Google` (disabled by default, no public auto-provisioning). Endpoint: `POST /api/auth/external/google`, rate-limited `AuthExternalLogin` (20/5min/IP). Account linking via Identity `AspNetUserLogins` — no new migration. Auto-link by email when `AllowAutoLinkByEmail=true`. Domain restriction via `AllowedDomains`. 7 new audit event types. `account.external_login_linked` notification templates (InApp+Email). 20 new integration tests with `FakeGoogleTokenValidator`. 2369/2369 pass.
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-5-google-oauth-external-login-foundation.md
+
+---
 
 **Phase 10Auth-F-4 — Refresh Tokens and Session Management** — complete (2026-06-23)
 

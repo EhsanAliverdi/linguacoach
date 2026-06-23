@@ -14,17 +14,20 @@ public sealed class AuthController : ControllerBase
     private readonly IChangePasswordHandler _changePasswordHandler;
     private readonly IPasswordResetService _passwordReset;
     private readonly IRefreshTokenService _refreshTokens;
+    private readonly IExternalLoginService _externalLogin;
 
     public AuthController(
         ILoginHandler loginHandler,
         IChangePasswordHandler changePasswordHandler,
         IPasswordResetService passwordReset,
-        IRefreshTokenService refreshTokens)
+        IRefreshTokenService refreshTokens,
+        IExternalLoginService externalLogin)
     {
         _loginHandler = loginHandler;
         _changePasswordHandler = changePasswordHandler;
         _passwordReset = passwordReset;
         _refreshTokens = refreshTokens;
+        _externalLogin = externalLogin;
     }
 
     [HttpPost("login")]
@@ -80,6 +83,31 @@ public sealed class AuthController : ControllerBase
             await _refreshTokens.RevokeAsync(request.RefreshToken, "Logout", ct);
 
         return NoContent();
+    }
+
+    [HttpPost("external/google")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthExternalLogin")]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken ct)
+    {
+        var correlationId = HttpContext.Request.Headers["X-Correlation-ID"].ToString();
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ua = HttpContext.Request.Headers["User-Agent"].ToString();
+
+        var result = await _externalLogin.GoogleLoginAsync(
+            new ExternalLoginRequest(request.IdToken, ip, ua, correlationId), ct);
+
+        if (!result.Succeeded)
+            return Unauthorized(new { error = "External login failed." });
+
+        return Ok(new
+        {
+            token = result.AccessToken,
+            role = result.Role!.ToString(),
+            mustChangePassword = result.MustChangePassword,
+            refreshToken = result.RefreshToken,
+            refreshExpiresAtUtc = result.RefreshExpiresAtUtc,
+        });
     }
 
     [HttpPost("revoke-sessions")]
@@ -143,6 +171,7 @@ public sealed class AuthController : ControllerBase
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 }
 
+public sealed record GoogleLoginRequest(string IdToken);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record LogoutRequest(string? RefreshToken);

@@ -168,6 +168,19 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
+    // External login: 20 requests per IP per 5 minutes
+    options.AddPolicy("AuthExternalLogin", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter($"extlogin:{ip}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(5),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
     // Authenticated change-password: 10 attempts per user per 5 minutes
     options.AddPolicy("AuthChangePassword", context =>
     {

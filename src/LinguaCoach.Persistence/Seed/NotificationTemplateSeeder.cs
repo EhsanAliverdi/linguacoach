@@ -196,6 +196,34 @@ public static class NotificationTemplateSeeder
                 title: null,
                 description: "Sent by email when an account is locked out due to too many failed login attempts.",
                 supportedVariablesJson: "[\"DisplayName\",\"AppName\"]"),
+
+            // ── External login notifications (Phase 10Auth-F-5) ───────────────
+
+            // External login linked — In-App
+            NotificationTemplate.Create(
+                templateKey: "account.external_login_linked",
+                channel: NotificationChannel.InApp,
+                name: "External Login Linked (In-App)",
+                body: "Your Google account has been linked. You can now sign in with Google.",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Info,
+                subject: null,
+                title: "Google account linked",
+                description: "Sent in-app when a Google account is linked to an existing account.",
+                supportedVariablesJson: "[]"),
+
+            // External login linked — Email
+            NotificationTemplate.Create(
+                templateKey: "account.external_login_linked",
+                channel: NotificationChannel.Email,
+                name: "External Login Linked (Email)",
+                body: "<p>Hello {{DisplayName}},</p><p>Your {{AppName}} account has been linked to your Google account. You can now sign in using Google.</p><p>If you did not do this, contact your administrator immediately.</p><p>— {{AppName}}</p>",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Info,
+                subject: "Your {{AppName}} account is now linked to Google",
+                title: null,
+                description: "Sent by email when a Google account is linked to an existing account.",
+                supportedVariablesJson: "[\"DisplayName\",\"AppName\"]"),
         };
     }
 }
