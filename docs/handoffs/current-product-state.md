@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-0)
+lastUpdated: 2026-06-23 (10Auth-F-2)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-23 (10Auth-F-0)
+Last updated: 2026-06-23 (10Auth-F-2)
 
 ---
 
@@ -25,19 +25,27 @@ Auth/security audit complete. No code changes. Roadmap defined.
 ### Hardening delivered (10Auth-F-1, 2026-06-23)
 
 - Account lockout: 5 failed attempts → 15-minute lockout. `LoginHandler` uses `AccessFailedAsync`/`IsLockedOutAsync`/`ResetAccessFailedCountAsync`.
-- Rate limiting: `AuthLogin` (10 req / 5 min per IP on POST /api/auth/login), `AuthReset` (3 req / 15 min per IP on reset-password and change-password).
+- Rate limiting: `AuthLogin` (10 req / 5 min per IP on POST /api/auth/login), `AuthReset` (3 req / 15 min per IP on reset-password), `AuthChangePassword` (10 req / 5 min per userId on change-password).
 - Password policy: 10+ chars, uppercase, lowercase, digit, special char all required.
 - Security response headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` (camera/mic/geo/payment blocked).
 - CSP and HSTS deferred (Angular nonce strategy and production TLS confirmation required first).
 
+### Auth event audit log (10Auth-F-2, 2026-06-23)
+
+- `AuthSecurityEvent` entity (append-only), migration T58 (`AuthSecurityEvents` table), 3 indexes.
+- Events logged: `LoginSucceeded`, `LoginFailed`, `LoginLockedOut`, `PasswordChanged`, `PasswordChangeFailed`, `ForcePasswordChangeCompleted`, `PasswordResetRequested`, `PasswordResetSucceeded`, `PasswordResetFailed`, `StudentAccountCreated`.
+- Audit service is non-fatal — persistence failure never aborts an auth flow.
+- No secrets in audit records: reset tokens, passwords, and raw auth headers are never written.
+- Admin endpoint: `GET /api/admin/auth-events` (paginated, filterable by userId, email, eventType, outcome, date range).
+- 16 new integration tests including security invariant checks.
+
 ### Remaining gaps
 
-No auth event audit log. No session revocation. No refresh tokens. No OAuth. No admin security UI.
+No session revocation. No refresh tokens. No OAuth. No admin security UI. No security notifications.
 
 ### Roadmap
 
-- **10Auth-F-1** (next): lockout config, login rate limiting, password policy hardening, security headers. ~1 day, no migration.
-- **10Auth-F-2**: auth event audit log (`AuthAuditEvent` entity, migration T58).
+- **10Auth-F-2** (done): auth event audit log (`AuthSecurityEvent` entity, migration T58, admin endpoint, 16 tests).
 - **10Auth-F-3**: security notifications (password changed, account locked, reset requested).
 - **10Auth-F-4**: refresh token / session management (migration T59, short-lived JWT, HttpOnly refresh cookie).
 - **10Auth-F-5**: Google OAuth / external login.

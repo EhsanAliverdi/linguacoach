@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-0)
+lastUpdated: 2026-06-23 (10Auth-F-2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-2 — Auth Event Audit Log** — complete (2026-06-23)
+
+`AuthSecurityEvent` entity, migration T58, `IAuthSecurityAuditService` (non-fatal, never logs secrets), audit integration in LoginHandler/ChangePasswordHandler/PasswordResetHandler/CreateStudentHandler. `GET /api/admin/auth-events` (paginated, filterable by userId, email, eventType, outcome, date range). Rate limiter split: `AuthReset` (3/15min, unauthenticated reset-link) and `AuthChangePassword` (10/5min, authenticated, keyed on userId). 16 new integration tests. 2319/2319 pass.
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-2-auth-event-audit-log.md
+
+---
 
 **Phase 10Auth-F-1 — Immediate Auth/Security Hardening** — complete (2026-06-23)
 

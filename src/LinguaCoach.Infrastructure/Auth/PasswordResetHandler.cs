@@ -3,6 +3,7 @@ using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,8 @@ public sealed class PasswordResetHandler : IPasswordResetService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly INotificationService _notifications;
     private readonly INotificationTemplateRenderer _templateRenderer;
+    private readonly IAuthSecurityAuditService _audit;
+    private readonly IHttpContextAccessor _httpContext;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PasswordResetHandler> _logger;
 
@@ -33,6 +36,8 @@ public sealed class PasswordResetHandler : IPasswordResetService
         UserManager<ApplicationUser> userManager,
         INotificationService notifications,
         INotificationTemplateRenderer templateRenderer,
+        IAuthSecurityAuditService audit,
+        IHttpContextAccessor httpContext,
         IConfiguration configuration,
         ILogger<PasswordResetHandler> logger)
     {
@@ -40,12 +45,18 @@ public sealed class PasswordResetHandler : IPasswordResetService
         _userManager = userManager;
         _notifications = notifications;
         _templateRenderer = templateRenderer;
+        _audit = audit;
+        _httpContext = httpContext;
         _configuration = configuration;
         _logger = logger;
     }
 
     public async Task SendResetLinkAsync(SendPasswordResetLinkCommand command, CancellationToken ct = default)
     {
+        var ip = _httpContext.HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var ua = _httpContext.HttpContext?.Request.Headers["User-Agent"].ToString();
+        var correlationId = _httpContext.HttpContext?.Request.Headers["X-Correlation-ID"].ToString();
+
         var profile = await _db.StudentProfiles
             .FirstOrDefaultAsync(p => p.Id == command.StudentProfileId, ct)
             ?? throw new InvalidOperationException("Student profile not found.");
@@ -62,9 +73,7 @@ public sealed class PasswordResetHandler : IPasswordResetService
 
         var baseUrl = _configuration["PublicApp:BaseUrl"]?.TrimEnd('/')
             ?? "http://localhost:4200";
-
         var appName = _configuration["PublicApp:AppName"] ?? "SpeakPath";
-
         var resetLink = $"{baseUrl}/reset-password?userId={Uri.EscapeDataString(user.Id.ToString())}&token={Uri.EscapeDataString(encodedToken)}";
 
         _logger.LogInformation(
@@ -72,12 +81,9 @@ public sealed class PasswordResetHandler : IPasswordResetService
             user.Id, command.AdminUserId);
 
         var displayName = !string.IsNullOrWhiteSpace(user.Email) ? user.Email : "Student";
-
-        var (emailSubject, emailBody) = await ResolveResetEmailContentAsync(
-            resetLink, appName, displayName, ct);
+        var (emailSubject, emailBody) = await ResolveResetEmailContentAsync(resetLink, appName, displayName, ct);
 
         // Queue email — body contains the link but NOT the raw token value separately.
-        // If queueing fails, rethrow so the admin knows the request didn't fully complete.
         await _notifications.QueueEmailAsync(
             recipientUserId: profile.UserId,
             title: emailSubject,
@@ -85,6 +91,11 @@ public sealed class PasswordResetHandler : IPasswordResetService
             category: NotificationCategory.Account,
             severity: NotificationSeverity.Info,
             ct: ct);
+
+        await _audit.RecordAsync(new AuthSecurityEventRecord(
+            AuthEventType.PasswordResetRequested, AuthEventOutcome.Requested,
+            UserId: user.Id, EmailOrUserName: user.Email,
+            IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
     }
 
     private async Task<(string Subject, string Body)> ResolveResetEmailContentAsync(
@@ -94,7 +105,7 @@ public sealed class PasswordResetHandler : IPasswordResetService
             .AsNoTracking()
             .FirstOrDefaultAsync(t =>
                 t.TemplateKey == "account.password_reset" &&
-                t.Channel == Domain.Enums.NotificationChannel.Email &&
+                t.Channel == NotificationChannel.Email &&
                 t.IsActive, ct);
 
         if (template is null)
@@ -129,23 +140,27 @@ public sealed class PasswordResetHandler : IPasswordResetService
     public async Task<CompletePasswordResetResult> CompleteResetAsync(
         CompletePasswordResetCommand command, CancellationToken ct = default)
     {
+        var ip = _httpContext.HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var ua = _httpContext.HttpContext?.Request.Headers["User-Agent"].ToString();
+        var correlationId = _httpContext.HttpContext?.Request.Headers["X-Correlation-ID"].ToString();
+
         if (command.NewPassword != command.ConfirmPassword)
             return CompletePasswordResetResult.Fail("Passwords do not match.");
-
-        if (command.NewPassword.Length < 8)
-            return CompletePasswordResetResult.Fail("Password must be at least 8 characters.");
 
         // Resolve user by ID (preferred) or by email as fallback.
         ApplicationUser? user = null;
         if (Guid.TryParse(command.UserIdOrEmail, out var userId))
             user = await _userManager.FindByIdAsync(userId.ToString());
-
         user ??= await _userManager.FindByEmailAsync(command.UserIdOrEmail);
 
         if (user is null)
         {
             // Do not reveal whether the user exists.
             _logger.LogWarning("CompletePasswordReset: user not found for input '{Input}'.", command.UserIdOrEmail);
+            await _audit.RecordAsync(new AuthSecurityEventRecord(
+                AuthEventType.PasswordResetFailed, AuthEventOutcome.Failure,
+                FailureReasonCode: "UnknownUserGeneric",
+                IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
             return CompletePasswordResetResult.Fail("The reset link is invalid or has expired.");
         }
 
@@ -156,16 +171,28 @@ public sealed class PasswordResetHandler : IPasswordResetService
         }
         catch
         {
+            await _audit.RecordAsync(new AuthSecurityEventRecord(
+                AuthEventType.PasswordResetFailed, AuthEventOutcome.Failure,
+                UserId: user.Id, EmailOrUserName: user.Email,
+                FailureReasonCode: "InvalidOrExpiredToken",
+                IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
             return CompletePasswordResetResult.Fail("The reset link is invalid or has expired.");
         }
 
         var result = await _userManager.ResetPasswordAsync(user, rawToken, command.NewPassword);
         if (!result.Succeeded)
         {
-            // Log internally but return generic message.
+            var reasonCode = result.Errors.Any(e => e.Code.Contains("Password", StringComparison.OrdinalIgnoreCase))
+                ? "PasswordPolicyFailed"
+                : "InvalidOrExpiredToken";
             _logger.LogWarning(
                 "CompletePasswordReset failed for user {UserId}: {Errors}",
                 user.Id, string.Join("; ", result.Errors.Select(e => e.Description)));
+            await _audit.RecordAsync(new AuthSecurityEventRecord(
+                AuthEventType.PasswordResetFailed, AuthEventOutcome.Failure,
+                UserId: user.Id, EmailOrUserName: user.Email,
+                FailureReasonCode: reasonCode,
+                IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
             return CompletePasswordResetResult.Fail("The reset link is invalid or has expired.");
         }
 
@@ -177,6 +204,10 @@ public sealed class PasswordResetHandler : IPasswordResetService
         }
 
         _logger.LogInformation("Password reset completed for user {UserId}.", user.Id);
+        await _audit.RecordAsync(new AuthSecurityEventRecord(
+            AuthEventType.PasswordResetSucceeded, AuthEventOutcome.Success,
+            UserId: user.Id, EmailOrUserName: user.Email,
+            IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
         return CompletePasswordResetResult.Ok();
     }
 

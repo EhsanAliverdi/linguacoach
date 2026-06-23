@@ -197,6 +197,7 @@ public static class DependencyInjection
         services.AddScoped<ILoginHandler, LoginHandler>();
         services.AddScoped<IChangePasswordHandler, ChangePasswordHandler>();
         services.AddScoped<IPasswordResetService, PasswordResetHandler>();
+        services.AddScoped<IAuthSecurityAuditService, AuthSecurityAuditService>();
 
         // Admin
         services.AddScoped<ICreateStudentHandler, CreateStudentHandler>();
@@ -205,6 +206,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminCurriculumHandler, AdminHandler>();
         services.AddScoped<IAdminAiConfigHandler, AdminHandler>();
         services.AddScoped<IAdminNotificationHandler, AdminNotificationHandler>();
+        services.AddScoped<IAdminAuthEventHandler, AdminAuthEventHandler>();
         services.AddScoped<IAdminTemplateHandler, AdminTemplateHandler>();
         services.AddSingleton<INotificationTemplateRenderer, SimpleNotificationTemplateRenderer>();
         services.AddScoped<IAiPricingResolver, AiPricingResolver>();

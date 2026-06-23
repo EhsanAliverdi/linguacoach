@@ -142,7 +142,7 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
-    // Auth reset/change: 3 attempts per IP per 15 minutes — reduces reset-link abuse
+    // Password reset link: 3 attempts per IP per 15 minutes — reduces reset-link abuse
     options.AddPolicy("AuthReset", context =>
     {
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -150,6 +150,21 @@ builder.Services.AddRateLimiter(options =>
         {
             PermitLimit = 3,
             Window = TimeSpan.FromMinutes(15),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
+    // Authenticated change-password: 10 attempts per user per 5 minutes
+    options.AddPolicy("AuthChangePassword", context =>
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.Connection.RemoteIpAddress?.ToString()
+            ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter($"chgpwd:{userId}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(5),
             QueueLimit = 0,
             AutoReplenishment = true
         });
@@ -179,6 +194,9 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
+// ── HTTP context accessor (used by Infrastructure services for IP/UA extraction) ──
+builder.Services.AddHttpContextAccessor();
 
 // ── Correlation ID (scoped per request) ────────────────────────────────────
 builder.Services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();

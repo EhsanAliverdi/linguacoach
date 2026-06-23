@@ -2,6 +2,7 @@ using LinguaCoach.Application.Auth;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,17 +14,23 @@ public sealed class LoginHandler : ILoginHandler
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly LinguaCoachDbContext _db;
+    private readonly IAuthSecurityAuditService _audit;
+    private readonly IHttpContextAccessor _httpContext;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
         LinguaCoachDbContext db,
+        IAuthSecurityAuditService audit,
+        IHttpContextAccessor httpContext,
         ILogger<LoginHandler> logger)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _db = db;
+        _audit = audit;
+        _httpContext = httpContext;
         _logger = logger;
     }
 
@@ -32,10 +39,19 @@ public sealed class LoginHandler : ILoginHandler
         // Deliberately not logging email to avoid leaking PII in bulk logs
         _logger.LogInformation("Login attempt for user");
 
+        var ip = _httpContext.HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var ua = _httpContext.HttpContext?.Request.Headers["User-Agent"].ToString();
+        var correlationId = _httpContext.HttpContext?.Request.Headers["X-Correlation-ID"].ToString();
+
         var user = await _userManager.FindByEmailAsync(command.Email);
         if (user is null)
         {
             _logger.LogWarning("Login failed — user not found");
+            await _audit.RecordAsync(new AuthSecurityEventRecord(
+                AuthEventType.LoginFailed, AuthEventOutcome.Failure,
+                EmailOrUserName: command.Email,
+                FailureReasonCode: "UnknownUserGeneric",
+                IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
@@ -43,18 +59,27 @@ public sealed class LoginHandler : ILoginHandler
         if (await _userManager.IsLockedOutAsync(user))
         {
             _logger.LogWarning("Login rejected — account locked out UserId={UserId}", user.Id);
+            await _audit.RecordAsync(new AuthSecurityEventRecord(
+                AuthEventType.LoginLockedOut, AuthEventOutcome.Blocked,
+                UserId: user.Id, EmailOrUserName: command.Email,
+                FailureReasonCode: "LockedOut",
+                IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
         var valid = await _userManager.CheckPasswordAsync(user, command.Password);
         if (!valid)
         {
-            // Increment failed count; Identity will set LockoutEnd when threshold is reached
             await _userManager.AccessFailedAsync(user);
             var stillLockedOut = await _userManager.IsLockedOutAsync(user);
             _logger.LogWarning(
                 "Login failed — invalid password UserId={UserId} LockedOut={LockedOut}",
                 user.Id, stillLockedOut);
+            await _audit.RecordAsync(new AuthSecurityEventRecord(
+                AuthEventType.LoginFailed, AuthEventOutcome.Failure,
+                UserId: user.Id, EmailOrUserName: command.Email,
+                FailureReasonCode: "InvalidCredentials",
+                IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
@@ -84,6 +109,12 @@ public sealed class LoginHandler : ILoginHandler
         var token = _tokenService.GenerateToken(user.Id, user.Email!, user.Role);
         _logger.LogInformation("Login succeeded UserId={UserId} Role={Role} MustChangePassword={MustChange}",
             user.Id, user.Role, user.MustChangePassword);
+
+        await _audit.RecordAsync(new AuthSecurityEventRecord(
+            AuthEventType.LoginSucceeded, AuthEventOutcome.Success,
+            UserId: user.Id, EmailOrUserName: command.Email,
+            IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
+
         return new LoginResult(token, user.Role, user.MustChangePassword);
     }
 }

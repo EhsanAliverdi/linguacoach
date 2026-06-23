@@ -71,6 +71,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<AiModelPricingOverride> AiModelPricingOverrides => Set<AiModelPricingOverride>();
 
+    // Phase 10Auth-F — Auth event audit log
+    public DbSet<AuthSecurityEvent> AuthSecurityEvents => Set<AuthSecurityEvent>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

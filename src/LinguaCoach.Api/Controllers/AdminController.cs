@@ -24,6 +24,7 @@ public sealed class AdminController : ControllerBase
     private readonly IAdminNotificationHandler _notificationHandler;
     private readonly IAdminTemplateHandler _templateHandler;
     private readonly INotificationPreferenceService _notificationPreferences;
+    private readonly IAdminAuthEventHandler _authEvents;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
@@ -36,7 +37,8 @@ public sealed class AdminController : ControllerBase
         IPasswordResetService passwordReset,
         IAdminNotificationHandler notificationHandler,
         IAdminTemplateHandler templateHandler,
-        INotificationPreferenceService notificationPreferences)
+        INotificationPreferenceService notificationPreferences,
+        IAdminAuthEventHandler authEvents)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
@@ -49,6 +51,7 @@ public sealed class AdminController : ControllerBase
         _notificationHandler = notificationHandler;
         _templateHandler = templateHandler;
         _notificationPreferences = notificationPreferences;
+        _authEvents = authEvents;
     }
 
 
@@ -853,6 +856,25 @@ public sealed class AdminController : ControllerBase
             isEnabled = p.IsEnabled,
             isRequired = p.IsRequired,
         }));
+    }
+
+    // ── Auth event audit log ─────────────────────────────────────────────────
+
+    [HttpGet("auth-events")]
+    public async Task<IActionResult> ListAuthEvents(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] Guid? userId = null,
+        [FromQuery] string? email = null,
+        [FromQuery] string? eventType = null,
+        [FromQuery] string? outcome = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        CancellationToken ct = default)
+    {
+        var result = await _authEvents.ListAsync(new AdminAuthEventListQuery(
+            page, pageSize, userId, email, eventType, outcome, from, to), ct);
+        return Ok(result);
     }
 
     private Guid GetCurrentUserId()

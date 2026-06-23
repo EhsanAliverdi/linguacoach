@@ -42,7 +42,7 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("change-password")]
     [Authorize]
-    [EnableRateLimiting("AuthReset")]
+    [EnableRateLimiting("AuthChangePassword")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();

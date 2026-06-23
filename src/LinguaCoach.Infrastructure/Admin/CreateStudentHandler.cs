@@ -1,9 +1,11 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Auth;
 using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,8 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
     private readonly LinguaCoachDbContext _db;
     private readonly INotificationService _notifications;
     private readonly INotificationTemplateRenderer _templateRenderer;
+    private readonly IAuthSecurityAuditService _audit;
+    private readonly IHttpContextAccessor _httpContext;
     private readonly IConfiguration _configuration;
     private readonly ILogger<CreateStudentHandler> _logger;
 
@@ -25,6 +29,8 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
         LinguaCoachDbContext db,
         INotificationService notifications,
         INotificationTemplateRenderer templateRenderer,
+        IAuthSecurityAuditService audit,
+        IHttpContextAccessor httpContext,
         IConfiguration configuration,
         ILogger<CreateStudentHandler> logger)
     {
@@ -32,6 +38,8 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
         _db = db;
         _notifications = notifications;
         _templateRenderer = templateRenderer;
+        _audit = audit;
+        _httpContext = httpContext;
         _configuration = configuration;
         _logger = logger;
     }
@@ -89,6 +97,14 @@ public sealed class CreateStudentHandler : ICreateStudentHandler
 
         _db.StudentProfiles.Add(profile);
         await _db.SaveChangesAsync(ct);
+
+        // Record audit event — never include the temporary password.
+        var ip = _httpContext.HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var correlationId = _httpContext.HttpContext?.Request.Headers["X-Correlation-ID"].ToString();
+        await _audit.RecordAsync(new AuthSecurityEventRecord(
+            AuthEventType.StudentAccountCreated, AuthEventOutcome.Success,
+            UserId: user.Id, EmailOrUserName: user.Email,
+            IpAddress: ip, CorrelationId: correlationId), ct);
 
         // Queue welcome/account-created email. Does not include the temporary password.
         // If queueing fails, log and continue — student creation still succeeds.
