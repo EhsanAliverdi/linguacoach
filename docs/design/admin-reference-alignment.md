@@ -125,8 +125,8 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 | `/admin/students` | AdminStudentsComponent | Complete | **Complete** — 4-tile KPI strip (real stats), rows-per-page selector, filter bar aligned | Resolved in 10UI-REDESIGN-2 | Done |
 | `/admin/students/:id` | AdminStudentDetailComponent | Complete | **Complete** — coloured initials avatar hero, KPI strip upgraded, danger zone card | Resolved in 10UI-REDESIGN-3 | Done |
 | `/admin/create-student` | CreateStudentComponent | Complete | **Complete** — two-column layout, sticky aside panel, multi-section form cards, security note, back link | Resolved in 10UI-REDESIGN-2 | Done |
-| `/admin/ai-config` | AdminAiConfigComponent | Complete | **Partial** | Missing: rate limits/quotas section, dedicated TTS card | 10UI-REDESIGN-5 (P2) |
-| `/admin/prompts` | AdminPromptsComponent | Complete | **Looks close** | Minor: tab+search same row, inline row action buttons | 10UI-REDESIGN-5 (P3) |
+| `/admin/ai-config` | AdminAiConfigComponent | Complete | **Complete** — 4-tile KPI strip (LLM configured, TTS, providers with key, pricing), X/N configured badge on LLM card, Rate limits card with "Backend not available yet" | Resolved in 10UI-REDESIGN-5 | Done |
+| `/admin/prompts` | AdminPromptsComponent | Complete | **Complete** — KPI strip upgraded to sp-admin-kpi-card, category badge column derived from key, category filter added, subtitle shows live count, title aligned to reference | Resolved in 10UI-REDESIGN-5 | Done |
 | `/admin/usage` | AdminAiUsageComponent | Complete | **Looks close** | Missing: area chart, bar chart, heatmap, date range pills | 10UI-REDESIGN-6 (P2) |
 | `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | **Looks close** | No reference counterpart — keep as-is | 10UI-REDESIGN-6 (P3) |
 | `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | **Complete** — KPI summary strip, skill-coloured icon tile per row, "Not runnable yet" label for non-ready types | Resolved in 10UI-REDESIGN-4 | Done |
@@ -173,6 +173,12 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-5
+
+- AI Config: 4-tile KPI summary strip (LLM configured, TTS configured, providers with key, pricing models). X/N configured badge on LLM Categories card. Rate limits card with "Backend not available yet" label — no fake usage numbers. API keys never displayed.
+- Prompts: `sp-admin-stat-card` → `sp-admin-kpi-card` strip. Category column derived from key first segment with tone-coded badge. Category filter added to filter bar. Page title → "Prompts". Subtitle shows live template count.
+- 20 new tests. 1206/1206 pass.
 
 ## Changes Made in 10UI-REDESIGN-4
 
