@@ -285,4 +285,104 @@ describe('AdminCurriculumComponent', () => {
     expect(tax?.skills).toContain('speaking');
     expect(tax?.skills).toContain('writing');
   });
+
+  // ── REDESIGN-4 coverage summary strip ─────────────────────────────────────
+
+  it('calls listObjectives with no filters for allObjectives on init', () => {
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const calls = svc.listObjectives.calls.all();
+    const allCall = calls.find(c => c.args[0] === undefined && c.args[1] === undefined && c.args[2] === undefined);
+    expect(allCall).toBeTruthy();
+  });
+
+  it('coverageSummary reflects loaded allObjectives count', () => {
+    svc.listObjectives.and.callFake((cefr?: string, skill?: string, active?: boolean) => {
+      if (cefr === undefined && skill === undefined && active === undefined) {
+        return of([makeObjective(), makeObjective({ key: 'b1.writing.emails', cefrLevel: 'B1', primarySkill: 'writing' })]);
+      }
+      return of([makeObjective()]);
+    });
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as any;
+    expect(comp.coverageSummary().total).toBe(2);
+  });
+
+  it('coverageSummary counts unique CEFR bands', () => {
+    svc.listObjectives.and.callFake((cefr?: string, skill?: string, active?: boolean) => {
+      if (cefr === undefined && skill === undefined && active === undefined) {
+        return of([
+          makeObjective({ cefrLevel: 'A1' }),
+          makeObjective({ key: 'b1.speaking.x', cefrLevel: 'B1' }),
+        ]);
+      }
+      return of([makeObjective()]);
+    });
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as any;
+    expect(comp.coverageSummary().cefrBands).toBe(2);
+  });
+
+  it('coverageSummary counts unique skills', () => {
+    svc.listObjectives.and.callFake((cefr?: string, skill?: string, active?: boolean) => {
+      if (cefr === undefined && skill === undefined && active === undefined) {
+        return of([
+          makeObjective({ primarySkill: 'speaking' }),
+          makeObjective({ key: 'b1.writing.x', primarySkill: 'writing' }),
+          makeObjective({ key: 'b1.speaking.y', primarySkill: 'speaking' }),
+        ]);
+      }
+      return of([makeObjective()]);
+    });
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as any;
+    expect(comp.coverageSummary().skills).toBe(2);
+  });
+
+  it('renders sp-admin-kpi-card elements when allObjectives loaded', () => {
+    svc.listObjectives.and.callFake((cefr?: string, skill?: string, active?: boolean) => {
+      if (cefr === undefined && skill === undefined && active === undefined) {
+        return of([makeObjective()]);
+      }
+      return of([makeObjective()]);
+    });
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    const cards = html.querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('coverage strip has aria-label "Curriculum coverage summary"', () => {
+    svc.listObjectives.and.callFake((cefr?: string, skill?: string, active?: boolean) => {
+      if (cefr === undefined && skill === undefined && active === undefined) {
+        return of([makeObjective()]);
+      }
+      return of([makeObjective()]);
+    });
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    const strip = html.querySelector('[aria-label="Curriculum coverage summary"]');
+    expect(strip).toBeTruthy();
+  });
+
+  it('coverageSummary active count matches active objectives only', () => {
+    svc.listObjectives.and.callFake((cefr?: string, skill?: string, active?: boolean) => {
+      if (cefr === undefined && skill === undefined && active === undefined) {
+        return of([
+          makeObjective({ isActive: true }),
+          makeObjective({ key: 'b1.speaking.x', isActive: false }),
+        ]);
+      }
+      return of([makeObjective()]);
+    });
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as any;
+    expect(comp.coverageSummary().active).toBe(1);
+  });
 });

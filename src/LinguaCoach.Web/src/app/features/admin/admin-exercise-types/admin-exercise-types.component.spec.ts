@@ -171,4 +171,97 @@ describe('AdminExerciseTypesComponent', () => {
     c.onSearch(fakeEvent);
     expect(c.page()).toBe(1);
   });
+
+  // ── REDESIGN-4 KPI strip and icon tile ─────────────────────────────────────
+
+  it('typeSummary total matches loaded exercise types count', () => {
+    admin.listExerciseTypes.and.returnValue(of([makeType(), makeType({ key: 'b' })]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.typeSummary().total).toBe(2);
+  });
+
+  it('typeSummary enabled counts only enabled types', () => {
+    admin.listExerciseTypes.and.returnValue(of([
+      makeType({ key: 'a', isEnabled: true }),
+      makeType({ key: 'b', isEnabled: false }),
+    ]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.typeSummary().enabled).toBe(1);
+  });
+
+  it('typeSummary ready counts only ready types', () => {
+    admin.listExerciseTypes.and.returnValue(of([
+      makeType({ key: 'a', implementationStatus: 'ready' }),
+      makeType({ key: 'b', implementationStatus: 'not_implemented' }),
+    ]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.typeSummary().ready).toBe(1);
+  });
+
+  it('typeSummary skills counts unique primary skills', () => {
+    admin.listExerciseTypes.and.returnValue(of([
+      makeType({ key: 'a', primarySkill: 'reading' }),
+      makeType({ key: 'b', primarySkill: 'writing' }),
+      makeType({ key: 'c', primarySkill: 'reading' }),
+    ]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.typeSummary().skills).toBe(2);
+  });
+
+  it('renders sp-admin-kpi-card elements for the summary strip', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    const cards = html.querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('summary strip has aria-label "Exercise types summary"', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('[aria-label="Exercise types summary"]')).toBeTruthy();
+  });
+
+  it('typeIconBg returns non-empty string for known skill', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const bg = fixture.componentInstance.typeIconBg('speaking');
+    expect(bg).toBeTruthy();
+    expect(bg.startsWith('#')).toBeTrue();
+  });
+
+  it('typeIconBg returns fallback for unknown skill', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.typeIconBg('unknown_skill')).toBeTruthy();
+  });
+
+  it('renders icon tile in name cell', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.sp-et-icon-tile')).toBeTruthy();
+  });
+
+  it('shows "Not runnable yet" label for non-ready type', () => {
+    admin.listExerciseTypes.and.returnValue(of([makeType({ implementationStatus: 'not_implemented' })]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.sp-et-not-runnable')).toBeTruthy();
+    expect(html.textContent).toContain('Not runnable yet');
+  });
+
+  it('does not show "Not runnable yet" label for ready type', () => {
+    admin.listExerciseTypes.and.returnValue(of([makeType({ implementationStatus: 'ready' })]));
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.sp-et-not-runnable')).toBeFalsy();
+  });
 });

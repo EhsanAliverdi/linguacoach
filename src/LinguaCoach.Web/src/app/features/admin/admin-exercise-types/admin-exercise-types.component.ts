@@ -11,6 +11,7 @@ import {
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
   SpAdminInputComponent,
+  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -34,6 +35,7 @@ import {
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
     SpAdminInputComponent,
+    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
@@ -47,6 +49,28 @@ import {
     <sp-admin-page-header
       title="Exercise Types"
       subtitle="Control which exercise types are available for SpeakPath lessons and Practice Gym generation." />
+
+    <!-- ── Exercise type KPI strip ── -->
+    @if (typeSummary().total > 0) {
+      <div class="sp-et-kpi-strip" aria-label="Exercise types summary">
+        <sp-admin-kpi-card label="Total types" variant="indigo">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          {{ typeSummary().total }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Enabled" [variant]="typeSummary().enabled > 0 ? 'green' : 'slate'">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          {{ typeSummary().enabled }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Ready" [variant]="typeSummary().ready > 0 ? 'teal' : 'amber'">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {{ typeSummary().ready }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Skills covered" variant="violet">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          {{ typeSummary().skills }}
+        </sp-admin-kpi-card>
+      </div>
+    }
 
     <sp-admin-page-body>
       @if (error()) {
@@ -106,11 +130,21 @@ import {
                 @for (type of pagedExerciseTypes(); track type.key) {
                   <tr>
                     <td class="sp-et-name-cell">
-                      <div class="sp-et-name">{{ type.displayName }}</div>
-                      <sp-admin-code-pill [value]="type.key" tone="neutral" />
-                      @if (type.description) {
-                        <sp-admin-truncated-text [value]="type.description" [maxLength]="72" class="sp-et-desc" />
-                      }
+                      <div class="sp-et-name-row">
+                        <div class="sp-et-icon-tile" [style.background]="typeIconBg(type.primarySkill)">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" [innerHTML]="typeIconPath(type.primarySkill)"></svg>
+                        </div>
+                        <div class="sp-et-name-body">
+                          <div class="sp-et-name">{{ type.displayName }}</div>
+                          <sp-admin-code-pill [value]="type.key" tone="neutral" />
+                          @if (type.description) {
+                            <sp-admin-truncated-text [value]="type.description" [maxLength]="72" class="sp-et-desc" />
+                          }
+                          @if (type.implementationStatus !== 'ready') {
+                            <div class="sp-et-not-runnable">Not runnable yet — foundation only</div>
+                          }
+                        </div>
+                      </div>
                     </td>
                     <td>
                       <span class="sp-admin-cap">{{ type.primarySkill }}</span>
@@ -171,9 +205,27 @@ import {
     </sp-admin-page-body>
   `,
   styles: [`
-    .sp-et-name-cell { min-width: 200px; max-width: 280px; }
+    .sp-et-kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px 24px 0;
+    }
+    @media (max-width: 800px) {
+      .sp-et-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+    .sp-et-name-cell { min-width: 220px; max-width: 300px; }
+    .sp-et-name-row { display: flex; gap: 10px; align-items: flex-start; }
+    .sp-et-icon-tile {
+      flex-shrink: 0;
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sp-et-name-body { min-width: 0; }
     .sp-et-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
     .sp-et-desc { display: block; margin-top: 2px; font-size: 11px; color: var(--sp-admin-muted, #6b7280); }
+    .sp-et-not-runnable { font-size: 10px; color: #b45309; background: #fffbeb; border-radius: 4px; padding: 1px 6px; margin-top: 3px; display: inline-block; }
     .sp-et-secondary { font-size: 11px; color: var(--sp-admin-muted, #6b7280); margin-top: 2px; }
     .sp-et-badges { display: flex; flex-direction: column; gap: 3px; }
     .sp-et-surfaces { white-space: nowrap; font-size: 11px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -223,6 +275,44 @@ export class AdminExerciseTypesComponent implements OnInit {
     }
     return Array.from(skills).sort().map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }));
   });
+
+  readonly typeSummary = computed(() => {
+    const all = this.exerciseTypes();
+    const skills = new Set(all.map(t => t.primarySkill).filter(Boolean)).size;
+    return {
+      total: all.length,
+      enabled: all.filter(t => t.isEnabled).length,
+      ready: all.filter(t => t.implementationStatus === 'ready').length,
+      skills,
+    };
+  });
+
+  private static readonly SKILL_COLORS: Record<string, string> = {
+    speaking:   '#f97316',
+    writing:    '#5B4BE8',
+    reading:    '#2563EB',
+    listening:  '#7C3AED',
+    vocabulary: '#d97706',
+    grammar:    '#16a34a',
+  };
+
+  private static readonly SKILL_ICONS: Record<string, string> = {
+    speaking:   '<circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.62 4.41-7.87 6.91-16.5 6.5"/>',
+    writing:    '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+    reading:    '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    listening:  '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
+    vocabulary: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    grammar:    '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  };
+
+  typeIconBg(skill: string): string {
+    return AdminExerciseTypesComponent.SKILL_COLORS[skill] ?? '#64748b';
+  }
+
+  typeIconPath(skill: string): string {
+    return AdminExerciseTypesComponent.SKILL_ICONS[skill]
+      ?? '<circle cx="12" cy="12" r="10"/>';
+  }
 
   filteredExerciseTypes = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
