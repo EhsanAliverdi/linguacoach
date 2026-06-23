@@ -662,3 +662,22 @@ export interface AdminAuthEventListQuery {
   from?: string;
   to?: string;
 }
+
+export interface ReadinessPoolSourceHealth {
+  source: string;
+  targetCount: number;
+  readyCount: number;
+  queuedOrGeneratingCount: number;
+  failedCount: number;
+  staleCount: number;
+  expiredCount: number;
+  reviewOnlyCount: number;
+  shortfallCount: number;
+  needsReplenishment: boolean;
+}
+
+export interface StudentReadinessPoolHealth {
+  studentId: string;
+  todayLesson: ReadinessPoolSourceHealth;
+  practiceGym: ReadinessPoolSourceHealth;
+}

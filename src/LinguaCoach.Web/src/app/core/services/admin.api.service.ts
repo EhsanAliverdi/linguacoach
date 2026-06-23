@@ -10,7 +10,7 @@ import {
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
-  StudentAuditHistoryItem,
+  StudentAuditHistoryItem, StudentReadinessPoolHealth,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -85,6 +85,9 @@ export class AdminApiService {
   }
   getStudentAuditHistory(studentProfileId: string): Observable<StudentAuditHistoryItem[]> {
     return this.http.get<StudentAuditHistoryItem[]>(`${this.api}/students/${studentProfileId}/audit-history`);
+  }
+  getStudentReadinessPoolHealth(studentProfileId: string): Observable<StudentReadinessPoolHealth> {
+    return this.http.get<StudentReadinessPoolHealth>(`${this.api}/students/${studentProfileId}/readiness-pool/health`);
   }
 
   // Prompts

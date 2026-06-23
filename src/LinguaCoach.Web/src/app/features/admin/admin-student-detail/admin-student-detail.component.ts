@@ -6,11 +6,20 @@ import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
-  AdminStudentDetail, StudentAuditHistoryItem,
+  AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
 import { SpAdminSlideOverComponent } from '../../../design-system/admin/components/slide-over/sp-admin-slide-over.component';
+import { SpAdminPageHeaderComponent } from '../../../design-system/admin/components/page-header/sp-admin-page-header.component';
+import { SpAdminPageBodyComponent } from '../../../design-system/admin/components/page-body/sp-admin-page-body.component';
+import { SpAdminCardComponent } from '../../../design-system/admin/components/card/sp-admin-card.component';
+import { SpAdminBadgeComponent } from '../../../design-system/admin/components/badge/sp-admin-badge.component';
+import { SpAdminStatCardComponent } from '../../../design-system/admin/components/stat-card/sp-admin-stat-card.component';
+import { SpAdminButtonComponent } from '../../../design-system/admin/components/button/sp-admin-button.component';
+import { SpAdminAlertComponent } from '../../../design-system/admin/components/alert/sp-admin-alert.component';
+import { SpAdminTableComponent } from '../../../design-system/admin/components/table/sp-admin-table.component';
+import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone, eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
   firstName: string;
@@ -28,68 +37,84 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-student-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminSlideOverComponent],
+  imports: [
+    CommonModule, FormsModule, RouterLink,
+    SpAdminSlideOverComponent, SpAdminPageHeaderComponent, SpAdminPageBodyComponent,
+    SpAdminCardComponent, SpAdminBadgeComponent, SpAdminStatCardComponent,
+    SpAdminButtonComponent, SpAdminAlertComponent, SpAdminTableComponent,
+  ],
   template: `
-    <div class="sp-admin-page-header">
-      <div class="sp-admin-header-row">
-        <div>
-          <a routerLink="/admin/students" class="sp-admin-back-link">&larr; Back to students</a>
-          @if (student(); as s) {
-            <h1 class="sp-admin-page-title">{{ displayName(s) }}</h1>
-            <p class="sp-admin-page-sub sp-safe-text">{{ s.email }}</p>
-          }
-        </div>
-        @if (student(); as s) {
-          <div class="sp-admin-row-actions">
-            <button type="button" class="sp-admin-link-button" (click)="startEdit(s)">Edit</button>
-            @if (s.lifecycleStage !== 'Archived') {
-              <button type="button" class="sp-admin-link-button" (click)="startResetPassword(s)">Reset password</button>
-              <button type="button" class="sp-admin-link-button" (click)="sendResetLink(s)" [disabled]="sendingResetLink()">Send reset link</button>
-              <button type="button" class="sp-admin-danger-link" (click)="startResetData(s)">Reset data</button>
-              <button type="button" class="sp-admin-danger-link" (click)="confirmArchive(s)">Archive</button>
-            }
-            @if (s.lifecycleStage === 'Archived') {
-              <button type="button" class="sp-admin-link-button" (click)="startLifecycleAction('reactivate', s)">Reactivate</button>
-            }
-            @if (s.lifecycleStage === 'Paused') {
-              <button type="button" class="sp-admin-link-button" (click)="startLifecycleAction('unpause', s)">Unpause</button>
-            }
-            @if (s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Paused') {
-              <button type="button" class="sp-admin-danger-link" (click)="startLifecycleAction('pause', s)">Pause</button>
-            }
-          </div>
+    @if (student(); as s) {
+      <sp-admin-page-header [title]="displayName(s)" [subtitle]="s.email">
+        <sp-admin-button appearance="ghost" size="sm" (click)="startEdit(s)">Edit</sp-admin-button>
+        @if (s.lifecycleStage !== 'Archived') {
+          <sp-admin-button appearance="ghost" size="sm" (click)="startResetPassword(s)">Reset password</sp-admin-button>
+          <sp-admin-button appearance="ghost" size="sm" (click)="sendResetLink(s)" [disabled]="sendingResetLink()">Send reset link</sp-admin-button>
+          <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startResetData(s)">Reset data</sp-admin-button>
+          <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="confirmArchive(s)">Archive</sp-admin-button>
         }
-      </div>
-    </div>
+        @if (s.lifecycleStage === 'Archived') {
+          <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('reactivate', s)">Reactivate</sp-admin-button>
+        }
+        @if (s.lifecycleStage === 'Paused') {
+          <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('unpause', s)">Unpause</sp-admin-button>
+        }
+        @if (s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Paused') {
+          <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startLifecycleAction('pause', s)">Pause</sp-admin-button>
+        }
+      </sp-admin-page-header>
+    } @else {
+      <sp-admin-page-header title="Student detail" />
+    }
+
+    <sp-admin-page-body>
 
     @if (loading()) {
       <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
     } @else if (error()) {
-      <div class="sp-admin-alert-error">{{ error() }}</div>
+      <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert>
     } @else if (student()) {
       @let s = student()!;
+
+      <!-- KPI strip -->
+      <div class="sp-admin-kpi-strip">
+        <sp-admin-stat-card
+          label="Lifecycle stage"
+          [value]="lifecycleLabel(s.lifecycleStage)"
+          [tone]="$any(lifecycleTone(s.lifecycleStage))"
+          size="sm" />
+        <sp-admin-stat-card
+          label="Onboarding"
+          [value]="onboardingLabel(s.onboardingStatus)"
+          [tone]="$any(onboardingTone(s.onboardingStatus))"
+          size="sm" />
+        <sp-admin-stat-card
+          label="CEFR level"
+          [value]="s.cefrLevel ?? 'Not set'"
+          tone="indigo"
+          size="sm" />
+        <sp-admin-stat-card
+          label="Pool health"
+          [value]="poolHealthLabel()"
+          [tone]="poolHealthTone()"
+          [loading]="poolHealthLoading()"
+          size="sm" />
+      </div>
+
       <div class="sp-admin-detail-grid">
-        <section class="sp-admin-table-card sp-admin-detail-card">
+        <sp-admin-card>
           <h2 class="sp-admin-card-title">Profile</h2>
           <dl class="sp-admin-detail-list">
             <div>
               <dt>Lifecycle stage</dt>
               <dd>
-                <span class="sp-admin-badge"
-                  [class.sp-admin-badge-slate]="s.lifecycleStage === 'Archived'"
-                  [class.sp-admin-badge-indigo]="s.lifecycleStage !== 'Archived'">
-                  {{ s.lifecycleStage }}
-                </span>
+                <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
               </dd>
             </div>
             <div>
               <dt>Onboarding</dt>
               <dd>
-                <span class="sp-admin-badge"
-                  [class.sp-admin-badge-green]="s.onboardingStatus === 'Complete'"
-                  [class.sp-admin-badge-amber]="s.onboardingStatus !== 'Complete'">
-                  {{ s.onboardingStatus }}
-                </span>
+                <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
               </dd>
             </div>
             <div>
@@ -97,7 +122,7 @@ interface StudentEditForm {
               <dd>
                 <span class="sp-admin-cefr-row">
                   @if (s.cefrLevel) {
-                    <span class="sp-admin-badge sp-admin-badge-indigo">{{ s.cefrLevel }}</span>
+                    <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
                   } @else {
                     <span class="sp-admin-table-muted">Not set</span>
                   }
@@ -139,9 +164,9 @@ interface StudentEditForm {
               <dd>{{ s.createdAt | date:'mediumDate' }}</dd>
             </div>
           </dl>
-        </section>
+        </sp-admin-card>
 
-        <section class="sp-admin-table-card sp-admin-detail-card" aria-label="Student preferences">
+        <sp-admin-card aria-label="Student preferences">
           <div class="sp-admin-section-header-row">
             <h2 class="sp-admin-card-title">Student preferences</h2>
             <button type="button" class="sp-admin-link-button" (click)="openPrefsSlideOver()">View preferences</button>
@@ -176,20 +201,16 @@ interface StudentEditForm {
           } @else {
             <p class="sp-admin-table-empty">Student has not set any learning preferences yet.</p>
           }
-        </section>
+        </sp-admin-card>
 
-        <section class="sp-admin-table-card sp-admin-detail-card" aria-label="Onboarding progress">
+        <sp-admin-card aria-label="Onboarding progress">
           <h2 class="sp-admin-card-title">Onboarding progress</h2>
           @if (s.onboardingProgress; as op) {
             <dl class="sp-admin-detail-list">
               <div>
                 <dt>Status</dt>
                 <dd>
-                  <span class="sp-admin-badge"
-                    [class.sp-admin-badge-green]="op.isComplete"
-                    [class.sp-admin-badge-amber]="!op.isComplete">
-                    {{ op.isComplete ? 'Complete' : 'In progress' }}
-                  </span>
+                  <sp-admin-badge [tone]="op.isComplete ? 'success' : 'info'">{{ op.isComplete ? 'Complete' : 'In progress' }}</sp-admin-badge>
                 </dd>
               </div>
               <div>
@@ -226,9 +247,9 @@ interface StudentEditForm {
           } @else {
             <p class="sp-admin-table-empty">No onboarding progress recorded for this student.</p>
           }
-        </section>
+        </sp-admin-card>
 
-        <section class="sp-admin-table-card sp-admin-detail-card">
+        <sp-admin-card>
           <div class="sp-admin-section-header-row">
             <h2 class="sp-admin-card-title">Usage policy</h2>
             <div class="sp-admin-row-actions">
@@ -256,9 +277,9 @@ interface StudentEditForm {
               <div>
                 <dt>Source</dt>
                 <dd>
-                  <span class="sp-admin-badge" [class.sp-admin-badge-indigo]="ep.isOverride" [class.sp-admin-badge-slate]="!ep.isOverride">
+                  <sp-admin-badge [tone]="ep.isOverride ? 'primary' : 'neutral'">
                     {{ ep.isOverride ? 'Student override' : 'Global default' }}
-                  </span>
+                  </sp-admin-badge>
                 </dd>
               </div>
               @if (ep.isOverride) {
@@ -281,9 +302,9 @@ interface StudentEditForm {
           } @else {
             <p class="sp-admin-table-empty">No policy found. Set a global default policy to enforce limits.</p>
           }
-        </section>
+        </sp-admin-card>
 
-        <section class="sp-admin-table-card sp-admin-detail-card">
+        <sp-admin-card>
           <h2 class="sp-admin-card-title">Learning memory</h2>
           @if (memoryLoading()) {
             <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
@@ -329,27 +350,77 @@ interface StudentEditForm {
                 @if (mem.skillProfile.length) {
                   <div class="sp-admin-skill-tags">
                     @for (skill of mem.skillProfile; track skill.skillKey) {
-                      <span class="sp-admin-badge" [class.sp-admin-badge-amber]="skill.isWeak" [class.sp-admin-badge-green]="!skill.isWeak">
-                        {{ skill.skillLabel }}
-                      </span>
+                      <sp-admin-badge [tone]="skill.isWeak ? 'warning' : 'success'">{{ skill.skillLabel }}</sp-admin-badge>
                     }
                   </div>
                 } @else { <p class="sp-admin-table-empty">No skill profile yet.</p> }
               </div>
             </div>
           }
-        </section>
+        </sp-admin-card>
 
-        <section class="sp-admin-table-card sp-admin-detail-card sp-admin-wide">
+        <!-- Readiness pool health (TODO-UI-02) -->
+        <sp-admin-card class="sp-admin-wide" aria-label="Readiness pool health">
+          <h2 class="sp-admin-card-title">Readiness pool health</h2>
+          @if (poolHealthLoading()) {
+            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+          } @else if (poolHealthError()) {
+            <sp-admin-alert variant="error">{{ poolHealthError() }}</sp-admin-alert>
+          } @else if (poolHealth()) {
+            @let ph = poolHealth()!;
+            <div class="sp-admin-pool-grid">
+              <div class="sp-admin-pool-source">
+                <h3 class="sp-admin-pool-source-title">Today's lesson</h3>
+                <dl class="sp-admin-detail-list">
+                  <div><dt>Ready</dt><dd>{{ ph.todayLesson.readyCount }} / {{ ph.todayLesson.targetCount }}</dd></div>
+                  <div><dt>Queued / generating</dt><dd>{{ ph.todayLesson.queuedOrGeneratingCount }}</dd></div>
+                  <div><dt>Shortfall</dt><dd>{{ ph.todayLesson.shortfallCount }}</dd></div>
+                  <div><dt>Failed</dt><dd>{{ ph.todayLesson.failedCount }}</dd></div>
+                  <div><dt>Stale</dt><dd>{{ ph.todayLesson.staleCount }}</dd></div>
+                  <div>
+                    <dt>Needs replenishment</dt>
+                    <dd>
+                      <sp-admin-badge [tone]="ph.todayLesson.needsReplenishment ? 'warning' : 'success'">
+                        {{ ph.todayLesson.needsReplenishment ? 'Yes' : 'No' }}
+                      </sp-admin-badge>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              <div class="sp-admin-pool-source">
+                <h3 class="sp-admin-pool-source-title">Practice gym</h3>
+                <dl class="sp-admin-detail-list">
+                  <div><dt>Ready</dt><dd>{{ ph.practiceGym.readyCount }} / {{ ph.practiceGym.targetCount }}</dd></div>
+                  <div><dt>Queued / generating</dt><dd>{{ ph.practiceGym.queuedOrGeneratingCount }}</dd></div>
+                  <div><dt>Shortfall</dt><dd>{{ ph.practiceGym.shortfallCount }}</dd></div>
+                  <div><dt>Failed</dt><dd>{{ ph.practiceGym.failedCount }}</dd></div>
+                  <div><dt>Stale</dt><dd>{{ ph.practiceGym.staleCount }}</dd></div>
+                  <div>
+                    <dt>Needs replenishment</dt>
+                    <dd>
+                      <sp-admin-badge [tone]="ph.practiceGym.needsReplenishment ? 'warning' : 'success'">
+                        {{ ph.practiceGym.needsReplenishment ? 'Yes' : 'No' }}
+                      </sp-admin-badge>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          } @else {
+            <p class="sp-admin-table-empty">Pool health data not available.</p>
+          }
+        </sp-admin-card>
+
+        <sp-admin-card class="sp-admin-wide">
           <h2 class="sp-admin-card-title">Activity history</h2>
           @if (historyLoading()) {
             <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
           } @else if (historyError()) {
-            <div class="sp-admin-alert-error">{{ historyError() }}</div>
+            <sp-admin-alert variant="error">{{ historyError() }}</sp-admin-alert>
           } @else if (history().length === 0) {
             <p class="sp-admin-table-empty">No activity attempts yet.</p>
           } @else {
-            <table class="sp-admin-table">
+            <sp-admin-table>
               <thead>
                 <tr>
                   <th>Activity</th>
@@ -367,13 +438,9 @@ interface StudentEditForm {
                     <td>{{ item.score !== null ? (item.score | number:'1.0-0') + '%' : (item.percentage !== null ? (item.percentage | number:'1.0-0') + '%' : '—') }}</td>
                     <td>
                       @if (item.passed !== null) {
-                        <span class="sp-admin-badge" [class.sp-admin-badge-green]="item.passed" [class.sp-admin-badge-amber]="!item.passed">
-                          {{ item.passed ? 'Passed' : 'Not passed' }}
-                        </span>
+                        <sp-admin-badge [tone]="item.passed ? 'success' : 'warning'">{{ item.passed ? 'Passed' : 'Not passed' }}</sp-admin-badge>
                       } @else if (item.completed !== null) {
-                        <span class="sp-admin-badge" [class.sp-admin-badge-green]="item.completed" [class.sp-admin-badge-amber]="!item.completed">
-                          {{ item.completed ? 'Completed' : 'Incomplete' }}
-                        </span>
+                        <sp-admin-badge [tone]="item.completed ? 'success' : 'warning'">{{ item.completed ? 'Completed' : 'Incomplete' }}</sp-admin-badge>
                       } @else {
                         —
                       }
@@ -382,20 +449,20 @@ interface StudentEditForm {
                   </tr>
                 }
               </tbody>
-            </table>
+            </sp-admin-table>
           }
-        </section>
+        </sp-admin-card>
 
-        <section class="sp-admin-table-card sp-admin-detail-card sp-admin-wide" aria-label="Audit history">
+        <sp-admin-card class="sp-admin-wide" aria-label="Audit history">
           <h2 class="sp-admin-card-title">Audit history</h2>
           @if (auditHistoryLoading()) {
             <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
           } @else if (auditHistoryError()) {
-            <div class="sp-admin-alert-error">{{ auditHistoryError() }}</div>
+            <sp-admin-alert variant="error">{{ auditHistoryError() }}</sp-admin-alert>
           } @else if (auditHistory().length === 0) {
             <p class="sp-admin-table-empty">No admin actions recorded for this student.</p>
           } @else {
-            <table class="sp-admin-table">
+            <sp-admin-table>
               <thead>
                 <tr>
                   <th>Action</th>
@@ -411,11 +478,7 @@ interface StudentEditForm {
                 @for (item of auditHistory(); track item.id) {
                   <tr>
                     <td>
-                      <span class="sp-admin-badge"
-                        [class.sp-admin-badge-indigo]="item.source === 'AdminAuditLog'"
-                        [class.sp-admin-badge-amber]="item.source === 'StudentResetLog'">
-                        {{ item.action }}
-                      </span>
+                      <sp-admin-badge [tone]="item.source === 'AdminAuditLog' ? 'primary' : 'warning'">{{ item.action }}</sp-admin-badge>
                     </td>
                     <td class="sp-admin-table-muted">{{ item.source === 'AdminAuditLog' ? 'Audit' : 'Reset' }}</td>
                     <td class="sp-admin-table-muted">
@@ -454,11 +517,13 @@ interface StudentEditForm {
                   </tr>
                 }
               </tbody>
-            </table>
+            </sp-admin-table>
           }
-        </section>
+        </sp-admin-card>
       </div>
     }
+
+    </sp-admin-page-body>
 
     @if (student(); as s) {
       <sp-admin-slide-over
@@ -881,6 +946,12 @@ interface StudentEditForm {
     }
   `,
   styles: [`
+    .sp-admin-kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+    @media(max-width:900px){.sp-admin-kpi-strip{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:600px){.sp-admin-kpi-strip{grid-template-columns:1fr;}}
+    .sp-admin-pool-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+    @media(max-width:700px){.sp-admin-pool-grid{grid-template-columns:1fr;}}
+    .sp-admin-pool-source-title{font-size:13px;font-weight:800;color:var(--sp-admin-text-muted,#64748B);margin-bottom:12px;}
     .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
     .sp-admin-section-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;}
     .sp-admin-section-header-row .sp-admin-card-title{margin-bottom:0;}
@@ -1015,6 +1086,33 @@ export class AdminStudentDetailComponent implements OnInit {
     { value: 3, label: 'Experienced in role' },
     { value: 4, label: 'Manages or trains others' },
   ];
+
+  poolHealth = signal<StudentReadinessPoolHealth | null>(null);
+  poolHealthLoading = signal(true);
+  poolHealthError = signal('');
+
+  readonly lifecycleLabel = lifecycleLabel;
+  readonly lifecycleTone = lifecycleTone;
+  readonly onboardingLabel = onboardingLabel;
+  readonly onboardingTone = onboardingTone;
+  readonly eventLevelLabel = eventLevelLabel;
+
+  poolHealthLabel(): string {
+    const ph = this.poolHealth();
+    if (this.poolHealthLoading()) return '…';
+    if (this.poolHealthError() || !ph) return 'Unknown';
+    const todayOk = !ph.todayLesson.needsReplenishment;
+    const gymOk = !ph.practiceGym.needsReplenishment;
+    if (todayOk && gymOk) return 'Healthy';
+    if (!todayOk && !gymOk) return 'Both need fill';
+    return todayOk ? 'Gym needs fill' : 'Lesson needs fill';
+  }
+
+  poolHealthTone(): 'success' | 'warning' | 'neutral' {
+    const ph = this.poolHealth();
+    if (this.poolHealthLoading() || this.poolHealthError() || !ph) return 'neutral';
+    return (ph.todayLesson.needsReplenishment || ph.practiceGym.needsReplenishment) ? 'warning' : 'success';
+  }
 
   effectivePolicy = signal<StudentEffectivePolicy | null>(null);
   policyLoading = signal(true);
@@ -1175,6 +1273,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadHistory(id);
     this.loadAuditHistory(id);
     this.loadPolicy(id);
+    this.loadPoolHealth(id);
   }
 
   private loadStudent(id: string): void {
@@ -1187,6 +1286,15 @@ export class AdminStudentDetailComponent implements OnInit {
         this.error.set(status === 404 ? 'Student not found.' : 'Could not load student.');
         this.loading.set(false);
       },
+    });
+  }
+
+  private loadPoolHealth(id: string): void {
+    this.poolHealthLoading.set(true);
+    this.poolHealthError.set('');
+    this.adminApi.getStudentReadinessPoolHealth(id).subscribe({
+      next: ph => { this.poolHealth.set(ph); this.poolHealthLoading.set(false); },
+      error: () => { this.poolHealthError.set('Could not load pool health.'); this.poolHealthLoading.set(false); },
     });
   }
 
