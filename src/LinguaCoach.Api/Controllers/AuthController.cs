@@ -13,15 +13,18 @@ public sealed class AuthController : ControllerBase
     private readonly ILoginHandler _loginHandler;
     private readonly IChangePasswordHandler _changePasswordHandler;
     private readonly IPasswordResetService _passwordReset;
+    private readonly IRefreshTokenService _refreshTokens;
 
     public AuthController(
         ILoginHandler loginHandler,
         IChangePasswordHandler changePasswordHandler,
-        IPasswordResetService passwordReset)
+        IPasswordResetService passwordReset,
+        IRefreshTokenService refreshTokens)
     {
         _loginHandler = loginHandler;
         _changePasswordHandler = changePasswordHandler;
         _passwordReset = passwordReset;
+        _refreshTokens = refreshTokens;
     }
 
     [HttpPost("login")]
@@ -32,12 +35,62 @@ public sealed class AuthController : ControllerBase
         try
         {
             var result = await _loginHandler.HandleAsync(new LoginCommand(request.Email, request.Password), ct);
-            return Ok(new { token = result.Token, role = result.Role.ToString(), mustChangePassword = result.MustChangePassword });
+            return Ok(new
+            {
+                token = result.Token,
+                role = result.Role.ToString(),
+                mustChangePassword = result.MustChangePassword,
+                refreshToken = result.RefreshToken,
+                refreshExpiresAtUtc = result.RefreshExpiresAtUtc,
+            });
         }
         catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(new { error = ex.Message });
         }
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthRefresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request, CancellationToken ct)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ua = HttpContext.Request.Headers["User-Agent"].ToString();
+        var correlationId = HttpContext.Request.Headers["X-Correlation-ID"].ToString();
+
+        var result = await _refreshTokens.RefreshAsync(request.RefreshToken, ip, ua, correlationId, ct);
+        if (!result.Succeeded)
+            return Unauthorized(new { error = "Invalid or expired refresh token." });
+
+        return Ok(new
+        {
+            token = result.AccessToken,
+            refreshToken = result.RefreshToken,
+            refreshExpiresAtUtc = result.ExpiresAtUtc,
+        });
+    }
+
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthRefresh")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+            await _refreshTokens.RevokeAsync(request.RefreshToken, "Logout", ct);
+
+        return NoContent();
+    }
+
+    [HttpPost("revoke-sessions")]
+    [Authorize]
+    public async Task<IActionResult> RevokeSessions(CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        await _refreshTokens.RevokeAllAsync(userId, "UserRevokedAll", ct);
+        return NoContent();
     }
 
     [HttpPost("change-password")]
@@ -91,5 +144,7 @@ public sealed class AuthController : ControllerBase
 }
 
 public sealed record LoginRequest(string Email, string Password);
+public sealed record RefreshRequest(string RefreshToken);
+public sealed record LogoutRequest(string? RefreshToken);
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record ResetPasswordRequest(string UserId, string Token, string NewPassword, string ConfirmPassword);

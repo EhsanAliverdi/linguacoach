@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-3)
+lastUpdated: 2026-06-23 (10Auth-F-4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-4 — Refresh Tokens and Session Management** — complete (2026-06-23)
+
+`UserRefreshToken` entity, migration T59, `IRefreshTokenService` (hash-only storage, rotation, reuse detection, revoke-all). Login issues refresh token. Password change/reset revokes all sessions. Endpoints: `POST /api/auth/refresh`, `POST /api/auth/logout`, `POST /api/auth/revoke-sessions`. `AuthRefresh` rate limiter (30/5min/IP). 6 new audit event types. 20 new integration tests. 2349/2349 pass. No frontend changes.
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-4-refresh-tokens-session-management.md
+
+---
 
 **Phase 10Auth-F-3 — Security Notifications** — complete (2026-06-23)
 

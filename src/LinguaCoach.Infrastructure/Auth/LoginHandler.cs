@@ -15,6 +15,7 @@ public sealed class LoginHandler : ILoginHandler
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly IRefreshTokenService _refreshTokens;
     private readonly LinguaCoachDbContext _db;
     private readonly INotificationService _notifications;
     private readonly IAuthSecurityAuditService _audit;
@@ -25,6 +26,7 @@ public sealed class LoginHandler : ILoginHandler
     public LoginHandler(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
+        IRefreshTokenService refreshTokens,
         LinguaCoachDbContext db,
         INotificationService notifications,
         IAuthSecurityAuditService audit,
@@ -34,6 +36,7 @@ public sealed class LoginHandler : ILoginHandler
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _refreshTokens = refreshTokens;
         _db = db;
         _notifications = notifications;
         _audit = audit;
@@ -128,7 +131,11 @@ public sealed class LoginHandler : ILoginHandler
             UserId: user.Id, EmailOrUserName: command.Email,
             IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
 
-        return new LoginResult(token, user.Role, user.MustChangePassword);
+        var refreshResult = await _refreshTokens.IssueAsync(
+            new IssueRefreshTokenCommand(user.Id, ip, ua, correlationId), ct);
+
+        return new LoginResult(token, user.Role, user.MustChangePassword,
+            refreshResult.RefreshToken, refreshResult.ExpiresAtUtc);
     }
 
     private async Task TryNotifyAccountLockedAsync(Guid userId, string? email, CancellationToken ct)

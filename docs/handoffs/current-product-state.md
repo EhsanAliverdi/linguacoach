@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-3)
+lastUpdated: 2026-06-23 (10Auth-F-4)
 owner: product
 supersedes:
 supersededBy:
@@ -51,9 +51,22 @@ Auth/security audit complete. No code changes. Roadmap defined.
 - 7 new templates seeded: `account.password_changed`, `account.password_reset_requested`, `account.password_reset_succeeded`, `account.locked_out`.
 - No new migration. No frontend changes.
 
+### Refresh tokens and session management (10Auth-F-4, 2026-06-23)
+
+- `UserRefreshToken` entity (hash-only, append-friendly), migration T59.
+- Refresh token expiry: 14 days (configurable via `Jwt:RefreshTokenExpiryDays`).
+- Login response now includes `refreshToken` and `refreshExpiresAtUtc`. Existing fields unchanged.
+- Token rotation: each refresh issues a new token; old token is immediately revoked.
+- Reuse detection: presenting a rotated token triggers full session family revocation.
+- Password change and password reset both revoke all active sessions.
+- Endpoints: `POST /api/auth/refresh`, `POST /api/auth/logout`, `POST /api/auth/revoke-sessions`.
+- Rate limiter: `AuthRefresh` (30/5min/IP) on refresh and logout endpoints.
+- Raw tokens never stored, logged, or audited — only SHA-256 hash stored.
+- 6 new audit event types: `RefreshTokenIssued`, `RefreshTokenRotated`, `RefreshTokenRevoked`, `RefreshTokenReuseDetected`, `LogoutSucceeded`, `AllSessionsRevoked`.
+
 ### Remaining gaps
 
-No session revocation. No refresh tokens. No OAuth. No admin security UI. SMS security notifications deferred (no real SMS provider).
+No OAuth. No admin security UI. No Angular session UI. SMS security notifications deferred (no real SMS provider).
 
 ### Roadmap
 

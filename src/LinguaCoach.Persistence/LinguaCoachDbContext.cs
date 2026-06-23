@@ -74,6 +74,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 10Auth-F — Auth event audit log
     public DbSet<AuthSecurityEvent> AuthSecurityEvents => Set<AuthSecurityEvent>();
 
+    // Phase 10Auth-F-4 — Refresh tokens / session management
+    public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

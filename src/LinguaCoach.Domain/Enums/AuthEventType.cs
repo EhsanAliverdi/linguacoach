@@ -12,4 +12,10 @@ public enum AuthEventType
     PasswordResetSucceeded,
     PasswordResetFailed,
     StudentAccountCreated,
+    RefreshTokenIssued,
+    RefreshTokenRotated,
+    RefreshTokenRevoked,
+    RefreshTokenReuseDetected,
+    LogoutSucceeded,
+    AllSessionsRevoked,
 }

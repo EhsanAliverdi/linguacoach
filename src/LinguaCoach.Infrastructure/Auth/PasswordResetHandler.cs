@@ -24,6 +24,7 @@ public sealed class PasswordResetHandler : IPasswordResetService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IRefreshTokenService _refreshTokens;
     private readonly INotificationService _notifications;
     private readonly INotificationTemplateRenderer _templateRenderer;
     private readonly IAuthSecurityAuditService _audit;
@@ -34,6 +35,7 @@ public sealed class PasswordResetHandler : IPasswordResetService
     public PasswordResetHandler(
         LinguaCoachDbContext db,
         UserManager<ApplicationUser> userManager,
+        IRefreshTokenService refreshTokens,
         INotificationService notifications,
         INotificationTemplateRenderer templateRenderer,
         IAuthSecurityAuditService audit,
@@ -43,6 +45,7 @@ public sealed class PasswordResetHandler : IPasswordResetService
     {
         _db = db;
         _userManager = userManager;
+        _refreshTokens = refreshTokens;
         _notifications = notifications;
         _templateRenderer = templateRenderer;
         _audit = audit;
@@ -211,6 +214,9 @@ public sealed class PasswordResetHandler : IPasswordResetService
             AuthEventType.PasswordResetSucceeded, AuthEventOutcome.Success,
             UserId: user.Id, EmailOrUserName: user.Email,
             IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
+
+        // Revoke all sessions after password reset — user must log in fresh.
+        await _refreshTokens.RevokeAllAsync(user.Id, "PasswordReset", ct);
 
         await TryNotifyResetSucceededAsync(user.Id, user.Email, ct);
         return CompletePasswordResetResult.Ok();

@@ -194,6 +194,7 @@ public static class DependencyInjection
 
         // Auth
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ILoginHandler, LoginHandler>();
         services.AddScoped<IChangePasswordHandler, ChangePasswordHandler>();
         services.AddScoped<IPasswordResetService, PasswordResetHandler>();

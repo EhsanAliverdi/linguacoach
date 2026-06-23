@@ -12,6 +12,7 @@ namespace LinguaCoach.Infrastructure.Auth;
 public sealed class ChangePasswordHandler : IChangePasswordHandler
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IRefreshTokenService _refreshTokens;
     private readonly INotificationService _notifications;
     private readonly IAuthSecurityAuditService _audit;
     private readonly IHttpContextAccessor _httpContext;
@@ -20,6 +21,7 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
 
     public ChangePasswordHandler(
         UserManager<ApplicationUser> userManager,
+        IRefreshTokenService refreshTokens,
         INotificationService notifications,
         IAuthSecurityAuditService audit,
         IHttpContextAccessor httpContext,
@@ -27,6 +29,7 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
         ILogger<ChangePasswordHandler> logger)
     {
         _userManager = userManager;
+        _refreshTokens = refreshTokens;
         _notifications = notifications;
         _audit = audit;
         _httpContext = httpContext;
@@ -72,6 +75,9 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
             eventType, AuthEventOutcome.Success,
             UserId: command.UserId, EmailOrUserName: user.Email,
             IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
+
+        // Revoke all refresh token sessions — password change invalidates all sessions.
+        await _refreshTokens.RevokeAllAsync(command.UserId, "PasswordChanged", ct);
 
         // Queue security notifications — non-fatal; never include password/token.
         await TryNotifyPasswordChangedAsync(command.UserId, user.Email, ct);

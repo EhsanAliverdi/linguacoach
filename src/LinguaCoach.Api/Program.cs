@@ -155,6 +155,19 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
+    // Refresh token: 30 requests per IP per 5 minutes — prevents brute-force on refresh endpoint
+    options.AddPolicy("AuthRefresh", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter($"refresh:{ip}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(5),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
     // Authenticated change-password: 10 attempts per user per 5 minutes
     options.AddPolicy("AuthChangePassword", context =>
     {
