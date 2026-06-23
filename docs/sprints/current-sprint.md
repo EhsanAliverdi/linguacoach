@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-REDESIGN-0)
+lastUpdated: 2026-06-23 (10UI-REDESIGN-1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-REDESIGN-1 — Admin Dashboard Reference Redesign** — complete (2026-06-23)
+
+Dashboard fully redesigned to match the SpeakPath admin reference layout. Dark hero weekly-snapshot banner (2 real slots, 2 placeholders). 5-tile KPI icon row (3 real, 1 live AI config, 1 placeholder). Onboarding funnel, at-risk students, and CEFR distribution derived from students list. All unavailable sections (activity chart, score distribution, AI spend, streak, avg session, live events) show explicit "Not implemented" / "Backend not available yet" placeholders. No fake data. 31 new tests + 1 migration spec updated. 1117/1117 pass.
+
+Review: docs/reviews/2026-06-23-phase-10ui-redesign-1-dashboard-reference-redesign.md
+
+---
 
 **Phase 10UI-REDESIGN-0 — Admin Reference Redesign Rollout Plan** — complete (2026-06-23)
 

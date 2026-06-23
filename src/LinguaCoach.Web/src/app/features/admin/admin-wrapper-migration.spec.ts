@@ -359,7 +359,7 @@ describe('admin wrapper migration', () => {
     const fixture = TestBed.createComponent(AdminDashboardComponent);
     fixture.detectChanges();
 
-    const kpiCards = fixture.nativeElement.querySelectorAll('sp-admin-stat-card');
+    const kpiCards = fixture.nativeElement.querySelectorAll('sp-admin-kpi-card');
     expect(kpiCards.length).toBeGreaterThanOrEqual(4);
   });
 

@@ -121,7 +121,7 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 
 | Route | Component | Wrapper usage | Page-level redesign status | Reference gap | Redesign phase |
 |-------|-----------|--------------|---------------------------|---------------|----------------|
-| `/admin` | AdminDashboardComponent | Good | **Old layout** — 4 stat cards + quick actions only | Missing: dark hero banner, area chart, onboarding funnel, at-risk card, score dist, donut, streak, live feed, cohort strip, system health | 10UI-REDESIGN-1 (P1) |
+| `/admin` | AdminDashboardComponent | Good | **Complete** — dark hero banner, KPI tile row, onboarding funnel, at-risk, CEFR distribution, AI system, cohort engagement, recent students, all unavailable sections show explicit placeholders | Resolved in 10UI-REDESIGN-1 | Done |
 | `/admin/students` | AdminStudentsComponent | Complete | **Looks close** | Missing: lifecycle filter, archived toggle, rows/page selector, sort icons, per-row action menu | 10UI-REDESIGN-2 (P2) |
 | `/admin/students/:id` | AdminStudentDetailComponent | Complete | **Partial** | Missing: coloured avatar hero, danger zone card | 10UI-REDESIGN-3 (P2) |
 | `/admin/create-student` | CreateStudentComponent | Complete | **Old layout** | Missing: two-column layout, sticky summary panel, cohort stats sidebar, multi-section form cards | 10UI-REDESIGN-2 (P2) |
@@ -173,6 +173,13 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-1
+
+- Dashboard fully redesigned to reference layout: dark hero banner, 5-tile KPI row, onboarding funnel, at-risk, CEFR distribution, AI system, cohort engagement, recent students, placeholder cards for all unavailable backend sections.
+- `SpAdminKpiCardComponent` used for KPI row (was `sp-admin-stat-card`).
+- `admin-wrapper-migration.spec.ts` updated to match new KPI selector.
+- 31 new tests added. 1117/1117 total.
 
 ## Changes Made in 10UI-REDESIGN-0
 
