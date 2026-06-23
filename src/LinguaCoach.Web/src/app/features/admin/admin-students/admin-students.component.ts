@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../design-system/admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../design-system/admin';
 import type { SpAdminSelectOption } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
@@ -25,17 +25,38 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <sp-admin-button routerLink="../create-student">Create student</sp-admin-button>
     </sp-admin-page-header>
 
     <sp-admin-page-body>
+
+    <!-- Summary strip (real data from stats + paged total) -->
+    <div class="sp-stu-summary-row">
+      <sp-admin-kpi-card label="Total students" variant="indigo">
+        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        {{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Onboarded" variant="green">
+        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ loadingStats() ? '—' : (stats()?.onboardedStudents ?? 0) }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Activities tracked" variant="amber">
+        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        {{ loadingStats() ? '—' : (stats()?.totalActivityAttempts ?? 0) }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Showing (this page)" variant="slate">
+        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        {{ totalCount() }}
+      </sp-admin-kpi-card>
+    </div>
+
     <sp-admin-filter-bar>
       <label class="sp-admin-filter-toggle">
         <input type="checkbox" [(ngModel)]="includeArchived" (change)="onIncludeArchivedChange()" />
-        <span>Show archived students</span>
+        <span>Show archived</span>
       </label>
       <sp-admin-input
         type="search"
@@ -66,7 +87,15 @@ interface StudentEditForm {
       @if (hasActiveFilters()) {
         <sp-admin-button variant="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
       }
-      <span class="sp-admin-table-muted">{{ totalCount() }} total</span>
+      <span class="sp-stu-filter-spacer"></span>
+      <label class="sp-stu-rows-label">
+        Rows per page
+        <select class="sp-stu-rows-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+          @for (n of pageSizeOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </label>
     </sp-admin-filter-bar>
 
     @if (loading()) {
@@ -352,6 +381,13 @@ interface StudentEditForm {
     </sp-admin-modal>
   `,
   styles: [`
+    .sp-stu-summary-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:4px;}
+    @media(min-width:900px){.sp-stu-summary-row{grid-template-columns:repeat(4,1fr);}}
+
+    .sp-stu-filter-spacer{flex:1;}
+    .sp-stu-rows-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748B;white-space:nowrap;flex-shrink:0;}
+    .sp-stu-rows-select{height:32px;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:0 8px;font-size:13px;color:#0F172A;background:#fff;cursor:pointer;}
+
     .sp-admin-sortable{cursor:pointer;user-select:none;}
     .sp-admin-sortable:hover{color:#334155;}
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
@@ -373,8 +409,14 @@ export class AdminStudentsComponent implements OnInit {
   students = signal<StudentListItem[]>([]);
   totalCount = signal(0);
   page = signal(1);
-  readonly pageSize = 25;
+  pageSize = 25;
   totalPages = signal(1);
+
+  readonly pageSizeOptions = [10, 25, 50, 100];
+
+  // Summary strip stats
+  stats = signal<AdminStats | null>(null);
+  loadingStats = signal(true);
 
   loading = signal(true);
   error = signal('');
@@ -557,10 +599,19 @@ export class AdminStudentsComponent implements OnInit {
     { value: 4, label: 'Manages or trains others' },
   ];
 
+  onPageSizeChange(): void {
+    this.page.set(1);
+    this.load();
+  }
+
   constructor(private adminApi: AdminApiService, private toast: ToastService) {}
 
   ngOnInit(): void {
     this.load();
+    this.adminApi.getStats().subscribe({
+      next: s => { this.stats.set(s); this.loadingStats.set(false); },
+      error: () => { this.loadingStats.set(false); },
+    });
   }
 
   load(): void {
@@ -568,7 +619,7 @@ export class AdminStudentsComponent implements OnInit {
     this.error.set('');
     this.adminApi.listStudents({
       page: this.page(),
-      pageSize: this.pageSize,
+      pageSize: this.pageSize,  // mutable — set by rows-per-page selector
       search: this.searchTerm() || undefined,
       includeArchived: this.includeArchived,
       sortBy: this.sortByParam(),

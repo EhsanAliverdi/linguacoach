@@ -1,139 +1,207 @@
-<sp-admin-page-header title="Create student" subtitle="Add a new pilot account" />
+<sp-admin-page-header title="Create student" subtitle="Add a new pilot account to the SpeakPath platform">
+  <sp-admin-button variant="ghost" routerLink="/admin/students">← Back to Students</sp-admin-button>
+</sp-admin-page-header>
 
 <sp-admin-page-body>
-<div style="max-width:860px">
+<div class="sp-cs-layout">
 
-  <sp-admin-card>
-    <p style="font-size:13.5px;color:var(--sp-admin-text-muted,#64748B);margin-bottom:20px">
-      Create a private pilot account. The student will use the temporary password once, then set their own password before onboarding.
-    </p>
+  <!-- Left: form sections -->
+  <div class="sp-cs-main">
 
     @if (error()) {
       <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert>
     }
-    @if (success()) {
-      <sp-admin-alert variant="success">{{ success() }}</sp-admin-alert>
-    }
 
-    <form (ngSubmit)="onSubmit()" novalidate style="margin-top:20px;display:flex;flex-direction:column;gap:16px">
+    <form (ngSubmit)="onSubmit()" novalidate>
 
-      <!-- Required: Email -->
-      <sp-admin-form-field label="Student email" [error]="emailError()">
-        <sp-admin-input
-          id="studentEmail"
-          type="email"
-          [(ngModel)]="email"
-          name="email"
-          [required]="true"
-          placeholder="student@example.com" />
-      </sp-admin-form-field>
-
-      <!-- Required: Temporary password -->
-      <sp-admin-form-field label="Temporary password" hint="Use at least 10 characters with upper, lower, digit, and special character." [error]="passwordError()">
-        <sp-admin-input
-          id="temporaryPassword"
-          type="text"
-          [(ngModel)]="temporaryPassword"
-          name="password"
-          [required]="true"
-          placeholder="Min 10 chars, upper/lower/digit/special" />
-      </sp-admin-form-field>
-
-      <!-- Must change password toggle -->
-      <div style="display:flex;align-items:flex-start;gap:12px;border-radius:12px;border:1px solid var(--sp-admin-border,#ECE9F5);background:var(--sp-admin-surface-subtle,#FBFAFE);padding:12px">
-        <input
-          id="mustChangePassword"
-          type="checkbox"
-          [(ngModel)]="mustChangePassword"
-          name="mustChangePassword"
-          style="margin-top:2px;width:16px;height:16px;accent-color:var(--sp-admin-primary,#5B4BE8);flex-shrink:0"
-        />
-        <div>
-          <label for="mustChangePassword" style="font-size:13.5px;font-weight:600;color:var(--sp-admin-text,#0F172A);cursor:pointer">Require password change on first login</label>
-          <p style="margin:2px 0 0;font-size:12px;color:var(--sp-admin-text-muted,#64748B)">Recommended for real students. Disable for test accounts.</p>
+      <!-- Section 1: Account credentials -->
+      <div class="sp-cs-section">
+        <div class="sp-cs-section-header">
+          <div class="sp-cs-section-title">Account credentials</div>
+          <div class="sp-cs-section-sub">The student uses these to log in. They will be prompted to set a new password on first login.</div>
         </div>
+
+        <sp-admin-form-field label="Student email" [error]="emailError()">
+          <sp-admin-input
+            id="studentEmail"
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            [required]="true"
+            placeholder="student@example.com" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Temporary password" hint="Min 10 characters — upper, lower, digit, and special character." [error]="passwordError()">
+          <sp-admin-input
+            id="temporaryPassword"
+            type="text"
+            [(ngModel)]="temporaryPassword"
+            name="password"
+            [required]="true"
+            placeholder="e.g. Pilot2025!" />
+        </sp-admin-form-field>
+
+        <!-- Must-change-password toggle -->
+        <div class="sp-cs-toggle-row">
+          <input
+            id="mustChangePassword"
+            type="checkbox"
+            [(ngModel)]="mustChangePassword"
+            name="mustChangePassword"
+            class="sp-cs-toggle-checkbox"
+          />
+          <div>
+            <label for="mustChangePassword" class="sp-cs-toggle-label">Require password change on first login</label>
+            <p class="sp-cs-toggle-hint">Recommended for real students. Disable only for test accounts.</p>
+          </div>
+        </div>
+
+        <!-- Security note -->
+        <div class="sp-cs-security-note">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>The temporary password is shown once — save it before sharing with the student. The student must sign in and set their own password before starting onboarding.</span>
+        </div>
+
       </div>
 
-      <!-- Optional profile section -->
-      <div style="border-top:1px solid var(--sp-admin-border,#ECE9F5);padding-top:16px">
+      <!-- Section 2: Student profile (optional) -->
+      <div class="sp-cs-section">
+        <div class="sp-cs-section-header">
+          <div class="sp-cs-section-title">
+            Student profile
+            <span class="sp-cs-optional-badge">Optional</span>
+          </div>
+          <div class="sp-cs-section-sub">Pre-filling these fields skips the matching onboarding steps and takes the student directly to placement.</div>
+        </div>
+
         <button
           type="button"
+          class="sp-cs-toggle-btn"
           (click)="showOptional = !showOptional"
-          style="display:flex;width:100%;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:600;color:var(--sp-admin-primary,#5B4BE8);background:none;border:none;cursor:pointer;padding:0"
         >
-          <span>{{ showOptional ? 'Hide optional profile fields' : 'Add optional profile fields' }}</span>
-          <svg style="width:16px;height:16px;transition:transform .2s" [style.transform]="showOptional ? 'rotate(180deg)' : 'rotate(0deg)'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span>{{ showOptional ? 'Hide profile fields' : 'Add profile fields' }}</span>
+          <svg class="sp-cs-toggle-chevron" [class.sp-cs-toggle-chevron--open]="showOptional"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
           </svg>
         </button>
-        <p style="margin:4px 0 0;font-size:12px;color:var(--sp-admin-text-muted,#64748B)">If provided, the student skips those onboarding steps and goes straight to placement.</p>
+
+        @if (showOptional) {
+          <div class="sp-cs-optional-fields">
+
+            <div class="sp-cs-two-col">
+              <sp-admin-form-field label="First name">
+                <sp-admin-input id="firstName" type="text" [(ngModel)]="firstName" name="firstName" placeholder="Ehsan" />
+              </sp-admin-form-field>
+              <sp-admin-form-field label="Last name">
+                <sp-admin-input id="lastName" type="text" [(ngModel)]="lastName" name="lastName" placeholder="Aliverdi" />
+              </sp-admin-form-field>
+            </div>
+
+            <sp-admin-form-field label="Display name" hint="What the student goes by in the platform">
+              <sp-admin-input id="displayName" type="text" [(ngModel)]="displayName" name="displayName" placeholder="e.g. Alice" />
+            </sp-admin-form-field>
+
+            <sp-admin-form-field label="Career context">
+              <sp-admin-input id="careerContext" type="text" [(ngModel)]="careerContext" name="careerContext" placeholder="e.g. Software engineering, Healthcare" />
+            </sp-admin-form-field>
+
+            <sp-admin-form-field label="Learning goal">
+              <sp-admin-input id="learningGoal" type="text" [(ngModel)]="learningGoal" name="learningGoal" placeholder="e.g. Communicate confidently in meetings" />
+            </sp-admin-form-field>
+
+            <sp-admin-form-field label="Preferred session duration">
+              <select id="sessionDuration" [(ngModel)]="preferredSessionDurationMinutes" name="sessionDuration" class="sp-cs-native-select">
+                <option [ngValue]="null">Not specified</option>
+                @for (d of sessionDurations; track d) {
+                  <option [ngValue]="d">{{ d }} minutes</option>
+                }
+              </select>
+            </sp-admin-form-field>
+
+            <div class="sp-cs-two-col">
+              <sp-admin-form-field label="Experience level">
+                <select id="experienceLevel" [(ngModel)]="professionalExperienceLevel" name="experienceLevel" class="sp-cs-native-select">
+                  <option [ngValue]="null">Not specified</option>
+                  @for (l of experienceLevels; track l.value) {
+                    <option [ngValue]="l.value">{{ l.label }}</option>
+                  }
+                </select>
+              </sp-admin-form-field>
+              <sp-admin-form-field label="Role familiarity">
+                <select id="roleFamiliarity" [(ngModel)]="roleFamiliarity" name="roleFamiliarity" class="sp-cs-native-select">
+                  <option [ngValue]="null">Not specified</option>
+                  @for (f of familiarityLevels; track f.value) {
+                    <option [ngValue]="f.value">{{ f.label }}</option>
+                  }
+                </select>
+              </sp-admin-form-field>
+            </div>
+
+          </div>
+        }
+
       </div>
 
-      @if (showOptional) {
-        <div style="display:flex;flex-direction:column;gap:16px;border-radius:12px;border:1px solid var(--sp-admin-border,#ECE9F5);background:var(--sp-admin-surface-subtle,#FBFAFE);padding:16px">
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <sp-admin-form-field label="First name">
-              <sp-admin-input id="firstName" type="text" [(ngModel)]="firstName" name="firstName" placeholder="Ehsan" />
-            </sp-admin-form-field>
-            <sp-admin-form-field label="Last name">
-              <sp-admin-input id="lastName" type="text" [(ngModel)]="lastName" name="lastName" placeholder="Aliverdi" />
-            </sp-admin-form-field>
-          </div>
-
-          <sp-admin-form-field label="Display name" hint="Optional — what they go by">
-            <sp-admin-input id="displayName" type="text" [(ngModel)]="displayName" name="displayName" placeholder="What they go by" />
-          </sp-admin-form-field>
-
-          <sp-admin-form-field label="Career context">
-            <sp-admin-input id="careerContext" type="text" [(ngModel)]="careerContext" name="careerContext" placeholder="e.g. Software engineering, Healthcare" />
-          </sp-admin-form-field>
-
-          <sp-admin-form-field label="Learning goal">
-            <sp-admin-input id="learningGoal" type="text" [(ngModel)]="learningGoal" name="learningGoal" placeholder="e.g. Communicate confidently in meetings" />
-          </sp-admin-form-field>
-
-          <!-- [ngValue] selects stay native — CVA wrapper does not support non-string ngValue -->
-          <sp-admin-form-field label="Preferred session duration">
-            <select id="sessionDuration" [(ngModel)]="preferredSessionDurationMinutes" name="sessionDuration"
-              style="width:100%;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:8px 12px;font-size:13.5px;color:var(--sp-admin-text,#0F172A);background:#fff">
-              <option [ngValue]="null">Not specified</option>
-              @for (d of sessionDurations; track d) {
-                <option [ngValue]="d">{{ d }} minutes</option>
-              }
-            </select>
-          </sp-admin-form-field>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <sp-admin-form-field label="Experience level">
-              <select id="experienceLevel" [(ngModel)]="professionalExperienceLevel" name="experienceLevel"
-                style="width:100%;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:8px 12px;font-size:13.5px;color:var(--sp-admin-text,#0F172A);background:#fff">
-                <option [ngValue]="null">Not specified</option>
-                @for (l of experienceLevels; track l.value) {
-                  <option [ngValue]="l.value">{{ l.label }}</option>
-                }
-              </select>
-            </sp-admin-form-field>
-            <sp-admin-form-field label="Role familiarity">
-              <select id="roleFamiliarity" [(ngModel)]="roleFamiliarity" name="roleFamiliarity"
-                style="width:100%;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:8px 12px;font-size:13.5px;color:var(--sp-admin-text,#0F172A);background:#fff">
-                <option [ngValue]="null">Not specified</option>
-                @for (f of familiarityLevels; track f.value) {
-                  <option [ngValue]="f.value">{{ f.label }}</option>
-                }
-              </select>
-            </sp-admin-form-field>
-          </div>
-
-        </div>
-      }
-
-      <sp-admin-button type="submit" [disabled]="loading()" style="width:100%;justify-content:center">
-        @if (loading()) { Creating... } @else { Create student }
-      </sp-admin-button>
+      <!-- Section 3: Actions -->
+      <div class="sp-cs-actions">
+        <sp-admin-button variant="ghost" type="button" routerLink="/admin/students">Cancel</sp-admin-button>
+        <sp-admin-button type="submit" [disabled]="loading()" [loading]="loading()">
+          {{ loading() ? 'Creating...' : 'Create student' }}
+        </sp-admin-button>
+      </div>
 
     </form>
-  </sp-admin-card>
+  </div>
+
+  <!-- Right: what happens next panel -->
+  <aside class="sp-cs-aside">
+    <div class="sp-cs-aside-card">
+      <div class="sp-cs-aside-title">What happens next</div>
+      <ol class="sp-cs-aside-steps">
+        <li>
+          <div class="sp-cs-step-dot sp-cs-step-dot--done">1</div>
+          <div>
+            <div class="sp-cs-step-label">Account created</div>
+            <div class="sp-cs-step-desc">Student email and temp password saved.</div>
+          </div>
+        </li>
+        <li>
+          <div class="sp-cs-step-dot">2</div>
+          <div>
+            <div class="sp-cs-step-label">Student signs in</div>
+            <div class="sp-cs-step-desc">Uses the temporary password once.</div>
+          </div>
+        </li>
+        <li>
+          <div class="sp-cs-step-dot">3</div>
+          <div>
+            <div class="sp-cs-step-label">Password change</div>
+            <div class="sp-cs-step-desc">Sets their own secure password before onboarding.</div>
+          </div>
+        </li>
+        <li>
+          <div class="sp-cs-step-dot">4</div>
+          <div>
+            <div class="sp-cs-step-label">Onboarding</div>
+            <div class="sp-cs-step-desc">Completes profile and goals (skipped fields auto-pre-filled).</div>
+          </div>
+        </li>
+        <li>
+          <div class="sp-cs-step-dot">5</div>
+          <div>
+            <div class="sp-cs-step-label">Placement test</div>
+            <div class="sp-cs-step-desc">CEFR level determined. Learning path unlocks.</div>
+          </div>
+        </li>
+      </ol>
+
+      <div class="sp-cs-aside-note">
+        Welcome email: backend not available yet — no automated email send endpoint.
+        Share the temporary password manually.
+      </div>
+    </div>
+  </aside>
 
 </div>
 </sp-admin-page-body>

@@ -4,7 +4,13 @@ import { of, throwError } from 'rxjs';
 import { AdminStudentsComponent } from './admin-students.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem, PagedResponse } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats, PagedResponse } from '../../../core/models/admin.models';
+
+const STATS: AdminStats = {
+  totalStudents: 42,
+  onboardedStudents: 30,
+  totalActivityAttempts: 500,
+};
 
 const STUDENT_ACTIVE: StudentListItem = {
   studentProfileId: 'id-1',
@@ -67,9 +73,10 @@ function pagedOf(items: StudentListItem[]): PagedResponse<StudentListItem> {
   return { items, totalCount: items.length, page: 1, pageSize: 25, totalPages: Math.max(1, Math.ceil(items.length / 25)) };
 }
 
-function makeAdminApi(students: StudentListItem[] = [STUDENT_ACTIVE]) {
+function makeAdminApi(students: StudentListItem[] = [STUDENT_ACTIVE], stats: AdminStats = STATS) {
   return {
     listStudents: jasmine.createSpy('listStudents').and.returnValue(of(pagedOf(students))),
+    getStats: jasmine.createSpy('getStats').and.returnValue(of(stats)),
     updateStudent: jasmine.createSpy('updateStudent').and.returnValue(of(STUDENT_ACTIVE)),
     archiveStudent: jasmine.createSpy('archiveStudent').and.returnValue(of({ ...STUDENT_ACTIVE, lifecycleStage: 'Archived' })),
     resetStudentPassword: jasmine.createSpy('resetStudentPassword').and.returnValue(of({})),
@@ -87,8 +94,8 @@ describe('AdminStudentsComponent', () => {
   let adminApi: ReturnType<typeof makeAdminApi>;
   let toast: ReturnType<typeof makeToast>;
 
-  async function setup(students: StudentListItem[] = [STUDENT_ACTIVE]) {
-    adminApi = makeAdminApi(students);
+  async function setup(students: StudentListItem[] = [STUDENT_ACTIVE], stats: AdminStats = STATS) {
+    adminApi = makeAdminApi(students, stats);
     toast = makeToast();
     await TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -417,5 +424,75 @@ describe('AdminStudentsComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.totalCount()).toBe(42);
+  });
+
+  // ── REDESIGN-2: Summary strip ────────────────────────────────────────────
+
+  describe('summary strip', () => {
+    it('renders summary KPI strip', async () => {
+      await setup([STUDENT_ACTIVE]);
+      const kpis = fixture.nativeElement.querySelectorAll('sp-admin-kpi-card');
+      expect(kpis.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('calls getStats on init', async () => {
+      await setup([STUDENT_ACTIVE]);
+      expect(adminApi.getStats).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows total students from stats in summary', async () => {
+      await setup([STUDENT_ACTIVE], STATS);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('42');
+    });
+
+    it('shows onboarded count from stats in summary', async () => {
+      await setup([STUDENT_ACTIVE], STATS);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('30');
+    });
+
+    it('shows activities tracked from stats in summary', async () => {
+      await setup([STUDENT_ACTIVE], STATS);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('500');
+    });
+
+    it('summary strip labels render', async () => {
+      await setup();
+      const text: string = fixture.nativeElement.textContent;
+      expect(text).toContain('Total students');
+      expect(text).toContain('Onboarded');
+      expect(text).toContain('Activities tracked');
+    });
+
+    it('summary strip does not display fake data', async () => {
+      await setup([STUDENT_ACTIVE], { totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 });
+      const text: string = fixture.nativeElement.textContent;
+      expect(text).not.toContain('$');
+      expect(text).not.toContain('All clear');
+    });
+  });
+
+  // ── REDESIGN-2: Rows per page ────────────────────────────────────────────
+
+  describe('rows per page', () => {
+    it('renders rows-per-page selector', async () => {
+      await setup();
+      const label: string = fixture.nativeElement.textContent;
+      expect(label).toContain('Rows per page');
+    });
+
+    it('onPageSizeChange resets page to 1 and calls listStudents', async () => {
+      await setup([STUDENT_ACTIVE]);
+      component.page.set(3);
+      component.pageSize = 50;
+      adminApi.listStudents.calls.reset();
+      component.onPageSizeChange();
+      expect(component.page()).toBe(1);
+      expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
+      const call = adminApi.listStudents.calls.mostRecent().args[0];
+      expect(call.pageSize).toBe(50);
+    });
   });
 });

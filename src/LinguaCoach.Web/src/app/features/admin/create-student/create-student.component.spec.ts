@@ -63,9 +63,11 @@ describe('CreateStudentComponent', () => {
     expect(fixture.nativeElement.querySelector('sp-admin-page-body')).toBeTruthy();
   });
 
-  it('renders card wrapper', async () => {
+  it('renders card wrapper or section container', async () => {
     await setup();
-    expect(fixture.nativeElement.querySelector('sp-admin-card')).toBeTruthy();
+    const hasCard = !!fixture.nativeElement.querySelector('sp-admin-card');
+    const hasSection = fixture.nativeElement.textContent.includes('Account credentials');
+    expect(hasCard || hasSection).toBeTrue();
   });
 
   it('renders email form field', async () => {
@@ -86,7 +88,8 @@ describe('CreateStudentComponent', () => {
 
   it('renders optional profile fields toggle', async () => {
     await setup();
-    expect(fixture.nativeElement.textContent).toContain('Add optional profile fields');
+    const text: string = fixture.nativeElement.textContent;
+    expect(text.includes('Add optional profile fields') || text.includes('Add profile fields')).toBeTrue();
   });
 
   it('renders submit button', async () => {
@@ -184,5 +187,85 @@ describe('CreateStudentComponent', () => {
   it('preserves temp password security wording', async () => {
     await setup();
     expect(fixture.nativeElement.textContent).toContain('temporary password');
+  });
+
+  // ── REDESIGN-2 new tests ──────────────────────────────────────────────────
+
+  describe('page structure', () => {
+    it('renders back-to-students button', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('Back to Students');
+    });
+
+    it('renders Account credentials section heading', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('Account credentials');
+    });
+
+    it('renders Student profile section heading', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('Student profile');
+    });
+
+    it('renders optional badge on profile section', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('Optional');
+    });
+
+    it('renders what-happens-next aside panel', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('What happens next');
+    });
+
+    it('aside panel lists onboarding steps', async () => {
+      await setup();
+      const text: string = fixture.nativeElement.textContent;
+      expect(text).toContain('Onboarding');
+      expect(text).toContain('Placement test');
+    });
+  });
+
+  describe('security note', () => {
+    it('renders security note about one-time password', async () => {
+      await setup();
+      const text: string = fixture.nativeElement.textContent;
+      expect(text).toContain('temporary password');
+      expect(text).toContain('once');
+    });
+
+    it('renders welcome email not-available-yet note', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('Welcome email');
+    });
+
+    it('does not expose any API key or secret', async () => {
+      await setup();
+      const text: string = fixture.nativeElement.textContent;
+      expect(text).not.toContain('API_KEY');
+      expect(text).not.toContain('sk-');
+      expect(text).not.toContain('JWT_KEY');
+    });
+  });
+
+  describe('profile toggle', () => {
+    it('optional profile fields are hidden by default', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).not.toContain('First name');
+    });
+
+    it('optional fields appear after toggling showOptional', async () => {
+      await setup();
+      component.showOptional = true;
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('First name');
+      expect(fixture.nativeElement.textContent).toContain('Career context');
+    });
+  });
+
+  describe('cancel action', () => {
+    it('renders cancel button', async () => {
+      await setup();
+      expect(fixture.nativeElement.textContent).toContain('Cancel');
+    });
   });
 });

@@ -78,8 +78,9 @@ describe('admin wrapper migration', () => {
   });
 
   it('students page renders filter and pagination wrappers', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 }));
     const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
 
     TestBed.configureTestingModule({
@@ -99,7 +100,8 @@ describe('admin wrapper migration', () => {
   });
 
   it('students page uses sp-admin-table and sp-admin-badge wrappers for rows (10X-G-F)', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
+    adminApi.getStats.and.returnValue(of({ totalStudents: 1, onboardedStudents: 0, totalActivityAttempts: 0 }));
     adminApi.listStudents.and.returnValue(of({ items: [{
       studentProfileId: 'p1',
       email: 'student@example.com',
@@ -392,7 +394,7 @@ describe('admin wrapper migration', () => {
 
 describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration', () => {
   function makeAdminApi() {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing', 'listAiPricingOverrides', 'listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing', 'listAiPricingOverrides', 'listStudents', 'getStats']);
     adminApi.listAiCategories.and.returnValue(of([
       { categoryKey: 'llm.default', displayName: 'Default LLM', providerName: 'fake', modelName: null, voiceName: null },
       { categoryKey: 'tts.listening', displayName: 'Listening TTS', providerName: 'openai', modelName: 'tts-1', voiceName: 'onyx' },
@@ -403,6 +405,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     adminApi.listAiPricing.and.returnValue(of([]));
     adminApi.listAiPricingOverrides.and.returnValue(of([]));
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 }));
     return adminApi;
   }
 
@@ -503,8 +506,9 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
       preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null,
       createdAt: new Date().toISOString(),
     };
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
     adminApi.listStudents.and.returnValue(of({ items: [student], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 1, onboardedStudents: 0, totalActivityAttempts: 0 }));
     const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
     TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -521,8 +525,9 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
   });
 
   it('Students edit modal closes on cancelEdit (10X-I)', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 }));
     const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
     TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -545,8 +550,9 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
       preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null,
       createdAt: new Date().toISOString(),
     };
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
     adminApi.listStudents.and.returnValue(of({ items: [student], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 1, onboardedStudents: 0, totalActivityAttempts: 0 }));
     const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
     TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -569,8 +575,9 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
       preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null,
       createdAt: new Date().toISOString(),
     };
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
     adminApi.listStudents.and.returnValue(of({ items: [student], totalCount: 1, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 1, onboardedStudents: 0, totalActivityAttempts: 0 }));
     const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
     TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
