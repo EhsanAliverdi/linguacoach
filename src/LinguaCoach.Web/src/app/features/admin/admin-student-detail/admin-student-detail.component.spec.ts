@@ -1346,6 +1346,364 @@ describe('AdminStudentDetailComponent — send reset link', () => {
   });
 });
 
+// ── REDESIGN-3: Hero section ──────────────────────────────────────────────────
+
+describe('AdminStudentDetailComponent — REDESIGN-3 hero section', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(overrides: Partial<AdminStudentDetail> = {}) {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory', 'getStudentReadinessPoolHealth',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
+      'sendStudentResetLink',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail(overrides)));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([]));
+    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('renders the hero section', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-sd-hero')).toBeTruthy();
+  });
+
+  it('renders student display name in hero', () => {
+    setup({ displayName: 'Ada Lovelace' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Ada Lovelace');
+  });
+
+  it('falls back to first+last name when displayName is null', () => {
+    setup({ displayName: null, firstName: 'Test', lastName: 'User' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Test User');
+  });
+
+  it('falls back to email when name fields are all null', () => {
+    setup({ displayName: null, firstName: null, lastName: null, email: 'noname@test.com' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('noname@test.com');
+  });
+
+  it('renders student email in hero', () => {
+    setup({ email: 'ada@example.com' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-sd-hero-email')?.textContent?.trim()).toContain('ada@example.com');
+  });
+
+  it('renders lifecycle badge in hero', () => {
+    setup({ lifecycleStage: 'CourseReady' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const hero = fixture.nativeElement.querySelector('.sp-sd-hero');
+    expect(hero?.textContent).toContain('Course ready');
+  });
+
+  it('renders onboarding badge in hero', () => {
+    setup({ onboardingStatus: 'Complete' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const hero = fixture.nativeElement.querySelector('.sp-sd-hero');
+    expect(hero?.textContent).toContain('Complete');
+  });
+
+  it('renders CEFR badge in hero when set', () => {
+    setup({ cefrLevel: 'B2' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const hero = fixture.nativeElement.querySelector('.sp-sd-hero-badges');
+    expect(hero?.textContent).toContain('B2');
+  });
+
+  it('does not render CEFR badge in hero when cefrLevel is null', () => {
+    setup({ cefrLevel: null });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const badges = fixture.nativeElement.querySelector('.sp-sd-hero-badges');
+    expect(badges?.textContent).not.toContain('Not set');
+  });
+
+  it('renders support language chip in hero when present', () => {
+    setup({ supportLanguageName: 'Persian', supportLanguageCode: 'fa' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-sd-hero-badges')?.textContent).toContain('Persian');
+  });
+
+  it('renders initials avatar with sp-sd-ava class', () => {
+    setup({ displayName: 'Ada Lovelace' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const ava = fixture.nativeElement.querySelector('.sp-sd-ava');
+    expect(ava).toBeTruthy();
+    expect(ava.textContent.trim()).toBe('AL');
+  });
+
+  it('initials fall back to first 2 chars of email for single-word name', () => {
+    setup({ displayName: null, firstName: null, lastName: null, email: 'zara@test.com' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const s = comp.student()!;
+    expect(comp.initials(s).length).toBeGreaterThan(0);
+  });
+
+  it('back link to students is present', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const text: string = fixture.nativeElement.textContent;
+    expect(text).toContain('Students');
+  });
+
+  it('hero action group renders Edit button', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const actions = fixture.nativeElement.querySelector('.sp-sd-hero-actions');
+    expect(actions?.textContent).toContain('Edit');
+  });
+
+  it('hero renders Reset password button for non-archived student', () => {
+    setup({ lifecycleStage: 'CourseReady' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const actions = fixture.nativeElement.querySelector('.sp-sd-hero-actions');
+    expect(actions?.textContent).toContain('Reset password');
+  });
+
+  it('hero does not render Reset password for archived student', () => {
+    setup({ lifecycleStage: 'Archived' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const actions = fixture.nativeElement.querySelector('.sp-sd-hero-actions');
+    expect(actions?.textContent).not.toContain('Reset password');
+  });
+
+  it('avatarColor returns a non-empty CSS colour string', () => {
+    setup({ displayName: 'Test User' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    const color = comp.avatarColor(comp.student()!);
+    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+});
+
+// ── REDESIGN-3: Danger zone card ──────────────────────────────────────────────
+
+describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(lifecycleStage: string = 'CourseReady') {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory', 'getStudentReadinessPoolHealth',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
+      'sendStudentResetLink',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: lifecycleStage as any })));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([]));
+    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('renders Danger zone section', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Danger zone');
+  });
+
+  it('danger zone has aria-label="Danger zone"', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-label="Danger zone"]')).toBeTruthy();
+  });
+
+  it('renders Reset data row for active student', () => {
+    setup('CourseReady');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
+    expect(dz?.textContent).toContain('Reset student data');
+  });
+
+  it('renders Archive row for active student', () => {
+    setup('CourseReady');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
+    expect(dz?.textContent).toContain('Archive student');
+  });
+
+  it('does not render Reset data or Archive for archived student', () => {
+    setup('Archived');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
+    expect(dz?.textContent).not.toContain('Reset student data');
+    expect(dz?.textContent).not.toContain('Archive student');
+  });
+
+  it('renders Reactivate row in danger zone for archived student', () => {
+    setup('Archived');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
+    expect(dz?.textContent).toContain('Reactivate student');
+  });
+
+  it('Reset data button in danger zone triggers startResetData', () => {
+    setup('CourseReady');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    expect(comp.resettingData()).toBeNull();
+    const dz: HTMLElement = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
+    const btn = Array.from(dz.querySelectorAll('button')).find(b => b.textContent?.includes('Reset data'));
+    btn?.click();
+    fixture.detectChanges();
+    expect(comp.resettingData()).not.toBeNull();
+  });
+
+  it('Archive button in danger zone triggers confirmArchive', () => {
+    setup('CourseReady');
+    adminApi.archiveStudent.and.returnValue(of(makeStudentDetail({ lifecycleStage: 'Archived' as any }) as any));
+    spyOn(window, 'confirm').and.returnValue(true);
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const dz: HTMLElement = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
+    const btn = Array.from(dz.querySelectorAll('button')).find(b => b.textContent?.includes('Archive'));
+    btn?.click();
+    expect(adminApi.archiveStudent).toHaveBeenCalled();
+  });
+});
+
+// ── REDESIGN-3: KPI strip uses sp-admin-kpi-card ──────────────────────────────
+
+describe('AdminStudentDetailComponent — REDESIGN-3 KPI strip', () => {
+  function setup(overrides: Partial<AdminStudentDetail> = {}) {
+    const adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory', 'getStudentReadinessPoolHealth',
+    ]);
+    const governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    const toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail(overrides)));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([]));
+    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('renders 4 sp-admin-kpi-card elements', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const cards = fixture.nativeElement.querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBe(4);
+  });
+
+  it('KPI strip shows lifecycle value', () => {
+    setup({ lifecycleStage: 'CourseReady' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
+    expect(strip?.textContent).toContain('Course ready');
+  });
+
+  it('KPI strip shows CEFR value', () => {
+    setup({ cefrLevel: 'C1' });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
+    expect(strip?.textContent).toContain('C1');
+  });
+
+  it('KPI strip shows Not set when CEFR is null', () => {
+    setup({ cefrLevel: null });
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
+    expect(strip?.textContent).toContain('Not set');
+  });
+
+  it('KPI strip shows pool health label', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
+    expect(strip?.textContent).toContain('Healthy');
+  });
+});
+
 // ── Readiness pool health section ─────────────────────────────────────────────
 
 describe('AdminStudentDetailComponent — readiness pool health section', () => {

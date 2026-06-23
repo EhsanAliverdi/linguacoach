@@ -19,6 +19,7 @@ import { SpAdminStatCardComponent } from '../../../design-system/admin/component
 import { SpAdminButtonComponent } from '../../../design-system/admin/components/button/sp-admin-button.component';
 import { SpAdminAlertComponent } from '../../../design-system/admin/components/alert/sp-admin-alert.component';
 import { SpAdminTableComponent } from '../../../design-system/admin/components/table/sp-admin-table.component';
+import { SpAdminKpiCardComponent } from '../../../design-system/admin/components/kpi-card/sp-admin-kpi-card.component';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone, eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
@@ -42,30 +43,12 @@ interface StudentEditForm {
     SpAdminSlideOverComponent, SpAdminPageHeaderComponent, SpAdminPageBodyComponent,
     SpAdminCardComponent, SpAdminBadgeComponent, SpAdminStatCardComponent,
     SpAdminButtonComponent, SpAdminAlertComponent, SpAdminTableComponent,
+    SpAdminKpiCardComponent,
   ],
   template: `
-    @if (student(); as s) {
-      <sp-admin-page-header [title]="displayName(s)" [subtitle]="s.email">
-        <sp-admin-button appearance="ghost" size="sm" (click)="startEdit(s)">Edit</sp-admin-button>
-        @if (s.lifecycleStage !== 'Archived') {
-          <sp-admin-button appearance="ghost" size="sm" (click)="startResetPassword(s)">Reset password</sp-admin-button>
-          <sp-admin-button appearance="ghost" size="sm" (click)="sendResetLink(s)" [disabled]="sendingResetLink()">Send reset link</sp-admin-button>
-          <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startResetData(s)">Reset data</sp-admin-button>
-          <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="confirmArchive(s)">Archive</sp-admin-button>
-        }
-        @if (s.lifecycleStage === 'Archived') {
-          <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('reactivate', s)">Reactivate</sp-admin-button>
-        }
-        @if (s.lifecycleStage === 'Paused') {
-          <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('unpause', s)">Unpause</sp-admin-button>
-        }
-        @if (s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Paused') {
-          <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startLifecycleAction('pause', s)">Pause</sp-admin-button>
-        }
-      </sp-admin-page-header>
-    } @else {
-      <sp-admin-page-header title="Student detail" />
-    }
+    <sp-admin-page-header title="Student detail">
+      <sp-admin-button appearance="ghost" size="sm" routerLink="/admin/students">← Students</sp-admin-button>
+    </sp-admin-page-header>
 
     <sp-admin-page-body>
 
@@ -76,29 +59,59 @@ interface StudentEditForm {
     } @else if (student()) {
       @let s = student()!;
 
+      <!-- Hero section -->
+      <div class="sp-sd-hero">
+        <div class="sp-sd-ava" [style.background]="avatarColor(s)">{{ initials(s) }}</div>
+        <div class="sp-sd-hero-body">
+          <div class="sp-sd-hero-name">{{ displayName(s) }}</div>
+          <div class="sp-sd-hero-email">{{ s.email }}</div>
+          <div class="sp-sd-hero-badges">
+            <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
+            <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
+            @if (s.cefrLevel) {
+              <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
+            }
+            @if (s.supportLanguageName || s.supportLanguageCode) {
+              <span class="sp-sd-hero-chip">{{ s.supportLanguageName || s.supportLanguageCode }}</span>
+            }
+          </div>
+        </div>
+        <div class="sp-sd-hero-actions">
+          <sp-admin-button appearance="ghost" size="sm" (click)="startEdit(s)">Edit</sp-admin-button>
+          @if (s.lifecycleStage !== 'Archived') {
+            <sp-admin-button appearance="ghost" size="sm" (click)="startResetPassword(s)">Reset password</sp-admin-button>
+            <sp-admin-button appearance="ghost" size="sm" (click)="sendResetLink(s)" [disabled]="sendingResetLink()">Send reset link</sp-admin-button>
+          }
+          @if (s.lifecycleStage === 'Archived') {
+            <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('reactivate', s)">Reactivate</sp-admin-button>
+          }
+          @if (s.lifecycleStage === 'Paused') {
+            <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('unpause', s)">Unpause</sp-admin-button>
+          }
+          @if (s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Paused') {
+            <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startLifecycleAction('pause', s)">Pause</sp-admin-button>
+          }
+        </div>
+      </div>
+
       <!-- KPI strip -->
       <div class="sp-admin-kpi-strip">
-        <sp-admin-stat-card
-          label="Lifecycle stage"
-          [value]="lifecycleLabel(s.lifecycleStage)"
-          [tone]="$any(lifecycleTone(s.lifecycleStage))"
-          size="sm" />
-        <sp-admin-stat-card
-          label="Onboarding"
-          [value]="onboardingLabel(s.onboardingStatus)"
-          [tone]="$any(onboardingTone(s.onboardingStatus))"
-          size="sm" />
-        <sp-admin-stat-card
-          label="CEFR level"
-          [value]="s.cefrLevel ?? 'Not set'"
-          tone="indigo"
-          size="sm" />
-        <sp-admin-stat-card
-          label="Pool health"
-          [value]="poolHealthLabel()"
-          [tone]="poolHealthTone()"
-          [loading]="poolHealthLoading()"
-          size="sm" />
+        <sp-admin-kpi-card label="Lifecycle" variant="indigo">
+          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          {{ lifecycleLabel(s.lifecycleStage) }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Onboarding" [variant]="onboardingTone(s.onboardingStatus) === 'success' ? 'green' : 'amber'">
+          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          {{ onboardingLabel(s.onboardingStatus) }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="CEFR level" variant="violet">
+          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          {{ s.cefrLevel ?? 'Not set' }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Pool health" [variant]="poolHealthTone() === 'success' ? 'green' : poolHealthTone() === 'warning' ? 'amber' : 'slate'">
+          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          {{ poolHealthLoading() ? '…' : poolHealthLabel() }}
+        </sp-admin-kpi-card>
       </div>
 
       <div class="sp-admin-detail-grid">
@@ -520,6 +533,57 @@ interface StudentEditForm {
             </sp-admin-table>
           }
         </sp-admin-card>
+
+        <!-- Danger zone -->
+        <sp-admin-card class="sp-admin-wide" aria-label="Danger zone">
+          <div class="sp-sd-danger-header">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;color:#DC2626"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <h2 class="sp-sd-danger-title">Danger zone</h2>
+          </div>
+
+          <div class="sp-sd-danger-rows">
+            <!-- Reset data -->
+            @if (s.lifecycleStage !== 'Archived') {
+              <div class="sp-sd-danger-row">
+                <div>
+                  <div class="sp-sd-danger-row-label">Reset student data</div>
+                  <div class="sp-sd-danger-row-sub">Delete activity history, placement results, or learning memory. Use for pilot re-runs or data corrections.</div>
+                </div>
+                <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startResetData(s)">Reset data</sp-admin-button>
+              </div>
+            }
+
+            <!-- Archive -->
+            @if (s.lifecycleStage !== 'Archived') {
+              <div class="sp-sd-danger-row">
+                <div>
+                  <div class="sp-sd-danger-row-label">Archive student</div>
+                  <div class="sp-sd-danger-row-sub">Hide this student from the active list and revoke sign-in access. Reversible via Reactivate.</div>
+                </div>
+                <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="confirmArchive(s)">Archive</sp-admin-button>
+              </div>
+            }
+
+            <!-- Reactivate (archived only) -->
+            @if (s.lifecycleStage === 'Archived') {
+              <div class="sp-sd-danger-row">
+                <div>
+                  <div class="sp-sd-danger-row-label">Reactivate student</div>
+                  <div class="sp-sd-danger-row-sub">Restore access and set lifecycle stage back to Onboarding Required.</div>
+                </div>
+                <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('reactivate', s)">Reactivate</sp-admin-button>
+              </div>
+            }
+
+            <!-- No actions if only archived state but already showing reactivate above -->
+            @if (s.lifecycleStage === 'Archived') {
+              <p class="sp-sd-danger-note">
+                Student is archived. Only Reactivate is available above. Reset data and further archive actions are disabled.
+              </p>
+            }
+          </div>
+        </sp-admin-card>
+
       </div>
     }
 
@@ -946,6 +1010,18 @@ interface StudentEditForm {
     }
   `,
   styles: [`
+    /* ── Hero ── */
+    .sp-sd-hero{display:flex;align-items:flex-start;gap:20px;background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:16px;padding:24px;margin-bottom:20px;flex-wrap:wrap;}
+    .sp-sd-ava{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;}
+    .sp-sd-hero-body{flex:1;min-width:0;}
+    .sp-sd-hero-name{font-size:20px;font-weight:800;color:var(--sp-admin-text,#0F172A);line-height:1.2;margin-bottom:3px;}
+    .sp-sd-hero-email{font-size:13px;color:var(--sp-admin-text-muted,#64748B);font-family:'JetBrains Mono',monospace;margin-bottom:10px;}
+    .sp-sd-hero-badges{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+    .sp-sd-hero-chip{font-size:12px;font-weight:600;color:var(--sp-admin-text-muted,#64748B);background:var(--sp-admin-surface-subtle,#FBFAFE);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:99px;padding:2px 10px;}
+    .sp-sd-hero-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-left:auto;}
+    @media(max-width:800px){.sp-sd-hero{flex-direction:column;}.sp-sd-hero-actions{margin-left:0;}}
+
+    /* ── KPI strip (now uses sp-admin-kpi-card) ── */
     .sp-admin-kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
     @media(max-width:900px){.sp-admin-kpi-strip{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:600px){.sp-admin-kpi-strip{grid-template-columns:1fr;}}
@@ -996,6 +1072,16 @@ interface StudentEditForm {
       .sp-admin-modal{left:12px;right:12px;top:68px;bottom:12px;width:auto;}
       .sp-admin-edit-grid{grid-template-columns:1fr;padding:18px;}
     }
+
+    /* ── Danger zone ── */
+    .sp-sd-danger-header{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+    .sp-sd-danger-title{font-size:15px;font-weight:800;color:#DC2626;margin:0;}
+    .sp-sd-danger-rows{display:flex;flex-direction:column;gap:0;}
+    .sp-sd-danger-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-top:1px solid var(--sp-admin-border,#ECE9F5);}
+    .sp-sd-danger-row:first-child{border-top:none;}
+    .sp-sd-danger-row-label{font-size:14px;font-weight:700;color:var(--sp-admin-text,#0F172A);margin-bottom:3px;}
+    .sp-sd-danger-row-sub{font-size:12.5px;color:var(--sp-admin-text-muted,#64748B);}
+    .sp-sd-danger-note{font-size:12px;color:var(--sp-admin-text-muted,#64748B);margin-top:12px;font-style:italic;}
   `],
 })
 export class AdminStudentDetailComponent implements OnInit {
@@ -1339,6 +1425,21 @@ export class AdminStudentDetailComponent implements OnInit {
     return student.displayName
       || [student.firstName, student.lastName].filter(Boolean).join(' ')
       || student.email;
+  }
+
+  initials(student: AdminStudentDetail): string {
+    const name = this.displayName(student);
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  }
+
+  avatarColor(student: AdminStudentDetail): string {
+    const COLORS = ['#5B4BE8','#0D9488','#7C3AED','#D97706','#2563EB','#059669','#DB2777','#0891B2'];
+    const name = this.displayName(student);
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return COLORS[Math.abs(hash) % COLORS.length];
   }
 
   experienceLabel(value: number | null): string {
