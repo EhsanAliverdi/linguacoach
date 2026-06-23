@@ -269,14 +269,15 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 
 ## UI Gap Tracking (from Phase 10UI-AUDIT-0, 2026-06-23)
 
-### TODO-UI-01 — Add missing nav links: usage-policies, curriculum, careers (P0)
-**What:** Add three sidebar nav items in `admin-app-layout.component.html`:
-- `/admin/usage-policies` — "Usage Policies"
-- `/admin/curriculum` — "Curriculum"
-- `/admin/careers` — "Careers"
-**Why:** Two complete production admin capabilities (usage governance, curriculum management) are fully built but unreachable from the sidebar. Admins must type the URL directly.
-**Context:** Pages and backend fully complete. Single HTML file change. No backend work needed.
-**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+### ~~TODO-UI-01~~ — Add missing nav links: usage-policies and curriculum — **DONE in Phase 10UI-FIX-1** (2026-06-23)
+
+`/admin/usage-policies` ("Usage Policies") and `/admin/curriculum` ("Curriculum") nav items added to both desktop sidebar and mobile drawer in `admin-app-layout.component.html`. `/admin/careers` has no admin UI page and is deferred (backend endpoint exists under `AdminController`).
+
+### TODO-UI-01B — Add Careers nav link when admin page exists (deferred)
+**What:** Add `/admin/careers` nav item to the admin sidebar.
+**Why:** `GET /api/admin/careers` returns career data used in onboarding. No admin CRUD page exists yet.
+**Context:** `AdminCareersComponent` exists as a minimal list page — evaluate whether it warrants a nav link before adding.
+**Deferred from:** Phase 10UI-FIX-1, 2026-06-23.
 
 ---
 
@@ -340,3 +341,24 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 **What:** Add visible "Deferred" or "Not yet implemented" notes for per-user session revocation, MFA, CAPTCHA, HSTS on `/admin/security`.
 **Why:** Admins may assume these are missing bugs rather than intentionally deferred features.
 **Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+## Design Reference Alignment (Phase 10UI-FIX-1, 2026-06-23)
+
+### TODO-UI-DESIGN-REFERENCE — Keep docs/design/admin-reference-alignment.md current
+**What:** Update `docs/design/admin-reference-alignment.md` whenever new admin pages are added or nav structure changes.
+**Why:** This doc is the authoritative mapping between the reference React design and the Angular `sp-admin-*` implementation. Stale mapping causes drift.
+**Deferred from:** Phase 10UI-FIX-1, 2026-06-23.
+
+### TODO-UI-COMPONENT-ALIGNMENT — Align admin page visual patterns to reference design
+**What:** Per-page visual review: compare each `docs/design/speakpath/admin/pages/*.jsx` against its Angular counterpart. Identify layout/spacing/card/table differences.
+**Why:** Pages were built before the reference design existed. Some may deviate from the visual intent.
+**Context:** Dashboard, Students, and AI Usage are highest-traffic and highest-risk for divergence. Start there.
+**Deferred from:** Phase 10UI-FIX-1, 2026-06-23.
+
+### TODO-UI-PAGE-ALIGNMENT — Reference dashboard stat cards: live data audit
+**What:** Audit which dashboard stat cards show live data vs. static values. Static values: "AI provider: Configured" always shows as configured. Align with reference design's computed KPI approach.
+**Why:** Admin trust in dashboard depends on data being real.
+**Context:** Reference `dashboard.jsx` computes all stats from mock data. Angular counterpart has at least one static card.
+**Deferred from:** Phase 10UI-FIX-1, 2026-06-23. Related: TODO-UI-06.

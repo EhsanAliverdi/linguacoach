@@ -14,6 +14,12 @@ Last updated: 2026-06-23
 
 ## Active sprint
 
+**Phase 10UI-FIX-1 — Admin Navigation P0 Fix and Design Reference Registration** — complete (2026-06-23)
+
+Added sidebar nav links for `/admin/usage-policies` (Usage Policies) and `/admin/curriculum` (Curriculum) to both desktop sidebar and mobile drawer in `admin-app-layout.component.html`. Registered SpeakPath reference design pack as source-of-truth in `docs/design/admin-reference-alignment.md`. Production build passes. TODOS updated (TODO-UI-01 closed, TODO-UI-01B + design reference TODOs added).
+
+---
+
 **Phase 10UI-AUDIT-0 — Full UI / Backend Capability Reconciliation** — complete (2026-06-23)
 
 Audit-only phase. No code changed. Route-by-route and capability-by-capability reconciliation across all admin and student routes against backend capabilities.
