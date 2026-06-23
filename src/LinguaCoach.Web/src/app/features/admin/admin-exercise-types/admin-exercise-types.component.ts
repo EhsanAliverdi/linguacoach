@@ -21,6 +21,8 @@ import {
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
+import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 @Component({
   selector: 'app-admin-exercise-types',
@@ -44,6 +46,8 @@ import {
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
+    SpAdminRingMetricComponent,
+    SpAdminBreakdownBarsComponent,
   ],
   template: `
     <sp-admin-page-header
@@ -70,6 +74,22 @@ import {
           {{ typeSummary().skills }}
         </sp-admin-kpi-card>
       </div>
+
+      <!-- Ready ring + skill breakdown strip -->
+      @if (typeSummary().total > 0) {
+        <div style="display:flex;align-items:flex-start;gap:24px;padding:12px 24px 4px;flex-wrap:wrap;">
+          <sp-admin-ring-metric
+            [pct]="readyRingPct()"
+            label="Ready"
+            [sub]="typeSummary().ready + ' of ' + typeSummary().total"
+            tone="teal"
+            [size]="72"
+            ariaLabel="Ready exercise types ring" />
+          <div style="flex:1;min-width:240px;">
+            <sp-admin-breakdown-bars [items]="skillBreakdownItems()" [showPct]="true" title="By skill" />
+          </div>
+        </div>
+      }
     }
 
     <sp-admin-page-body>
@@ -285,6 +305,22 @@ export class AdminExerciseTypesComponent implements OnInit {
       ready: all.filter(t => t.implementationStatus === 'ready').length,
       skills,
     };
+  });
+
+  readonly readyRingPct = computed(() => {
+    const { total, ready } = this.typeSummary();
+    return total > 0 ? Math.round((ready / total) * 100) : 0;
+  });
+
+  readonly skillBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const all = this.exerciseTypes();
+    const counts: Record<string, number> = {};
+    for (const t of all) if (t.primarySkill) counts[t.primarySkill] = (counts[t.primarySkill] ?? 0) + 1;
+    const total = all.length || 1;
+    const tones: BreakdownBarItem['tone'][] = ['amber', 'indigo', 'indigo', 'violet', 'amber', 'green'];
+    return Object.entries(counts).map(([label, value], i) => ({
+      label, value, pct: Math.round((value / total) * 100), tone: tones[i % tones.length],
+    }));
   });
 
   private static readonly SKILL_COLORS: Record<string, string> = {

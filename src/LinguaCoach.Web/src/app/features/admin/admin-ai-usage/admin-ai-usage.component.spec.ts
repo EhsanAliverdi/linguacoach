@@ -1266,8 +1266,8 @@ describe('AdminAiUsageComponent', () => {
     svc.getTrends.and.returnValue(of(buckets));
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const bars = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-au-mini-bar');
-    expect(bars.length).toBeGreaterThan(0);
+    const chart = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-mini-bar-chart');
+    expect(chart).toBeTruthy();
   });
 
   it('activities per day card renders with "not implemented" text', () => {

@@ -26,6 +26,8 @@ import {
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
+import { SpAdminMiniBarChartComponent, MiniBarItem } from '../../../design-system/admin/components/mini-bar-chart/sp-admin-mini-bar-chart.component';
+import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 
 @Component({
   selector: 'app-admin-ai-usage',
@@ -51,6 +53,8 @@ import {
     SpAdminSelectComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
+    SpAdminMiniBarChartComponent,
+    SpAdminVisualPlaceholderComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
   styles: [`
@@ -370,7 +374,7 @@ export class AdminAiUsageComponent implements OnInit {
     };
   });
 
-  // Mini bar chart heights for trend (proportional 0-48 px)
+  // Mini bar chart heights for trend (proportional 0-48 px) — kept for backward compat
   readonly trendBars = computed(() => {
     const buckets = this.trendBuckets();
     if (!buckets.length) return [];
@@ -381,6 +385,15 @@ export class AdminAiUsageComponent implements OnInit {
       label:  `${b.date}: ${b.callCount} calls`,
     }));
   });
+
+  // MiniBarItem[] for sp-admin-mini-bar-chart
+  readonly trendItems = computed<MiniBarItem[]>(() =>
+    this.trendBuckets().map(b => ({
+      label: b.date.slice(5), // MM-DD
+      value: b.callCount,
+      date: b.date,
+    }))
+  );
 
   readonly periodPillOptions: { value: PeriodPreset; label: string }[] = [
     { value: '7d',  label: '7d' },

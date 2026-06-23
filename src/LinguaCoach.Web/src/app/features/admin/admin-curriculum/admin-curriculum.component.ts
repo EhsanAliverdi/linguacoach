@@ -24,6 +24,8 @@ import {
   SpAdminTableComponent,
 } from '../../../design-system/admin';
 import type { SpAdminSelectOption } from '../../../design-system/admin';
+import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 type View = 'list' | 'edit' | 'create' | 'preview';
 
@@ -50,6 +52,8 @@ function parseJsonArray(json: string | null | undefined): string[] {
     SpAdminPageHeaderComponent,
     SpAdminSelectComponent,
     SpAdminTableComponent,
+    SpAdminRingMetricComponent,
+    SpAdminBreakdownBarsComponent,
   ],
   styles: [`
     .sp-curr-kpi-strip {
@@ -90,6 +94,22 @@ function parseJsonArray(json: string | null | undefined): string[] {
           {{ coverageSummary().skills }}
         </sp-admin-kpi-card>
       </div>
+
+      <!-- Active/total ring + CEFR breakdown strip -->
+      @if (coverageSummary().total > 0) {
+        <div style="display:flex;align-items:flex-start;gap:24px;padding:12px 24px 4px;flex-wrap:wrap;">
+          <sp-admin-ring-metric
+            [pct]="activeRingPct()"
+            label="Active"
+            [sub]="coverageSummary().active + ' of ' + coverageSummary().total"
+            tone="green"
+            [size]="72"
+            ariaLabel="Active objectives ring" />
+          <div style="flex:1;min-width:240px;">
+            <sp-admin-breakdown-bars [items]="cefrBreakdownItems()" [showPct]="true" title="CEFR distribution" />
+          </div>
+        </div>
+      }
     }
 
     <sp-admin-page-body>
@@ -408,6 +428,23 @@ export class AdminCurriculumComponent implements OnInit {
       cefrBands,
       skills,
     };
+  });
+
+  readonly activeRingPct = computed(() => {
+    const { total, active } = this.coverageSummary();
+    return total > 0 ? Math.round((active / total) * 100) : 0;
+  });
+
+  readonly cefrBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const all = this.allObjectives();
+    const counts: Record<string, number> = {};
+    for (const o of all) if (o.cefrLevel) counts[o.cefrLevel] = (counts[o.cefrLevel] ?? 0) + 1;
+    const order = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    const total = all.length || 1;
+    const tones: BreakdownBarItem['tone'][] = ['green', 'teal', 'indigo', 'violet', 'amber', 'slate'];
+    return order.filter(l => counts[l]).map((l, i) => ({
+      label: l, value: counts[l], pct: Math.round((counts[l] / total) * 100), tone: tones[i % tones.length],
+    }));
   });
 
   form: AdminCurriculumObjectiveUpsertRequest = this.emptyForm();

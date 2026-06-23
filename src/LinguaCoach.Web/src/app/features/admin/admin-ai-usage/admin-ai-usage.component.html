@@ -187,16 +187,11 @@
   } @else if (trendBuckets().length === 0) {
     <sp-admin-empty-state message="No trend data for selected filters." />
   } @else {
-    <!-- Mini bar chart from real trendBuckets data -->
-    <div class="sp-au-mini-bars" aria-label="Daily calls mini bar chart" role="img">
-      @for (bar of trendBars(); track $index) {
-        <div
-          class="sp-au-mini-bar"
-          [style.height.px]="bar.height"
-          [title]="bar.label"
-          [attr.aria-label]="bar.label"></div>
-      }
-    </div>
+    <sp-admin-mini-bar-chart
+      [items]="trendItems()"
+      tone="indigo"
+      [height]="56"
+      ariaLabel="Daily calls bar chart" />
     <sp-admin-table variant="data" density="compact" minWidth="640px">
       <table>
         <thead>

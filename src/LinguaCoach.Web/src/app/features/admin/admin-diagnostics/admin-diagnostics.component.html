@@ -24,6 +24,15 @@
     </div>
   }
 
+<!-- Recent event feed summary (real data — top 8 from loaded events) -->
+@if (!loadingEvents() && recentFeedItems().length > 0) {
+  <sp-admin-event-feed
+    [items]="recentFeedItems()"
+    title="Recent events (top 8)"
+    ariaLabel="Recent diagnostic events"
+    style="margin-bottom:20px;display:block" />
+}
+
 <sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
   <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus()">
     Refresh

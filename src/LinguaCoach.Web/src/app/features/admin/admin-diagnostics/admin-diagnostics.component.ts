@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
+import { SpAdminEventFeedComponent, EventFeedItem } from '../../../design-system/admin/components/event-feed/sp-admin-event-feed.component';
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
@@ -54,6 +55,7 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
+    SpAdminEventFeedComponent,
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
@@ -94,6 +96,17 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   readonly eventsPageSize = 25;
 
   eventsTotalPages = computed(() => Math.max(1, Math.ceil(this.events().length / this.eventsPageSize)));
+
+  readonly recentFeedItems = computed<EventFeedItem[]>(() =>
+    this.events().slice(0, 8).map((e, i) => ({
+      id: e.correlationId ?? String(i),
+      timestamp: e.timestampUtc,
+      title: e.message?.slice(0, 80) ?? 'Event',
+      level: e.level as EventFeedItem['level'],
+      category: e.category ?? undefined,
+      correlationId: e.correlationId ?? undefined,
+    }))
+  );
 
   readonly kpiSummary = computed(() => {
     const s = this.status();

@@ -16,6 +16,8 @@ import {
   SpAdminTableComponent,
   SpAdminKpiCardComponent,
 } from '../../../design-system/admin';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
+import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
 @Component({
@@ -34,6 +36,8 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     SpAdminLoadingStateComponent,
     SpAdminTableComponent,
     SpAdminKpiCardComponent,
+    SpAdminBreakdownBarsComponent,
+    SpAdminVisualPlaceholderComponent,
   ],
   template: `
     <sp-admin-page-header title="Dashboard" subtitle="SpeakPath platform overview" />
@@ -155,24 +159,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
         @if (loadingStudents() || loadingStats()) {
           <sp-admin-loading-state message="Loading" />
         } @else {
-          <div class="sp-dash-funnel">
-            <div class="sp-dash-funnel-row">
-              <span class="sp-dash-funnel-label">Total students</span>
-              <span class="sp-dash-funnel-val">{{ stats()?.totalStudents ?? 0 }}</span>
-            </div>
-            <div class="sp-dash-funnel-row">
-              <span class="sp-dash-funnel-label">Onboarded</span>
-              <span class="sp-dash-funnel-val sp-dash-funnel-val--green">{{ stats()?.onboardedStudents ?? 0 }}</span>
-            </div>
-            <div class="sp-dash-funnel-row">
-              <span class="sp-dash-funnel-label">Not started</span>
-              <span class="sp-dash-funnel-val">{{ onboardingCounts().notStarted }}</span>
-            </div>
-            <div class="sp-dash-funnel-row">
-              <span class="sp-dash-funnel-label">In progress</span>
-              <span class="sp-dash-funnel-val">{{ onboardingCounts().inProgress }}</span>
-            </div>
-          </div>
+          <sp-admin-breakdown-bars [items]="onboardingFunnelItems()" [showPct]="true" />
         }
       </sp-admin-card>
 
@@ -209,17 +196,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
         } @else if (cefrDistribution().length === 0) {
           <sp-admin-empty-state message="No CEFR data yet." />
         } @else {
-          <div class="sp-dash-cefr-list">
-            @for (row of cefrDistribution(); track row.level) {
-              <div class="sp-dash-cefr-row">
-                <sp-admin-badge tone="primary">{{ row.level }}</sp-admin-badge>
-                <div class="sp-dash-cefr-bar-wrap">
-                  <div class="sp-dash-cefr-bar" [style.width.%]="row.pct"></div>
-                </div>
-                <span class="sp-dash-cefr-count">{{ row.count }}</span>
-              </div>
-            }
-          </div>
+          <sp-admin-breakdown-bars [items]="cefrBreakdownItems()" [showPct]="true" />
         }
       </sp-admin-card>
 
@@ -229,31 +206,19 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <div class="sp-dash-four-grid">
 
       <sp-admin-card title="Score distribution">
-        <div class="sp-dash-placeholder-block">
-          <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
-          <div class="sp-dash-placeholder-sub">No score distribution endpoint</div>
-        </div>
+        <sp-admin-visual-placeholder state="not-available" title="Score distribution" message="No score distribution endpoint" />
       </sp-admin-card>
 
       <sp-admin-card title="AI spend by type">
-        <div class="sp-dash-placeholder-block">
-          <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
-          <div class="sp-dash-placeholder-sub">No per-category cost endpoint in admin stats</div>
-        </div>
+        <sp-admin-visual-placeholder state="not-available" title="AI spend by type" message="No per-category cost endpoint in admin stats" />
       </sp-admin-card>
 
       <sp-admin-card title="Avg session duration">
-        <div class="sp-dash-placeholder-block">
-          <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
-          <div class="sp-dash-placeholder-sub">No session duration endpoint</div>
-        </div>
+        <sp-admin-visual-placeholder state="not-available" title="Avg session duration" message="No session duration endpoint" />
       </sp-admin-card>
 
       <sp-admin-card title="Streak leaderboard">
-        <div class="sp-dash-placeholder-block">
-          <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
-          <div class="sp-dash-placeholder-sub">No streak endpoint</div>
-        </div>
+        <sp-admin-visual-placeholder state="not-available" title="Streak leaderboard" message="No streak endpoint" />
       </sp-admin-card>
 
     </div>
@@ -557,6 +522,31 @@ export class AdminDashboardComponent implements OnInit {
     return order
       .filter(l => counts[l])
       .map(level => ({ level, count: counts[level], pct: Math.round((counts[level] / max) * 100) }));
+  });
+
+  readonly cefrBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const dist = this.cefrDistribution();
+    const total = dist.reduce((s, r) => s + r.count, 0) || 1;
+    const tones: BreakdownBarItem['tone'][] = ['green', 'teal', 'indigo', 'violet', 'amber', 'slate'];
+    return dist.map((r, i) => ({
+      label: r.level,
+      value: r.count,
+      pct: Math.round((r.count / total) * 100),
+      tone: tones[i % tones.length],
+    }));
+  });
+
+  readonly onboardingFunnelItems = computed<BreakdownBarItem[]>(() => {
+    const ss = this.students();
+    const total = ss.length || 1;
+    const completed = ss.filter(s => s.onboardingStatus === 'Completed').length;
+    const inProgress = ss.filter(s => s.onboardingStatus === 'InProgress').length;
+    const notStarted = ss.filter(s => s.onboardingStatus === 'NotStarted').length;
+    return [
+      { label: 'Completed', value: completed, pct: Math.round((completed / total) * 100), tone: 'green' },
+      { label: 'In progress', value: inProgress, pct: Math.round((inProgress / total) * 100), tone: 'amber' },
+      { label: 'Not started', value: notStarted, pct: Math.round((notStarted / total) * 100), tone: 'slate' },
+    ];
   });
 
   readonly lifecycleCounts = computed(() => {

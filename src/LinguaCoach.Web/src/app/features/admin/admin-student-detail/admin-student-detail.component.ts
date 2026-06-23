@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -20,6 +20,8 @@ import { SpAdminButtonComponent } from '../../../design-system/admin/components/
 import { SpAdminAlertComponent } from '../../../design-system/admin/components/alert/sp-admin-alert.component';
 import { SpAdminTableComponent } from '../../../design-system/admin/components/table/sp-admin-table.component';
 import { SpAdminKpiCardComponent } from '../../../design-system/admin/components/kpi-card/sp-admin-kpi-card.component';
+import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone, eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
@@ -43,7 +45,7 @@ interface StudentEditForm {
     SpAdminSlideOverComponent, SpAdminPageHeaderComponent, SpAdminPageBodyComponent,
     SpAdminCardComponent, SpAdminBadgeComponent, SpAdminStatCardComponent,
     SpAdminButtonComponent, SpAdminAlertComponent, SpAdminTableComponent,
-    SpAdminKpiCardComponent,
+    SpAdminKpiCardComponent, SpAdminRingMetricComponent, SpAdminBreakdownBarsComponent,
   ],
   template: `
     <sp-admin-page-header title="Student detail">
@@ -384,39 +386,47 @@ interface StudentEditForm {
             <div class="sp-admin-pool-grid">
               <div class="sp-admin-pool-source">
                 <h3 class="sp-admin-pool-source-title">Today's lesson</h3>
-                <dl class="sp-admin-detail-list">
-                  <div><dt>Ready</dt><dd>{{ ph.todayLesson.readyCount }} / {{ ph.todayLesson.targetCount }}</dd></div>
-                  <div><dt>Queued / generating</dt><dd>{{ ph.todayLesson.queuedOrGeneratingCount }}</dd></div>
-                  <div><dt>Shortfall</dt><dd>{{ ph.todayLesson.shortfallCount }}</dd></div>
-                  <div><dt>Failed</dt><dd>{{ ph.todayLesson.failedCount }}</dd></div>
-                  <div><dt>Stale</dt><dd>{{ ph.todayLesson.staleCount }}</dd></div>
-                  <div>
-                    <dt>Needs replenishment</dt>
-                    <dd>
-                      <sp-admin-badge [tone]="ph.todayLesson.needsReplenishment ? 'warning' : 'success'">
-                        {{ ph.todayLesson.needsReplenishment ? 'Yes' : 'No' }}
-                      </sp-admin-badge>
-                    </dd>
-                  </div>
-                </dl>
+                <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:8px;">
+                  <sp-admin-ring-metric
+                    [pct]="lessonRingPct()"
+                    label="Ready"
+                    [sub]="ph.todayLesson.readyCount + ' / ' + ph.todayLesson.targetCount"
+                    [tone]="ph.todayLesson.needsReplenishment ? 'amber' : 'green'"
+                    [size]="64"
+                    ariaLabel="Lesson pool ready ring" />
+                  @if (lessonPoolBreakdown().length > 0) {
+                    <div style="flex:1;min-width:180px;">
+                      <sp-admin-breakdown-bars [items]="lessonPoolBreakdown()" [showPct]="false" />
+                    </div>
+                  }
+                </div>
+                <div style="margin-top:8px;">
+                  <sp-admin-badge [tone]="ph.todayLesson.needsReplenishment ? 'warning' : 'success'">
+                    {{ ph.todayLesson.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}
+                  </sp-admin-badge>
+                </div>
               </div>
               <div class="sp-admin-pool-source">
                 <h3 class="sp-admin-pool-source-title">Practice gym</h3>
-                <dl class="sp-admin-detail-list">
-                  <div><dt>Ready</dt><dd>{{ ph.practiceGym.readyCount }} / {{ ph.practiceGym.targetCount }}</dd></div>
-                  <div><dt>Queued / generating</dt><dd>{{ ph.practiceGym.queuedOrGeneratingCount }}</dd></div>
-                  <div><dt>Shortfall</dt><dd>{{ ph.practiceGym.shortfallCount }}</dd></div>
-                  <div><dt>Failed</dt><dd>{{ ph.practiceGym.failedCount }}</dd></div>
-                  <div><dt>Stale</dt><dd>{{ ph.practiceGym.staleCount }}</dd></div>
-                  <div>
-                    <dt>Needs replenishment</dt>
-                    <dd>
-                      <sp-admin-badge [tone]="ph.practiceGym.needsReplenishment ? 'warning' : 'success'">
-                        {{ ph.practiceGym.needsReplenishment ? 'Yes' : 'No' }}
-                      </sp-admin-badge>
-                    </dd>
-                  </div>
-                </dl>
+                <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:8px;">
+                  <sp-admin-ring-metric
+                    [pct]="gymRingPct()"
+                    label="Ready"
+                    [sub]="ph.practiceGym.readyCount + ' / ' + ph.practiceGym.targetCount"
+                    [tone]="ph.practiceGym.needsReplenishment ? 'amber' : 'green'"
+                    [size]="64"
+                    ariaLabel="Gym pool ready ring" />
+                  @if (gymPoolBreakdown().length > 0) {
+                    <div style="flex:1;min-width:180px;">
+                      <sp-admin-breakdown-bars [items]="gymPoolBreakdown()" [showPct]="false" />
+                    </div>
+                  }
+                </div>
+                <div style="margin-top:8px;">
+                  <sp-admin-badge [tone]="ph.practiceGym.needsReplenishment ? 'warning' : 'success'">
+                    {{ ph.practiceGym.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}
+                  </sp-admin-badge>
+                </div>
               </div>
             </div>
           } @else {
@@ -1176,6 +1186,50 @@ export class AdminStudentDetailComponent implements OnInit {
   poolHealth = signal<StudentReadinessPoolHealth | null>(null);
   poolHealthLoading = signal(true);
   poolHealthError = signal('');
+
+  readonly lessonRingPct = computed(() => {
+    const ph = this.poolHealth();
+    if (!ph) return 0;
+    const t = ph.todayLesson.targetCount;
+    return t > 0 ? Math.round((ph.todayLesson.readyCount / t) * 100) : 0;
+  });
+
+  readonly gymRingPct = computed(() => {
+    const ph = this.poolHealth();
+    if (!ph) return 0;
+    const t = ph.practiceGym.targetCount;
+    return t > 0 ? Math.round((ph.practiceGym.readyCount / t) * 100) : 0;
+  });
+
+  readonly lessonPoolBreakdown = computed<BreakdownBarItem[]>(() => {
+    const ph = this.poolHealth();
+    if (!ph) return [];
+    const l = ph.todayLesson;
+    const tot = l.targetCount || 1;
+    const rows: BreakdownBarItem[] = [
+      { label: 'Ready', value: l.readyCount, pct: Math.round((l.readyCount / tot) * 100), tone: 'green' },
+      { label: 'Queued', value: l.queuedOrGeneratingCount, pct: Math.round((l.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' },
+      { label: 'Shortfall', value: l.shortfallCount, pct: Math.round((l.shortfallCount / tot) * 100), tone: 'amber' },
+      { label: 'Failed', value: l.failedCount, pct: Math.round((l.failedCount / tot) * 100), tone: 'danger' },
+      { label: 'Stale', value: l.staleCount, pct: Math.round((l.staleCount / tot) * 100), tone: 'slate' },
+    ];
+    return rows.filter(i => i.value > 0);
+  });
+
+  readonly gymPoolBreakdown = computed<BreakdownBarItem[]>(() => {
+    const ph = this.poolHealth();
+    if (!ph) return [];
+    const g = ph.practiceGym;
+    const tot = g.targetCount || 1;
+    const rows: BreakdownBarItem[] = [
+      { label: 'Ready', value: g.readyCount, pct: Math.round((g.readyCount / tot) * 100), tone: 'green' },
+      { label: 'Queued', value: g.queuedOrGeneratingCount, pct: Math.round((g.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' },
+      { label: 'Shortfall', value: g.shortfallCount, pct: Math.round((g.shortfallCount / tot) * 100), tone: 'amber' },
+      { label: 'Failed', value: g.failedCount, pct: Math.round((g.failedCount / tot) * 100), tone: 'danger' },
+      { label: 'Stale', value: g.staleCount, pct: Math.round((g.staleCount / tot) * 100), tone: 'slate' },
+    ];
+    return rows.filter(i => i.value > 0);
+  });
 
   readonly lifecycleLabel = lifecycleLabel;
   readonly lifecycleTone = lifecycleTone;

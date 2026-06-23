@@ -1767,16 +1767,16 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
     expect(text).toContain('8 / 8');
   });
 
-  it('shows No badge when pool does not need replenishment', () => {
+  it('shows Healthy badge when pool does not need replenishment', () => {
     setup(makePoolHealth());
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const badges = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge'));
-    const noBadges = badges.filter(b => b.textContent?.trim() === 'No');
-    expect(noBadges.length).toBe(2);
+    const healthyBadges = badges.filter(b => b.textContent?.trim() === 'Healthy');
+    expect(healthyBadges.length).toBe(2);
   });
 
-  it('shows Yes badge when pool needs replenishment', () => {
+  it('shows Needs replenishment badge when pool needs replenishment', () => {
     const ph = makePoolHealth();
     (ph.todayLesson as any).needsReplenishment = true;
     (ph.todayLesson as any).shortfallCount = 3;
@@ -1784,7 +1784,7 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const badges = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge'));
-    expect(badges.some(b => b.textContent?.trim() === 'Yes')).toBeTrue();
+    expect(badges.some(b => b.textContent?.trim() === 'Needs replenishment')).toBeTrue();
   });
 
   it('shows error state when pool health load fails', () => {
