@@ -426,6 +426,57 @@ describe('AdminStudentsComponent', () => {
     expect(component.totalCount()).toBe(42);
   });
 
+  // ── Avatar helpers ───────────────────────────────────────────────────────
+
+  describe('avatarInitial', () => {
+    it('returns first letter of displayName uppercased', async () => {
+      await setup();
+      expect(component.avatarInitial(STUDENT_ACTIVE)).toBe('A');
+    });
+
+    it('falls back to firstName when displayName is empty', async () => {
+      await setup();
+      const s = { ...STUDENT_NO_PROFILE, displayName: '', firstName: 'Carol' };
+      expect(component.avatarInitial(s)).toBe('C');
+    });
+
+    it('falls back to email when displayName and firstName are empty', async () => {
+      await setup();
+      expect(component.avatarInitial(STUDENT_NO_PROFILE)).toBe('C');
+    });
+
+    it('returns ? for completely empty student', async () => {
+      await setup();
+      const s = { ...STUDENT_ACTIVE, displayName: '', firstName: '', email: '' };
+      expect(component.avatarInitial(s)).toBe('?');
+    });
+  });
+
+  describe('avatarColor', () => {
+    it('returns a hex colour string', async () => {
+      await setup();
+      const colour = component.avatarColor(STUDENT_ACTIVE);
+      expect(colour).toMatch(/^#[0-9a-fA-F]{6}$/);
+    });
+
+    it('returns consistent colour for same email', async () => {
+      await setup();
+      expect(component.avatarColor(STUDENT_ACTIVE)).toBe(component.avatarColor(STUDENT_ACTIVE));
+    });
+
+    it('renders avatar element in student name cell', async () => {
+      await setup([STUDENT_ACTIVE]);
+      const avatar = fixture.nativeElement.querySelector('.sp-stu-avatar');
+      expect(avatar).not.toBeNull();
+    });
+
+    it('renders correct initial in avatar', async () => {
+      await setup([STUDENT_ACTIVE]);
+      const avatar = fixture.nativeElement.querySelector('.sp-stu-avatar');
+      expect(avatar.textContent.trim()).toBe('A');
+    });
+  });
+
   // ── REDESIGN-2: Summary strip ────────────────────────────────────────────
 
   describe('summary strip', () => {

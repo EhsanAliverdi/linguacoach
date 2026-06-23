@@ -440,9 +440,9 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **Needs:** New backend endpoint `GET /admin/health/detailed` returning per-service latency.
 **Phase:** 10UI-BACKEND-AGG-1
 
-### TODO-VISUAL-08 — Dashboard pending actions: computed contextual list (P2)
+### TODO-VISUAL-08 — Dashboard pending actions: computed contextual list (P2) ✅ DONE 2026-06-24
 **What:** Replace hardcoded "Admin quick actions" 4-card grid with a computed contextual pending-action list derived from real student + AI config state.
-**Can be built now** from existing loaded signals: `atRiskStudents().length`, `cefrDistribution()` zero-CEFR count, `aiCategories()` unconfigured count.
+**Done:** `pendingActions` computed signal on dashboard derives from `aiCategories()` (unconfigured count) and `students()` (no-CEFR, not-onboarded). Shows polished empty state if none. Links to `/admin/ai-config` and `/admin/students`.
 **Phase:** 10UI-POLISH-1
 
 ### TODO-VISUAL-09 — AI Config: category edit should use slide-over not centered modal (P2)
@@ -450,14 +450,14 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **Can be built now** using existing `sp-admin-slide-over` component.
 **Phase:** 10UI-POLISH-1
 
-### TODO-VISUAL-10 — Toggle switch component (P2)
+### TODO-VISUAL-10 — Toggle switch component (P2) ✅ DONE 2026-06-24
 **What:** Exercise Types and Notifications use button variants for enable/disable. Reference uses a dedicated CSS toggle-switch pill component.
-**Can be built now** — new small component, no backend changes.
+**Done:** `sp-admin-toggle` created (CVA, accessible role=switch, 17 specs). Applied to Notifications channel isEnabled fields (in-app, email, SMS). Exercise Types left on context-menu — inline toggle too risky without table redesign (deferred to TODO-VISUAL-10B).
 **Phase:** 10UI-POLISH-1
 
-### TODO-VISUAL-11 — Students list and dashboard: avatar tiles in rows (P3)
+### TODO-VISUAL-11 — Students list and dashboard: avatar tiles in rows (P3) ✅ DONE 2026-06-24
 **What:** Avatar tiles (coloured initial circle) added to dashboard at-risk list and recent students table in VISUAL-FINAL. Students list page itself still has no per-row avatars.
-**Can be built now.**
+**Done:** `avatarInitial()` and `avatarColor()` added to `admin-students.component.ts`. Name cell updated to show coloured initial circle. 8 specs added for avatar helpers and DOM rendering.
 **Phase:** 10UI-POLISH-1
 
 ### TODO-VISUAL-12 — Dashboard live events feed (P2)

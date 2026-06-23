@@ -30,6 +30,7 @@ import {
   SpAdminSelectComponent, SpAdminSelectOption,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
+  SpAdminToggleComponent,
 } from '../../../design-system/admin';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
@@ -59,6 +60,7 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminTableComponent,
     SpAdminVisualPlaceholderComponent,
     SpAdminBreakdownBarsComponent,
+    SpAdminToggleComponent,
   ],
   templateUrl: './admin-notifications.component.html',
   styles: [`

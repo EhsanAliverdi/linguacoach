@@ -44,6 +44,7 @@ export * from './components/truncated-text/sp-admin-truncated-text.component';
 export * from './components/copyable-text/sp-admin-copyable-text.component';
 export * from './components/code-pill/sp-admin-code-pill.component';
 export * from './components/graph-card/sp-admin-graph-card.component';
+export * from './components/toggle/sp-admin-toggle.component';
 export * from './utils/admin-badge.utils';
 export * from './components/toast-outlet/sp-admin-toast-outlet.component';
 export * from './services/admin-drawer.service';

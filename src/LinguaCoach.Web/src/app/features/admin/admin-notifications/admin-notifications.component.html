@@ -283,7 +283,7 @@
       <!-- In-App config -->
       <sp-admin-card title="In-App channel">
         <div class="sp-notif-checkbox-row">
-          <sp-admin-checkbox [(ngModel)]="inAppForm.isEnabled" label="Enabled" />
+          <sp-admin-toggle [(ngModel)]="inAppForm.isEnabled" label="Enabled" />
           <sp-admin-button size="sm" variant="secondary" [disabled]="inAppSaving()" (clicked)="saveInAppConfig()">
             {{ inAppSaving() ? 'Saving…' : 'Save' }}
           </sp-admin-button>
@@ -300,7 +300,7 @@
       <!-- Email config -->
       <sp-admin-card title="Email configuration (SMTP)">
         <div class="sp-notif-checkbox-row">
-          <sp-admin-checkbox [(ngModel)]="emailForm.isEnabled" label="Enabled" />
+          <sp-admin-toggle [(ngModel)]="emailForm.isEnabled" label="Enabled" />
         </div>
         <div class="sp-notif-field-row">
           <sp-admin-input size="sm" label="Host" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" />
@@ -348,7 +348,7 @@
           message="No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are deferred. You may pre-configure credentials for when a provider is integrated."
           style="margin-bottom:12px;display:block" />
         <div class="sp-notif-checkbox-row" style="margin-top:12px;">
-          <sp-admin-checkbox [(ngModel)]="smsForm.isEnabled" label="Enabled (no-op until provider implemented)" />
+          <sp-admin-toggle [(ngModel)]="smsForm.isEnabled" label="Enabled" description="No-op until provider implemented" />
         </div>
         <div class="sp-notif-field-row">
           <sp-admin-input size="sm" label="Provider" placeholder="e.g. Twilio" [(ngModel)]="smsForm.provider" />

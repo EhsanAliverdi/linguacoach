@@ -321,6 +321,27 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       }
     </sp-admin-card>
 
+    <!-- Pending admin actions (derived from already-loaded data) -->
+    <sp-admin-card title="Pending actions">
+      @if (loadingStudents() || loadingAiCategories()) {
+        <sp-admin-loading-state message="Checking for pending actions" />
+      } @else if (pendingActions().length === 0) {
+        <sp-admin-empty-state message="No immediate admin actions from loaded data." />
+      } @else {
+        <ul class="sp-dash-actions-list">
+          @for (action of pendingActions(); track action.label) {
+            <li class="sp-dash-action-item sp-dash-action-item--{{ action.tone }}">
+              <span class="sp-dash-action-dot sp-dash-action-dot--{{ action.tone }}"></span>
+              <div class="sp-dash-action-body">
+                <a [routerLink]="action.link" class="sp-dash-action-label">{{ action.label }}</a>
+                <span class="sp-dash-action-detail">{{ action.detail }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </sp-admin-card>
+
     <!-- Live events feed (placeholder) -->
     <sp-admin-card title="Live events feed">
       <sp-admin-visual-placeholder state="not-available" skeleton="timeline" title="Live events feed" message="No real-time events feed endpoint" />
@@ -457,6 +478,20 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
     /* At-risk note */
     .sp-dash-at-risk-note { font-size: 10.5px; color: #94a3b8; margin-top: 10px; font-style: italic; }
+    /* Pending actions list */
+    .sp-dash-actions-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .sp-dash-action-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--sp-admin-surface-alt, #F8F7FB); }
+    .sp-dash-action-item--warning { background: #fffbeb; }
+    .sp-dash-action-item--danger  { background: #fef2f2; }
+    .sp-dash-action-item--info    { background: #f0f9ff; }
+    .sp-dash-action-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+    .sp-dash-action-dot--warning { background: #D97706; }
+    .sp-dash-action-dot--danger  { background: #DC2626; }
+    .sp-dash-action-dot--info    { background: #0891b2; }
+    .sp-dash-action-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .sp-dash-action-label { font-size: 13px; font-weight: 700; color: var(--sp-admin-text, #211B36); text-decoration: none; }
+    .sp-dash-action-label:hover { text-decoration: underline; }
+    .sp-dash-action-detail { font-size: 11.5px; color: var(--sp-admin-text-muted, #8B85A0); }
 
     /* Avatar */
     .sp-dash-avatar {
@@ -558,6 +593,48 @@ export class AdminDashboardComponent implements OnInit {
       { label: 'Not onboarded',value: notStarted, pct: Math.round((notStarted / total) * 100), tone: 'slate' },
     ];
     return rows;
+  });
+
+  readonly pendingActions = computed<{ label: string; detail: string; link: string; tone: 'danger' | 'warning' | 'info' }[]>(() => {
+    const actions: { label: string; detail: string; link: string; tone: 'danger' | 'warning' | 'info' }[] = [];
+
+    // Unconfigured AI categories (real data from listAiCategories)
+    if (!this.loadingAiCategories() && !this.aiConfigError()) {
+      const unconfigured = this.aiCategories().filter(c => !c.providerName);
+      if (unconfigured.length > 0) {
+        actions.push({
+          label: `${unconfigured.length} AI ${unconfigured.length === 1 ? 'category' : 'categories'} not configured`,
+          detail: unconfigured.map(c => c.displayName).join(', '),
+          link: '/admin/ai-config',
+          tone: 'warning',
+        });
+      }
+    }
+
+    // Students with no CEFR level (need placement)
+    if (!this.loadingStudents()) {
+      const noCefr = this.students().filter(s => !s.cefrLevel && s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Created');
+      if (noCefr.length > 0) {
+        actions.push({
+          label: `${noCefr.length} ${noCefr.length === 1 ? 'student' : 'students'} awaiting placement`,
+          detail: 'CEFR level not yet assigned',
+          link: '/admin/students',
+          tone: 'info',
+        });
+      }
+      // Students not onboarded at all
+      const notStarted = this.students().filter(s => s.onboardingStatus === 'NotStarted' && s.lifecycleStage !== 'Archived');
+      if (notStarted.length > 0) {
+        actions.push({
+          label: `${notStarted.length} ${notStarted.length === 1 ? 'student' : 'students'} not yet onboarded`,
+          detail: 'Onboarding not started',
+          link: '/admin/students',
+          tone: 'info',
+        });
+      }
+    }
+
+    return actions;
   });
 
   readonly lifecycleCounts = computed(() => {

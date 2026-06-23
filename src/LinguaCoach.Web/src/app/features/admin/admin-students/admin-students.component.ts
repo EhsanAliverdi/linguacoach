@@ -135,8 +135,13 @@ interface StudentEditForm {
               @for (s of students(); track s.studentProfileId) {
                 <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
                   <td class="sp-admin-wide-cell">
-                    <div class="sp-admin-student-name">{{ displayName(s) }}</div>
-                    <sp-admin-copyable-text [value]="s.email" class="sp-admin-table-muted" />
+                    <div class="sp-stu-avatar-row">
+                      <span class="sp-stu-avatar" [style.background]="avatarColor(s)">{{ avatarInitial(s) }}</span>
+                      <div>
+                        <div class="sp-admin-student-name">{{ displayName(s) }}</div>
+                        <sp-admin-copyable-text [value]="s.email" class="sp-admin-table-muted" />
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
@@ -405,6 +410,8 @@ interface StudentEditForm {
     .sp-admin-sortable:hover{color:#334155;}
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
     .sp-admin-filter-toggle input{accent-color:var(--sp-admin-primary,#5B4BE8);}
+    .sp-stu-avatar-row{display:flex;align-items:center;gap:9px;}
+    .sp-stu-avatar{flex-shrink:0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;line-height:1;}
     .sp-admin-student-name{font-weight:800;color:#0F172A;}
     .sp-admin-profile-cell{max-width:280px;}
     .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}
@@ -667,6 +674,19 @@ export class AdminStudentsComponent implements OnInit {
     return student.displayName
       || [student.firstName, student.lastName].filter(Boolean).join(' ')
       || student.email;
+  }
+
+  avatarInitial(student: StudentListItem): string {
+    const name = student.displayName || student.firstName || student.email || '?';
+    return name[0].toUpperCase();
+  }
+
+  avatarColor(student: StudentListItem): string {
+    const palette = ['#5B4BE8','#16a34a','#D97706','#0891b2','#7C3AED','#DC2626','#0F766E'];
+    const seed = student.email || student.studentProfileId || '?';
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) & 0xFFFFFF;
+    return palette[Math.abs(h) % palette.length];
   }
 
   startEdit(student: StudentListItem): void {
