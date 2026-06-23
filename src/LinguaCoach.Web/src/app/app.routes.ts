@@ -106,6 +106,10 @@ export const routes: Routes = [
         path: 'notifications',
         loadComponent: () => import('./features/admin/admin-notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent),
       },
+      {
+        path: 'security',
+        loadComponent: () => import('./features/admin/admin-security/admin-security.component').then(m => m.AdminSecurityComponent),
+      },
     ],
   },
 

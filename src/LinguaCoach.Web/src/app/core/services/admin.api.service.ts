@@ -19,6 +19,7 @@ import {
   AdminNotificationConfigStatus, AdminNotificationConfigStatusV2, AdminTestEmailResult,
   AdminUpdateEmailConfigRequest, AdminUpdateSmsConfigRequest, AdminUpdateInAppConfigRequest,
   AdminUpdateConfigResult,
+  AdminSecuritySettings, AdminAuthEventItem, AdminAuthEventListQuery,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -267,5 +268,25 @@ export class AdminApiService {
   testEmail(toAddress: string): Observable<AdminTestEmailResult> {
     return this.http.post<AdminTestEmailResult>(
       `${this.api}/notifications/config/email/test`, { toAddress });
+  }
+
+  // ── Security settings ────────────────────────────────────────────────────
+
+  getSecuritySettings(): Observable<AdminSecuritySettings> {
+    return this.http.get<AdminSecuritySettings>(`${this.api}/security/settings`);
+  }
+
+  listSecurityAuthEvents(query: AdminAuthEventListQuery): Observable<PagedResponse<AdminAuthEventItem>> {
+    const params: Record<string, string> = {};
+    if (query.page) params['page'] = String(query.page);
+    if (query.pageSize) params['pageSize'] = String(query.pageSize);
+    if (query.userId) params['userId'] = query.userId;
+    if (query.email) params['email'] = query.email;
+    if (query.eventType) params['eventType'] = query.eventType;
+    if (query.outcome) params['outcome'] = query.outcome;
+    if (query.from) params['from'] = query.from;
+    if (query.to) params['to'] = query.to;
+    return this.http.get<PagedResponse<AdminAuthEventItem>>(
+      `${this.api}/security/auth-events`, { params });
   }
 }

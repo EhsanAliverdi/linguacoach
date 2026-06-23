@@ -1,0 +1,266 @@
+<sp-admin-page-body>
+  <sp-admin-page-header title="Security Settings" subtitle="Auth policy, rate limits, external login, and audit log." />
+
+  <!-- Tab bar -->
+  <div class="flex gap-2 mb-4 border-b border-gray-200">
+    <button
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class.border-indigo-600]="activeTab === 'overview'"
+      [class.text-indigo-600]="activeTab === 'overview'"
+      [class.border-transparent]="activeTab !== 'overview'"
+      [class.text-gray-500]="activeTab !== 'overview'"
+      (click)="onTabChange('overview')">
+      Overview
+    </button>
+    <button
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+      [class.border-indigo-600]="activeTab === 'events'"
+      [class.text-indigo-600]="activeTab === 'events'"
+      [class.border-transparent]="activeTab !== 'events'"
+      [class.text-gray-500]="activeTab !== 'events'"
+      (click)="onTabChange('events')">
+      Auth Events
+    </button>
+  </div>
+
+  <!-- ── Overview tab ──────────────────────────────────────────────────────── -->
+  @if (activeTab === 'overview') {
+    @if (settingsLoading()) {
+      <sp-admin-loading-state message="Loading security settings…" />
+    } @else if (settingsError()) {
+      <sp-admin-error-state [message]="settingsError()" (retry)="loadSettings()" />
+    } @else if (settings()) {
+
+      <!-- Password policy -->
+      <sp-admin-card title="Password Policy" class="mb-4">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Min length</div>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.passwordPolicy.requiredLength }}</span>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Uppercase</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireUppercase)">{{ boolLabel(settings()!.passwordPolicy.requireUppercase, 'Required', 'Not required') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Lowercase</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireLowercase)">{{ boolLabel(settings()!.passwordPolicy.requireLowercase, 'Required', 'Not required') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Digit</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireDigit)">{{ boolLabel(settings()!.passwordPolicy.requireDigit, 'Required', 'Not required') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Special char</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireNonAlphanumeric)">{{ boolLabel(settings()!.passwordPolicy.requireNonAlphanumeric, 'Required', 'Not required') }}</sp-admin-badge>
+          </div>
+        </div>
+      </sp-admin-card>
+
+      <!-- Lockout policy -->
+      <sp-admin-card title="Lockout Policy" class="mb-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Max failed attempts</div>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.lockout.maxFailedAccessAttempts }}</span>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Lockout duration</div>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.lockout.lockoutDurationMinutes }} minutes</span>
+          </div>
+        </div>
+      </sp-admin-card>
+
+      <!-- JWT / Session -->
+      <sp-admin-card title="JWT and Session" class="mb-4">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Access token expiry</div>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.jwt.accessTokenExpiryHours }}h</span>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Refresh token expiry</div>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.refreshToken.expiryDays }} days</span>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Token rotation</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.refreshToken.rotationEnabled)">{{ boolLabel(settings()!.refreshToken.rotationEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Revoke on password change</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.refreshToken.revokeOnPasswordChange)">{{ boolLabel(settings()!.refreshToken.revokeOnPasswordChange, 'Yes', 'No') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Revoke on password reset</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.refreshToken.revokeOnPasswordReset)">{{ boolLabel(settings()!.refreshToken.revokeOnPasswordReset, 'Yes', 'No') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Issuer configured</div>
+            <sp-admin-badge [tone]="configuredTone(settings()!.jwt.issuerConfigured)">{{ boolLabel(settings()!.jwt.issuerConfigured, 'Yes', 'Not set') }}</sp-admin-badge>
+          </div>
+        </div>
+      </sp-admin-card>
+
+      <!-- Rate limits -->
+      <sp-admin-card title="Rate Limiting" class="mb-4">
+        <sp-admin-table>
+          <thead>
+            <tr>
+              <th>Policy</th>
+              <th>Permit limit</th>
+              <th>Window</th>
+              <th>Keyed by</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of settings()!.rateLimitPolicies; track p.policyName) {
+              <tr>
+                <td class="font-mono text-xs">{{ p.policyName }}</td>
+                <td>{{ p.permitLimit }}</td>
+                <td>{{ p.windowMinutes }} min</td>
+                <td class="text-gray-500">{{ p.keyedBy }}</td>
+              </tr>
+            }
+          </tbody>
+        </sp-admin-table>
+      </sp-admin-card>
+
+      <!-- Security headers -->
+      <sp-admin-card title="Security Headers" class="mb-4">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">X-Content-Type-Options</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.xContentTypeOptionsEnabled)">{{ boolLabel(settings()!.securityHeaders.xContentTypeOptionsEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">X-Frame-Options</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.xFrameOptionsEnabled)">{{ boolLabel(settings()!.securityHeaders.xFrameOptionsEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Referrer-Policy</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.referrerPolicyEnabled)">{{ boolLabel(settings()!.securityHeaders.referrerPolicyEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Permissions-Policy</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.permissionsPolicyEnabled)">{{ boolLabel(settings()!.securityHeaders.permissionsPolicyEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">CSP</div>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ settings()!.securityHeaders.cspStatus }}</span>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">HSTS</div>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ settings()!.securityHeaders.hstsStatus }}</span>
+          </div>
+        </div>
+      </sp-admin-card>
+
+      <!-- External login — Google -->
+      <sp-admin-card title="External Login — Google" class="mb-4">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Provider</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.externalLogin.google.enabled)">{{ boolLabel(settings()!.externalLogin.google.enabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Client ID</div>
+            <sp-admin-badge [tone]="configuredTone(settings()!.externalLogin.google.clientIdConfigured)">{{ boolLabel(settings()!.externalLogin.google.clientIdConfigured, 'Configured', 'Not set') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Client Secret</div>
+            <sp-admin-badge [tone]="configuredTone(settings()!.externalLogin.google.clientSecretConfigured)">{{ boolLabel(settings()!.externalLogin.google.clientSecretConfigured, 'Configured', 'Not set') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Auto-link by email</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.externalLogin.google.allowAutoLinkByEmail)">{{ boolLabel(settings()!.externalLogin.google.allowAutoLinkByEmail, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Student auto-provisioning</div>
+            <sp-admin-badge [tone]="boolTone(settings()!.externalLogin.google.allowStudentAutoProvisioning)">{{ boolLabel(settings()!.externalLogin.google.allowStudentAutoProvisioning, 'Enabled', 'Disabled') }}</sp-admin-badge>
+          </div>
+          <div class="text-sm">
+            <div class="text-gray-500 dark:text-gray-400 mb-1">Allowed domains</div>
+            @if (settings()!.externalLogin.google.allowedDomains.length === 0) {
+              <span class="text-xs text-gray-500 dark:text-gray-400">Any domain</span>
+            } @else {
+              <span class="text-xs font-mono text-gray-900 dark:text-white">{{ settings()!.externalLogin.google.allowedDomains.join(', ') }}</span>
+            }
+          </div>
+        </div>
+        <div class="mt-4 p-3 rounded bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400">
+          To update Google provider settings, set values in <code>appsettings.json</code> under
+          <code>Authentication:ExternalProviders:Google</code>.
+        </div>
+      </sp-admin-card>
+
+    } @else {
+      <sp-admin-empty-state message="No settings loaded." />
+    }
+  }
+
+  <!-- ── Auth events tab ────────────────────────────────────────────────────── -->
+  @if (activeTab === 'events') {
+    <sp-admin-card>
+      <sp-admin-filter-bar density="compact">
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All event types"
+          [options]="eventTypeOptions"
+          [(ngModel)]="eventTypeFilter"
+          (ngModelChange)="applyEventFilters()"
+          aria-label="Filter by event type" />
+        <sp-admin-select
+          filters size="sm"
+          placeholder="All outcomes"
+          [options]="outcomeOptions"
+          [(ngModel)]="outcomeFilter"
+          (ngModelChange)="applyEventFilters()"
+          aria-label="Filter by outcome" />
+        <sp-admin-input
+          filters size="sm"
+          placeholder="Filter by email…"
+          [(ngModel)]="emailSearch"
+          (keyup.enter)="applyEventFilters()"
+          aria-label="Filter by email" />
+      </sp-admin-filter-bar>
+
+      @if (eventsLoading()) {
+        <sp-admin-loading-state message="Loading auth events…" />
+      } @else if (eventsError()) {
+        <sp-admin-error-state [message]="eventsError()" (retry)="loadEvents()" />
+      } @else if (events().length === 0) {
+        <sp-admin-empty-state message="No auth events found." />
+      } @else {
+        <sp-admin-table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Outcome</th>
+              <th>Email / User</th>
+              <th>IP</th>
+              <th>Reason</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of events(); track e.id) {
+              <tr>
+                <td class="text-xs font-mono">{{ formatEventType(e.eventType) }}</td>
+                <td><sp-admin-badge [tone]="outcomeTone(e.outcome)">{{ e.outcome }}</sp-admin-badge></td>
+                <td class="text-xs">{{ e.emailOrUserName ?? '—' }}</td>
+                <td class="text-xs font-mono">{{ e.ipAddress ?? '—' }}</td>
+                <td class="text-xs text-gray-500">{{ e.failureReasonCode ?? '—' }}</td>
+                <td class="text-xs text-gray-400">{{ timeAgo(e.occurredAtUtc) }}</td>
+              </tr>
+            }
+          </tbody>
+        </sp-admin-table>
+        <sp-admin-pagination
+          [page]="eventsPage()"
+          [totalPages]="eventsTotalPages()"
+          (pageChange)="onEventsPage($event)" />
+      }
+    </sp-admin-card>
+  }
+
+</sp-admin-page-body>

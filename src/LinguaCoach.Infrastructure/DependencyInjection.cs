@@ -216,6 +216,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminAiConfigHandler, AdminHandler>();
         services.AddScoped<IAdminNotificationHandler, AdminNotificationHandler>();
         services.AddScoped<IAdminAuthEventHandler, AdminAuthEventHandler>();
+        services.AddScoped<IAdminSecurityHandler, AdminSecurityHandler>();
         services.AddScoped<IAdminTemplateHandler, AdminTemplateHandler>();
         services.AddSingleton<INotificationTemplateRenderer, SimpleNotificationTemplateRenderer>();
         services.AddScoped<IAiPricingResolver, AiPricingResolver>();

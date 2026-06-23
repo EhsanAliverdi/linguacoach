@@ -572,3 +572,93 @@ export interface UpdateExerciseTypeRequest {
   defaultOptionsPerItem?: number;
   maxOptionsPerItem?: number;
 }
+
+// ── Security settings (Phase 10Auth-F-6) ─────────────────────────────────────
+
+export interface AdminPasswordPolicySettings {
+  requiredLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireDigit: boolean;
+  requireNonAlphanumeric: boolean;
+}
+
+export interface AdminLockoutSettings {
+  maxFailedAccessAttempts: number;
+  lockoutDurationMinutes: number;
+}
+
+export interface AdminRateLimitPolicyInfo {
+  policyName: string;
+  permitLimit: number;
+  windowMinutes: number;
+  keyedBy: string;
+}
+
+export interface AdminJwtSettings {
+  accessTokenExpiryHours: number;
+  issuerConfigured: boolean;
+  audienceConfigured: boolean;
+}
+
+export interface AdminRefreshTokenSettings {
+  expiryDays: number;
+  rotationEnabled: boolean;
+  revokeOnPasswordChange: boolean;
+  revokeOnPasswordReset: boolean;
+}
+
+export interface AdminSecurityHeadersSettings {
+  xContentTypeOptionsEnabled: boolean;
+  xFrameOptionsEnabled: boolean;
+  referrerPolicyEnabled: boolean;
+  permissionsPolicyEnabled: boolean;
+  cspStatus: string;
+  hstsStatus: string;
+}
+
+export interface AdminGoogleExternalLoginSettings {
+  enabled: boolean;
+  clientIdConfigured: boolean;
+  clientSecretConfigured: boolean;
+  allowAutoLinkByEmail: boolean;
+  allowStudentAutoProvisioning: boolean;
+  allowedDomains: string[];
+}
+
+export interface AdminExternalLoginSettings {
+  google: AdminGoogleExternalLoginSettings;
+}
+
+export interface AdminSecuritySettings {
+  passwordPolicy: AdminPasswordPolicySettings;
+  lockout: AdminLockoutSettings;
+  rateLimitPolicies: AdminRateLimitPolicyInfo[];
+  jwt: AdminJwtSettings;
+  refreshToken: AdminRefreshTokenSettings;
+  securityHeaders: AdminSecurityHeadersSettings;
+  externalLogin: AdminExternalLoginSettings;
+}
+
+export interface AdminAuthEventItem {
+  id: string;
+  eventType: string;
+  outcome: string;
+  userId: string | null;
+  emailOrUserName: string | null;
+  failureReasonCode: string | null;
+  ipAddress: string | null;
+  correlationId: string | null;
+  occurredAtUtc: string;
+}
+
+export interface AdminAuthEventListQuery {
+  page?: number;
+  pageSize?: number;
+  userId?: string;
+  email?: string;
+  eventType?: string;
+  outcome?: string;
+  from?: string;
+  to?: string;
+}

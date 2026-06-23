@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-5)
+lastUpdated: 2026-06-23 (10Auth-F-6)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-6 — Admin Security Settings UI and Read-Only Auth Visibility** — complete (2026-06-23)
+
+`GET /api/admin/security/settings` read-only endpoint (Admin-role only) returning password policy, lockout, rate limit summary, JWT/refresh token config, security headers status, Google external login config — no secrets returned. `GET /api/admin/security/auth-events` aliasing the existing F-2 auth event handler. Angular admin page at `/admin/security` with Overview and Auth Events tabs, using sp-admin-* wrapper components. Security nav item added to admin sidebar (System section). No new migrations. 16 new frontend unit tests.
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-6-admin-security-settings-ui.md
+
+---
 
 **Phase 10Auth-F-5 — Google OAuth / External Login Foundation** — complete (2026-06-23)
 
