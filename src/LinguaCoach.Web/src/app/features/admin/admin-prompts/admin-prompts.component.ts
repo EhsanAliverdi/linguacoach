@@ -14,13 +14,13 @@ import {
   SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
+  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminSelectComponent,
-  SpAdminStatCardComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTextareaComponent,
@@ -44,19 +44,19 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
+    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
-    SpAdminStatCardComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTextareaComponent,
   ],
   template: `
-    <sp-admin-page-header title="Prompt Templates" subtitle="Manage and version AI prompt templates">
+    <sp-admin-page-header title="Prompts" [subtitle]="'Manage and version AI prompt templates · ' + prompts().length + ' templates'">
       <sp-admin-button (click)="toggleForm()">{{ showForm() ? 'Cancel' : 'New version' }}</sp-admin-button>
     </sp-admin-page-header>
 
@@ -91,17 +91,37 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       </sp-admin-card>
     }
 
-    <div class="sp-admin-metric-grid" aria-label="Prompt template summary">
-      <sp-admin-stat-card tone="primary" size="md" label="Templates" [value]="uniqueKeyCount()" />
-      <sp-admin-stat-card tone="success" size="md" label="Active versions" [value]="activeCount()" />
-      <sp-admin-stat-card tone="neutral" size="md" label="Total versions" [value]="prompts().length" />
-      <sp-admin-stat-card tone="info" size="md" label="Avg token budget" [value]="averageTokenBudget()" />
+    <div class="sp-pt-kpi-strip" aria-label="Prompt template summary">
+      <sp-admin-kpi-card label="Templates" variant="indigo">
+        <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        {{ uniqueKeyCount() }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Active versions" [variant]="activeCount() > 0 ? 'green' : 'slate'">
+        <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ activeCount() }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Total versions" variant="violet">
+        <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        {{ prompts().length }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Avg token budget" variant="amber">
+        <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        {{ averageTokenBudget() }}
+      </sp-admin-kpi-card>
     </div>
 
     <sp-admin-card title="Prompt library" variant="section" padding="none" [headerDivider]="true">
       <sp-admin-filter-bar layout="responsive" density="compact">
         <sp-admin-form-field search label="Search prompts" size="sm">
           <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Category" size="sm">
+          <sp-admin-select
+            [ngModel]="categoryFilter()"
+            (ngModelChange)="setCategoryFilter($event)"
+            [options]="categoryFilterOptions()"
+            size="sm"
+            placeholder="All categories" />
         </sp-admin-form-field>
         <sp-admin-form-field filters label="Status" size="sm">
           <sp-admin-select
@@ -128,6 +148,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
             <thead>
               <tr>
                 <th>Key</th>
+                <th>Category</th>
                 <th>Version</th>
                 <th>Status</th>
                 <th>Token budget</th>
@@ -138,6 +159,9 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
               @for (p of pagedPrompts(); track p.id) {
                 <tr>
                   <td><sp-admin-code-pill [value]="p.key" tone="neutral" [maxLength]="48" /></td>
+                  <td>
+                    <sp-admin-badge [tone]="categoryTone(promptCategory(p.key))">{{ promptCategory(p.key) }}</sp-admin-badge>
+                  </td>
                   <td class="sp-admin-num">v{{ p.version }}</td>
                   <td>
                     <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
@@ -169,11 +193,11 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
   `,
   styles: [`
     .sp-admin-wide{grid-column:1/-1;}
-    .sp-admin-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
+    .sp-pt-kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:16px 24px 0;}
     .sp-admin-prompt-preview{font-size:12px;color:#334155;background:#F8FAFC;border-radius:8px;padding:12px;overflow:auto;max-height:220px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;}
     .sp-admin-state-wrap{display:grid;gap:12px;padding:16px;}
-    @media (max-width: 1100px){.sp-admin-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
-    @media (max-width: 640px){.sp-admin-metric-grid{grid-template-columns:1fr;}}
+    @media (max-width: 1100px){.sp-pt-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media (max-width: 640px){.sp-pt-kpi-strip{grid-template-columns:1fr;}}
   `],
 })
 export class AdminPromptsComponent implements OnInit {
@@ -187,6 +211,7 @@ export class AdminPromptsComponent implements OnInit {
   busyPromptId = signal<string | null>(null);
   searchTerm = signal('');
   statusFilter = signal<PromptStatusFilter>('all');
+  categoryFilter = signal('');
   page = signal(1);
   readonly pageSize = 12;
   newKey = ''; newContent = ''; newMaxInput = 800; newMaxOutput = 600;
@@ -214,14 +239,21 @@ export class AdminPromptsComponent implements OnInit {
   filteredPrompts = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const status = this.statusFilter();
+    const cat = this.categoryFilter();
     return this.prompts().filter(p => {
       const matchesSearch = !term || p.key.toLowerCase().includes(term);
       const matchesStatus =
         status === 'all' ||
         (status === 'active' && p.isActive) ||
         (status === 'inactive' && !p.isActive);
-      return matchesSearch && matchesStatus;
+      const matchesCategory = !cat || this.promptCategory(p.key) === cat;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
+  });
+
+  readonly categoryFilterOptions = computed(() => {
+    const cats = new Set(this.prompts().map(p => this.promptCategory(p.key)));
+    return Array.from(cats).sort().map(c => ({ value: c, label: c }));
   });
   totalPages = computed(() => Math.max(1, Math.ceil(this.filteredPrompts().length / this.pageSize)));
   pagedPrompts = computed(() => {
@@ -292,6 +324,31 @@ export class AdminPromptsComponent implements OnInit {
   setStatusFilter(status: PromptStatusFilter): void {
     this.statusFilter.set(status);
     this.page.set(1);
+  }
+
+  setCategoryFilter(cat: string): void {
+    this.categoryFilter.set(cat);
+    this.page.set(1);
+  }
+
+  promptCategory(key: string): string {
+    const parts = key.split('.');
+    if (parts.length >= 2) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+    return 'Other';
+  }
+
+  private static readonly CATEGORY_TONES: Record<string, 'info' | 'success' | 'warning' | 'danger' | 'neutral'> = {
+    Writing: 'info',
+    Speaking: 'warning',
+    Feedback: 'success',
+    Assessment: 'danger',
+    Listening: 'info',
+    Vocabulary: 'warning',
+    Grammar: 'neutral',
+  };
+
+  categoryTone(cat: string): 'info' | 'success' | 'warning' | 'danger' | 'neutral' {
+    return AdminPromptsComponent.CATEGORY_TONES[cat] ?? 'neutral';
   }
 
   createVersion(): void {

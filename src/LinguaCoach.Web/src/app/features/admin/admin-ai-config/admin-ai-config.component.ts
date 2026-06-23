@@ -13,6 +13,7 @@ import {
   SpAdminBadgeComponent,
   SpAdminCardComponent,
   SpAdminCodePillComponent,
+  SpAdminKpiCardComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
@@ -78,9 +79,31 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-admin-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCodePillComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
+  imports: [CommonModule, FormsModule, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCodePillComponent, SpAdminKpiCardComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent],
   template: `
-    <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials" />
+    <sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials." />
+
+    <!-- ── AI Config KPI strip ── -->
+    @if (!loading() && !loadError()) {
+      <div class="sp-aic-kpi-strip" aria-label="AI configuration summary">
+        <sp-admin-kpi-card label="LLM configured" [variant]="configSummary().llmConfigured === configSummary().llmTotal ? 'green' : 'amber'">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          {{ configSummary().llmConfigured }}/{{ configSummary().llmTotal }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="TTS configured" [variant]="configSummary().ttsConfigured > 0 ? 'teal' : 'slate'">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+          {{ configSummary().ttsConfigured }}/{{ configSummary().ttsTotal }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Providers with key" [variant]="configSummary().providersWithKey > 0 ? 'indigo' : 'slate'">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          {{ configSummary().providersWithKey }}
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Pricing models" [variant]="configSummary().pricingModels > 0 ? 'violet' : 'slate'">
+          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          {{ configSummary().pricingModels }}
+        </sp-admin-kpi-card>
+      </div>
+    }
 
     <sp-admin-page-body>
     @if (loading()) {
@@ -90,6 +113,11 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     } @else {
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
       <sp-admin-card title="LLM Categories">
+        <div slot="actions">
+          <sp-admin-badge [tone]="configSummary().llmConfigured === configSummary().llmTotal ? 'success' : 'warning'">
+            {{ configSummary().llmConfigured }}/{{ configSummary().llmTotal }} configured
+          </sp-admin-badge>
+        </div>
         <p class="text-sm text-slate-500 mb-4">
           Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
         </p>
@@ -476,10 +504,39 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+      <!-- ── Section 5: Rate Limits — Not implemented ─────────────────────── -->
+      <sp-admin-card title="Rate limits and quotas">
+        <div class="sp-aic-not-impl" aria-label="Rate limits not implemented">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#94a3b8;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <div class="sp-aic-not-impl-title">Backend not available yet</div>
+            <div class="sp-aic-not-impl-body">
+              Real-time rate limit usage (requests per minute, tokens per day, daily cost cap) requires a backend endpoint that is not yet implemented.
+              Cost and token usage totals are visible on the <a href="/admin/usage" style="color:var(--sp-admin-primary,#5B4BE8);text-decoration:underline">AI Usage</a> page.
+            </div>
+          </div>
+        </div>
+      </sp-admin-card>
+
     }
     </sp-admin-page-body>
   `,
   styles: [`
+    .sp-aic-kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px 24px 0;
+    }
+    @media (max-width: 800px) { .sp-aic-kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+    .sp-aic-not-impl {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 4px 0;
+    }
+    .sp-aic-not-impl-title { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+    .sp-aic-not-impl-body { font-size: 13px; color: #94a3b8; line-height: 1.5; }
     .sp-adm-native-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
     .sp-adm-native-select:disabled{opacity:0.55;cursor:not-allowed;background:#F9FAFB;color:#9CA3AF;}
     .sp-adm-native-select:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
@@ -495,6 +552,21 @@ export class AdminAiConfigComponent implements OnInit {
   deactivateBusy = signal<string | null>(null);
   loading = signal(true);
   loadError = signal('');
+
+  readonly configSummary = computed(() => {
+    const cats = this.categories();
+    const llm = cats.filter(cs => cs.item.categoryKey.startsWith('llm.'));
+    const tts = cats.filter(cs => cs.item.categoryKey.startsWith('tts.'));
+    const isSet = (cs: CategoryState) => !!cs.item.providerName && cs.item.providerName !== 'fake';
+    return {
+      llmConfigured: llm.filter(isSet).length,
+      llmTotal: llm.length,
+      ttsConfigured: tts.filter(isSet).length,
+      ttsTotal: tts.length,
+      providersWithKey: this.providers().filter(ps => ps.catalog.hasApiKey).length,
+      pricingModels: this.pricing().length,
+    };
+  });
 
   constructor(private adminApi: AdminApiService) {}
 

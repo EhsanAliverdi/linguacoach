@@ -57,7 +57,7 @@ describe('AdminPromptsComponent', () => {
 
   it('renders the page', async () => {
     await setup();
-    expect(fixture.nativeElement.textContent).toContain('Prompt Templates');
+    expect(fixture.nativeElement.textContent).toContain('Prompts');
   });
 
   it('calls listPrompts on init', async () => {
@@ -212,5 +212,75 @@ describe('AdminPromptsComponent', () => {
   it('computes activeCount correctly', async () => {
     await setup([PROMPT_ACTIVE, PROMPT_INACTIVE]);
     expect(component.activeCount()).toBe(1);
+  });
+
+  // ── REDESIGN-5 KPI strip, category badge, category filter ─────────────────
+
+  it('renders sp-admin-kpi-card elements for the summary strip', async () => {
+    await setup([PROMPT_ACTIVE]);
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('summary strip has aria-label "Prompt template summary"', async () => {
+    await setup([PROMPT_ACTIVE]);
+    const strip = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Prompt template summary"]');
+    expect(strip).toBeTruthy();
+  });
+
+  it('page header subtitle includes template count', async () => {
+    await setup([PROMPT_ACTIVE, PROMPT_INACTIVE]);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('2 templates');
+  });
+
+  it('promptCategory extracts first key segment capitalised', async () => {
+    await setup();
+    expect(component.promptCategory('writing.exercise.feedback.v1')).toBe('Writing');
+    expect(component.promptCategory('speaking.practice.score.v1')).toBe('Speaking');
+  });
+
+  it('promptCategory returns Other for single-segment key', async () => {
+    await setup();
+    expect(component.promptCategory('toplevel')).toBe('Other');
+  });
+
+  it('renders category badge in table row', async () => {
+    await setup([PROMPT_ACTIVE]);
+    const badges = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge');
+    const badgeTexts = Array.from(badges).map(b => b.textContent?.trim());
+    expect(badgeTexts.some(t => t === 'Writing')).toBeTrue();
+  });
+
+  it('categoryFilter filters rows by derived category', async () => {
+    await setup([PROMPT_ACTIVE, PROMPT_INACTIVE]);
+    component.setCategoryFilter('Writing');
+    expect(component.filteredPrompts().length).toBe(1);
+    expect(component.filteredPrompts()[0].key).toBe('writing.exercise.feedback.v1');
+  });
+
+  it('setCategoryFilter resets page to 1', async () => {
+    await setup([PROMPT_ACTIVE, PROMPT_INACTIVE]);
+    component.page.set(2);
+    component.setCategoryFilter('Writing');
+    expect(component.page()).toBe(1);
+  });
+
+  it('categoryFilterOptions computed from loaded prompts', async () => {
+    await setup([PROMPT_ACTIVE, PROMPT_INACTIVE]);
+    const opts = component.categoryFilterOptions();
+    const labels = opts.map(o => o.label);
+    expect(labels).toContain('Writing');
+    expect(labels).toContain('Speaking');
+  });
+
+  it('categoryTone returns known tone for Writing', async () => {
+    await setup();
+    expect(component.categoryTone('Writing')).toBe('info');
+  });
+
+  it('categoryTone returns neutral for unknown category', async () => {
+    await setup();
+    expect(component.categoryTone('Zoology')).toBe('neutral');
   });
 });

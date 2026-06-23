@@ -426,6 +426,62 @@ describe('AdminAiConfigComponent', () => {
     expect(f.notes).toBe('test note');
   });
 
+  // ── REDESIGN-5 KPI strip and configSummary ────────────────────────────────
+
+  it('renders sp-admin-kpi-card elements for the summary strip', async () => {
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER]);
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('summary strip has aria-label "AI configuration summary"', async () => {
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER]);
+    const strip = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="AI configuration summary"]');
+    expect(strip).toBeTruthy();
+  });
+
+  it('configSummary.llmConfigured counts configured LLM categories', async () => {
+    await setup([CAT_LLM, CAT_UNSET], [PROVIDER]);
+    expect(component.configSummary().llmConfigured).toBe(1);
+    expect(component.configSummary().llmTotal).toBe(2);
+  });
+
+  it('configSummary.ttsConfigured counts configured TTS categories', async () => {
+    await setup([CAT_TTS], [PROVIDER]);
+    expect(component.configSummary().ttsConfigured).toBe(1);
+    expect(component.configSummary().ttsTotal).toBe(1);
+  });
+
+  it('configSummary.providersWithKey counts providers with stored key', async () => {
+    await setup([CAT_LLM], [PROVIDER, { ...PROVIDER, providerName: 'openai', hasApiKey: false }]);
+    expect(component.configSummary().providersWithKey).toBe(1);
+  });
+
+  it('configSummary.pricingModels counts pricing rows', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    expect(component.configSummary().pricingModels).toBe(PRICING_ROWS.length);
+  });
+
+  it('renders configured badge on LLM categories card header', async () => {
+    await setup([CAT_LLM, CAT_UNSET], [PROVIDER]);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('1/2 configured');
+  });
+
+  it('renders Rate limits card with "Backend not available yet"', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Backend not available yet');
+    expect(el.querySelector('[aria-label="Rate limits not implemented"]')).toBeTruthy();
+  });
+
+  it('API keys are not displayed in any rendered text', async () => {
+    await setup([CAT_LLM], [PROVIDER]);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('sk-proj-');
+    expect(text).not.toContain('AIza');
+    expect(text).not.toContain('sk-ant-');
+  });
+
   it('overrides with active entry renders Edit and Deactivate buttons', async () => {
     const override: AiModelPricingOverrideItem = {
       id: 'ov-1', providerName: 'openai', modelName: 'gpt-4o',
