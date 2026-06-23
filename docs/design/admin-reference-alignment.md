@@ -131,8 +131,8 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 | `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | **Looks close** | No reference counterpart — keep as-is | 10UI-REDESIGN-6 (P3) |
 | `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | **Complete** — KPI summary strip, skill-coloured icon tile per row, "Not runnable yet" label for non-ready types | Resolved in 10UI-REDESIGN-4 | Done |
 | `/admin/curriculum` | AdminCurriculumComponent | Complete | **Complete** — 4-tile KPI coverage strip (total, active, CEFR bands, skills covered) derived from full objective list | Resolved in 10UI-REDESIGN-4 | Done |
-| `/admin/notifications` | AdminNotificationsComponent | Complete | **Looks close** | Missing: webhook channel card (placeholder) | 10UI-REDESIGN-7 (P3) |
-| `/admin/integrations` | AdminIntegrationsComponent | Complete | **Old layout** | Reference integrations concept (SMTP/Webhook/Slack/Analytics/Admin API) not surfaced; current page is MinIO/jobs domain | 10UI-REDESIGN-7 (P1) |
+| `/admin/notifications` | AdminNotificationsComponent | Complete | **Complete** — KPI channel summary strip (InApp/Email/SMS Foundation only/Dispatch), CSS token tab bar, sp-admin-kpi-card config status strip, sp-admin-card named titles, sp-admin-button (clicked) actions | Resolved in 10UI-REDESIGN-7 | Done |
+| `/admin/integrations` | AdminIntegrationsComponent | Complete | **Complete** — Integration card grid (storage real, SMTP link, Webhook/Slack/Analytics/Admin API all not-implemented), sp-admin-kpi-card for background job metrics | Resolved in 10UI-REDESIGN-7 | Done |
 | `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | **Looks close** | Minor: outlined border card style vs sp-admin-card | 10UI-REDESIGN-8 (P3) |
 | `/admin/security` | AdminSecurityComponent | Complete | **Looks close** | No reference counterpart — deferred capabilities card added in FIX-8 | 10UI-REDESIGN-8 (P3) |
 | `/admin/careers` | — | — | **Resolved** — redirects to `/admin/curriculum` | — | Done |
@@ -173,6 +173,13 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-7
+
+- Notifications: KPI channel summary strip (InApp/Email/SMS/Dispatch) from real config, loaded on `ngOnInit`. Tab bar and config cards use CSS token classes. Config channel status section upgraded to `sp-admin-kpi-card` strip. `sp-admin-card title=` used for all config cards. `sp-admin-button (clicked)` for all outbox/template actions. SMS always shows "Foundation only" — never implies production-ready.
+- Integrations: Subtitle updated. Integration card grid added (6 cards: storage real with live badge, SMTP links to Notifications, Webhook/Slack/Analytics/Admin API all "Backend not available yet"). `sp-admin-stat-card` → `sp-admin-kpi-card` for background job metrics. All `(click)` → `(clicked)` on `sp-admin-button`. RouterLink added for SMTP navigation card.
+- Spec fixes: `getNotificationConfig` mocked in beforeEach, 3 stale test assertions updated for eager init, `provideRouter([])` added to all integrations test setups.
+- 1221/1221 PASS.
 
 ## Changes Made in 10UI-REDESIGN-6
 
