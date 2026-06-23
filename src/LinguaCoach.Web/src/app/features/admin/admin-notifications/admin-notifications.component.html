@@ -1,12 +1,12 @@
-<sp-admin-page-body>
-  <sp-admin-page-header
-    title="Notifications"
-    subtitle="In-app, email, SMS channel config, delivery queue, templates, and admin controls.">
-    <div slot="header-actions">
-      <sp-admin-button (clicked)="openSendForm()" aria-label="Send notification">Send notification</sp-admin-button>
-    </div>
-  </sp-admin-page-header>
+<sp-admin-page-header
+  title="Notifications"
+  subtitle="In-app, email, SMS channel config, delivery queue, templates, and admin controls.">
+  <div slot="header-actions">
+    <sp-admin-button (clicked)="openSendForm()" aria-label="Send notification">Send notification</sp-admin-button>
+  </div>
+</sp-admin-page-header>
 
+<sp-admin-page-body>
   <!-- Channel KPI strip — loaded from real config on init -->
   @if (channelSummary()) {
     <div class="sp-notif-kpi-strip" aria-label="Notification channel summary">

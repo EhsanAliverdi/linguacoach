@@ -695,4 +695,19 @@ describe('AdminNotificationsComponent', () => {
     const html = fixture.nativeElement as HTMLElement;
     expect(html.textContent).toContain('SMS delivery is not production-ready');
   });
+
+  it('renders sp-admin-page-header with title Notifications', () => {
+    fixture.detectChanges();
+    const header = fixture.nativeElement.querySelector('sp-admin-page-header') as HTMLElement | null;
+    expect(header).toBeTruthy();
+    expect(header!.getAttribute('title')).toBe('Notifications');
+  });
+
+  it('page header is not nested inside sp-admin-page-body', () => {
+    fixture.detectChanges();
+    const body = fixture.nativeElement.querySelector('sp-admin-page-body') as HTMLElement | null;
+    expect(body).toBeTruthy();
+    const headerInsideBody = body!.querySelector('sp-admin-page-header');
+    expect(headerInsideBody).toBeNull();
+  });
 });

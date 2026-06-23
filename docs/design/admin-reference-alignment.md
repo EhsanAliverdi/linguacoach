@@ -174,6 +174,12 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
 
+## Changes Made in 10UI-REDESIGN-FINAL
+
+- Notifications: `sp-admin-page-header` moved outside `sp-admin-page-body` (was incorrectly nested — same structural fix as Security in REDESIGN-8). 2 new tests added. 1253/1253 PASS.
+- Closure audit: route alignment matrix, component audit, fake data audit, secrets audit, backend coverage audit all complete. No fake data found. No secrets displayed. All KPI strips use real data.
+- Closure review: `docs/reviews/2026-06-23-phase-10ui-redesign-final-admin-ui-reference-closure-audit.md`
+
 ## Changes Made in 10UI-REDESIGN-8
 
 - Diagnostics: KPI strip (Database/AI provider/Errors (loaded)/Warnings (loaded)) from real status+events data. `(click)` → `(clicked)` on all `sp-admin-button` bindings. Subtitle updated. CSS token classes for count row and meta text.
