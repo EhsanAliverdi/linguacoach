@@ -127,7 +127,7 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 | `/admin/create-student` | CreateStudentComponent | Complete | **Complete** — two-column layout, sticky aside panel, multi-section form cards, security note, back link | Resolved in 10UI-REDESIGN-2 | Done |
 | `/admin/ai-config` | AdminAiConfigComponent | Complete | **Complete** — 4-tile KPI strip (LLM configured, TTS, providers with key, pricing), X/N configured badge on LLM card, Rate limits card with "Backend not available yet" | Resolved in 10UI-REDESIGN-5 | Done |
 | `/admin/prompts` | AdminPromptsComponent | Complete | **Complete** — KPI strip upgraded to sp-admin-kpi-card, category badge column derived from key, category filter added, subtitle shows live count, title aligned to reference | Resolved in 10UI-REDESIGN-5 | Done |
-| `/admin/usage` | AdminAiUsageComponent | Complete | **Looks close** | Missing: area chart, bar chart, heatmap, date range pills | 10UI-REDESIGN-6 (P2) |
+| `/admin/usage` | AdminAiUsageComponent | Complete | **Complete** — 4-tile KPI strip (total requests, cost, success rate, failed), period pill buttons (7d/30d/All), mini bar chart from real trendBuckets, explicit "Backend not available yet" cards for activities/engagement | Resolved in 10UI-REDESIGN-6 | Done |
 | `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | **Looks close** | No reference counterpart — keep as-is | 10UI-REDESIGN-6 (P3) |
 | `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | **Complete** — KPI summary strip, skill-coloured icon tile per row, "Not runnable yet" label for non-ready types | Resolved in 10UI-REDESIGN-4 | Done |
 | `/admin/curriculum` | AdminCurriculumComponent | Complete | **Complete** — 4-tile KPI coverage strip (total, active, CEFR bands, skills covered) derived from full objective list | Resolved in 10UI-REDESIGN-4 | Done |
@@ -173,6 +173,11 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-6
+
+- AI Usage: `sp-admin-stat-card` (8 tiles) → `sp-admin-kpi-card` (4 tiles: total requests, total cost, success rate, failed calls). Period pill buttons (7d/30d/All) added above filter bar. "Calls over time" card with mini proportional bar chart from real `trendBuckets` data. "Activities per day" and "Student engagement" placeholder cards with "Backend not available yet" labels. All existing filter/export/pagination/zero-cost behaviour preserved.
+- 15 new tests. 1221/1221 pass.
 
 ## Changes Made in 10UI-REDESIGN-5
 
