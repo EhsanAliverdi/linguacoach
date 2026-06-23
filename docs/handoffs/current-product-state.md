@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-5)
+lastUpdated: 2026-06-23 (10Auth-F-FINAL)
 owner: product
 supersedes:
 supersededBy:
@@ -8,92 +8,55 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-23 (10Auth-F-2)
+Last updated: 2026-06-23 (10Auth-F-FINAL)
 
 ---
 
-## Enterprise Auth/Security — GAP CHECK COMPLETE (Phase 10Auth-F-0, 2026-06-23)
+## Enterprise Auth/Security — FULLY CLOSED (Phase 10Auth-F-FINAL, 2026-06-23)
 
-Auth/security audit complete. No code changes. Roadmap defined.
+All 6 implementation phases complete and verified. 2369/2369 .NET + 1025/1025 Angular tests pass. Production-ready for current single-host SpeakPath stage.
 
-### Current auth model
+Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap-check.md
+Closure audit: docs/reviews/2026-06-23-phase-10auth-f-final-enterprise-auth-security-closure-audit.md
 
-- ASP.NET Core Identity + JWT Bearer (24-hour access token, no refresh tokens).
-- Admin/Student roles. Force-password-change middleware. Token-based reset links.
-- Generic error responses (no enumeration). Secrets never exposed to frontend.
+### Auth capability summary
 
-### Hardening delivered (10Auth-F-1, 2026-06-23)
+| Capability | Status | Detail |
+|---|---|---|
+| Password policy | ✅ | 10+ chars, upper+lower+digit+special |
+| Account lockout | ✅ | 5 attempts, 15-min duration, generic errors |
+| Rate limiting | ✅ | 5 policies: AuthLogin/Reset/ChangePassword/ExternalLogin/Refresh |
+| Security headers | ✅ | X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy |
+| Auth event audit log | ✅ | 23 event types, migration T58, admin endpoint |
+| Audit metadata safety | ✅ | No passwords, tokens, secrets, or Google IDs in audit |
+| Security notifications | ✅ | 5 notification groups (password change/reset/lockout/external link) |
+| Refresh token sessions | ✅ | Hash-only, rotation, reuse detection, migration T59 |
+| Session revocation | ✅ | Logout, revoke-all, password change/reset all revoke sessions |
+| Google external login | ✅ | Disabled by default, testable abstraction, no migration |
+| Force-password-change middleware | ✅ | HTTP 403 on all endpoints except change-password |
+| Admin security settings page | ✅ | /admin/security — read-only overview + auth events tab |
 
-- Account lockout: 5 failed attempts → 15-minute lockout. `LoginHandler` uses `AccessFailedAsync`/`IsLockedOutAsync`/`ResetAccessFailedCountAsync`.
-- Rate limiting: `AuthLogin` (10 req / 5 min per IP on POST /api/auth/login), `AuthReset` (3 req / 15 min per IP on reset-password), `AuthChangePassword` (10 req / 5 min per userId on change-password).
-- Password policy: 10+ chars, uppercase, lowercase, digit, special char all required.
-- Security response headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` (camera/mic/geo/payment blocked).
-- CSP and HSTS deferred (Angular nonce strategy and production TLS confirmation required first).
+### Auth endpoints
 
-### Auth event audit log (10Auth-F-2, 2026-06-23)
+- `POST /api/auth/login` — email/password, issues JWT + refresh token
+- `POST /api/auth/refresh` — rotate refresh token, issue new access token
+- `POST /api/auth/logout` — revoke single refresh token
+- `POST /api/auth/revoke-sessions` — revoke all sessions (authenticated)
+- `POST /api/auth/change-password` — change password, revoke all sessions
+- `POST /api/auth/reset-password` — public, token-validated, revokes sessions
+- `POST /api/auth/external/google` — Google ID token login
 
-- `AuthSecurityEvent` entity (append-only), migration T58 (`AuthSecurityEvents` table), 3 indexes.
-- Events logged: `LoginSucceeded`, `LoginFailed`, `LoginLockedOut`, `PasswordChanged`, `PasswordChangeFailed`, `ForcePasswordChangeCompleted`, `PasswordResetRequested`, `PasswordResetSucceeded`, `PasswordResetFailed`, `StudentAccountCreated`.
-- Audit service is non-fatal — persistence failure never aborts an auth flow.
-- No secrets in audit records: reset tokens, passwords, and raw auth headers are never written.
-- Admin endpoint: `GET /api/admin/auth-events` (paginated, filterable by userId, email, eventType, outcome, date range).
-- 16 new integration tests including security invariant checks.
+### Deferred (documented, not blocking)
 
-### Security notifications (10Auth-F-3, 2026-06-23)
-
-- Security events now notify users via in-app and/or email:
-  - Password changed → InApp + Email
-  - Password reset requested → InApp only (reset-link email serves the email role)
-  - Password reset succeeded → InApp + Email
-  - Account locked out → InApp + Email (on lockout transition only — not on repeated locked attempts)
-- All use `NotificationCategory.Account` (mandatory — bypasses user opt-out).
-- Notification failures are non-fatal and never abort auth flows.
-- 7 new templates seeded: `account.password_changed`, `account.password_reset_requested`, `account.password_reset_succeeded`, `account.locked_out`.
-- No new migration. No frontend changes.
-
-### Refresh tokens and session management (10Auth-F-4, 2026-06-23)
-
-- `UserRefreshToken` entity (hash-only, append-friendly), migration T59.
-- Refresh token expiry: 14 days (configurable via `Jwt:RefreshTokenExpiryDays`).
-- Login response now includes `refreshToken` and `refreshExpiresAtUtc`. Existing fields unchanged.
-- Token rotation: each refresh issues a new token; old token is immediately revoked.
-- Reuse detection: presenting a rotated token triggers full session family revocation.
-- Password change and password reset both revoke all active sessions.
-- Endpoints: `POST /api/auth/refresh`, `POST /api/auth/logout`, `POST /api/auth/revoke-sessions`.
-- Rate limiter: `AuthRefresh` (30/5min/IP) on refresh and logout endpoints.
-- Raw tokens never stored, logged, or audited — only SHA-256 hash stored.
-- 6 new audit event types: `RefreshTokenIssued`, `RefreshTokenRotated`, `RefreshTokenRevoked`, `RefreshTokenReuseDetected`, `LogoutSucceeded`, `AllSessionsRevoked`.
-
-### Google OAuth / external login foundation (10Auth-F-5, 2026-06-23)
-
-- `IGoogleTokenValidator` abstraction — testable without real Google API; `GoogleTokenValidator` uses `Google.Apis.Auth.GoogleJsonWebSignature`.
-- `IExternalLoginService` / `ExternalLoginService` — validates Google ID token, links account via Identity `AspNetUserLogins`, issues JWT + refresh token using existing services.
-- `GoogleExternalLoginOptions` bound from `Authentication:ExternalProviders:Google`. Defaults: `Enabled=false`, no public auto-provisioning, no domain restriction.
-- No new migration — uses existing `AspNetUserLogins` table from Identity.
-- Account linking: auto-link by verified email when `AllowAutoLinkByEmail=true`; reject unknown users by default.
-- Domain restriction: `AllowedDomains` list checked against Google `hd` claim.
-- Admin accounts never auto-created via Google login.
-- Endpoint: `POST /api/auth/external/google` (anonymous, `AuthExternalLogin` rate limiter — 20/5min/IP).
-- Login response shape identical to local login (`token`, `role`, `mustChangePassword`, `refreshToken`, `refreshExpiresAtUtc`).
-- Raw Google ID token never stored, logged, or in audit metadata.
-- 7 new audit event types: `ExternalLoginSucceeded`, `ExternalLoginFailed`, `ExternalLoginLinked`, `ExternalLoginRejected`, `ExternalProviderDisabled`, `ExternalEmailUnverified`, `ExternalDomainRejected`.
-- Notifications: `account.external_login_linked` (InApp + Email) queued when account linked.
-- 20 new integration tests. `FakeGoogleTokenValidator` injected via DI — no real Google API calls in tests.
-
-### Remaining gaps
-
-No Angular Google sign-in button. No admin security settings UI. No SMS security notifications. No enterprise SSO/SAML/OIDC.
-
-### Roadmap
-
-- **10Auth-F-2** (done): auth event audit log (`AuthSecurityEvent` entity, migration T58, admin endpoint, 16 tests).
-- **10Auth-F-3** (done): security notifications (password changed, account locked, reset requested).
-- **10Auth-F-4** (done): refresh token / session management (migration T59, rotation, reuse detection).
-- **10Auth-F-5** (done): Google OAuth / external login foundation (no migration, 20 tests).
-- **10Auth-F-6**: admin security settings UI.
-- **10Auth-F-FINAL**: closure audit.
-
-Gap check review: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap-check.md
+- CSP header — requires Angular build nonce strategy
+- HSTS — requires production TLS confirmation
+- Distributed rate limiting — before horizontal scaling
+- Admin-initiated per-user session revocation UI
+- SMS security notifications — requires SMS provider + phone verification
+- Cloud KMS for Data Protection keys — before horizontal scaling
+- CAPTCHA / bot protection
+- MFA, enterprise SSO/SAML/OIDC — not in current product scope
+- Formal deployment guide (`docs/deployment/`)
 
 ---
 

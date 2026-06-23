@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-6)
+lastUpdated: 2026-06-23 (10Auth-F-FINAL)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,15 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-FINAL — Enterprise Auth/Security Closure Audit** — complete (2026-06-23)
+
+Audit-only phase. All 6 implementation phases (F-1 through F-6) verified closed. 23 auth event types confirmed. All security invariants confirmed: no secrets/tokens in audit metadata, logs, or API responses. Refresh tokens hash-only with rotation and reuse detection. Session revocation wired into password change, reset, and logout. Deferred items documented (CSP, HSTS, distributed rate limiting, MFA, SMS, cloud KMS). Next recommended phase: 10UI-AUDIT-0.
+
+Gates: 2369/2369 .NET | 1025/1025 Angular | build clean.
+Review: docs/reviews/2026-06-23-phase-10auth-f-final-enterprise-auth-security-closure-audit.md
+
+---
 
 **Phase 10Auth-F-6 — Admin Security Settings UI and Read-Only Auth Visibility** — complete (2026-06-23)
 
