@@ -28,7 +28,7 @@ interface StudentEditForm {
   imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
-      <a routerLink="../create-student" class="sp-admin-btn-primary">Create student</a>
+      <sp-admin-button routerLink="../create-student">Create student</sp-admin-button>
     </sp-admin-page-header>
 
     <sp-admin-page-body>

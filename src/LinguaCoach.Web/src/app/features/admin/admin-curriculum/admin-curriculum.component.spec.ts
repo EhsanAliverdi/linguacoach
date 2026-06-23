@@ -96,9 +96,18 @@ describe('AdminCurriculumComponent', () => {
     expect(svc.listObjectives).toHaveBeenCalled();
     const html = fixture.nativeElement as HTMLElement;
     expect(html.querySelector('sp-admin-page-header')).toBeTruthy();
+    expect(html.querySelector('sp-admin-page-body')).toBeTruthy();
     expect(html.querySelector('sp-admin-filter-bar')).toBeTruthy();
     expect(html.querySelector('sp-admin-table')).toBeTruthy();
     expect(html.textContent).toContain('Greetings');
+  });
+
+  it('renders sp-admin-select wrappers in filter bar', () => {
+    const fixture = TestBed.createComponent(AdminCurriculumComponent);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    const selects = html.querySelectorAll('sp-admin-select');
+    expect(selects.length).toBeGreaterThanOrEqual(3);
   });
 
   it('shows objective key in list', () => {

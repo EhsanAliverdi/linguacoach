@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   CurriculumService,
@@ -18,9 +18,12 @@ import {
   SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminLoadingStateComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminSelectComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
+import type { SpAdminSelectOption } from '../../../design-system/admin';
 
 type View = 'list' | 'edit' | 'create' | 'preview';
 
@@ -42,7 +45,9 @@ function parseJsonArray(json: string | null | undefined): string[] {
     SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminLoadingStateComponent,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminSelectComponent,
     SpAdminTableComponent,
   ],
   template: `
@@ -53,6 +58,8 @@ function parseJsonArray(json: string | null | undefined): string[] {
       <sp-admin-button variant="secondary" type="button" (click)="view.set('preview')">Routing preview</sp-admin-button>
     </sp-admin-page-header>
 
+    <sp-admin-page-body>
+
       @if (globalError()) {
         <sp-admin-error-state title="Curriculum unavailable" [message]="globalError()!" />
       }
@@ -60,23 +67,27 @@ function parseJsonArray(json: string | null | undefined): string[] {
       <!-- ── List ── -->
       @if (view() === 'list') {
         <sp-admin-filter-bar>
-          <select class="sp-input" style="min-width:120px" [(ngModel)]="filterCefr" (change)="load()">
-            <option value="">All levels</option>
-            @for (level of taxonomy()?.cefrLevels ?? []; track level) {
-              <option [value]="level">{{ level }}</option>
-            }
-          </select>
-          <select class="sp-input" style="min-width:140px" [(ngModel)]="filterSkill" (change)="load()">
-            <option value="">All skills</option>
-            @for (skill of taxonomy()?.skills ?? []; track skill) {
-              <option [value]="skill">{{ skill }}</option>
-            }
-          </select>
-          <select class="sp-input" style="min-width:140px" [(ngModel)]="filterActive" (change)="load()">
-            <option value="">Active + inactive</option>
-            <option value="true">Active only</option>
-            <option value="false">Inactive only</option>
-          </select>
+          <sp-admin-select
+            [options]="cefrOptions()"
+            placeholder="All levels"
+            size="sm"
+            [fullWidth]="false"
+            [(ngModel)]="filterCefr"
+            (ngModelChange)="load()" />
+          <sp-admin-select
+            [options]="skillOptions()"
+            placeholder="All skills"
+            size="sm"
+            [fullWidth]="false"
+            [(ngModel)]="filterSkill"
+            (ngModelChange)="load()" />
+          <sp-admin-select
+            [options]="activeOptions"
+            placeholder="Active + inactive"
+            size="sm"
+            [fullWidth]="false"
+            [(ngModel)]="filterActive"
+            (ngModelChange)="load()" />
         </sp-admin-filter-bar>
 
         <sp-admin-table>
@@ -319,6 +330,8 @@ function parseJsonArray(json: string | null | undefined): string[] {
           </div>
         </sp-admin-card>
       }
+
+    </sp-admin-page-body>
   `,
 })
 export class AdminCurriculumComponent implements OnInit {
@@ -338,6 +351,17 @@ export class AdminCurriculumComponent implements OnInit {
   filterActive = 'true';
   focusTagsRaw = '';
   prerequisiteKeysRaw = '';
+
+  readonly cefrOptions = computed<SpAdminSelectOption[]>(() =>
+    (this.taxonomy()?.cefrLevels ?? []).map(l => ({ value: l, label: l }))
+  );
+  readonly skillOptions = computed<SpAdminSelectOption[]>(() =>
+    (this.taxonomy()?.skills ?? []).map(s => ({ value: s, label: s }))
+  );
+  readonly activeOptions: SpAdminSelectOption[] = [
+    { value: 'true', label: 'Active only' },
+    { value: 'false', label: 'Inactive only' },
+  ];
 
   form: AdminCurriculumObjectiveUpsertRequest = this.emptyForm();
   preview: AdminRoutingPreviewRequest = { allowReviewOrScaffold: false, source: 'admin_preview' };

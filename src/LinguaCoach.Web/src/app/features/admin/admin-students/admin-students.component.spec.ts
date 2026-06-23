@@ -111,6 +111,14 @@ describe('AdminStudentsComponent', () => {
     expect(el.textContent).toContain('Students');
   });
 
+  it('renders Create student button via sp-admin-button wrapper', async () => {
+    await setup();
+    const el: HTMLElement = fixture.nativeElement;
+    const btn = el.querySelector('sp-admin-button[routerLink]') ?? el.querySelector('sp-admin-button');
+    expect(btn).toBeTruthy();
+    expect(el.textContent).toContain('Create student');
+  });
+
   it('calls listStudents with default params on init', async () => {
     await setup([STUDENT_ACTIVE]);
     expect(adminApi.listStudents).toHaveBeenCalledTimes(1);

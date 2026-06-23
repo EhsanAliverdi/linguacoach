@@ -354,6 +354,14 @@ Dashboard stat card now calls `listAiCategories()` and shows "Configured" / "N/M
 
 ---
 
+### ~~TODO-UI-12~~ — Create Student wrapper migration — **DONE in Phase 10UI-FIX-6** (2026-06-23)
+
+`CreateStudentComponent` migrated to `sp-admin-page-header`, `sp-admin-page-body`, `sp-admin-card`, `sp-admin-form-field`, `sp-admin-input`, `sp-admin-alert`, `sp-admin-button`. Native `<select>` retained for `[ngValue]` number/null bindings (known incompatibility). 17 new tests. 1065/1065 pass.
+
+### ~~TODO-UI-13~~ — Curriculum filter bar + page body wrapper — **DONE in Phase 10UI-FIX-6** (2026-06-23)
+
+`AdminCurriculumComponent` filter bar selects migrated from raw `<select class="sp-input">` to `sp-admin-select` with computed `cefrOptions`/`skillOptions`/`activeOptions`. Page wrapped in `sp-admin-page-body`. 2 new tests.
+
 ### TODO-UI-DESIGN-REFERENCE — Keep docs/design/admin-reference-alignment.md current
 **What:** Update `docs/design/admin-reference-alignment.md` whenever new admin pages are added or nav structure changes.
 **Why:** This doc is the authoritative mapping between the reference React design and the Angular `sp-admin-*` implementation. Stale mapping causes drift.

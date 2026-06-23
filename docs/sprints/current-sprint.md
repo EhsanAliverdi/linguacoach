@@ -14,6 +14,14 @@ Last updated: 2026-06-23
 
 ## Active sprint
 
+**Phase 10UI-FIX-6 — Students Header, Create Student Wrapper Migration, Curriculum Filter Bar** — complete (2026-06-23)
+
+Students list "Create student" header action migrated from raw `<a class="sp-admin-btn-primary">` to `sp-admin-button`. Create Student page fully migrated to `sp-admin-*` wrappers (page-header, page-body, card, form-field, input, alert, button); native selects retained for `[ngValue]` number/null bindings. Curriculum filter bar migrated from raw `<select class="sp-input">` to `sp-admin-select` with computed option arrays; page body wrapped in `sp-admin-page-body`. 20 new tests. 1065/1065 Angular tests pass. Build clean.
+
+Review: docs/reviews/2026-06-23-phase-10ui-fix-6-students-create-curriculum-alignment.md
+
+---
+
 **Phase 10UI-FIX-5 — Careers Route Redirect and Dashboard AI Provider Accuracy** — complete (2026-06-23)
 
 Deleted stale `AdminUsageComponent` (emoji placeholder, never routed). Redirected `/admin/careers` → `/admin/curriculum`. Replaced static dashboard "AI provider: Configured" stat card with live status derived from `listAiCategories()` — shows "Configured" / "N/M configured" / "Not configured" / "Unknown" based on real backend state. Replaced hardcoded "Active" AI System card rows with live per-category loop showing real provider names. 10 new dashboard tests + 2 wrapper-migration mock fixes. 1045/1045 Angular tests pass. Build clean.

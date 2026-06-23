@@ -5,11 +5,30 @@ import { Router } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import {
+  SpAdminAlertComponent,
+  SpAdminButtonComponent,
+  SpAdminCardComponent,
+  SpAdminFormFieldComponent,
+  SpAdminInputComponent,
+  SpAdminPageBodyComponent,
+  SpAdminPageHeaderComponent,
+} from '../../../design-system/admin';
 
 @Component({
   selector: 'app-create-student',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminAlertComponent,
+    SpAdminButtonComponent,
+    SpAdminCardComponent,
+    SpAdminFormFieldComponent,
+    SpAdminInputComponent,
+    SpAdminPageBodyComponent,
+    SpAdminPageHeaderComponent,
+  ],
   templateUrl: './create-student.component.html',
 })
 export class CreateStudentComponent {
