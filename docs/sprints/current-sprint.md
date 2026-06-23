@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-REDESIGN-1)
+lastUpdated: 2026-06-23 (10UI-REDESIGN-2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-REDESIGN-2 — Students List and Create Student Reference Redesign** — complete (2026-06-23)
+
+Students list redesigned: 4-tile KPI summary strip (Total students, Onboarded, Activities tracked, Showing this page) using real `getStats()` data, rows-per-page selector (10/25/50/100), filter bar aligned to reference. Create Student redesigned: two-column layout (multi-section form cards left, sticky "What happens next" aside right), back-to-students link, security note about one-time password, Welcome email not-available-yet note. All original fields, validation, submit payload, and modal actions preserved. 21 new tests + 8 migration spec spy fixes. 1138/1138 pass. Build clean.
+
+Review: docs/reviews/2026-06-23-phase-10ui-redesign-2-students-create-reference-redesign.md
+
+---
 
 **Phase 10UI-REDESIGN-1 — Admin Dashboard Reference Redesign** — complete (2026-06-23)
 

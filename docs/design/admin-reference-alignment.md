@@ -122,9 +122,9 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 | Route | Component | Wrapper usage | Page-level redesign status | Reference gap | Redesign phase |
 |-------|-----------|--------------|---------------------------|---------------|----------------|
 | `/admin` | AdminDashboardComponent | Good | **Complete** — dark hero banner, KPI tile row, onboarding funnel, at-risk, CEFR distribution, AI system, cohort engagement, recent students, all unavailable sections show explicit placeholders | Resolved in 10UI-REDESIGN-1 | Done |
-| `/admin/students` | AdminStudentsComponent | Complete | **Looks close** | Missing: lifecycle filter, archived toggle, rows/page selector, sort icons, per-row action menu | 10UI-REDESIGN-2 (P2) |
+| `/admin/students` | AdminStudentsComponent | Complete | **Complete** — 4-tile KPI strip (real stats), rows-per-page selector, filter bar aligned | Resolved in 10UI-REDESIGN-2 | Done |
 | `/admin/students/:id` | AdminStudentDetailComponent | Complete | **Partial** | Missing: coloured avatar hero, danger zone card | 10UI-REDESIGN-3 (P2) |
-| `/admin/create-student` | CreateStudentComponent | Complete | **Old layout** | Missing: two-column layout, sticky summary panel, cohort stats sidebar, multi-section form cards | 10UI-REDESIGN-2 (P2) |
+| `/admin/create-student` | CreateStudentComponent | Complete | **Complete** — two-column layout, sticky aside panel, multi-section form cards, security note, back link | Resolved in 10UI-REDESIGN-2 | Done |
 | `/admin/ai-config` | AdminAiConfigComponent | Complete | **Partial** | Missing: rate limits/quotas section, dedicated TTS card | 10UI-REDESIGN-5 (P2) |
 | `/admin/prompts` | AdminPromptsComponent | Complete | **Looks close** | Minor: tab+search same row, inline row action buttons | 10UI-REDESIGN-5 (P3) |
 | `/admin/usage` | AdminAiUsageComponent | Complete | **Looks close** | Missing: area chart, bar chart, heatmap, date range pills | 10UI-REDESIGN-6 (P2) |
@@ -173,6 +173,12 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-2
+
+- Students list: 4-tile KPI summary strip using `getStats()` real data. Rows-per-page selector (10/25/50/100). Filter bar spacer aligned to reference.
+- Create Student: full two-column template rewrite. Left: credential section, optional profile section (collapsible), actions. Right: sticky "What happens next" aside (5 steps + email note). Security note in credentials section. Back-to-students link in page header.
+- 21 new tests + 8 migration spec spy fixes. 1138/1138 pass.
 
 ## Changes Made in 10UI-REDESIGN-1
 

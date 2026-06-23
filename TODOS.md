@@ -388,7 +388,7 @@ Brand palette, sidebar widths, header height, border colors, background, nav ite
 Rollout plan: docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-redesign-rollout-plan.md
 
 - [x] TODO-REDESIGN-1 (P1): **10UI-REDESIGN-1** — Dashboard reference redesign. DONE 2026-06-23. Review: docs/reviews/2026-06-23-phase-10ui-redesign-1-dashboard-reference-redesign.md
-- TODO-REDESIGN-2 (P2): **10UI-REDESIGN-2** — Students list + Create Student redesign. Students: lifecycle filter, archived toggle, rows/page selector, sort icons, per-row action menu. Create student: two-column layout with sticky "What happens next" panel and cohort stats sidebar.
+- ~~TODO-REDESIGN-2~~ — **DONE in 10UI-REDESIGN-2** (2026-06-23). Students list: KPI strip, rows-per-page selector, filter bar aligned. Create Student: two-column layout, sticky aside panel, security note, back link. 1138/1138.
 - TODO-REDESIGN-3 (P2): **10UI-REDESIGN-3** — Student detail completion. Coloured avatar hero section with badge row and action buttons. Danger zone card (reset password, reset data, archive).
 - TODO-REDESIGN-4 (P2): **10UI-REDESIGN-4** — Curriculum + Exercise Types redesign. Curriculum: track-level icon cards alongside objectives table (backend has objectives, not tracks — show placeholder for track management). Exercise types: card-per-type layout with icon tile, expandable stat grid.
 - TODO-REDESIGN-5 (P2): **10UI-REDESIGN-5** — AI Config + Prompts redesign. AI Config: rate limits/quotas section (placeholder — no endpoint), dedicated TTS settings card. Prompts: tab+search same row, inline row action buttons.
