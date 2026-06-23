@@ -7,7 +7,8 @@
 
 <!-- Mobile sidebar drawer -->
 <aside
-  class="fixed top-0 left-0 bottom-0 w-[290px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out xl:hidden"
+  class="fixed top-0 left-0 bottom-0 w-[240px] bg-white dark:bg-gray-900 z-50 flex flex-col transition-transform duration-300 ease-in-out xl:hidden"
+  style="border-right:1px solid var(--sp-admin-border);"
   [class.-translate-x-full]="!drawerOpen()"
   [class.translate-x-0]="drawerOpen()"
   (touchstart)="onDrawerTouchStart($event)"
@@ -15,7 +16,7 @@
   (touchend)="onDrawerTouchEnd()"
 >
   <!-- Drawer brand -->
-  <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+  <div class="flex items-center justify-between px-4 flex-shrink-0" style="height:var(--sp-admin-header-h);border-bottom:1px solid var(--sp-admin-border);">
     <a routerLink="/admin" (click)="closeDrawer()" class="flex items-center gap-3 no-underline">
       <svg class="w-8 h-8" viewBox="0 0 48 48" fill="none" aria-hidden="true">
         <defs><linearGradient id="lg-drawer" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FF7A59"/><stop offset=".52" stop-color="#B45CF0"/><stop offset="1" stop-color="#5B4BE8"/></linearGradient></defs>
@@ -94,7 +95,8 @@
   <sp-admin-sidebar slot="sidebar" [collapsed]="collapsed()">
 
     <!-- Brand -->
-    <div class="flex items-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0 h-16 px-4"
+    <div class="flex items-center flex-shrink-0 px-4"
+      style="height:var(--sp-admin-header-h);border-bottom:1px solid var(--sp-admin-border);"
       [class.justify-center]="collapsed()">
       <a routerLink="/admin" class="flex items-center gap-3 no-underline overflow-hidden">
         <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 48 48" fill="none" aria-hidden="true">

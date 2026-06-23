@@ -14,6 +14,14 @@ Last updated: 2026-06-23
 
 ## Active sprint
 
+**Phase 10UI-FIX-2 — Admin Shell, Sidebar, and Header Visual Alignment** — complete (2026-06-23)
+
+Shell/sidebar/header aligned to SpeakPath reference design. Brand palette shifted to `#5B4BE8` family. Sidebar narrowed 290→240px / 90→64px collapsed. Header height fixed to 60px. Border color to lavender `#ECE9F5`. Background to warm `#F6F4FB`. Active nav indicator bar (left stripe) added. Nav item replaced TailAdmin `menu-item` utilities with `sp-nav-*` SpeakPath classes. Section labels tightened. All 12 required nav routes confirmed present in both desktop sidebar and mobile drawer. Logout confirmed absent from sidebar. 1035/1035 Angular tests pass.
+
+Review: docs/reviews/2026-06-23-phase-10ui-fix-2-admin-shell-sidebar-header-alignment.md
+
+---
+
 **Phase 10UI-FIX-1 — Admin Navigation P0 Fix and Design Reference Registration** — complete (2026-06-23)
 
 Added sidebar nav links for `/admin/usage-policies` (Usage Policies) and `/admin/curriculum` (Curriculum) to both desktop sidebar and mobile drawer in `admin-app-layout.component.html`. Registered SpeakPath reference design pack as source-of-truth in `docs/design/admin-reference-alignment.md`. Production build passes. TODOS updated (TODO-UI-01 closed, TODO-UI-01B + design reference TODOs added).

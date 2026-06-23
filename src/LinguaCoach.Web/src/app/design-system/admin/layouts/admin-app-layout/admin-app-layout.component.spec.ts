@@ -20,7 +20,7 @@ function setup() {
   return { fixture, auth, host: fixture.nativeElement as HTMLElement };
 }
 
-describe('AdminAppLayoutComponent (Phase 10X-LAYOUT-BLOCKER)', () => {
+describe('AdminAppLayoutComponent (Phase 10UI-FIX-2)', () => {
 
   it('sp-admin-layout renders the admin shell', () => {
     const { host } = setup();
@@ -133,6 +133,88 @@ describe('AdminAppLayoutComponent (Phase 10X-LAYOUT-BLOCKER)', () => {
   });
 
   it('renders router-outlet for page content', () => {
+    const { host } = setup();
+    expect(host.querySelector('router-outlet')).toBeTruthy();
+  });
+
+});
+
+describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', () => {
+
+  function getAllNavLinks(host: HTMLElement) {
+    return Array.from(host.querySelectorAll('sp-admin-sidebar a[routerLink], sp-admin-sidebar a[ng-reflect-router-link]'));
+  }
+  function getDrawerLinks(host: HTMLElement) {
+    return Array.from(host.querySelectorAll('aside.xl\\:hidden a[routerLink], aside.xl\\:hidden a[ng-reflect-router-link]'));
+  }
+
+  it('desktop sidebar contains all required nav routes', () => {
+    const { host } = setup();
+    const links = getAllNavLinks(host);
+    const routes = links.map(l => l.getAttribute('ng-reflect-router-link') ?? l.getAttribute('routerLink'));
+    const required = ['/admin', '/admin/students', '/admin/ai-config', '/admin/prompts',
+      '/admin/usage', '/admin/usage-policies', '/admin/curriculum',
+      '/admin/exercise-types', '/admin/notifications',
+      '/admin/integrations', '/admin/diagnostics', '/admin/security'];
+    for (const r of required) {
+      expect(routes).withContext(`route ${r} missing from desktop sidebar`).toContain(r);
+    }
+  });
+
+  it('Usage Policies link renders in desktop sidebar', () => {
+    const { host } = setup();
+    const text = host.querySelector('sp-admin-sidebar')?.textContent ?? '';
+    expect(text).toContain('Usage Policies');
+  });
+
+  it('Curriculum link renders in desktop sidebar', () => {
+    const { host } = setup();
+    const text = host.querySelector('sp-admin-sidebar')?.textContent ?? '';
+    expect(text).toContain('Curriculum');
+  });
+
+  it('Security link renders in desktop sidebar', () => {
+    const { host } = setup();
+    const text = host.querySelector('sp-admin-sidebar')?.textContent ?? '';
+    expect(text).toContain('Security');
+  });
+
+  it('sidebar nav items use sp-nav-item class', () => {
+    const { host } = setup();
+    const navItems = host.querySelectorAll('sp-admin-sidebar a.sp-nav-item');
+    expect(navItems.length).toBeGreaterThan(8);
+  });
+
+  it('logout is NOT rendered as a sidebar nav item', () => {
+    const { host } = setup();
+    const sidebarText = host.querySelector('sp-admin-sidebar')?.textContent ?? '';
+    expect(sidebarText.toLowerCase()).not.toContain('sign out');
+    expect(sidebarText.toLowerCase()).not.toContain('log out');
+    expect(sidebarText.toLowerCase()).not.toContain('logout');
+  });
+
+  it('mobile drawer contains Usage Policies and Curriculum links', () => {
+    const { host } = setup();
+    const drawerEl = host.querySelector('aside') as HTMLElement;
+    const text = drawerEl?.textContent ?? '';
+    expect(text).toContain('Usage Policies');
+    expect(text).toContain('Curriculum');
+  });
+
+  it('mobile drawer contains Security link', () => {
+    const { host } = setup();
+    const drawerEl = host.querySelector('aside') as HTMLElement;
+    const text = drawerEl?.textContent ?? '';
+    expect(text).toContain('Security');
+  });
+
+  it('header still renders notification bell and user menu', () => {
+    const { host } = setup();
+    expect(host.querySelector('sp-admin-header')).toBeTruthy();
+    expect(host.querySelector('button[aria-label="Profile menu"]')).toBeTruthy();
+  });
+
+  it('shell projects page content via router-outlet', () => {
     const { host } = setup();
     expect(host.querySelector('router-outlet')).toBeTruthy();
   });

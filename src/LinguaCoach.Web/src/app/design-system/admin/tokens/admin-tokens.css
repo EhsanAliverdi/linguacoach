@@ -4,19 +4,19 @@
 :root {
   /* ── Layout ──────────────────────────────────────────────────────────── */
   --sp-admin-sidebar-w: 240px;
-  --sp-admin-sidebar-w-collapsed: 72px;
+  --sp-admin-sidebar-w-collapsed: 64px;
   --sp-admin-header-h: 60px;
   --sp-admin-content-max: 1280px;
 
   /* ── Surfaces ────────────────────────────────────────────────────────── */
-  --sp-admin-bg: #F8FAFC;
+  --sp-admin-bg: #F6F4FB;
   --sp-admin-surface: #ffffff;
-  --sp-admin-surface-subtle: #F8FAFC;
+  --sp-admin-surface-subtle: #FBFAFE;
   --sp-admin-surface-elevated: #ffffff;
 
   /* ── Borders ─────────────────────────────────────────────────────────── */
-  --sp-admin-border: #E2E8F0;
-  --sp-admin-border-subtle: #F1F5F9;
+  --sp-admin-border: #ECE9F5;
+  --sp-admin-border-subtle: #F4F2FC;
 
   /* ── Text ────────────────────────────────────────────────────────────── */
   --sp-admin-text: #0F172A;
@@ -26,10 +26,10 @@
   --sp-admin-text-faint: #CBD5E1;
 
   /* ── Brand / primary ─────────────────────────────────────────────────── */
-  --sp-admin-primary: #4338CA;
-  --sp-admin-primary-bg: #EEF2FF;
-  --sp-admin-primary-hover: #3730A3;
-  --sp-admin-primary-focus: #C7D2FE;
+  --sp-admin-primary: #5B4BE8;
+  --sp-admin-primary-bg: #EDEBFF;
+  --sp-admin-primary-hover: #3A2EA8;
+  --sp-admin-primary-focus: #C0BAF9;
 
   /* ── Status tones ────────────────────────────────────────────────────── */
   --sp-admin-green: #16A34A;
@@ -65,7 +65,7 @@
   /* ── Shadows ─────────────────────────────────────────────────────────── */
   --sp-admin-shadow-card: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
   --sp-admin-shadow-card-hover: 0 4px 12px rgba(0,0,0,.08);
-  --sp-admin-shadow-action: 0 2px 8px rgba(67,56,202,.10);
+  --sp-admin-shadow-action: 0 2px 8px rgba(91,75,232,.10);
   --sp-admin-shadow-dropdown: 0 10px 32px rgba(15,23,42,.14);
   --sp-admin-shadow-modal: 0 20px 60px rgba(15,23,42,.20);
 
@@ -91,5 +91,5 @@
 
   /* ── Form controls ───────────────────────────────────────────────────── */
   --sp-admin-control-h: 36px;
-  --sp-admin-focus-ring: 0 0 0 3px rgba(67,56,202,.15);
+  --sp-admin-focus-ring: 0 0 0 3px rgba(91,75,232,.15);
 }

@@ -19,19 +19,19 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   template: `
     <a
       [routerLink]="route"
-      routerLinkActive="menu-item-active"
+      routerLinkActive="sp-nav-active"
       [routerLinkActiveOptions]="exact ? { exact: true } : { exact: false }"
-      class="menu-item group menu-item-inactive"
+      class="sp-nav-item group"
       [class.justify-center]="collapsed"
       [class.px-0]="collapsed"
       [title]="collapsed ? label : ''"
       (click)="itemClick.emit()"
     >
-      <span class="menu-item-icon-size menu-item-icon-inactive">
+      <span class="sp-nav-icon">
         <ng-content />
       </span>
       @if (!collapsed) {
-        <span class="menu-item-text">{{ label }}</span>
+        <span class="sp-nav-label">{{ label }}</span>
       }
     </a>
   `,

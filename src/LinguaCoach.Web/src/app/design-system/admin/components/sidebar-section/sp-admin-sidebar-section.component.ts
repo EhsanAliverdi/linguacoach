@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     @if (!collapsed) {
-      <p class="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 px-3">{{ label }}</p>
+      <p class="mb-2 px-3 text-[9.5px] font-extrabold uppercase tracking-[.1em]" style="color:var(--sp-admin-text-faint)">{{ label }}</p>
     }
   `,
   styles: [`:host { display: contents; }`],

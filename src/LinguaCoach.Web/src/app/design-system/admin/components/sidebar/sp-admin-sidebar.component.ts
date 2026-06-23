@@ -14,10 +14,11 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <aside
-      class="fixed flex flex-col top-0 left-0 h-screen bg-white dark:bg-gray-900 text-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out z-[99] overflow-hidden"
+      class="fixed flex flex-col top-0 left-0 h-screen bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-in-out z-[99] overflow-hidden"
+      style="border-right: 1px solid var(--sp-admin-border);"
       [ngClass]="{
-        'w-[290px]': !collapsed,
-        'w-[90px]': collapsed,
+        'w-[240px]': !collapsed,
+        'w-[64px]': collapsed,
         '-translate-x-full xl:translate-x-0': true
       }"
     >

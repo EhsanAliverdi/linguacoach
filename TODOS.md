@@ -351,6 +351,10 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 **Why:** This doc is the authoritative mapping between the reference React design and the Angular `sp-admin-*` implementation. Stale mapping causes drift.
 **Deferred from:** Phase 10UI-FIX-1, 2026-06-23.
 
+### ~~TODO-UI-SHELL-ALIGNMENT~~ — Admin shell visual alignment — **DONE in Phase 10UI-FIX-2** (2026-06-23)
+
+Brand palette, sidebar widths, header height, border colors, background, nav item active state with indicator bar — all aligned to reference design. 1035 Angular tests pass.
+
 ### TODO-UI-COMPONENT-ALIGNMENT — Align admin page visual patterns to reference design
 **What:** Per-page visual review: compare each `docs/design/speakpath/admin/pages/*.jsx` against its Angular counterpart. Identify layout/spacing/card/table differences.
 **Why:** Pages were built before the reference design existed. Some may deviate from the visual intent.
