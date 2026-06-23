@@ -186,4 +186,83 @@ describe('AdminDiagnosticsComponent', () => {
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-pagination')).toBeTruthy();
   });
+
+  // ── KPI summary strip ─────────────────────────────────────────────────────
+
+  it('renders kpi summary strip after status loads', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[aria-label="System health summary"]')).toBeTruthy();
+  });
+
+  it('kpi strip renders 4 kpi cards', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    const strip = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="System health summary"]');
+    expect(strip).toBeTruthy();
+    expect(strip!.querySelectorAll('sp-admin-kpi-card').length).toBe(4);
+  });
+
+  it('kpiSummary shows database reachable label', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.database.label).toBe('Reachable');
+  });
+
+  it('kpiSummary shows database unreachable label when not reachable', () => {
+    svc.getStatus.and.returnValue(of(makeStatus({ database: { reachable: false } })));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.database.label).toBe('Unreachable');
+    expect(fixture.componentInstance.kpiSummary()!.database.variant).toBe('amber');
+  });
+
+  it('kpiSummary returns null when status not loaded', () => {
+    svc.getStatus.and.returnValue(throwError(() => ({ error: { error: 'fail' } })));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()).toBeNull();
+  });
+
+  it('kpiSummary counts errors from loaded events', () => {
+    svc.getEvents.and.returnValue(of({
+      enabled: true, total: 3,
+      items: [
+        makeEvent({ level: 'Error' }),
+        makeEvent({ level: 'Error' }),
+        makeEvent({ level: 'Information' }),
+      ],
+    }));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.errors).toBe(2);
+  });
+
+  it('kpiSummary counts warnings from loaded events', () => {
+    svc.getEvents.and.returnValue(of({
+      enabled: true, total: 2,
+      items: [
+        makeEvent({ level: 'Warning' }),
+        makeEvent({ level: 'Information' }),
+      ],
+    }));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.warnings).toBe(1);
+  });
+
+  it('kpi strip does not show fake healthy state when status errors', () => {
+    svc.getStatus.and.returnValue(throwError(() => ({ error: { error: 'fail' } })));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[aria-label="System health summary"]')).toBeNull();
+  });
+
+  it('subtitle contains system status and events', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    const header = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-page-header');
+    expect(header).toBeTruthy();
+    expect(header!.getAttribute('subtitle') ?? header!.textContent).toBeTruthy();
+  });
 });

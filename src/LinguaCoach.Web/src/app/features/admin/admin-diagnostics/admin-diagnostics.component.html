@@ -1,8 +1,31 @@
-<sp-admin-page-header title="Diagnostics" subtitle="System status, recent log events, and correlation ID lookup." />
+<sp-admin-page-header title="Diagnostics" subtitle="System status, health indicators, recent events, and correlation ID lookup." />
 
 <sp-admin-page-body>
+
+  <!-- ── Status KPI strip ───────────────────────────────────────────────────── -->
+  @if (kpiSummary(); as kpi) {
+    <div class="sp-diag-kpi-strip" aria-label="System health summary">
+      <sp-admin-kpi-card label="Database" [variant]="kpi.database.variant">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v5c0 1.657 4.03 3 9 3s9-1.343 9-3V5"/><path d="M3 10v5c0 1.657 4.03 3 9 3s9-1.343 9-3v-5"/></svg>
+        {{ kpi.database.label }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="AI provider" [variant]="kpi.ai.variant">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5.5-4.5 6.5V17h-5v-1.5C7 14.5 5 12 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6M10 17v4M14 17v4"/></svg>
+        {{ kpi.ai.label }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Errors (loaded)" [variant]="kpi.errors > 0 ? 'amber' : 'green'">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {{ kpi.errors }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Warnings (loaded)" [variant]="kpi.warnings > 0 ? 'amber' : 'slate'">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m10.29 3.86-8 14A1 1 0 0 0 3 19.5h18a1 1 0 0 0 .86-1.5l-8-14a1 1 0 0 0-1.72 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        {{ kpi.warnings }}
+      </sp-admin-kpi-card>
+    </div>
+  }
+
 <sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
-  <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (click)="loadStatus()">
+  <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus()">
     Refresh
   </sp-admin-button>
 
@@ -39,10 +62,10 @@
       size="sm"
       [variant]="autoRefresh() ? 'success' : 'neutral'"
       [appearance]="autoRefresh() ? 'solid' : 'outline'"
-      (click)="toggleAutoRefresh()">
+      (clicked)="toggleAutoRefresh()">
       {{ autoRefresh() ? 'Stop auto-refresh' : 'Auto-refresh' }}
     </sp-admin-button>
-    <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="loadEvents()">Refresh</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadEvents()">Refresh</sp-admin-button>
   </div>
 
   <sp-admin-filter-bar layout="responsive" density="compact">

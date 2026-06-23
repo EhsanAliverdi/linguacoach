@@ -13,6 +13,7 @@ import {
   SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
+  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -42,6 +43,7 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
+    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
@@ -55,8 +57,10 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
+    .sp-diag-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
+    @media(min-width:900px){.sp-diag-kpi-strip{grid-template-columns:repeat(4,1fr);}}
     .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .sp-diag-count { padding: 8px 16px; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 12px; font-weight: 600; }
+    .sp-diag-count { padding: 8px 16px; border-top: 1px solid var(--sp-admin-border,#ECE9F5); color: var(--sp-admin-muted,#64748b); font-size: 12px; font-weight: 600; }
     .sp-diag-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
     .sp-diag-muted { color: var(--sp-admin-muted, #9ca3af); }
     .sp-diag-th-time { white-space: nowrap; min-width: 130px; }
@@ -67,7 +71,7 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     .sp-diag-message-cell { max-width: 480px; }
     .sp-diag-corr-cell { white-space: nowrap; }
     .sp-diag-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
-    .sp-diag-meta-item { font-size: 11px; color: #6b7280; }
+    .sp-diag-meta-item { font-size: 11px; color: var(--sp-admin-muted,#6b7280); }
     .sp-diag-row-error td { background: #fff5f5; }
     .sp-diag-row-warn  td { background: #fffbeb; }
   `],
@@ -90,6 +94,21 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   readonly eventsPageSize = 25;
 
   eventsTotalPages = computed(() => Math.max(1, Math.ceil(this.events().length / this.eventsPageSize)));
+
+  readonly kpiSummary = computed(() => {
+    const s = this.status();
+    const evs = this.events();
+    if (!s) return null;
+    const errors = evs.filter(e => e.level?.toLowerCase() === 'error').length;
+    const warnings = evs.filter(e => e.level?.toLowerCase() === 'warning').length;
+    return {
+      database: { label: s.database.reachable ? 'Reachable' : 'Unreachable', variant: (s.database.reachable ? 'green' : 'amber') as 'green' | 'amber' },
+      ai: { label: s.ai.providerConfigured ? (s.ai.activeProvider ?? 'Configured') : 'Not configured', variant: (s.ai.providerConfigured ? 'indigo' : 'amber') as 'indigo' | 'amber' },
+      errors,
+      warnings,
+    };
+  });
+
   pagedEvents = computed(() => {
     const page = Math.min(this.eventsPage(), this.eventsTotalPages());
     const start = (page - 1) * this.eventsPageSize;

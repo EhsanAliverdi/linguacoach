@@ -9,13 +9,17 @@ import {
   PagedResponse,
 } from '../../../core/models/admin.models';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent, SpAdminBadgeTone,
   SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
+  SpAdminFormFieldComponent,
+  SpAdminFormGridComponent,
   SpAdminInputComponent,
+  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -30,13 +34,17 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
+    SpAdminFormFieldComponent,
+    SpAdminFormGridComponent,
     SpAdminInputComponent,
+    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
@@ -46,6 +54,17 @@ import {
   ],
   templateUrl: './admin-security.component.html',
   styles: [`
+    .sp-sec-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
+    @media(min-width:900px){.sp-sec-kpi-strip{grid-template-columns:repeat(4,1fr);}}
+    .sp-sec-tab-bar{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--sp-admin-border,#ECE9F5);}
+    .sp-sec-tab{padding:8px 20px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:var(--sp-admin-muted,#6b7280);transition:color 0.15s,border-color 0.15s;}
+    .sp-sec-tab--active{color:var(--sp-admin-primary,#5B4BE8);border-bottom-color:var(--sp-admin-primary,#5B4BE8);}
+    .sp-sec-setting-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+    @media(min-width:700px){.sp-sec-setting-grid{grid-template-columns:repeat(3,1fr);}}
+    .sp-sec-field{display:flex;flex-direction:column;gap:4px;}
+    .sp-sec-field-label{font-size:12px;font-weight:600;color:var(--sp-admin-muted,#64748b);}
+    .sp-sec-field-value{font-size:14px;font-weight:700;color:var(--sp-admin-text,#0F172A);}
+    .sp-sec-config-note{font-size:12px;color:var(--sp-admin-muted,#64748b);background:var(--sp-admin-surface-alt,#f6f4fb);border-radius:8px;padding:10px 12px;margin-top:8px;}
     .sp-sec-deferred-grid{display:grid;gap:12px;}
     .sp-sec-deferred-row{display:grid;grid-template-columns:1fr auto;align-items:start;gap:6px 12px;padding:10px 0;border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC);}
     .sp-sec-deferred-row:first-child{border-top:none;padding-top:0;}
@@ -67,6 +86,20 @@ export class AdminSecurityComponent implements OnInit {
   eventsPage = signal(1);
   readonly eventsPageSize = 20;
   eventsTotalPages = computed(() => Math.max(1, Math.ceil(this.eventsTotal() / this.eventsPageSize)));
+
+  readonly kpiSummary = computed(() => {
+    const s = this.settings();
+    if (!s) return null;
+    return {
+      passwordMinLength: s.passwordPolicy.requiredLength,
+      lockoutAttempts: s.lockout.maxFailedAccessAttempts,
+      lockoutMinutes: s.lockout.lockoutDurationMinutes,
+      ratePolicies: s.rateLimitPolicies.length,
+      tokenRotation: s.refreshToken.rotationEnabled,
+      googleEnabled: s.externalLogin.google.enabled,
+      googleConfigured: s.externalLogin.google.clientIdConfigured && s.externalLogin.google.clientSecretConfigured,
+    };
+  });
 
   eventTypeFilter = '';
   outcomeFilter = '';

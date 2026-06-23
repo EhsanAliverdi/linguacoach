@@ -1,26 +1,39 @@
-<sp-admin-page-body>
-  <sp-admin-page-header title="Security Settings" subtitle="Auth policy, rate limits, external login, and audit log." />
+<sp-admin-page-header
+  title="Security"
+  subtitle="Authentication, sessions, external login, audit events, and security posture." />
 
-  <!-- Tab bar -->
-  <div class="flex gap-2 mb-4 border-b border-gray-200">
-    <button
-      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-      [class.border-indigo-600]="activeTab === 'overview'"
-      [class.text-indigo-600]="activeTab === 'overview'"
-      [class.border-transparent]="activeTab !== 'overview'"
-      [class.text-gray-500]="activeTab !== 'overview'"
-      (click)="onTabChange('overview')">
-      Overview
-    </button>
-    <button
-      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-      [class.border-indigo-600]="activeTab === 'events'"
-      [class.text-indigo-600]="activeTab === 'events'"
-      [class.border-transparent]="activeTab !== 'events'"
-      [class.text-gray-500]="activeTab !== 'events'"
-      (click)="onTabChange('events')">
-      Auth Events
-    </button>
+<sp-admin-page-body>
+
+  <!-- ── KPI summary strip ─────────────────────────────────────────────────── -->
+  @if (kpiSummary(); as kpi) {
+    <div class="sp-sec-kpi-strip" aria-label="Security posture summary">
+      <sp-admin-kpi-card label="Password min length" variant="indigo">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        {{ kpi.passwordMinLength }} chars
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Lockout threshold" variant="amber">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {{ kpi.lockoutAttempts }} attempts / {{ kpi.lockoutMinutes }}m
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Rate limit policies" variant="violet">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+        {{ kpi.ratePolicies }}
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Google OAuth" [variant]="kpi.googleConfigured ? 'green' : 'slate'">
+        <svg slot="icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        {{ kpi.googleEnabled ? (kpi.googleConfigured ? 'Configured' : 'Enabled — keys missing') : 'Disabled' }}
+      </sp-admin-kpi-card>
+    </div>
+  }
+
+  <!-- ── Tab bar ────────────────────────────────────────────────────────────── -->
+  <div class="sp-sec-tab-bar" role="tablist" aria-label="Security sections">
+    <button class="sp-sec-tab" [class.sp-sec-tab--active]="activeTab === 'overview'"
+      role="tab" [attr.aria-selected]="activeTab === 'overview'"
+      (click)="onTabChange('overview')">Overview</button>
+    <button class="sp-sec-tab" [class.sp-sec-tab--active]="activeTab === 'events'"
+      role="tab" [attr.aria-selected]="activeTab === 'events'"
+      (click)="onTabChange('events')">Auth Events</button>
   </div>
 
   <!-- ── Overview tab ──────────────────────────────────────────────────────── -->
@@ -32,165 +45,168 @@
     } @else if (settings()) {
 
       <!-- Password policy -->
-      <sp-admin-card title="Password Policy" class="mb-4">
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Min length</div>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.passwordPolicy.requiredLength }}</span>
+      <sp-admin-card title="Password policy">
+        <div class="sp-sec-setting-grid">
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Min length</span>
+            <span class="sp-sec-field-value">{{ settings()!.passwordPolicy.requiredLength }}</span>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Uppercase</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Uppercase</span>
             <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireUppercase)">{{ boolLabel(settings()!.passwordPolicy.requireUppercase, 'Required', 'Not required') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Lowercase</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Lowercase</span>
             <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireLowercase)">{{ boolLabel(settings()!.passwordPolicy.requireLowercase, 'Required', 'Not required') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Digit</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Digit</span>
             <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireDigit)">{{ boolLabel(settings()!.passwordPolicy.requireDigit, 'Required', 'Not required') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Special char</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Special char</span>
             <sp-admin-badge [tone]="boolTone(settings()!.passwordPolicy.requireNonAlphanumeric)">{{ boolLabel(settings()!.passwordPolicy.requireNonAlphanumeric, 'Required', 'Not required') }}</sp-admin-badge>
           </div>
         </div>
       </sp-admin-card>
 
       <!-- Lockout policy -->
-      <sp-admin-card title="Lockout Policy" class="mb-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Max failed attempts</div>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.lockout.maxFailedAccessAttempts }}</span>
+      <sp-admin-card title="Lockout policy">
+        <div class="sp-sec-setting-grid">
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Max failed attempts</span>
+            <span class="sp-sec-field-value">{{ settings()!.lockout.maxFailedAccessAttempts }}</span>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Lockout duration</div>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.lockout.lockoutDurationMinutes }} minutes</span>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Lockout duration</span>
+            <span class="sp-sec-field-value">{{ settings()!.lockout.lockoutDurationMinutes }} min</span>
           </div>
         </div>
       </sp-admin-card>
 
-      <!-- JWT / Session -->
-      <sp-admin-card title="JWT and Session" class="mb-4">
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Access token expiry</div>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.jwt.accessTokenExpiryHours }}h</span>
+      <!-- JWT and session -->
+      <sp-admin-card title="JWT and session">
+        <div class="sp-sec-setting-grid">
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Access token expiry</span>
+            <span class="sp-sec-field-value">{{ settings()!.jwt.accessTokenExpiryHours }}h</span>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Refresh token expiry</div>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ settings()!.refreshToken.expiryDays }} days</span>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Refresh token expiry</span>
+            <span class="sp-sec-field-value">{{ settings()!.refreshToken.expiryDays }} days</span>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Token rotation</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Token rotation</span>
             <sp-admin-badge [tone]="boolTone(settings()!.refreshToken.rotationEnabled)">{{ boolLabel(settings()!.refreshToken.rotationEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Revoke on password change</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Revoke on password change</span>
             <sp-admin-badge [tone]="boolTone(settings()!.refreshToken.revokeOnPasswordChange)">{{ boolLabel(settings()!.refreshToken.revokeOnPasswordChange, 'Yes', 'No') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Revoke on password reset</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Revoke on password reset</span>
             <sp-admin-badge [tone]="boolTone(settings()!.refreshToken.revokeOnPasswordReset)">{{ boolLabel(settings()!.refreshToken.revokeOnPasswordReset, 'Yes', 'No') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Issuer configured</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Issuer configured</span>
             <sp-admin-badge [tone]="configuredTone(settings()!.jwt.issuerConfigured)">{{ boolLabel(settings()!.jwt.issuerConfigured, 'Yes', 'Not set') }}</sp-admin-badge>
           </div>
         </div>
+        <p class="sp-sec-config-note">JWT signing key is never displayed. Key presence is verified server-side only.</p>
       </sp-admin-card>
 
-      <!-- Rate limits -->
-      <sp-admin-card title="Rate Limiting" class="mb-4">
-        <sp-admin-table>
-          <thead>
-            <tr>
-              <th>Policy</th>
-              <th>Permit limit</th>
-              <th>Window</th>
-              <th>Keyed by</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of settings()!.rateLimitPolicies; track p.policyName) {
+      <!-- Rate limiting -->
+      <sp-admin-card title="Rate limiting">
+        <sp-admin-table variant="data" density="compact">
+          <table>
+            <thead>
               <tr>
-                <td class="font-mono text-xs">{{ p.policyName }}</td>
-                <td>{{ p.permitLimit }}</td>
-                <td>{{ p.windowMinutes }} min</td>
-                <td class="text-gray-500">{{ p.keyedBy }}</td>
+                <th>Policy</th>
+                <th>Permit limit</th>
+                <th>Window</th>
+                <th>Keyed by</th>
               </tr>
-            }
-          </tbody>
+            </thead>
+            <tbody>
+              @for (p of settings()!.rateLimitPolicies; track p.policyName) {
+                <tr>
+                  <td style="font-size:12px;font-family:ui-monospace,monospace">{{ p.policyName }}</td>
+                  <td>{{ p.permitLimit }}</td>
+                  <td>{{ p.windowMinutes }} min</td>
+                  <td style="color:var(--sp-admin-muted,#64748b)">{{ p.keyedBy }}</td>
+                </tr>
+              }
+              @if (settings()!.rateLimitPolicies.length === 0) {
+                <tr><td colspan="4" class="sp-admin-table-empty">No rate limit policies configured.</td></tr>
+              }
+            </tbody>
+          </table>
         </sp-admin-table>
       </sp-admin-card>
 
       <!-- Security headers -->
-      <sp-admin-card title="Security Headers" class="mb-4">
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">X-Content-Type-Options</div>
+      <sp-admin-card title="Security headers">
+        <div class="sp-sec-setting-grid">
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">X-Content-Type-Options</span>
             <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.xContentTypeOptionsEnabled)">{{ boolLabel(settings()!.securityHeaders.xContentTypeOptionsEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">X-Frame-Options</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">X-Frame-Options</span>
             <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.xFrameOptionsEnabled)">{{ boolLabel(settings()!.securityHeaders.xFrameOptionsEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Referrer-Policy</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Referrer-Policy</span>
             <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.referrerPolicyEnabled)">{{ boolLabel(settings()!.securityHeaders.referrerPolicyEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Permissions-Policy</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Permissions-Policy</span>
             <sp-admin-badge [tone]="boolTone(settings()!.securityHeaders.permissionsPolicyEnabled)">{{ boolLabel(settings()!.securityHeaders.permissionsPolicyEnabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">CSP</div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ settings()!.securityHeaders.cspStatus }}</span>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">CSP</span>
+            <span style="font-size:13px;color:var(--sp-admin-muted,#64748b)">{{ settings()!.securityHeaders.cspStatus }}</span>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">HSTS</div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ settings()!.securityHeaders.hstsStatus }}</span>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">HSTS</span>
+            <span style="font-size:13px;color:var(--sp-admin-muted,#64748b)">{{ settings()!.securityHeaders.hstsStatus }}</span>
           </div>
         </div>
       </sp-admin-card>
 
       <!-- External login — Google -->
-      <sp-admin-card title="External Login — Google" class="mb-4">
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Provider</div>
+      <sp-admin-card title="External login — Google">
+        <div class="sp-sec-setting-grid">
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Provider</span>
             <sp-admin-badge [tone]="boolTone(settings()!.externalLogin.google.enabled)">{{ boolLabel(settings()!.externalLogin.google.enabled, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Client ID</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Client ID</span>
             <sp-admin-badge [tone]="configuredTone(settings()!.externalLogin.google.clientIdConfigured)">{{ boolLabel(settings()!.externalLogin.google.clientIdConfigured, 'Configured', 'Not set') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Client Secret</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Client secret</span>
             <sp-admin-badge [tone]="configuredTone(settings()!.externalLogin.google.clientSecretConfigured)">{{ boolLabel(settings()!.externalLogin.google.clientSecretConfigured, 'Configured', 'Not set') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Auto-link by email</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Auto-link by email</span>
             <sp-admin-badge [tone]="boolTone(settings()!.externalLogin.google.allowAutoLinkByEmail)">{{ boolLabel(settings()!.externalLogin.google.allowAutoLinkByEmail, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Student auto-provisioning</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Student auto-provisioning</span>
             <sp-admin-badge [tone]="boolTone(settings()!.externalLogin.google.allowStudentAutoProvisioning)">{{ boolLabel(settings()!.externalLogin.google.allowStudentAutoProvisioning, 'Enabled', 'Disabled') }}</sp-admin-badge>
           </div>
-          <div class="text-sm">
-            <div class="text-gray-500 dark:text-gray-400 mb-1">Allowed domains</div>
+          <div class="sp-sec-field">
+            <span class="sp-sec-field-label">Allowed domains</span>
             @if (settings()!.externalLogin.google.allowedDomains.length === 0) {
-              <span class="text-xs text-gray-500 dark:text-gray-400">Any domain</span>
+              <span style="font-size:13px;color:var(--sp-admin-muted,#64748b)">Any domain</span>
             } @else {
-              <span class="text-xs font-mono text-gray-900 dark:text-white">{{ settings()!.externalLogin.google.allowedDomains.join(', ') }}</span>
+              <span style="font-size:12px;font-family:ui-monospace,monospace;color:var(--sp-admin-text,#0F172A)">{{ settings()!.externalLogin.google.allowedDomains.join(', ') }}</span>
             }
           </div>
         </div>
-        <div class="mt-4 p-3 rounded bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400">
-          To update Google provider settings, set values in <code>appsettings.json</code> under
-          <code>Authentication:ExternalProviders:Google</code>.
-        </div>
+        <p class="sp-sec-config-note">Client secret is never displayed. To update Google provider settings, configure <code>Authentication:ExternalProviders:Google</code> in <code>appsettings.json</code>.</p>
       </sp-admin-card>
 
     } @else {
@@ -231,29 +247,31 @@
       } @else if (events().length === 0) {
         <sp-admin-empty-state message="No auth events found." />
       } @else {
-        <sp-admin-table>
-          <thead>
-            <tr>
-              <th>Event</th>
-              <th>Outcome</th>
-              <th>Email / User</th>
-              <th>IP</th>
-              <th>Reason</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (e of events(); track e.id) {
+        <sp-admin-table variant="data" density="compact" minWidth="760px">
+          <table>
+            <thead>
               <tr>
-                <td class="text-xs font-mono">{{ formatEventType(e.eventType) }}</td>
-                <td><sp-admin-badge [tone]="outcomeTone(e.outcome)">{{ e.outcome }}</sp-admin-badge></td>
-                <td class="text-xs">{{ e.emailOrUserName ?? '—' }}</td>
-                <td class="text-xs font-mono">{{ e.ipAddress ?? '—' }}</td>
-                <td class="text-xs text-gray-500">{{ e.failureReasonCode ?? '—' }}</td>
-                <td class="text-xs text-gray-400">{{ timeAgo(e.occurredAtUtc) }}</td>
+                <th>Event</th>
+                <th>Outcome</th>
+                <th>Email / User</th>
+                <th>IP</th>
+                <th>Reason</th>
+                <th>Time</th>
               </tr>
-            }
-          </tbody>
+            </thead>
+            <tbody>
+              @for (e of events(); track e.id) {
+                <tr>
+                  <td style="font-size:12px;font-family:ui-monospace,monospace">{{ formatEventType(e.eventType) }}</td>
+                  <td><sp-admin-badge [tone]="outcomeTone(e.outcome)">{{ e.outcome }}</sp-admin-badge></td>
+                  <td style="font-size:12px">{{ e.emailOrUserName ?? '—' }}</td>
+                  <td style="font-size:12px;font-family:ui-monospace,monospace">{{ e.ipAddress ?? '—' }}</td>
+                  <td style="font-size:12px;color:var(--sp-admin-muted,#64748b)">{{ e.failureReasonCode ?? '—' }}</td>
+                  <td style="font-size:12px;color:var(--sp-admin-muted,#64748b)">{{ timeAgo(e.occurredAtUtc) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </sp-admin-table>
         <sp-admin-pagination
           [page]="eventsPage()"
@@ -263,9 +281,9 @@
     </sp-admin-card>
   }
 
-  <!-- Deferred security capabilities -->
-  <sp-admin-card title="Deferred security capabilities" class="mt-4">
-    <p class="text-xs text-gray-500 mb-4">These capabilities are planned or partially implemented. None are active in the current build. No action needed until each is scheduled for implementation.</p>
+  <!-- ── Deferred security capabilities ───────────────────────────────────── -->
+  <sp-admin-card title="Deferred security capabilities">
+    <p class="sp-sec-config-note" style="margin-top:0;margin-bottom:12px">These capabilities are planned or partially implemented. None are active in the current build.</p>
     <div class="sp-sec-deferred-grid">
       <div class="sp-sec-deferred-row">
         <div class="sp-sec-deferred-label">Multi-factor authentication (MFA/TOTP)</div>
