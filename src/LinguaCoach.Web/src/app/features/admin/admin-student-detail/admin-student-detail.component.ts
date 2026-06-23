@@ -884,10 +884,10 @@ interface StudentEditForm {
     .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
     .sp-admin-section-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;}
     .sp-admin-section-header-row .sp-admin-card-title{margin-bottom:0;}
-    .sp-admin-back-link{display:inline-block;margin-bottom:8px;font-size:13px;font-weight:700;color:#4338CA;text-decoration:none;}
+    .sp-admin-back-link{display:inline-block;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--sp-admin-primary,#5B4BE8);text-decoration:none;}
     .sp-admin-row-actions{display:flex;align-items:center;gap:10px;white-space:nowrap;}
     .sp-admin-link-button,.sp-admin-danger-link{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;}
-    .sp-admin-link-button{color:#4338CA;}
+    .sp-admin-link-button{color:var(--sp-admin-primary,#5B4BE8);}
     .sp-admin-danger-link{color:#DC2626;}
     .sp-admin-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
     .sp-admin-detail-card{padding:20px;}

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-FIX-3)
+lastUpdated: 2026-06-23 (10UI-FIX-4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-FIX-4 — Admin Page-Level Spot-Check and Alignment Plan** — complete (2026-06-23)
+
+All 14 admin routes inspected against reference design, backend capability, wrapper usage, and stale/misleading UI. Tiny safe fixes applied: tab bar `blue-600`→`indigo-600` on notifications page; `#4338CA`/`#465fff` CSS literals replaced with `var(--sp-admin-primary,#5B4BE8)` token in dashboard, careers, student-detail (x2), students, and usage-policies components. Four planning matrices produced: page matrix (A), wrapper misuse matrix (B), stale UI matrix (C), and recommended phases (D). Next phases: 10UI-FIX-5 (dashboard static cards + careers orphan), 10UI-FIX-6 (student list + create-student + curriculum wrapper migration), 10UI-FIX-7 (student detail full wrapper migration). 1035/1035 tests pass. Build clean.
+
+Review: docs/reviews/2026-06-23-phase-10ui-fix-4-admin-page-level-spot-check.md
+
+---
 
 **Phase 10UI-FIX-3 — Admin Core Component Visual Alignment** — complete (2026-06-23)
 

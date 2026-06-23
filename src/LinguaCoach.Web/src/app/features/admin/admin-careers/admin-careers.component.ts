@@ -121,7 +121,7 @@ import { ReferenceService } from '../../../core/services/reference.service';
     .sp-admin-wide{grid-column:1/-1;}
     .sp-admin-mb{margin-bottom:20px;}
     .sp-admin-select{max-width:320px;}
-    .sp-admin-link-button{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;color:#4338CA;}
+    .sp-admin-link-button{border:none;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;color:var(--sp-admin-primary,#5B4BE8);}
     .sp-admin-text-success-link{color:#16A34A;}
     .sp-admin-text-muted-link{color:#94A3B8;}
   `],

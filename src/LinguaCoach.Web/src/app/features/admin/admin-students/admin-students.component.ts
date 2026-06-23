@@ -355,7 +355,7 @@ interface StudentEditForm {
     .sp-admin-sortable{cursor:pointer;user-select:none;}
     .sp-admin-sortable:hover{color:#334155;}
     .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
-    .sp-admin-filter-toggle input{accent-color:#4338CA;}
+    .sp-admin-filter-toggle input{accent-color:var(--sp-admin-primary,#5B4BE8);}
     .sp-admin-student-name{font-weight:800;color:#0F172A;}
     .sp-admin-profile-cell{max-width:280px;}
     .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}

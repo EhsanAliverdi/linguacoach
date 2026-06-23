@@ -115,8 +115,38 @@ Reference design NAV sections → Angular sidebar sections:
 
 ---
 
+## Page Status (updated 10UI-FIX-4)
+
+| Route | Component | Wrapper usage | Stale/static UI | Priority gap |
+|-------|-----------|--------------|-----------------|--------------|
+| `/admin` | AdminDashboardComponent | Good | Static AI provider stat card; always-active AI badges | P1 — 10UI-FIX-5 |
+| `/admin/students` | AdminStudentsComponent | Good (minor: header action) | None | P2 — 10UI-FIX-6 |
+| `/admin/students/:id` | AdminStudentDetailComponent | Partial — raw page-header/badge | Missing readiness pool + activity history | P1 — 10UI-FIX-7 |
+| `/admin/create-student` | CreateStudentComponent | None — raw sp-input/sp-label | None | P2 — 10UI-FIX-6 |
+| `/admin/ai-config` | AdminAiConfigComponent | Good | None | P3 — 10UI-FIX-9 |
+| `/admin/prompts` | AdminPromptsComponent | Complete | None | — |
+| `/admin/usage` | AdminAiUsageComponent | Complete | None | — |
+| `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | None | — |
+| `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | None | — |
+| `/admin/curriculum` | AdminCurriculumComponent | Partial — filter bar uses raw select | None | P2 — 10UI-FIX-6 |
+| `/admin/notifications` | AdminNotificationsComponent | Complete | SMS shows without "foundation only" label | P2 — 10UI-FIX-8 |
+| `/admin/integrations` | AdminIntegrationsComponent | Complete | Missing readiness pool status | P2 — 10UI-FIX-8 |
+| `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | None | — |
+| `/admin/security` | AdminSecurityComponent | Complete | Missing deferred-feature notes | P2 — 10UI-FIX-8 |
+| `/admin/careers` | AdminCareersComponent | **Orphan** — no wrappers | Entire page is stale/orphan | P0 — 10UI-FIX-5 |
+
+---
+
 ## Changes Made in 10UI-FIX-1
 
 - Added **Usage Policies** nav link (`/admin/usage-policies`) to desktop sidebar and mobile drawer.
 - Added **Curriculum** nav link (`/admin/curriculum`) to desktop sidebar and mobile drawer.
 - Both were already routed and fully implemented — only sidebar discoverability was missing.
+
+## Changes Made in 10UI-FIX-4
+
+- Tiny CSS token fixes across 6 admin page components (blue/indigo literals → `var(--sp-admin-primary,#5B4BE8)`).
+- Tab bar `border-blue-600`/`text-blue-600` → indigo on notifications page.
+- Page matrix, wrapper misuse matrix, stale UI matrix, and recommended phases documented in `docs/reviews/2026-06-23-phase-10ui-fix-4-admin-page-level-spot-check.md`.
+- Added TODO-UI-11 (careers orphan decision).
+- Next phase: **10UI-FIX-5** — dashboard static cards + careers redirect.

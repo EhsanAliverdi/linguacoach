@@ -346,6 +346,14 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 
 ## Design Reference Alignment (Phase 10UI-FIX-1, 2026-06-23)
 
+### TODO-UI-11 — Admin careers orphan: tombstone or suppress route (P0)
+**What:** `/admin/careers` (`AdminCareersComponent`) is an orphan: no sidebar link, title says "Curriculum", no `sp-admin-*` wrappers, duplicates vocabulary management that now lives in `/admin/curriculum`. Decision needed: redirect `/admin/careers` to `/admin/curriculum`, or add a tombstone page, or suppress the route.
+**Why:** An admin who knows the URL can access a broken, unwrapped, stale page. The backend capabilities (career profiles, curriculum words) are real and served by `/admin/curriculum`. Having two conflicting pages is misleading.
+**Context:** `AdminCareersComponent` should NOT be wrapper-migrated — it is an orphan scheduled for removal. Preferred outcome: redirect route in `app.routes.ts`.
+**Deferred from:** Phase 10UI-FIX-4, 2026-06-23.
+
+---
+
 ### TODO-UI-DESIGN-REFERENCE — Keep docs/design/admin-reference-alignment.md current
 **What:** Update `docs/design/admin-reference-alignment.md` whenever new admin pages are added or nav structure changes.
 **Why:** This doc is the authoritative mapping between the reference React design and the Angular `sp-admin-*` implementation. Stale mapping causes drift.

@@ -171,8 +171,8 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     .sp-admin-empty-action { display: flex; justify-content: center; margin-top: -14px; margin-bottom: 18px; }
 
     .sp-admin-mini-empty { color: #CBD5E1; font-size: 12px; }
-    .sp-admin-link { font-size: 12.5px; font-weight: 700; color: #4338CA; text-decoration: none; }
-    .sp-admin-link:hover { color: #3730A3; }
+    .sp-admin-link { font-size: 12.5px; font-weight: 700; color: var(--sp-admin-primary,#5B4BE8); text-decoration: none; }
+    .sp-admin-link:hover { color: var(--sp-admin-primary-hover,#3A2EA8); }
 
     .sp-admin-status-rows { display: flex; flex-direction: column; gap: 8px; }
     .sp-admin-status-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: #475569; }
