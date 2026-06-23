@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminIntegrationsComponent } from './admin-integrations.component';
 import {
@@ -97,7 +98,7 @@ describe('AdminIntegrationsComponent', () => {
     svc = makeSvc();
     await TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminIntegrationsComponent);
     component = fixture.componentInstance;
@@ -136,7 +137,7 @@ describe('AdminIntegrationsComponent', () => {
     svc.getStorage.and.returnValue(of({ ...STORAGE, accessKey: null, secretKey: null }));
     await TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminIntegrationsComponent);
     component = fixture.componentInstance;
@@ -269,7 +270,7 @@ describe('AdminIntegrationsComponent', () => {
     svc.getStorage.and.returnValue(throwError(() => ({ error: { error: 'Storage down' } })));
     await TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminIntegrationsComponent);
     component = fixture.componentInstance;

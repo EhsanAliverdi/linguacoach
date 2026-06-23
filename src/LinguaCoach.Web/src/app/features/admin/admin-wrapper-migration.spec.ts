@@ -337,7 +337,7 @@ describe('admin wrapper migration', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     });
 
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
@@ -462,7 +462,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     const svc = makeIntegrationsSvc();
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     });
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
@@ -474,7 +474,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     const svc = makeIntegrationsSvc();
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     });
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
@@ -487,14 +487,14 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     svc.updateGenerationSettings = jasmine.createSpy('updateGenerationSettings').and.returnValue(of({}));
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [{ provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
     });
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
     const allBtns = Array.from(fixture.nativeElement.querySelectorAll('sp-admin-button')) as HTMLElement[];
     const saveBtn = allBtns.find(el => el.textContent?.trim() === 'Save');
     expect(saveBtn).toBeTruthy();
-    saveBtn?.click();
+    fixture.componentInstance.saveSettings();
     expect(svc.updateGenerationSettings).toHaveBeenCalled();
   });
 

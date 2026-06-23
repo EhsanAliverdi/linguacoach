@@ -57,6 +57,14 @@ describe('AdminNotificationsComponent', () => {
       'updateNotificationTemplate', 'deactivateNotificationTemplate',
       'previewNotificationTemplate',
     ]);
+    const mockConfig: AdminNotificationConfigStatusV2 = {
+      source: 'AppSettings',
+      inApp: { channel: 'InApp', enabled: true, statusLabel: 'Enabled' },
+      email: { enabled: true, configured: true, statusLabel: 'Enabled', host: 'smtp.test.com', port: 587, fromAddress: 'no-reply@test.com', fromDisplayName: 'Test', useSsl: true, hasUsername: true, hasPassword: true },
+      sms: { enabled: false, configured: false, statusLabel: 'Foundation only — provider not connected', provider: null, senderId: null, hasApiKey: false },
+      dispatchJob: { enabled: true, intervalDescription: 'Every 5 min', batchSize: 50 },
+    };
+    apiSpy.getNotificationConfig.and.returnValue(of(mockConfig));
     apiSpy.listNotificationTemplates.and.returnValue(of(pagedOf([])));
     apiSpy.listAdminNotifications.and.returnValue(of(pagedOf([makeNotif()])));
     apiSpy.listAdminOutbox.and.returnValue(of(pagedOf([makeOutbox()])));
@@ -336,6 +344,7 @@ describe('AdminNotificationsComponent', () => {
   });
 
   it('loadConfig sets configError on failure', () => {
+    component.config.set(null);
     apiSpy.getNotificationConfig.and.returnValue(throwError(() => new Error('fail')));
     component.loadConfig();
     expect(component.configError()).toBe('Could not load configuration.');
@@ -343,11 +352,13 @@ describe('AdminNotificationsComponent', () => {
   });
 
   it('onConfigTabActivated calls loadConfig only when config is null', () => {
-    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    // ngOnInit already called getNotificationConfig once (count=1)
+    // Reset config to null to simulate a cold tab activate
     component.config.set(null);
+    apiSpy.getNotificationConfig.calls.reset();
     component.onConfigTabActivated();
     expect(apiSpy.getNotificationConfig).toHaveBeenCalledTimes(1);
-    // second call should not reload
+    // second call should not reload when config is already set
     component.onConfigTabActivated();
     expect(apiSpy.getNotificationConfig).toHaveBeenCalledTimes(1);
   });
@@ -389,8 +400,8 @@ describe('AdminNotificationsComponent', () => {
     expect(component.configTone('Misconfigured')).toBe('warning');
   });
 
-  it('config signal starts null', () => {
-    expect(component.config()).toBeNull();
+  it('config signal is populated after ngOnInit', () => {
+    expect(component.config()).not.toBeNull();
   });
 
   it('loadConfig syncs emailForm from loaded config', () => {

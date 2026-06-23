@@ -1,44 +1,52 @@
 <sp-admin-page-body>
-  <sp-admin-page-header title="Notification Center" subtitle="Inspect and manage notification records and delivery queue.">
+  <sp-admin-page-header
+    title="Notifications"
+    subtitle="In-app, email, SMS channel config, delivery queue, templates, and admin controls.">
     <div slot="header-actions">
       <sp-admin-button (clicked)="openSendForm()" aria-label="Send notification">Send notification</sp-admin-button>
     </div>
   </sp-admin-page-header>
 
+  <!-- Channel KPI strip — loaded from real config on init -->
+  @if (channelSummary()) {
+    <div class="sp-notif-kpi-strip" aria-label="Notification channel summary">
+      <sp-admin-kpi-card label="In-App" [variant]="channelSummary()!.inApp.tone === 'success' ? 'green' : 'slate'">
+        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+        </svg>
+        <sp-admin-badge [tone]="channelSummary()!.inApp.tone">{{ channelSummary()!.inApp.label }}</sp-admin-badge>
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Email" [variant]="channelSummary()!.email.tone === 'success' ? 'teal' : 'amber'">
+        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+        </svg>
+        <sp-admin-badge [tone]="channelSummary()!.email.tone">{{ channelSummary()!.email.label }}</sp-admin-badge>
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="SMS" variant="amber">
+        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+        </svg>
+        <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
+      </sp-admin-kpi-card>
+      <sp-admin-kpi-card label="Dispatch job" [variant]="channelSummary()!.dispatch.tone === 'success' ? 'indigo' : 'slate'">
+        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+        </svg>
+        <sp-admin-badge [tone]="channelSummary()!.dispatch.tone">{{ channelSummary()!.dispatch.label }}</sp-admin-badge>
+      </sp-admin-kpi-card>
+    </div>
+  }
+
   <!-- Tab bar -->
-  <div class="flex gap-2 mb-4 border-b border-gray-200">
-    <button
-      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-      [class.border-indigo-600]="activeTab === 'notifications'"
-      [class.text-indigo-600]="activeTab === 'notifications'"
-      [class.border-transparent]="activeTab !== 'notifications'"
-      [class.text-gray-500]="activeTab !== 'notifications'"
-      (click)="activeTab = 'notifications'"
-    >Notifications</button>
-    <button
-      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-      [class.border-blue-600]="activeTab === 'outbox'"
-      [class.text-blue-600]="activeTab === 'outbox'"
-      [class.border-transparent]="activeTab !== 'outbox'"
-      [class.text-gray-500]="activeTab !== 'outbox'"
-      (click)="activeTab = 'outbox'"
-    >Delivery Queue</button>
-    <button
-      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-      [class.border-blue-600]="activeTab === 'config'"
-      [class.text-blue-600]="activeTab === 'config'"
-      [class.border-transparent]="activeTab !== 'config'"
-      [class.text-gray-500]="activeTab !== 'config'"
-      (click)="activeTab = 'config'; onConfigTabActivated()"
-    >Configuration</button>
-    <button
-      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-      [class.border-blue-600]="activeTab === 'templates'"
-      [class.text-blue-600]="activeTab === 'templates'"
-      [class.border-transparent]="activeTab !== 'templates'"
-      [class.text-gray-500]="activeTab !== 'templates'"
-      (click)="activeTab = 'templates'; onTemplatesTabActivated()"
-    >Templates</button>
+  <div class="sp-notif-tab-bar">
+    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'notifications'"
+      (click)="activeTab = 'notifications'">Notifications</button>
+    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'outbox'"
+      (click)="activeTab = 'outbox'">Delivery Queue</button>
+    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'config'"
+      (click)="activeTab = 'config'; onConfigTabActivated()">Configuration</button>
+    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'templates'"
+      (click)="activeTab = 'templates'; onTemplatesTabActivated()">Templates</button>
   </div>
 
   <!-- ── Notifications tab ──────────────────────────────────────────────────── -->
@@ -145,7 +153,7 @@
           [(ngModel)]="outboxStatusFilter"
           (ngModelChange)="applyOutboxFilters()"
           aria-label="Filter by status" />
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <label class="sp-notif-failed-only">
           <input type="checkbox" [(ngModel)]="outboxFailedOnly" (change)="applyOutboxFilters()" aria-label="Failed only" />
           Failed only
         </label>
@@ -186,22 +194,18 @@
                   {{ item.lastError ?? '—' }}
                 </td>
                 <td>
-                  <div class="flex gap-2">
+                  <div class="sp-notif-outbox-actions">
                     @if (canRetry(item)) {
-                      <button
-                        class="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                      <sp-admin-button size="sm" variant="ghost"
                         [disabled]="retryingId() === item.id"
-                        (click)="retry(item)"
-                        type="button"
-                      >{{ retryingId() === item.id ? 'Retrying…' : 'Retry' }}</button>
+                        (clicked)="retry(item)"
+                      >{{ retryingId() === item.id ? 'Retrying…' : 'Retry' }}</sp-admin-button>
                     }
                     @if (canCancel(item)) {
-                      <button
-                        class="text-xs px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      <sp-admin-button size="sm" variant="ghost"
                         [disabled]="cancellingId() === item.id"
-                        (click)="cancel(item)"
-                        type="button"
-                      >{{ cancellingId() === item.id ? 'Cancelling…' : 'Cancel' }}</button>
+                        (clicked)="cancel(item)"
+                      >{{ cancellingId() === item.id ? 'Cancelling…' : 'Cancel' }}</sp-admin-button>
                     }
                   </div>
                 </td>
@@ -228,158 +232,142 @@
       <sp-admin-error-state [message]="configError()" (retry)="loadConfig()" />
     } @else if (config()) {
 
-      <!-- Source badge -->
-      <div class="flex items-center gap-2 mb-4">
-        <span class="text-xs text-gray-500">Config source:</span>
+      <!-- Source row -->
+      <div class="sp-notif-source-row">
+        <span>Config source:</span>
         <sp-admin-badge [tone]="sourceTone(config()!.source)">{{ config()!.source }}</sp-admin-badge>
-        <button class="ml-auto text-xs text-blue-600 hover:underline" (click)="loadConfig()">Refresh</button>
+        <button (click)="loadConfig()">Refresh</button>
       </div>
 
-      <!-- Channel status cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <sp-admin-card>
-          <div class="p-4">
-            <p class="text-xs text-gray-500 mb-1">In-App</p>
-            <sp-admin-badge [tone]="configTone(config()!.inApp.statusLabel)">{{ config()!.inApp.statusLabel }}</sp-admin-badge>
-          </div>
-        </sp-admin-card>
-        <sp-admin-card>
-          <div class="p-4">
-            <p class="text-xs text-gray-500 mb-1">Email</p>
-            <sp-admin-badge [tone]="configTone(config()!.email.statusLabel)">{{ config()!.email.statusLabel }}</sp-admin-badge>
-          </div>
-        </sp-admin-card>
-        <sp-admin-card>
-          <div class="p-4">
-            <p class="text-xs text-gray-500 mb-1">SMS</p>
-            <sp-admin-badge [tone]="configTone(config()!.sms.statusLabel)">{{ config()!.sms.statusLabel }}</sp-admin-badge>
-            <sp-admin-badge tone="warning" class="mt-1 block">Foundation only</sp-admin-badge>
-          </div>
-        </sp-admin-card>
-        <sp-admin-card>
-          <div class="p-4">
-            <p class="text-xs text-gray-500 mb-1">Dispatch Job</p>
-            <sp-admin-badge [tone]="configTone(config()!.dispatchJob.enabled ? 'Enabled' : 'Disabled')">
-              {{ config()!.dispatchJob.enabled ? 'Enabled' : 'Disabled' }}
-            </sp-admin-badge>
-            <p class="text-xs text-gray-400 mt-1">{{ config()!.dispatchJob.intervalDescription }} · batch {{ config()!.dispatchJob.batchSize }}</p>
-          </div>
-        </sp-admin-card>
+      <!-- Channel status KPI strip -->
+      <div class="sp-notif-kpi-strip" aria-label="Channel configuration status">
+        <sp-admin-kpi-card label="In-App" [variant]="configTone(config()!.inApp.statusLabel) === 'success' ? 'green' : 'slate'">
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+          </svg>
+          <sp-admin-badge [tone]="configTone(config()!.inApp.statusLabel)">{{ config()!.inApp.statusLabel }}</sp-admin-badge>
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Email" [variant]="configTone(config()!.email.statusLabel) === 'success' ? 'teal' : 'amber'">
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+          </svg>
+          <sp-admin-badge [tone]="configTone(config()!.email.statusLabel)">{{ config()!.email.statusLabel }}</sp-admin-badge>
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="SMS" variant="amber">
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+          </svg>
+          <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
+        </sp-admin-kpi-card>
+        <sp-admin-kpi-card label="Dispatch job" [variant]="config()!.dispatchJob.enabled ? 'indigo' : 'slate'">
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+          </svg>
+          <sp-admin-badge [tone]="config()!.dispatchJob.enabled ? 'success' : 'neutral'">
+            {{ config()!.dispatchJob.enabled ? 'Enabled' : 'Disabled' }}
+          </sp-admin-badge>
+        </sp-admin-kpi-card>
       </div>
 
       <!-- In-App config -->
-      <sp-admin-card>
-        <div class="p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-gray-800">In-App Channel</h3>
-          </div>
-          <div class="flex items-center gap-4">
-            <sp-admin-checkbox [(ngModel)]="inAppForm.isEnabled" label="Enabled" />
-            <sp-admin-button size="sm" variant="secondary" [disabled]="inAppSaving()" (clicked)="saveInAppConfig()">
-              {{ inAppSaving() ? 'Saving…' : 'Save' }}
-            </sp-admin-button>
-          </div>
-          @if (inAppSaveSuccess()) {
-            <p class="mt-2 text-sm text-green-600" role="status">{{ inAppSaveSuccess() }}</p>
-          }
-          @if (inAppSaveError()) {
-            <p class="mt-2 text-sm text-red-600" role="alert">{{ inAppSaveError() }}</p>
-          }
-          <p class="mt-3 text-xs text-gray-400">Account and System notifications cannot be blocked even if InApp is disabled.</p>
+      <sp-admin-card title="In-App channel">
+        <div class="sp-notif-checkbox-row">
+          <sp-admin-checkbox [(ngModel)]="inAppForm.isEnabled" label="Enabled" />
+          <sp-admin-button size="sm" variant="secondary" [disabled]="inAppSaving()" (clicked)="saveInAppConfig()">
+            {{ inAppSaving() ? 'Saving…' : 'Save' }}
+          </sp-admin-button>
         </div>
+        @if (inAppSaveSuccess()) {
+          <p class="sp-notif-save-msg-ok" role="status">{{ inAppSaveSuccess() }}</p>
+        }
+        @if (inAppSaveError()) {
+          <p class="sp-notif-save-msg-err" role="alert">{{ inAppSaveError() }}</p>
+        }
+        <p class="sp-notif-config-note">Account and System notifications cannot be blocked even if InApp is disabled.</p>
       </sp-admin-card>
 
       <!-- Email config -->
-      <sp-admin-card>
-        <div class="p-5">
-          <h3 class="text-sm font-semibold text-gray-800 mb-4">Email Configuration (SMTP)</h3>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div class="sm:col-span-2">
-              <sp-admin-checkbox [(ngModel)]="emailForm.isEnabled" label="Enabled" />
-            </div>
-            <sp-admin-input size="sm" label="Host" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" />
-            <sp-admin-input size="sm" label="Port" type="number" placeholder="587" [(ngModel)]="emailForm.port" />
-            <sp-admin-input size="sm" label="From address" placeholder="noreply@example.com" [(ngModel)]="emailForm.fromAddress" />
-            <sp-admin-input size="sm" label="From display name" placeholder="SpeakPath" [(ngModel)]="emailForm.fromDisplayName" />
-            <sp-admin-input size="sm" label="Username" placeholder="smtp-username" [(ngModel)]="emailForm.username" />
-            <div>
-              <sp-admin-input size="sm" label="Password (replace)" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="emailForm.newSecret" />
-              <div class="mt-1 flex items-center gap-2">
-                <sp-admin-badge [tone]="config()!.email.hasPassword ? 'success' : 'neutral'">
-                  {{ config()!.email.hasPassword ? 'Password configured' : 'No password stored' }}
-                </sp-admin-badge>
-                @if (config()!.email.hasPassword) {
-                  <sp-admin-checkbox [(ngModel)]="emailForm.clearSecret" label="Clear stored password" />
-                }
-              </div>
-            </div>
-            <div class="sm:col-span-2">
-              <sp-admin-checkbox [(ngModel)]="emailForm.useSsl" label="Use SSL/TLS" />
-            </div>
-          </div>
-
-          <div class="flex gap-2 items-center">
-            <sp-admin-button size="sm" [disabled]="emailSaving()" (clicked)="saveEmailConfig()">
-              {{ emailSaving() ? 'Saving…' : 'Save email config' }}
-            </sp-admin-button>
-          </div>
-          @if (emailSaveSuccess()) {
-            <p class="mt-2 text-sm text-green-600" role="status">{{ emailSaveSuccess() }}</p>
-          }
-          @if (emailSaveError()) {
-            <p class="mt-2 text-sm text-red-600" role="alert">{{ emailSaveError() }}</p>
-          }
+      <sp-admin-card title="Email configuration (SMTP)">
+        <div class="sp-notif-checkbox-row">
+          <sp-admin-checkbox [(ngModel)]="emailForm.isEnabled" label="Enabled" />
         </div>
+        <div class="sp-notif-field-row">
+          <sp-admin-input size="sm" label="Host" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" />
+          <sp-admin-input size="sm" label="Port" type="number" placeholder="587" [(ngModel)]="emailForm.port" />
+          <sp-admin-input size="sm" label="From address" placeholder="noreply@example.com" [(ngModel)]="emailForm.fromAddress" />
+          <sp-admin-input size="sm" label="From display name" placeholder="SpeakPath" [(ngModel)]="emailForm.fromDisplayName" />
+          <sp-admin-input size="sm" label="Username" placeholder="smtp-username" [(ngModel)]="emailForm.username" />
+          <div>
+            <sp-admin-input size="sm" label="Password (replace)" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="emailForm.newSecret" />
+            <div class="sp-notif-checkbox-row" style="margin-top:8px">
+              <sp-admin-badge [tone]="config()!.email.hasPassword ? 'success' : 'neutral'">
+                {{ config()!.email.hasPassword ? 'Password configured' : 'No password stored' }}
+              </sp-admin-badge>
+              @if (config()!.email.hasPassword) {
+                <sp-admin-checkbox [(ngModel)]="emailForm.clearSecret" label="Clear stored password" />
+              }
+            </div>
+          </div>
+          <div>
+            <sp-admin-checkbox [(ngModel)]="emailForm.useSsl" label="Use SSL/TLS" />
+          </div>
+        </div>
+        <div class="sp-notif-save-row">
+          <sp-admin-button size="sm" [disabled]="emailSaving()" (clicked)="saveEmailConfig()">
+            {{ emailSaving() ? 'Saving…' : 'Save email config' }}
+          </sp-admin-button>
+        </div>
+        @if (emailSaveSuccess()) {
+          <p class="sp-notif-save-msg-ok" role="status">{{ emailSaveSuccess() }}</p>
+        }
+        @if (emailSaveError()) {
+          <p class="sp-notif-save-msg-err" role="alert">{{ emailSaveError() }}</p>
+        }
       </sp-admin-card>
 
       <!-- SMS config -->
       <sp-admin-card>
-        <div class="p-5">
-          <div class="flex items-center gap-2 mb-3">
-            <h3 class="text-sm font-semibold text-gray-800">SMS Configuration</h3>
-            <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
-          </div>
-          <sp-admin-alert variant="warning">
-            SMS delivery is not production-ready. No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are also deferred. You may pre-configure credentials for when a provider is integrated.
-          </sp-admin-alert>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div class="sm:col-span-2">
-              <sp-admin-checkbox [(ngModel)]="smsForm.isEnabled" label="Enabled (no-op until provider implemented)" />
-            </div>
-            <sp-admin-input size="sm" label="Provider" placeholder="e.g. Twilio" [(ngModel)]="smsForm.provider" />
-            <sp-admin-input size="sm" label="Sender ID" placeholder="SpeakPath" [(ngModel)]="smsForm.senderId" />
-            <div>
-              <sp-admin-input size="sm" label="API key (replace)" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="smsForm.newSecret" />
-              <div class="mt-1 flex items-center gap-2">
-                <sp-admin-badge [tone]="config()!.sms.hasApiKey ? 'success' : 'neutral'">
-                  {{ config()!.sms.hasApiKey ? 'API key configured' : 'No key stored' }}
-                </sp-admin-badge>
-                @if (config()!.sms.hasApiKey) {
-                  <sp-admin-checkbox [(ngModel)]="smsForm.clearSecret" label="Clear stored key" />
-                }
-              </div>
-            </div>
-          </div>
-          <div class="flex gap-2 items-center">
-            <sp-admin-button size="sm" variant="secondary" [disabled]="smsSaving()" (clicked)="saveSmsConfig()">
-              {{ smsSaving() ? 'Saving…' : 'Save SMS config' }}
-            </sp-admin-button>
-          </div>
-          @if (smsSaveSuccess()) {
-            <p class="mt-2 text-sm text-green-600" role="status">{{ smsSaveSuccess() }}</p>
-          }
-          @if (smsSaveError()) {
-            <p class="mt-2 text-sm text-red-600" role="alert">{{ smsSaveError() }}</p>
-          }
+        <div slot="title-area" style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:14px;font-weight:600;">SMS configuration</span>
+          <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
         </div>
+        <sp-admin-alert variant="warning">
+          SMS delivery is not production-ready. No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are also deferred. You may pre-configure credentials for when a provider is integrated.
+        </sp-admin-alert>
+        <div class="sp-notif-checkbox-row" style="margin-top:12px;">
+          <sp-admin-checkbox [(ngModel)]="smsForm.isEnabled" label="Enabled (no-op until provider implemented)" />
+        </div>
+        <div class="sp-notif-field-row">
+          <sp-admin-input size="sm" label="Provider" placeholder="e.g. Twilio" [(ngModel)]="smsForm.provider" />
+          <sp-admin-input size="sm" label="Sender ID" placeholder="SpeakPath" [(ngModel)]="smsForm.senderId" />
+          <div>
+            <sp-admin-input size="sm" label="API key (replace)" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="smsForm.newSecret" />
+            <div class="sp-notif-checkbox-row" style="margin-top:8px">
+              <sp-admin-badge [tone]="config()!.sms.hasApiKey ? 'success' : 'neutral'">
+                {{ config()!.sms.hasApiKey ? 'API key configured' : 'No key stored' }}
+              </sp-admin-badge>
+              @if (config()!.sms.hasApiKey) {
+                <sp-admin-checkbox [(ngModel)]="smsForm.clearSecret" label="Clear stored key" />
+              }
+            </div>
+          </div>
+        </div>
+        <div class="sp-notif-save-row">
+          <sp-admin-button size="sm" variant="secondary" [disabled]="smsSaving()" (clicked)="saveSmsConfig()">
+            {{ smsSaving() ? 'Saving…' : 'Save SMS config' }}
+          </sp-admin-button>
+        </div>
+        @if (smsSaveSuccess()) {
+          <p class="sp-notif-save-msg-ok" role="status">{{ smsSaveSuccess() }}</p>
+        }
+        @if (smsSaveError()) {
+          <p class="sp-notif-save-msg-err" role="alert">{{ smsSaveError() }}</p>
+        }
       </sp-admin-card>
 
       <!-- Test email -->
-      <sp-admin-card>
-        <div class="p-5">
-          <h3 class="text-sm font-semibold text-gray-800 mb-3">Send Test Email</h3>
-          <div class="flex gap-2 items-start">
+      <sp-admin-card title="Send test email">
+        <div class="flex gap-2 items-start">
             <sp-admin-input
               size="sm"
               placeholder="recipient@example.com"
@@ -394,15 +382,12 @@
             >{{ testEmailLoading() ? 'Sending…' : 'Send test' }}</sp-admin-button>
           </div>
           @if (testEmailResult()) {
-            <p class="mt-2 text-sm"
-               [class.text-green-600]="testEmailResult()!.succeeded"
-               [class.text-amber-600]="testEmailResult()!.wasSkipped && !testEmailResult()!.succeeded"
-               [class.text-red-600]="!testEmailResult()!.succeeded && !testEmailResult()!.wasSkipped"
+            <p class="sp-notif-config-meta"
+               [style.color]="testEmailResult()!.succeeded ? 'var(--sp-admin-green,#16a34a)' : testEmailResult()!.wasSkipped ? 'var(--sp-admin-amber,#d97706)' : 'var(--sp-admin-danger,#dc2626)'"
                role="status">
               {{ testEmailResult()!.message }}
             </p>
           }
-        </div>
       </sp-admin-card>
 
     } @else {
@@ -481,18 +466,10 @@
                 <td>{{ t.version }}</td>
                 <td>{{ t.updatedAtUtc ? timeAgo(t.updatedAtUtc) : '—' }}</td>
                 <td>
-                  <div class="flex gap-2">
-                    <button
-                      class="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
-                      (click)="openEditTemplate(t)"
-                      type="button"
-                    >Edit</button>
+                  <div class="sp-notif-outbox-actions">
+                    <sp-admin-button size="sm" variant="ghost" (clicked)="openEditTemplate(t)">Edit</sp-admin-button>
                     @if (t.isActive) {
-                      <button
-                        class="text-xs px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50"
-                        (click)="deactivateTemplate(t)"
-                        type="button"
-                      >Deactivate</button>
+                      <sp-admin-button size="sm" variant="ghost" (clicked)="deactivateTemplate(t)">Deactivate</sp-admin-button>
                     }
                   </div>
                 </td>
