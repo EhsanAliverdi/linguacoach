@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-REDESIGN-2)
+lastUpdated: 2026-06-23 (10UI-REDESIGN-3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-REDESIGN-3 — Student Detail Reference Redesign** — complete (2026-06-23)
+
+Hero section added: coloured initials avatar (hash-based colour, 8-palette), student display name with email/name fallbacks, lifecycle/onboarding/CEFR/support-language badges, action group (Edit, Reset password, Send reset link, Pause/Unpause/Reactivate). KPI strip upgraded from sp-admin-stat-card to sp-admin-kpi-card with icon tiles (Lifecycle, Onboarding, CEFR, Pool health). Danger zone card added as full-width last section (Reset data, Archive, Reactivate — all wired to existing modal flows). Back-to-students link in page header. 30 new tests. 1168/1168 pass. Build clean.
+
+Review: docs/reviews/2026-06-23-phase-10ui-redesign-3-student-detail-reference-redesign.md
+
+---
 
 **Phase 10UI-REDESIGN-2 — Students List and Create Student Reference Redesign** — complete (2026-06-23)
 

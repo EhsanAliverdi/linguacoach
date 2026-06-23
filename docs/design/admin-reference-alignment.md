@@ -123,7 +123,7 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 |-------|-----------|--------------|---------------------------|---------------|----------------|
 | `/admin` | AdminDashboardComponent | Good | **Complete** — dark hero banner, KPI tile row, onboarding funnel, at-risk, CEFR distribution, AI system, cohort engagement, recent students, all unavailable sections show explicit placeholders | Resolved in 10UI-REDESIGN-1 | Done |
 | `/admin/students` | AdminStudentsComponent | Complete | **Complete** — 4-tile KPI strip (real stats), rows-per-page selector, filter bar aligned | Resolved in 10UI-REDESIGN-2 | Done |
-| `/admin/students/:id` | AdminStudentDetailComponent | Complete | **Partial** | Missing: coloured avatar hero, danger zone card | 10UI-REDESIGN-3 (P2) |
+| `/admin/students/:id` | AdminStudentDetailComponent | Complete | **Complete** — coloured initials avatar hero, KPI strip upgraded, danger zone card | Resolved in 10UI-REDESIGN-3 | Done |
 | `/admin/create-student` | CreateStudentComponent | Complete | **Complete** — two-column layout, sticky aside panel, multi-section form cards, security note, back link | Resolved in 10UI-REDESIGN-2 | Done |
 | `/admin/ai-config` | AdminAiConfigComponent | Complete | **Partial** | Missing: rate limits/quotas section, dedicated TTS card | 10UI-REDESIGN-5 (P2) |
 | `/admin/prompts` | AdminPromptsComponent | Complete | **Looks close** | Minor: tab+search same row, inline row action buttons | 10UI-REDESIGN-5 (P3) |
@@ -173,6 +173,12 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-3
+
+- Student detail: hero section (coloured initials avatar, name, email, lifecycle/onboarding/CEFR/support-language badges, action group). KPI strip upgraded to sp-admin-kpi-card with icon tiles. Danger zone card added (Reset data, Archive, Reactivate). Back-to-students link in header.
+- `initials()` and `avatarColor()` helpers added to component class.
+- 30 new tests. 1168/1168 pass.
 
 ## Changes Made in 10UI-REDESIGN-2
 

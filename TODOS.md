@@ -389,7 +389,7 @@ Rollout plan: docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-rede
 
 - [x] TODO-REDESIGN-1 (P1): **10UI-REDESIGN-1** — Dashboard reference redesign. DONE 2026-06-23. Review: docs/reviews/2026-06-23-phase-10ui-redesign-1-dashboard-reference-redesign.md
 - ~~TODO-REDESIGN-2~~ — **DONE in 10UI-REDESIGN-2** (2026-06-23). Students list: KPI strip, rows-per-page selector, filter bar aligned. Create Student: two-column layout, sticky aside panel, security note, back link. 1138/1138.
-- TODO-REDESIGN-3 (P2): **10UI-REDESIGN-3** — Student detail completion. Coloured avatar hero section with badge row and action buttons. Danger zone card (reset password, reset data, archive).
+- ~~TODO-REDESIGN-3~~ — **DONE in 10UI-REDESIGN-3** (2026-06-23). Hero section: coloured initials avatar, name/email, lifecycle/onboarding/CEFR badges, action group. KPI strip upgraded to sp-admin-kpi-card. Danger zone card: Reset data, Archive, Reactivate. 30 new tests. 1168/1168.
 - TODO-REDESIGN-4 (P2): **10UI-REDESIGN-4** — Curriculum + Exercise Types redesign. Curriculum: track-level icon cards alongside objectives table (backend has objectives, not tracks — show placeholder for track management). Exercise types: card-per-type layout with icon tile, expandable stat grid.
 - TODO-REDESIGN-5 (P2): **10UI-REDESIGN-5** — AI Config + Prompts redesign. AI Config: rate limits/quotas section (placeholder — no endpoint), dedicated TTS settings card. Prompts: tab+search same row, inline row action buttons.
 - TODO-REDESIGN-6 (P2): **10UI-REDESIGN-6** — AI Usage + Usage Policies redesign. AI Usage: date range pills, SVG area chart, SVG bar chart, SVG heatmap (all placeholders or real data per endpoint availability). Usage Policies: no reference counterpart — keep as-is.
