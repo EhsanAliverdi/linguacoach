@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-2)
+lastUpdated: 2026-06-23 (10Auth-F-3)
 owner: product
 supersedes:
 supersededBy:
@@ -39,9 +39,21 @@ Auth/security audit complete. No code changes. Roadmap defined.
 - Admin endpoint: `GET /api/admin/auth-events` (paginated, filterable by userId, email, eventType, outcome, date range).
 - 16 new integration tests including security invariant checks.
 
+### Security notifications (10Auth-F-3, 2026-06-23)
+
+- Security events now notify users via in-app and/or email:
+  - Password changed → InApp + Email
+  - Password reset requested → InApp only (reset-link email serves the email role)
+  - Password reset succeeded → InApp + Email
+  - Account locked out → InApp + Email (on lockout transition only — not on repeated locked attempts)
+- All use `NotificationCategory.Account` (mandatory — bypasses user opt-out).
+- Notification failures are non-fatal and never abort auth flows.
+- 7 new templates seeded: `account.password_changed`, `account.password_reset_requested`, `account.password_reset_succeeded`, `account.locked_out`.
+- No new migration. No frontend changes.
+
 ### Remaining gaps
 
-No session revocation. No refresh tokens. No OAuth. No admin security UI. No security notifications.
+No session revocation. No refresh tokens. No OAuth. No admin security UI. SMS security notifications deferred (no real SMS provider).
 
 ### Roadmap
 

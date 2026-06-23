@@ -96,6 +96,9 @@ public sealed class PasswordResetHandler : IPasswordResetService
             AuthEventType.PasswordResetRequested, AuthEventOutcome.Requested,
             UserId: user.Id, EmailOrUserName: user.Email,
             IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
+
+        // In-app only — the reset-link email already serves as the email notification.
+        await TryNotifyResetRequestedAsync(profile.UserId, ct);
     }
 
     private async Task<(string Subject, string Body)> ResolveResetEmailContentAsync(
@@ -208,7 +211,60 @@ public sealed class PasswordResetHandler : IPasswordResetService
             AuthEventType.PasswordResetSucceeded, AuthEventOutcome.Success,
             UserId: user.Id, EmailOrUserName: user.Email,
             IpAddress: ip, UserAgent: ua, CorrelationId: correlationId), ct);
+
+        await TryNotifyResetSucceededAsync(user.Id, user.Email, ct);
         return CompletePasswordResetResult.Ok();
+    }
+
+    private async Task TryNotifyResetRequestedAsync(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            await _notifications.QueueInAppAsync(
+                recipientUserId: userId,
+                title: "Password reset requested",
+                body: "A password reset was requested for your account. If this was not you, contact your administrator.",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Warning,
+                ct: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to queue password-reset-requested in-app notification for user {UserId}. Auth flow unaffected.",
+                userId);
+        }
+    }
+
+    private async Task TryNotifyResetSucceededAsync(Guid userId, string? email, CancellationToken ct)
+    {
+        try
+        {
+            var appName = _configuration["PublicApp:AppName"] ?? "SpeakPath";
+            var displayName = email ?? "User";
+
+            await _notifications.QueueInAppAsync(
+                recipientUserId: userId,
+                title: "Password reset successful",
+                body: "Your password was reset successfully. If you did not do this, contact your administrator immediately.",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Warning,
+                ct: ct);
+
+            await _notifications.QueueEmailAsync(
+                recipientUserId: userId,
+                title: $"Your {appName} password was reset",
+                body: $"<p>Hello {displayName},</p><p>Your {appName} password was reset successfully.</p><p>If you did not request this reset, please contact your administrator immediately.</p><p>— {appName}</p>",
+                category: NotificationCategory.Account,
+                severity: NotificationSeverity.Warning,
+                ct: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to queue password-reset-succeeded notification for user {UserId}. Auth flow unaffected.",
+                userId);
+        }
     }
 
     private static string Base64UrlEncode(string value)

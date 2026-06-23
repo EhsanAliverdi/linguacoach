@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-2)
+lastUpdated: 2026-06-23 (10Auth-F-3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10Auth-F-3 — Security Notifications** — complete (2026-06-23)
+
+Security notifications wired into all auth flows. Templates added: `account.password_changed` (InApp+Email), `account.password_reset_requested` (InApp only — reset-link email serves the email role), `account.password_reset_succeeded` (InApp+Email), `account.locked_out` (InApp+Email). All use `NotificationCategory.Account` (mandatory, bypasses opt-out). Lockout notification fires only on transition — not on every locked-out login attempt. Notification failures are non-fatal. No new migration. 11 new integration tests. 2330/2330 pass.
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-3-security-notifications.md
+
+---
 
 **Phase 10Auth-F-2 — Auth Event Audit Log** — complete (2026-06-23)
 
