@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-FINAL)
+lastUpdated: 2026-06-23 (10UI-AUDIT-0)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,37 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-23 (10Auth-F-FINAL)
+Last updated: 2026-06-23 (10UI-AUDIT-0)
+
+---
+
+## UI / Backend Reconciliation Audit — complete (Phase 10UI-AUDIT-0, 2026-06-23)
+
+Audit-only phase. No code changed. All admin and student routes audited against backend capabilities.
+
+### Top P0 gaps found (fix immediately)
+
+| Gap | Location | Fix |
+|---|---|---|
+| `/admin/usage-policies` has NO nav link | Admin sidebar | Add nav item — single HTML change |
+| `/admin/curriculum` has NO nav link | Admin sidebar | Add nav item — single HTML change |
+
+### Top P1 gaps found
+
+| Gap | Location | Fix phase |
+|---|---|---|
+| Readiness pool health not shown | /admin/students/:id | 10UI-FIX-2 |
+| Student activity history not shown | /admin/students/:id | 10UI-FIX-2 |
+| Onboarding flow viewer missing | No admin page | 10UI-FIX-2 |
+| Orphan AdminUsageComponent (stale placeholder) | admin-usage folder | 10UI-FIX-4 |
+| Dashboard "AI provider" stat card always static | /admin dashboard | 10UI-FIX-4 |
+
+### Student UI status
+
+Student-facing routes (/today, /journey, /practice, /progress, /profile) are broadly aligned with backend. No P0 gaps. Minor P2 gaps: CEFR not shown on /progress, no Google login button on /login.
+
+Full report: docs/reviews/2026-06-23-phase-10ui-audit-0-ui-backend-capability-reconciliation.md
+New TODOs: TODO-UI-01 through TODO-UI-10 in TODOS.md.
 
 ---
 

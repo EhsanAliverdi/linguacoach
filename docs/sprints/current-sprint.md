@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10Auth-F-FINAL)
+lastUpdated: 2026-06-23 (10UI-AUDIT-0)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,25 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-AUDIT-0 — Full UI / Backend Capability Reconciliation** — complete (2026-06-23)
+
+Audit-only phase. No code changed. Route-by-route and capability-by-capability reconciliation across all admin and student routes against backend capabilities.
+
+Key findings:
+- P0: `/admin/usage-policies` and `/admin/curriculum` are complete production pages with NO sidebar nav links. Admins cannot find them without typing the URL directly.
+- P1: Student detail page missing readiness pool health, activity history section, and onboarding flow viewer.
+- P1: Orphan `AdminUsageComponent` (admin-usage folder) renders stale placeholder — dead code contradicting the real AI usage page.
+- P1: Admin dashboard "AI provider: Configured" stat card is always static.
+- P2: SMS shown in notification config without "foundation only" label. CEFR not shown on student progress page. No Google login button on /login.
+
+Next recommended phase: **10UI-FIX-1** — add three missing nav links (single HTML file, 1-2 hours).
+
+Review: docs/reviews/2026-06-23-phase-10ui-audit-0-ui-backend-capability-reconciliation.md
+TODOs added: TODO-UI-01 through TODO-UI-10 in TODOS.md.
+Gates: no code changed.
+
+---
 
 **Phase 10Auth-F-FINAL — Enterprise Auth/Security Closure Audit** — complete (2026-06-23)
 

@@ -264,3 +264,79 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 **Student routes to cover:** `/student/today`, `/student/journey`, `/student/practice`, `/student/progress`, `/student/profile`.
 **Output:** Route-by-route matrix + prioritised list of next UI phases.
 **Deferred from:** Phase 10Auth-F-FINAL closure audit, 2026-06-23.
+
+---
+
+## UI Gap Tracking (from Phase 10UI-AUDIT-0, 2026-06-23)
+
+### TODO-UI-01 — Add missing nav links: usage-policies, curriculum, careers (P0)
+**What:** Add three sidebar nav items in `admin-app-layout.component.html`:
+- `/admin/usage-policies` — "Usage Policies"
+- `/admin/curriculum` — "Curriculum"
+- `/admin/careers` — "Careers"
+**Why:** Two complete production admin capabilities (usage governance, curriculum management) are fully built but unreachable from the sidebar. Admins must type the URL directly.
+**Context:** Pages and backend fully complete. Single HTML file change. No backend work needed.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-02 — Admin student detail: readiness pool health section (P1)
+**What:** Add a "Readiness pool" section to `/admin/students/:id` wiring `GET /api/admin/students/{id}/readiness-pool/health` and `/readiness-pool`.
+**Why:** Admins cannot diagnose why a student has no ready activities. The pool health endpoint has existed since Phase 10N.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-03 — Admin student detail: activity history section (P1)
+**What:** Add an "Activity history" section to `/admin/students/:id` calling `GET /api/admin/students/{id}/activity-history`.
+**Why:** Audit history (admin actions) is shown but not the student's actual activity attempts. These are different datasets. The endpoint has existed since the early admin phases.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-04 — Admin onboarding flow viewer page/modal (P1)
+**What:** Add a read-only view for the active onboarding flow definition, wiring `GET /api/admin/onboarding/flow`. Can be a new `/admin/onboarding` route or a modal from the dashboard.
+**Why:** Admins cannot inspect step definitions, answer mappings, or enabled steps without a database query. Endpoint has existed since Phase 10I.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-05 — Remove or repurpose orphan AdminUsageComponent (P1)
+**What:** Delete `src/LinguaCoach.Web/src/app/features/admin/admin-usage/` folder (the old placeholder with static emoji cards). It is never rendered (the `/admin/usage` route redirects to the real AI usage page) but is confusing dead code.
+**Why:** The stale placeholder says "Analytics not yet tracked" with emoji — contradicting the fully implemented AI usage page. Confusing for future agents and developers.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-06 — Admin dashboard: replace static "AI provider: Configured" card (P1)
+**What:** Replace the always-static "AI provider: Configured" stat card on `/admin` with a live status derived from `GET /api/admin/ai/categories`.
+**Why:** Card always shows "Configured" regardless of whether credentials are actually set. Misleads admins into thinking AI is ready when it may not be.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-07 — Notification config: add SMS "foundation only" label (P2)
+**What:** Add a visible "Foundation only — not active" or "Coming soon" label to the SMS section in `/admin/notifications` Configuration tab.
+**Why:** `DisabledSmsSender` always skips. No UI indication that SMS is not functional. Admins could waste time configuring a non-working channel.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-08 — Student progress page: show CEFR level badge (P2)
+**What:** Display the student's current CEFR level badge on the `/progress` page.
+**Why:** CEFR is the student's primary achievement signal. It is tracked in the backend and shown in admin but not on the student's own progress page.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-09 — Admin integrations: add readiness pool replenishment status (P2)
+**What:** Add a readiness pool health summary to `/admin/integrations` page. May require a new aggregate endpoint.
+**Why:** Integrations page shows lesson generation batch status but not practice gym pool health. Admins cannot tell if the background replenishment job is working.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+
+---
+
+### TODO-UI-10 — Admin security page: add deferred feature notes (P2)
+**What:** Add visible "Deferred" or "Not yet implemented" notes for per-user session revocation, MFA, CAPTCHA, HSTS on `/admin/security`.
+**Why:** Admins may assume these are missing bugs rather than intentionally deferred features.
+**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
