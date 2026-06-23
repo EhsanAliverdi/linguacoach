@@ -17,12 +17,12 @@ import {
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
   SpAdminInputComponent,
+  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminSelectComponent,
-  SpAdminStatCardComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
@@ -43,20 +43,19 @@ import {
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
     SpAdminInputComponent,
+    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
-    SpAdminStatCardComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
   styles: [`
-    .sp-au-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
-    @media(min-width: 900px)  { .sp-au-stat-grid { grid-template-columns: repeat(4, 1fr); } }
-    @media(min-width: 1200px) { .sp-au-stat-grid { grid-template-columns: repeat(8, 1fr); } }
+    .sp-au-kpi-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
+    @media(min-width: 900px) { .sp-au-kpi-strip { grid-template-columns: repeat(4, 1fr); } }
     .sp-au-two-col { display: grid; gap: 24px; margin-bottom: 24px; }
     @media(min-width: 1100px) { .sp-au-two-col { grid-template-columns: 1fr 1fr; align-items: start; } }
     .sp-au-num    { text-align: right; white-space: nowrap; }
@@ -71,6 +70,14 @@ import {
     .sp-au-fail-reason { font-size: 11px; color: var(--sp-admin-danger, #dc2626); margin-top: 2px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sp-au-filter-note { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); margin: 0 0 8px; }
     .sp-au-trend-zero td { color: var(--sp-admin-muted, #9ca3af); }
+    .sp-au-period-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .sp-au-pill { padding: 4px 14px; border-radius: 9999px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--sp-admin-border, #e5e7eb); background: transparent; color: var(--sp-admin-muted, #6b7280); transition: background 0.12s, color 0.12s; }
+    .sp-au-pill:hover { background: var(--sp-admin-surface, #f9fafb); }
+    .sp-au-pill--active { background: var(--sp-admin-primary, #5B4BE8); color: #fff; border-color: var(--sp-admin-primary, #5B4BE8); }
+    .sp-au-mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
+    .sp-au-mini-bar { flex: 1; min-width: 3px; border-radius: 2px 2px 0 0; background: var(--sp-admin-primary, #5B4BE8); opacity: 0.75; transition: height 0.2s; }
+    .sp-au-chart-empty { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); padding: 8px 0; }
+    .sp-au-not-impl { font-size: 13px; color: var(--sp-admin-muted, #9ca3af); padding: 12px 0; }
   `],
 })
 export class AdminAiUsageComponent implements OnInit {
@@ -350,6 +357,41 @@ export class AdminAiUsageComponent implements OnInit {
     !!this.recentFeatureFilter()  ||
     !!this.recentStatusFilter()   ||
     !!this.recentStudentFilter());
+
+  // KPI strip summary (4 tiles: total calls, total cost, success rate, failed)
+  readonly kpiSummary = computed(() => {
+    const s = this.summary();
+    if (!s) return null;
+    return {
+      totalCalls:   s.totalCalls,
+      totalCostUsd: s.totalCostUsd,
+      successRate:  s.totalCalls > 0 ? Math.round((s.successfulCalls / s.totalCalls) * 100) : 0,
+      failedCalls:  s.failedCalls,
+    };
+  });
+
+  // Mini bar chart heights for trend (proportional 0-48 px)
+  readonly trendBars = computed(() => {
+    const buckets = this.trendBuckets();
+    if (!buckets.length) return [];
+    const max = Math.max(...buckets.map(b => b.callCount));
+    if (max === 0) return buckets.map(() => ({ height: 2, label: '0' }));
+    return buckets.map(b => ({
+      height: Math.max(2, Math.round((b.callCount / max) * 48)),
+      label:  `${b.date}: ${b.callCount} calls`,
+    }));
+  });
+
+  readonly periodPillOptions: { value: PeriodPreset; label: string }[] = [
+    { value: '7d',  label: '7d' },
+    { value: '30d', label: '30d' },
+    { value: 'all', label: 'All' },
+  ];
+
+  onPillClick(value: PeriodPreset): void {
+    this.periodPresetValue = value;
+    this.onPeriodChange(value);
+  }
 
 
   buildRange(preset: PeriodPreset): AiUsageDateRange | undefined {

@@ -72,35 +72,35 @@ describe('AdminAiUsageComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-page-header')).toBeTruthy();
   });
 
-  it('renders stat cards after summary loads', () => {
+  it('renders kpi cards after summary loads', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card');
-    expect(cards.length).toBe(8);
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBeGreaterThanOrEqual(4);
   });
 
-  it('renders input token stat card', () => {
+  it('renders total requests kpi card', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card'));
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card'));
     const labels = cards.map(c => c.getAttribute('label') ?? c.getAttribute('ng-reflect-label') ?? c.textContent ?? '');
-    expect(labels.some(l => l.toLowerCase().includes('input token'))).toBeTrue();
+    expect(labels.some(l => l.toLowerCase().includes('request'))).toBeTrue();
   });
 
-  it('renders output token stat card', () => {
+  it('renders total cost kpi card', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card'));
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card'));
     const labels = cards.map(c => c.getAttribute('label') ?? c.getAttribute('ng-reflect-label') ?? c.textContent ?? '');
-    expect(labels.some(l => l.toLowerCase().includes('output token'))).toBeTrue();
+    expect(labels.some(l => l.toLowerCase().includes('cost'))).toBeTrue();
   });
 
-  it('renders total token stat card', () => {
+  it('renders failed calls kpi card', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card'));
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card'));
     const labels = cards.map(c => c.getAttribute('label') ?? c.getAttribute('ng-reflect-label') ?? c.textContent ?? '');
-    expect(labels.some(l => l.toLowerCase().includes('total token'))).toBeTrue();
+    expect(labels.some(l => l.toLowerCase().includes('failed'))).toBeTrue();
   });
 
   it('renders provider and feature summary tables', () => {
@@ -735,12 +735,12 @@ describe('AdminAiUsageComponent', () => {
     expect(svc.getRecent).toHaveBeenCalledTimes(1);
   });
 
-  it('summary cards still render after filter alignment change', () => {
+  it('kpi cards still render after filter alignment change', () => {
     svc.getSummary.and.returnValue(of(makeSummary({ totalCalls: 5, totalInputTokens: 999 })));
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-stat-card');
-    expect(cards.length).toBe(8);
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card');
+    expect(cards.length).toBeGreaterThanOrEqual(4);
     expect(fixture.componentInstance.summary()!.totalInputTokens).toBe(999);
   });
 
@@ -1165,6 +1165,132 @@ describe('AdminAiUsageComponent', () => {
 
     const filters = svc.getSummary.calls.mostRecent().args[1] as { provider?: string } | undefined;
     expect(filters?.provider).toBe('openai');
+  });
+
+  // ── REDESIGN-6: KPI strip, period pills, trend bars, not-impl placeholders ─
+
+  it('summary strip has aria-label "AI usage summary"', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const strip = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="AI usage summary"]');
+    expect(strip).toBeTruthy();
+  });
+
+  it('kpiSummary computed returns correct totalCalls', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ totalCalls: 42 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.totalCalls).toBe(42);
+  });
+
+  it('kpiSummary computed returns correct totalCostUsd', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ totalCostUsd: 1.2345 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.totalCostUsd).toBeCloseTo(1.2345);
+  });
+
+  it('kpiSummary computed calculates successRate correctly', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ totalCalls: 10, successfulCalls: 8 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.successRate).toBe(80);
+  });
+
+  it('kpiSummary successRate is 0 when totalCalls is 0', () => {
+    svc.getSummary.and.returnValue(of(makeSummary({ totalCalls: 0, successfulCalls: 0 })));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()!.successRate).toBe(0);
+  });
+
+  it('kpiSummary returns null when summary not loaded', () => {
+    svc.getSummary.and.returnValue(new Subject<AiUsageSummary>().asObservable());
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.kpiSummary()).toBeNull();
+  });
+
+  it('period pill buttons render', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const pills = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-au-pill');
+    expect(pills.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('period pill container has aria-label', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const container = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Quick date range selection"]');
+    expect(container).toBeTruthy();
+  });
+
+  it('onPillClick updates periodPreset and calls load', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    svc.getSummary.calls.reset();
+
+    c.onPillClick('7d');
+
+    expect(c.periodPreset()).toBe('7d');
+    expect(svc.getSummary).toHaveBeenCalledTimes(1);
+  });
+
+  it('trendBars returns empty array when no buckets', () => {
+    svc.getTrends.and.returnValue(of([]));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.trendBars().length).toBe(0);
+  });
+
+  it('trendBars returns proportional heights from real data', () => {
+    const buckets: AiUsageTrendBucket[] = [
+      { date: '2025-03-10', callCount: 10, successCount: 9, failureCount: 1, fallbackCount: 0, inputTokens: 100, outputTokens: 50, totalTokens: 150, costUsd: 0.01 },
+      { date: '2025-03-11', callCount: 5,  successCount: 5, failureCount: 0, fallbackCount: 0, inputTokens:  50, outputTokens: 25, totalTokens:  75, costUsd: 0.005 },
+    ];
+    svc.getTrends.and.returnValue(of(buckets));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const bars = fixture.componentInstance.trendBars();
+    expect(bars.length).toBe(2);
+    expect(bars[0].height).toBe(48);
+    expect(bars[1].height).toBeGreaterThan(0);
+    expect(bars[1].height).toBeLessThan(48);
+  });
+
+  it('mini bar chart renders when trend data available', () => {
+    const buckets: AiUsageTrendBucket[] = [
+      { date: '2025-03-10', callCount: 5, successCount: 4, failureCount: 1, fallbackCount: 0, inputTokens: 100, outputTokens: 50, totalTokens: 150, costUsd: 0.01 },
+    ];
+    svc.getTrends.and.returnValue(of(buckets));
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const bars = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-au-mini-bar');
+    expect(bars.length).toBeGreaterThan(0);
+  });
+
+  it('activities per day card renders with "not implemented" text', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const el = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Activities per day not implemented"]');
+    expect(el).toBeTruthy();
+  });
+
+  it('student engagement card renders with "not implemented" text', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const el = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Student engagement not implemented"]');
+    expect(el).toBeTruthy();
+  });
+
+  it('no API key or secret text rendered anywhere', () => {
+    const fixture = TestBed.createComponent(AdminAiUsageComponent);
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text.toLowerCase()).not.toContain('api_key');
+    expect(text.toLowerCase()).not.toContain('bearer ');
+    expect(text.toLowerCase()).not.toContain('sk-');
   });
 
   // ── zero-cost alert ────────────────────────────────────────────────────────

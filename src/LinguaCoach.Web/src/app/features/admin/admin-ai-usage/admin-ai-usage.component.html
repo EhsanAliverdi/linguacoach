@@ -3,6 +3,19 @@
   subtitle="Token usage, cost, provider performance, and fallback rates." />
 
 <sp-admin-page-body>
+
+<!-- Period pill buttons -->
+<div class="sp-au-period-pills" aria-label="Quick date range selection">
+  @for (pill of periodPillOptions; track pill.value) {
+    <button
+      class="sp-au-pill"
+      [class.sp-au-pill--active]="periodPreset() === pill.value"
+      (click)="onPillClick(pill.value)"
+      [attr.aria-pressed]="periodPreset() === pill.value"
+      type="button">{{ pill.label }}</button>
+  }
+</div>
+
 <sp-admin-filter-bar density="compact">
   <sp-admin-select
     filters
@@ -39,24 +52,46 @@
   <sp-admin-alert variant="error">{{ customRangeError() }}</sp-admin-alert>
 }
 
+<!-- KPI summary strip -->
 @if (loadingSummary()) {
   <sp-admin-loading-state message="Loading usage summary" />
 } @else if (summaryError()) {
   <sp-admin-error-state title="Usage summary unavailable" [message]="summaryError()" />
-} @else if (summary()) {
+} @else if (kpiSummary()) {
   @if (hasActiveRecentFilters()) {
     <p class="sp-au-filter-note">Summary totals reflect active filters.</p>
   }
-  <div class="sp-au-stat-grid">
-    <sp-admin-stat-card label="Total calls"     [value]="summary()!.totalCalls"                                   tone="indigo" />
-    <sp-admin-stat-card label="Success rate"    [value]="summary()!.successRate + '%'"                            tone="green"  />
-    <sp-admin-stat-card label="Failed calls"    [value]="summary()!.failedCalls"                                  tone="amber"  />
-    <sp-admin-stat-card label="Fallback calls"  [value]="summary()!.fallbackCalls"                                tone="violet" />
-    <sp-admin-stat-card label="Total cost"      [value]="'$' + summary()!.totalCostUsd.toFixed(4)"               tone="teal"   />
-    <sp-admin-stat-card label="Input tokens"    [value]="formatTokens(summary()!.totalInputTokens)"   tone="indigo" />
-    <sp-admin-stat-card label="Output tokens"   [value]="formatTokens(summary()!.totalOutputTokens)"  tone="indigo" />
-    <sp-admin-stat-card label="Total tokens"    [value]="formatTokens(summary()!.totalTokens)"        tone="indigo" />
+  <div class="sp-au-kpi-strip" aria-label="AI usage summary">
+    <sp-admin-kpi-card label="Total requests" variant="indigo">
+      <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+      </svg>
+      {{ kpiSummary()!.totalCalls | number }}
+    </sp-admin-kpi-card>
+    <sp-admin-kpi-card label="Total cost" variant="teal">
+      <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+      ${{ kpiSummary()!.totalCostUsd.toFixed(4) }}
+    </sp-admin-kpi-card>
+    <sp-admin-kpi-card
+      label="Success rate"
+      [variant]="kpiSummary()!.successRate >= 90 ? 'green' : kpiSummary()!.successRate >= 70 ? 'amber' : 'violet'">
+      <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+      {{ kpiSummary()!.successRate }}%
+    </sp-admin-kpi-card>
+    <sp-admin-kpi-card
+      label="Failed calls"
+      [variant]="kpiSummary()!.failedCalls === 0 ? 'slate' : 'amber'">
+      <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+      </svg>
+      {{ kpiSummary()!.failedCalls | number }}
+    </sp-admin-kpi-card>
   </div>
+
   @if (summary()!.zeroCostCallCount > 0) {
     <sp-admin-alert variant="warning">
       {{ summary()!.zeroCostCallCount }} AI call{{ summary()!.zeroCostCallCount === 1 ? '' : 's' }} in this filtered range
@@ -144,7 +179,7 @@
   </div>
 }
 
-<sp-admin-card title="Usage trend">
+<sp-admin-card title="Calls over time">
   @if (loadingTrends()) {
     <sp-admin-loading-state message="Loading trend" />
   } @else if (trendError()) {
@@ -152,6 +187,16 @@
   } @else if (trendBuckets().length === 0) {
     <sp-admin-empty-state message="No trend data for selected filters." />
   } @else {
+    <!-- Mini bar chart from real trendBuckets data -->
+    <div class="sp-au-mini-bars" aria-label="Daily calls mini bar chart" role="img">
+      @for (bar of trendBars(); track $index) {
+        <div
+          class="sp-au-mini-bar"
+          [style.height.px]="bar.height"
+          [title]="bar.label"
+          [attr.aria-label]="bar.label"></div>
+      }
+    </div>
     <sp-admin-table variant="data" density="compact" minWidth="640px">
       <table>
         <thead>
@@ -200,6 +245,22 @@
     </sp-admin-table>
   }
 </sp-admin-card>
+
+<div class="sp-au-two-col">
+  <sp-admin-card title="Activities per day">
+    <p class="sp-au-not-impl" aria-label="Activities per day not implemented">
+      Backend not available yet — Activity completion counts by day require a
+      separate analytics endpoint that is not yet implemented.
+    </p>
+  </sp-admin-card>
+
+  <sp-admin-card title="Student engagement">
+    <p class="sp-au-not-impl" aria-label="Student engagement not implemented">
+      Backend not available yet — Engagement heatmap requires per-student
+      daily activity data that is not yet implemented.
+    </p>
+  </sp-admin-card>
+</div>
 
 <sp-admin-card title="Recent calls">
   @if (exportError()) {
