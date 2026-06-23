@@ -59,7 +59,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
         <div class="sp-dash-hero-stat sp-dash-hero-stat--placeholder">
           <div class="sp-dash-hero-value">—</div>
           <div class="sp-dash-hero-key">Activities this week</div>
-          <div class="sp-dash-hero-na">Not implemented</div>
+          <div class="sp-dash-hero-na">Backend not available yet</div>
         </div>
         <div class="sp-dash-hero-stat sp-dash-hero-stat--placeholder">
           <div class="sp-dash-hero-value">—</div>
@@ -168,7 +168,10 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
             <div class="sp-dash-status-rows">
               @for (s of atRiskStudents().slice(0, 4); track s.userId) {
                 <div class="sp-dash-status-row">
-                  <span class="sp-dash-student-email">{{ s.email }}</span>
+                  <div class="sp-dash-avatar-row">
+                    <span class="sp-dash-avatar" [style.background]="avatarColor(s.email)">{{ avatarInitial(s.email) }}</span>
+                    <span class="sp-dash-student-email">{{ s.email }}</span>
+                  </div>
                   <sp-admin-badge tone="warning">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
                 </div>
               }
@@ -291,7 +294,12 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
             <tbody>
               @for (s of students().slice(0,5); track s.userId) {
                 <tr>
-                  <td>{{ s.email }}</td>
+                  <td>
+                    <div class="sp-dash-avatar-row">
+                      <span class="sp-dash-avatar" [style.background]="avatarColor(s.email)">{{ avatarInitial(s.email) }}</span>
+                      <span>{{ s.email }}</span>
+                    </div>
+                  </td>
                   <td>
                     <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">
                       {{ onboardingLabel(s.onboardingStatus) }}
@@ -323,7 +331,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
   styles: [`
     /* Hero banner */
     .sp-dash-hero {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%);
+      background: linear-gradient(135deg, #211B36 0%, #2D2455 100%);
       border-radius: 16px;
       padding: 24px 28px;
       color: #fff;
@@ -334,7 +342,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       font-weight: 700;
       letter-spacing: .08em;
       text-transform: uppercase;
-      color: #a5b4fc;
+      color: rgba(255,255,255,.45);
       margin-bottom: 16px;
     }
     .sp-dash-hero-grid {
@@ -352,13 +360,13 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     }
     .sp-dash-hero-key {
       font-size: 12px;
-      color: #c7d2fe;
+      color: rgba(255,255,255,.5);
       margin-top: 4px;
     }
-    .sp-dash-hero-stat--placeholder .sp-dash-hero-value { color: #818cf8; }
+    .sp-dash-hero-stat--placeholder .sp-dash-hero-value { color: rgba(255,255,255,.35); }
     .sp-dash-hero-na {
       font-size: 10px;
-      color: #818cf8;
+      color: rgba(255,255,255,.35);
       margin-top: 2px;
       font-style: italic;
     }
@@ -450,6 +458,15 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     /* At-risk note */
     .sp-dash-at-risk-note { font-size: 10.5px; color: #94a3b8; margin-top: 10px; font-style: italic; }
 
+    /* Avatar */
+    .sp-dash-avatar {
+      flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; color: #fff; line-height: 1;
+    }
+    .sp-dash-avatar-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .sp-dash-avatar-row > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
     /* Table helpers */
     .sp-dash-mini-empty { color: #CBD5E1; font-size: 12px; }
     .sp-dash-table-muted { color: #94a3b8; }
@@ -530,14 +547,17 @@ export class AdminDashboardComponent implements OnInit {
   readonly onboardingFunnelItems = computed<BreakdownBarItem[]>(() => {
     const ss = this.students();
     const total = ss.length || 1;
-    const completed = ss.filter(s => s.onboardingStatus === 'Completed').length;
+    const completed  = ss.filter(s => s.onboardingStatus === 'Completed').length;
+    const cefrPlaced = ss.filter(s => !!s.cefrLevel).length;
     const inProgress = ss.filter(s => s.onboardingStatus === 'InProgress').length;
     const notStarted = ss.filter(s => s.onboardingStatus === 'NotStarted').length;
-    return [
-      { label: 'Completed', value: completed, pct: Math.round((completed / total) * 100), tone: 'green' },
-      { label: 'In progress', value: inProgress, pct: Math.round((inProgress / total) * 100), tone: 'amber' },
-      { label: 'Not started', value: notStarted, pct: Math.round((notStarted / total) * 100), tone: 'slate' },
+    const rows: BreakdownBarItem[] = [
+      { label: 'Onboarded',    value: completed,  pct: Math.round((completed  / total) * 100), tone: 'green' },
+      { label: 'CEFR placed',  value: cefrPlaced, pct: Math.round((cefrPlaced / total) * 100), tone: 'teal' },
+      { label: 'In progress',  value: inProgress, pct: Math.round((inProgress / total) * 100), tone: 'amber' },
+      { label: 'Not onboarded',value: notStarted, pct: Math.round((notStarted / total) * 100), tone: 'slate' },
     ];
+    return rows;
   });
 
   readonly lifecycleCounts = computed(() => {
@@ -551,6 +571,17 @@ export class AdminDashboardComponent implements OnInit {
 
   readonly onboardingLabel = onboardingLabel;
   readonly onboardingTone = onboardingTone;
+
+  avatarInitial(email: string): string {
+    return (email?.[0] ?? '?').toUpperCase();
+  }
+
+  avatarColor(email: string): string {
+    const palette = ['#5B4BE8','#16a34a','#D97706','#0891b2','#7C3AED','#DC2626','#0F766E'];
+    let h = 0;
+    for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xFFFFFF;
+    return palette[Math.abs(h) % palette.length];
+  }
 
   constructor(private adminApi: AdminApiService) {}
 

@@ -283,3 +283,26 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - **Dashboard**: upgraded 6 placeholder cards with skeleton variants (Activity trends → chart, Score distribution → chart, AI spend by type → grid, Avg session duration → ring, Streak leaderboard → timeline, Live events feed → timeline).
 - 15 new component specs. 1324/1324 PASS.
 - Review: `docs/reviews/2026-06-24-phase-10ui-visual-3-admin-graph-cards-reference-density.md`
+
+## Changes Made in 10UI-VISUAL-FINAL
+
+Visual fidelity audit comparing all admin routes against the reference design. Tiny safe polish fixes applied to dashboard only.
+
+**Fixes applied:**
+- Hero banner gradient: warm near-black `#211B36 → #2D2455` (was cool indigo).
+- Hero label/subtext/placeholder colours: changed from cool indigo `#a5b4fc`/`#c7d2fe`/`#818cf8` to warm opacity values matching reference.
+- Hero placeholder label: unified both to "Backend not available yet".
+- Onboarding funnel: added CEFR placed stage (4th stage from `cefrLevel` computed); renamed stages to Onboarded / CEFR placed / In progress / Not onboarded.
+- Avatar tiles: added to at-risk student list rows and recent students table email cells. `avatarInitial()` + `avatarColor()` hash helpers added to component class.
+
+**Key audit findings:**
+- Dashboard fidelity: 6/10. Biggest gaps are missing backend aggregate endpoints (activity chart, score distribution, AI cost breakdown, streak leaderboard). All currently skeleton-placeholder.
+- AI Usage fidelity: 5/10. Area chart, activities bar chart, and heatmap all need new endpoints.
+- Student list fidelity: 8/10. Missing streak + mins/wk columns (backend not available).
+- Most other routes: 7–8/10.
+- Root cause of remaining visual gaps: **missing backend aggregate endpoints**, not frontend component quality.
+
+**No frontend component, business logic, or backend changes beyond the fixes above.**
+- 1324/1324 tests pass.
+- Review: `docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-audit.md`
+- TODOs: TODO-VISUAL-01 through TODO-VISUAL-12 added to TODOS.md.

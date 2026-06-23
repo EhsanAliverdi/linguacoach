@@ -397,3 +397,70 @@ Rollout plan: docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-rede
 - TODO-REDESIGN-8 (P3): **10UI-REDESIGN-8** — Diagnostics + Security reference redesign. Diagnostics: minor border card style. Security: no reference counterpart — keep current.
 - ~~TODO-REDESIGN-FINAL~~: **10UI-REDESIGN-FINAL** — Admin UI reference alignment closure audit across all routes. **DONE 2026-06-23.** Notifications header fix, 2 new tests, 1253/1253 PASS. Closure review: `docs/reviews/2026-06-23-phase-10ui-redesign-final-admin-ui-reference-closure-audit.md`.
 - ~~TODO-STYLE-1~~: **10UI-STYLE-1** — Admin reusable component visual alignment. **DONE 2026-06-23.** Token colour palette → warm purple ink; green → brand green; shadows → purple-tinted; radius scale updated; KPI card typography upgraded; card title uses tokens; badge weight 700; table header muted/800; page header tighter tracking; 11 new sp-adm-* form classes; notifications+integrations Tailwind debt closed. 1253/1253 PASS. Review: `docs/reviews/2026-06-23-phase-10ui-style-1-admin-reusable-component-visual-alignment.md`.
+
+---
+
+## Admin UI — Visual Fidelity Gaps (from 10UI-VISUAL-FINAL, 2026-06-24)
+
+Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-audit.md
+
+### TODO-VISUAL-01 — Dashboard activity trends chart (P1)
+**What:** Replace `skeleton="chart"` placeholder on dashboard "Activity trends" card with a real SVG bar or area chart.
+**Why:** Largest single visual gap between dashboard and reference (reference shows 14-day bezier area chart with hover tooltips).
+**Needs:** New backend endpoint `GET /admin/stats/activities-per-day?days=N` returning daily activity buckets.
+**Phase:** 10UI-BACKEND-AGG-1
+
+### TODO-VISUAL-02 — Dashboard score distribution chart (P1)
+**What:** Replace `skeleton="chart"` placeholder with real 5-bin horizontal bar chart.
+**Needs:** New backend endpoint `GET /admin/stats/score-distribution`.
+**Phase:** 10UI-BACKEND-AGG-1
+
+### TODO-VISUAL-03 — Dashboard AI spend donut/breakdown (P1)
+**What:** Replace `skeleton="grid"` placeholder with per-category AI cost breakdown bars.
+**Needs:** Extend `/admin/ai/usage/summary` to return per-category cost breakdown, or wire existing `byFeature[]` cost data.
+**Phase:** 10UI-BACKEND-AGG-1 (can partially use existing `byFeature` from AI Usage summary)
+
+### TODO-VISUAL-04 — Dashboard streak leaderboard (P1)
+**What:** Replace `skeleton="timeline"` placeholder with named student streak list (top 5).
+**Needs:** New backend endpoint `GET /admin/stats/streaks`.
+**Phase:** 10UI-BACKEND-AGG-1
+
+### TODO-VISUAL-05 — AI Usage activities bar chart (P1)
+**What:** Replace `skeleton="chart"` placeholder with 14-bar activities-per-day chart.
+**Needs:** Same `GET /admin/stats/activities-per-day` endpoint as TODO-VISUAL-01.
+**Phase:** 10UI-BACKEND-AGG-1
+
+### TODO-VISUAL-06 — AI Usage student engagement heatmap (P1)
+**What:** Replace `skeleton="ring"` placeholder with 7×12 GitHub-style activity heatmap.
+**Needs:** New backend endpoint `GET /admin/stats/activity-heatmap?weeks=12`.
+**Phase:** 10UI-BACKEND-AGG-2 (complex)
+
+### TODO-VISUAL-07 — Dashboard system health: per-service latency (P2)
+**What:** Add per-service response-time bars to system health card (Writing AI, Feedback AI, DB, Auth).
+**Needs:** New backend endpoint `GET /admin/health/detailed` returning per-service latency.
+**Phase:** 10UI-BACKEND-AGG-1
+
+### TODO-VISUAL-08 — Dashboard pending actions: computed contextual list (P2)
+**What:** Replace hardcoded "Admin quick actions" 4-card grid with a computed contextual pending-action list derived from real student + AI config state.
+**Can be built now** from existing loaded signals: `atRiskStudents().length`, `cefrDistribution()` zero-CEFR count, `aiCategories()` unconfigured count.
+**Phase:** 10UI-POLISH-1
+
+### TODO-VISUAL-09 — AI Config: category edit should use slide-over not centered modal (P2)
+**What:** The AI Config category edit form uses `sp-admin-modal` (centered). Reference uses a right-side slide-in drawer.
+**Can be built now** using existing `sp-admin-slide-over` component.
+**Phase:** 10UI-POLISH-1
+
+### TODO-VISUAL-10 — Toggle switch component (P2)
+**What:** Exercise Types and Notifications use button variants for enable/disable. Reference uses a dedicated CSS toggle-switch pill component.
+**Can be built now** — new small component, no backend changes.
+**Phase:** 10UI-POLISH-1
+
+### TODO-VISUAL-11 — Students list and dashboard: avatar tiles in rows (P3)
+**What:** Avatar tiles (coloured initial circle) added to dashboard at-risk list and recent students table in VISUAL-FINAL. Students list page itself still has no per-row avatars.
+**Can be built now.**
+**Phase:** 10UI-POLISH-1
+
+### TODO-VISUAL-12 — Dashboard live events feed (P2)
+**What:** Real-time scrollable events feed card. Currently skeleton placeholder.
+**Needs:** SignalR or polling endpoint for live diagnostic events.
+**Phase:** 10UI-BACKEND-AGG-2 (complex)
