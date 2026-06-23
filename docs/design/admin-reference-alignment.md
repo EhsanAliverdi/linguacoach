@@ -133,8 +133,8 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 | `/admin/curriculum` | AdminCurriculumComponent | Complete | **Complete** — 4-tile KPI coverage strip (total, active, CEFR bands, skills covered) derived from full objective list | Resolved in 10UI-REDESIGN-4 | Done |
 | `/admin/notifications` | AdminNotificationsComponent | Complete | **Complete** — KPI channel summary strip (InApp/Email/SMS Foundation only/Dispatch), CSS token tab bar, sp-admin-kpi-card config status strip, sp-admin-card named titles, sp-admin-button (clicked) actions | Resolved in 10UI-REDESIGN-7 | Done |
 | `/admin/integrations` | AdminIntegrationsComponent | Complete | **Complete** — Integration card grid (storage real, SMTP link, Webhook/Slack/Analytics/Admin API all not-implemented), sp-admin-kpi-card for background job metrics | Resolved in 10UI-REDESIGN-7 | Done |
-| `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | **Looks close** | Minor: outlined border card style vs sp-admin-card | 10UI-REDESIGN-8 (P3) |
-| `/admin/security` | AdminSecurityComponent | Complete | **Looks close** | No reference counterpart — deferred capabilities card added in FIX-8 | 10UI-REDESIGN-8 (P3) |
+| `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | **Complete** — KPI strip (database/AI/errors/warnings from real data), (clicked) on all buttons, CSS token classes, subtitle updated | Resolved in 10UI-REDESIGN-8 | Done |
+| `/admin/security` | AdminSecurityComponent | Complete | **Complete** — header order fixed, title/subtitle updated, tab bar CSS tokens, KPI strip (password/lockout/rate policies/Google OAuth), settings cards CSS tokens, JWT+secret notes | Resolved in 10UI-REDESIGN-8 | Done |
 | `/admin/careers` | — | — | **Resolved** — redirects to `/admin/curriculum` | — | Done |
 
 ---
@@ -173,6 +173,12 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-8
+
+- Diagnostics: KPI strip (Database/AI provider/Errors (loaded)/Warnings (loaded)) from real status+events data. `(click)` → `(clicked)` on all `sp-admin-button` bindings. Subtitle updated. CSS token classes for count row and meta text.
+- Security: `sp-admin-page-header` moved outside `sp-admin-page-body` (was incorrectly nested). Title `Security Settings` → `Security`. Subtitle updated. Tab bar converted from Tailwind color literals to CSS token classes (`.sp-sec-tab`/`.sp-sec-tab--active`). KPI strip (password length/lockout/rate policies/Google OAuth) from real settings. Settings cards refactored to CSS token layout classes (`.sp-sec-setting-grid`/`.sp-sec-field`). JWT signing key note and Google client secret note added.
+- 30 new tests (10 diagnostics KPI, 20 security). 1251/1251 PASS.
 
 ## Changes Made in 10UI-REDESIGN-7
 
