@@ -129,8 +129,8 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 | `/admin/prompts` | AdminPromptsComponent | Complete | **Looks close** | Minor: tab+search same row, inline row action buttons | 10UI-REDESIGN-5 (P3) |
 | `/admin/usage` | AdminAiUsageComponent | Complete | **Looks close** | Missing: area chart, bar chart, heatmap, date range pills | 10UI-REDESIGN-6 (P2) |
 | `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | **Looks close** | No reference counterpart — keep as-is | 10UI-REDESIGN-6 (P3) |
-| `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | **Partial** | Missing: card-per-type layout with icon tile, expandable stat grid | 10UI-REDESIGN-4 (P2) |
-| `/admin/curriculum` | AdminCurriculumComponent | Complete | **Partial** | Missing: track-level icon cards (backend has objectives table, not tracks) | 10UI-REDESIGN-4 (P2) |
+| `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | **Complete** — KPI summary strip, skill-coloured icon tile per row, "Not runnable yet" label for non-ready types | Resolved in 10UI-REDESIGN-4 | Done |
+| `/admin/curriculum` | AdminCurriculumComponent | Complete | **Complete** — 4-tile KPI coverage strip (total, active, CEFR bands, skills covered) derived from full objective list | Resolved in 10UI-REDESIGN-4 | Done |
 | `/admin/notifications` | AdminNotificationsComponent | Complete | **Looks close** | Missing: webhook channel card (placeholder) | 10UI-REDESIGN-7 (P3) |
 | `/admin/integrations` | AdminIntegrationsComponent | Complete | **Old layout** | Reference integrations concept (SMTP/Webhook/Slack/Analytics/Admin API) not surfaced; current page is MinIO/jobs domain | 10UI-REDESIGN-7 (P1) |
 | `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | **Looks close** | Minor: outlined border card style vs sp-admin-card | 10UI-REDESIGN-8 (P3) |
@@ -173,6 +173,12 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-4
+
+- Curriculum: 4-tile KPI coverage strip added above objectives table (total, active, CEFR bands, skills). Derived from full `listObjectives()` response via separate `allObjectives` signal and `loadAll()` method. No fake data.
+- Exercise Types: 4-tile KPI summary strip (total, enabled, ready, skills). Skill-coloured icon tile added to name cell. "Not runnable yet — foundation only" amber label for non-ready types. Reference avg-completion/score stats not shown (no backend endpoint).
+- 18 new tests. 1186/1186 pass.
 
 ## Changes Made in 10UI-REDESIGN-3
 
