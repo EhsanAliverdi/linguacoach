@@ -31,14 +31,15 @@ import { CommonModule } from '@angular/common';
       font-size: 22px;
       font-weight: 800;
       color: var(--sp-admin-text);
-      letter-spacing: -.02em;
+      letter-spacing: -.03em;
       margin: 0;
-      line-height: 1.2;
+      line-height: 1.15;
     }
     .sp-ph-sub {
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--sp-admin-text-muted);
       margin: 3px 0 0;
+      line-height: 1.5;
     }
     .sp-ph-actions {
       display: flex;

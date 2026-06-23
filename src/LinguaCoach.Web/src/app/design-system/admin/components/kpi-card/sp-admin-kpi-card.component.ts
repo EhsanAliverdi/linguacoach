@@ -24,17 +24,17 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
     .sp-kpi-card {
       background: var(--sp-admin-surface, #fff);
       border: 1px solid var(--sp-admin-border, #ECE9F5);
-      border-radius: 16px;
+      border-radius: var(--sp-admin-radius-md, 14px);
       padding: 20px;
       display: flex;
       align-items: center;
       gap: 16px;
-      box-shadow: var(--sp-admin-shadow-card, 0 1px 3px rgba(0,0,0,.06));
+      box-shadow: var(--sp-admin-shadow-card, 0 1px 2px rgba(33,27,54,.06));
     }
     .sp-kpi-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -49,17 +49,18 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
     .sp-kpi-body { min-width: 0; }
     .sp-kpi-label {
       font-size: 11px;
-      font-weight: 600;
-      color: var(--sp-admin-text-muted, #64748B);
+      font-weight: 800;
+      color: var(--sp-admin-text-muted, #8B85A0);
       text-transform: uppercase;
-      letter-spacing: .05em;
+      letter-spacing: .08em;
       margin-bottom: 4px;
     }
     .sp-kpi-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--sp-admin-text, #0F172A);
-      line-height: 1.1;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--sp-admin-text, #211B36);
+      letter-spacing: -.03em;
+      line-height: 1;
     }
   `],
 })

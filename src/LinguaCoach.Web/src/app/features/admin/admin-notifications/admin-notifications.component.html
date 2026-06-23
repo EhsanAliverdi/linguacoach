@@ -190,7 +190,7 @@
                 <td>{{ timeAgo(item.createdAtUtc) }}</td>
                 <td>{{ item.lastAttemptAtUtc ? timeAgo(item.lastAttemptAtUtc) : '—' }}</td>
                 <td>{{ item.nextAttemptAtUtc ? timeAgo(item.nextAttemptAtUtc) : '—' }}</td>
-                <td class="text-xs text-red-600 max-w-[200px] truncate" [title]="item.lastError ?? ''">
+                <td style="font-size:12px;color:var(--sp-admin-danger,#EF4444);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" [title]="item.lastError ?? ''">
                   {{ item.lastError ?? '—' }}
                 </td>
                 <td>
@@ -500,43 +500,41 @@
 
       @if (templateFormMode === 'create') {
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Template key <span class="text-red-500">*</span></label>
+          <label class="sp-adm-label">Template key <span class="sp-adm-label-req">*</span></label>
           <sp-admin-input size="sm" placeholder="account.password_reset" [(ngModel)]="tplKey" aria-label="Template key" />
-          <p class="text-xs text-gray-400 mt-1">Stable dot-separated key, e.g. account.password_reset</p>
+          <p class="sp-adm-hint">Stable dot-separated key, e.g. account.password_reset</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Channel <span class="text-red-500">*</span></label>
+          <label class="sp-adm-label">Channel <span class="sp-adm-label-req">*</span></label>
           <sp-admin-select size="sm" [options]="channelOptions" [(ngModel)]="tplChannel" aria-label="Channel" />
         </div>
       } @else {
-        <div class="text-xs text-gray-500 font-mono bg-gray-50 rounded px-3 py-2">
-          {{ tplKey }} / {{ tplChannel }}
-        </div>
+        <div class="sp-adm-code-preview">{{ tplKey }} / {{ tplChannel }}</div>
       }
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+        <label class="sp-adm-label">Name <span class="sp-adm-label-req">*</span></label>
         <sp-admin-input size="sm" placeholder="Template display name" [(ngModel)]="tplName" aria-label="Template name" />
       </div>
 
       @if (tplChannel === 'Email' || tplChannel === 'Sms') {
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Subject <span class="text-red-500">*</span></label>
+          <label class="sp-adm-label">Subject <span class="sp-adm-label-req">*</span></label>
           <sp-admin-input size="sm" placeholder="Email subject line" [(ngModel)]="tplSubject" aria-label="Subject" />
         </div>
       }
 
       @if (tplChannel === 'InApp') {
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+          <label class="sp-adm-label">Title <span class="sp-adm-label-req">*</span></label>
           <sp-admin-input size="sm" placeholder="In-app notification title" [(ngModel)]="tplTitle" aria-label="Title" />
         </div>
       }
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Body <span class="text-red-500">*</span></label>
+        <label class="sp-adm-label">Body <span class="sp-adm-label-req">*</span></label>
         <textarea
-          class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm focus:border-blue-300 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none font-mono"
+          class="sp-adm-textarea sp-adm-textarea-mono"
           rows="5"
           [placeholder]="'Body content. Use ' + '{{' + 'VarName' + '}}' + ' placeholders.'"
           [(ngModel)]="tplBody"
@@ -546,27 +544,27 @@
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <label class="sp-adm-label">Category</label>
           <sp-admin-select size="sm" [options]="categoryOptions" [(ngModel)]="tplCategory" aria-label="Category" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+          <label class="sp-adm-label">Severity</label>
           <sp-admin-select size="sm" [options]="severityOptions" [(ngModel)]="tplSeverity" aria-label="Severity" />
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-gray-400 font-normal">(optional)</span></label>
+        <label class="sp-adm-label">Description <span class="sp-adm-label-opt">(optional)</span></label>
         <sp-admin-input size="sm" placeholder="Internal description" [(ngModel)]="tplDescription" aria-label="Description" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Supported variables JSON <span class="text-gray-400 font-normal">(optional)</span></label>
+        <label class="sp-adm-label">Supported variables JSON <span class="sp-adm-label-opt">(optional)</span></label>
         <sp-admin-input size="sm" placeholder='["DisplayName","ResetLink"]' [(ngModel)]="tplSupportedVars" aria-label="Supported variables" />
       </div>
 
       @if (templateFormError()) {
-        <p class="text-sm text-red-600" role="alert">{{ templateFormError() }}</p>
+        <p class="sp-adm-hint-error" role="alert">{{ templateFormError() }}</p>
       }
       @if (templateFormSuccess()) {
         <p class="text-sm text-green-600" role="status">{{ templateFormSuccess() }}</p>
@@ -574,12 +572,12 @@
 
       <!-- Preview (edit mode only) -->
       @if (templateFormMode === 'edit') {
-        <div class="border-t border-gray-100 pt-4">
-          <h4 class="text-sm font-semibold text-gray-700 mb-2">Preview</h4>
+        <div class="sp-adm-section-divider">
+          <h4 class="sp-adm-label" style="font-size:13.5px;margin-bottom:8px;">Preview</h4>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Variables (JSON)</label>
+            <label class="sp-adm-hint" style="margin-bottom:4px;">Variables (JSON)</label>
             <textarea
-              class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-xs focus:border-blue-300 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none font-mono"
+              class="sp-adm-textarea sp-adm-textarea-mono"
               rows="2"
               placeholder='{"DisplayName": "Alice"}'
               [(ngModel)]="previewVariablesJson"
@@ -590,17 +588,17 @@
             {{ previewLoading() ? 'Rendering…' : 'Preview' }}
           </sp-admin-button>
           @if (previewError()) {
-            <p class="text-xs text-red-600 mt-1" role="alert">{{ previewError() }}</p>
+            <p class="sp-adm-hint-error" role="alert">{{ previewError() }}</p>
           }
           @if (previewResult()) {
-            <div class="mt-3 bg-gray-50 rounded p-3 text-xs space-y-2">
+            <div class="sp-adm-preview-box">
               @if (previewResult()!.renderedSubject) {
-                <div><span class="text-gray-500">Subject:</span> {{ previewResult()!.renderedSubject }}</div>
+                <div><span class="sp-adm-preview-field">Subject:</span> {{ previewResult()!.renderedSubject }}</div>
               }
               @if (previewResult()!.renderedTitle) {
-                <div><span class="text-gray-500">Title:</span> {{ previewResult()!.renderedTitle }}</div>
+                <div><span class="sp-adm-preview-field">Title:</span> {{ previewResult()!.renderedTitle }}</div>
               }
-              <div><span class="text-gray-500">Body:</span></div>
+              <div><span class="sp-adm-preview-field">Body:</span></div>
               <pre class="whitespace-pre-wrap break-words">{{ previewResult()!.renderedBody }}</pre>
               @if (previewResult()!.missingVariables.length > 0) {
                 <p class="text-amber-600">Missing variables: {{ previewResult()!.missingVariables.join(', ') }}</p>
@@ -631,7 +629,7 @@
 
       <!-- Recipient lookup -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Recipient email</label>
+        <label class="sp-adm-label">Recipient email</label>
         <div class="flex gap-2">
           <sp-admin-input
             size="sm"
@@ -650,13 +648,13 @@
           <p class="mt-1 text-xs text-green-600">Recipient: {{ sendResolvedEmail }}</p>
         }
         @if (studentSearchError()) {
-          <p class="mt-1 text-xs text-red-600" role="alert">{{ studentSearchError() }}</p>
+          <p class="sp-adm-hint-error" role="alert">{{ studentSearchError() }}</p>
         }
       </div>
 
       <!-- Channels -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Channels</label>
+        <label class="sp-adm-label">Channels</label>
         <div class="flex flex-col gap-2">
           <sp-admin-checkbox
             label="In-App"
@@ -666,7 +664,7 @@
             label="Email (queued — sent by dispatch job)"
             [(ngModel)]="sendChannelEmail"
             aria-label="Email channel" />
-          <p class="text-xs text-gray-500">
+          <p class="sp-adm-hint">
             SMS is not yet available. Email requires a configured email provider and is queued, not sent immediately.
           </p>
         </div>
@@ -674,7 +672,7 @@
 
       <!-- Title -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+        <label class="sp-adm-label">Title <span class="sp-adm-label-req">*</span></label>
         <sp-admin-input
           size="sm"
           placeholder="Notification title"
@@ -684,9 +682,9 @@
 
       <!-- Body -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Body <span class="text-red-500">*</span></label>
+        <label class="sp-adm-label">Body <span class="sp-adm-label-req">*</span></label>
         <textarea
-          class="w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm focus:border-blue-300 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none"
+          class="sp-adm-textarea"
           rows="4"
           placeholder="Notification body…"
           [(ngModel)]="sendBody"
@@ -697,7 +695,7 @@
       <!-- Category + Severity -->
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <label class="sp-adm-label">Category</label>
           <sp-admin-select
             size="sm"
             [options]="categoryOptions"
@@ -705,7 +703,7 @@
             aria-label="Notification category" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+          <label class="sp-adm-label">Severity</label>
           <sp-admin-select
             size="sm"
             [options]="severityOptions"
@@ -716,7 +714,7 @@
 
       <!-- Deep link (optional) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Deep link URL <span class="text-gray-400 font-normal">(optional)</span></label>
+        <label class="sp-adm-label">Deep link URL <span class="sp-adm-label-opt">(optional)</span></label>
         <sp-admin-input
           size="sm"
           placeholder="/dashboard"
@@ -726,7 +724,7 @@
 
       <!-- Feedback -->
       @if (sendError()) {
-        <p class="text-sm text-red-600" role="alert">{{ sendError() }}</p>
+        <p class="sp-adm-hint-error" role="alert">{{ sendError() }}</p>
       }
       @if (sendSuccess()) {
         <p class="text-sm text-green-600" role="status">{{ sendSuccess() }}</p>

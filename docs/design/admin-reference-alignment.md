@@ -174,6 +174,20 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
 - FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
 
+## Changes Made in 10UI-STYLE-1
+
+- Admin design tokens updated: text colours → warm purple ink palette (`#211B36`/`#4B4462`/`#8B85A0`/`#BDB8CC`); green → SpeakPath brand green (`#13B07C`/`#E0F6EE`); shadows → purple-tinted; radius scale stepped up (md=14px, lg=18px, xl=22px).
+- KPI card: value `28px/800`, label `800/0.08em`, icon `40px/11px radius`.
+- Card: title uses CSS token style; default radius `'md'` (14px); radius classes use tokens.
+- Badge: `font-weight 700`.
+- Data table header: `text-muted`, `800`, `0.08em`.
+- Page header: title `letter-spacing -.03em`, subtitle `13px`.
+- Global: 11 new `.sp-adm-*` form/slide-over utility classes added to `styles.css`.
+- Notifications: 29 Tailwind literals in slide-over forms → `sp-adm-*` CSS token classes. Debt from 10UI-REDESIGN-FINAL closed.
+- Integrations: 3 Tailwind literals → `.sp-adm-hint`. Debt from 10UI-REDESIGN-FINAL closed.
+- 1253/1253 PASS. Build clean.
+- Review: `docs/reviews/2026-06-23-phase-10ui-style-1-admin-reusable-component-visual-alignment.md`
+
 ## Changes Made in 10UI-REDESIGN-FINAL
 
 - Notifications: `sp-admin-page-header` moved outside `sp-admin-page-body` (was incorrectly nested — same structural fix as Security in REDESIGN-8). 2 new tests added. 1253/1253 PASS.

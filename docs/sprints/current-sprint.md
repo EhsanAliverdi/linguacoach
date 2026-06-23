@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-REDESIGN-FINAL)
+lastUpdated: 2026-06-23 (10UI-STYLE-1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,12 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-STYLE-1 — Admin Reusable Component Visual Alignment** — complete (2026-06-23)
+
+Admin design tokens updated to match SpeakPath brand: text/muted/dim colours → warm purple ink palette; green → brand green (`#13B07C`); shadows → purple-tinted. KPI card: value 28px/800, label 800 weight, icon 40px. Card: title CSS token style, default radius 14px. Badge: font-weight 700. Data table header: muted colour, 800 weight. Page header: tighter letter-spacing. Global styles: 11 new `.sp-adm-*` slide-over/form utility classes. Notifications: 29 Tailwind literals in slide-overs replaced. Integrations: 3 Tailwind literals replaced. All 14 admin routes benefit automatically. 1253/1253 PASS. Build clean. No backend changes. No data logic changes.
+
+---
 
 **Phase 10UI-REDESIGN-FINAL — Admin UI Reference Alignment Closure Audit** — complete (2026-06-23)
 

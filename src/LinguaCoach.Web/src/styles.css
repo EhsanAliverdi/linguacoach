@@ -194,6 +194,29 @@ body.admin-layout {
   --sp-zi-flyout:200;
 }
 
+/* ── Admin slide-over / form utility classes ────────────────────────────── */
+/* Replace raw Tailwind literals in admin slide-over forms */
+.sp-adm-label        { display:block; font-size:13px; font-weight:600; color:var(--sp-admin-text,#211B36); margin-bottom:4px; }
+.sp-adm-label-opt    { font-weight:400; color:var(--sp-admin-text-muted,#8B85A0); }
+.sp-adm-label-req    { color:var(--sp-admin-danger,#EF4444); }
+.sp-adm-hint         { font-size:12px; color:var(--sp-admin-text-muted,#8B85A0); margin-top:3px; }
+.sp-adm-hint-error   { font-size:12px; color:var(--sp-admin-danger,#EF4444); margin-top:3px; }
+.sp-adm-code-preview { background:var(--sp-admin-surface-subtle,#FBFAFE); border-radius:6px; padding:8px 12px; font-size:12px; font-family:monospace; color:var(--sp-admin-text-secondary,#4B4462); }
+.sp-adm-preview-box  { margin-top:12px; background:var(--sp-admin-surface-subtle,#FBFAFE); border-radius:8px; padding:12px; font-size:12px; }
+.sp-adm-preview-field{ color:var(--sp-admin-text-muted,#8B85A0); }
+.sp-adm-section-divider { border-top:1px solid var(--sp-admin-border,#ECE9F5); padding-top:16px; }
+.sp-adm-textarea {
+  width:100%; border-radius:8px; border:1px solid var(--sp-admin-border,#ECE9F5);
+  background:transparent; padding:8px 12px; font-size:13px;
+  color:var(--sp-admin-text,#211B36); resize:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+.sp-adm-textarea:focus {
+  outline:none; border-color:var(--sp-admin-primary,#5B4BE8);
+  box-shadow:var(--sp-admin-focus-ring,0 0 0 3px rgba(91,75,232,.15));
+}
+.sp-adm-textarea-mono { font-family:monospace; font-size:12px; }
+
 /* == Base ================================================================== */
 html {
   font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;

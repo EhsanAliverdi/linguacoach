@@ -25,7 +25,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
       @if (title || hasActions) {
         <header class="sp-adm-card-header px-6 py-5" [class.sp-adm-card-header-divider]="headerDivider">
           @if (title) {
-            <h2 class="sp-adm-card-title text-base font-medium text-gray-800 dark:text-white/90 m-0">{{ title }}</h2>
+            <h2 class="sp-adm-card-title">{{ title }}</h2>
           }
           <ng-content select="[slot=header]" />
           <ng-content select="[slot=actions]" />
@@ -52,10 +52,10 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     .sp-adm-card-dashed    { border-style:dashed; }
 
     /* Radius */
-    .sp-adm-card-radius-md  { border-radius:8px; }
-    .sp-adm-card-radius-lg  { border-radius:12px; }
-    .sp-adm-card-radius-xl  { border-radius:16px; }
-    .sp-adm-card-radius-2xl { border-radius:20px; }
+    .sp-adm-card-radius-md  { border-radius:var(--sp-admin-radius-md,14px); }
+    .sp-adm-card-radius-lg  { border-radius:var(--sp-admin-radius-lg,18px); }
+    .sp-adm-card-radius-xl  { border-radius:var(--sp-admin-radius-xl,22px); }
+    .sp-adm-card-radius-2xl { border-radius:var(--sp-admin-radius-xl,22px); }
 
     /* Hover */
     .sp-adm-card-hover { cursor:pointer; transition:box-shadow .15s,border-color .15s; }
@@ -66,7 +66,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
       display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
     .sp-adm-card-header-divider { border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
-    .sp-adm-card-title { margin:0; }
+    .sp-adm-card-title { margin:0; font-size:13.5px; font-weight:700; color:var(--sp-admin-text,#211B36); }
 
     /* Body padding */
     .sp-adm-card-body-none { padding:0; }
@@ -94,7 +94,7 @@ export class SpAdminCardComponent {
   @Input() title = '';
   @Input() variant: SpAdminCardVariant = 'default';
   @Input() padding: SpAdminCardPadding = 'md';
-  @Input() radius: SpAdminCardRadius = '2xl';
+  @Input() radius: SpAdminCardRadius = 'md';
   @Input() headerDivider = false;
   @Input() hover = false;
   @Input() loading = false;

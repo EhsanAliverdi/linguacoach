@@ -19,11 +19,11 @@
   --sp-admin-border-subtle: #F4F2FC;
 
   /* ── Text ────────────────────────────────────────────────────────────── */
-  --sp-admin-text: #0F172A;
-  --sp-admin-text-secondary: #334155;
-  --sp-admin-text-muted: #64748B;
-  --sp-admin-text-dim: #94A3B8;
-  --sp-admin-text-faint: #CBD5E1;
+  --sp-admin-text: #211B36;
+  --sp-admin-text-secondary: #4B4462;
+  --sp-admin-text-muted: #8B85A0;
+  --sp-admin-text-dim: #BDB8CC;
+  --sp-admin-text-faint: #D4D0E0;
 
   /* ── Brand / primary ─────────────────────────────────────────────────── */
   --sp-admin-primary: #5B4BE8;
@@ -32,9 +32,9 @@
   --sp-admin-primary-focus: #C0BAF9;
 
   /* ── Status tones ────────────────────────────────────────────────────── */
-  --sp-admin-green: #16A34A;
-  --sp-admin-green-bg: #F0FDF4;
-  --sp-admin-green-ring: #DCFCE7;
+  --sp-admin-green: #13B07C;
+  --sp-admin-green-bg: #E0F6EE;
+  --sp-admin-green-ring: #A8EDD4;
 
   --sp-admin-amber: #D97706;
   --sp-admin-amber-bg: #FFFBEB;
@@ -58,16 +58,16 @@
   /* ── Radii ───────────────────────────────────────────────────────────── */
   --sp-admin-radius-xs: 6px;
   --sp-admin-radius-sm: 8px;
-  --sp-admin-radius-md: 12px;
-  --sp-admin-radius-lg: 14px;
-  --sp-admin-radius-xl: 18px;
+  --sp-admin-radius-md: 14px;
+  --sp-admin-radius-lg: 18px;
+  --sp-admin-radius-xl: 22px;
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
-  --sp-admin-shadow-card: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
-  --sp-admin-shadow-card-hover: 0 4px 12px rgba(0,0,0,.08);
-  --sp-admin-shadow-action: 0 2px 8px rgba(91,75,232,.10);
-  --sp-admin-shadow-dropdown: 0 10px 32px rgba(15,23,42,.14);
-  --sp-admin-shadow-modal: 0 20px 60px rgba(15,23,42,.20);
+  --sp-admin-shadow-card: 0 1px 2px rgba(33,27,54,.06);
+  --sp-admin-shadow-card-hover: 0 8px 24px rgba(60,48,140,.10);
+  --sp-admin-shadow-action: 0 2px 8px rgba(91,75,232,.12);
+  --sp-admin-shadow-dropdown: 0 10px 32px rgba(33,27,54,.14);
+  --sp-admin-shadow-modal: 0 20px 60px rgba(33,27,54,.20);
 
   /* ── Typography ──────────────────────────────────────────────────────── */
   --sp-admin-font: inherit;

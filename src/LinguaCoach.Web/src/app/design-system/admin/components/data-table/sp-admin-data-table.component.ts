@@ -56,10 +56,10 @@ import { SpAdminEmptyStateComponent } from '../empty-state/sp-admin-empty-state.
       text-align: left;
       padding: 10px 14px;
       font-size: 11px;
-      font-weight: 700;
-      color: var(--sp-admin-text-dim);
+      font-weight: 800;
+      color: var(--sp-admin-text-muted);
       text-transform: uppercase;
-      letter-spacing: .05em;
+      letter-spacing: .08em;
       background: var(--sp-admin-surface-subtle);
       border-bottom: 1px solid var(--sp-admin-border);
     }
