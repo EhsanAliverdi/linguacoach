@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-FIX-7)
+lastUpdated: 2026-06-23 (10UI-REDESIGN-0)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,22 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-REDESIGN-0 — Admin Reference Redesign Rollout Plan** — complete (2026-06-23)
+
+Full route-by-route redesign plan for all 14 admin routes. Reference design files read and compared against current Angular components. Page redesign matrix, component gap matrix, and phase sequence produced. No Angular source changes. Two P1 gaps confirmed: dashboard (Old layout — 4 stat cards only) and integrations (domain mismatch — reference SMTP/Webhook/Slack/Analytics/Admin API not surfaced). Next phase: **10UI-REDESIGN-1** (dashboard reference redesign).
+
+Review: docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-redesign-rollout-plan.md
+
+---
+
+**Phase 10UI-FIX-8 — Notifications, Security, and Integrations Admin Polish** — complete (2026-06-23)
+
+SMS channel and config card: Foundation-only badge and warning alert. Security: deferred capabilities card listing MFA, enterprise SSO, distributed rate limiting, captcha, CSP/HSTS, SMS notifications, admin session management. Integrations: readiness pool aggregate placeholder card. 12 new tests. 1086/1086 pass.
+
+Review: docs/reviews/2026-06-23-phase-10ui-fix-8-notifications-security-integrations-polish.md
+
+---
 
 **Phase 10UI-FIX-7 — Student Detail Reference Alignment, Readiness Pool, Activity History** — complete (2026-06-23)
 

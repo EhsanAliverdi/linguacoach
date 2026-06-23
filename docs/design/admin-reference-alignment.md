@@ -115,25 +115,43 @@ Reference design NAV sections → Angular sidebar sections:
 
 ---
 
-## Page Status (updated 10UI-FIX-4)
+## Page Status (updated 10UI-REDESIGN-0 — 2026-06-23)
 
-| Route | Component | Wrapper usage | Stale/static UI | Priority gap |
-|-------|-----------|--------------|-----------------|--------------|
-| `/admin` | AdminDashboardComponent | Good | Static AI provider stat card; always-active AI badges | P1 — 10UI-FIX-5 |
-| `/admin/students` | AdminStudentsComponent | Good (minor: header action) | None | P2 — 10UI-FIX-6 |
-| `/admin/students/:id` | AdminStudentDetailComponent | Partial — raw page-header/badge | Missing readiness pool + activity history | P1 — 10UI-FIX-7 |
-| `/admin/create-student` | CreateStudentComponent | None — raw sp-input/sp-label | None | P2 — 10UI-FIX-6 |
-| `/admin/ai-config` | AdminAiConfigComponent | Good | None | P3 — 10UI-FIX-9 |
-| `/admin/prompts` | AdminPromptsComponent | Complete | None | — |
-| `/admin/usage` | AdminAiUsageComponent | Complete | None | — |
-| `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | None | — |
-| `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | None | — |
-| `/admin/curriculum` | AdminCurriculumComponent | Partial — filter bar uses raw select | None | P2 — 10UI-FIX-6 |
-| `/admin/notifications` | AdminNotificationsComponent | Complete | SMS shows without "foundation only" label | P2 — 10UI-FIX-8 |
-| `/admin/integrations` | AdminIntegrationsComponent | Complete | Missing readiness pool status | P2 — 10UI-FIX-8 |
-| `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | None | — |
-| `/admin/security` | AdminSecurityComponent | Complete | Missing deferred-feature notes | P2 — 10UI-FIX-8 |
-| `/admin/careers` | AdminCareersComponent | **Orphan** — no wrappers | Entire page is stale/orphan | P0 — 10UI-FIX-5 |
+Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-redesign-rollout-plan.md`
+
+| Route | Component | Wrapper usage | Page-level redesign status | Reference gap | Redesign phase |
+|-------|-----------|--------------|---------------------------|---------------|----------------|
+| `/admin` | AdminDashboardComponent | Good | **Old layout** — 4 stat cards + quick actions only | Missing: dark hero banner, area chart, onboarding funnel, at-risk card, score dist, donut, streak, live feed, cohort strip, system health | 10UI-REDESIGN-1 (P1) |
+| `/admin/students` | AdminStudentsComponent | Complete | **Looks close** | Missing: lifecycle filter, archived toggle, rows/page selector, sort icons, per-row action menu | 10UI-REDESIGN-2 (P2) |
+| `/admin/students/:id` | AdminStudentDetailComponent | Complete | **Partial** | Missing: coloured avatar hero, danger zone card | 10UI-REDESIGN-3 (P2) |
+| `/admin/create-student` | CreateStudentComponent | Complete | **Old layout** | Missing: two-column layout, sticky summary panel, cohort stats sidebar, multi-section form cards | 10UI-REDESIGN-2 (P2) |
+| `/admin/ai-config` | AdminAiConfigComponent | Complete | **Partial** | Missing: rate limits/quotas section, dedicated TTS card | 10UI-REDESIGN-5 (P2) |
+| `/admin/prompts` | AdminPromptsComponent | Complete | **Looks close** | Minor: tab+search same row, inline row action buttons | 10UI-REDESIGN-5 (P3) |
+| `/admin/usage` | AdminAiUsageComponent | Complete | **Looks close** | Missing: area chart, bar chart, heatmap, date range pills | 10UI-REDESIGN-6 (P2) |
+| `/admin/usage-policies` | AdminUsagePoliciesComponent | Complete | **Looks close** | No reference counterpart — keep as-is | 10UI-REDESIGN-6 (P3) |
+| `/admin/exercise-types` | AdminExerciseTypesComponent | Complete | **Partial** | Missing: card-per-type layout with icon tile, expandable stat grid | 10UI-REDESIGN-4 (P2) |
+| `/admin/curriculum` | AdminCurriculumComponent | Complete | **Partial** | Missing: track-level icon cards (backend has objectives table, not tracks) | 10UI-REDESIGN-4 (P2) |
+| `/admin/notifications` | AdminNotificationsComponent | Complete | **Looks close** | Missing: webhook channel card (placeholder) | 10UI-REDESIGN-7 (P3) |
+| `/admin/integrations` | AdminIntegrationsComponent | Complete | **Old layout** | Reference integrations concept (SMTP/Webhook/Slack/Analytics/Admin API) not surfaced; current page is MinIO/jobs domain | 10UI-REDESIGN-7 (P1) |
+| `/admin/diagnostics` | AdminDiagnosticsComponent | Complete | **Looks close** | Minor: outlined border card style vs sp-admin-card | 10UI-REDESIGN-8 (P3) |
+| `/admin/security` | AdminSecurityComponent | Complete | **Looks close** | No reference counterpart — deferred capabilities card added in FIX-8 | 10UI-REDESIGN-8 (P3) |
+| `/admin/careers` | — | — | **Resolved** — redirects to `/admin/curriculum` | — | Done |
+
+---
+
+## Redesign phase sequence
+
+| Phase | Routes | Priority |
+|-------|--------|----------|
+| 10UI-REDESIGN-1 | `/admin` (dashboard) | P1 |
+| 10UI-REDESIGN-2 | `/admin/students`, `/admin/create-student` | P2 |
+| 10UI-REDESIGN-3 | `/admin/students/:id` | P2 |
+| 10UI-REDESIGN-4 | `/admin/curriculum`, `/admin/exercise-types` | P2 |
+| 10UI-REDESIGN-5 | `/admin/ai-config`, `/admin/prompts` | P2/P3 |
+| 10UI-REDESIGN-6 | `/admin/usage`, `/admin/usage-policies` | P2/P3 |
+| 10UI-REDESIGN-7 | `/admin/notifications`, `/admin/integrations` | P1/P3 |
+| 10UI-REDESIGN-8 | `/admin/diagnostics`, `/admin/security` | P3 |
+| 10UI-REDESIGN-FINAL | All routes — closure audit | — |
 
 ---
 
@@ -147,6 +165,18 @@ Reference design NAV sections → Angular sidebar sections:
 
 - Tiny CSS token fixes across 6 admin page components (blue/indigo literals → `var(--sp-admin-primary,#5B4BE8)`).
 - Tab bar `border-blue-600`/`text-blue-600` → indigo on notifications page.
-- Page matrix, wrapper misuse matrix, stale UI matrix, and recommended phases documented in `docs/reviews/2026-06-23-phase-10ui-fix-4-admin-page-level-spot-check.md`.
-- Added TODO-UI-11 (careers orphan decision).
-- Next phase: **10UI-FIX-5** — dashboard static cards + careers redirect.
+- Page matrix, wrapper misuse matrix, stale UI matrix documented in `docs/reviews/2026-06-23-phase-10ui-fix-4-admin-page-level-spot-check.md`.
+
+## Changes Made in 10UI-FIX-5 through 10UI-FIX-8
+
+- FIX-5: Careers redirect resolved. Dashboard AI provider stat card wired to live backend.
+- FIX-6: Students header, create-student, curriculum filter bar wrapper migration complete.
+- FIX-7: Student detail full wrapper migration + readiness pool section + activity history.
+- FIX-8: Notifications SMS foundation-only label, Security deferred capabilities card, Integrations readiness pool placeholder.
+
+## Changes Made in 10UI-REDESIGN-0
+
+- Full route-by-route redesign rollout plan created.
+- Page redesign matrix and component gap matrix produced.
+- Phase sequence confirmed: next phase is **10UI-REDESIGN-1** (dashboard reference redesign).
+- No Angular source changes in this phase.

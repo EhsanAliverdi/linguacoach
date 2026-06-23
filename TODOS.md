@@ -380,3 +380,19 @@ Brand palette, sidebar widths, header height, border colors, background, nav ite
 **Why:** Admin trust in dashboard depends on data being real.
 **Context:** Reference `dashboard.jsx` computes all stats from mock data. Angular counterpart has at least one static card.
 **Deferred from:** Phase 10UI-FIX-1, 2026-06-23. Related: TODO-UI-06.
+
+---
+
+## Admin UI — Reference Redesign Phases (from 10UI-REDESIGN-0, 2026-06-23)
+
+Rollout plan: docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-redesign-rollout-plan.md
+
+- TODO-REDESIGN-1 (P1): **10UI-REDESIGN-1** — Dashboard reference redesign. Dark hero banner, 4-col KPI icon tiles, onboarding funnel card, at-risk students card, cohort engagement metric strip, system health card, activity area chart (placeholder), score distribution (placeholder), streak leaderboard (placeholder), live events feed (placeholder), AI cost donut (placeholder). Real data: students, stats, system health. Placeholders: charts, streak, live feed.
+- TODO-REDESIGN-2 (P2): **10UI-REDESIGN-2** — Students list + Create Student redesign. Students: lifecycle filter, archived toggle, rows/page selector, sort icons, per-row action menu. Create student: two-column layout with sticky "What happens next" panel and cohort stats sidebar.
+- TODO-REDESIGN-3 (P2): **10UI-REDESIGN-3** — Student detail completion. Coloured avatar hero section with badge row and action buttons. Danger zone card (reset password, reset data, archive).
+- TODO-REDESIGN-4 (P2): **10UI-REDESIGN-4** — Curriculum + Exercise Types redesign. Curriculum: track-level icon cards alongside objectives table (backend has objectives, not tracks — show placeholder for track management). Exercise types: card-per-type layout with icon tile, expandable stat grid.
+- TODO-REDESIGN-5 (P2): **10UI-REDESIGN-5** — AI Config + Prompts redesign. AI Config: rate limits/quotas section (placeholder — no endpoint), dedicated TTS settings card. Prompts: tab+search same row, inline row action buttons.
+- TODO-REDESIGN-6 (P2): **10UI-REDESIGN-6** — AI Usage + Usage Policies redesign. AI Usage: date range pills, SVG area chart, SVG bar chart, SVG heatmap (all placeholders or real data per endpoint availability). Usage Policies: no reference counterpart — keep as-is.
+- TODO-REDESIGN-7 (P1): **10UI-REDESIGN-7** — Notifications + Integrations redesign. Notifications: webhook channel card (placeholder). Integrations: add platform integrations section (SMTP=real, Webhook/Slack/Analytics=placeholder, Admin API=placeholder) alongside existing MinIO/jobs infrastructure section.
+- TODO-REDESIGN-8 (P3): **10UI-REDESIGN-8** — Diagnostics + Security reference redesign. Diagnostics: minor border card style. Security: no reference counterpart — keep current.
+- TODO-REDESIGN-FINAL: **10UI-REDESIGN-FINAL** — Admin UI reference alignment closure audit across all routes.
