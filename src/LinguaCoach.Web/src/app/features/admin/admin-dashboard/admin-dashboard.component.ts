@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, AdminStats, AiConfigCategoryItem, AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats, AiConfigCategoryItem, AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse, AdminAiUsageTrendResponse } from '../../../core/models/admin.models';
 import { SpAdminStatCardTone } from '../../../design-system/admin/components/stat-card/sp-admin-stat-card.component';
 import {
   SpAdminPageBodyComponent,
@@ -58,15 +58,20 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
           <div class="sp-dash-hero-value">{{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}</div>
           <div class="sp-dash-hero-key">Total students</div>
         </div>
-        <div class="sp-dash-hero-stat sp-dash-hero-stat--placeholder">
-          <div class="sp-dash-hero-value">—</div>
-          <div class="sp-dash-hero-key">Activities this week</div>
-          <div class="sp-dash-hero-na">Backend not available yet</div>
+        <div class="sp-dash-hero-stat" [class.sp-dash-hero-stat--placeholder]="loadingActivityTrends() || heroActivitiesThisWeek() === null">
+          <div class="sp-dash-hero-value">
+            @if (loadingActivityTrends()) { — } @else { {{ heroActivitiesThisWeek() ?? 0 }} }
+          </div>
+          <div class="sp-dash-hero-key">Activity attempts (7d)</div>
         </div>
-        <div class="sp-dash-hero-stat sp-dash-hero-stat--placeholder">
-          <div class="sp-dash-hero-value">—</div>
-          <div class="sp-dash-hero-key">Avg score</div>
-          <div class="sp-dash-hero-na">Backend not available yet</div>
+        <div class="sp-dash-hero-stat" [class.sp-dash-hero-stat--placeholder]="loadingScoreDistribution() || heroAvgScore() === null">
+          <div class="sp-dash-hero-value">
+            @if (loadingScoreDistribution()) { — } @else if (heroAvgScore() !== null) { {{ heroAvgScore() | number:'1.0-1' }} } @else { — }
+          </div>
+          <div class="sp-dash-hero-key">Avg score (7d)</div>
+          @if (!loadingScoreDistribution() && heroAvgScore() === null) {
+            <div class="sp-dash-hero-na">No scored attempts yet</div>
+          }
         </div>
       </div>
     </div>
@@ -97,7 +102,13 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
       <sp-admin-kpi-card label="AI cost (7 d)" variant="slate">
         <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        <span class="sp-dash-kpi-na">Not implemented</span>
+        @if (loadingAiUsageTrends7d()) {
+          <span class="sp-dash-kpi-na">—</span>
+        } @else if (aiUsageTrends7dError()) {
+          <span class="sp-dash-kpi-na">Unavailable</span>
+        } @else {
+          {{ '$' + (heroAiCost7d()! | number:'1.2-4') }}
+        }
       </sp-admin-kpi-card>
     </div>
 
@@ -542,6 +553,29 @@ export class AdminDashboardComponent implements OnInit {
   loadingScoreDistribution = signal(true);
   scoreDistributionError = signal(false);
 
+  aiUsageTrends7d = signal<AdminAiUsageTrendResponse | null>(null);
+  loadingAiUsageTrends7d = signal(true);
+  aiUsageTrends7dError = signal(false);
+
+  readonly heroActivitiesThisWeek = computed<number | null>(() => {
+    const data = this.aiUsageTrends7d(); // reuse for cost; use activityTrends for attempts
+    const trends = this.activityTrends();
+    if (!trends) return null;
+    return trends.buckets.reduce((sum, b) => sum + b.activityCount, 0);
+  });
+
+  readonly heroAvgScore = computed<number | null>(() => {
+    const data = this.scoreDistribution();
+    if (!data) return null;
+    return data.averageScore ?? null;
+  });
+
+  readonly heroAiCost7d = computed<number | null>(() => {
+    const data = this.aiUsageTrends7d();
+    if (!data) return null;
+    return data.buckets.reduce((sum, b) => sum + b.cost, 0);
+  });
+
   readonly aiProviderLabel = computed<string>(() => {
     if (this.loadingAiCategories()) return '—';
     if (this.aiConfigError()) return 'Unknown';
@@ -724,9 +758,13 @@ export class AdminDashboardComponent implements OnInit {
       next: r => { this.activityTrends.set(r); this.loadingActivityTrends.set(false); },
       error: () => { this.activityTrendsError.set(true); this.loadingActivityTrends.set(false); },
     });
-    this.adminApi.getDashboardScoreDistribution('30d').subscribe({
+    this.adminApi.getDashboardScoreDistribution('7d').subscribe({
       next: r => { this.scoreDistribution.set(r); this.loadingScoreDistribution.set(false); },
       error: () => { this.scoreDistributionError.set(true); this.loadingScoreDistribution.set(false); },
+    });
+    this.adminApi.getAiUsageTrends('7d').subscribe({
+      next: r => { this.aiUsageTrends7d.set(r); this.loadingAiUsageTrends7d.set(false); },
+      error: () => { this.aiUsageTrends7dError.set(true); this.loadingAiUsageTrends7d.set(false); },
     });
   }
 }

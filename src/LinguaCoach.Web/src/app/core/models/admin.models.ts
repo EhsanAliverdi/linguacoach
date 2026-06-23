@@ -688,7 +688,7 @@ export interface ActivityTrendBucket { date: string; activityCount: number; comp
 export interface AdminDashboardActivityTrendResponse { period: string; buckets: ActivityTrendBucket[]; }
 
 export interface ScoreDistributionBucket { label: string; minScore: number; maxScore: number; count: number; }
-export interface AdminDashboardScoreDistributionResponse { period: string; totalScoredAttempts: number; buckets: ScoreDistributionBucket[]; }
+export interface AdminDashboardScoreDistributionResponse { period: string; totalScoredAttempts: number; buckets: ScoreDistributionBucket[]; averageScore: number | null; }
 
 export interface AdminAggAiUsageTrendBucket { date: string; requestCount: number; successfulCalls: number; failedCalls: number; inputTokens: number; outputTokens: number; totalTokens: number; cost: number; }
 export interface AdminAiUsageTrendResponse { period: string; buckets: AdminAggAiUsageTrendBucket[]; }

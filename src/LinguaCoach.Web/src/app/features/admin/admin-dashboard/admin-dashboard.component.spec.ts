@@ -92,7 +92,37 @@ function pagedOf(items: StudentListItem[]) {
 }
 
 const EMPTY_ACTIVITY_TRENDS = { period: '30d', buckets: [] };
-const EMPTY_SCORE_DIST = { period: '30d', totalScoredAttempts: 0, buckets: [] };
+const EMPTY_SCORE_DIST = { period: '7d', totalScoredAttempts: 0, buckets: [], averageScore: null };
+const EMPTY_AI_TRENDS = { period: '7d', buckets: [] };
+
+const REAL_ACTIVITY_TRENDS = {
+  period: '7d',
+  buckets: [
+    { date: '2026-06-18', activityCount: 3, completedCount: 2, failedCount: 1 },
+    { date: '2026-06-19', activityCount: 5, completedCount: 4, failedCount: 0 },
+  ],
+};
+
+const REAL_SCORE_DIST = {
+  period: '7d',
+  totalScoredAttempts: 10,
+  buckets: [
+    { label: '0–39', minScore: 0, maxScore: 39, count: 1 },
+    { label: '40–59', minScore: 40, maxScore: 59, count: 2 },
+    { label: '60–74', minScore: 60, maxScore: 74, count: 3 },
+    { label: '75–89', minScore: 75, maxScore: 89, count: 3 },
+    { label: '90–100', minScore: 90, maxScore: 100, count: 1 },
+  ],
+  averageScore: 67.5,
+};
+
+const REAL_AI_TRENDS = {
+  period: '7d',
+  buckets: [
+    { date: '2026-06-18', requestCount: 10, successfulCalls: 9, failedCalls: 1, inputTokens: 500, outputTokens: 200, totalTokens: 700, cost: 0.012 },
+    { date: '2026-06-19', requestCount: 5,  successfulCalls: 5, failedCalls: 0, inputTokens: 250, outputTokens: 100, totalTokens: 350, cost: 0.006 },
+  ],
+};
 
 function makeAdminApi(
   students: StudentListItem[] = [STUDENT],
@@ -107,6 +137,7 @@ function makeAdminApi(
     ),
     getDashboardActivityTrends: jasmine.createSpy('getDashboardActivityTrends').and.returnValue(of(EMPTY_ACTIVITY_TRENDS)),
     getDashboardScoreDistribution: jasmine.createSpy('getDashboardScoreDistribution').and.returnValue(of(EMPTY_SCORE_DIST)),
+    getAiUsageTrends: jasmine.createSpy('getAiUsageTrends').and.returnValue(of(EMPTY_AI_TRENDS)),
   };
 }
 
@@ -302,32 +333,28 @@ describe('AdminDashboardComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('5');
     });
 
-    it('shows "Not implemented" for activities this week slot', async () => {
+    it('shows activity attempts this week slot', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Activities this week');
-      expect(fixture.nativeElement.textContent).toContain('Not implemented');
+      expect(fixture.nativeElement.textContent).toContain('Activity attempts (7d)');
     });
 
-    it('shows "Backend not available yet" for avg score slot', async () => {
+    it('shows avg score slot', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Avg score');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
+      expect(fixture.nativeElement.textContent).toContain('Avg score (7d)');
     });
   });
 
   describe('KPI icon tile row', () => {
-    it('renders AI cost tile with Not implemented', async () => {
+    it('renders AI cost (7d) tile', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('AI cost');
-      expect(fixture.nativeElement.textContent).toContain('Not implemented');
+      expect(fixture.nativeElement.textContent).toContain('AI cost (7 d)');
     });
   });
 
-  describe('activity trends chart placeholder', () => {
-    it('renders activity chart card with placeholder text', async () => {
+  describe('activity trends chart', () => {
+    it('renders activity trends card', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('Activity trends');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
     });
   });
 
@@ -412,34 +439,29 @@ describe('AdminDashboardComponent', () => {
   });
 
   describe('placeholder cards', () => {
-    it('renders score distribution card with placeholder', async () => {
+    it('renders score distribution card', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('Score distribution');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
     });
 
     it('renders AI spend by type card with placeholder', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('AI spend by type');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
     });
 
     it('renders avg session duration card with placeholder', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('Avg session duration');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
     });
 
     it('renders streak leaderboard card with placeholder', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('Streak leaderboard');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
     });
 
-    it('renders live events feed card with placeholder', async () => {
+    it('renders live events feed card', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('Live events feed');
-      expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
     });
   });
 
@@ -471,11 +493,110 @@ describe('AdminDashboardComponent', () => {
   });
 
   describe('no fake data', () => {
-    it('does not show fake production data', async () => {
+    it('does not render hardcoded placeholder values', async () => {
       await setup([], { totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 });
       const text: string = fixture.nativeElement.textContent;
-      expect(text).not.toContain('$');
       expect(text).not.toContain('All clear');
+      expect(text).not.toContain('Not implemented');
+    });
+  });
+
+  describe('hero KPI — activities this week', () => {
+    it('calls getDashboardActivityTrends on init', async () => {
+      await setup();
+      expect(adminApi.getDashboardActivityTrends).toHaveBeenCalledTimes(1);
+    });
+
+    it('heroActivitiesThisWeek sums activityCount from real trend data', async () => {
+      adminApi = makeAdminApi();
+      adminApi.getDashboardActivityTrends.and.returnValue(of(REAL_ACTIVITY_TRENDS));
+      await TestBed.configureTestingModule({
+        imports: [AdminDashboardComponent],
+        providers: [
+          provideRouter([]),
+          { provide: AdminApiService, useValue: adminApi },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(AdminDashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(component.heroActivitiesThisWeek()).toBe(8); // 3 + 5
+    });
+
+    it('heroActivitiesThisWeek is null while loading', async () => {
+      await setup();
+      component.loadingActivityTrends.set(true);
+      component.activityTrends.set(null);
+      expect(component.heroActivitiesThisWeek()).toBeNull();
+    });
+  });
+
+  describe('hero KPI — avg score', () => {
+    it('calls getDashboardScoreDistribution on init', async () => {
+      await setup();
+      expect(adminApi.getDashboardScoreDistribution).toHaveBeenCalledTimes(1);
+    });
+
+    it('heroAvgScore returns averageScore from endpoint', async () => {
+      adminApi = makeAdminApi();
+      adminApi.getDashboardScoreDistribution.and.returnValue(of(REAL_SCORE_DIST));
+      await TestBed.configureTestingModule({
+        imports: [AdminDashboardComponent],
+        providers: [
+          provideRouter([]),
+          { provide: AdminApiService, useValue: adminApi },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(AdminDashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(component.heroAvgScore()).toBe(67.5);
+    });
+
+    it('heroAvgScore is null when no scored attempts', async () => {
+      await setup();
+      component.scoreDistribution.set({ period: '7d', totalScoredAttempts: 0, buckets: [], averageScore: null });
+      expect(component.heroAvgScore()).toBeNull();
+    });
+  });
+
+  describe('hero KPI — AI cost 7d', () => {
+    it('calls getAiUsageTrends on init', async () => {
+      await setup();
+      expect(adminApi.getAiUsageTrends).toHaveBeenCalledTimes(1);
+    });
+
+    it('heroAiCost7d sums cost from AI usage trend buckets', async () => {
+      adminApi = makeAdminApi();
+      adminApi.getAiUsageTrends.and.returnValue(of(REAL_AI_TRENDS));
+      await TestBed.configureTestingModule({
+        imports: [AdminDashboardComponent],
+        providers: [
+          provideRouter([]),
+          { provide: AdminApiService, useValue: adminApi },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(AdminDashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(component.heroAiCost7d()).toBeCloseTo(0.018, 5);
+    });
+
+    it('heroAiCost7d is null while loading', async () => {
+      await setup();
+      component.loadingAiUsageTrends7d.set(true);
+      component.aiUsageTrends7d.set(null);
+      expect(component.heroAiCost7d()).toBeNull();
+    });
+
+    it('heroAiCost7d is 0 when no AI usage data', async () => {
+      await setup();
+      component.aiUsageTrends7d.set({ period: '7d', buckets: [] });
+      component.loadingAiUsageTrends7d.set(false);
+      expect(component.heroAiCost7d()).toBe(0);
     });
   });
 });

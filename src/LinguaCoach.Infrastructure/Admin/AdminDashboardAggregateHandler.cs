@@ -83,7 +83,8 @@ public sealed class AdminDashboardAggregateHandler : IAdminDashboardAggregateHan
             new("90–100", 90, 100, Count(scores, 90, 100)),
         };
 
-        return new AdminDashboardScoreDistributionResponse(label, scores.Count, buckets);
+        double? averageScore = scores.Count > 0 ? Math.Round(scores.Average(), 1) : null;
+        return new AdminDashboardScoreDistributionResponse(label, scores.Count, buckets, averageScore);
     }
 
     public async Task<AdminAiUsageTrendResponse> GetAiUsageTrendsAsync(

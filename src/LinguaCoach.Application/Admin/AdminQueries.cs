@@ -406,7 +406,7 @@ public sealed record ActivityTrendBucket(string Date, int ActivityCount, int Com
 public sealed record AdminDashboardActivityTrendResponse(string Period, IReadOnlyList<ActivityTrendBucket> Buckets);
 
 public sealed record ScoreDistributionBucket(string Label, int MinScore, int MaxScore, int Count);
-public sealed record AdminDashboardScoreDistributionResponse(string Period, int TotalScoredAttempts, IReadOnlyList<ScoreDistributionBucket> Buckets);
+public sealed record AdminDashboardScoreDistributionResponse(string Period, int TotalScoredAttempts, IReadOnlyList<ScoreDistributionBucket> Buckets, double? AverageScore);
 
 public sealed record AdminAggAiUsageTrendBucket(string Date, int RequestCount, int SuccessfulCalls, int FailedCalls, long InputTokens, long OutputTokens, long TotalTokens, decimal Cost);
 public sealed record AdminAiUsageTrendResponse(string Period, IReadOnlyList<AdminAggAiUsageTrendBucket> Buckets);

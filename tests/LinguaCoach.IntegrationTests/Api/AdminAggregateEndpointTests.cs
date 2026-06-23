@@ -251,4 +251,31 @@ public sealed class AdminAggregateEndpointTests : IClassFixture<ApiTestFactory>
         var second = categories[1].GetProperty("requestCount").GetInt32();
         Assert.True(first >= second);
     }
+
+    // ── AverageScore field on score-distribution ─────────────────────────────
+
+    [Fact]
+    public async Task ScoreDistribution_EmptyDb_AverageScoreIsNull()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = AdminClient(token);
+        var response = await client.GetAsync("/api/admin/dashboard/score-distribution?period=7d");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        // averageScore should be null when no scored attempts exist
+        var avg = body.GetProperty("averageScore");
+        Assert.Equal(JsonValueKind.Null, avg.ValueKind);
+    }
+
+    [Fact]
+    public async Task ScoreDistribution_ResponseIncludesAverageScoreField()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = AdminClient(token);
+        var response = await client.GetAsync("/api/admin/dashboard/score-distribution?period=30d");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        // Field must exist (either null or a number)
+        Assert.True(body.TryGetProperty("averageScore", out _));
+    }
 }

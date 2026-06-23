@@ -61,12 +61,13 @@ function query(host: HTMLElement, selector: string): Element | null {
 
 describe('admin wrapper migration', () => {
   it('dashboard renders with admin wrapper components', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories', 'getDashboardActivityTrends', 'getDashboardScoreDistribution']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories', 'getDashboardActivityTrends', 'getDashboardScoreDistribution', 'getAiUsageTrends']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }));
     adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 0 }));
     adminApi.listAiCategories.and.returnValue(of([]));
     adminApi.getDashboardActivityTrends.and.returnValue(of({ period: '30d', buckets: [] }));
-    adminApi.getDashboardScoreDistribution.and.returnValue(of({ period: '30d', totalScoredAttempts: 0, buckets: [] }));
+    adminApi.getDashboardScoreDistribution.and.returnValue(of({ period: '7d', totalScoredAttempts: 0, buckets: [], averageScore: null }));
+    adminApi.getAiUsageTrends.and.returnValue(of({ period: '7d', buckets: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],
@@ -352,12 +353,13 @@ describe('admin wrapper migration', () => {
   });
 
   it('dashboard renders KPI grid cards', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories', 'getDashboardActivityTrends', 'getDashboardScoreDistribution']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories', 'getDashboardActivityTrends', 'getDashboardScoreDistribution', 'getAiUsageTrends']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }));
     adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 42 }));
     adminApi.listAiCategories.and.returnValue(of([]));
     adminApi.getDashboardActivityTrends.and.returnValue(of({ period: '30d', buckets: [] }));
-    adminApi.getDashboardScoreDistribution.and.returnValue(of({ period: '30d', totalScoredAttempts: 0, buckets: [] }));
+    adminApi.getDashboardScoreDistribution.and.returnValue(of({ period: '7d', totalScoredAttempts: 0, buckets: [], averageScore: null }));
+    adminApi.getAiUsageTrends.and.returnValue(of({ period: '7d', buckets: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],

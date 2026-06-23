@@ -404,30 +404,29 @@ Rollout plan: docs/reviews/2026-06-23-phase-10ui-redesign-0-admin-reference-rede
 
 Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-audit.md
 
-### TODO-VISUAL-01 — Dashboard activity trends chart (P1)
+### TODO-VISUAL-01 — Dashboard activity trends chart (P1) ✅ DONE 2026-06-24
 **What:** Replace `skeleton="chart"` placeholder on dashboard "Activity trends" card with a real SVG bar or area chart.
-**Why:** Largest single visual gap between dashboard and reference (reference shows 14-day bezier area chart with hover tooltips).
-**Needs:** New backend endpoint `GET /admin/stats/activities-per-day?days=N` returning daily activity buckets.
-**Phase:** 10UI-BACKEND-AGG-1
+**Done:** `GET /api/admin/dashboard/activity-trends?period=7d|30d|90d` returns daily `activityCount` buckets. Dashboard wires the data via `activityTrends` signal; `sp-admin-breakdown-bars` renders bars. Hero KPI "Activity attempts (7d)" summed from buckets.
+**Phase:** 10UI-BACKEND-AGG-1 / AGG-2
 
-### TODO-VISUAL-02 — Dashboard score distribution chart (P1)
+### TODO-VISUAL-02 — Dashboard score distribution chart (P1) ✅ DONE 2026-06-24
 **What:** Replace `skeleton="chart"` placeholder with real 5-bin horizontal bar chart.
-**Needs:** New backend endpoint `GET /admin/stats/score-distribution`.
-**Phase:** 10UI-BACKEND-AGG-1
+**Done:** `GET /api/admin/dashboard/score-distribution?period=7d|30d|90d` returns 5 fixed buckets plus `averageScore`. Dashboard wires data via `scoreDistribution` signal; breakdown bars render. Hero KPI "Avg score (7d)" shows real `averageScore`.
+**Phase:** 10UI-BACKEND-AGG-1 / AGG-2
 
 ### TODO-VISUAL-03 — Dashboard AI spend donut/breakdown (P1)
 **What:** Replace `skeleton="grid"` placeholder with per-category AI cost breakdown bars.
-**Needs:** Extend `/admin/ai/usage/summary` to return per-category cost breakdown, or wire existing `byFeature[]` cost data.
-**Phase:** 10UI-BACKEND-AGG-1 (can partially use existing `byFeature` from AI Usage summary)
+**Status:** Partially done. `GET /api/admin/ai-usage/by-category` returns per-feature-key breakdown. Hero KPI "AI cost (7d)" wired. Full donut/spend-by-category-type chart still needs a grouped-category backend field.
+**Phase:** 10UI-BACKEND-AGG-1 / AGG-2 (partial)
 
 ### TODO-VISUAL-04 — Dashboard streak leaderboard (P1)
 **What:** Replace `skeleton="timeline"` placeholder with named student streak list (top 5).
-**Needs:** New backend endpoint `GET /admin/stats/streaks`.
-**Phase:** 10UI-BACKEND-AGG-1
+**Needs:** No streak entity in domain. Deferred pending streak model addition.
+**Phase:** Future
 
-### TODO-VISUAL-05 — AI Usage activities bar chart (P1)
+### TODO-VISUAL-05 — AI Usage activities bar chart (P1) ✅ DONE 2026-06-24
 **What:** Replace `skeleton="chart"` placeholder with 14-bar activities-per-day chart.
-**Needs:** Same `GET /admin/stats/activities-per-day` endpoint as TODO-VISUAL-01.
+**Done:** `GET /api/admin/ai-usage/aggregate-trends?period=7d|30d|90d` returns daily AI cost/call buckets. AI Usage page wires via `aiUsageTrends` signal.
 **Phase:** 10UI-BACKEND-AGG-1
 
 ### TODO-VISUAL-06 — AI Usage student engagement heatmap (P1)
