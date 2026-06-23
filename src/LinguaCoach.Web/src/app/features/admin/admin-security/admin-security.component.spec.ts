@@ -194,4 +194,42 @@ describe('AdminSecurityComponent', () => {
       expect(component.formatEventType('LoginSucceeded')).toBe('Login Succeeded');
     });
   });
+
+  // ── Deferred security capabilities card ──────────────────────────────────
+
+  describe('deferred security capabilities card', () => {
+    it('renders the deferred capabilities card', () => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Deferred security capabilities');
+    });
+
+    it('lists MFA', () => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Multi-factor authentication');
+    });
+
+    it('lists enterprise SSO', () => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Enterprise SSO');
+    });
+
+    it('lists distributed rate limiting', () => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Distributed');
+    });
+
+    it('lists CSP or deployment hardening', () => {
+      fixture.detectChanges();
+      const text = fixture.nativeElement.textContent as string;
+      expect(text.includes('CSP') || text.includes('deployment')).toBeTrue();
+    });
+
+    it('does not display any secret key or credential value', () => {
+      fixture.detectChanges();
+      const text = fixture.nativeElement.textContent as string;
+      expect(text).not.toContain('ANTHROPIC_API_KEY');
+      expect(text).not.toContain('OPENAI_API_KEY');
+      expect(text).not.toContain('JWT_KEY');
+    });
+  });
 });

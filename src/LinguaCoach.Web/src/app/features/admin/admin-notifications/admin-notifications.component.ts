@@ -13,6 +13,7 @@ import {
   AdminTemplatePreviewResult,
 } from '../../../core/models/admin.models';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent, SpAdminBadgeTone,
   SpAdminButtonComponent,
   SpAdminCardComponent,
@@ -36,6 +37,7 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,

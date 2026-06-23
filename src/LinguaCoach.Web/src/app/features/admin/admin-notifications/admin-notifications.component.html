@@ -253,6 +253,7 @@
           <div class="p-4">
             <p class="text-xs text-gray-500 mb-1">SMS</p>
             <sp-admin-badge [tone]="configTone(config()!.sms.statusLabel)">{{ config()!.sms.statusLabel }}</sp-admin-badge>
+            <sp-admin-badge tone="warning" class="mt-1 block">Foundation only</sp-admin-badge>
           </div>
         </sp-admin-card>
         <sp-admin-card>
@@ -335,10 +336,13 @@
       <!-- SMS config -->
       <sp-admin-card>
         <div class="p-5">
-          <h3 class="text-sm font-semibold text-gray-800 mb-4">SMS Configuration</h3>
-          <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4">
-            Real SMS provider is not yet implemented. You can save configuration, but sending is disabled.
-          </p>
+          <div class="flex items-center gap-2 mb-3">
+            <h3 class="text-sm font-semibold text-gray-800">SMS Configuration</h3>
+            <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
+          </div>
+          <sp-admin-alert variant="warning">
+            SMS delivery is not production-ready. No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are also deferred. You may pre-configure credentials for when a provider is integrated.
+          </sp-admin-alert>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div class="sm:col-span-2">
               <sp-admin-checkbox [(ngModel)]="smsForm.isEnabled" label="Enabled (no-op until provider implemented)" />

@@ -263,4 +263,46 @@
     </sp-admin-card>
   }
 
+  <!-- Deferred security capabilities -->
+  <sp-admin-card title="Deferred security capabilities" class="mt-4">
+    <p class="text-xs text-gray-500 mb-4">These capabilities are planned or partially implemented. None are active in the current build. No action needed until each is scheduled for implementation.</p>
+    <div class="sp-sec-deferred-grid">
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">Multi-factor authentication (MFA/TOTP)</div>
+        <sp-admin-badge tone="warning">Deferred</sp-admin-badge>
+        <div class="sp-sec-deferred-note">TOTP/app-based MFA is not yet wired. No enrolment, challenge, or recovery flows exist.</div>
+      </div>
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">Enterprise SSO — SAML / OIDC</div>
+        <sp-admin-badge tone="warning">Deferred</sp-admin-badge>
+        <div class="sp-sec-deferred-note">External identity provider federation is not implemented. Google OAuth scaffold exists but full OIDC/SAML is deferred.</div>
+      </div>
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">Distributed / Redis rate limiting</div>
+        <sp-admin-badge tone="warning">Deferred</sp-admin-badge>
+        <div class="sp-sec-deferred-note">Current rate limiting is in-process memory only. Multi-instance deployments need a Redis-backed store.</div>
+      </div>
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">Captcha / abuse protection</div>
+        <sp-admin-badge tone="warning">Deferred</sp-admin-badge>
+        <div class="sp-sec-deferred-note">No CAPTCHA or bot-mitigation on login, registration, or password reset flows.</div>
+      </div>
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">CSP / HSTS header hardening</div>
+        <sp-admin-badge tone="neutral">Deployment dependent</sp-admin-badge>
+        <div class="sp-sec-deferred-note">Content-Security-Policy and HSTS enforcement should be configured at the reverse-proxy or hosting layer. Not enforced by the application in development.</div>
+      </div>
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">SMS security notifications</div>
+        <sp-admin-badge tone="warning">Deferred</sp-admin-badge>
+        <div class="sp-sec-deferred-note">Login alerts and password-change SMS notifications require both an SMS provider and phone verification, neither of which is implemented.</div>
+      </div>
+      <div class="sp-sec-deferred-row">
+        <div class="sp-sec-deferred-label">Admin session / device management UI</div>
+        <sp-admin-badge tone="neutral">Planned</sp-admin-badge>
+        <div class="sp-sec-deferred-note">No UI exists for admins to view or revoke active sessions or trusted devices.</div>
+      </div>
+    </div>
+  </sp-admin-card>
+
 </sp-admin-page-body>

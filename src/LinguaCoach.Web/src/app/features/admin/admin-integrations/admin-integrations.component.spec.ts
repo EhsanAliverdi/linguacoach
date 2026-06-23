@@ -320,4 +320,22 @@ describe('AdminIntegrationsComponent', () => {
     const grids = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-form-grid');
     expect(grids.length).toBeGreaterThanOrEqual(2);
   });
+
+  // ── Readiness pool aggregate placeholder card ─────────────────────────────
+
+  it('renders readiness pool aggregate card title', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('Readiness pool');
+  });
+
+  it('renders "Backend not available yet" in readiness pool card', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
+  });
+
+  it('existing batches and storage tests still pass alongside pool card', async () => {
+    await setup();
+    expect(fixture.nativeElement.textContent).toContain('Ready lesson buffer per student');
+    expect(fixture.nativeElement.textContent).toContain('Recent batches');
+  });
 });

@@ -206,4 +206,12 @@
       </sp-admin-table>
     }
   </sp-admin-card>
+
+  <!-- Readiness pool aggregate -->
+  <sp-admin-card title="Readiness pool — aggregate health" class="mt-4">
+    <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
+    <p class="text-xs text-gray-500 mt-2">A system-wide readiness pool aggregate endpoint is not yet implemented. Per-student pool health is available on the student detail page. An aggregate endpoint showing total ready, queued, stale, and failed items across all students is deferred to a future phase.</p>
+    <p class="text-xs text-gray-400 mt-1">See <code>/api/admin/students/&#123;id&#125;/readiness-pool/health</code> for per-student data.</p>
+  </sp-admin-card>
+
 </sp-admin-page-body>

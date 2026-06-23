@@ -45,6 +45,13 @@ import {
     SpAdminTableComponent,
   ],
   templateUrl: './admin-security.component.html',
+  styles: [`
+    .sp-sec-deferred-grid{display:grid;gap:12px;}
+    .sp-sec-deferred-row{display:grid;grid-template-columns:1fr auto;align-items:start;gap:6px 12px;padding:10px 0;border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC);}
+    .sp-sec-deferred-row:first-child{border-top:none;padding-top:0;}
+    .sp-sec-deferred-label{font-size:13px;font-weight:700;color:var(--sp-admin-text,#0F172A);}
+    .sp-sec-deferred-note{grid-column:1/-1;font-size:12px;color:var(--sp-admin-text-muted,#64748B);}
+  `],
 })
 export class AdminSecurityComponent implements OnInit {
   // ── Settings ──────────────────────────────────────────────────────────────

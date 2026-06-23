@@ -652,4 +652,36 @@ describe('AdminNotificationsComponent', () => {
     expect(component.studentSearchError()).toContain('No student found');
     expect(component.sendResolvedUserId).toBe('');
   });
+
+  // ── SMS foundation-only label ─────────────────────────────────────────────
+
+  it('SMS channel status card shows Foundation only badge', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.activeTab = 'config';
+    component.loadConfig();
+    fixture.detectChanges();
+    const badges = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge'));
+    expect(badges.some(b => b.textContent?.trim() === 'Foundation only')).toBeTrue();
+  });
+
+  it('Foundation only badge does not appear for In-App or Email channel cards', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.activeTab = 'config';
+    component.loadConfig();
+    fixture.detectChanges();
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-card'));
+    const inAppCard = cards.find(c => c.textContent?.includes('In-App') && !c.textContent?.includes('SMS'));
+    expect(inAppCard?.textContent).not.toContain('Foundation only');
+    const emailCard = cards.find(c => c.textContent?.includes('Email') && !c.textContent?.includes('SMS'));
+    expect(emailCard?.textContent).not.toContain('Foundation only');
+  });
+
+  it('SMS config card shows warning alert about provider not connected', () => {
+    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
+    component.activeTab = 'config';
+    component.loadConfig();
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('SMS delivery is not production-ready');
+  });
 });
