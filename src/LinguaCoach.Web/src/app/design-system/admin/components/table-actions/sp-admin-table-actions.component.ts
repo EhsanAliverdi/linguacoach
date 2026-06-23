@@ -99,7 +99,7 @@ export interface SpAdminTableAction {
       position: fixed;
       width: 176px;      /* w-44 = 11rem = 176px */
       border-radius: 12px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--sp-admin-border,#ECE9F5);
       background: #fff;
       box-shadow: 0 4px 24px rgba(0,0,0,0.10);
       padding: 4px 0;
@@ -122,7 +122,7 @@ export interface SpAdminTableAction {
       font-size: 13px;
       font-weight: 500;
       line-height: 1.4;
-      color: #374151;
+      color: var(--sp-admin-text,#0F172A);
       background: transparent;
       border: none;
       cursor: pointer;
@@ -131,11 +131,11 @@ export interface SpAdminTableAction {
       white-space: nowrap;
     }
     .sp-adm-action-item:hover {
-      background: #f9fafb;
-      color: #111827;
+      background: var(--sp-admin-bg,#F6F4FB);
+      color: var(--sp-admin-text,#0F172A);
     }
     .sp-adm-action-item:focus-visible {
-      outline: 2px solid #6366f1;
+      outline: 2px solid var(--sp-admin-primary,#5B4BE8);
       outline-offset: -2px;
     }
     .sp-adm-action-item.sp-adm-action-danger {

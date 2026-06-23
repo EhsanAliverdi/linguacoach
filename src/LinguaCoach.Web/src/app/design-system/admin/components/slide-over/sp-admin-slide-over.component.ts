@@ -124,8 +124,8 @@ const Z_STACK_STEP = 50;
       height: 100vh;
       max-width: 100vw;
       background: #fff;
-      border-left: 1px solid #e5e7eb;
-      box-shadow: -4px 0 32px rgba(0, 0, 0, 0.10);
+      border-left: 1px solid var(--sp-admin-border,#ECE9F5);
+      box-shadow: -4px 0 32px rgba(0, 0, 0, 0.08);
       z-index: 1001;
       display: flex;
       flex-direction: column;
@@ -152,7 +152,7 @@ const Z_STACK_STEP = 50;
       justify-content: space-between;
       gap: 12px;
       padding: 20px 20px 16px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid var(--sp-admin-border-subtle,#F4F2FC);
       flex-shrink: 0;
     }
 
@@ -165,7 +165,7 @@ const Z_STACK_STEP = 50;
       margin: 0;
       font-size: 15px;
       font-weight: 600;
-      color: #111827;
+      color: var(--sp-admin-text,#0F172A);
       line-height: 1.3;
       white-space: nowrap;
       overflow: hidden;
@@ -175,7 +175,7 @@ const Z_STACK_STEP = 50;
     .sp-adm-so-subtitle {
       margin: 3px 0 0;
       font-size: 12px;
-      color: #6b7280;
+      color: var(--sp-admin-text-muted,#64748B);
       line-height: 1.4;
     }
 
@@ -195,8 +195,8 @@ const Z_STACK_STEP = 50;
       height: 32px;
       border: none;
       border-radius: 50%;
-      background: #f3f4f6;
-      color: #6b7280;
+      background: var(--sp-admin-surface-subtle,#FBFAFE);
+      color: var(--sp-admin-text-muted,#64748B);
       cursor: pointer;
       transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
@@ -204,12 +204,12 @@ const Z_STACK_STEP = 50;
     }
 
     .sp-adm-so-close:hover {
-      background: #e5e7eb;
-      color: #374151;
+      background: var(--sp-admin-border,#ECE9F5);
+      color: var(--sp-admin-text,#0F172A);
     }
 
     .sp-adm-so-close:focus-visible {
-      outline: 3px solid #465fff;
+      outline: 3px solid var(--sp-admin-primary,#5B4BE8);
       outline-offset: 2px;
     }
 
@@ -223,7 +223,7 @@ const Z_STACK_STEP = 50;
     /* Footer */
     .sp-adm-so-footer {
       flex-shrink: 0;
-      border-top: 1px solid #f3f4f6;
+      border-top: 1px solid var(--sp-admin-border-subtle,#F4F2FC);
       padding: 14px 20px;
       display: flex;
       gap: 10px;

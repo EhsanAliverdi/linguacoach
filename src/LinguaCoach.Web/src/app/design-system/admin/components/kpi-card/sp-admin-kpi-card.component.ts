@@ -23,7 +23,7 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
   styles: [`
     .sp-kpi-card {
       background: var(--sp-admin-surface, #fff);
-      border: 1px solid var(--sp-admin-border, #e5e7eb);
+      border: 1px solid var(--sp-admin-border, #ECE9F5);
       border-radius: 16px;
       padding: 20px;
       display: flex;
@@ -40,7 +40,7 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
       justify-content: center;
       flex-shrink: 0;
     }
-    .sp-kpi-icon-indigo { background: var(--sp-admin-primary-bg, #ecf3ff); color: var(--sp-admin-primary, #465fff); }
+    .sp-kpi-icon-indigo { background: var(--sp-admin-primary-bg, #EDEBFF); color: var(--sp-admin-primary, #5B4BE8); }
     .sp-kpi-icon-green  { background: var(--sp-admin-green-bg, #ecfdf3);   color: var(--sp-admin-green, #16a34a); }
     .sp-kpi-icon-violet { background: var(--sp-admin-violet-bg, #f5f3ff);  color: var(--sp-admin-violet, #7c3aed); }
     .sp-kpi-icon-amber  { background: var(--sp-admin-amber-bg, #fffbeb);   color: var(--sp-admin-amber, #d97706); }
@@ -50,7 +50,7 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
     .sp-kpi-label {
       font-size: 11px;
       font-weight: 600;
-      color: var(--sp-admin-text-muted, #6b7280);
+      color: var(--sp-admin-text-muted, #64748B);
       text-transform: uppercase;
       letter-spacing: .05em;
       margin-bottom: 4px;
@@ -58,7 +58,7 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
     .sp-kpi-value {
       font-size: 24px;
       font-weight: 700;
-      color: var(--sp-admin-text, #111827);
+      color: var(--sp-admin-text, #0F172A);
       line-height: 1.1;
     }
   `],

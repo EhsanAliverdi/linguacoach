@@ -110,14 +110,13 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     </div>
   `,
   styles: [`
-    /* TailAdmin basic-table-one: rounded-2xl border border-gray-200 bg-white */
-    .sp-adm-table-card    { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; }
-    .sp-adm-table-card.dark\\:border-gray-800 { border-color:#1f2937; }
-    .sp-adm-table-data    { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; }
+    /* SpeakPath-aligned table card shells */
+    .sp-adm-table-card    { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
+    .sp-adm-table-data    { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
     .sp-adm-table-simple  { background:transparent; }
-    .sp-adm-table-card-v  { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,.08); }
-    .sp-adm-table-bordered-v { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; }
-    .sp-adm-table-striped-v  { border-radius:16px; border:1px solid #e5e7eb; background:#fff; overflow:hidden; }
+    .sp-adm-table-card-v  { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; box-shadow:var(--sp-admin-shadow-card,0 2px 8px rgba(60,48,140,.07)); }
+    .sp-adm-table-bordered-v { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
+    .sp-adm-table-striped-v  { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
 
     .sp-adm-table-scroll  { overflow-x:auto; width:100%; }
     .sp-adm-table-scroll::-webkit-scrollbar { height:8px; }
@@ -130,30 +129,31 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       border-spacing:0;
       table-layout:auto;
     }
-    :host ::ng-deep thead tr { border-bottom:1px solid #e5e7eb; }
+    :host ::ng-deep thead tr { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); }
     :host ::ng-deep th {
       padding:11px 16px;
-      background:#f9fafb;
-      color:#6b7280;
+      background:var(--sp-admin-surface-subtle,#FBFAFE);
+      color:var(--sp-admin-text-muted,#64748B);
       font-size:11px;
-      font-weight:600;
+      font-weight:700;
       line-height:1.4;
       text-align:left;
       white-space:nowrap;
       vertical-align:middle;
-      letter-spacing:0.02em;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
     }
     :host ::ng-deep td {
       padding:13px 16px;
-      color:#374151;
+      color:var(--sp-admin-text-secondary,#334155);
       font-size:13px;
       line-height:1.5;
       vertical-align:middle;
-      border-bottom:1px solid #f1f5f9;
+      border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC);
       min-width:72px;
     }
     :host ::ng-deep tbody tr:last-child td { border-bottom:0; }
-    :host ::ng-deep tbody tr:hover td { background:#fcfcfd; }
+    :host ::ng-deep tbody tr:hover td { background:var(--sp-admin-bg,#F6F4FB); }
     :host ::ng-deep td:first-child,
     :host ::ng-deep th:first-child { padding-left:20px; }
     :host ::ng-deep td:last-child,
@@ -207,21 +207,20 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-thead-data   { }
     .sp-adm-thead-sticky { position:sticky; top:0; z-index:2; }
 
-    .sp-adm-thead-row-basic  { border-bottom:1px solid #f1f5f9; }
-    .sp-adm-thead-row-data   { border-bottom:2px solid #e5e7eb; }
-    .sp-adm-thead-row-simple { border-bottom:1px solid #e5e7eb; }
-    .sp-adm-thead-row-bordered { border-bottom:1px solid #e5e7eb; }
-    .sp-adm-thead-row-striped  { border-bottom:1px solid #e5e7eb; }
-    .sp-adm-thead-row-card     { border-bottom:1px solid #f1f5f9; }
+    .sp-adm-thead-row-basic  { border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
+    .sp-adm-thead-row-data   { border-bottom:2px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-thead-row-simple { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-thead-row-bordered { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-thead-row-striped  { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-thead-row-card     { border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
 
-    /* th — TailAdmin: px-5 py-3 text-xs font-medium text-gray-500 bg-gray-50 */
-    .sp-adm-th        { text-align:left; font-size:11px; font-weight:600; color:#6b7280; white-space:nowrap; }
-    .sp-adm-th-basic  { background:#f9fafb; }
-    .sp-adm-th-data   { background:#f3f4f6; color:#374151; }
+    .sp-adm-th        { text-align:left; font-size:11px; font-weight:700; color:var(--sp-admin-text-muted,#64748B); white-space:nowrap; letter-spacing:0.06em; text-transform:uppercase; }
+    .sp-adm-th-basic  { background:var(--sp-admin-surface-subtle,#FBFAFE); }
+    .sp-adm-th-data   { background:var(--sp-admin-surface-subtle,#FBFAFE); color:var(--sp-admin-text-secondary,#334155); }
     .sp-adm-th-simple { background:transparent; }
-    .sp-adm-th-card   { background:#f9fafb; }
-    .sp-adm-th-bordered { background:#f9fafb; border-right:1px solid #e5e7eb; }
-    .sp-adm-th-striped  { background:#f9fafb; }
+    .sp-adm-th-card   { background:var(--sp-admin-surface-subtle,#FBFAFE); }
+    .sp-adm-th-bordered { background:var(--sp-admin-surface-subtle,#FBFAFE); border-right:1px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-th-striped  { background:var(--sp-admin-surface-subtle,#FBFAFE); }
 
     /* Density — th/td padding */
     .sp-adm-th-compact    { padding:6px 12px; }
@@ -232,8 +231,8 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-td-spacious   { padding:18px 24px; font-size:14px; }
 
     /* td */
-    .sp-adm-td        { color:#374151; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
-    .sp-adm-td-bordered { border-right:1px solid #e5e7eb; }
+    .sp-adm-td        { color:var(--sp-admin-text-secondary,#334155); vertical-align:middle; border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
+    .sp-adm-td-bordered { border-right:1px solid var(--sp-admin-border,#ECE9F5); }
     .sp-adm-table-muted { color:#94a3b8; font-size:11px; }
 
     /* Sortable */
@@ -243,12 +242,12 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 
     /* Row states */
     .sp-adm-tr-hover { transition:background .1s; }
-    .sp-adm-tr-hover:hover { background:#f9fafb; }
-    .sp-adm-tr-stripe-odd  { background:#f9fafb; }
+    .sp-adm-tr-hover:hover { background:var(--sp-admin-bg,#F6F4FB); }
+    .sp-adm-tr-stripe-odd  { background:var(--sp-admin-surface-subtle,#FBFAFE); }
     .sp-adm-tr-stripe-even { background:#fff; }
 
     /* Borders */
-    .sp-adm-table-bordered th, .sp-adm-table-bordered td { border:1px solid #e5e7eb; }
+    .sp-adm-table-bordered th, .sp-adm-table-bordered td { border:1px solid var(--sp-admin-border,#ECE9F5); }
 
     /* Check column */
     .sp-adm-th-check, .sp-adm-td-check { width:40px; padding:0 12px; text-align:center; }

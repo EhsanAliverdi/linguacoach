@@ -52,11 +52,11 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     .sp-adm-btn-md  { min-height: 40px; padding: 10px 20px; font-size: 13px; }
     .sp-adm-btn-lg  { min-height: 48px; padding: 12px 28px; font-size: 15px; }
 
-    /* --- Solid (TailAdmin primary bg-brand-500 / danger / etc.) --- */
-    .sp-adm-btn-solid-primary   { background:#465fff; color:#fff; box-shadow:0 1px 2px rgba(0,0,0,.05); }
-    .sp-adm-btn-solid-primary:hover:not(:disabled)   { background:#3641f5; }
+    /* --- Solid --- */
+    .sp-adm-btn-solid-primary   { background:var(--sp-admin-primary,#5B4BE8); color:#fff; box-shadow:var(--sp-admin-shadow-action,0 2px 8px rgba(91,75,232,.10)); }
+    .sp-adm-btn-solid-primary:hover:not(:disabled)   { background:var(--sp-admin-primary-hover,#3A2EA8); }
     .sp-adm-btn-solid-secondary { background:#fff; color:#344054; box-shadow:0 0 0 1px #d0d5dd inset; }
-    .sp-adm-btn-solid-secondary:hover:not(:disabled) { background:#f9fafb; }
+    .sp-adm-btn-solid-secondary:hover:not(:disabled) { background:var(--sp-admin-surface-subtle,#FBFAFE); }
     .sp-adm-btn-solid-success   { background:#16a34a; color:#fff; }
     .sp-adm-btn-solid-success:hover:not(:disabled)   { background:#15803d; }
     .sp-adm-btn-solid-danger    { background:#ef4444; color:#fff; }
@@ -66,13 +66,13 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     .sp-adm-btn-solid-info      { background:#0ba5ec; color:#fff; }
     .sp-adm-btn-solid-info:hover:not(:disabled)      { background:#0284c7; }
     .sp-adm-btn-solid-neutral   { background:#f2f4f7; color:#344054; box-shadow:0 0 0 1px #d0d5dd inset; }
-    .sp-adm-btn-solid-neutral:hover:not(:disabled)   { background:#e5e7eb; }
+    .sp-adm-btn-solid-neutral:hover:not(:disabled)   { background:var(--sp-admin-border,#ECE9F5); }
 
     /* --- Outline --- */
-    .sp-adm-btn-outline-primary   { background:transparent; color:#465fff; box-shadow:0 0 0 1px #465fff inset; }
-    .sp-adm-btn-outline-primary:hover:not(:disabled)   { background:#ecf3ff; }
+    .sp-adm-btn-outline-primary   { background:transparent; color:var(--sp-admin-primary,#5B4BE8); box-shadow:0 0 0 1px var(--sp-admin-primary,#5B4BE8) inset; }
+    .sp-adm-btn-outline-primary:hover:not(:disabled)   { background:var(--sp-admin-primary-bg,#EDEBFF); }
     .sp-adm-btn-outline-secondary { background:transparent; color:#344054; box-shadow:0 0 0 1px #d0d5dd inset; }
-    .sp-adm-btn-outline-secondary:hover:not(:disabled) { background:#f9fafb; }
+    .sp-adm-btn-outline-secondary:hover:not(:disabled) { background:var(--sp-admin-surface-subtle,#FBFAFE); }
     .sp-adm-btn-outline-success   { background:transparent; color:#16a34a; box-shadow:0 0 0 1px #16a34a inset; }
     .sp-adm-btn-outline-success:hover:not(:disabled)   { background:#ecfdf3; }
     .sp-adm-btn-outline-danger    { background:transparent; color:#ef4444; box-shadow:0 0 0 1px #ef4444 inset; }
@@ -85,10 +85,10 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     .sp-adm-btn-outline-neutral:hover:not(:disabled)   { background:#f2f4f7; }
 
     /* --- Soft --- */
-    .sp-adm-btn-soft-primary   { background:#ecf3ff; color:#465fff; }
-    .sp-adm-btn-soft-primary:hover:not(:disabled)   { background:#dde8ff; }
-    .sp-adm-btn-soft-secondary { background:#f9fafb; color:#344054; }
-    .sp-adm-btn-soft-secondary:hover:not(:disabled) { background:#f2f4f7; }
+    .sp-adm-btn-soft-primary   { background:var(--sp-admin-primary-bg,#EDEBFF); color:var(--sp-admin-primary,#5B4BE8); }
+    .sp-adm-btn-soft-primary:hover:not(:disabled)   { background:var(--sp-admin-primary-focus,#C0BAF9); }
+    .sp-adm-btn-soft-secondary { background:var(--sp-admin-surface-subtle,#FBFAFE); color:#344054; }
+    .sp-adm-btn-soft-secondary:hover:not(:disabled) { background:var(--sp-admin-bg,#F6F4FB); }
     .sp-adm-btn-soft-success   { background:#ecfdf3; color:#16a34a; }
     .sp-adm-btn-soft-success:hover:not(:disabled)   { background:#d1fae5; }
     .sp-adm-btn-soft-danger    { background:#fef2f2; color:#ef4444; }
@@ -98,13 +98,13 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     .sp-adm-btn-soft-info      { background:#f0f9ff; color:#0ba5ec; }
     .sp-adm-btn-soft-info:hover:not(:disabled)      { background:#e0f2fe; }
     .sp-adm-btn-soft-neutral   { background:#f2f4f7; color:#344054; }
-    .sp-adm-btn-soft-neutral:hover:not(:disabled)   { background:#e5e7eb; }
+    .sp-adm-btn-soft-neutral:hover:not(:disabled)   { background:var(--sp-admin-border,#ECE9F5); }
 
     /* --- Ghost --- */
-    .sp-adm-btn-ghost-primary   { background:transparent; color:#465fff; }
-    .sp-adm-btn-ghost-primary:hover:not(:disabled)   { background:#ecf3ff; }
+    .sp-adm-btn-ghost-primary   { background:transparent; color:var(--sp-admin-primary,#5B4BE8); }
+    .sp-adm-btn-ghost-primary:hover:not(:disabled)   { background:var(--sp-admin-primary-bg,#EDEBFF); }
     .sp-adm-btn-ghost-secondary { background:transparent; color:#344054; }
-    .sp-adm-btn-ghost-secondary:hover:not(:disabled) { background:#f2f4f7; }
+    .sp-adm-btn-ghost-secondary:hover:not(:disabled) { background:var(--sp-admin-bg,#F6F4FB); }
     .sp-adm-btn-ghost-success   { background:transparent; color:#16a34a; }
     .sp-adm-btn-ghost-success:hover:not(:disabled)   { background:#ecfdf3; }
     .sp-adm-btn-ghost-danger    { background:transparent; color:#ef4444; }
@@ -117,8 +117,8 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     .sp-adm-btn-ghost-neutral:hover:not(:disabled)   { background:#f2f4f7; }
 
     /* --- Link --- */
-    .sp-adm-btn-link-primary   { background:transparent; color:#465fff; padding-left:0; padding-right:0; text-decoration:underline; }
-    .sp-adm-btn-link-primary:hover:not(:disabled)   { color:#3641f5; }
+    .sp-adm-btn-link-primary   { background:transparent; color:var(--sp-admin-primary,#5B4BE8); padding-left:0; padding-right:0; text-decoration:underline; }
+    .sp-adm-btn-link-primary:hover:not(:disabled)   { color:var(--sp-admin-primary-hover,#3A2EA8); }
     .sp-adm-btn-link-secondary { background:transparent; color:#344054; padding-left:0; padding-right:0; text-decoration:underline; }
     .sp-adm-btn-link-secondary:hover:not(:disabled) { color:#0f172a; }
     .sp-adm-btn-link-success   { background:transparent; color:#16a34a; padding-left:0; padding-right:0; text-decoration:underline; }

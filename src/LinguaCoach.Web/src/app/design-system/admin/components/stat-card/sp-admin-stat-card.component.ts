@@ -13,7 +13,8 @@ export type SpAdminStatCardSize = 'sm' | 'md' | 'lg';
   imports: [CommonModule],
   template: `
     <article
-      class="sp-adm-stat rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+      class="sp-adm-stat rounded-2xl bg-white dark:bg-white/[0.03]"
+      style="border:1px solid var(--sp-admin-border,#ECE9F5);"
       [class]="hostClasses"
     >
       @if (loading) {
@@ -59,8 +60,8 @@ export type SpAdminStatCardSize = 'sm' | 'md' | 'lg';
     .sp-adm-stat { display:flex; align-items:center; }
 
     /* Icon tone backgrounds — maps to TailAdmin brand/success/warning/error tokens */
-    .sp-adm-stat-icon-indigo  { background:#ecf3ff; color:#465fff; }
-    .sp-adm-stat-icon-primary { background:#ecf3ff; color:#465fff; }
+    .sp-adm-stat-icon-indigo  { background:var(--sp-admin-primary-bg,#EDEBFF); color:var(--sp-admin-primary,#5B4BE8); }
+    .sp-adm-stat-icon-primary { background:var(--sp-admin-primary-bg,#EDEBFF); color:var(--sp-admin-primary,#5B4BE8); }
     .sp-adm-stat-icon-green   { background:#ecfdf3; color:#16a34a; }
     .sp-adm-stat-icon-success { background:#ecfdf3; color:#16a34a; }
     .sp-adm-stat-icon-violet  { background:#f5f3ff; color:#7c3aed; }

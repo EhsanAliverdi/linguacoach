@@ -40,7 +40,7 @@ export type SpAdminStatusCardTone = 'success' | 'warning' | 'danger' | 'info' | 
       display: flex;
       flex-direction: column;
       border-radius: 16px;
-      border: 1px solid var(--sp-sc-border, #e5e7eb);
+      border: 1px solid var(--sp-sc-border, #ECE9F5);
       background: var(--sp-sc-bg, #fff);
       padding: 16px 20px 14px;
       min-width: 0;
@@ -113,7 +113,7 @@ export type SpAdminStatusCardTone = 'success' | 'warning' | 'danger' | 'info' | 
     .sp-sc-skeleton { display: flex; flex-direction: column; gap: 8px; }
     .sp-sc-skel-bar {
       border-radius: 4px;
-      background: #f1f5f9;
+      background: var(--sp-admin-surface-subtle,#FBFAFE);
       animation: sp-sc-pulse 1.4s ease infinite;
     }
     .sp-sc-skel-label { height: 10px; width: 60%; }

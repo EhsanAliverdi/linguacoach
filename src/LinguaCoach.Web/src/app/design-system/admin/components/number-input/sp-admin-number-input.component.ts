@@ -37,10 +37,10 @@ export type SpAdminNumberInputSize = 'sm' | 'md' | 'lg';
   `,
   styles: [`
     :host { display:block; min-width:0; }
-    .sp-adm-input { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid #e5e7eb; background:transparent; color:#111827; transition:border-color .15s, box-shadow .15s; }
-    .sp-adm-input::placeholder { color:#9ca3af; }
-    .sp-adm-input:focus { outline:none; border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.3); }
-    .sp-adm-input:disabled { opacity:.55; cursor:not-allowed; background:#f9fafb; }
+    .sp-adm-input { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid var(--sp-admin-border,#ECE9F5); background:transparent; color:var(--sp-admin-text,#0F172A); transition:border-color .15s, box-shadow .15s; }
+    .sp-adm-input::placeholder { color:var(--sp-admin-text-faint,#CBD5E1); }
+    .sp-adm-input:focus { outline:none; border-color:var(--sp-admin-primary,#5B4BE8); box-shadow:var(--sp-admin-focus-ring,0 0 0 3px rgba(91,75,232,.15)); }
+    .sp-adm-input:disabled { opacity:.55; cursor:not-allowed; background:var(--sp-admin-surface-subtle,#FBFAFE); }
     .sp-adm-input-sm { height:32px; padding:6px 12px; font-size:12px; }
     .sp-adm-input-md { height:44px; padding:10px 16px; font-size:13px; }
     .sp-adm-input-lg { height:52px; padding:12px 20px; font-size:15px; }

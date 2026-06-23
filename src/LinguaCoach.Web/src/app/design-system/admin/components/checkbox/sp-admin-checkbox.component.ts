@@ -65,7 +65,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     .sp-adm-cb-track:focus-within .sp-adm-cb-box {
       box-shadow:0 0 0 3px rgba(79,70,229,.2);
     }
-    .sp-adm-cb-label { font-size:13px; color:#374151; }
+    .sp-adm-cb-label { font-size:13px; color:var(--sp-admin-text,#0F172A); }
     .sp-adm-cb-label-disabled { opacity:.55; }
     .sp-adm-cb-helper { display:block; font-size:11.5px; color:#9ca3af; margin-top:1px; }
   `],

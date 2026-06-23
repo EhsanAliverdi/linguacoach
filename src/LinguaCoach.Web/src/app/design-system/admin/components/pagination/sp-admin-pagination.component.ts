@@ -28,11 +28,11 @@ import { SpAdminButtonComponent } from '../button/sp-admin-button.component';
       gap:12px;
       flex-wrap:wrap;
       padding:10px 20px;
-      border-top:1px solid #f1f5f9;
+      border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC);
       background:#fff;
     }
     .sp-adm-pagination-label {
-      color:#6b7280;
+      color:var(--sp-admin-text-muted,#64748B);
       font-size:12px;
       font-weight:500;
     }

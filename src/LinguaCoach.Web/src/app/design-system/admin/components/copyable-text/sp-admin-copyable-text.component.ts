@@ -59,7 +59,7 @@ import { CommonModule } from '@angular/common';
       transition: color 0.1s, background 0.1s;
     }
     .sp-adm-copy-btn:hover {
-      color: #465fff;
+      color: var(--sp-admin-primary,#5B4BE8);
       background: #f0f4ff;
     }
   `],

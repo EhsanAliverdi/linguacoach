@@ -41,10 +41,10 @@ export type SpAdminTextareaState = 'default' | 'error' | 'success' | 'disabled';
   styles: [`
     :host { display:block; min-width:0; }
     /* TailAdmin-backed: rounded-lg border border-gray-200 textarea pattern */
-    .sp-adm-textarea { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid #e5e7eb; background:transparent; color:#111827; resize:vertical; transition:border-color .15s, box-shadow .15s; }
-    .sp-adm-textarea::placeholder { color:#9ca3af; }
-    .sp-adm-textarea:focus { outline:none; border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.3); }
-    .sp-adm-textarea:disabled { opacity:.55; cursor:not-allowed; background:#f9fafb; }
+    .sp-adm-textarea { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid var(--sp-admin-border,#ECE9F5); background:transparent; color:var(--sp-admin-text,#0F172A); resize:vertical; transition:border-color .15s, box-shadow .15s; }
+    .sp-adm-textarea::placeholder { color:var(--sp-admin-text-faint,#CBD5E1); }
+    .sp-adm-textarea:focus { outline:none; border-color:var(--sp-admin-primary,#5B4BE8); box-shadow:var(--sp-admin-focus-ring,0 0 0 3px rgba(91,75,232,.15)); }
+    .sp-adm-textarea:disabled { opacity:.55; cursor:not-allowed; background:var(--sp-admin-surface-subtle,#FBFAFE); }
 
     /* Sizes */
     .sp-adm-textarea-sm { padding:6px 12px;  font-size:12px; }

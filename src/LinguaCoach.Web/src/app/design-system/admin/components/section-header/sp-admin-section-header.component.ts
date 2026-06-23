@@ -29,13 +29,13 @@ import { CommonModule } from '@angular/common';
     .sp-sh-title {
       font-size: 13px;
       font-weight: 600;
-      color: #374151;
+      color: var(--sp-admin-text,#0F172A);
       line-height: 1.35;
       letter-spacing: 0.01em;
     }
     .sp-sh-desc {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--sp-admin-text-muted,#64748B);
       line-height: 1.45;
     }
   `],

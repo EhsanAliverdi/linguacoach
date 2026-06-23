@@ -62,8 +62,8 @@ const DRAWER_SIZE_MAP: Record<SpAdminDrawerSize, string> = {
   `,
   styles: [`
     /* TailAdmin-backed: fixed right-0 / left-0 bg-white border shadow-2xl drawer */
-    .sp-adm-drawer-right { right:0; border-left:1px solid #e5e7eb; }
-    .sp-adm-drawer-left  { left:0;  border-right:1px solid #e5e7eb; }
+    .sp-adm-drawer-right { right:0; border-left:1px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-drawer-left  { left:0;  border-right:1px solid var(--sp-admin-border,#ECE9F5); }
     .sp-adm-drawer-footer:empty { display:none; }
   `],
 })

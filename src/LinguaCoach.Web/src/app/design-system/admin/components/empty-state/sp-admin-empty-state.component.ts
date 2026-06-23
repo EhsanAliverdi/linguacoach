@@ -30,19 +30,19 @@ import { RouterLink } from '@angular/router';
       font-size: 13px;
     }
     .sp-empty-title {
-      color: var(--sp-admin-text, #374151);
+      color: var(--sp-admin-text, #0F172A);
       font-size: 14px;
       font-weight: 600;
       margin-bottom: 2px;
     }
-    .sp-empty-msg { margin: 0; color: #6b7280; }
+    .sp-empty-msg { margin: 0; color: var(--sp-admin-text-muted,#64748B); }
     .sp-empty-cta {
       display: inline-block;
       font-size: 12px;
       font-weight: 600;
       padding: 6px 16px;
       border-radius: 8px;
-      background: var(--sp-admin-primary, #465fff);
+      background: var(--sp-admin-primary, #5B4BE8);
       color: #fff;
       text-decoration: none;
       margin-top: 8px;

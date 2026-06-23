@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-AUDIT-0)
+lastUpdated: 2026-06-23 (10UI-FIX-3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-FIX-3 — Admin Core Component Visual Alignment** — complete (2026-06-23)
+
+All reusable `sp-admin-*` component CSS aligned to SpeakPath indigo token palette. Replaced TailAdmin-blue hardcoded literals (`#465fff`, `#ecf3ff`, `#93c5fd`, `#e5e7eb`, `#f9fafb`, `#111827`, `#6b7280`, `#374151`) with `var(--sp-admin-*)` tokens throughout: card, button, badge, stat-card, empty-state, table, input, select, pagination, slide-over, modal, textarea, number-input, checkbox, drawer, copyable-text, code-pill, alert, kpi-card, section-card, section-header, table-actions, status-card. Dark-mode panel backgrounds (`#111827`, `#1f2937`) preserved as intentional. 1035/1035 tests pass. Production build clean.
+
+Review: docs/reviews/2026-06-23-phase-10ui-fix-3-admin-core-component-visual-alignment.md
+
+---
 
 **Phase 10UI-FIX-2 — Admin Shell, Sidebar, and Header Visual Alignment** — complete (2026-06-23)
 

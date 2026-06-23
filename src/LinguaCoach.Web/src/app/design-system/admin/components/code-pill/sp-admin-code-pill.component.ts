@@ -30,7 +30,7 @@ export type SpAdminCodePillTone = 'neutral' | 'primary' | 'info' | 'success' | '
       line-height: 1.5;
     }
     .sp-adm-code-pill-neutral { background: #f2f4f7; color: #344054; }
-    .sp-adm-code-pill-primary { background: #ecf3ff; color: #3538cd; }
+    .sp-adm-code-pill-primary { background: var(--sp-admin-primary-bg,#EDEBFF); color: var(--sp-admin-primary,#5B4BE8); }
     .sp-adm-code-pill-info    { background: #f0f9ff; color: #0369a1; }
     .sp-adm-code-pill-success { background: #ecfdf3; color: #15803d; }
     .sp-adm-code-pill-warning { background: #fffbeb; color: #b45309; }

@@ -34,9 +34,9 @@ export type AlertVariant = 'error' | 'success' | 'info' | 'warning';
       border-left-color: var(--sp-admin-green, #16a34a);
     }
     .sp-alert-info    {
-      background: var(--sp-admin-primary-bg, #ecf3ff);
-      color: var(--sp-admin-primary, #465fff);
-      border-left-color: var(--sp-admin-primary, #465fff);
+      background: var(--sp-admin-primary-bg, #EDEBFF);
+      color: var(--sp-admin-primary, #5B4BE8);
+      border-left-color: var(--sp-admin-primary, #5B4BE8);
     }
     .sp-alert-warning {
       background: var(--sp-admin-amber-bg, #fffbeb);

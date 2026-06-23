@@ -43,12 +43,12 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     .sp-adm-card { min-width:0; position:relative; overflow:hidden; }
 
     /* Variant borders/shadows */
-    .sp-adm-card-default   { border:1px solid #e5e7eb; }
-    .sp-adm-card-bordered  { border:2px solid #e5e7eb; }
-    .sp-adm-card-elevated  { border:1px solid #e5e7eb; box-shadow:0 4px 12px rgba(0,0,0,.08); }
-    .sp-adm-card-flat      { border:none; background:#f9fafb !important; }
-    .sp-adm-card-metric    { border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,.06); }
-    .sp-adm-card-section   { border:none; border-top:2px solid #465fff; }
+    .sp-adm-card-default   { border:1px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-card-bordered  { border:2px solid var(--sp-admin-border,#ECE9F5); }
+    .sp-adm-card-elevated  { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-card,0 4px 12px rgba(60,48,140,.07)); }
+    .sp-adm-card-flat      { border:none; background:var(--sp-admin-surface-subtle,#FBFAFE) !important; }
+    .sp-adm-card-metric    { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-card,0 1px 3px rgba(60,48,140,.05)); }
+    .sp-adm-card-section   { border:none; border-top:2px solid var(--sp-admin-primary,#5B4BE8); }
     .sp-adm-card-dashed    { border-style:dashed; }
 
     /* Radius */
@@ -59,13 +59,13 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
 
     /* Hover */
     .sp-adm-card-hover { cursor:pointer; transition:box-shadow .15s,border-color .15s; }
-    .sp-adm-card-hover:hover { box-shadow:0 4px 16px rgba(70,95,255,.1); border-color:#c7d2fe; }
+    .sp-adm-card-hover:hover { box-shadow:0 4px 16px rgba(91,75,232,.12); border-color:var(--sp-admin-primary-focus,#C0BAF9); }
 
     /* Header */
     .sp-adm-card-header {
       display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
-    .sp-adm-card-header-divider { border-bottom:1px solid #f1f5f9; }
+    .sp-adm-card-header-divider { border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
     .sp-adm-card-title { margin:0; }
 
     /* Body padding */
@@ -75,7 +75,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     .sp-adm-card-body-lg   { padding:24px 32px; }
 
     /* Body border (when header present) */
-    .sp-adm-card-body-bordered { border-top:1px solid #f1f5f9; }
+    .sp-adm-card-body-bordered { border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
 
     /* Loading overlay */
     .sp-adm-card-loading {
@@ -84,7 +84,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     }
     .sp-adm-card-spinner {
       width:24px; height:24px; border-radius:50%;
-      border:3px solid #e5e7eb; border-top-color:#465fff;
+      border:3px solid var(--sp-admin-border,#ECE9F5); border-top-color:var(--sp-admin-primary,#5B4BE8);
       animation:sp-adm-card-spin .7s linear infinite;
     }
     @keyframes sp-adm-card-spin { to { transform:rotate(360deg); } }

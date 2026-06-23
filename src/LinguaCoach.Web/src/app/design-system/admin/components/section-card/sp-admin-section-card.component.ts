@@ -20,12 +20,12 @@ import { CommonModule } from '@angular/common';
   styles: [`
     .sp-sc-root {
       background: var(--sp-admin-surface, #fff);
-      border: 1px solid var(--sp-admin-border, #e5e7eb);
+      border: 1px solid var(--sp-admin-border, #ECE9F5);
       border-radius: 16px;
       padding: 20px;
     }
     .sp-sc-dashed {
-      border: 1.5px dashed var(--sp-admin-border, #e5e7eb);
+      border: 1.5px dashed var(--sp-admin-border, #ECE9F5);
     }
     .sp-sc-header {
       display: flex;
@@ -36,7 +36,7 @@ import { CommonModule } from '@angular/common';
     .sp-sc-title {
       font-size: 13px;
       font-weight: 600;
-      color: var(--sp-admin-text, #374151);
+      color: var(--sp-admin-text, #0F172A);
       letter-spacing: 0.01em;
       flex: 1;
     }

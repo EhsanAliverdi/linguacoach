@@ -86,9 +86,9 @@ const MODAL_SIZE_MAP: Record<SpAdminModalSize, string> = {
     .sp-modal-panel-confirm { border-radius:20px; text-align:center; }
     .sp-modal-panel-confirm .sp-modal-footer { justify-content:center; }
     .sp-modal-title-danger  { color:#ef4444; }
-    .sp-modal-title-default { color:#111827; }
-    .sp-modal-title-form    { color:#111827; }
-    .sp-modal-title-confirm { color:#111827; }
+    .sp-modal-title-default { color:var(--sp-admin-text,#0F172A); }
+    .sp-modal-title-form    { color:var(--sp-admin-text,#0F172A); }
+    .sp-modal-title-confirm { color:var(--sp-admin-text,#0F172A); }
     .sp-modal-danger-icon   { display:flex; justify-content:flex-start; }
     .sp-modal-panel-confirm .sp-modal-danger-icon { justify-content:center; }
   `],
