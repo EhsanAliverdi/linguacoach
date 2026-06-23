@@ -269,6 +269,17 @@
         </sp-admin-kpi-card>
       </div>
 
+      <!-- Channel status breakdown (real data from config) -->
+      @if (channelBreakdownItems().length > 0) {
+        <div style="max-width:400px;margin-bottom:16px;">
+          <sp-admin-breakdown-bars
+            [items]="channelBreakdownItems()"
+            title="Active channels"
+            [showPct]="false"
+            ariaLabel="Notification channel status breakdown" />
+        </div>
+      }
+
       <!-- In-App config -->
       <sp-admin-card title="In-App channel">
         <div class="sp-notif-checkbox-row">
@@ -331,9 +342,11 @@
           <span style="font-size:14px;font-weight:600;">SMS configuration</span>
           <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
         </div>
-        <sp-admin-alert variant="warning">
-          SMS delivery is not production-ready. No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are also deferred. You may pre-configure credentials for when a provider is integrated.
-        </sp-admin-alert>
+        <sp-admin-visual-placeholder
+          state="foundation-only"
+          title="SMS — foundation only"
+          message="No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are deferred. You may pre-configure credentials for when a provider is integrated."
+          style="margin-bottom:12px;display:block" />
         <div class="sp-notif-checkbox-row" style="margin-top:12px;">
           <sp-admin-checkbox [(ngModel)]="smsForm.isEnabled" label="Enabled (no-op until provider implemented)" />
         </div>

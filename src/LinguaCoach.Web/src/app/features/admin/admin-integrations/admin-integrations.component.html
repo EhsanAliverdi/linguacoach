@@ -59,7 +59,7 @@
         </div>
       </div>
       <p class="sp-int-card-desc">Outbound webhook delivery for lesson completion, score events, and student lifecycle hooks.</p>
-      <p class="sp-int-card-not-impl">Backend not available yet. No webhook endpoint is implemented.</p>
+      <sp-admin-visual-placeholder state="not-available" title="Webhook" message="No webhook endpoint is implemented." />
     </div>
 
     <!-- Slack — not implemented -->
@@ -74,7 +74,7 @@
         </div>
       </div>
       <p class="sp-int-card-desc">Slack workspace notifications for admin alerts, batch failures, and student milestones.</p>
-      <p class="sp-int-card-not-impl">Backend not available yet. No Slack integration endpoint is implemented.</p>
+      <sp-admin-visual-placeholder state="not-available" title="Slack" message="No Slack integration endpoint is implemented." />
     </div>
 
     <!-- Analytics — not implemented -->
@@ -89,7 +89,7 @@
         </div>
       </div>
       <p class="sp-int-card-desc">Third-party analytics pipeline (Segment, Mixpanel, PostHog) for product and engagement data.</p>
-      <p class="sp-int-card-not-impl">Backend not available yet. No analytics provider is connected.</p>
+      <sp-admin-visual-placeholder state="not-available" title="Analytics" message="No analytics provider is connected." />
     </div>
 
     <!-- Admin API — not implemented -->
@@ -104,7 +104,7 @@
         </div>
       </div>
       <p class="sp-int-card-desc">Programmatic admin access for external tooling, CI/CD pipelines, and partner integrations.</p>
-      <p class="sp-int-card-not-impl">No public Admin API key management endpoint is implemented. API keys are never displayed.</p>
+      <sp-admin-visual-placeholder state="not-available" title="Admin API" message="No public Admin API key management endpoint is implemented. API keys are never displayed." />
     </div>
 
   </div>
@@ -327,9 +327,10 @@
 
   <!-- Readiness pool aggregate -->
   <sp-admin-card title="Readiness pool — aggregate health" class="mt-4">
-    <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
-    <p class="sp-adm-hint" style="margin-top:8px;">A system-wide readiness pool aggregate endpoint is not yet implemented. Per-student pool health is available on the student detail page. An aggregate endpoint showing total ready, queued, stale, and failed items across all students is deferred to a future phase.</p>
-    <p class="sp-adm-hint" style="margin-top:4px;">See <code>/api/admin/students/&#123;id&#125;/readiness-pool/health</code> for per-student data.</p>
+    <sp-admin-visual-placeholder
+      state="not-available"
+      title="Aggregate pool health"
+      message="A system-wide readiness pool aggregate endpoint is not yet implemented. Per-student pool health is available on the student detail page." />
   </sp-admin-card>
 
 </sp-admin-page-body>

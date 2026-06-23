@@ -329,9 +329,9 @@ describe('AdminIntegrationsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Readiness pool');
   });
 
-  it('renders "Backend not available yet" in readiness pool card', async () => {
+  it('renders visual placeholder in readiness pool card', async () => {
     await setup();
-    expect(fixture.nativeElement.textContent).toContain('Backend not available yet');
+    expect(fixture.nativeElement.querySelector('sp-admin-visual-placeholder')).toBeTruthy();
   });
 
   it('existing batches and storage tests still pass alongside pool card', async () => {

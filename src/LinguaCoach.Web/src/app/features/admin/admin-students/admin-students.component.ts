@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../design-system/admin';
 import type { SpAdminSelectOption } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 interface StudentEditForm {
   firstName: string;
@@ -25,7 +26,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent, SpAdminBreakdownBarsComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <sp-admin-button routerLink="../create-student">Create student</sp-admin-button>
@@ -52,6 +53,17 @@ interface StudentEditForm {
         {{ totalCount() }}
       </sp-admin-kpi-card>
     </div>
+
+    <!-- Onboarding breakdown (real data from stats) -->
+    @if (!loadingStats() && onboardingBreakdownItems().length > 0) {
+      <div class="sp-stu-breakdown-row">
+        <sp-admin-breakdown-bars
+          [items]="onboardingBreakdownItems()"
+          title="Onboarding progress"
+          [showPct]="true"
+          ariaLabel="Student onboarding breakdown" />
+      </div>
+    }
 
     <sp-admin-filter-bar>
       <label class="sp-admin-filter-toggle">
@@ -383,6 +395,7 @@ interface StudentEditForm {
   styles: [`
     .sp-stu-summary-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:4px;}
     @media(min-width:900px){.sp-stu-summary-row{grid-template-columns:repeat(4,1fr);}}
+    .sp-stu-breakdown-row{max-width:480px;margin-bottom:4px;}
 
     .sp-stu-filter-spacer{flex:1;}
     .sp-stu-rows-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748B;white-space:nowrap;flex-shrink:0;}
@@ -417,6 +430,18 @@ export class AdminStudentsComponent implements OnInit {
   // Summary strip stats
   stats = signal<AdminStats | null>(null);
   loadingStats = signal(true);
+
+  readonly onboardingBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const s = this.stats();
+    if (!s || s.totalStudents === 0) return [];
+    const total = s.totalStudents;
+    const onboarded = s.onboardedStudents;
+    const notOnboarded = total - onboarded;
+    return [
+      { label: 'Onboarded', value: onboarded, pct: Math.round((onboarded / total) * 100), tone: 'green' },
+      { label: 'Pending', value: notOnboarded, pct: Math.round((notOnboarded / total) * 100), tone: 'amber' },
+    ];
+  });
 
   loading = signal(true);
   error = signal('');

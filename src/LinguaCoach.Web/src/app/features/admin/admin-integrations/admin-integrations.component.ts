@@ -29,11 +29,12 @@ import {
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
+import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCheckboxComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminFormGridComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminNumberInputComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminSectionHeaderComponent, SpAdminTableComponent, SpAdminTruncatedTextComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminCardComponent, SpAdminCheckboxComponent, SpAdminCopyableTextComponent, SpAdminErrorStateComponent, SpAdminFormGridComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminNumberInputComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminSectionHeaderComponent, SpAdminTableComponent, SpAdminTruncatedTextComponent, SpAdminVisualPlaceholderComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
     .sp-int-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px;}

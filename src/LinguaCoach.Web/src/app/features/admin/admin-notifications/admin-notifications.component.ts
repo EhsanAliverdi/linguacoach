@@ -31,6 +31,8 @@ import {
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
+import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 @Component({
   selector: 'app-admin-notifications',
@@ -55,6 +57,8 @@ import {
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
+    SpAdminVisualPlaceholderComponent,
+    SpAdminBreakdownBarsComponent,
   ],
   templateUrl: './admin-notifications.component.html',
   styles: [`
@@ -513,6 +517,24 @@ export class AdminNotificationsComponent implements OnInit {
       dispatch:{ label: cfg.dispatchJob.enabled ? 'Enabled' : 'Disabled',
                  tone: this.configTone(cfg.dispatchJob.enabled ? 'Enabled' : 'Disabled') },
     };
+  });
+
+  readonly channelBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const cfg = this.config();
+    if (!cfg) return [];
+    const channels: { label: string; ok: boolean }[] = [
+      { label: 'In-App', ok: cfg.inApp.statusLabel.toLowerCase() === 'enabled' || cfg.inApp.statusLabel.toLowerCase() === 'configured' },
+      { label: 'Email', ok: cfg.email.statusLabel.toLowerCase() === 'configured' || cfg.email.statusLabel.toLowerCase() === 'enabled' },
+      { label: 'Dispatch', ok: cfg.dispatchJob.enabled },
+    ];
+    const total = channels.length;
+    return channels.map(c => ({
+      label: c.label,
+      value: c.ok ? 1 : 0,
+      pct: c.ok ? 100 : 0,
+      tone: (c.ok ? 'green' : 'amber') as BreakdownBarItem['tone'],
+      badge: c.ok ? 'Active' : 'Not active',
+    }));
   });
 
   configTone(label: string): 'success' | 'warning' | 'danger' | 'neutral' {

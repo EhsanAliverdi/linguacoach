@@ -104,13 +104,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
       <!-- Activities chart placeholder -->
       <sp-admin-card title="Activity trends">
-        <div class="sp-dash-chart-placeholder">
-          <div class="sp-dash-placeholder-inner">
-            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:#CBD5E1"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <div class="sp-dash-placeholder-label">Activity chart</div>
-            <div class="sp-dash-placeholder-sub">Backend not available yet — no time-series endpoint</div>
-          </div>
-        </div>
+        <sp-admin-visual-placeholder state="not-available" title="Activity trends" message="No time-series activity endpoint" />
       </sp-admin-card>
 
       <!-- System health — AI categories (real data) -->
@@ -321,10 +315,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
     <!-- Live events feed (placeholder) -->
     <sp-admin-card title="Live events feed">
-      <div class="sp-dash-placeholder-block">
-        <sp-admin-badge tone="neutral">Backend not available yet</sp-admin-badge>
-        <div class="sp-dash-placeholder-sub">No real-time events feed endpoint</div>
-      </div>
+      <sp-admin-visual-placeholder state="not-available" title="Live events feed" message="No real-time events feed endpoint" />
     </sp-admin-card>
 
     </sp-admin-page-body>

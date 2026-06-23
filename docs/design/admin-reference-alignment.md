@@ -249,3 +249,27 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - Page redesign matrix and component gap matrix produced.
 - Phase sequence confirmed: next phase is **10UI-REDESIGN-1** (dashboard reference redesign).
 - No Angular source changes in this phase.
+
+## Changes Made in 10UI-VISUAL-1
+
+- Five new reusable visual analytics components added to the admin design system under `design-system/admin/components/`:
+  - `sp-admin-mini-bar-chart` — CSS/SVG proportional bar chart, no external lib.
+  - `sp-admin-breakdown-bars` — horizontal progress rows with label/value/pct, ARIA progressbar.
+  - `sp-admin-ring-metric` — SVG donut ring via `stroke-dasharray`/`stroke-dashoffset`.
+  - `sp-admin-event-feed` — timeline dot-and-line event list with level badges.
+  - `sp-admin-visual-placeholder` — shared "Backend not available yet / Foundation only / Deferred" card.
+- Applied to: AI Usage (mini bar chart for `trendBuckets`), Dashboard (breakdown bars for CEFR + onboarding funnel, visual placeholders for 4 unavailable cards), Diagnostics (event feed summary for top 8 real events), Curriculum (ring metric + CEFR breakdown), Exercise Types (ring metric + skill breakdown), Student Detail (ring metric + pool breakdown for lesson and gym pools).
+- All widgets use real signals. No mock data.
+- 56 new component specs. 1309/1309 PASS.
+- Review: `docs/reviews/2026-06-23-phase-10ui-visual-1-admin-visual-analytics-components.md`
+
+## Changes Made in 10UI-VISUAL-2
+
+- Applied the VISUAL-1 component layer more consistently across remaining pages:
+  - **Students list**: added `sp-admin-breakdown-bars` for onboarding progress (Onboarded/Pending) from real `stats()` signal.
+  - **Notifications**: SMS config card `sp-admin-alert` → `sp-admin-visual-placeholder state="foundation-only"`. Added `sp-admin-breakdown-bars` for channel status (In-App/Email/Dispatch) in config tab from real `config()` signal.
+  - **Integrations**: four "Not implemented" cards (Webhook/Slack/Analytics/Admin API) and readiness pool aggregate card — inline `<p>` text → `sp-admin-visual-placeholder state="not-available"`.
+  - **Dashboard**: activity trends card and live events feed card — custom placeholder divs → `sp-admin-visual-placeholder`.
+  - **AI Usage**: "Activities per day" and "Student engagement" cards — `<p class="sp-au-not-impl">` → `sp-admin-visual-placeholder`.
+- 2 specs updated to match new placeholder element. 1309/1309 PASS.
+- Review: `docs/reviews/2026-06-23-phase-10ui-visual-2-admin-visual-richness-application-sweep.md`

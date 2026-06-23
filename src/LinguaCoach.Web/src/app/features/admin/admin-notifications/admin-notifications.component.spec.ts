@@ -687,13 +687,13 @@ describe('AdminNotificationsComponent', () => {
     expect(emailCard?.textContent).not.toContain('Foundation only');
   });
 
-  it('SMS config card shows warning alert about provider not connected', () => {
+  it('SMS config card shows visual placeholder for foundation-only state', () => {
     apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
     component.activeTab = 'config';
     component.loadConfig();
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
-    expect(html.textContent).toContain('SMS delivery is not production-ready');
+    expect(html.querySelector('sp-admin-visual-placeholder')).toBeTruthy();
   });
 
   it('renders sp-admin-page-header with title Notifications', () => {
