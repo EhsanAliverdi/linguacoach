@@ -61,9 +61,10 @@ function query(host: HTMLElement, selector: string): Element | null {
 
 describe('admin wrapper migration', () => {
   it('dashboard renders with admin wrapper components', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }));
     adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 0 }));
+    adminApi.listAiCategories.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],
@@ -345,9 +346,10 @@ describe('admin wrapper migration', () => {
   });
 
   it('dashboard renders KPI grid cards', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }));
     adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 42 }));
+    adminApi.listAiCategories.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],

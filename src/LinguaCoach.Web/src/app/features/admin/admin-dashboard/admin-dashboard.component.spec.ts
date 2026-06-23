@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AdminDashboardComponent } from './admin-dashboard.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, AdminStats } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats, AiConfigCategoryItem } from '../../../core/models/admin.models';
 
 const STATS: AdminStats = {
   totalStudents: 5,
@@ -51,14 +51,37 @@ const STUDENT_NO_CEFR: StudentListItem = {
   onboardingStatus: 'NotStarted',
 };
 
+const AI_CATEGORIES_CONFIGURED: AiConfigCategoryItem[] = [
+  { id: '1', categoryKey: 'writing', displayName: 'Writing activities', providerName: 'OpenAI', modelName: 'gpt-4o', voiceName: null },
+  { id: '2', categoryKey: 'tts', displayName: 'Text to speech', providerName: 'OpenAI', modelName: 'tts-1', voiceName: 'nova' },
+];
+
+const AI_CATEGORIES_PARTIAL: AiConfigCategoryItem[] = [
+  { id: '1', categoryKey: 'writing', displayName: 'Writing activities', providerName: 'OpenAI', modelName: 'gpt-4o', voiceName: null },
+  { id: '2', categoryKey: 'tts', displayName: 'Text to speech', providerName: null, modelName: null, voiceName: null },
+];
+
+const AI_CATEGORIES_EMPTY: AiConfigCategoryItem[] = [];
+
+const AI_CATEGORIES_NONE_CONFIGURED: AiConfigCategoryItem[] = [
+  { id: '1', categoryKey: 'writing', displayName: 'Writing activities', providerName: null, modelName: null, voiceName: null },
+];
+
 function pagedOf(items: StudentListItem[]) {
   return { items, totalCount: items.length, page: 1, pageSize: 100, totalPages: 1 };
 }
 
-function makeAdminApi(students: StudentListItem[] = [STUDENT], stats: AdminStats = STATS) {
+function makeAdminApi(
+  students: StudentListItem[] = [STUDENT],
+  stats: AdminStats = STATS,
+  aiCategories: AiConfigCategoryItem[] | 'error' = AI_CATEGORIES_CONFIGURED,
+) {
   return {
     listStudents: jasmine.createSpy('listStudents').and.returnValue(of(pagedOf(students))),
     getStats: jasmine.createSpy('getStats').and.returnValue(of(stats)),
+    listAiCategories: jasmine.createSpy('listAiCategories').and.returnValue(
+      aiCategories === 'error' ? throwError(() => new Error('API error')) : of(aiCategories),
+    ),
   };
 }
 
@@ -67,8 +90,12 @@ describe('AdminDashboardComponent', () => {
   let component: AdminDashboardComponent;
   let adminApi: ReturnType<typeof makeAdminApi>;
 
-  async function setup(students: StudentListItem[] = [STUDENT], stats: AdminStats = STATS) {
-    adminApi = makeAdminApi(students, stats);
+  async function setup(
+    students: StudentListItem[] = [STUDENT],
+    stats: AdminStats = STATS,
+    aiCategories: AiConfigCategoryItem[] | 'error' = AI_CATEGORIES_CONFIGURED,
+  ) {
+    adminApi = makeAdminApi(students, stats, aiCategories);
     await TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],
       providers: [
@@ -88,10 +115,11 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Dashboard');
   });
 
-  it('calls listStudents and getStats on init', async () => {
+  it('calls listStudents, getStats, and listAiCategories on init', async () => {
     await setup();
     expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
     expect(adminApi.getStats).toHaveBeenCalledTimes(1);
+    expect(adminApi.listAiCategories).toHaveBeenCalledTimes(1);
   });
 
   it('renders total students stat card from stats', async () => {
@@ -150,12 +178,6 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('No students yet');
   });
 
-  it('renders AI System section', async () => {
-    await setup();
-    expect(fixture.nativeElement.textContent).toContain('AI System');
-    expect(fixture.nativeElement.textContent).toContain('Active');
-  });
-
   it('renders only up to 5 students in preview', async () => {
     const many = Array.from({ length: 8 }, (_, i) => ({
       ...STUDENT,
@@ -166,5 +188,70 @@ describe('AdminDashboardComponent', () => {
     await setup(many);
     const rows = fixture.nativeElement.querySelectorAll('tbody tr');
     expect(rows.length).toBe(5);
+  });
+
+  // AI provider stat card — live status
+  it('shows "Configured" label when all categories have a provider', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
+    expect(fixture.nativeElement.textContent).toContain('AI provider');
+    expect(fixture.nativeElement.textContent).toContain('Configured');
+  });
+
+  it('shows partial label when only some categories configured', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_PARTIAL);
+    expect(fixture.nativeElement.textContent).toContain('1/2 configured');
+  });
+
+  it('shows "Not configured" label when no categories have a provider', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_NONE_CONFIGURED);
+    expect(fixture.nativeElement.textContent).toContain('Not configured');
+  });
+
+  it('shows "Not configured" label when categories list is empty', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_EMPTY);
+    expect(fixture.nativeElement.textContent).toContain('Not configured');
+  });
+
+  it('shows "Unknown" label when AI config API errors', async () => {
+    await setup([STUDENT], STATS, 'error');
+    expect(fixture.nativeElement.textContent).toContain('Unknown');
+  });
+
+  // AI System card — live categories
+  it('renders AI System section with live category names', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
+    expect(fixture.nativeElement.textContent).toContain('AI System');
+    expect(fixture.nativeElement.textContent).toContain('Writing activities');
+    expect(fixture.nativeElement.textContent).toContain('Text to speech');
+    expect(fixture.nativeElement.textContent).toContain('OpenAI');
+  });
+
+  it('shows "Not configured" badge for unconfigured category', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_PARTIAL);
+    expect(fixture.nativeElement.textContent).toContain('Not configured');
+  });
+
+  it('shows "Action needed" when AI System has no configured categories', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_EMPTY);
+    expect(fixture.nativeElement.textContent).toContain('Action needed');
+  });
+
+  it('shows "Unavailable" in AI System when API errors', async () => {
+    await setup([STUDENT], STATS, 'error');
+    expect(fixture.nativeElement.textContent).toContain('Unavailable');
+  });
+
+  it('renders link to /admin/ai-config', async () => {
+    await setup();
+    const link = fixture.nativeElement.querySelector('a[href="/admin/ai-config"]');
+    expect(link).toBeTruthy();
+  });
+
+  it('does not display any API key or secret value', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
+    const text: string = fixture.nativeElement.textContent;
+    expect(text).not.toContain('sk-');
+    expect(text).not.toContain('apiKey');
+    expect(text).not.toContain('API_KEY');
   });
 });

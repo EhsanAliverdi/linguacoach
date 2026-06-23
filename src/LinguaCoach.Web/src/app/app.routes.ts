@@ -76,7 +76,7 @@ export const routes: Routes = [
       },
       {
         path: 'careers',
-        loadComponent: () => import('./features/admin/admin-careers/admin-careers.component').then(m => m.AdminCareersComponent),
+        redirectTo: 'curriculum',
       },
       {
         path: 'usage',

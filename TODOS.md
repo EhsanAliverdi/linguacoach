@@ -302,17 +302,15 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 
 ---
 
-### TODO-UI-05 — Remove or repurpose orphan AdminUsageComponent (P1)
-**What:** Delete `src/LinguaCoach.Web/src/app/features/admin/admin-usage/` folder (the old placeholder with static emoji cards). It is never rendered (the `/admin/usage` route redirects to the real AI usage page) but is confusing dead code.
-**Why:** The stale placeholder says "Analytics not yet tracked" with emoji — contradicting the fully implemented AI usage page. Confusing for future agents and developers.
-**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+### ~~TODO-UI-05~~ — Remove orphan AdminUsageComponent — **DONE in Phase 10UI-FIX-5** (2026-06-23)
+
+`src/LinguaCoach.Web/src/app/features/admin/admin-usage/` folder deleted. Component was unreachable (no route pointed to it). Real AI usage page is `AdminAiUsageComponent` at `/admin/usage`.
 
 ---
 
-### TODO-UI-06 — Admin dashboard: replace static "AI provider: Configured" card (P1)
-**What:** Replace the always-static "AI provider: Configured" stat card on `/admin` with a live status derived from `GET /api/admin/ai/categories`.
-**Why:** Card always shows "Configured" regardless of whether credentials are actually set. Misleads admins into thinking AI is ready when it may not be.
-**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+### ~~TODO-UI-06~~ — Admin dashboard: replace static "AI provider: Configured" card — **DONE in Phase 10UI-FIX-5** (2026-06-23)
+
+Dashboard stat card now calls `listAiCategories()` and shows "Configured" / "N/M configured" / "Not configured" / "Unknown" based on real `AiConfigCategoryItem.providerName` values. AI System card replaced with live category loop. 1045/1045 Angular tests pass.
 
 ---
 
@@ -346,7 +344,9 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 
 ## Design Reference Alignment (Phase 10UI-FIX-1, 2026-06-23)
 
-### TODO-UI-11 — Admin careers orphan: tombstone or suppress route (P0)
+### ~~TODO-UI-11~~ — Admin careers orphan: redirect route — **DONE in Phase 10UI-FIX-5** (2026-06-23)
+
+`/admin/careers` route changed to `redirectTo: 'curriculum'`. Stale `AdminUsageComponent` (emoji placeholder) deleted. `AdminCareersComponent` file retained pending final removal decision — no sidebar link, no active route.
 **What:** `/admin/careers` (`AdminCareersComponent`) is an orphan: no sidebar link, title says "Curriculum", no `sp-admin-*` wrappers, duplicates vocabulary management that now lives in `/admin/curriculum`. Decision needed: redirect `/admin/careers` to `/admin/curriculum`, or add a tombstone page, or suppress the route.
 **Why:** An admin who knows the URL can access a broken, unwrapped, stale page. The backend capabilities (career profiles, curriculum words) are real and served by `/admin/curriculum`. Having two conflicting pages is misleading.
 **Context:** `AdminCareersComponent` should NOT be wrapper-migrated — it is an orphan scheduled for removal. Preferred outcome: redirect route in `app.routes.ts`.

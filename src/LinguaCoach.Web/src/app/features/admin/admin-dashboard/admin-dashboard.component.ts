@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, AdminStats } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats, AiConfigCategoryItem } from '../../../core/models/admin.models';
+import { SpAdminStatCardTone } from '../../../design-system/admin/components/stat-card/sp-admin-stat-card.component';
 import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -49,7 +50,11 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
         <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       </sp-admin-stat-card>
 
-      <sp-admin-stat-card tone="violet" label="AI provider" value="Configured">
+      <sp-admin-stat-card
+        [tone]="aiProviderTone()"
+        label="AI provider"
+        [value]="aiProviderLabel()"
+        [loading]="loadingAiCategories()">
         <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
       </sp-admin-stat-card>
 
@@ -134,25 +139,35 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
     <!-- Bottom row: AI system status -->
     <sp-admin-card title="AI System">
-      <sp-admin-badge slot="actions" tone="success" [dot]="true">Online</sp-admin-badge>
-      <div class="sp-admin-status-rows">
-        <div class="sp-admin-status-row">
-          <span>Writing activities</span>
-          <sp-admin-badge tone="success" [dot]="true">Active</sp-admin-badge>
+      @if (loadingAiCategories()) {
+        <sp-admin-loading-state message="Loading AI config" />
+      } @else if (aiConfigError()) {
+        <div class="sp-admin-status-rows">
+          <div class="sp-admin-status-row">
+            <span>Configuration status</span>
+            <sp-admin-badge tone="neutral">Unavailable</sp-admin-badge>
+          </div>
         </div>
-        <div class="sp-admin-status-row">
-          <span>Feedback generation</span>
-          <sp-admin-badge tone="success" [dot]="true">Active</sp-admin-badge>
+      } @else {
+        <div class="sp-admin-status-rows">
+          @for (cat of aiCategories(); track cat.categoryKey) {
+            <div class="sp-admin-status-row">
+              <span>{{ cat.displayName }}</span>
+              @if (cat.providerName) {
+                <sp-admin-badge tone="success" [dot]="true">{{ cat.providerName }}</sp-admin-badge>
+              } @else {
+                <sp-admin-badge tone="warning">Not configured</sp-admin-badge>
+              }
+            </div>
+          }
+          @if (aiCategories().length === 0) {
+            <div class="sp-admin-status-row">
+              <span>No categories configured</span>
+              <sp-admin-badge tone="warning">Action needed</sp-admin-badge>
+            </div>
+          }
         </div>
-        <div class="sp-admin-status-row">
-          <span>Speaking</span>
-          <sp-admin-badge tone="success" [dot]="true">Active</sp-admin-badge>
-        </div>
-        <div class="sp-admin-status-row">
-          <span>Listening</span>
-          <sp-admin-badge tone="success" [dot]="true">Active</sp-admin-badge>
-        </div>
-      </div>
+      }
       <div class="mt-3">
         <a routerLink="/admin/ai-config" class="sp-admin-link">Manage AI config →</a>
       </div>
@@ -183,6 +198,29 @@ export class AdminDashboardComponent implements OnInit {
   loadingStudents = signal(true);
   stats = signal<AdminStats | null>(null);
   loadingStats = signal(true);
+  aiCategories = signal<AiConfigCategoryItem[]>([]);
+  loadingAiCategories = signal(true);
+  aiConfigError = signal(false);
+
+  readonly aiProviderLabel = computed<string>(() => {
+    if (this.loadingAiCategories()) return '—';
+    if (this.aiConfigError()) return 'Unknown';
+    const cats = this.aiCategories();
+    const configured = cats.filter(c => c.providerName);
+    if (cats.length === 0) return 'Not configured';
+    if (configured.length === 0) return 'Not configured';
+    if (configured.length === cats.length) return 'Configured';
+    return `${configured.length}/${cats.length} configured`;
+  });
+
+  readonly aiProviderTone = computed<SpAdminStatCardTone>(() => {
+    if (this.loadingAiCategories() || this.aiConfigError()) return 'neutral';
+    const cats = this.aiCategories();
+    const configured = cats.filter(c => c.providerName);
+    if (configured.length === 0) return 'amber';
+    if (configured.length === cats.length) return 'violet';
+    return 'amber';
+  });
 
   readonly onboardingLabel = onboardingLabel;
   readonly onboardingTone = onboardingTone;
@@ -197,6 +235,10 @@ export class AdminDashboardComponent implements OnInit {
     this.adminApi.getStats().subscribe({
       next: s => { this.stats.set(s); this.loadingStats.set(false); },
       error: () => { this.loadingStats.set(false); },
+    });
+    this.adminApi.listAiCategories().subscribe({
+      next: cats => { this.aiCategories.set(cats); this.loadingAiCategories.set(false); },
+      error: () => { this.aiConfigError.set(true); this.loadingAiCategories.set(false); },
     });
   }
 }
