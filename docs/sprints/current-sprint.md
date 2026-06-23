@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-FIX-4)
+lastUpdated: 2026-06-23 (10UI-FIX-7)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,14 @@ Last updated: 2026-06-23
 ---
 
 ## Active sprint
+
+**Phase 10UI-FIX-7 — Student Detail Reference Alignment, Readiness Pool, Activity History** — complete (2026-06-23)
+
+Full wrapper migration for `/admin/students/:id`. Page header migrated to `sp-admin-page-header` with projected action buttons. All `<section class="sp-admin-table-card">` cards replaced with `sp-admin-card`. All raw badge class strings replaced with `sp-admin-badge` wrappers using `lifecycleTone`/`onboardingTone` utils. Activity and audit history tables migrated to `sp-admin-table`. Error states migrated to `sp-admin-alert`. New KPI strip (lifecycle, onboarding, CEFR, pool health stat cards). New readiness pool health section (TODO-UI-02) wiring `GET /api/admin/students/{id}/readiness-pool/health` with today/gym breakdown and replenishment badges. `StudentReadinessPoolHealth` DTO added to `admin.models.ts`; `getStudentReadinessPoolHealth()` added to `AdminApiService`. 9 new pool health tests. 1074/1074 Angular tests pass. Build clean.
+
+Review: docs/reviews/2026-06-23-phase-10ui-fix-7-student-detail-reference-alignment.md
+
+---
 
 **Phase 10UI-FIX-6 — Students Header, Create Student Wrapper Migration, Curriculum Filter Bar** — complete (2026-06-23)
 

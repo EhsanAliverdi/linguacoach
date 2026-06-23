@@ -281,17 +281,15 @@ Gap check: docs/reviews/2026-06-23-phase-10auth-f-0-enterprise-auth-security-gap
 
 ---
 
-### TODO-UI-02 — Admin student detail: readiness pool health section (P1)
-**What:** Add a "Readiness pool" section to `/admin/students/:id` wiring `GET /api/admin/students/{id}/readiness-pool/health` and `/readiness-pool`.
-**Why:** Admins cannot diagnose why a student has no ready activities. The pool health endpoint has existed since Phase 10N.
-**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+### ~~TODO-UI-02 — Admin student detail: readiness pool health section~~ DONE
+**Completed:** Phase 10UI-FIX-7, 2026-06-23. Commit: a26293e.
+Pool health section added with today/gym breakdown, KPI strip integration, and `sp-admin-badge` replenishment indicators.
 
 ---
 
-### TODO-UI-03 — Admin student detail: activity history section (P1)
-**What:** Add an "Activity history" section to `/admin/students/:id` calling `GET /api/admin/students/{id}/activity-history`.
-**Why:** Audit history (admin actions) is shown but not the student's actual activity attempts. These are different datasets. The endpoint has existed since the early admin phases.
-**Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
+### ~~TODO-UI-03 — Admin student detail: activity history section~~ DONE
+**Completed:** Phase 10UI-FIX-7, 2026-06-23. Commit: a26293e.
+Activity history section existed; migrated to `sp-admin-table` wrapper and `sp-admin-badge` result badges.
 
 ---
 
