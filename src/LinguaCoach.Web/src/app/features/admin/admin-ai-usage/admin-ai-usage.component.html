@@ -179,6 +179,35 @@
   </div>
 }
 
+<!-- Visual analytics row: success ring + token breakdown + provider share -->
+@if (!loadingSummary() && !summaryError() && summary()) {
+  <div class="sp-au-visual-row">
+    <sp-admin-card title="Success rate">
+      <sp-admin-ring-metric
+        [pct]="successRingPct()"
+        [label]="successRingPct() + '%'"
+        sublabel="of calls succeeded"
+        [tone]="successRingPct() >= 90 ? 'green' : successRingPct() >= 70 ? 'amber' : 'danger'" />
+    </sp-admin-card>
+
+    <sp-admin-card title="Token split">
+      @if (tokenBreakdownItems().length > 0) {
+        <sp-admin-breakdown-bars [items]="tokenBreakdownItems()" [showPct]="true" />
+      } @else {
+        <sp-admin-visual-placeholder state="not-available" title="Token split" message="No token data in this range" />
+      }
+    </sp-admin-card>
+
+    <sp-admin-card title="Calls by provider">
+      @if (providerBreakdownItems().length > 0) {
+        <sp-admin-breakdown-bars [items]="providerBreakdownItems()" [showPct]="true" />
+      } @else {
+        <sp-admin-visual-placeholder state="not-available" title="Calls by provider" message="No provider data in this range" />
+      }
+    </sp-admin-card>
+  </div>
+}
+
 <sp-admin-card title="Calls over time">
   @if (loadingTrends()) {
     <sp-admin-loading-state message="Loading trend" />
@@ -244,12 +273,12 @@
 <div class="sp-au-two-col">
   <sp-admin-card title="Activities per day">
     <span aria-label="Activities per day not implemented" style="display:none"></span>
-    <sp-admin-visual-placeholder state="not-available" title="Activities per day" message="Requires a separate analytics endpoint that is not yet implemented." />
+    <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activities per day" message="Requires a separate analytics endpoint that is not yet implemented." />
   </sp-admin-card>
 
   <sp-admin-card title="Student engagement">
     <span aria-label="Student engagement not implemented" style="display:none"></span>
-    <sp-admin-visual-placeholder state="not-available" title="Student engagement" message="Requires per-student daily activity data that is not yet implemented." />
+    <sp-admin-visual-placeholder state="not-available" skeleton="ring" title="Student engagement" message="Requires per-student daily activity data that is not yet implemented." />
   </sp-admin-card>
 </div>
 

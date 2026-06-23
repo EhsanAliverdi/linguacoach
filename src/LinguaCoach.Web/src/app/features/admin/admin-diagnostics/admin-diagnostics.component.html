@@ -33,6 +33,13 @@
     style="margin-bottom:20px;display:block" />
 }
 
+<!-- Severity breakdown (real data — derived from loaded events) -->
+@if (!loadingEvents() && severityBreakdownItems().length > 0) {
+  <sp-admin-card title="Event severity breakdown" style="margin-bottom:20px">
+    <sp-admin-breakdown-bars [items]="severityBreakdownItems()" [showPct]="true" />
+  </sp-admin-card>
+}
+
 <sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
   <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus()">
     Refresh

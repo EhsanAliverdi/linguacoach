@@ -28,6 +28,9 @@ import {
 } from '../../../design-system/admin';
 import { SpAdminMiniBarChartComponent, MiniBarItem } from '../../../design-system/admin/components/mini-bar-chart/sp-admin-mini-bar-chart.component';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
+import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
+import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 
 @Component({
   selector: 'app-admin-ai-usage',
@@ -55,6 +58,9 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
     SpAdminTruncatedTextComponent,
     SpAdminMiniBarChartComponent,
     SpAdminVisualPlaceholderComponent,
+    SpAdminRingMetricComponent,
+    SpAdminBreakdownBarsComponent,
+    SpAdminGraphCardComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
   styles: [`
@@ -82,6 +88,8 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
     .sp-au-mini-bar { flex: 1; min-width: 3px; border-radius: 2px 2px 0 0; background: var(--sp-admin-primary, #5B4BE8); opacity: 0.75; transition: height 0.2s; }
     .sp-au-chart-empty { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); padding: 8px 0; }
     .sp-au-not-impl { font-size: 13px; color: var(--sp-admin-muted, #9ca3af); padding: 12px 0; }
+    .sp-au-visual-row { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); margin-bottom: 24px; }
+    @media(min-width: 1100px) { .sp-au-visual-row { grid-template-columns: repeat(3, 1fr); } }
   `],
 })
 export class AdminAiUsageComponent implements OnInit {
@@ -394,6 +402,35 @@ export class AdminAiUsageComponent implements OnInit {
       date: b.date,
     }))
   );
+
+  readonly successRingPct = computed<number>(() => {
+    const s = this.summary();
+    if (!s || s.totalCalls === 0) return 0;
+    return Math.round((s.successfulCalls / s.totalCalls) * 100);
+  });
+
+  readonly tokenBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const s = this.summary();
+    if (!s || s.totalTokens === 0) return [];
+    const total = s.totalTokens;
+    return [
+      { label: 'Input tokens',  value: s.totalInputTokens,  pct: Math.round((s.totalInputTokens  / total) * 100), tone: 'indigo' },
+      { label: 'Output tokens', value: s.totalOutputTokens, pct: Math.round((s.totalOutputTokens / total) * 100), tone: 'violet' },
+    ];
+  });
+
+  readonly providerBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const s = this.summary();
+    if (!s) return [];
+    const total = s.totalCalls || 1;
+    const tones: BreakdownBarItem['tone'][] = ['indigo', 'violet', 'teal', 'amber', 'green'];
+    return s.byProvider.map((p, i) => ({
+      label: p.provider,
+      value: p.calls,
+      pct: Math.round((p.calls / total) * 100),
+      tone: tones[i % tones.length],
+    }));
+  });
 
   readonly periodPillOptions: { value: PeriodPreset; label: string }[] = [
     { value: '7d',  label: '7d' },

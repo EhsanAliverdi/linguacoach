@@ -273,3 +273,13 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
   - **AI Usage**: "Activities per day" and "Student engagement" cards — `<p class="sp-au-not-impl">` → `sp-admin-visual-placeholder`.
 - 2 specs updated to match new placeholder element. 1309/1309 PASS.
 - Review: `docs/reviews/2026-06-23-phase-10ui-visual-2-admin-visual-richness-application-sweep.md`
+
+## Changes Made in 10UI-VISUAL-3
+
+- Added 4 decorative skeleton variants to `sp-admin-visual-placeholder`: `chart` (8-bar SVG), `ring` (donut arc), `timeline` (dot-and-bar rows), `grid` (3×6 opacity-band cells). All decorative — no fake numbers.
+- Created new `sp-admin-graph-card` wrapper component with title, subtitle, status badge (live/partial/unavailable), action link, footer note, and ng-content body slot.
+- **AI Usage**: inserted 3-card visual analytics row (Success rate ring from real `successfulCalls/totalCalls`, Token split breakdown bars from real `totalInputTokens/totalOutputTokens`, Calls by provider breakdown bars from real `byProvider[]`). Upgraded 2 remaining placeholder cards with `skeleton="chart"` and `skeleton="ring"`.
+- **Diagnostics**: added `severityBreakdownItems` computed from real `events()` array; inserted "Event severity breakdown" card (Error/Warning/Information/Debug) above System status when events are present.
+- **Dashboard**: upgraded 6 placeholder cards with skeleton variants (Activity trends → chart, Score distribution → chart, AI spend by type → grid, Avg session duration → ring, Streak leaderboard → timeline, Live events feed → timeline).
+- 15 new component specs. 1324/1324 PASS.
+- Review: `docs/reviews/2026-06-24-phase-10ui-visual-3-admin-graph-cards-reference-density.md`

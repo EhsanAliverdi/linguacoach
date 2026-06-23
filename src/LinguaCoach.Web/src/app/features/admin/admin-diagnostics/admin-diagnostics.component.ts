@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
 import { SpAdminEventFeedComponent, EventFeedItem } from '../../../design-system/admin/components/event-feed/sp-admin-event-feed.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
@@ -56,6 +57,7 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
     SpAdminEventFeedComponent,
+    SpAdminBreakdownBarsComponent,
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
@@ -107,6 +109,23 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       correlationId: e.correlationId ?? undefined,
     }))
   );
+
+  readonly severityBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const evs = this.events();
+    if (evs.length === 0) return [];
+    const total = evs.length;
+    const errors      = evs.filter(e => e.level?.toLowerCase() === 'error').length;
+    const warnings    = evs.filter(e => e.level?.toLowerCase() === 'warning').length;
+    const information = evs.filter(e => e.level?.toLowerCase() === 'information').length;
+    const debug       = evs.filter(e => e.level?.toLowerCase() === 'debug').length;
+    const rows: BreakdownBarItem[] = [
+      { label: 'Error',       value: errors,      pct: Math.round((errors      / total) * 100), tone: 'danger' },
+      { label: 'Warning',     value: warnings,    pct: Math.round((warnings    / total) * 100), tone: 'amber' },
+      { label: 'Information', value: information, pct: Math.round((information / total) * 100), tone: 'indigo' },
+      { label: 'Debug',       value: debug,       pct: Math.round((debug       / total) * 100), tone: 'slate' },
+    ];
+    return rows.filter(r => r.value > 0);
+  });
 
   readonly kpiSummary = computed(() => {
     const s = this.status();

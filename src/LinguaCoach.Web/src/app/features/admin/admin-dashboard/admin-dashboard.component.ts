@@ -104,7 +104,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
       <!-- Activities chart placeholder -->
       <sp-admin-card title="Activity trends">
-        <sp-admin-visual-placeholder state="not-available" title="Activity trends" message="No time-series activity endpoint" />
+        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activity trends" message="No time-series activity endpoint" />
       </sp-admin-card>
 
       <!-- System health — AI categories (real data) -->
@@ -200,19 +200,19 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <div class="sp-dash-four-grid">
 
       <sp-admin-card title="Score distribution">
-        <sp-admin-visual-placeholder state="not-available" title="Score distribution" message="No score distribution endpoint" />
+        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Score distribution" message="No score distribution endpoint" />
       </sp-admin-card>
 
       <sp-admin-card title="AI spend by type">
-        <sp-admin-visual-placeholder state="not-available" title="AI spend by type" message="No per-category cost endpoint in admin stats" />
+        <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="AI spend by type" message="No per-category cost endpoint in admin stats" />
       </sp-admin-card>
 
       <sp-admin-card title="Avg session duration">
-        <sp-admin-visual-placeholder state="not-available" title="Avg session duration" message="No session duration endpoint" />
+        <sp-admin-visual-placeholder state="not-available" skeleton="ring" title="Avg session duration" message="No session duration endpoint" />
       </sp-admin-card>
 
       <sp-admin-card title="Streak leaderboard">
-        <sp-admin-visual-placeholder state="not-available" title="Streak leaderboard" message="No streak endpoint" />
+        <sp-admin-visual-placeholder state="not-available" skeleton="timeline" title="Streak leaderboard" message="No streak endpoint" />
       </sp-admin-card>
 
     </div>
@@ -315,7 +315,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
     <!-- Live events feed (placeholder) -->
     <sp-admin-card title="Live events feed">
-      <sp-admin-visual-placeholder state="not-available" title="Live events feed" message="No real-time events feed endpoint" />
+      <sp-admin-visual-placeholder state="not-available" skeleton="timeline" title="Live events feed" message="No real-time events feed endpoint" />
     </sp-admin-card>
 
     </sp-admin-page-body>

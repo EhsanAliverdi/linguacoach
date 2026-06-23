@@ -61,4 +61,35 @@ describe('SpAdminVisualPlaceholderComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.sp-vp-foundation-only')).toBeTruthy();
   });
+
+  it('renders no skeleton element when skeleton is none', () => {
+    component.skeleton = 'none';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-vp-skeleton')).toBeFalsy();
+  });
+
+  it('renders chart skeleton SVG when skeleton is chart', () => {
+    component.skeleton = 'chart';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-vp-skeleton')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.sp-vp-sk-svg')).toBeTruthy();
+  });
+
+  it('renders ring skeleton when skeleton is ring', () => {
+    component.skeleton = 'ring';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-vp-sk-ring-arc')).toBeTruthy();
+  });
+
+  it('renders timeline skeleton when skeleton is timeline', () => {
+    component.skeleton = 'timeline';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-vp-sk-tl-line')).toBeTruthy();
+  });
+
+  it('renders grid skeleton when skeleton is grid', () => {
+    component.skeleton = 'grid';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-vp-skeleton')).toBeTruthy();
+  });
 });
