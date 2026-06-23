@@ -61,12 +61,12 @@ public sealed class AuthEndpointTests : IClassFixture<ApiTestFactory>
     [Fact]
     public async Task ChangePassword_WithValidCredentials_Returns204()
     {
-        var (token, _) = await CreateTempStudentAsync("cp_student@test.com", "Temp@1234");
+        var (token, _) = await CreateTempStudentAsync("cp_student@test.com", "Temp@12345");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/change-password")
         {
             Headers = { Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token) },
-            Content = JsonContent.Create(new { currentPassword = "Temp@1234", newPassword = "NewPass@5678" })
+            Content = JsonContent.Create(new { currentPassword = "Temp@12345", newPassword = "NewPass@5678" })
         };
         var response = await _client.SendAsync(request);
 
@@ -85,7 +85,7 @@ public sealed class AuthEndpointTests : IClassFixture<ApiTestFactory>
     [Fact]
     public async Task TemporaryPassword_UserCannotAccessProtectedEndpoints()
     {
-        var (token, _) = await CreateTempStudentAsync($"restricted_{Guid.NewGuid():N}@test.com", "Temp@1234");
+        var (token, _) = await CreateTempStudentAsync($"restricted_{Guid.NewGuid():N}@test.com", "Temp@12345");
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
         {
             Headers = { Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token) }

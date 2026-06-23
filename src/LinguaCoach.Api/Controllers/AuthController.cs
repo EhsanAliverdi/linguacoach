@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LinguaCoach.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LinguaCoach.Api.Controllers;
 
@@ -25,6 +26,7 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthLogin")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         try
@@ -40,6 +42,7 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("change-password")]
     [Authorize]
+    [EnableRateLimiting("AuthReset")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
@@ -63,6 +66,7 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     [HttpPost("reset-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthReset")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
     {
         if (request.NewPassword != request.ConfirmPassword)

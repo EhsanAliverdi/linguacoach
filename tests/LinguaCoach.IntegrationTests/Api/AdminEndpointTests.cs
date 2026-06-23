@@ -71,12 +71,12 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
 
         var email = $"mustchange_{Guid.NewGuid():N}@test.com";
         await _client.PostAsJsonAsync("/api/admin/students",
-            new { email, temporaryPassword = "Temp@5678" });
+            new { email, temporaryPassword = "Temp@56789" });
 
         // Now log in as the newly created student — must_change_password should be true.
         var loginClient = _factory.CreateClient();
         var loginResponse = await loginClient.PostAsJsonAsync("/api/auth/login",
-            new { email, password = "Temp@5678" });
+            new { email, password = "Temp@56789" });
 
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
         var body = await loginResponse.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
@@ -104,12 +104,12 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
 
         var email = $"nochange_{Guid.NewGuid():N}@test.com";
         var createResponse = await _client.PostAsJsonAsync("/api/admin/students",
-            new { email, temporaryPassword = "Temp@5678", mustChangePassword = false });
+            new { email, temporaryPassword = "Temp@56789", mustChangePassword = false });
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
 
         var loginClient = _factory.CreateClient();
         var loginResponse = await loginClient.PostAsJsonAsync("/api/auth/login",
-            new { email, password = "Temp@5678" });
+            new { email, password = "Temp@56789" });
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
         var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.False(body.GetProperty("mustChangePassword").GetBoolean());
@@ -125,7 +125,7 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         var createResponse = await _client.PostAsJsonAsync("/api/admin/students", new
         {
             email,
-            temporaryPassword = "Temp@5678",
+            temporaryPassword = "Temp@56789",
             mustChangePassword = false,
             firstName = "Ehsan",
             lastName = "Test",
@@ -154,7 +154,7 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         var createResponse = await _client.PostAsJsonAsync("/api/admin/students", new
         {
             email,
-            temporaryPassword = "Temp@5678",
+            temporaryPassword = "Temp@56789",
             mustChangePassword = true,
             firstName = "Ehsan"
         });
@@ -163,7 +163,7 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         // Login and verify mustChangePassword=true from the token response
         var loginClient = _factory.CreateClient();
         var loginResponse = await loginClient.PostAsJsonAsync("/api/auth/login",
-            new { email, password = "Temp@5678" });
+            new { email, password = "Temp@56789" });
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
         var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(body.GetProperty("mustChangePassword").GetBoolean());

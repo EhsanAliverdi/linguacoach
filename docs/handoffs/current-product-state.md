@@ -22,9 +22,17 @@ Auth/security audit complete. No code changes. Roadmap defined.
 - Admin/Student roles. Force-password-change middleware. Token-based reset links.
 - Generic error responses (no enumeration). Secrets never exposed to frontend.
 
-### Critical gap
+### Hardening delivered (10Auth-F-1, 2026-06-23)
 
-No brute-force/lockout protection on `/api/auth/login`. No auth event audit log. No session revocation.
+- Account lockout: 5 failed attempts → 15-minute lockout. `LoginHandler` uses `AccessFailedAsync`/`IsLockedOutAsync`/`ResetAccessFailedCountAsync`.
+- Rate limiting: `AuthLogin` (10 req / 5 min per IP on POST /api/auth/login), `AuthReset` (3 req / 15 min per IP on reset-password and change-password).
+- Password policy: 10+ chars, uppercase, lowercase, digit, special char all required.
+- Security response headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` (camera/mic/geo/payment blocked).
+- CSP and HSTS deferred (Angular nonce strategy and production TLS confirmation required first).
+
+### Remaining gaps
+
+No auth event audit log. No session revocation. No refresh tokens. No OAuth. No admin security UI.
 
 ### Roadmap
 

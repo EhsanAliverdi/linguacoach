@@ -14,6 +14,14 @@ Last updated: 2026-06-23
 
 ## Active sprint
 
+**Phase 10Auth-F-1 — Immediate Auth/Security Hardening** — complete (2026-06-23)
+
+Lockout (5 attempts / 15 min), IP rate limiting on login (10 req/5 min) and reset/change-password (3 req/15 min), password policy hardened (10 chars, upper+lower+digit+special), `SecurityHeadersMiddleware` (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy). `LoginHandler` updated to use `AccessFailedAsync`/`IsLockedOutAsync`/`ResetAccessFailedCountAsync`. 13 new auth security integration tests. 2304/2304 tests pass. No migrations, no UI changes.
+
+Review: docs/reviews/2026-06-23-phase-10auth-f-1-immediate-auth-security-hardening.md
+
+---
+
 **Phase 10Auth-F-0 — Enterprise Auth/Security Gap Check** — complete (2026-06-23)
 
 Audit of authentication, authorization, password, session, token, reset-password, and account-security implementation. No code changes. Roadmap defined for 10Auth-F-1 through 10Auth-F-FINAL. Critical gap: no brute-force/lockout protection. Next phase: 10Auth-F-1 (lockout + rate limiting + password policy hardening, ~1 day, no migration).

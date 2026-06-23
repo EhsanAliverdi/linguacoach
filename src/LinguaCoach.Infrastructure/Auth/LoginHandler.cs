@@ -39,10 +39,22 @@ public sealed class LoginHandler : ILoginHandler
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
+        // Check lockout before validating password — do not reveal reason
+        if (await _userManager.IsLockedOutAsync(user))
+        {
+            _logger.LogWarning("Login rejected — account locked out UserId={UserId}", user.Id);
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
         var valid = await _userManager.CheckPasswordAsync(user, command.Password);
         if (!valid)
         {
-            _logger.LogWarning("Login failed — invalid password for UserId={UserId}", user.Id);
+            // Increment failed count; Identity will set LockoutEnd when threshold is reached
+            await _userManager.AccessFailedAsync(user);
+            var stillLockedOut = await _userManager.IsLockedOutAsync(user);
+            _logger.LogWarning(
+                "Login failed — invalid password UserId={UserId} LockedOut={LockedOut}",
+                user.Id, stillLockedOut);
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
@@ -65,6 +77,9 @@ public sealed class LoginHandler : ILoginHandler
                 throw new UnauthorizedAccessException("Account is not active.");
             }
         }
+
+        // Successful login — reset failed access count
+        await _userManager.ResetAccessFailedCountAsync(user);
 
         var token = _tokenService.GenerateToken(user.Id, user.Email!, user.Role);
         _logger.LogInformation("Login succeeded UserId={UserId} Role={Role} MustChangePassword={MustChange}",

@@ -49,13 +49,19 @@ else
 // ── ASP.NET Identity ────────────────────────────────────────────────────────
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
-    options.Password.RequiredLength = 8;
+    // Password policy — enterprise baseline
+    options.Password.RequiredLength = 10;
     options.Password.RequireDigit = true;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
     options.User.RequireUniqueEmail = true;
     // Admin creates accounts; email confirmation is set programmatically.
     options.SignIn.RequireConfirmedEmail = false;
+    // Lockout — brute-force protection
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddEntityFrameworkStores<LinguaCoachDbContext>()
 .AddDefaultTokenProviders();
@@ -123,14 +129,43 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
+    // Auth login: 10 attempts per IP per 5 minutes — reduces password spray
+    options.AddPolicy("AuthLogin", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(5),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
+    // Auth reset/change: 3 attempts per IP per 15 minutes — reduces reset-link abuse
+    options.AddPolicy("AuthReset", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter($"reset:{ip}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 3,
+            Window = TimeSpan.FromMinutes(15),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.HttpContext.Response.ContentType = "application/json";
-        await context.HttpContext.Response.WriteAsJsonAsync(new
-        {
-            error = "Please wait before requesting more writing feedback."
-        }, token);
+
+        var isAuthEndpoint = context.HttpContext.Request.Path.StartsWithSegments("/api/auth");
+        var message = isAuthEndpoint
+            ? "Too many requests. Please try again later."
+            : "Please wait before requesting more writing feedback.";
+
+        await context.HttpContext.Response.WriteAsJsonAsync(new { error = message }, token);
     };
 });
 
@@ -226,6 +261,7 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment()) app.UseCors("AngularDev");
