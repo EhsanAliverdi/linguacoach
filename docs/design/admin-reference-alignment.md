@@ -284,6 +284,39 @@ Full route-by-route redesign plan in: `docs/reviews/2026-06-23-phase-10ui-redesi
 - 15 new component specs. 1324/1324 PASS.
 - Review: `docs/reviews/2026-06-24-phase-10ui-visual-3-admin-graph-cards-reference-density.md`
 
+## Changes Made in 10UI-CLOSURE-1 (2026-06-24)
+
+Phase 10UI-CLOSURE-1 closure audit. No source changes. Verified:
+- Dashboard wires `getDashboardActivityTrends('30d')`, `getDashboardScoreDistribution('7d')`, `getAiUsageTrends('7d')`.
+- All three hero KPIs (`heroActivitiesThisWeek`, `heroAvgScore`, `heroAiCost7d`) derive from real signals.
+- AI Usage page wires `getAiUsageTrends('30d')` and `getAiUsageCategoryBreakdown('30d')` on init.
+- All placeholders are honest — none claim data unavailable when it is now available.
+- No secrets or mock data in any admin template.
+- TODOS.md VISUAL-01 through VISUAL-12 statuses all accurate.
+
+Updated fidelity table:
+
+| Route | Fidelity (10UI-CLOSURE-1) | Key gaps |
+|---|---|---|
+| `/admin` | 7/10 | AI spend donut, streak, avg session, live events (all need new backend endpoints) |
+| `/admin/students` | 8/10 | Streak/mins columns (no backend) |
+| `/admin/create-student` | 9/10 | — |
+| `/admin/students/:id` | 9/10 | — |
+| `/admin/ai-config` | 8/10 | Rate limits card (no endpoint) |
+| `/admin/prompts` | 8/10 | — |
+| `/admin/usage` | 8/10 | Aggregate charts always 30d (period pills don't refresh aggregate) |
+| `/admin/usage-policies` | 7/10 | No reference counterpart |
+| `/admin/exercise-types` | 8/10 | Inline toggle deferred |
+| `/admin/curriculum` | 8/10 | Track-level cards not available |
+| `/admin/notifications` | 8/10 | Webhook placeholder |
+| `/admin/integrations` | 8/10 | Webhook/Slack/Analytics/Admin API placeholders |
+| `/admin/diagnostics` | 8/10 | — |
+| `/admin/security` | 9/10 | — |
+
+Review: `docs/reviews/2026-06-24-phase-10ui-closure-1-admin-ui-visual-aggregate-closure-audit.md`
+
+---
+
 ## Changes Made in 10UI-VISUAL-FINAL
 
 Visual fidelity audit comparing all admin routes against the reference design. Tiny safe polish fixes applied to dashboard only.
