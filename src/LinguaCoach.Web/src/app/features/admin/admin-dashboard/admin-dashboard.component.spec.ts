@@ -91,6 +91,9 @@ function pagedOf(items: StudentListItem[]) {
   return { items, totalCount: items.length, page: 1, pageSize: 100, totalPages: 1 };
 }
 
+const EMPTY_ACTIVITY_TRENDS = { period: '30d', buckets: [] };
+const EMPTY_SCORE_DIST = { period: '30d', totalScoredAttempts: 0, buckets: [] };
+
 function makeAdminApi(
   students: StudentListItem[] = [STUDENT],
   stats: AdminStats = STATS,
@@ -102,6 +105,8 @@ function makeAdminApi(
     listAiCategories: jasmine.createSpy('listAiCategories').and.returnValue(
       aiCategories === 'error' ? throwError(() => new Error('API error')) : of(aiCategories),
     ),
+    getDashboardActivityTrends: jasmine.createSpy('getDashboardActivityTrends').and.returnValue(of(EMPTY_ACTIVITY_TRENDS)),
+    getDashboardScoreDistribution: jasmine.createSpy('getDashboardScoreDistribution').and.returnValue(of(EMPTY_SCORE_DIST)),
   };
 }
 

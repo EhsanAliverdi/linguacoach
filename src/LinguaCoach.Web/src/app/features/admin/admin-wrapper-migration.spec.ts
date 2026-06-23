@@ -61,10 +61,12 @@ function query(host: HTMLElement, selector: string): Element | null {
 
 describe('admin wrapper migration', () => {
   it('dashboard renders with admin wrapper components', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories', 'getDashboardActivityTrends', 'getDashboardScoreDistribution']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }));
     adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 0 }));
     adminApi.listAiCategories.and.returnValue(of([]));
+    adminApi.getDashboardActivityTrends.and.returnValue(of({ period: '30d', buckets: [] }));
+    adminApi.getDashboardScoreDistribution.and.returnValue(of({ period: '30d', totalScoredAttempts: 0, buckets: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],
@@ -200,8 +202,10 @@ describe('admin wrapper migration', () => {
       byFeature: [],
     }));
     svc.getRecent.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getAiUsageTrends', 'getAiUsageCategoryBreakdown']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 1 }));
+    adminApi.getAiUsageTrends.and.returnValue(of({ period: '30d', buckets: [] }));
+    adminApi.getAiUsageCategoryBreakdown.and.returnValue(of({ period: '30d', categories: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminAiUsageComponent],
@@ -348,10 +352,12 @@ describe('admin wrapper migration', () => {
   });
 
   it('dashboard renders KPI grid cards', () => {
-    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories']);
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getStats', 'listAiCategories', 'getDashboardActivityTrends', 'getDashboardScoreDistribution']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 100, totalPages: 1 }));
     adminApi.getStats.and.returnValue(of({ totalActivityAttempts: 42 }));
     adminApi.listAiCategories.and.returnValue(of([]));
+    adminApi.getDashboardActivityTrends.and.returnValue(of({ period: '30d', buckets: [] }));
+    adminApi.getDashboardScoreDistribution.and.returnValue(of({ period: '30d', totalScoredAttempts: 0, buckets: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],

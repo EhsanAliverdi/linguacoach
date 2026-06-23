@@ -54,8 +54,10 @@ describe('AdminAiUsageComponent', () => {
     svc.exportUsageCsv.and.returnValue(of(new Blob(['header\nrow1'], { type: 'text/csv' })));
     svc.getTrends.and.returnValue(of([] as AiUsageTrendBucket[]));
 
-    adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents']);
+    adminApi = jasmine.createSpyObj('AdminApiService', ['listStudents', 'getAiUsageTrends', 'getAiUsageCategoryBreakdown']);
     adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 50, totalPages: 1 }));
+    adminApi.getAiUsageTrends.and.returnValue(of({ period: '30d', buckets: [] }));
+    adminApi.getAiUsageCategoryBreakdown.and.returnValue(of({ period: '30d', categories: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminAiUsageComponent],
@@ -1270,18 +1272,18 @@ describe('AdminAiUsageComponent', () => {
     expect(chart).toBeTruthy();
   });
 
-  it('activities per day card renders with "not implemented" text', () => {
+  it('AI calls per day graph card renders', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const el = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Activities per day not implemented"]');
+    const el = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-graph-card');
     expect(el).toBeTruthy();
   });
 
-  it('student engagement card renders with "not implemented" text', () => {
+  it('calls by feature graph card renders', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const el = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Student engagement not implemented"]');
-    expect(el).toBeTruthy();
+    const els = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-graph-card');
+    expect(els.length).toBeGreaterThanOrEqual(1);
   });
 
   it('no API key or secret text rendered anywhere', () => {

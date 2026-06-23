@@ -681,3 +681,17 @@ export interface StudentReadinessPoolHealth {
   todayLesson: ReadinessPoolSourceHealth;
   practiceGym: ReadinessPoolSourceHealth;
 }
+
+// ── Dashboard aggregate ────────────────────────────────────────────────────────
+
+export interface ActivityTrendBucket { date: string; activityCount: number; completedCount: number; failedCount: number; }
+export interface AdminDashboardActivityTrendResponse { period: string; buckets: ActivityTrendBucket[]; }
+
+export interface ScoreDistributionBucket { label: string; minScore: number; maxScore: number; count: number; }
+export interface AdminDashboardScoreDistributionResponse { period: string; totalScoredAttempts: number; buckets: ScoreDistributionBucket[]; }
+
+export interface AdminAggAiUsageTrendBucket { date: string; requestCount: number; successfulCalls: number; failedCalls: number; inputTokens: number; outputTokens: number; totalTokens: number; cost: number; }
+export interface AdminAiUsageTrendResponse { period: string; buckets: AdminAggAiUsageTrendBucket[]; }
+
+export interface AiUsageCategoryBreakdownItem { category: string; requestCount: number; totalTokens: number; cost: number; failedCalls: number; }
+export interface AdminAiUsageCategoryBreakdownResponse { period: string; categories: AiUsageCategoryBreakdownItem[]; }

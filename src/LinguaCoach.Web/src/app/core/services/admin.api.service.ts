@@ -20,6 +20,8 @@ import {
   AdminUpdateEmailConfigRequest, AdminUpdateSmsConfigRequest, AdminUpdateInAppConfigRequest,
   AdminUpdateConfigResult,
   AdminSecuritySettings, AdminAuthEventItem, AdminAuthEventListQuery,
+  AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse,
+  AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -291,5 +293,23 @@ export class AdminApiService {
     if (query.to) params['to'] = query.to;
     return this.http.get<PagedResponse<AdminAuthEventItem>>(
       `${this.api}/security/auth-events`, { params });
+  }
+
+  // ── Dashboard aggregate ──────────────────────────────────────────────────────
+
+  getDashboardActivityTrends(period = '30d'): Observable<AdminDashboardActivityTrendResponse> {
+    return this.http.get<AdminDashboardActivityTrendResponse>(`${this.api}/dashboard/activity-trends?period=${period}`);
+  }
+
+  getDashboardScoreDistribution(period = '30d'): Observable<AdminDashboardScoreDistributionResponse> {
+    return this.http.get<AdminDashboardScoreDistributionResponse>(`${this.api}/dashboard/score-distribution?period=${period}`);
+  }
+
+  getAiUsageTrends(period = '30d'): Observable<AdminAiUsageTrendResponse> {
+    return this.http.get<AdminAiUsageTrendResponse>(`${this.api}/ai-usage/aggregate-trends?period=${period}`);
+  }
+
+  getAiUsageCategoryBreakdown(period = '30d'): Observable<AdminAiUsageCategoryBreakdownResponse> {
+    return this.http.get<AdminAiUsageCategoryBreakdownResponse>(`${this.api}/ai-usage/by-category?period=${period}`);
   }
 }

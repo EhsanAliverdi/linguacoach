@@ -399,3 +399,25 @@ public sealed record CategoryTestResult(
     bool Ok,
     int LatencyMs,
     string? Error);
+
+// ── Dashboard aggregate ───────────────────────────────────────────────────────
+
+public sealed record ActivityTrendBucket(string Date, int ActivityCount, int CompletedCount, int FailedCount);
+public sealed record AdminDashboardActivityTrendResponse(string Period, IReadOnlyList<ActivityTrendBucket> Buckets);
+
+public sealed record ScoreDistributionBucket(string Label, int MinScore, int MaxScore, int Count);
+public sealed record AdminDashboardScoreDistributionResponse(string Period, int TotalScoredAttempts, IReadOnlyList<ScoreDistributionBucket> Buckets);
+
+public sealed record AdminAggAiUsageTrendBucket(string Date, int RequestCount, int SuccessfulCalls, int FailedCalls, long InputTokens, long OutputTokens, long TotalTokens, decimal Cost);
+public sealed record AdminAiUsageTrendResponse(string Period, IReadOnlyList<AdminAggAiUsageTrendBucket> Buckets);
+
+public sealed record AiUsageCategoryBreakdownItem(string Category, int RequestCount, long TotalTokens, decimal Cost, int FailedCalls);
+public sealed record AdminAiUsageCategoryBreakdownResponse(string Period, IReadOnlyList<AiUsageCategoryBreakdownItem> Categories);
+
+public interface IAdminDashboardAggregateHandler
+{
+    Task<AdminDashboardActivityTrendResponse> GetActivityTrendsAsync(string period, CancellationToken ct = default);
+    Task<AdminDashboardScoreDistributionResponse> GetScoreDistributionAsync(string period, CancellationToken ct = default);
+    Task<AdminAiUsageTrendResponse> GetAiUsageTrendsAsync(string period, CancellationToken ct = default);
+    Task<AdminAiUsageCategoryBreakdownResponse> GetAiUsageCategoryBreakdownAsync(string period, CancellationToken ct = default);
+}

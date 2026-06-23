@@ -5,7 +5,7 @@ export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month' | 'custom';
 import { FormsModule } from '@angular/forms';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter, AiUsageTrendBucket } from '../../../core/services/ai-usage.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem } from '../../../core/models/admin.models';
+import { StudentListItem, AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse } from '../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -146,6 +146,14 @@ export class AdminAiUsageComponent implements OnInit {
   loadingTrends = signal(false);
   trendError = signal('');
 
+  // Aggregate analytics signals
+  aggTrends = signal<AdminAiUsageTrendResponse | null>(null);
+  loadingAggTrends = signal(true);
+  aggTrendsError = signal(false);
+  aggCategoryBreakdown = signal<AdminAiUsageCategoryBreakdownResponse | null>(null);
+  loadingAggCategory = signal(true);
+  aggCategoryError = signal(false);
+
   // Student options loaded on init from admin student list
   studentOptions = signal<{ value: string; label: string }[]>([]);
 
@@ -187,6 +195,18 @@ export class AdminAiUsageComponent implements OnInit {
   ngOnInit(): void {
     this.loadStudentOptions();
     this.load();
+    this.loadAggregateAnalytics();
+  }
+
+  private loadAggregateAnalytics(): void {
+    this.adminApi.getAiUsageTrends('30d').subscribe({
+      next: r => { this.aggTrends.set(r); this.loadingAggTrends.set(false); },
+      error: () => { this.aggTrendsError.set(true); this.loadingAggTrends.set(false); },
+    });
+    this.adminApi.getAiUsageCategoryBreakdown('30d').subscribe({
+      next: r => { this.aggCategoryBreakdown.set(r); this.loadingAggCategory.set(false); },
+      error: () => { this.aggCategoryError.set(true); this.loadingAggCategory.set(false); },
+    });
   }
 
   private loadStudentOptions(): void {
@@ -428,6 +448,31 @@ export class AdminAiUsageComponent implements OnInit {
       label: p.provider,
       value: p.calls,
       pct: Math.round((p.calls / total) * 100),
+      tone: tones[i % tones.length],
+    }));
+  });
+
+  readonly aggTrendItems = computed<BreakdownBarItem[]>(() => {
+    const data = this.aggTrends();
+    if (!data) return [];
+    const max = Math.max(...data.buckets.map(b => b.requestCount), 1);
+    return data.buckets.slice(-7).map(b => ({
+      label: b.date.slice(5),
+      value: b.requestCount,
+      pct: Math.round((b.requestCount / max) * 100),
+      tone: 'indigo' as const,
+    }));
+  });
+
+  readonly aggCategoryItems = computed<BreakdownBarItem[]>(() => {
+    const data = this.aggCategoryBreakdown();
+    if (!data) return [];
+    const max = Math.max(...data.categories.map(c => c.requestCount), 1);
+    const tones: BreakdownBarItem['tone'][] = ['indigo', 'violet', 'teal', 'amber', 'green', 'slate'];
+    return data.categories.map((c, i) => ({
+      label: c.category.replace(/_/g, ' '),
+      value: c.requestCount,
+      pct: Math.round((c.requestCount / max) * 100),
       tone: tones[i % tones.length],
     }));
   });

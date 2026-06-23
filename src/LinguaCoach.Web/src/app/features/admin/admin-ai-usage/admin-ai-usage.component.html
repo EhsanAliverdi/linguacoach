@@ -271,15 +271,25 @@
 </sp-admin-card>
 
 <div class="sp-au-two-col">
-  <sp-admin-card title="Activities per day">
-    <span aria-label="Activities per day not implemented" style="display:none"></span>
-    <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activities per day" message="Requires a separate analytics endpoint that is not yet implemented." />
-  </sp-admin-card>
+  <sp-admin-graph-card title="AI calls per day (30d)" [status]="loadingAggTrends() ? 'loading' : aggTrendsError() ? 'unavailable' : aggTrendItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+    @if (loadingAggTrends()) {
+      <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="AI calls per day" message="Loading..." />
+    } @else if (aggTrendsError() || aggTrendItems().length === 0) {
+      <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="AI calls per day" message="No AI usage recorded for this period" />
+    } @else {
+      <sp-admin-breakdown-bars [items]="aggTrendItems()" />
+    }
+  </sp-admin-graph-card>
 
-  <sp-admin-card title="Student engagement">
-    <span aria-label="Student engagement not implemented" style="display:none"></span>
-    <sp-admin-visual-placeholder state="not-available" skeleton="ring" title="Student engagement" message="Requires per-student daily activity data that is not yet implemented." />
-  </sp-admin-card>
+  <sp-admin-graph-card title="Calls by feature (30d)" [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+    @if (loadingAggCategory()) {
+      <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="Loading..." />
+    } @else if (aggCategoryError() || aggCategoryItems().length === 0) {
+      <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="No category data for this period" />
+    } @else {
+      <sp-admin-breakdown-bars [items]="aggCategoryItems()" [showPct]="true" />
+    }
+  </sp-admin-graph-card>
 </div>
 
 <sp-admin-card title="Recent calls">

@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, AdminStats, AiConfigCategoryItem } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStats, AiConfigCategoryItem, AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse } from '../../../core/models/admin.models';
 import { SpAdminStatCardTone } from '../../../design-system/admin/components/stat-card/sp-admin-stat-card.component';
 import {
   SpAdminPageBodyComponent,
@@ -18,6 +18,7 @@ import {
 } from '../../../design-system/admin';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
+import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
 @Component({
@@ -38,6 +39,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     SpAdminKpiCardComponent,
     SpAdminBreakdownBarsComponent,
     SpAdminVisualPlaceholderComponent,
+    SpAdminGraphCardComponent,
   ],
   template: `
     <sp-admin-page-header title="Dashboard" subtitle="SpeakPath platform overview" />
@@ -102,10 +104,16 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <!-- Main 2-col grid: chart area + system health -->
     <div class="sp-dash-main-grid">
 
-      <!-- Activities chart placeholder -->
-      <sp-admin-card title="Activity trends">
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activity trends" message="No time-series activity endpoint" />
-      </sp-admin-card>
+      <!-- Activity trends (real data) -->
+      <sp-admin-graph-card title="Activity trends (30d)" [status]="loadingActivityTrends() ? 'loading' : activityTrendsError() ? 'unavailable' : activityTrendItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+        @if (loadingActivityTrends()) {
+          <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activity trends" message="Loading..." />
+        } @else if (activityTrendsError() || activityTrendItems().length === 0) {
+          <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activity trends" message="No activity recorded for this period" />
+        } @else {
+          <sp-admin-breakdown-bars [items]="activityTrendItems()" />
+        }
+      </sp-admin-graph-card>
 
       <!-- System health — AI categories (real data) -->
       <sp-admin-card title="AI System">
@@ -202,9 +210,15 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <!-- Fourth row: score dist + AI cost + streak + avg session (all placeholder) -->
     <div class="sp-dash-four-grid">
 
-      <sp-admin-card title="Score distribution">
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Score distribution" message="No score distribution endpoint" />
-      </sp-admin-card>
+      <sp-admin-graph-card title="Score distribution (30d)" [status]="loadingScoreDistribution() ? 'loading' : scoreDistributionError() ? 'unavailable' : scoreDistributionItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+        @if (loadingScoreDistribution()) {
+          <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Score distribution" message="Loading..." />
+        } @else if (scoreDistributionError() || scoreDistributionItems().length === 0) {
+          <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Score distribution" message="No scored attempts for this period" />
+        } @else {
+          <sp-admin-breakdown-bars [items]="scoreDistributionItems()" [showPct]="true" />
+        }
+      </sp-admin-graph-card>
 
       <sp-admin-card title="AI spend by type">
         <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="AI spend by type" message="No per-category cost endpoint in admin stats" />
@@ -521,6 +535,13 @@ export class AdminDashboardComponent implements OnInit {
   loadingAiCategories = signal(true);
   aiConfigError = signal(false);
 
+  activityTrends = signal<AdminDashboardActivityTrendResponse | null>(null);
+  loadingActivityTrends = signal(true);
+  activityTrendsError = signal(false);
+  scoreDistribution = signal<AdminDashboardScoreDistributionResponse | null>(null);
+  loadingScoreDistribution = signal(true);
+  scoreDistributionError = signal(false);
+
   readonly aiProviderLabel = computed<string>(() => {
     if (this.loadingAiCategories()) return '—';
     if (this.aiConfigError()) return 'Unknown';
@@ -646,6 +667,30 @@ export class AdminDashboardComponent implements OnInit {
     };
   });
 
+  readonly activityTrendItems = computed<BreakdownBarItem[]>(() => {
+    const data = this.activityTrends();
+    if (!data) return [];
+    const max = Math.max(...data.buckets.map(b => b.activityCount), 1);
+    return data.buckets.slice(-7).map(b => ({
+      label: b.date.slice(5),
+      value: b.activityCount,
+      pct: Math.round((b.activityCount / max) * 100),
+      tone: 'indigo' as const,
+    }));
+  });
+
+  readonly scoreDistributionItems = computed<BreakdownBarItem[]>(() => {
+    const data = this.scoreDistribution();
+    if (!data) return [];
+    const max = Math.max(...data.buckets.map(b => b.count), 1);
+    return data.buckets.map(b => ({
+      label: b.label,
+      value: b.count,
+      pct: Math.round((b.count / max) * 100),
+      tone: (b.minScore >= 75 ? 'success' : b.minScore >= 60 ? 'warning' : 'danger') as any,
+    }));
+  });
+
   readonly onboardingLabel = onboardingLabel;
   readonly onboardingTone = onboardingTone;
 
@@ -674,6 +719,14 @@ export class AdminDashboardComponent implements OnInit {
     this.adminApi.listAiCategories().subscribe({
       next: cats => { this.aiCategories.set(cats); this.loadingAiCategories.set(false); },
       error: () => { this.aiConfigError.set(true); this.loadingAiCategories.set(false); },
+    });
+    this.adminApi.getDashboardActivityTrends('30d').subscribe({
+      next: r => { this.activityTrends.set(r); this.loadingActivityTrends.set(false); },
+      error: () => { this.activityTrendsError.set(true); this.loadingActivityTrends.set(false); },
+    });
+    this.adminApi.getDashboardScoreDistribution('30d').subscribe({
+      next: r => { this.scoreDistribution.set(r); this.loadingScoreDistribution.set(false); },
+      error: () => { this.scoreDistributionError.set(true); this.loadingScoreDistribution.set(false); },
     });
   }
 }
