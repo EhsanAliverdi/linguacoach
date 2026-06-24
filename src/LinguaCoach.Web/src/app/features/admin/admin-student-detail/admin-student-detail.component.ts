@@ -49,7 +49,7 @@ interface StudentEditForm {
   ],
   template: `
     <sp-admin-page-header title="Student detail">
-      <sp-admin-button appearance="ghost" size="sm" routerLink="/admin/students">← Students</sp-admin-button>
+      <sp-admin-button appearance="ghost" size="sm" routerLink="/admin/students">← Back to Students</sp-admin-button>
     </sp-admin-page-header>
 
     <sp-admin-page-body>
@@ -79,362 +79,222 @@ interface StudentEditForm {
           </div>
         </div>
         <div class="sp-sd-hero-actions">
-          <sp-admin-button appearance="ghost" size="sm" (click)="startEdit(s)">Edit</sp-admin-button>
+          <sp-admin-button appearance="ghost" size="sm" (click)="activeTab.set('settings')">Edit</sp-admin-button>
           @if (s.lifecycleStage !== 'Archived') {
             <sp-admin-button appearance="ghost" size="sm" (click)="startResetPassword(s)">Reset password</sp-admin-button>
-            <sp-admin-button appearance="ghost" size="sm" (click)="sendResetLink(s)" [disabled]="sendingResetLink()">Send reset link</sp-admin-button>
+            <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="confirmArchive(s)">Archive</sp-admin-button>
           }
           @if (s.lifecycleStage === 'Archived') {
             <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('reactivate', s)">Reactivate</sp-admin-button>
           }
-          @if (s.lifecycleStage === 'Paused') {
-            <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('unpause', s)">Unpause</sp-admin-button>
-          }
-          @if (s.lifecycleStage !== 'Archived' && s.lifecycleStage !== 'Paused') {
-            <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startLifecycleAction('pause', s)">Pause</sp-admin-button>
-          }
         </div>
       </div>
 
-      <!-- KPI strip -->
-      <div class="sp-admin-kpi-strip">
-        <sp-admin-kpi-card label="Lifecycle" variant="indigo">
-          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          {{ lifecycleLabel(s.lifecycleStage) }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Onboarding" [variant]="onboardingTone(s.onboardingStatus) === 'success' ? 'green' : 'amber'">
-          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          {{ onboardingLabel(s.onboardingStatus) }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="CEFR level" variant="violet">
-          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          {{ s.cefrLevel ?? 'Not set' }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Pool health" [variant]="poolHealthTone() === 'success' ? 'green' : poolHealthTone() === 'warning' ? 'amber' : 'slate'">
-          <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          {{ poolHealthLoading() ? '…' : poolHealthLabel() }}
-        </sp-admin-kpi-card>
+      <!-- Tab bar -->
+      <div class="sp-sd-tabs" role="tablist">
+        <button role="tab" type="button" class="sp-sd-tab" [class.sp-sd-tab--active]="activeTab() === 'overview'" (click)="activeTab.set('overview')">Overview</button>
+        <button role="tab" type="button" class="sp-sd-tab" [class.sp-sd-tab--active]="activeTab() === 'activity'" (click)="activeTab.set('activity')">Activity</button>
+        <button role="tab" type="button" class="sp-sd-tab" [class.sp-sd-tab--active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Settings</button>
       </div>
 
-      <div class="sp-admin-detail-grid">
-        <sp-admin-card>
-          <h2 class="sp-admin-card-title">Profile</h2>
-          <dl class="sp-admin-detail-list">
-            <div>
-              <dt>Lifecycle stage</dt>
-              <dd>
-                <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
-              </dd>
-            </div>
-            <div>
-              <dt>Onboarding</dt>
-              <dd>
-                <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
-              </dd>
-            </div>
-            <div>
-              <dt>CEFR level</dt>
-              <dd>
-                <span class="sp-admin-cefr-row">
-                  @if (s.cefrLevel) {
-                    <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
-                  } @else {
-                    <span class="sp-admin-table-muted">Not set</span>
-                  }
-                  <button type="button" class="sp-admin-link-button" (click)="startSetCefr(s)">Set CEFR</button>
-                </span>
-                <p class="sp-admin-cefr-hint">CEFR is controlled by assessment and admin. Students cannot edit this.</p>
-              </dd>
-            </div>
-            <div>
-              <dt>Career context</dt>
-              <dd>{{ s.careerContext || 'Not set' }}</dd>
-            </div>
-            <div>
-              <dt>Learning goal</dt>
-              <dd>{{ s.learningGoal || 'Not set' }}</dd>
-            </div>
-            <div>
-              <dt>Learning goal description</dt>
-              <dd>{{ s.learningGoalDescription || 'Not set' }}</dd>
-            </div>
-            <div>
-              <dt>Difficult situations</dt>
-              <dd>{{ s.difficultSituationsText || 'Not set' }}</dd>
-            </div>
-            <div>
-              <dt>Preferred session duration</dt>
-              <dd>{{ s.preferredSessionDurationMinutes ? s.preferredSessionDurationMinutes + ' minutes' : 'Not set' }}</dd>
-            </div>
-            <div>
-              <dt>Experience level</dt>
-              <dd>{{ experienceLabel(s.professionalExperienceLevel) }}</dd>
-            </div>
-            <div>
-              <dt>Role familiarity</dt>
-              <dd>{{ familiarityLabel(s.roleFamiliarity) }}</dd>
-            </div>
-            <div>
-              <dt>Joined</dt>
-              <dd>{{ s.createdAt | date:'mediumDate' }}</dd>
-            </div>
-          </dl>
-        </sp-admin-card>
-
-        <sp-admin-card aria-label="Student preferences">
-          <div class="sp-admin-section-header-row">
-            <h2 class="sp-admin-card-title">Student preferences</h2>
-            <button type="button" class="sp-admin-link-button" (click)="openPrefsSlideOver()">View preferences</button>
-          </div>
-          @if (hasAnyPreference(s)) {
-            <dl class="sp-admin-detail-list">
-              @if (s.preferredName) {
-                <div>
-                  <dt>Preferred name</dt>
-                  <dd>{{ s.preferredName }}</dd>
-                </div>
-              }
-              @if (s.supportLanguageName || s.supportLanguageCode) {
-                <div>
-                  <dt>Support language</dt>
-                  <dd>{{ s.supportLanguageName || s.supportLanguageCode }}</dd>
-                </div>
-              }
-              @if (s.difficultyPreference) {
-                <div>
-                  <dt>Difficulty</dt>
-                  <dd>{{ s.difficultyPreference }}</dd>
-                </div>
-              }
-              @if (s.focusAreas?.length) {
-                <div>
-                  <dt>Focus areas</dt>
-                  <dd>{{ s.focusAreas.slice(0, 3).join(', ') }}{{ s.focusAreas.length > 3 ? '…' : '' }}</dd>
-                </div>
-              }
-            </dl>
-          } @else {
-            <p class="sp-admin-table-empty">Student has not set any learning preferences yet.</p>
-          }
-        </sp-admin-card>
-
-        <sp-admin-card aria-label="Onboarding progress">
-          <h2 class="sp-admin-card-title">Onboarding progress</h2>
-          @if (s.onboardingProgress; as op) {
+      <!-- Overview tab -->
+      @if (activeTab() === 'overview') {
+        <div class="sp-sd-overview-grid">
+          <!-- Left: Profile card -->
+          <sp-admin-card>
+            <h2 class="sp-admin-card-title">Profile</h2>
             <dl class="sp-admin-detail-list">
               <div>
-                <dt>Status</dt>
+                <dt>Email</dt>
+                <dd>{{ s.email }}</dd>
+              </div>
+              <div>
+                <dt>Joined</dt>
+                <dd>{{ s.createdAt | date:'mediumDate' }}</dd>
+              </div>
+              <div>
+                <dt>Lifecycle</dt>
                 <dd>
-                  <sp-admin-badge [tone]="op.isComplete ? 'success' : 'info'">{{ op.isComplete ? 'Complete' : 'In progress' }}</sp-admin-badge>
+                  <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
                 </dd>
               </div>
               <div>
-                <dt>Progress</dt>
-                <dd>{{ op.percentageComplete }}%</dd>
-              </div>
-              <div>
-                <dt>Steps completed</dt>
-                <dd>{{ op.completedStepKeys.length }}</dd>
-              </div>
-              @if (op.currentStepKey) {
-                <div>
-                  <dt>Current step</dt>
-                  <dd><code class="sp-admin-code-pill">{{ op.currentStepKey }}</code></dd>
-                </div>
-              }
-              @if (op.preliminaryCefrLevel) {
-                <div>
-                  <dt>Preliminary CEFR</dt>
-                  <dd>{{ op.preliminaryCefrLevel }}</dd>
-                </div>
-              }
-              <div>
-                <dt>Started</dt>
-                <dd>{{ op.startedAt | date:'mediumDate' }}</dd>
-              </div>
-              @if (op.completedAt) {
-                <div>
-                  <dt>Completed</dt>
-                  <dd>{{ op.completedAt | date:'mediumDate' }}</dd>
-                </div>
-              }
-            </dl>
-          } @else {
-            <p class="sp-admin-table-empty">No onboarding progress recorded for this student.</p>
-          }
-        </sp-admin-card>
-
-        <sp-admin-card>
-          <div class="sp-admin-section-header-row">
-            <h2 class="sp-admin-card-title">Usage policy</h2>
-            <div class="sp-admin-row-actions">
-              <button type="button" class="sp-admin-link-button" (click)="startAssignPolicy()">Assign policy</button>
-              @if (effectivePolicy()?.isOverride) {
-                <button type="button" class="sp-admin-danger-link" (click)="confirmRemovePolicy()">Reset to default</button>
-              }
-            </div>
-          </div>
-          @if (policyLoading()) {
-            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
-          } @else if (policyError()) {
-            <div class="sp-admin-alert-error">{{ policyError() }}</div>
-          } @else if (effectivePolicy()) {
-            @let ep = effectivePolicy()!;
-            <dl class="sp-admin-detail-list">
-              <div>
-                <dt>Policy name</dt>
-                <dd>{{ ep.policy.name }}</dd>
-              </div>
-              <div>
-                <dt>Scope</dt>
-                <dd>{{ ep.policy.scopeType }}</dd>
-              </div>
-              <div>
-                <dt>Source</dt>
+                <dt>Onboarding</dt>
                 <dd>
-                  <sp-admin-badge [tone]="ep.isOverride ? 'primary' : 'neutral'">
-                    {{ ep.isOverride ? 'Student override' : 'Global default' }}
-                  </sp-admin-badge>
+                  <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
                 </dd>
               </div>
-              @if (ep.isOverride) {
-                <div>
-                  <dt>Assigned</dt>
-                  <dd>{{ ep.assignedAt | date:'mediumDate' }}</dd>
-                </div>
-                @if (ep.reason) {
-                  <div>
-                    <dt>Reason</dt>
-                    <dd class="sp-safe-text">{{ ep.reason }}</dd>
-                  </div>
+              <div>
+                <dt>Career context</dt>
+                <dd>{{ s.careerContext || 'Not set' }}</dd>
+              </div>
+              <div>
+                <dt>Learning goal</dt>
+                <dd>{{ s.learningGoal || 'Not set' }}</dd>
+              </div>
+            </dl>
+          </sp-admin-card>
+
+          <!-- Right: stats strip + CEFR card -->
+          <div class="sp-sd-right-col">
+            <div class="sp-sd-stats-strip">
+              <div class="sp-sd-stat">
+                <div class="sp-sd-stat-value">0</div>
+                <div class="sp-sd-stat-label">Day streak</div>
+              </div>
+              <div class="sp-sd-stat">
+                <div class="sp-sd-stat-value">–</div>
+                <div class="sp-sd-stat-label">Mins this week</div>
+              </div>
+              <div class="sp-sd-stat">
+                <div class="sp-sd-stat-value">{{ history().length }}</div>
+                <div class="sp-sd-stat-label">Activities done</div>
+              </div>
+            </div>
+            <sp-admin-card>
+              <h2 class="sp-admin-card-title">CEFR Level</h2>
+              <div class="sp-admin-cefr-row">
+                @if (s.cefrLevel) {
+                  <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
+                } @else {
+                  <span class="sp-admin-table-muted">Not set</span>
                 }
-              }
-              <div>
-                <dt>Active rules</dt>
-                <dd>{{ ep.policy.rules.length }}</dd>
+                <button type="button" class="sp-admin-link-button" (click)="startSetCefr(s)">Set CEFR</button>
               </div>
-            </dl>
-          } @else {
-            <p class="sp-admin-table-empty">No policy found. Set a global default policy to enforce limits.</p>
-          }
-        </sp-admin-card>
+              <p class="sp-admin-cefr-hint">CEFR is set by assessment and admin only.</p>
+            </sp-admin-card>
+          </div>
+        </div>
 
-        <sp-admin-card>
-          <h2 class="sp-admin-card-title">Learning memory</h2>
-          @if (memoryLoading()) {
-            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
-          } @else if (memoryError()) {
-            <div class="sp-admin-alert-error">{{ memoryError() }}</div>
-          } @else if (memory()) {
-            @let mem = memory()!;
-            <div class="sp-admin-memory">
-              <div>
-                <h3>Journey summary</h3>
-                <p>{{ mem.journeySummary || 'No summary yet.' }}</p>
+        <!-- Extra detail cards below overview top section -->
+        <div class="sp-admin-detail-grid" style="margin-top:16px;">
+          <sp-admin-card aria-label="Onboarding progress">
+            <h2 class="sp-admin-card-title">Onboarding progress</h2>
+            @if (s.onboardingProgress; as op) {
+              <dl class="sp-admin-detail-list">
+                <div><dt>Status</dt><dd><sp-admin-badge [tone]="op.isComplete ? 'success' : 'info'">{{ op.isComplete ? 'Complete' : 'In progress' }}</sp-admin-badge></dd></div>
+                <div><dt>Progress</dt><dd>{{ op.percentageComplete }}%</dd></div>
+                <div><dt>Steps completed</dt><dd>{{ op.completedStepKeys.length }}</dd></div>
+                @if (op.currentStepKey) { <div><dt>Current step</dt><dd><code class="sp-admin-code-pill">{{ op.currentStepKey }}</code></dd></div> }
+                @if (op.preliminaryCefrLevel) { <div><dt>Preliminary CEFR</dt><dd>{{ op.preliminaryCefrLevel }}</dd></div> }
+                <div><dt>Started</dt><dd>{{ op.startedAt | date:'mediumDate' }}</dd></div>
+                @if (op.completedAt) { <div><dt>Completed</dt><dd>{{ op.completedAt | date:'mediumDate' }}</dd></div> }
+              </dl>
+            } @else {
+              <p class="sp-admin-table-empty">No onboarding progress recorded for this student.</p>
+            }
+          </sp-admin-card>
+
+          <sp-admin-card>
+            <div class="sp-admin-section-header-row">
+              <h2 class="sp-admin-card-title">Usage policy</h2>
+              <div class="sp-admin-row-actions">
+                <button type="button" class="sp-admin-link-button" (click)="startAssignPolicy()">Assign policy</button>
+                @if (effectivePolicy()?.isOverride) {
+                  <button type="button" class="sp-admin-danger-link" (click)="confirmRemovePolicy()">Reset to default</button>
+                }
               </div>
-              <div>
-                <h3>Strong skills</h3>
-                @if (mem.strongSkills.length) {
-                  <ul>@for (skill of mem.strongSkills; track skill) { <li>{{ skill }}</li> }</ul>
-                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+            </div>
+            @if (policyLoading()) {
+              <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+            } @else if (policyError()) {
+              <div class="sp-admin-alert-error">{{ policyError() }}</div>
+            } @else if (effectivePolicy()) {
+              @let ep = effectivePolicy()!;
+              <dl class="sp-admin-detail-list">
+                <div><dt>Policy name</dt><dd>{{ ep.policy.name }}</dd></div>
+                <div><dt>Scope</dt><dd>{{ ep.policy.scopeType }}</dd></div>
+                <div><dt>Source</dt><dd><sp-admin-badge [tone]="ep.isOverride ? 'primary' : 'neutral'">{{ ep.isOverride ? 'Student override' : 'Global default' }}</sp-admin-badge></dd></div>
+                @if (ep.isOverride) {
+                  <div><dt>Assigned</dt><dd>{{ ep.assignedAt | date:'mediumDate' }}</dd></div>
+                  @if (ep.reason) { <div><dt>Reason</dt><dd class="sp-safe-text">{{ ep.reason }}</dd></div> }
+                }
+                <div><dt>Active rules</dt><dd>{{ ep.policy.rules.length }}</dd></div>
+              </dl>
+            } @else {
+              <p class="sp-admin-table-empty">No policy found. Set a global default policy to enforce limits.</p>
+            }
+          </sp-admin-card>
+
+          <sp-admin-card>
+            <div class="sp-admin-section-header-row">
+              <h2 class="sp-admin-card-title">Preferences</h2>
+              <button type="button" class="sp-admin-link-button" (click)="openPrefsSlideOver()">View all</button>
+            </div>
+            @if (hasAnyPreference(s)) {
+              <dl class="sp-admin-detail-list">
+                @if (s.preferredName) { <div><dt>Preferred name</dt><dd>{{ s.preferredName }}</dd></div> }
+                @if (s.supportLanguageName || s.supportLanguageCode) { <div><dt>Support language</dt><dd>{{ s.supportLanguageName || s.supportLanguageCode }}</dd></div> }
+                @if (s.difficultyPreference) { <div><dt>Difficulty</dt><dd>{{ s.difficultyPreference }}</dd></div> }
+              </dl>
+            } @else {
+              <p class="sp-admin-table-empty">No preferences set yet.</p>
+            }
+          </sp-admin-card>
+
+          <sp-admin-card>
+            <h2 class="sp-admin-card-title">Learning memory</h2>
+            @if (memoryLoading()) {
+              <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+            } @else if (memoryError()) {
+              <div class="sp-admin-alert-error">{{ memoryError() }}</div>
+            } @else if (memory()) {
+              @let mem = memory()!;
+              <div class="sp-admin-memory">
+                <div><h3>Journey summary</h3><p>{{ mem.journeySummary || 'No summary yet.' }}</p></div>
+                <div><h3>Strong skills</h3>
+                  @if (mem.strongSkills.length) { <ul>@for (skill of mem.strongSkills; track skill) { <li>{{ skill }}</li> }</ul> } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+                </div>
+                <div><h3>Weak skills</h3>
+                  @if (mem.weakSkills.length) { <ul>@for (skill of mem.weakSkills; track skill) { <li>{{ skill }}</li> }</ul> } @else { <p class="sp-admin-table-empty">None recorded.</p> }
+                </div>
               </div>
-              <div>
-                <h3>Weak skills</h3>
-                @if (mem.weakSkills.length) {
-                  <ul>@for (skill of mem.weakSkills; track skill) { <li>{{ skill }}</li> }</ul>
-                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
-              </div>
-              <div>
-                <h3>Recurring mistakes</h3>
-                @if (mem.recurringMistakes.length) {
-                  <ul>@for (m of mem.recurringMistakes; track m) { <li>{{ m }}</li> }</ul>
-                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
-              </div>
-              <div>
-                <h3>Next recommended focus</h3>
-                @if (mem.nextRecommendedFocus.length) {
-                  <ul>@for (f of mem.nextRecommendedFocus; track f) { <li>{{ f }}</li> }</ul>
-                } @else { <p class="sp-admin-table-empty">None recorded.</p> }
-              </div>
-              <div>
-                <h3>Covered scenarios</h3>
-                <p>{{ mem.coveredScenarioCount }}</p>
-              </div>
-              <div class="sp-admin-wide">
-                <h3>Skill profile</h3>
-                @if (mem.skillProfile.length) {
-                  <div class="sp-admin-skill-tags">
-                    @for (skill of mem.skillProfile; track skill.skillKey) {
-                      <sp-admin-badge [tone]="skill.isWeak ? 'warning' : 'success'">{{ skill.skillLabel }}</sp-admin-badge>
+            } @else {
+              <p class="sp-admin-table-empty">No learning memory recorded.</p>
+            }
+          </sp-admin-card>
+
+          <!-- Readiness pool health -->
+          <sp-admin-card class="sp-admin-wide" aria-label="Readiness pool health">
+            <h2 class="sp-admin-card-title">Readiness pool health</h2>
+            @if (poolHealthLoading()) {
+              <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
+            } @else if (poolHealthError()) {
+              <sp-admin-alert variant="error">{{ poolHealthError() }}</sp-admin-alert>
+            } @else if (poolHealth()) {
+              @let ph = poolHealth()!;
+              <div class="sp-admin-pool-grid">
+                <div class="sp-admin-pool-source">
+                  <h3 class="sp-admin-pool-source-title">Today's lesson</h3>
+                  <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:8px;">
+                    <sp-admin-ring-metric [pct]="lessonRingPct()" label="Ready" [sub]="ph.todayLesson.readyCount + ' / ' + ph.todayLesson.targetCount" [tone]="ph.todayLesson.needsReplenishment ? 'amber' : 'green'" [size]="64" ariaLabel="Lesson pool ready ring" />
+                    @if (lessonPoolBreakdown().length > 0) {
+                      <div style="flex:1;min-width:180px;"><sp-admin-breakdown-bars [items]="lessonPoolBreakdown()" [showPct]="false" /></div>
                     }
                   </div>
-                } @else { <p class="sp-admin-table-empty">No skill profile yet.</p> }
+                  <div style="margin-top:8px;"><sp-admin-badge [tone]="ph.todayLesson.needsReplenishment ? 'warning' : 'success'">{{ ph.todayLesson.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}</sp-admin-badge></div>
+                </div>
+                <div class="sp-admin-pool-source">
+                  <h3 class="sp-admin-pool-source-title">Practice gym</h3>
+                  <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:8px;">
+                    <sp-admin-ring-metric [pct]="gymRingPct()" label="Ready" [sub]="ph.practiceGym.readyCount + ' / ' + ph.practiceGym.targetCount" [tone]="ph.practiceGym.needsReplenishment ? 'amber' : 'green'" [size]="64" ariaLabel="Gym pool ready ring" />
+                    @if (gymPoolBreakdown().length > 0) {
+                      <div style="flex:1;min-width:180px;"><sp-admin-breakdown-bars [items]="gymPoolBreakdown()" [showPct]="false" /></div>
+                    }
+                  </div>
+                  <div style="margin-top:8px;"><sp-admin-badge [tone]="ph.practiceGym.needsReplenishment ? 'warning' : 'success'">{{ ph.practiceGym.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}</sp-admin-badge></div>
+                </div>
               </div>
-            </div>
-          }
-        </sp-admin-card>
+            } @else {
+              <p class="sp-admin-table-empty">Pool health data not available.</p>
+            }
+          </sp-admin-card>
+        </div>
+      }
 
-        <!-- Readiness pool health (TODO-UI-02) -->
-        <sp-admin-card class="sp-admin-wide" aria-label="Readiness pool health">
-          <h2 class="sp-admin-card-title">Readiness pool health</h2>
-          @if (poolHealthLoading()) {
-            <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
-          } @else if (poolHealthError()) {
-            <sp-admin-alert variant="error">{{ poolHealthError() }}</sp-admin-alert>
-          } @else if (poolHealth()) {
-            @let ph = poolHealth()!;
-            <div class="sp-admin-pool-grid">
-              <div class="sp-admin-pool-source">
-                <h3 class="sp-admin-pool-source-title">Today's lesson</h3>
-                <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:8px;">
-                  <sp-admin-ring-metric
-                    [pct]="lessonRingPct()"
-                    label="Ready"
-                    [sub]="ph.todayLesson.readyCount + ' / ' + ph.todayLesson.targetCount"
-                    [tone]="ph.todayLesson.needsReplenishment ? 'amber' : 'green'"
-                    [size]="64"
-                    ariaLabel="Lesson pool ready ring" />
-                  @if (lessonPoolBreakdown().length > 0) {
-                    <div style="flex:1;min-width:180px;">
-                      <sp-admin-breakdown-bars [items]="lessonPoolBreakdown()" [showPct]="false" />
-                    </div>
-                  }
-                </div>
-                <div style="margin-top:8px;">
-                  <sp-admin-badge [tone]="ph.todayLesson.needsReplenishment ? 'warning' : 'success'">
-                    {{ ph.todayLesson.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}
-                  </sp-admin-badge>
-                </div>
-              </div>
-              <div class="sp-admin-pool-source">
-                <h3 class="sp-admin-pool-source-title">Practice gym</h3>
-                <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:8px;">
-                  <sp-admin-ring-metric
-                    [pct]="gymRingPct()"
-                    label="Ready"
-                    [sub]="ph.practiceGym.readyCount + ' / ' + ph.practiceGym.targetCount"
-                    [tone]="ph.practiceGym.needsReplenishment ? 'amber' : 'green'"
-                    [size]="64"
-                    ariaLabel="Gym pool ready ring" />
-                  @if (gymPoolBreakdown().length > 0) {
-                    <div style="flex:1;min-width:180px;">
-                      <sp-admin-breakdown-bars [items]="gymPoolBreakdown()" [showPct]="false" />
-                    </div>
-                  }
-                </div>
-                <div style="margin-top:8px;">
-                  <sp-admin-badge [tone]="ph.practiceGym.needsReplenishment ? 'warning' : 'success'">
-                    {{ ph.practiceGym.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}
-                  </sp-admin-badge>
-                </div>
-              </div>
-            </div>
-          } @else {
-            <p class="sp-admin-table-empty">Pool health data not available.</p>
-          }
-        </sp-admin-card>
-
-        <sp-admin-card class="sp-admin-wide">
+      <!-- Activity tab -->
+      @if (activeTab() === 'activity') {
+        <sp-admin-card>
           <h2 class="sp-admin-card-title">Activity history</h2>
           @if (historyLoading()) {
             <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
@@ -447,9 +307,9 @@ interface StudentEditForm {
               <thead>
                 <tr>
                   <th>Activity</th>
-                  <th>Type</th>
+                  <th>Skill</th>
                   <th>Score</th>
-                  <th>Result</th>
+                  <th>Duration</th>
                   <th>Date</th>
                 </tr>
               </thead>
@@ -458,17 +318,9 @@ interface StudentEditForm {
                   <tr>
                     <td class="sp-safe-text">{{ item.activityTitle }}</td>
                     <td>{{ item.activityType }}</td>
-                    <td>{{ item.score !== null ? (item.score | number:'1.0-0') + '%' : (item.percentage !== null ? (item.percentage | number:'1.0-0') + '%' : '—') }}</td>
-                    <td>
-                      @if (item.passed !== null) {
-                        <sp-admin-badge [tone]="item.passed ? 'success' : 'warning'">{{ item.passed ? 'Passed' : 'Not passed' }}</sp-admin-badge>
-                      } @else if (item.completed !== null) {
-                        <sp-admin-badge [tone]="item.completed ? 'success' : 'warning'">{{ item.completed ? 'Completed' : 'Incomplete' }}</sp-admin-badge>
-                      } @else {
-                        —
-                      }
-                    </td>
-                    <td>{{ item.createdAt | date:'medium' }}</td>
+                    <td>{{ item.score !== null ? (item.score | number:'1.0-0') + '/100' : (item.percentage !== null ? (item.percentage | number:'1.0-0') + '/100' : '—') }}</td>
+                    <td class="sp-admin-table-muted">–</td>
+                    <td>{{ item.createdAt | date:'mediumDate' }}</td>
                   </tr>
                 }
               </tbody>
@@ -476,7 +328,8 @@ interface StudentEditForm {
           }
         </sp-admin-card>
 
-        <sp-admin-card class="sp-admin-wide" aria-label="Audit history">
+        <!-- Audit history also in activity tab -->
+        <sp-admin-card style="margin-top:16px;" aria-label="Audit history">
           <h2 class="sp-admin-card-title">Audit history</h2>
           @if (auditHistoryLoading()) {
             <div class="sp-admin-table-loading"><div class="sp-admin-spinner"></div></div>
@@ -489,30 +342,17 @@ interface StudentEditForm {
               <thead>
                 <tr>
                   <th>Action</th>
-                  <th>Source</th>
                   <th>Actor</th>
                   <th>Reason</th>
                   <th>Value change</th>
-                  <th>Details</th>
                   <th>Date</th>
                 </tr>
               </thead>
               <tbody>
                 @for (item of auditHistory(); track item.id) {
                   <tr>
-                    <td>
-                      <sp-admin-badge [tone]="item.source === 'AdminAuditLog' ? 'primary' : 'warning'">{{ item.action }}</sp-admin-badge>
-                    </td>
-                    <td class="sp-admin-table-muted">{{ item.source === 'AdminAuditLog' ? 'Audit' : 'Reset' }}</td>
-                    <td class="sp-admin-table-muted">
-                      @if (item.actorEmail) {
-                        {{ item.actorEmail }}
-                      } @else if (item.actorId) {
-                        <code class="sp-admin-code-pill">{{ item.actorId | slice:0:8 }}…</code>
-                      } @else {
-                        —
-                      }
-                    </td>
+                    <td><sp-admin-badge [tone]="item.source === 'AdminAuditLog' ? 'primary' : 'warning'">{{ item.action }}</sp-admin-badge></td>
+                    <td class="sp-admin-table-muted">{{ item.actorEmail || '—' }}</td>
                     <td class="sp-safe-text sp-admin-table-muted">{{ item.reason || '—' }}</td>
                     <td>
                       @if (item.oldValue || item.newValue) {
@@ -521,60 +361,101 @@ interface StudentEditForm {
                           <span>&rarr;</span>
                           <span>{{ item.newValue || '—' }}</span>
                         </span>
-                      } @else {
-                        —
-                      }
+                      } @else { — }
                     </td>
-                    <td>
-                      @if (item.details) {
-                        @if ((item.details || '').length > 80) {
-                          <button type="button" class="sp-admin-link-button" (click)="openAuditDetails(item)">View details</button>
-                        } @else {
-                          <code class="sp-admin-code-pill">{{ item.details }}</code>
-                        }
-                      } @else {
-                        —
-                      }
-                    </td>
-                    <td class="sp-admin-table-muted">{{ item.timestamp | date:'medium' }}</td>
+                    <td class="sp-admin-table-muted">{{ item.timestamp | date:'mediumDate' }}</td>
                   </tr>
                 }
               </tbody>
             </sp-admin-table>
           }
         </sp-admin-card>
+      }
 
-        <!-- Danger zone -->
-        <sp-admin-card class="sp-admin-wide" aria-label="Danger zone">
+      <!-- Settings tab -->
+      @if (activeTab() === 'settings') {
+        <sp-admin-card>
+          <h2 class="sp-admin-card-title">Edit student</h2>
+          <form (ngSubmit)="saveEdit()" class="sp-admin-edit-grid">
+            <label>
+              <span>Display name</span>
+              <input class="sp-input" [(ngModel)]="editForm.displayName" name="displayName" />
+            </label>
+            <label>
+              <span>Email</span>
+              <input class="sp-input" [value]="s.email" disabled />
+            </label>
+            <label>
+              <span>First name</span>
+              <input class="sp-input" [(ngModel)]="editForm.firstName" name="firstName" />
+            </label>
+            <label>
+              <span>Last name</span>
+              <input class="sp-input" [(ngModel)]="editForm.lastName" name="lastName" />
+            </label>
+            <label class="sp-admin-wide">
+              <span>Career or work context</span>
+              <input class="sp-input" [(ngModel)]="editForm.careerContext" name="careerContext" />
+            </label>
+            <label class="sp-admin-wide">
+              <span>Learning goal</span>
+              <input class="sp-input" [(ngModel)]="editForm.learningGoal" name="learningGoal" />
+            </label>
+            <label>
+              <span>Preferred duration</span>
+              <select class="sp-input" [(ngModel)]="editForm.preferredSessionDurationMinutes" name="preferredSessionDurationMinutes">
+                <option [ngValue]="null">Not set</option>
+                @for (duration of sessionDurations; track duration) { <option [ngValue]="duration">{{ duration }} minutes</option> }
+              </select>
+            </label>
+            <label>
+              <span>Experience level</span>
+              <select class="sp-input" [(ngModel)]="editForm.professionalExperienceLevel" name="professionalExperienceLevel">
+                <option [ngValue]="null">Not set</option>
+                @for (level of experienceLevels; track level.value) { <option [ngValue]="level.value">{{ level.label }}</option> }
+              </select>
+            </label>
+            @if (editError()) {
+              <div class="sp-admin-alert-error sp-admin-wide">{{ editError() }}</div>
+            }
+            <div class="sp-admin-modal-actions sp-admin-wide">
+              <button type="submit" class="sp-admin-btn-primary" [disabled]="savingEdit()">
+                {{ savingEdit() ? 'Saving...' : 'Save changes' }}
+              </button>
+            </div>
+          </form>
+        </sp-admin-card>
+
+        <!-- Danger zone in Settings tab -->
+        <sp-admin-card style="margin-top:16px;" aria-label="Danger zone">
           <div class="sp-sd-danger-header">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;color:#DC2626"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <h2 class="sp-sd-danger-title">Danger zone</h2>
           </div>
-
           <div class="sp-sd-danger-rows">
-            <!-- Reset data -->
             @if (s.lifecycleStage !== 'Archived') {
+              <div class="sp-sd-danger-row">
+                <div>
+                  <div class="sp-sd-danger-row-label">Reset password</div>
+                  <div class="sp-sd-danger-row-sub">Set a new temporary password for this student.</div>
+                </div>
+                <sp-admin-button appearance="ghost" size="sm" (click)="startResetPassword(s)">Reset password</sp-admin-button>
+              </div>
               <div class="sp-sd-danger-row">
                 <div>
                   <div class="sp-sd-danger-row-label">Reset student data</div>
-                  <div class="sp-sd-danger-row-sub">Delete activity history, placement results, or learning memory. Use for pilot re-runs or data corrections.</div>
+                  <div class="sp-sd-danger-row-sub">Delete activity history, placement results, or learning memory.</div>
                 </div>
                 <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="startResetData(s)">Reset data</sp-admin-button>
               </div>
-            }
-
-            <!-- Archive -->
-            @if (s.lifecycleStage !== 'Archived') {
               <div class="sp-sd-danger-row">
                 <div>
                   <div class="sp-sd-danger-row-label">Archive student</div>
-                  <div class="sp-sd-danger-row-sub">Hide this student from the active list and revoke sign-in access. Reversible via Reactivate.</div>
+                  <div class="sp-sd-danger-row-sub">Hide this student from the active list and revoke sign-in access.</div>
                 </div>
                 <sp-admin-button variant="danger" appearance="ghost" size="sm" (click)="confirmArchive(s)">Archive</sp-admin-button>
               </div>
             }
-
-            <!-- Reactivate (archived only) -->
             @if (s.lifecycleStage === 'Archived') {
               <div class="sp-sd-danger-row">
                 <div>
@@ -584,17 +465,10 @@ interface StudentEditForm {
                 <sp-admin-button appearance="ghost" size="sm" (click)="startLifecycleAction('reactivate', s)">Reactivate</sp-admin-button>
               </div>
             }
-
-            <!-- No actions if only archived state but already showing reactivate above -->
-            @if (s.lifecycleStage === 'Archived') {
-              <p class="sp-sd-danger-note">
-                Student is archived. Only Reactivate is available above. Reset data and further archive actions are disabled.
-              </p>
-            }
           </div>
         </sp-admin-card>
+      }
 
-      </div>
     }
 
     </sp-admin-page-body>
@@ -724,87 +598,6 @@ interface StudentEditForm {
         </div>
       </form>
     </sp-admin-slide-over>
-
-    @if (editing(); as student) {
-      <div class="sp-admin-modal-backdrop" (click)="cancelEdit()"></div>
-      <section class="sp-admin-modal" role="dialog" aria-modal="true" aria-labelledby="editStudentTitle">
-        <div class="sp-admin-modal-header">
-          <div>
-            <h2 id="editStudentTitle">Edit student</h2>
-            <p>{{ student.email }}</p>
-          </div>
-          <button type="button" (click)="cancelEdit()" aria-label="Close edit student">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <form (ngSubmit)="saveEdit()" class="sp-admin-edit-grid">
-          <label>
-            <span>First name</span>
-            <input class="sp-input" [(ngModel)]="editForm.firstName" name="firstName" />
-          </label>
-          <label>
-            <span>Last name</span>
-            <input class="sp-input" [(ngModel)]="editForm.lastName" name="lastName" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Display name</span>
-            <input class="sp-input" [(ngModel)]="editForm.displayName" name="displayName" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Career or work context</span>
-            <input class="sp-input" [(ngModel)]="editForm.careerContext" name="careerContext" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Learning goal</span>
-            <input class="sp-input" [(ngModel)]="editForm.learningGoal" name="learningGoal" />
-          </label>
-          <label class="sp-admin-wide">
-            <span>Learning goal description</span>
-            <textarea class="sp-input" rows="3" [(ngModel)]="editForm.learningGoalDescription" name="learningGoalDescription"></textarea>
-          </label>
-          <label class="sp-admin-wide">
-            <span>Difficult situations</span>
-            <textarea class="sp-input" rows="3" [(ngModel)]="editForm.difficultSituationsText" name="difficultSituationsText"></textarea>
-          </label>
-          <label>
-            <span>Preferred duration</span>
-            <select class="sp-input" [(ngModel)]="editForm.preferredSessionDurationMinutes" name="preferredSessionDurationMinutes">
-              <option [ngValue]="null">Not set</option>
-              @for (duration of sessionDurations; track duration) {
-                <option [ngValue]="duration">{{ duration }} minutes</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Experience level</span>
-            <select class="sp-input" [(ngModel)]="editForm.professionalExperienceLevel" name="professionalExperienceLevel">
-              <option [ngValue]="null">Not set</option>
-              @for (level of experienceLevels; track level.value) {
-                <option [ngValue]="level.value">{{ level.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Role familiarity</span>
-            <select class="sp-input" [(ngModel)]="editForm.roleFamiliarity" name="roleFamiliarity">
-              <option [ngValue]="null">Not set</option>
-              @for (level of familiarityLevels; track level.value) {
-                <option [ngValue]="level.value">{{ level.label }}</option>
-              }
-            </select>
-          </label>
-          @if (editError()) {
-            <div class="sp-admin-alert-error sp-admin-wide">{{ editError() }}</div>
-          }
-          <div class="sp-admin-modal-actions sp-admin-wide">
-            <button type="button" class="sp-button-ghost" (click)="cancelEdit()">Cancel</button>
-            <button type="submit" class="sp-admin-btn-primary" [disabled]="savingEdit()">
-              {{ savingEdit() ? 'Saving...' : 'Save changes' }}
-            </button>
-          </div>
-        </form>
-      </section>
-    }
 
     @if (resetting(); as student) {
       <div class="sp-admin-modal-backdrop" (click)="cancelResetPassword()"></div>
@@ -1020,6 +813,22 @@ interface StudentEditForm {
     }
   `,
   styles: [`
+    /* ── Tabs ── */
+    .sp-sd-tabs{display:flex;gap:2px;border-bottom:2px solid var(--sp-admin-border,#ECE9F5);margin-bottom:20px;}
+    .sp-sd-tab{padding:10px 20px;font-size:14px;font-weight:700;color:var(--sp-admin-text-muted,#8B85A0);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:color .15s,border-color .15s;}
+    .sp-sd-tab:hover{color:var(--sp-admin-text,#211B36);}
+    .sp-sd-tab--active{color:var(--sp-admin-primary,#5B4BE8);border-bottom-color:var(--sp-admin-primary,#5B4BE8);}
+
+    /* ── Overview grid ── */
+    .sp-sd-overview-grid{display:grid;grid-template-columns:1fr 280px;gap:16px;margin-bottom:0;}
+    @media(max-width:900px){.sp-sd-overview-grid{grid-template-columns:1fr;}}
+    .sp-sd-right-col{display:flex;flex-direction:column;gap:14px;}
+    .sp-sd-stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(33,27,54,.06);}
+    .sp-sd-stat{padding:14px 12px;text-align:center;border-right:1px solid var(--sp-admin-border,#ECE9F5);}
+    .sp-sd-stat:last-child{border-right:none;}
+    .sp-sd-stat-value{font-size:22px;font-weight:800;color:#211B36;letter-spacing:-0.03em;}
+    .sp-sd-stat-label{font-size:11px;font-weight:700;color:#8B85A0;text-transform:uppercase;letter-spacing:.06em;margin-top:3px;}
+
     /* ── Hero ── */
     .sp-sd-hero{display:flex;align-items:flex-start;gap:18px;background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:14px;padding:24px;margin-bottom:24px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(33,27,54,.06);}
     .sp-sd-ava{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;}
@@ -1098,6 +907,7 @@ export class AdminStudentDetailComponent implements OnInit {
   student = signal<AdminStudentDetail | null>(null);
   loading = signal(true);
   error = signal('');
+  activeTab = signal<'overview' | 'activity' | 'settings'>('overview');
 
   memory = signal<AdminStudentLearningMemory | null>(null);
   memoryLoading = signal(true);
@@ -1420,7 +1230,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     this.adminApi.getStudent(id).subscribe({
-      next: detail => { this.student.set(detail); this.loading.set(false); },
+      next: detail => { this.student.set(detail); this.loading.set(false); this.startEdit(detail); },
       error: (err) => {
         const status = err?.status;
         this.error.set(status === 404 ? 'Student not found.' : 'Could not load student.');
@@ -1505,7 +1315,6 @@ export class AdminStudentDetailComponent implements OnInit {
   }
 
   startEdit(student: AdminStudentDetail): void {
-    this.editing.set(student);
     this.editError.set('');
     this.editForm = {
       firstName: student.firstName ?? '',
@@ -1527,7 +1336,7 @@ export class AdminStudentDetailComponent implements OnInit {
   }
 
   saveEdit(): void {
-    const student = this.editing();
+    const student = this.student();
     if (!student) return;
 
     this.savingEdit.set(true);
@@ -1549,7 +1358,6 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.updateStudent(student.studentProfileId, request).subscribe({
       next: () => {
         this.savingEdit.set(false);
-        this.editing.set(null);
         this.loadStudent(student.studentProfileId);
         this.toast.success('Student updated successfully');
       },

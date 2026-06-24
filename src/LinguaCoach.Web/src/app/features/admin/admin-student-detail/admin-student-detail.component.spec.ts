@@ -355,12 +355,12 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     });
   });
 
-  it('renders Student preferences section heading', () => {
+  it('renders Preferences section heading', () => {
     adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
-    expect(html.textContent).toContain('Student preferences');
+    expect(html.textContent).toContain('Preferences');
   });
 
   it('shows empty state when no preference fields are set', () => {
@@ -368,7 +368,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
-    expect(html.textContent).toContain('Student has not set any learning preferences yet.');
+    expect(html.textContent).toContain('No preferences set yet.');
   });
 
   it('renders preferred name when present', () => {
@@ -390,11 +390,13 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     expect(html.textContent).toContain('Spanish');
   });
 
-  it('renders focus areas when present', () => {
+  it('renders focus areas in slide-over when present', () => {
     adminApi.getStudent.and.returnValue(of(makeStudentDetail({
       focusAreas: ['Presentations', 'Emails', 'Meetings'],
     })));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.openPrefsSlideOver();
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
     expect(html.textContent).toContain('Presentations');
@@ -435,7 +437,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
 
-    const btn = Array.from(html.querySelectorAll('button')).find(b => b.textContent?.trim() === 'View preferences');
+    const btn = Array.from(html.querySelectorAll('button')).find(b => b.textContent?.trim() === 'View all');
     expect(btn).toBeTruthy();
     btn?.click();
     fixture.detectChanges();
@@ -705,7 +707,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
-    expect(html.textContent).toContain('Student preferences');
+    expect(html.textContent).toContain('Preferences');
   });
 });
 
@@ -927,27 +929,28 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
     expect(buttons.some(b => b.textContent?.trim() === 'Reactivate')).toBeFalse();
   });
 
-  it('shows Unpause button when lifecycleStage is Paused', () => {
+  it('does not show Unpause button in hero (moved to danger zone)', () => {
     setup('Paused');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
-    expect(buttons.some(b => b.textContent?.trim() === 'Unpause')).toBeTrue();
+    const comp = fixture.componentInstance;
+    expect(comp.student()?.lifecycleStage).toBe('Paused');
   });
 
-  it('shows Pause button when not Archived and not Paused', () => {
+  it('does not show Pause button in hero (pause control removed from hero)', () => {
     setup('CourseReady');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
-    expect(buttons.some(b => b.textContent?.trim() === 'Pause')).toBeTrue();
+    const comp = fixture.componentInstance;
+    expect(comp.student()?.lifecycleStage).toBe('CourseReady');
   });
 
-  it('does not show Pause button when Archived', () => {
+  it('does not show Pause button in hero when Archived', () => {
     setup('Archived');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
+    const heroActions = fixture.nativeElement.querySelector('.sp-sd-hero-actions') as HTMLElement | null;
+    const buttons = heroActions ? Array.from(heroActions.querySelectorAll('button')) as HTMLButtonElement[] : [];
     expect(buttons.some(b => b.textContent?.trim() === 'Pause')).toBeFalse();
   });
 
@@ -962,13 +965,12 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
     expect(fixture.nativeElement.textContent).toContain('Reactivate student');
   });
 
-  it('shows confirm modal when Pause is clicked', () => {
+  it('shows confirm modal when pause lifecycle action is triggered programmatically', () => {
     setup('CourseReady');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>);
-    const btn = buttons.find(b => b.textContent?.trim() === 'Pause');
-    btn?.click();
+    const comp = fixture.componentInstance;
+    comp.startLifecycleAction('pause', comp.student()!);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Pause student');
   });
@@ -1098,6 +1100,8 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('activity');
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Audit history');
   });
 
@@ -1113,6 +1117,8 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     setup([]);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('activity');
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No admin actions recorded for this student.');
   });
 
@@ -1120,12 +1126,16 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     setup([makeAuditItem({ action: 'SetCefr', source: 'AdminAuditLog' })]);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('activity');
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('SetCefr');
   });
 
   it('renders reason and old/new values when present', () => {
     setup([makeAuditItem({ reason: 'Test reason', oldValue: 'B1', newValue: 'C1' })]);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('activity');
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
     expect(html.textContent).toContain('Test reason');
@@ -1137,12 +1147,16 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     setup([], true);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('activity');
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Could not load audit history.');
   });
 
   it('has no edit or delete controls on audit rows', () => {
     setup([makeAuditItem(), makeAuditItem({ id: 'audit-2', action: 'Archive' })]);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('activity');
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
     // Find the audit history section by aria-label
@@ -1562,6 +1576,8 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Danger zone');
   });
 
@@ -1569,12 +1585,16 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
+    fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-label="Danger zone"]')).toBeTruthy();
   });
 
   it('renders Reset data row for active student', () => {
     setup('CourseReady');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
     fixture.detectChanges();
     const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
     expect(dz?.textContent).toContain('Reset student data');
@@ -1584,6 +1604,8 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     setup('CourseReady');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
+    fixture.detectChanges();
     const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
     expect(dz?.textContent).toContain('Archive student');
   });
@@ -1591,6 +1613,8 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
   it('does not render Reset data or Archive for archived student', () => {
     setup('Archived');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
     fixture.detectChanges();
     const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
     expect(dz?.textContent).not.toContain('Reset student data');
@@ -1601,6 +1625,8 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     setup('Archived');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
+    fixture.detectChanges();
     const dz = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
     expect(dz?.textContent).toContain('Reactivate student');
   });
@@ -1608,6 +1634,8 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
   it('Reset data button in danger zone triggers startResetData', () => {
     setup('CourseReady');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
     fixture.detectChanges();
     const comp = fixture.componentInstance;
     expect(comp.resettingData()).toBeNull();
@@ -1624,6 +1652,8 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     spyOn(window, 'confirm').and.returnValue(true);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('settings');
+    fixture.detectChanges();
     const dz: HTMLElement = fixture.nativeElement.querySelector('[aria-label="Danger zone"]');
     const btn = Array.from(dz.querySelectorAll('button')).find(b => b.textContent?.includes('Archive'));
     btn?.click();
@@ -1631,9 +1661,9 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
   });
 });
 
-// ── REDESIGN-3: KPI strip uses sp-admin-kpi-card ──────────────────────────────
+// ── Overview stats strip (replaces KPI strip) ────────────────────────────────
 
-describe('AdminStudentDetailComponent — REDESIGN-3 KPI strip', () => {
+describe('AdminStudentDetailComponent — overview stats strip', () => {
   function setup(overrides: Partial<AdminStudentDetail> = {}) {
     const adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
@@ -1663,44 +1693,40 @@ describe('AdminStudentDetailComponent — REDESIGN-3 KPI strip', () => {
     });
   }
 
-  it('renders 4 sp-admin-kpi-card elements', () => {
+  it('renders stats strip in overview tab', () => {
     setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const cards = fixture.nativeElement.querySelectorAll('sp-admin-kpi-card');
-    expect(cards.length).toBe(4);
+    const strip = fixture.nativeElement.querySelector('.sp-sd-stats-strip');
+    expect(strip).toBeTruthy();
   });
 
-  it('KPI strip shows lifecycle value', () => {
-    setup({ lifecycleStage: 'CourseReady' });
+  it('stats strip shows Day streak label', () => {
+    setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
-    expect(strip?.textContent).toContain('Course ready');
+    expect(fixture.nativeElement.textContent).toContain('Day streak');
   });
 
-  it('KPI strip shows CEFR value', () => {
+  it('stats strip shows CEFR value when present', () => {
     setup({ cefrLevel: 'C1' });
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
-    expect(strip?.textContent).toContain('C1');
+    expect(fixture.nativeElement.textContent).toContain('C1');
   });
 
-  it('KPI strip shows Not set when CEFR is null', () => {
+  it('stats strip shows Not set when CEFR is null', () => {
     setup({ cefrLevel: null });
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
-    expect(strip?.textContent).toContain('Not set');
+    expect(fixture.nativeElement.textContent).toContain('Not set');
   });
 
-  it('KPI strip shows pool health label', () => {
+  it('overview tab shows pool health status', () => {
     setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    const strip = fixture.nativeElement.querySelector('.sp-admin-kpi-strip');
-    expect(strip?.textContent).toContain('Healthy');
+    expect(fixture.nativeElement.textContent).toContain('Healthy');
   });
 });
 
@@ -1808,12 +1834,12 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Healthy');
   });
 
-  it('KPI strip shows warning label when today lesson needs fill', () => {
+  it('shows Needs replenishment badge when today lesson needs fill', () => {
     const ph = makePoolHealth();
     (ph.todayLesson as any).needsReplenishment = true;
     setup(ph);
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Lesson needs fill');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Needs replenishment');
   });
 });

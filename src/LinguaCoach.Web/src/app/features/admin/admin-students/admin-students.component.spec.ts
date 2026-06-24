@@ -4,13 +4,7 @@ import { of, throwError } from 'rxjs';
 import { AdminStudentsComponent } from './admin-students.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem, AdminStats, PagedResponse } from '../../../core/models/admin.models';
-
-const STATS: AdminStats = {
-  totalStudents: 42,
-  onboardedStudents: 30,
-  totalActivityAttempts: 500,
-};
+import { StudentListItem, PagedResponse } from '../../../core/models/admin.models';
 
 const STUDENT_ACTIVE: StudentListItem = {
   studentProfileId: 'id-1',
@@ -70,13 +64,12 @@ const STUDENT_NO_PROFILE: StudentListItem = {
 };
 
 function pagedOf(items: StudentListItem[]): PagedResponse<StudentListItem> {
-  return { items, totalCount: items.length, page: 1, pageSize: 25, totalPages: Math.max(1, Math.ceil(items.length / 25)) };
+  return { items, totalCount: items.length, page: 1, pageSize: 10, totalPages: Math.max(1, Math.ceil(items.length / 10)) };
 }
 
-function makeAdminApi(students: StudentListItem[] = [STUDENT_ACTIVE], stats: AdminStats = STATS) {
+function makeAdminApi(students: StudentListItem[] = [STUDENT_ACTIVE]) {
   return {
     listStudents: jasmine.createSpy('listStudents').and.returnValue(of(pagedOf(students))),
-    getStats: jasmine.createSpy('getStats').and.returnValue(of(stats)),
     updateStudent: jasmine.createSpy('updateStudent').and.returnValue(of(STUDENT_ACTIVE)),
     archiveStudent: jasmine.createSpy('archiveStudent').and.returnValue(of({ ...STUDENT_ACTIVE, lifecycleStage: 'Archived' })),
     resetStudentPassword: jasmine.createSpy('resetStudentPassword').and.returnValue(of({})),
@@ -94,8 +87,8 @@ describe('AdminStudentsComponent', () => {
   let adminApi: ReturnType<typeof makeAdminApi>;
   let toast: ReturnType<typeof makeToast>;
 
-  async function setup(students: StudentListItem[] = [STUDENT_ACTIVE], stats: AdminStats = STATS) {
-    adminApi = makeAdminApi(students, stats);
+  async function setup(students: StudentListItem[] = [STUDENT_ACTIVE]) {
+    adminApi = makeAdminApi(students);
     toast = makeToast();
     await TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -131,7 +124,7 @@ describe('AdminStudentsComponent', () => {
     expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
     const call = adminApi.listStudents.calls.mostRecent().args[0];
     expect(call.page).toBe(1);
-    expect(call.pageSize).toBe(25);
+    expect(call.pageSize).toBe(10);
   });
 
   it('loads and displays student rows from paged response items', async () => {
@@ -245,16 +238,6 @@ describe('AdminStudentsComponent', () => {
     expect(badges.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows profile text when careerContext is set', async () => {
-    await setup([STUDENT_ACTIVE]);
-    expect(fixture.nativeElement.textContent).toContain('Software engineer');
-  });
-
-  it('shows "Not set" when no careerContext or learningGoal', async () => {
-    await setup([STUDENT_NO_PROFILE]);
-    expect(fixture.nativeElement.textContent).toContain('Not set');
-  });
-
   it('marks archived row when lifecycleStage is Archived', async () => {
     await setup([STUDENT_ARCHIVED]);
     const rows = fixture.nativeElement.querySelectorAll('tbody tr.sp-admin-archived-row');
@@ -264,7 +247,7 @@ describe('AdminStudentsComponent', () => {
   it('shows pagination when totalPages > 1', async () => {
     // Server returns totalPages = 2
     adminApi = makeAdminApi([STUDENT_ACTIVE]);
-    adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 30, page: 1, pageSize: 25, totalPages: 2 }));
+    adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 30, page: 1, pageSize: 10, totalPages: 2 }));
     toast = makeToast();
     await TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -409,7 +392,7 @@ describe('AdminStudentsComponent', () => {
 
   it('totalCount signal reflects server response', async () => {
     adminApi = makeAdminApi();
-    adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 42, page: 1, pageSize: 25, totalPages: 2 }));
+    adminApi.listStudents.and.returnValue(of({ items: [STUDENT_ACTIVE], totalCount: 42, page: 1, pageSize: 10, totalPages: 2 }));
     toast = makeToast();
     await TestBed.configureTestingModule({
       imports: [AdminStudentsComponent],
@@ -477,55 +460,7 @@ describe('AdminStudentsComponent', () => {
     });
   });
 
-  // ── REDESIGN-2: Summary strip ────────────────────────────────────────────
-
-  describe('summary strip', () => {
-    it('renders summary KPI strip', async () => {
-      await setup([STUDENT_ACTIVE]);
-      const kpis = fixture.nativeElement.querySelectorAll('sp-admin-kpi-card');
-      expect(kpis.length).toBeGreaterThanOrEqual(3);
-    });
-
-    it('calls getStats on init', async () => {
-      await setup([STUDENT_ACTIVE]);
-      expect(adminApi.getStats).toHaveBeenCalledTimes(1);
-    });
-
-    it('shows total students from stats in summary', async () => {
-      await setup([STUDENT_ACTIVE], STATS);
-      fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('42');
-    });
-
-    it('shows onboarded count from stats in summary', async () => {
-      await setup([STUDENT_ACTIVE], STATS);
-      fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('30');
-    });
-
-    it('shows activities tracked from stats in summary', async () => {
-      await setup([STUDENT_ACTIVE], STATS);
-      fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('500');
-    });
-
-    it('summary strip labels render', async () => {
-      await setup();
-      const text: string = fixture.nativeElement.textContent;
-      expect(text).toContain('Total students');
-      expect(text).toContain('Onboarded');
-      expect(text).toContain('Activities tracked');
-    });
-
-    it('summary strip does not display fake data', async () => {
-      await setup([STUDENT_ACTIVE], { totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 });
-      const text: string = fixture.nativeElement.textContent;
-      expect(text).not.toContain('$');
-      expect(text).not.toContain('All clear');
-    });
-  });
-
-  // ── REDESIGN-2: Rows per page ────────────────────────────────────────────
+  // ── Rows per page ────────────────────────────────────────────
 
   describe('rows per page', () => {
     it('renders rows-per-page selector', async () => {

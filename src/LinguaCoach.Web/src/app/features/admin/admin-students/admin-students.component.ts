@@ -3,12 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { StudentListItem, AdminStats, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
+import { StudentListItem, UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
-import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../design-system/admin';
+import { SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent } from '../../../design-system/admin';
 import type { SpAdminSelectOption } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
-import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 interface StudentEditForm {
   firstName: string;
@@ -26,7 +25,7 @@ interface StudentEditForm {
 @Component({
   selector: 'app-admin-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminKpiCardComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent, SpAdminBreakdownBarsComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SpAdminBadgeComponent, SpAdminButtonComponent, SpAdminCopyableTextComponent, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminFilterBarComponent, SpAdminFormFieldComponent, SpAdminInputComponent, SpAdminLoadingStateComponent, SpAdminModalComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminPaginationComponent, SpAdminSelectComponent, SpAdminTableActionsComponent, SpAdminTableComponent, SpAdminTextareaComponent, SpAdminTruncatedTextComponent],
   template: `
     <sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
       <sp-admin-button routerLink="../create-student">Create student</sp-admin-button>
@@ -34,42 +33,7 @@ interface StudentEditForm {
 
     <sp-admin-page-body>
 
-    <!-- Summary strip (real data from stats + paged total) -->
-    <div class="sp-stu-summary-row">
-      <sp-admin-kpi-card label="Total students" variant="indigo">
-        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        {{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}
-      </sp-admin-kpi-card>
-      <sp-admin-kpi-card label="Onboarded" variant="green">
-        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        {{ loadingStats() ? '—' : (stats()?.onboardedStudents ?? 0) }}
-      </sp-admin-kpi-card>
-      <sp-admin-kpi-card label="Activities tracked" variant="amber">
-        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        {{ loadingStats() ? '—' : (stats()?.totalActivityAttempts ?? 0) }}
-      </sp-admin-kpi-card>
-      <sp-admin-kpi-card label="Showing (this page)" variant="slate">
-        <svg slot="icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        {{ totalCount() }}
-      </sp-admin-kpi-card>
-    </div>
-
-    <!-- Onboarding breakdown (real data from stats) -->
-    @if (!loadingStats() && onboardingBreakdownItems().length > 0) {
-      <div class="sp-stu-breakdown-row">
-        <sp-admin-breakdown-bars
-          [items]="onboardingBreakdownItems()"
-          title="Onboarding progress"
-          [showPct]="true"
-          ariaLabel="Student onboarding breakdown" />
-      </div>
-    }
-
     <sp-admin-filter-bar>
-      <label class="sp-admin-filter-toggle">
-        <input type="checkbox" [(ngModel)]="includeArchived" (change)="onIncludeArchivedChange()" />
-        <span>Show archived</span>
-      </label>
       <sp-admin-input
         type="search"
         placeholder="Search by email or name"
@@ -82,20 +46,10 @@ interface StudentEditForm {
         [fullWidth]="false"
         [ngModel]="filterLifecycleStage()"
         (ngModelChange)="onLifecycleStageChange($event)" />
-      <sp-admin-select
-        [options]="onboardingStatusOptions"
-        placeholder="All onboarding statuses"
-        size="sm"
-        [fullWidth]="false"
-        [ngModel]="filterOnboardingStatus()"
-        (ngModelChange)="onOnboardingStatusChange($event)" />
-      <sp-admin-select
-        [options]="cefrLevelOptions"
-        placeholder="All CEFR levels"
-        size="sm"
-        [fullWidth]="false"
-        [ngModel]="filterCefrLevel()"
-        (ngModelChange)="onCefrLevelChange($event)" />
+      <label class="sp-admin-filter-toggle">
+        <input type="checkbox" [(ngModel)]="includeArchived" (change)="onIncludeArchivedChange()" />
+        <span>Show archived</span>
+      </label>
       @if (hasActiveFilters()) {
         <sp-admin-button variant="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
       }
@@ -128,7 +82,6 @@ interface StudentEditForm {
                 <th>CEFR</th>
                 <th>Streak</th>
                 <th>Mins/wk</th>
-                <th>Profile</th>
                 <th class="sp-admin-sortable" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
                 <th>Actions</th>
               </tr>
@@ -158,24 +111,32 @@ interface StudentEditForm {
                       <span class="sp-admin-table-empty">-</span>
                     }
                   </td>
-                  <td class="sp-admin-table-muted">—</td>
-                  <td class="sp-admin-table-muted">—</td>
-                  <td class="sp-admin-profile-cell">
-                    @if (s.careerContext || s.learningGoal) {
-                      <sp-admin-truncated-text [value]="s.careerContext || s.learningGoal || ''" [maxLength]="60" [maxWidth]="'260px'" />
-                    } @else {
-                      <span class="sp-admin-table-empty">Not set</span>
-                    }
-                  </td>
-                  <td class="sp-admin-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
+                  <td class="sp-admin-table-muted">{{ s.onboardingStatus === 'Completed' ? '🔥 0' : '0' }}</td>
+                  <td class="sp-admin-table-muted">–</td>
+                  <td class="sp-admin-table-muted sp-stu-joined">{{ s.createdAt | date:'MMM d, y' }}</td>
                   <td class="sp-admin-actions">
                     <sp-admin-table-actions>
-                      <a role="menuitem" [routerLink]="[s.studentProfileId]" class="sp-adm-action-item">View</a>
-                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="startEdit(s)">Edit</button>
+                      <a role="menuitem" [routerLink]="[s.studentProfileId]" class="sp-adm-action-item sp-adm-action-icon-item">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View profile
+                      </a>
+                      <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-icon-item" (click)="startEdit(s)">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit student
+                      </button>
                       @if (s.lifecycleStage !== 'Archived') {
-                        <button role="menuitem" type="button" class="sp-adm-action-item" (click)="startResetPassword(s)">Reset password</button>
-                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="startResetData(s)">Reset data</button>
-                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="confirmArchive(s)">Archive</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-icon-item" (click)="startResetPassword(s)">
+                          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          Reset password
+                        </button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-icon-item" (click)="startResetData(s)">
+                          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.4"/></svg>
+                          Reset data
+                        </button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-icon-item sp-adm-action-danger sp-adm-action-divider" (click)="confirmArchive(s)">
+                          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                          Archive
+                        </button>
                       }
                     </sp-admin-table-actions>
                   </td>
@@ -184,9 +145,12 @@ interface StudentEditForm {
             </tbody>
           </table>
         </sp-admin-table>
-        @if (totalPages() > 1) {
-          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-        }
+        <div class="sp-stu-footer">
+          <span class="sp-stu-footer-count">Showing {{ showingFrom() }}–{{ showingTo() }} of {{ totalCount() }} students</span>
+          @if (totalPages() > 1) {
+            <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+          }
+        </div>
       }
     }
 
@@ -402,10 +366,6 @@ interface StudentEditForm {
     </sp-admin-modal>
   `,
   styles: [`
-    .sp-stu-summary-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:4px;}
-    @media(min-width:900px){.sp-stu-summary-row{grid-template-columns:repeat(4,1fr);}}
-    .sp-stu-breakdown-row{max-width:480px;margin-bottom:4px;}
-
     .sp-stu-filter-spacer{flex:1;}
     .sp-stu-rows-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#8B85A0;white-space:nowrap;flex-shrink:0;}
     .sp-stu-rows-select{height:32px;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:0 8px;font-size:13px;color:#211B36;background:#fff;cursor:pointer;}
@@ -417,12 +377,21 @@ interface StudentEditForm {
     .sp-stu-avatar-row{display:flex;align-items:center;gap:9px;}
     .sp-stu-avatar{flex-shrink:0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;line-height:1;}
     .sp-admin-student-name{font-weight:800;color:#211B36;}
-    .sp-admin-profile-cell{max-width:280px;}
+    .sp-stu-joined{white-space:nowrap;}
     .sp-admin-archived-row td{background:#FBFAFE;color:#8B85A0;}
     .sp-stu-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
     .sp-stu-wide{grid-column:1/-1;}
     .sp-stu-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
     .sp-stu-select:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+
+    .sp-stu-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;flex-wrap:wrap;}
+    .sp-stu-footer-count{font-size:13px;color:var(--sp-admin-text-muted,#8B85A0);font-weight:600;}
+
+    /* Icon+label action items */
+    .sp-adm-action-icon-item{display:flex;align-items:center;gap:8px;}
+    .sp-adm-action-icon-item svg{flex-shrink:0;opacity:.75;}
+    .sp-adm-action-divider{border-top:1px solid var(--sp-admin-border,#ECE9F5);margin-top:2px;padding-top:10px;}
+
     @media(max-width:640px){
       .sp-stu-edit-grid{grid-template-columns:1fr;}
     }
@@ -433,26 +402,16 @@ export class AdminStudentsComponent implements OnInit {
   students = signal<StudentListItem[]>([]);
   totalCount = signal(0);
   page = signal(1);
-  pageSize = 25;
+  pageSize = 10;
   totalPages = signal(1);
 
   readonly pageSizeOptions = [10, 25, 50, 100];
 
-  // Summary strip stats
-  stats = signal<AdminStats | null>(null);
-  loadingStats = signal(true);
-
-  readonly onboardingBreakdownItems = computed<BreakdownBarItem[]>(() => {
-    const s = this.stats();
-    if (!s || s.totalStudents === 0) return [];
-    const total = s.totalStudents;
-    const onboarded = s.onboardedStudents;
-    const notOnboarded = total - onboarded;
-    return [
-      { label: 'Onboarded', value: onboarded, pct: Math.round((onboarded / total) * 100), tone: 'green' },
-      { label: 'Pending', value: notOnboarded, pct: Math.round((notOnboarded / total) * 100), tone: 'amber' },
-    ];
+  readonly showingFrom = computed(() => {
+    if (this.totalCount() === 0) return 0;
+    return (this.page() - 1) * this.pageSize + 1;
   });
+  readonly showingTo = computed(() => Math.min(this.page() * this.pageSize, this.totalCount()));
 
   loading = signal(true);
   error = signal('');
@@ -644,10 +603,6 @@ export class AdminStudentsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
-    this.adminApi.getStats().subscribe({
-      next: s => { this.stats.set(s); this.loadingStats.set(false); },
-      error: () => { this.loadingStats.set(false); },
-    });
   }
 
   load(): void {
