@@ -68,7 +68,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
   `],
   template: `
     <sp-admin-page-header
-      title="Curriculum Objectives"
+      title="Curriculum"
       subtitle="Manage the curriculum syllabus used for CEFR-aware activity routing.">
       <sp-admin-button type="button" (click)="startCreate()">New objective</sp-admin-button>
       <sp-admin-button variant="secondary" type="button" (click)="view.set('preview')">Routing preview</sp-admin-button>

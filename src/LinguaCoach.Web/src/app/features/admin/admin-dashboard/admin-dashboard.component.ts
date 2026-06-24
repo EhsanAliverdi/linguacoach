@@ -48,59 +48,58 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
     <!-- Dark hero weekly-snapshot banner -->
     <div class="sp-dash-hero">
-      <div class="sp-dash-hero-label">Weekly snapshot</div>
+      <div class="sp-dash-hero-label">This week</div>
       <div class="sp-dash-hero-grid">
-        <div class="sp-dash-hero-stat">
-          <div class="sp-dash-hero-value">{{ loadingStats() ? '—' : (stats()?.onboardedStudents ?? 0) }}</div>
-          <div class="sp-dash-hero-key">Students onboarded</div>
-        </div>
-        <div class="sp-dash-hero-stat">
-          <div class="sp-dash-hero-value">{{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}</div>
-          <div class="sp-dash-hero-key">Total students</div>
-        </div>
         <div class="sp-dash-hero-stat" [class.sp-dash-hero-stat--placeholder]="loadingActivityTrends() || heroActivitiesThisWeek() === null">
+          <div class="sp-dash-hero-eyebrow">THIS WEEK</div>
           <div class="sp-dash-hero-value">
-            @if (loadingActivityTrends()) { — } @else { {{ heroActivitiesThisWeek() ?? 0 }} }
+            @if (loadingActivityTrends()) { — } @else { {{ heroActivitiesThisWeek() ?? 0 }} activities }
           </div>
-          <div class="sp-dash-hero-key">Activity attempts (7d)</div>
+        </div>
+        <div class="sp-dash-hero-stat" [class.sp-dash-hero-stat--placeholder]="loadingStats() || heroEngagementPct() === null">
+          <div class="sp-dash-hero-eyebrow">ENGAGEMENT</div>
+          <div class="sp-dash-hero-value">
+            @if (loadingStats()) { — } @else { {{ heroEngagementPct() ?? 0 }}% }
+          </div>
+          <div class="sp-dash-hero-key">{{ loadingStats() ? '' : (stats()?.onboardedStudents ?? 0) + ' of ' + (stats()?.totalStudents ?? 0) + ' students active' }}</div>
         </div>
         <div class="sp-dash-hero-stat" [class.sp-dash-hero-stat--placeholder]="loadingScoreDistribution() || heroAvgScore() === null">
+          <div class="sp-dash-hero-eyebrow">AVG SCORE</div>
           <div class="sp-dash-hero-value">
-            @if (loadingScoreDistribution()) { — } @else if (heroAvgScore() !== null) { {{ heroAvgScore() | number:'1.0-1' }} } @else { — }
+            @if (loadingScoreDistribution()) { — } @else if (heroAvgScore() !== null) { {{ heroAvgScore() | number:'1.0-1' }}/100 } @else { — }
           </div>
-          <div class="sp-dash-hero-key">Avg score (7d)</div>
-          @if (!loadingScoreDistribution() && heroAvgScore() === null) {
-            <div class="sp-dash-hero-na">No scored attempts yet</div>
-          }
+          <div class="sp-dash-hero-key">Based on all activities</div>
+        </div>
+        <div class="sp-dash-hero-stat" [class.sp-dash-hero-stat--placeholder]="loadingStudents()">
+          <div class="sp-dash-hero-eyebrow">ACTION NEEDED</div>
+          <div class="sp-dash-hero-value sp-dash-hero-value--action">
+            @if (loadingStudents()) { — } @else { {{ heroActionNeededCount() }} students }
+          </div>
+          <div class="sp-dash-hero-key">Require attention</div>
         </div>
       </div>
     </div>
 
-    <!-- KPI icon tile row -->
+    <!-- KPI icon tile row — matches standalone: Total Students / Active This Week / Activities Done / AI Cost 7d -->
     <div class="sp-dash-kpi-row">
       <sp-admin-kpi-card label="Total students" variant="indigo">
         <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         {{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}
       </sp-admin-kpi-card>
 
-      <sp-admin-kpi-card label="Onboarded" variant="green">
+      <sp-admin-kpi-card label="Active this week" variant="green">
         <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        {{ loadingStats() ? '—' : (stats()?.onboardedStudents ?? 0) }}
+        @if (loadingStats()) { — } @else {
+          {{ stats()?.onboardedStudents ?? 0 }}/{{ stats()?.totalStudents ?? 0 }}
+        }
       </sp-admin-kpi-card>
 
-      <sp-admin-kpi-card label="Activities tracked" variant="amber">
+      <sp-admin-kpi-card label="Activities done" variant="amber">
         <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         {{ loadingStats() ? '—' : (stats()?.totalActivityAttempts ?? 0) }}
       </sp-admin-kpi-card>
 
-      <sp-admin-kpi-card
-        label="AI provider"
-        [variant]="aiProviderTone() === 'violet' ? 'violet' : aiProviderTone() === 'amber' ? 'amber' : 'slate'">
-        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-        {{ aiProviderLabel() }}
-      </sp-admin-kpi-card>
-
-      <sp-admin-kpi-card label="AI cost (7 d)" variant="slate">
+      <sp-admin-kpi-card label="AI cost (7 days)" variant="slate">
         <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         @if (loadingAiUsageTrends7d()) {
           <span class="sp-dash-kpi-na">—</span>
@@ -306,14 +305,15 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
           <a routerLink="/admin/create-student" class="sp-dash-link">Create first student</a>
         </div>
       } @else {
-        <sp-admin-table variant="data" density="compact" minWidth="620px">
+        <sp-admin-table variant="data" density="compact" minWidth="560px">
           <table>
             <thead>
               <tr>
-                <th>Email</th>
-                <th>Onboarding</th>
+                <th>Student</th>
                 <th>CEFR</th>
+                <th>Acts</th>
                 <th>Joined</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -322,13 +322,8 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
                   <td>
                     <div class="sp-dash-avatar-row">
                       <span class="sp-dash-avatar" [style.background]="avatarColor(s.email)">{{ avatarInitial(s.email) }}</span>
-                      <span>{{ s.email }}</span>
+                      <span class="sp-dash-student-email">{{ s.displayName || s.email }}</span>
                     </div>
-                  </td>
-                  <td>
-                    <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">
-                      {{ onboardingLabel(s.onboardingStatus) }}
-                    </sp-admin-badge>
                   </td>
                   <td>
                     @if (s.cefrLevel) {
@@ -337,7 +332,13 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
                       <span class="sp-dash-mini-empty">—</span>
                     }
                   </td>
+                  <td class="sp-dash-table-muted">—</td>
                   <td class="sp-dash-table-muted">{{ s.createdAt | date:'mediumDate' }}</td>
+                  <td>
+                    <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">
+                      {{ onboardingLabel(s.onboardingStatus) }}
+                    </sp-admin-badge>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -404,11 +405,20 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       line-height: 1;
       color: #fff;
     }
+    .sp-dash-hero-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+      margin-bottom: 6px;
+    }
     .sp-dash-hero-key {
       font-size: 12px;
       color: rgba(255,255,255,.5);
       margin-top: 4px;
     }
+    .sp-dash-hero-value--action { color: #FCD34D; }
     .sp-dash-hero-stat--placeholder .sp-dash-hero-value { color: rgba(255,255,255,.35); }
     .sp-dash-hero-na {
       font-size: 10px;
@@ -423,7 +433,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       grid-template-columns: repeat(2, 1fr);
       gap: 14px;
     }
-    @media(min-width:900px){ .sp-dash-kpi-row { grid-template-columns: repeat(5, 1fr); } }
+    @media(min-width:900px){ .sp-dash-kpi-row { grid-template-columns: repeat(4, 1fr); } }
     .sp-dash-kpi-na { font-size: 12px; color: var(--sp-admin-text-muted, #64748B); font-style: italic; }
 
     /* Main 2-col */
@@ -558,10 +568,22 @@ export class AdminDashboardComponent implements OnInit {
   aiUsageTrends7dError = signal(false);
 
   readonly heroActivitiesThisWeek = computed<number | null>(() => {
-    const data = this.aiUsageTrends7d(); // reuse for cost; use activityTrends for attempts
     const trends = this.activityTrends();
     if (!trends) return null;
     return trends.buckets.reduce((sum, b) => sum + b.activityCount, 0);
+  });
+
+  readonly heroEngagementPct = computed<number | null>(() => {
+    const s = this.stats();
+    if (!s) return null;
+    if (s.totalStudents === 0) return 0;
+    return Math.round((s.onboardedStudents / s.totalStudents) * 100);
+  });
+
+  readonly heroActionNeededCount = computed<number>(() => {
+    if (this.loadingStudents()) return 0;
+    const ss = this.students();
+    return ss.filter(s => !s.cefrLevel && s.lifecycleStage !== 'Archived').length;
   });
 
   readonly heroAvgScore = computed<number | null>(() => {

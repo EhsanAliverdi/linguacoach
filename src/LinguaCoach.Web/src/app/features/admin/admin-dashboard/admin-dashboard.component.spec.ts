@@ -186,15 +186,15 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('5');
   });
 
-  it('renders onboarded stat card from stats', async () => {
+  it('renders active this week stat card from stats', async () => {
     await setup([], STATS);
-    expect(fixture.nativeElement.textContent).toContain('Onboarded');
+    expect(fixture.nativeElement.textContent).toContain('Active this week');
     expect(fixture.nativeElement.textContent).toContain('3');
   });
 
-  it('renders activities tracked stat card', async () => {
+  it('renders activities done stat card', async () => {
     await setup([], STATS);
-    expect(fixture.nativeElement.textContent).toContain('Activities tracked');
+    expect(fixture.nativeElement.textContent).toContain('Activities done');
     expect(fixture.nativeElement.textContent).toContain('120');
   });
 
@@ -206,9 +206,9 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Prompts');
   });
 
-  it('renders recent students table', async () => {
+  it('renders recent students table with display name', async () => {
     await setup([STUDENT]);
-    expect(fixture.nativeElement.textContent).toContain('alice@example.com');
+    expect(fixture.nativeElement.textContent).toContain('Alice Smith');
   });
 
   it('renders onboarding badge using shared label', async () => {
@@ -248,31 +248,32 @@ describe('AdminDashboardComponent', () => {
     expect(rows.length).toBe(5);
   });
 
-  // AI provider stat card — live status
-  it('shows "Configured" label when all categories have a provider', async () => {
+  // AI System card — live status (AI provider KPI card was removed; status is shown in the AI System card)
+  it('shows "Configured" provider in AI System card when all categories have a provider', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
-    expect(fixture.nativeElement.textContent).toContain('AI provider');
-    expect(fixture.nativeElement.textContent).toContain('Configured');
+    expect(fixture.nativeElement.textContent).toContain('AI System');
+    expect(fixture.nativeElement.textContent).toContain('OpenAI');
   });
 
-  it('shows partial label when only some categories configured', async () => {
+  it('shows partial configured in AI System card', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_PARTIAL);
-    expect(fixture.nativeElement.textContent).toContain('1/2 configured');
+    expect(fixture.nativeElement.textContent).toContain('OpenAI');
+    expect(fixture.nativeElement.textContent).toContain('Not configured');
   });
 
-  it('shows "Not configured" label when no categories have a provider', async () => {
+  it('shows "Not configured" badge in AI System when no categories configured', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_NONE_CONFIGURED);
     expect(fixture.nativeElement.textContent).toContain('Not configured');
   });
 
-  it('shows "Not configured" label when categories list is empty', async () => {
+  it('shows "Action needed" in AI System when categories list is empty', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_EMPTY);
-    expect(fixture.nativeElement.textContent).toContain('Not configured');
+    expect(fixture.nativeElement.textContent).toContain('Action needed');
   });
 
-  it('shows "Unknown" label when AI config API errors', async () => {
+  it('shows "Unavailable" in AI System when AI config API errors', async () => {
     await setup([STUDENT], STATS, 'error');
-    expect(fixture.nativeElement.textContent).toContain('Unknown');
+    expect(fixture.nativeElement.textContent).toContain('Unavailable');
   });
 
   // AI System card — live categories
@@ -318,36 +319,40 @@ describe('AdminDashboardComponent', () => {
   describe('weekly-snapshot hero banner', () => {
     it('renders the hero banner section', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Weekly snapshot');
+      expect(fixture.nativeElement.textContent).toContain('This week');
     });
 
-    it('shows onboarded count in hero from real stats', async () => {
+    it('shows THIS WEEK eyebrow and activity count', async () => {
       await setup([], STATS);
-      expect(fixture.nativeElement.textContent).toContain('Students onboarded');
-      expect(fixture.nativeElement.textContent).toContain('3');
+      expect(fixture.nativeElement.textContent).toContain('THIS WEEK');
     });
 
-    it('shows total students count in hero from real stats', async () => {
+    it('shows ENGAGEMENT eyebrow and engagement %', async () => {
       await setup([], STATS);
-      expect(fixture.nativeElement.textContent).toContain('Total students');
-      expect(fixture.nativeElement.textContent).toContain('5');
+      expect(fixture.nativeElement.textContent).toContain('ENGAGEMENT');
+      expect(fixture.nativeElement.textContent).toContain('60%');
     });
 
-    it('shows activity attempts this week slot', async () => {
+    it('shows AVG SCORE eyebrow', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Activity attempts (7d)');
+      expect(fixture.nativeElement.textContent).toContain('AVG SCORE');
     });
 
-    it('shows avg score slot', async () => {
+    it('shows ACTION NEEDED eyebrow', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Avg score (7d)');
+      expect(fixture.nativeElement.textContent).toContain('ACTION NEEDED');
     });
   });
 
   describe('KPI icon tile row', () => {
-    it('renders AI cost (7d) tile', async () => {
+    it('renders AI cost (7 days) tile', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('AI cost (7 d)');
+      expect(fixture.nativeElement.textContent).toContain('AI cost (7 days)');
+    });
+
+    it('renders Active this week tile', async () => {
+      await setup([], STATS);
+      expect(fixture.nativeElement.textContent).toContain('Active this week');
     });
   });
 

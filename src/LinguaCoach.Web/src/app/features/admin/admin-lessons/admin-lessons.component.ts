@@ -94,6 +94,21 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
           <sp-admin-form-field label="TTS timeout (s)">
             <sp-admin-number-input placeholder="e.g. 60" />
           </sp-admin-form-field>
+          <sp-admin-form-field label="Max concurrent generation jobs">
+            <sp-admin-number-input placeholder="e.g. 2" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Max concurrent TTS jobs">
+            <sp-admin-number-input placeholder="e.g. 4" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Practice ready per type">
+            <sp-admin-number-input placeholder="e.g. 3" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Practice refill threshold">
+            <sp-admin-number-input placeholder="e.g. 1" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Practice refill count">
+            <sp-admin-number-input placeholder="e.g. 2" />
+          </sp-admin-form-field>
         </div>
         <div style="margin-top:16px;">
           <div class="sp-les-toggle-row">
