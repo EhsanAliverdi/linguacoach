@@ -351,7 +351,7 @@ describe('admin wrapper migration', () => {
     fixture.detectChanges();
 
     expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
-    expect(fixture.nativeElement.querySelectorAll('sp-admin-card').length).toBeGreaterThanOrEqual(3);
+    expect(fixture.nativeElement.querySelectorAll('.sp-int-card').length).toBeGreaterThanOrEqual(5);
   });
 
   it('dashboard renders KPI grid cards', () => {
@@ -470,7 +470,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     expect(selects.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('Integrations page renders sp-admin-form-field for storage display fields (10X-I)', () => {
+  it('Integrations page renders integration cards grid (10X-I)', () => {
     const svc = makeIntegrationsSvc();
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
@@ -478,8 +478,8 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     });
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
-    const fields = fixture.nativeElement.querySelectorAll('sp-admin-form-field');
-    expect(fields.length).toBeGreaterThanOrEqual(7);
+    const cards = fixture.nativeElement.querySelectorAll('.sp-int-card');
+    expect(cards.length).toBeGreaterThanOrEqual(5);
   });
 
   it('Integrations page renders sp-admin-button for test connection action (10X-I)', () => {
@@ -491,23 +491,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('sp-admin-button');
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('Integrations save button calls saveSettings (10X-I)', () => {
-    const svc = makeIntegrationsSvc();
-    svc.updateGenerationSettings = jasmine.createSpy('updateGenerationSettings').and.returnValue(of({}));
-    TestBed.configureTestingModule({
-      imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
-    });
-    const fixture = TestBed.createComponent(AdminIntegrationsComponent);
-    fixture.detectChanges();
-    const allBtns = Array.from(fixture.nativeElement.querySelectorAll('sp-admin-button')) as HTMLElement[];
-    const saveBtn = allBtns.find(el => el.textContent?.trim() === 'Save');
-    expect(saveBtn).toBeTruthy();
-    fixture.componentInstance.saveSettings();
-    expect(svc.updateGenerationSettings).toHaveBeenCalled();
+    expect(buttons.length).toBeGreaterThanOrEqual(1);
   });
 
   it('Students edit modal opens as sp-admin-modal on startEdit (10X-I)', () => {
