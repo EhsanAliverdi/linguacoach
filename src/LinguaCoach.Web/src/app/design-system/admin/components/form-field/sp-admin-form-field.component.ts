@@ -34,7 +34,7 @@ export type SpAdminFormFieldSize = 'sm' | 'md' | 'lg';
     /* TailAdmin-backed: block text-sm font-medium text-gray-700 label pattern */
 
     /* Vertical (default): label above, hint/error below */
-    .sp-adm-field-vertical { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .sp-adm-field-vertical { display:flex; flex-direction:column; gap:5px; min-width:0; }
 
     /* Horizontal: label left, control right */
     .sp-adm-field-horizontal { display:grid; grid-template-columns:160px minmax(0,1fr); align-items:start; gap:12px; min-width:0; }
@@ -47,8 +47,8 @@ export type SpAdminFormFieldSize = 'sm' | 'md' | 'lg';
     .sp-adm-field-inline .sp-adm-field-hint,
     .sp-adm-field-inline .sp-adm-field-error { width:100%; margin-top:2px; }
 
-    /* Label sizes */
-    .sp-adm-field-label-sm { font-size:11px; }
+    /* Label sizes — sm matches JSX filter bar label: 12px/700/muted */
+    .sp-adm-field-label-sm { font-size:12px; font-weight:700; color:var(--sp-admin-text-muted,#8B85A0); }
     .sp-adm-field-label-md { font-size:13px; }
     .sp-adm-field-label-lg { font-size:15px; }
 

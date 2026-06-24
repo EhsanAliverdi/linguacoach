@@ -48,9 +48,9 @@ export type KpiLayout = 'standard' | 'tile';
     }
     .sp-kpi-body { min-width: 0; flex: 1; }
     .sp-kpi-label {
-      font-size: 11px; font-weight: 800;
+      font-size: 10.5px; font-weight: 800;
       color: #8B85A0; text-transform: uppercase;
-      letter-spacing: .08em; margin-bottom: 4px;
+      letter-spacing: .09em; margin-bottom: 4px;
     }
     .sp-kpi-value {
       font-size: 30px; font-weight: 800;

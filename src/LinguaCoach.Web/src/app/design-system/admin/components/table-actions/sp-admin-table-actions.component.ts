@@ -41,20 +41,16 @@ export interface SpAdminTableAction {
   imports: [CommonModule],
   template: `
     <div class="sp-adm-row-actions relative inline-block">
-      <!-- Trigger: three-dot button matching TailAdmin table-dropdown button style -->
+      <!-- Trigger: •••  ghost xs button matching JSX adm-btn-ghost adm-btn-xs -->
       <button
         #triggerRef
         type="button"
-        class="sp-adm-actions-trigger flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
+        class="sp-adm-actions-trigger"
         [attr.aria-expanded]="isOpen"
         aria-haspopup="menu"
         aria-label="Row actions"
         (click)="toggle($event)"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-        </svg>
-      </button>
+      >•••</button>
 
       @if (isOpen) {
         <!--
@@ -94,16 +90,38 @@ export interface SpAdminTableAction {
   styles: [`
     :host { display: inline-block; }
 
-    /* Fixed-positioned dropdown panel — escapes any overflow:hidden/auto ancestor */
+    /* Trigger — JSX: adm-btn-ghost adm-btn-xs, padding 4px 8px, letterSpacing 2 */
+    .sp-adm-actions-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1.5px solid #E2DEF0;
+      background: #fff;
+      color: #211B36;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 2px;
+      cursor: pointer;
+      line-height: 1;
+      transition: opacity .12s;
+      white-space: nowrap;
+    }
+    .sp-adm-actions-trigger:hover { opacity: .88; }
+
+    /* Fixed-positioned dropdown panel — matches JSX: minWidth 160, radius 10, shadow */
     .sp-adm-actions-menu {
       position: fixed;
-      width: 176px;      /* w-44 = 11rem = 176px */
-      border-radius: 12px;
-      border: 1px solid var(--sp-admin-border,#ECE9F5);
+      min-width: 160px;
+      border-radius: 10px;
+      border: 1px solid #ECE9F5;
       background: #fff;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      box-shadow: 0 8px 24px rgba(33,27,54,.12);
       padding: 4px 0;
       z-index: 500;
+      overflow: hidden;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -113,49 +131,47 @@ export interface SpAdminTableAction {
       }
     }
 
-    /* Menu items — common base */
-    .sp-adm-action-item {
-      display: block;
+    /* Menu items — ::ng-deep to cover both internal and projected items */
+    :host ::ng-deep .sp-adm-action-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       width: 100%;
       text-align: left;
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 500;
+      padding: 9px 14px;
+      font-size: 13.5px;
+      font-weight: 600;
+      font-family: inherit;
       line-height: 1.4;
-      color: var(--sp-admin-text,#0F172A);
-      background: transparent;
+      color: #4B4462;
+      background: none;
       border: none;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.1s, color 0.1s;
+      transition: background .08s;
       white-space: nowrap;
+      box-sizing: border-box;
     }
-    .sp-adm-action-item:hover {
-      background: var(--sp-admin-bg,#F6F4FB);
-      color: var(--sp-admin-text,#0F172A);
+    :host ::ng-deep .sp-adm-action-item:hover {
+      background: #F6F4FB;
+      color: #211B36;
     }
-    .sp-adm-action-item:focus-visible {
-      outline: 2px solid var(--sp-admin-primary,#5B4BE8);
+    :host ::ng-deep .sp-adm-action-item:focus-visible {
+      outline: 2px solid #5B4BE8;
       outline-offset: -2px;
     }
-    .sp-adm-action-item.sp-adm-action-danger {
-      color: #dc2626;
+    :host ::ng-deep .sp-adm-action-item.sp-adm-action-danger {
+      color: #C0392B;
     }
-    .sp-adm-action-item.sp-adm-action-danger:hover {
-      background: #fef2f2;
-      color: #b91c1c;
+    :host ::ng-deep .sp-adm-action-item.sp-adm-action-danger:hover {
+      background: #F6F4FB;
+      color: #C0392B;
     }
-    .sp-adm-action-item.sp-adm-action-disabled,
-    .sp-adm-action-item:disabled {
+    :host ::ng-deep .sp-adm-action-item:disabled,
+    :host ::ng-deep .sp-adm-action-item.sp-adm-action-disabled {
       opacity: 0.4;
       cursor: not-allowed;
       pointer-events: none;
-    }
-
-    /* Dark mode item overrides */
-    @media (prefers-color-scheme: dark) {
-      .sp-adm-action-item { color: #d1d5db; }
-      .sp-adm-action-item:hover { background: #1f2937; color: #f9fafb; }
     }
   `],
 })
@@ -173,8 +189,8 @@ export class SpAdminTableActionsComponent {
   private readonly MENU_HEIGHT_ESTIMATE = 200;
   /** Gap between trigger bottom and menu top. */
   private readonly MENU_GAP = 4;
-  /** Menu width matches .sp-adm-actions-menu width (176px). */
-  private readonly MENU_WIDTH = 176;
+  /** Menu width estimate for right-align calculation (min-width 160px). */
+  private readonly MENU_WIDTH = 160;
 
   constructor(
     private elRef: ElementRef<HTMLElement>,

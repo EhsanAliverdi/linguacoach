@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   template: `
     <!-- Matches .adm-pagination: flex space-between, 12/16px padding, border-top border -->
     <nav class="sp-adm-pagination" aria-label="Pagination">
-      <span class="sp-adm-pag-info">Page {{ safePage }} of {{ safeTotalPages }}</span>
+      <span class="sp-adm-pag-info">Page {{ safePage }} of {{ safeTotalPages }}{{ totalRows != null ? ' · ' + totalRows + ' rows' : '' }}</span>
       <div class="sp-adm-pag-btns">
         <button
           class="sp-adm-pag-btn"
@@ -16,13 +16,17 @@ import { CommonModule } from '@angular/common';
           (click)="goTo(safePage - 1)"
           aria-label="Previous page"
         >Previous</button>
-        @for (p of pageNumbers; track p) {
-          <button
-            class="sp-adm-pag-btn"
-            [class.sp-adm-pag-btn-cur]="p === safePage"
-            (click)="goTo(p)"
-            [attr.aria-current]="p === safePage ? 'page' : null"
-          >{{ p }}</button>
+        @for (entry of pageEntries; track entry.key) {
+          @if (entry.ellipsis) {
+            <span class="sp-adm-pag-ellipsis">…</span>
+          } @else {
+            <button
+              class="sp-adm-pag-btn"
+              [class.sp-adm-pag-btn-cur]="entry.page === safePage"
+              (click)="goTo(entry.page!)"
+              [attr.aria-current]="entry.page === safePage ? 'page' : null"
+            >{{ entry.page }}</button>
+          }
         }
         <button
           class="sp-adm-pag-btn"
@@ -80,11 +84,13 @@ import { CommonModule } from '@angular/common';
       border-color:#5B4BE8;
     }
     .sp-adm-pag-btn-cur:hover:not(:disabled) { background:#3A2EA8; }
+    .sp-adm-pag-ellipsis { padding: 0 4px; color: #8B85A0; font-size: 13px; line-height: 30px; }
   `],
 })
 export class SpAdminPaginationComponent {
   @Input() page = 1;
   @Input() totalPages = 1;
+  @Input() totalRows: number | null = null;
   @Output() pageChange = new EventEmitter<number>();
 
   get safeTotalPages(): number {
@@ -102,12 +108,20 @@ export class SpAdminPaginationComponent {
     }
   }
 
-  get pageNumbers(): number[] {
+  get pageEntries(): { key: string; page?: number; ellipsis?: boolean }[] {
     const total = this.safeTotalPages;
     const cur = this.safePage;
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    // show first, last, current ±2 with ellipsis condensed to numbers only
-    const pages = new Set([1, total, cur - 1, cur, cur + 1].filter(p => p >= 1 && p <= total));
-    return [...pages].sort((a, b) => a - b);
+    const nums: number[] = total <= 7
+      ? Array.from({ length: total }, (_, i) => i + 1)
+      : [...new Set([1, total, cur - 1, cur, cur + 1].filter(p => p >= 1 && p <= total))].sort((a, b) => a - b);
+
+    const entries: { key: string; page?: number; ellipsis?: boolean }[] = [];
+    for (let i = 0; i < nums.length; i++) {
+      if (i > 0 && nums[i] - nums[i - 1] > 1) {
+        entries.push({ key: `ellipsis-${i}`, ellipsis: true });
+      }
+      entries.push({ key: `page-${nums[i]}`, page: nums[i] });
+    }
+    return entries;
   }
 }

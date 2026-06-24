@@ -22,8 +22,8 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
           <span class="sp-adm-card-spinner" aria-hidden="true"></span>
         </div>
       }
-      @if (title || hasActions) {
-        <header class="sp-adm-card-header" [class.sp-adm-card-header-divider]="headerDivider">
+      @if (title || hasHeader || hasActions) {
+        <header class="sp-adm-card-header" [class.sp-adm-card-header-divider]="headerDivider" [class.sp-adm-card-header-custom]="hasHeader && !title">
           @if (title) {
             <h2 class="sp-adm-card-title">{{ title }}</h2>
           }
@@ -51,7 +51,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     .sp-adm-card-elevated { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-sm,0 2px 8px rgba(60,48,140,.07)); }
     .sp-adm-card-flat     { border:none; background:var(--sp-admin-surface-subtle,#FBFAFE) !important; box-shadow:none; }
     .sp-adm-card-metric   { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
-    .sp-adm-card-section  { border:none; border-top:2px solid var(--sp-admin-primary,#5B4BE8); box-shadow:none; }
+    .sp-adm-card-section  { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
     .sp-adm-card-dashed   { border-style:dashed; }
 
     /* Radius — standalone card is 14px */
@@ -64,16 +64,18 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     .sp-adm-card-hover { cursor:pointer; transition:box-shadow .15s,border-color .15s; }
     .sp-adm-card-hover:hover { box-shadow:var(--sp-admin-shadow-sm,0 2px 8px rgba(60,48,140,.07)); border-color:var(--sp-admin-primary-focus,#C0BAF9); }
 
-    /* Header — matches .adm-card-header: flex, space-between, margin-bottom:16px, padding 20px */
+    /* Header — matches .adm-card header: flex, space-between, padding 16px 20px, borderBottom */
     .sp-adm-card-header {
       display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:20px 20px 0;
-      margin-bottom:16px;
+      padding:16px 20px;
+      margin-bottom:0;
     }
-    .sp-adm-card-header-divider { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); padding-bottom:16px; margin-bottom:0; }
+    .sp-adm-card-header-divider { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); }
+    /* Custom header slot: take full width, no flex constraints */
+    .sp-adm-card-header-custom { display:block; padding:0; }
 
-    /* Title — matches .adm-card-title: 13.5px/700/ink */
-    .sp-adm-card-title { margin:0; font-size:13.5px; font-weight:700; color:var(--sp-admin-text,#211B36); line-height:1.3; }
+    /* Title — matches JSX: 14px/800/ink */
+    .sp-adm-card-title { margin:0; font-size:14px; font-weight:800; color:var(--sp-admin-text,#211B36); line-height:1.3; }
 
     /* Body padding — standalone .adm-card-p: padding 20px */
     .sp-adm-card-body-none { padding:0; }
@@ -109,6 +111,7 @@ export class SpAdminCardComponent {
   /** @deprecated use variant='flat' or padding='sm' */
   @Input() set tight(v: boolean) { if (v) this.padding = 'sm'; }
 
+  @Input() hasHeader = false;
   get hasActions(): boolean { return false; }
 
   get hostClasses(): string {

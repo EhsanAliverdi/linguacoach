@@ -113,6 +113,8 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     /* SpeakPath-aligned table card shells */
     .sp-adm-table-card    { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
     .sp-adm-table-data    { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
+    /* flush: no outer shell — table sits inside a parent card */
+    .sp-adm-table-flush   { background:transparent; overflow:hidden; }
     .sp-adm-table-simple  { background:transparent; }
     .sp-adm-table-card-v  { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; box-shadow:var(--sp-admin-shadow-card,0 2px 8px rgba(60,48,140,.07)); }
     .sp-adm-table-bordered-v { border-radius:14px; border:1px solid var(--sp-admin-border,#ECE9F5); background:#fff; overflow:hidden; }
@@ -130,7 +132,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       table-layout:auto;
     }
     :host ::ng-deep thead tr { border-bottom:1px solid #ECE9F5; }
-    /* .adm-table th: 11px/800/muted/0.07em/uppercase, 10/16px padding, border-bottom border */
+    /* .adm-table th — exact Admin.html spec */
     :host ::ng-deep th {
       padding:10px 16px;
       background:transparent;
@@ -141,12 +143,12 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       text-align:left;
       white-space:nowrap;
       vertical-align:middle;
-      letter-spacing:0.07em;
+      letter-spacing:.07em;
       text-transform:uppercase;
       border-bottom:1px solid #ECE9F5;
       user-select:none;
     }
-    /* .adm-table td: 12/16px, 13.5px/text color, border-bottom border */
+    /* .adm-table td — exact Admin.html spec */
     :host ::ng-deep td {
       padding:12px 16px;
       color:#4B4462;
@@ -154,16 +156,12 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       line-height:1.5;
       vertical-align:middle;
       border-bottom:1px solid #ECE9F5;
-      min-width:72px;
+      min-width:0;
     }
     /* .adm-table tr:last-child td: no border-bottom */
     :host ::ng-deep tbody tr:last-child td { border-bottom:0; }
-    /* .adm-table tbody tr:hover: background rgb(250,250,254) */
-    :host ::ng-deep tbody tr:hover td { background:rgb(250,250,254); }
-    :host ::ng-deep td:first-child,
-    :host ::ng-deep th:first-child { padding-left:20px; }
-    :host ::ng-deep td:last-child,
-    :host ::ng-deep th:last-child { padding-right:20px; }
+    /* .adm-table tbody tr:hover */
+    :host ::ng-deep tbody tr:hover td { background:#FAFAFE; }
     :host ::ng-deep .sp-admin-table-muted,
     :host ::ng-deep .sp-admin-muted { color:#667085; }
     :host ::ng-deep .sp-admin-mono,
@@ -277,12 +275,14 @@ export class SpAdminTableComponent {
   @Input() showHeader = true;
   @Input() stickyHeader = false;
   @Input() minWidth = '720px';
+  @Input() flush = false;
   @Output() sortChange = new EventEmitter<SpAdminSortChange>();
   @Output() selectionChange = new EventEmitter<number[]>();
 
   private selectedRows = new Set<number>();
 
   get outerClasses(): string {
+    if (this.flush) return 'sp-adm-table-flush';
     const variantMap: Record<SpAdminTableVariant, string> = {
       basic: 'sp-adm-table-card',
       data: 'sp-adm-table-data',

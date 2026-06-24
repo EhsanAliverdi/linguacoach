@@ -220,14 +220,15 @@ const Z_STACK_STEP = 50;
       padding: 20px;
     }
 
-    /* Footer */
+    /* Footer — JSX: left-aligned flex row, gap 10px */
     .sp-adm-so-footer {
       flex-shrink: 0;
       border-top: 1px solid var(--sp-admin-border-subtle,#F4F2FC);
       padding: 14px 20px;
       display: flex;
       gap: 10px;
-      justify-content: flex-end;
+      justify-content: flex-start;
+      align-items: center;
     }
 
     .sp-adm-so-footer:empty {

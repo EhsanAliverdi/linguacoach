@@ -61,8 +61,8 @@ export type SpAdminSelectState = 'default' | 'error' | 'success' | 'disabled';
 
     /* Sizes */
     .sp-adm-select-sm { height:32px; padding:4px 12px; font-size:12px; }
-    .sp-adm-select-md { height:44px; padding:10px 16px; font-size:13px; }
-    .sp-adm-select-lg { height:52px; padding:12px 20px; font-size:15px; }
+    .sp-adm-select-md { height:36px; padding:0 12px; font-size:13.5px; }
+    .sp-adm-select-lg { height:44px; padding:10px 16px; font-size:14px; }
 
     /* States */
     .sp-adm-select-error   { border-color:#ef4444; }

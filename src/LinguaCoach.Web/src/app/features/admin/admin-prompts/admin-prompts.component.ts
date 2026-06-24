@@ -85,28 +85,32 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     </div>
 
     <!-- Prompt library -->
-    <sp-admin-card title="Prompt library" variant="section" padding="none" [headerDivider]="true">
-      <sp-admin-filter-bar layout="responsive" density="compact">
-        <sp-admin-form-field search label="Search prompts" size="sm">
-          <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key…" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Category" size="sm">
-          <sp-admin-select
-            [ngModel]="categoryFilter()"
-            (ngModelChange)="setCategoryFilter($event)"
-            [options]="categoryFilterOptions()"
-            size="sm"
-            placeholder="All categories" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Status" size="sm">
-          <sp-admin-select
-            [ngModel]="statusFilter()"
-            (ngModelChange)="setStatusFilter($event)"
-            [options]="statusFilterOptions"
-            size="sm" />
-        </sp-admin-form-field>
-        <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()" [loading]="loading()">Refresh</sp-admin-button>
-      </sp-admin-filter-bar>
+    <sp-admin-card variant="default" padding="none" [hasHeader]="true" [headerDivider]="false">
+      <!-- Library header: title + filter row in one block, matching JSX padding 16px 20px + borderBottom -->
+      <div slot="header" class="sp-adm-lib-header">
+        <div class="sp-adm-lib-title">Prompt library</div>
+        <sp-admin-filter-bar layout="responsive" density="compact">
+          <sp-admin-form-field search label="Search prompts" size="sm">
+            <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key…" />
+          </sp-admin-form-field>
+          <sp-admin-form-field filters label="Category" size="sm">
+            <sp-admin-select
+              [ngModel]="categoryFilter()"
+              (ngModelChange)="setCategoryFilter($event)"
+              [options]="categoryFilterOptions()"
+              size="sm"
+              placeholder="All categories" />
+          </sp-admin-form-field>
+          <sp-admin-form-field class="sp-adm-status-field" filters label="Status" size="sm">
+            <sp-admin-select
+              [ngModel]="statusFilter()"
+              (ngModelChange)="setStatusFilter($event)"
+              [options]="statusFilterOptions"
+              size="sm" />
+          </sp-admin-form-field>
+          <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()" [loading]="loading()">Refresh</sp-admin-button>
+        </sp-admin-filter-bar>
+      </div>
 
       @if (loading()) {
         <sp-admin-loading-state message="Loading prompt templates" />
@@ -118,8 +122,8 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       } @else if (filteredPrompts().length === 0) {
         <sp-admin-empty-state [message]="emptyMessage()" />
       } @else {
-        <sp-admin-table variant="data" density="compact" minWidth="860px">
-          <table>
+        <sp-admin-table variant="data" density="comfortable" minWidth="860px" [flush]="true">
+          <table style="table-layout:fixed">
             <colgroup>
               <col style="width:34%"/>
               <col style="width:11%"/>
@@ -134,8 +138,8 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
                 <th>CATEGORY</th>
                 <th>VERSION</th>
                 <th>STATUS</th>
-                <th class="sp-admin-th-right">TOKEN BUDGET</th>
-                <th class="sp-admin-th-right">ACTIONS</th>
+                <th style="text-align:right">TOKEN BUDGET</th>
+                <th style="text-align:right">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -152,10 +156,10 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
                   </td>
                   <!-- CATEGORY -->
                   <td>
-                    <sp-admin-badge [tone]="categoryTone(promptCategory(p.key))">{{ promptCategory(p.key) }}</sp-admin-badge>
+                    <span class="sp-adm-category">{{ promptCategory(p.key) }}</span>
                   </td>
                   <!-- VERSION -->
-                  <td class="sp-admin-num sp-adm-version">v{{ p.version }}</td>
+                  <td class="sp-adm-version">v{{ p.version }}</td>
                   <!-- STATUS -->
                   <td>
                     <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
@@ -166,15 +170,29 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
                   <td class="sp-admin-num sp-adm-token-budget">{{ tokenBudgetLabel(p) }}</td>
                   <!-- ACTIONS -->
                   <td class="sp-admin-actions" (click)="$event.stopPropagation()">
+                    <div class="sp-adm-actions-wrap">
                     <sp-admin-table-actions>
-                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="openView(p)">View content</button>
-                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="openEdit(p)">Edit</button>
+                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="openView(p)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View
+                      </button>
+                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="openEdit(p)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit
+                      </button>
                       @if (p.isActive) {
-                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="deactivate(p)" [disabled]="busyPromptId() === p.id">Deactivate</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="deactivate(p)" [disabled]="busyPromptId() === p.id">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          Deactivate
+                        </button>
                       } @else {
-                        <button role="menuitem" type="button" class="sp-adm-action-item" (click)="activate(p)" [disabled]="busyPromptId() === p.id">Activate</button>
+                        <button role="menuitem" type="button" class="sp-adm-action-item" (click)="activate(p)" [disabled]="busyPromptId() === p.id">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                          Activate
+                        </button>
                       }
                     </sp-admin-table-actions>
+                    </div>
                   </td>
                 </tr>
               }
@@ -182,7 +200,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
           </table>
         </sp-admin-table>
         @if (totalPages() > 1) {
-          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="page.set($event)" />
+          <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" [totalRows]="filteredPrompts().length" (pageChange)="page.set($event)" />
         }
       }
     </sp-admin-card>
@@ -222,6 +240,31 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
           </div>
         </div>
 
+        @if (viewSiblings().length > 1) {
+          <div class="sp-adm-so-section">
+            <div class="sp-adm-so-section-title">Version history</div>
+            <div class="sp-adm-ver-btns">
+              @for (s of viewSiblings(); track s.id) {
+                <button
+                  type="button"
+                  class="sp-adm-ver-btn"
+                  [class.sp-adm-ver-btn-active]="s.id === viewPrompt()?.id"
+                  (click)="switchVersion(s)">
+                  v{{ s.version }}
+                  @if (s.isActive) {
+                    <span class="sp-adm-ver-dot" [class.sp-adm-ver-dot-cur]="s.id === viewPrompt()?.id"></span>
+                  }
+                </button>
+              }
+            </div>
+            @if (viewPrompt()?.isActive) {
+              <div class="sp-adm-ver-status sp-adm-active">● v{{ viewPrompt()?.version }} is the active version</div>
+            } @else {
+              <div class="sp-adm-ver-status sp-adm-inactive">● v{{ viewPrompt()?.version }} is inactive</div>
+            }
+          </div>
+        }
+
         @if (promptVars(detail()!.content).length > 0) {
           <div class="sp-adm-so-section">
             <div class="sp-adm-so-section-title">Variables <span class="sp-adm-muted">({{ promptVars(detail()!.content).length }})</span></div>
@@ -240,7 +283,10 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       }
 
       <div slot="footer">
-        <sp-admin-button (click)="openEditFromView()">Edit</sp-admin-button>
+        <sp-admin-button variant="secondary" appearance="solid" (click)="openEditFromView()">
+          <svg slot="leading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </sp-admin-button>
         @if (viewPrompt()?.isActive) {
           <sp-admin-button variant="danger" appearance="ghost" (click)="deactivateFromView()">Deactivate v{{ viewPrompt()?.version }}</sp-admin-button>
         }
@@ -283,7 +329,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       </div>
 
       <div slot="footer">
-        <sp-admin-button (click)="createVersion()" [loading]="creating()">
+        <sp-admin-button variant="secondary" appearance="solid" (click)="createVersion()" [loading]="creating()">
           {{ editRow() ? 'Save as new version' : 'Create' }}
         </sp-admin-button>
         <sp-admin-button variant="neutral" appearance="ghost" (click)="closeEdit()">Cancel</sp-admin-button>
@@ -292,19 +338,37 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
   `,
   styles: [`
     .sp-admin-wide { grid-column: 1 / -1; }
+
+    /* Library card header block — matches JSX: padding 16px 20px, borderBottom, title 14px/800, filter below */
+    .sp-adm-lib-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .sp-adm-lib-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--sp-admin-text, #211B36);
+      margin-bottom: 14px;
+    }
+    /* Status select narrower than category (JSX: 160px vs 180px) */
+    :host ::ng-deep .sp-adm-status-field { flex: 0 0 160px !important; min-width: 100px !important; }
     .sp-pt-kpi-strip {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
-      padding: 16px 24px 0;
     }
     .sp-admin-state-wrap { display: grid; gap: 12px; padding: 16px; }
     .sp-admin-th-right { text-align: right !important; }
     .sp-adm-row-click { cursor: pointer; }
-    .sp-adm-key-cell { display: flex; align-items: center; gap: 8px; }
+    .sp-adm-key-cell { display: flex; align-items: center; gap: 8px; overflow: hidden; min-width: 0; }
     .sp-adm-version { font-size: 13.5px; font-weight: 700; }
     .sp-adm-token-budget { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--sp-admin-text-muted, #64748B); }
     .sp-adm-action-danger { color: #ef4444 !important; }
+    .sp-adm-actions-wrap { display: flex; justify-content: flex-end; }
+    .sp-adm-category { font-size: 13px; font-weight: 600; color: var(--sp-admin-text, #0F172A); }
 
     /* Slide-over meta grid */
     .sp-adm-so-meta-grid {
@@ -365,6 +429,28 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
       padding: 3px 9px;
       border-radius: 6px;
     }
+
+    /* Version history buttons */
+    .sp-adm-ver-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .sp-adm-ver-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      min-width: 52px; height: 28px; padding: 0 12px;
+      border-radius: 7px; font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: background .08s;
+      border: 1.5px solid var(--sp-admin-border, #ECE9F5);
+      background: #fff; color: var(--sp-admin-text, #0F172A);
+    }
+    .sp-adm-ver-btn:hover { background: var(--sp-admin-surface-subtle, #FBFAFE); }
+    .sp-adm-ver-btn-active {
+      background: #5B4BE8; color: #fff; border-color: #5B4BE8;
+    }
+    .sp-adm-ver-btn-active:hover { background: #3A2EA8; }
+    .sp-adm-ver-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #13B07C; flex-shrink: 0; display: inline-block;
+    }
+    .sp-adm-ver-dot-cur { background: #fff; }
+    .sp-adm-ver-status { font-size: 12px; font-weight: 600; }
 
     /* Prompt body code block */
     .sp-adm-prompt-body {
@@ -470,10 +556,20 @@ export class AdminPromptsComponent implements OnInit {
       : 'No prompt templates match the current filters.'
   );
 
+  viewSiblings = computed(() => {
+    const p = this.viewPrompt();
+    if (!p) return [];
+    return this.prompts()
+      .filter(s => s.key === p.key)
+      .sort((a, b) => a.version - b.version);
+  });
+
   viewSlideOverSubtitle = computed(() => {
     const p = this.viewPrompt();
     if (!p) return '';
-    return `${this.promptCategory(p.key)} · v${p.version}`;
+    const siblings = this.viewSiblings();
+    const count = siblings.length;
+    return `${this.promptCategory(p.key)} · ${count} version${count !== 1 ? 's' : ''}`;
   });
 
   load(): void {
@@ -499,6 +595,18 @@ export class AdminPromptsComponent implements OnInit {
         this.detailError.set('Prompt content could not be loaded.');
         this.detailLoading.set(false);
       },
+    });
+  }
+
+  switchVersion(sibling: PromptTemplateItem): void {
+    if (sibling.id === this.viewPrompt()?.id) return;
+    this.viewPrompt.set(sibling);
+    this.detail.set(null);
+    this.detailError.set('');
+    this.detailLoading.set(true);
+    this.adminApi.getPrompt(sibling.id).subscribe({
+      next: d => { this.detail.set(d); this.detailLoading.set(false); },
+      error: () => { this.detailError.set('Prompt content could not be loaded.'); this.detailLoading.set(false); },
     });
   }
 
