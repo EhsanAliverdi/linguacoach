@@ -67,3 +67,4 @@ src/LinguaCoach.Web/dist/
 .gstack/
 src/LinguaCoach.Web/playwright-report/
 graphify-out/*
+docs/design/*
