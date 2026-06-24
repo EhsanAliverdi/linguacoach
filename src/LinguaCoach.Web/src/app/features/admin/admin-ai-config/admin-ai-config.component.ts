@@ -537,9 +537,9 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     }
     .sp-aic-not-impl-title { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
     .sp-aic-not-impl-body { font-size: 13px; color: #94a3b8; line-height: 1.5; }
-    .sp-adm-native-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}
-    .sp-adm-native-select:disabled{opacity:0.55;cursor:not-allowed;background:#F9FAFB;color:#9CA3AF;}
-    .sp-adm-native-select:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+    .sp-adm-native-select{width:100%;height:36px;border:1.5px solid #E2DEF0;border-radius:8px;padding:0 12px;font-size:13.5px;background:#fff;color:#211B36;box-sizing:border-box;font-family:inherit;}
+    .sp-adm-native-select:disabled{opacity:0.55;cursor:not-allowed;background:#FBFAFE;}
+    .sp-adm-native-select:focus{outline:none;border-color:#5B4BE8;}
     .sp-adm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
   `],
 })

@@ -1021,11 +1021,11 @@ interface StudentEditForm {
   `,
   styles: [`
     /* ── Hero ── */
-    .sp-sd-hero{display:flex;align-items:flex-start;gap:20px;background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:16px;padding:24px;margin-bottom:20px;flex-wrap:wrap;}
-    .sp-sd-ava{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;}
+    .sp-sd-hero{display:flex;align-items:flex-start;gap:18px;background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:14px;padding:24px;margin-bottom:24px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(33,27,54,.06);}
+    .sp-sd-ava{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;}
     .sp-sd-hero-body{flex:1;min-width:0;}
-    .sp-sd-hero-name{font-size:20px;font-weight:800;color:var(--sp-admin-text,#0F172A);line-height:1.2;margin-bottom:3px;}
-    .sp-sd-hero-email{font-size:13px;color:var(--sp-admin-text-muted,#64748B);font-family:'JetBrains Mono',monospace;margin-bottom:10px;}
+    .sp-sd-hero-name{font-size:20px;font-weight:800;color:var(--sp-admin-text,#211B36);line-height:1.2;margin-bottom:3px;letter-spacing:-0.025em;}
+    .sp-sd-hero-email{font-size:13.5px;color:var(--sp-admin-text-muted,#8B85A0);margin-bottom:10px;}
     .sp-sd-hero-badges{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
     .sp-sd-hero-chip{font-size:12px;font-weight:600;color:var(--sp-admin-text-muted,#64748B);background:var(--sp-admin-surface-subtle,#FBFAFE);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:99px;padding:2px 10px;}
     .sp-sd-hero-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-left:auto;}
