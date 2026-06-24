@@ -1,0 +1,108 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start: All (Docker + Frontend)",
+      "dependsOn": ["Start: Docker (DB + API)", "Start: Frontend"],
+      "dependsOrder": "sequence",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start: Docker (DB + API)",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting",
+          "endsPattern": "Attaching to"
+        }
+      },
+      "presentation": {
+        "label": "Docker",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Start: Frontend",
+      "type": "shell",
+      "command": "npm start",
+      "options": { "cwd": "${workspaceFolder}/src/LinguaCoach.Web" },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Browser bundles",
+          "endsPattern": "Local:"
+        }
+      },
+      "presentation": {
+        "label": "Frontend",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Stop: Docker",
+      "type": "shell",
+      "command": "docker compose down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": {
+        "label": "Docker Stop",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Stop: Docker + Volumes",
+      "type": "shell",
+      "command": "docker compose down -v",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": {
+        "label": "Docker Stop",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Test: All",
+      "type": "shell",
+      "command": "dotnet test",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "test",
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "label": "Tests",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Test: Frontend",
+      "type": "shell",
+      "command": "npm test -- --watch=false --browsers=ChromeHeadless",
+      "options": { "cwd": "${workspaceFolder}/src/LinguaCoach.Web" },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "label": "Frontend Tests",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}
