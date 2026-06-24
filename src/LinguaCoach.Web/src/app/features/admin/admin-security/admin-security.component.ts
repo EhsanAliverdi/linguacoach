@@ -1,218 +1,282 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
-  AdminSecuritySettings,
-  AdminAuthEventItem,
-  AdminAuthEventListQuery,
-  PagedResponse,
-} from '../../../core/models/admin.models';
-import {
-  SpAdminAlertComponent,
-  SpAdminBadgeComponent, SpAdminBadgeTone,
+  SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
-  SpAdminEmptyStateComponent,
-  SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
-  SpAdminFormFieldComponent,
-  SpAdminFormGridComponent,
-  SpAdminInputComponent,
-  SpAdminKpiCardComponent,
-  SpAdminLoadingStateComponent,
-  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
-  SpAdminSelectComponent, SpAdminSelectOption,
-  SpAdminTableComponent,
+  SpAdminToggleComponent,
 } from '../../../design-system/admin';
 
+export interface SecuritySessionVm {
+  id: number;
+  device: string;
+  location: string;
+  ip: string;
+  last: string;
+  current: boolean;
+}
+
+export type AuditLevel = 'info' | 'warn' | 'danger';
+
+export interface AuditEntryVm {
+  id: number;
+  actor: string;
+  action: string;
+  time: string;
+  level: AuditLevel;
+}
+
+export interface PostureItemVm {
+  label: string;
+  done: boolean;
+}
+
+/**
+ * Admin Security page — UI-only security posture surface.
+ *
+ * IMPORTANT: All state here (toggles, sessions, audit log, password form,
+ * danger zone) is local UI placeholder state. No backend calls are made.
+ * Never display real secrets here.
+ */
 @Component({
   selector: 'app-admin-security',
   standalone: true,
   imports: [
     CommonModule,
     FormsModule,
-    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
-    SpAdminEmptyStateComponent,
-    SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
-    SpAdminFormFieldComponent,
-    SpAdminFormGridComponent,
-    SpAdminInputComponent,
-    SpAdminKpiCardComponent,
-    SpAdminLoadingStateComponent,
-    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
-    SpAdminSelectComponent,
-    SpAdminTableComponent,
+    SpAdminToggleComponent,
   ],
   templateUrl: './admin-security.component.html',
   styles: [`
-    .sp-sec-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
-    @media(min-width:900px){.sp-sec-kpi-strip{grid-template-columns:repeat(4,1fr);}}
-    .sp-sec-tab-bar{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--sp-admin-border,#ECE9F5);}
-    .sp-sec-tab{padding:8px 20px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:var(--sp-admin-muted,#8B85A0);transition:color 0.15s,border-color 0.15s;}
-    .sp-sec-tab--active{color:var(--sp-admin-primary,#5B4BE8);border-bottom-color:var(--sp-admin-primary,#5B4BE8);}
-    .sp-sec-cols{display:grid;grid-template-columns:1fr;gap:20px;align-items:start;margin-bottom:20px;}
-    @media(min-width:1000px){.sp-sec-cols{grid-template-columns:1fr 1fr;}}
-    .sp-sec-setting-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
-    @media(min-width:700px){.sp-sec-setting-grid{grid-template-columns:repeat(3,1fr);}}
-    .sp-sec-field{display:flex;flex-direction:column;gap:4px;}
-    .sp-sec-field-label{font-size:12px;font-weight:600;color:var(--sp-admin-muted,#8B85A0);}
-    .sp-sec-field-value{font-size:14px;font-weight:700;color:var(--sp-admin-text,#211B36);}
-    .sp-sec-config-note{font-size:12px;color:var(--sp-admin-muted,#8B85A0);background:var(--sp-admin-surface-alt,#F6F4FB);border-radius:8px;padding:10px 12px;margin-top:8px;}
-    .sp-sec-deferred-grid{display:grid;gap:12px;}
-    .sp-sec-deferred-row{display:grid;grid-template-columns:1fr auto;align-items:start;gap:6px 12px;padding:10px 0;border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC);}
-    .sp-sec-deferred-row:first-child{border-top:none;padding-top:0;}
-    .sp-sec-deferred-label{font-size:13px;font-weight:700;color:var(--sp-admin-text,#211B36);}
-    .sp-sec-deferred-note{grid-column:1/-1;font-size:12px;color:var(--sp-admin-text-muted,#8B85A0);}
+    .sp-sec-row { display: grid; gap: 20px; margin-bottom: 20px; }
+    .sp-sec-g2 { grid-template-columns: 1fr 1fr; }
+    .sp-sec-g2-skew { grid-template-columns: 1fr 1.6fr; }
+    @media (max-width: 800px) { .sp-sec-g2, .sp-sec-g2-skew { grid-template-columns: 1fr; } }
+
+    .sp-sec-card-sub { font-size: 12.5px; color: var(--sp-admin-text-muted); margin: 2px 0 0; line-height: 1.5; }
+
+    .sp-sec-posture { display: flex; align-items: center; gap: 20px; }
+    .sp-sec-ring { flex-shrink: 0; }
+    .sp-sec-check-list { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .sp-sec-check-row { display: flex; align-items: center; gap: 8px; }
+    .sp-sec-check-box {
+      width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 11px; font-weight: 900;
+    }
+    .sp-sec-check-box.on { background: var(--sp-admin-green-bg); color: var(--sp-admin-green); }
+    .sp-sec-check-box.off { background: var(--sp-admin-bg); color: var(--sp-admin-text-dim); }
+    .sp-sec-check-label { font-size: 13px; font-weight: 600; color: var(--sp-admin-text); }
+    .sp-sec-check-label.off { color: var(--sp-admin-text-muted); }
+
+    .sp-sec-toggle-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--sp-admin-border);
+    }
+    .sp-sec-toggle-row:first-child { border-top: none; padding-top: 0; }
+    .sp-sec-toggle-label { font-size: 13.5px; font-weight: 700; color: var(--sp-admin-text); }
+    .sp-sec-toggle-sub { font-size: 12px; color: var(--sp-admin-text-muted); margin-top: 1px; }
+
+    .sp-sec-pw-summary {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+      background: var(--sp-admin-bg); border-radius: 10px;
+    }
+    .sp-sec-pw-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary);
+      display: grid; place-items: center; font-size: 17px;
+    }
+    .sp-sec-pw-dots { font-size: 13.5px; font-weight: 700; color: var(--sp-admin-text); letter-spacing: 2px; }
+    .sp-sec-pw-meta { font-size: 12px; color: var(--sp-admin-text-muted); }
+    .sp-sec-pw-form { display: flex; flex-direction: column; gap: 12px; }
+    .sp-sec-field { display: flex; flex-direction: column; gap: 4px; }
+    .sp-sec-field-label { font-size: 12px; font-weight: 600; color: var(--sp-admin-text-muted); }
+    .sp-sec-field-input {
+      height: 36px; border-radius: 8px; border: 1.5px solid var(--sp-admin-border-2);
+      padding: 0 12px; font-size: 13.5px; font-family: inherit; color: var(--sp-admin-text);
+      background: var(--sp-admin-surface);
+    }
+    .sp-sec-field-input:focus { outline: none; border-color: var(--sp-admin-primary); box-shadow: var(--sp-admin-focus-ring); }
+    .sp-sec-pw-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+    .sp-sec-session-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+      border-bottom: 1px solid var(--sp-admin-border);
+    }
+    .sp-sec-session-row:last-child { border-bottom: none; }
+    .sp-sec-session-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 16px;
+      background: var(--sp-admin-bg); color: var(--sp-admin-text-muted);
+    }
+    .sp-sec-session-icon.current { background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary); }
+    .sp-sec-session-main { flex: 1; min-width: 0; }
+    .sp-sec-session-title { display: flex; align-items: center; gap: 7px; }
+    .sp-sec-session-device { font-size: 13.5px; font-weight: 700; color: var(--sp-admin-text); }
+    .sp-sec-session-meta { font-size: 11.5px; color: var(--sp-admin-text-muted); margin-top: 1px; }
+
+    .sp-sec-log-row {
+      display: flex; align-items: center; gap: 14px; padding: 11px 20px;
+      border-bottom: 1px solid var(--sp-admin-border); font-size: 12.5px;
+    }
+    .sp-sec-log-row:last-of-type { border-bottom: none; }
+    .sp-sec-log-row.danger { background: #FFF8F8; }
+    .sp-sec-log-time { color: var(--sp-admin-text-muted); min-width: 72px; flex-shrink: 0; }
+    .sp-sec-log-level { font-weight: 800; min-width: 44px; flex-shrink: 0; letter-spacing: .04em; }
+    .sp-sec-log-actor { font-weight: 700; color: var(--sp-admin-text-muted); min-width: 56px; flex-shrink: 0; }
+    .sp-sec-log-msg { color: var(--sp-admin-text); }
+
+    .sp-sec-pagination {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 20px;
+    }
+    .sp-sec-pag-info { font-size: 12.5px; color: var(--sp-admin-text-muted); }
+    .sp-sec-pag-btns { display: flex; gap: 4px; }
+    .sp-sec-pag-btn {
+      min-width: 30px; height: 30px; padding: 0 8px; border-radius: 7px;
+      border: 1.5px solid var(--sp-admin-border-2); background: var(--sp-admin-surface);
+      font-size: 12.5px; font-weight: 600; color: var(--sp-admin-text-secondary);
+      cursor: pointer; font-family: inherit;
+    }
+    .sp-sec-pag-btn.cur { background: var(--sp-admin-primary); border-color: var(--sp-admin-primary); color: #fff; }
+    .sp-sec-pag-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .sp-sec-danger {
+      margin-top: 28px; border: 1.5px solid var(--sp-admin-danger-bg);
+      border-radius: 14px; padding: 20px; background: #FFFBFB;
+    }
+    .sp-sec-danger-title { font-size: 14px; font-weight: 800; color: var(--sp-admin-danger-ink); }
+    .sp-sec-danger-sub { font-size: 12.5px; color: var(--sp-admin-text-muted); margin: 2px 0 12px; }
+    .sp-sec-danger-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--sp-admin-danger-bg);
+    }
+    .sp-sec-danger-row:last-child { border-bottom: none; }
+    .sp-sec-danger-label { font-size: 13.5px; font-weight: 700; color: var(--sp-admin-text); }
+    .sp-sec-danger-item-sub { font-size: 12px; color: var(--sp-admin-text-muted); margin-top: 1px; }
   `],
 })
-export class AdminSecurityComponent implements OnInit {
-  // ── Settings ──────────────────────────────────────────────────────────────
-  settingsLoading = signal(false);
-  settingsError = signal('');
-  settings = signal<AdminSecuritySettings | null>(null);
+export class AdminSecurityComponent {
+  // ── Access control toggles (UI-only) ──────────────────────────────────────
+  readonly mfa = signal(true);
+  readonly sessionAlerts = signal(true);
+  readonly ipWhitelist = signal(false);
+  readonly auditRetention = signal(false);
 
-  // ── Auth events tab ───────────────────────────────────────────────────────
-  eventsLoading = signal(false);
-  eventsError = signal('');
-  events = signal<AdminAuthEventItem[]>([]);
-  eventsTotal = signal(0);
-  eventsPage = signal(1);
-  readonly eventsPageSize = 20;
-  eventsTotalPages = computed(() => Math.max(1, Math.ceil(this.eventsTotal() / this.eventsPageSize)));
+  // ── Password form (UI-only) ───────────────────────────────────────────────
+  readonly showPasswordForm = signal(false);
+  passwordForm = { current: '', next: '', confirm: '' };
 
-  readonly kpiSummary = computed(() => {
-    const s = this.settings();
-    if (!s) return null;
-    return {
-      passwordMinLength: s.passwordPolicy.requiredLength,
-      lockoutAttempts: s.lockout.maxFailedAccessAttempts,
-      lockoutMinutes: s.lockout.lockoutDurationMinutes,
-      ratePolicies: s.rateLimitPolicies.length,
-      tokenRotation: s.refreshToken.rotationEnabled,
-      googleEnabled: s.externalLogin.google.enabled,
-      googleConfigured: s.externalLogin.google.clientIdConfigured && s.externalLogin.google.clientSecretConfigured,
-    };
+  // ── Sessions (UI-only placeholder) ────────────────────────────────────────
+  readonly sessions = signal<SecuritySessionVm[]>([
+    { id: 1, device: 'Chrome on macOS',   location: 'London, UK',   ip: '82.44.120.5',  last: 'Now',        current: true },
+    { id: 2, device: 'Safari on iPhone',  location: 'London, UK',   ip: '82.44.120.6',  last: '2h ago',     current: false },
+    { id: 3, device: 'Chrome on Windows', location: 'Dubai, UAE',   ip: '94.200.11.21', last: 'Yesterday',  current: false },
+    { id: 4, device: 'Firefox on Linux',  location: 'Frankfurt, DE', ip: '37.49.225.4', last: '3 days ago', current: false },
+  ]);
+
+  // ── Audit log (UI-only placeholder) ───────────────────────────────────────
+  readonly auditLog: AuditEntryVm[] = [
+    { id: 1, actor: 'Ehsan',  action: 'Updated AI Config — model changed to gpt-4o', time: '2 min ago',  level: 'info' },
+    { id: 2, actor: 'Ehsan',  action: 'Exported student list (42 records)',          time: '18 min ago', level: 'warn' },
+    { id: 3, actor: 'System', action: 'Automatic backup completed successfully',     time: '1 hr ago',   level: 'info' },
+    { id: 4, actor: 'Ehsan',  action: 'Rotated Admin API key',                       time: '4 hr ago',   level: 'warn' },
+    { id: 5, actor: 'Ehsan',  action: 'Signed in from Chrome on macOS',              time: 'Yesterday',  level: 'info' },
+    { id: 6, actor: 'Ehsan',  action: 'Deleted student: Omar Khalid',                time: 'Yesterday',  level: 'danger' },
+    { id: 7, actor: 'System', action: 'Failed login attempt (wrong password)',       time: '2 days ago', level: 'danger' },
+    { id: 8, actor: 'Ehsan',  action: 'Changed notification settings',               time: '3 days ago', level: 'info' },
+  ];
+
+  // ── Posture ring ───────────────────────────────────────────────────────────
+  readonly postureItems = computed<PostureItemVm[]>(() => [
+    { label: 'MFA enabled',        done: this.mfa() },
+    { label: 'Strong password',     done: true },
+    { label: 'Session alerts on',   done: this.sessionAlerts() },
+    { label: 'IP whitelist active', done: this.ipWhitelist() },
+  ]);
+
+  /** Score derived from which posture items pass (0-100). */
+  readonly postureScore = computed(() => {
+    const items = this.postureItems();
+    const done = items.filter(i => i.done).length;
+    return Math.round((done / items.length) * 100);
   });
 
-  eventTypeFilter = '';
-  outcomeFilter = '';
-  emailSearch = '';
+  readonly postureTone = computed(() => {
+    const s = this.postureScore();
+    if (s >= 80) return 'success' as const;
+    if (s >= 50) return 'warning' as const;
+    return 'danger' as const;
+  });
 
-  activeTab: 'overview' | 'events' = 'overview';
+  readonly postureLabel = computed(() => {
+    const s = this.postureScore();
+    if (s >= 80) return 'Good';
+    if (s >= 50) return 'Fair';
+    return 'At risk';
+  });
 
-  readonly eventTypeOptions: SpAdminSelectOption[] = [
-    { value: 'LoginSucceeded', label: 'Login Succeeded' },
-    { value: 'LoginFailed', label: 'Login Failed' },
-    { value: 'LoginLockedOut', label: 'Login Locked Out' },
-    { value: 'PasswordChanged', label: 'Password Changed' },
-    { value: 'PasswordChangeFailed', label: 'Password Change Failed' },
-    { value: 'PasswordResetRequested', label: 'Password Reset Requested' },
-    { value: 'PasswordResetSucceeded', label: 'Password Reset Succeeded' },
-    { value: 'PasswordResetFailed', label: 'Password Reset Failed' },
-    { value: 'ExternalLoginSucceeded', label: 'External Login Succeeded' },
-    { value: 'ExternalLoginFailed', label: 'External Login Failed' },
-    { value: 'ExternalLoginLinked', label: 'External Login Linked' },
-    { value: 'ExternalLoginRejected', label: 'External Login Rejected' },
-    { value: 'RefreshTokenIssued', label: 'Refresh Token Issued' },
-    { value: 'RefreshTokenRotated', label: 'Refresh Token Rotated' },
-    { value: 'RefreshTokenReuseDetected', label: 'Refresh Token Reuse Detected' },
-    { value: 'AllSessionsRevoked', label: 'All Sessions Revoked' },
-  ];
+  // SVG ring geometry (r=34).
+  readonly ringCircumference = 2 * Math.PI * 34;
+  readonly ringDash = computed(() => {
+    const frac = this.postureScore() / 100;
+    const c = this.ringCircumference;
+    return `${c * frac} ${c * (1 - frac)}`;
+  });
+  readonly ringOffset = this.ringCircumference * 0.25;
+  readonly ringColor = computed(() => {
+    const t = this.postureTone();
+    if (t === 'success') return 'var(--sp-admin-green)';
+    if (t === 'warning') return 'var(--sp-admin-warn)';
+    return 'var(--sp-admin-danger)';
+  });
 
-  readonly outcomeOptions: SpAdminSelectOption[] = [
-    { value: 'Success', label: 'Success' },
-    { value: 'Failure', label: 'Failure' },
-    { value: 'Blocked', label: 'Blocked' },
-  ];
+  readonly levelColor: Record<AuditLevel, string> = {
+    info: 'var(--sp-admin-green)',
+    warn: 'var(--sp-admin-warn)',
+    danger: 'var(--sp-admin-danger)',
+  };
+  readonly levelLabel: Record<AuditLevel, string> = {
+    info: 'INFO',
+    warn: 'WARN',
+    danger: 'ERR',
+  };
 
-  constructor(private adminApi: AdminApiService) {}
+  // ── Actions (all UI-only) ──────────────────────────────────────────────────
 
-  ngOnInit(): void {
-    this.loadSettings();
-    this.loadEvents();
+  refresh(): void {
+    // UI-only placeholder. No backend call.
   }
 
-  // ── Settings ──────────────────────────────────────────────────────────────
-
-  loadSettings(): void {
-    this.settingsLoading.set(true);
-    this.settingsError.set('');
-    this.adminApi.getSecuritySettings().subscribe({
-      next: (s) => { this.settings.set(s); this.settingsLoading.set(false); },
-      error: () => { this.settingsError.set('Could not load security settings.'); this.settingsLoading.set(false); },
-    });
+  togglePasswordForm(): void {
+    this.showPasswordForm.update(v => !v);
   }
 
-  // ── Auth events ───────────────────────────────────────────────────────────
-
-  loadEvents(): void {
-    this.eventsLoading.set(true);
-    this.eventsError.set('');
-    const q: AdminAuthEventListQuery = {
-      page: this.eventsPage(),
-      pageSize: this.eventsPageSize,
-      eventType: this.eventTypeFilter || undefined,
-      outcome: this.outcomeFilter || undefined,
-      email: this.emailSearch || undefined,
-    };
-    this.adminApi.listSecurityAuthEvents(q).subscribe({
-      next: (res: PagedResponse<AdminAuthEventItem>) => {
-        this.events.set(res.items);
-        this.eventsTotal.set(res.totalCount);
-        this.eventsLoading.set(false);
-      },
-      error: () => { this.eventsError.set('Could not load auth events.'); this.eventsLoading.set(false); },
-    });
+  cancelPasswordForm(): void {
+    this.showPasswordForm.set(false);
+    this.passwordForm = { current: '', next: '', confirm: '' };
   }
 
-  applyEventFilters(): void { this.eventsPage.set(1); this.loadEvents(); }
-  onEventsPage(page: number): void { this.eventsPage.set(page); this.loadEvents(); }
-
-  onTabChange(tab: 'overview' | 'events'): void {
-    this.activeTab = tab;
+  updatePassword(): void {
+    // UI-only placeholder. No backend call. Never persist secrets.
+    this.cancelPasswordForm();
   }
 
-  // ── Tone helpers ──────────────────────────────────────────────────────────
-
-  outcomeTone(outcome: string): SpAdminBadgeTone {
-    switch (outcome) {
-      case 'Success': return 'success';
-      case 'Failure': return 'danger';
-      case 'Blocked': return 'warning';
-      default: return 'neutral';
-    }
+  revokeSession(id: number): void {
+    this.sessions.update(list => list.filter(s => s.id !== id));
   }
 
-  boolTone(val: boolean): SpAdminBadgeTone {
-    return val ? 'success' : 'neutral';
+  revokeAllOthers(): void {
+    this.sessions.update(list => list.filter(s => s.current));
   }
 
-  boolLabel(val: boolean, trueLabel = 'Yes', falseLabel = 'No'): string {
-    return val ? trueLabel : falseLabel;
-  }
-
-  configuredTone(configured: boolean): SpAdminBadgeTone {
-    return configured ? 'success' : 'warning';
-  }
-
-  timeAgo(iso: string): string {
-    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-    if (diff < 60) return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
-  }
-
-  formatEventType(type: string): string {
-    return type.replace(/([A-Z])/g, ' $1').trim();
-  }
+  // Danger zone — UI-only, no backend calls.
+  dangerRevokeAll(): void { /* UI-only */ }
+  dangerReset2fa(): void { /* UI-only */ }
+  dangerWipeLog(): void { /* UI-only */ }
 }
