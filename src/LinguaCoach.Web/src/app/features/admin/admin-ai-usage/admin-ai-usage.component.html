@@ -271,7 +271,7 @@
 </sp-admin-card>
 
 <div class="sp-au-two-col">
-  <sp-admin-graph-card title="AI calls per day (30d)" [status]="loadingAggTrends() ? 'loading' : aggTrendsError() ? 'unavailable' : aggTrendItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+  <sp-admin-graph-card title="AI calls per day (30d)" [status]="loadingAggTrends() ? 'loading' : aggTrendsError() ? 'unavailable' : aggTrendItems().length === 0 ? 'unavailable' : 'live'">
     @if (loadingAggTrends()) {
       <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="AI calls per day" message="Loading..." />
     } @else if (aggTrendsError() || aggTrendItems().length === 0) {
@@ -281,7 +281,7 @@
     }
   </sp-admin-graph-card>
 
-  <sp-admin-graph-card title="Calls by feature (30d)" [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+  <sp-admin-graph-card title="Calls by feature (30d)" [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryItems().length === 0 ? 'unavailable' : 'live'">
     @if (loadingAggCategory()) {
       <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="Loading..." />
     } @else if (aggCategoryError() || aggCategoryItems().length === 0) {

@@ -126,6 +126,8 @@ interface StudentEditForm {
                 <th>Lifecycle</th>
                 <th class="sp-admin-sortable" (click)="setSort('onboarding')">Onboarding{{ sortIndicator('onboarding') }}</th>
                 <th>CEFR</th>
+                <th>Streak</th>
+                <th>Mins/wk</th>
                 <th>Profile</th>
                 <th class="sp-admin-sortable" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
                 <th>Actions</th>
@@ -156,6 +158,8 @@ interface StudentEditForm {
                       <span class="sp-admin-table-empty">-</span>
                     }
                   </td>
+                  <td class="sp-admin-table-muted">—</td>
+                  <td class="sp-admin-table-muted">—</td>
                   <td class="sp-admin-profile-cell">
                     @if (s.careerContext || s.learningGoal) {
                       <sp-admin-truncated-text [value]="s.careerContext || s.learningGoal || ''" [maxLength]="60" [maxWidth]="'260px'" />

@@ -116,7 +116,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <div class="sp-dash-main-grid">
 
       <!-- Activity trends (real data) -->
-      <sp-admin-graph-card title="Activity trends (30d)" [status]="loadingActivityTrends() ? 'loading' : activityTrendsError() ? 'unavailable' : activityTrendItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+      <sp-admin-graph-card title="Activity trends (30d)" [status]="loadingActivityTrends() ? 'loading' : activityTrendsError() ? 'unavailable' : activityTrendItems().length === 0 ? 'unavailable' : 'live'">
         @if (loadingActivityTrends()) {
           <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activity trends" message="Loading..." />
         } @else if (activityTrendsError() || activityTrendItems().length === 0) {
@@ -221,7 +221,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <!-- Fourth row: score dist + AI cost + streak + avg session (all placeholder) -->
     <div class="sp-dash-four-grid">
 
-      <sp-admin-graph-card title="Score distribution (30d)" [status]="loadingScoreDistribution() ? 'loading' : scoreDistributionError() ? 'unavailable' : scoreDistributionItems().length === 0 ? 'unavailable' : 'live'" statusLabel="Real data">
+      <sp-admin-graph-card title="Score distribution (30d)" [status]="loadingScoreDistribution() ? 'loading' : scoreDistributionError() ? 'unavailable' : scoreDistributionItems().length === 0 ? 'unavailable' : 'live'">
         @if (loadingScoreDistribution()) {
           <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Score distribution" message="Loading..." />
         } @else if (scoreDistributionError() || scoreDistributionItems().length === 0) {
