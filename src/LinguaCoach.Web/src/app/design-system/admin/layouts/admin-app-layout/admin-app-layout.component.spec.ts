@@ -55,10 +55,13 @@ describe('AdminAppLayoutComponent (Phase 10UI-FIX-2)', () => {
     expect(text).toContain('AI Config');
   });
 
-  it('desktop sidebar has Menu and System section headings', () => {
+  it('desktop sidebar has expected section headings', () => {
     const { host } = setup();
     const text = host.querySelector('sp-admin-sidebar')!.textContent ?? '';
-    expect(text).toContain('Menu');
+    expect(text).toContain('Overview');
+    expect(text).toContain('AI System');
+    expect(text).toContain('Analytics');
+    expect(text).toContain('Content');
     expect(text).toContain('System');
   });
 

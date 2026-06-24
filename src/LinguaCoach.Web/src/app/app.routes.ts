@@ -103,6 +103,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-usage-policies/admin-usage-policies.component').then(m => m.AdminUsagePoliciesComponent),
       },
       {
+        path: 'lessons',
+        loadComponent: () => import('./features/admin/admin-lessons/admin-lessons.component').then(m => m.AdminLessonsComponent),
+      },
+      {
+        path: 'usage-analytics',
+        loadComponent: () => import('./features/admin/admin-usage-analytics/admin-usage-analytics.component').then(m => m.AdminUsageAnalyticsComponent),
+      },
+      {
         path: 'notifications',
         loadComponent: () => import('./features/admin/admin-notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent),
       },

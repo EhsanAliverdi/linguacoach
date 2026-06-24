@@ -39,15 +39,25 @@
 
   <!-- Drawer nav -->
   <nav class="flex-1 overflow-y-auto no-scrollbar px-3 py-4" aria-label="Mobile navigation">
-    <div class="mb-4">
-      <sp-admin-sidebar-section label="Menu" [collapsed]="false" />
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Overview" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
         <li><sp-admin-sidebar-nav-item label="Dashboard" route="/admin" [exact]="true" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Students" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
         <li><sp-admin-sidebar-nav-item label="Students" route="/admin/students" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="AI System" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
         <li><sp-admin-sidebar-nav-item label="AI Config" route="/admin/ai-config" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
         </sp-admin-sidebar-nav-item></li>
@@ -60,20 +70,36 @@
         <li><sp-admin-sidebar-nav-item label="Usage Policies" route="/admin/usage-policies" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Analytics" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
+        <li><sp-admin-sidebar-nav-item label="Usage & Analytics" route="/admin/usage-analytics" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Content" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
+        <li><sp-admin-sidebar-nav-item label="Lessons" route="/admin/lessons" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Notifications" route="/admin/notifications" [collapsed]="false" (itemClick)="closeDrawer()">
-          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
     <div>
       <sp-admin-sidebar-section label="System" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
+        <li><sp-admin-sidebar-nav-item label="Notifications" route="/admin/notifications" [collapsed]="false" (itemClick)="closeDrawer()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Integrations" route="/admin/integrations" [collapsed]="false" (itemClick)="closeDrawer()">
           <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
         </sp-admin-sidebar-nav-item></li>
@@ -122,15 +148,31 @@
 
     <!-- Nav -->
     <nav class="flex-1 overflow-y-auto no-scrollbar px-3 py-4" aria-label="Admin navigation">
-      <div class="mb-4">
-        <sp-admin-sidebar-section label="Menu" [collapsed]="collapsed()" />
+
+      <!-- OVERVIEW -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Overview" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
           <li><sp-admin-sidebar-nav-item label="Dashboard" route="/admin" [exact]="true" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- STUDENTS -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Students" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
           <li><sp-admin-sidebar-nav-item label="Students" route="/admin/students" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- AI SYSTEM -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="AI System" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
           <li><sp-admin-sidebar-nav-item label="AI Config" route="/admin/ai-config" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
           </sp-admin-sidebar-nav-item></li>
@@ -143,20 +185,42 @@
           <li><sp-admin-sidebar-nav-item label="Usage Policies" route="/admin/usage-policies" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Analytics" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
+          <li><sp-admin-sidebar-nav-item label="Usage & Analytics" route="/admin/usage-analytics" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Content" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
+          <li><sp-admin-sidebar-nav-item label="Lessons" route="/admin/lessons" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Notifications" route="/admin/notifications" [collapsed]="collapsed()">
-            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>
+
+      <!-- SYSTEM -->
       <div>
         <sp-admin-sidebar-section label="System" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
+          <li><sp-admin-sidebar-nav-item label="Notifications" route="/admin/notifications" [collapsed]="collapsed()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Integrations" route="/admin/integrations" [collapsed]="collapsed()">
             <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
           </sp-admin-sidebar-nav-item></li>
@@ -168,6 +232,7 @@
           </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>
+
     </nav>
 
   </sp-admin-sidebar>
