@@ -1493,3 +1493,252 @@ describe('admin-badge.utils — Phase 10X-K-7', () => {
     });
   });
 });
+
+// Phase 10UI-DASHBOARD-PARITY-2 shared component tests
+
+import { SpAdminHeroSummaryComponent, HeroColumn } from './hero-summary/sp-admin-hero-summary.component';
+import { SpAdminSystemHealthComponent, SystemService, SystemFooterRow } from './system-health/sp-admin-system-health.component';
+import { SpAdminDonutChartComponent, DonutSegment } from './donut-chart/sp-admin-donut-chart.component';
+import { SpAdminSparklineCardComponent } from './sparkline-card/sp-admin-sparkline-card.component';
+import { SpAdminKpiCardComponent } from './kpi-card/sp-admin-kpi-card.component';
+
+@Component({
+  standalone: true,
+  imports: [SpAdminHeroSummaryComponent],
+  template: `<sp-admin-hero-summary [columns]="cols"/>`,
+})
+class HeroHostComponent {
+  cols: HeroColumn[] = [
+    { label: 'THIS WEEK', value: '42 activities', sub: 'up 18%', valueColor: '#fff', subColor: 'rgba(255,255,255,.5)' },
+    { label: 'ENGAGEMENT', value: '75%', sub: '3 of 4 active' },
+    { label: 'AVG SCORE', value: '82/100' },
+    { label: 'ACTION NEEDED', value: '1 students', sub: 'Require attention', valueColor: '#FBB040', subColor: '#FBB040' },
+  ];
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSystemHealthComponent],
+  template: `<sp-admin-system-health [services]="svcs" [footer]="footer" diagnosticsLink="/admin/diagnostics"/>`,
+})
+class SysHealthHostComponent {
+  svcs: SystemService[] = [{ name: 'Writing AI', ms: 142 }, { name: 'Database', ms: 4 }];
+  footer: SystemFooterRow[] = [{ k: 'Provider', v: 'OpenAI' }];
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminDonutChartComponent],
+  template: `<sp-admin-donut-chart title="AI cost by type" [segments]="segs" [size]="80"/>`,
+})
+class DonutHostComponent {
+  segs: DonutSegment[] = [
+    { label: 'Writing', pct: 42, color: '#5B4BE8' },
+    { label: 'Feedback', pct: 38, color: '#B45CF0' },
+    { label: 'Speaking', pct: 12, color: '#FF7A59' },
+    { label: 'Assessment', pct: 8, color: '#13B07C' },
+  ];
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminSparklineCardComponent],
+  template: `<sp-admin-sparkline-card title="AI spend (30d)" value="$1.23" sub="Last 7 days" [data]="data" color="#F0982C"/>`,
+})
+class SparklineHostComponent {
+  data = [0.1, 0.3, 0.2, 0.4, 0.35, 0.5, 0.45];
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminKpiCardComponent],
+  template: `
+    <sp-admin-kpi-card layout="tile" variant="indigo" label="TOTAL STUDENTS" delta="Pilot cohort">
+      <svg slot="icon" width="20" height="20" viewBox="0 0 24 24"></svg>
+      42
+    </sp-admin-kpi-card>
+  `,
+})
+class KpiTileHostComponent {}
+
+describe('SpAdminHeroSummaryComponent (10UI-DASHBOARD-PARITY-2)', () => {
+  it('renders 4 column labels', async () => {
+    await TestBed.configureTestingModule({ imports: [HeroHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(HeroHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelectorAll('.sp-hero-col').length).toBe(4);
+  });
+
+  it('renders eyebrow text for first column', async () => {
+    await TestBed.configureTestingModule({ imports: [HeroHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(HeroHostComponent);
+    fix.detectChanges();
+    const eyebrows = fix.nativeElement.querySelectorAll('.sp-hero-eyebrow');
+    expect(eyebrows[0].textContent.trim()).toBe('THIS WEEK');
+  });
+
+  it('applies valueColor to last hero-value', async () => {
+    await TestBed.configureTestingModule({ imports: [HeroHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(HeroHostComponent);
+    fix.detectChanges();
+    const val = fix.nativeElement.querySelectorAll('.sp-hero-value')[3] as HTMLElement;
+    expect(val.style.color).toBe('rgb(251, 176, 64)');
+  });
+
+  it('last column has sp-hero-col--last class', async () => {
+    await TestBed.configureTestingModule({ imports: [HeroHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(HeroHostComponent);
+    fix.detectChanges();
+    const cols = fix.nativeElement.querySelectorAll('.sp-hero-col');
+    expect(cols[3].classList.contains('sp-hero-col--last')).toBeTrue();
+    expect(cols[0].classList.contains('sp-hero-col--last')).toBeFalse();
+  });
+});
+
+describe('SpAdminSystemHealthComponent (10UI-DASHBOARD-PARITY-2)', () => {
+  beforeEach(() => TestBed.configureTestingModule({
+    imports: [SysHealthHostComponent],
+    providers: [provideRouter([])],
+  }));
+
+  it('renders service rows', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(SysHealthHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelectorAll('.sp-syshealth-row').length).toBe(2);
+  });
+
+  it('renders service names', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(SysHealthHostComponent);
+    fix.detectChanges();
+    const names = fix.nativeElement.querySelectorAll('.sp-syshealth-svc-name');
+    expect(names[0].textContent.trim()).toBe('Writing AI');
+    expect(names[1].textContent.trim()).toBe('Database');
+  });
+
+  it('renders footer value', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(SysHealthHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-syshealth-footer-v').textContent.trim()).toBe('OpenAI');
+  });
+
+  it('renders diagnostics link', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(SysHealthHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-syshealth-link')).toBeTruthy();
+  });
+
+  it('barPct clamps to 100', () => {
+    const c = new SpAdminSystemHealthComponent();
+    expect(c.barPct(500)).toBe(100);
+    expect(c.barPct(0)).toBe(0);
+  });
+
+  it('barColor returns green for fast services', () => {
+    const c = new SpAdminSystemHealthComponent();
+    expect(c.barColor(50)).toContain('13B07C');
+  });
+
+  it('barColor returns warn color for medium latency', () => {
+    const c = new SpAdminSystemHealthComponent();
+    expect(c.barColor(150)).toContain('F0982C');
+  });
+});
+
+describe('SpAdminDonutChartComponent (10UI-DASHBOARD-PARITY-2)', () => {
+  it('renders title', async () => {
+    await TestBed.configureTestingModule({ imports: [DonutHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(DonutHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-donut-title').textContent.trim()).toBe('AI cost by type');
+  });
+
+  it('renders correct number of legend rows', async () => {
+    await TestBed.configureTestingModule({ imports: [DonutHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(DonutHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelectorAll('.sp-donut-legend-row').length).toBe(4);
+  });
+
+  it('renders SVG circles for segments plus center', async () => {
+    await TestBed.configureTestingModule({ imports: [DonutHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(DonutHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelectorAll('circle').length).toBe(5);
+  });
+
+  it('computes dashArray on ngOnChanges', () => {
+    const c = new SpAdminDonutChartComponent();
+    c.segments = [{ label: 'A', pct: 50, color: '#000' }, { label: 'B', pct: 50, color: '#fff' }];
+    c.ngOnChanges();
+    expect(c.computed.length).toBe(2);
+    expect(c.computed[0].dashArray).toContain(' ');
+  });
+});
+
+describe('SpAdminSparklineCardComponent (10UI-DASHBOARD-PARITY-2)', () => {
+  it('renders title and value', async () => {
+    await TestBed.configureTestingModule({ imports: [SparklineHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(SparklineHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-sparkcard-title').textContent.trim()).toBe('AI spend (30d)');
+    expect(fix.nativeElement.querySelector('.sp-sparkcard-value').textContent.trim()).toBe('$1.23');
+  });
+
+  it('renders SVG sparkline when data provided', async () => {
+    await TestBed.configureTestingModule({ imports: [SparklineHostComponent] }).compileComponents();
+    const fix = TestBed.createComponent(SparklineHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('svg')).toBeTruthy();
+    expect(fix.nativeElement.querySelector('path')).toBeTruthy();
+  });
+
+  it('produces no path for fewer than 2 data points', () => {
+    const c = new SpAdminSparklineCardComponent();
+    c.data = [1];
+    c.ngOnChanges();
+    expect(c.linePath).toBe('');
+  });
+
+  it('produces valid path starting with M for sufficient data', () => {
+    const c = new SpAdminSparklineCardComponent();
+    c.data = [1, 2, 3, 2, 4];
+    c.sparkW = 80; c.sparkH = 32;
+    c.ngOnChanges();
+    expect(c.linePath).toMatch(/^M/);
+    expect(c.lastPt[0]).toBeGreaterThan(0);
+  });
+});
+
+describe('SpAdminKpiCardComponent tile layout (10UI-DASHBOARD-PARITY-2)', () => {
+  beforeEach(() => TestBed.configureTestingModule({ imports: [KpiTileHostComponent] }));
+
+  it('applies sp-kpi-card--tile class when layout=tile', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(KpiTileHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-kpi-card--tile')).toBeTruthy();
+  });
+
+  it('renders label text', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(KpiTileHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-kpi-label').textContent.trim()).toBe('TOTAL STUDENTS');
+  });
+
+  it('renders delta text', async () => {
+    await TestBed.compileComponents();
+    const fix = TestBed.createComponent(KpiTileHostComponent);
+    fix.detectChanges();
+    expect(fix.nativeElement.querySelector('.sp-kpi-delta').textContent.trim()).toBe('Pilot cohort');
+  });
+
+  it('defaults to standard layout', () => {
+    const c = new SpAdminKpiCardComponent();
+    expect(c.layout).toBe('standard');
+  });
+});

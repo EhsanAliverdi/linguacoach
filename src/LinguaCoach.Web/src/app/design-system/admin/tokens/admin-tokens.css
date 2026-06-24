@@ -109,4 +109,21 @@
   /* ── Form controls — matched to .adm-input height:36px ──────────────── */
   --sp-admin-control-h: 36px;
   --sp-admin-focus-ring: 0 0 0 3px rgba(91,75,232,.15);
+
+  /* ── Dashboard tokens ────────────────────────────────────────────────── */
+  --sp-dash-hero-bg-start: #211B36;
+  --sp-dash-hero-bg-end: #2D2455;
+  --sp-dash-hero-divider: rgba(255,255,255,.1);
+  --sp-dash-hero-eyebrow: rgba(255,255,255,.45);
+  --sp-dash-hero-action-color: #FBB040;
+  --sp-dash-hero-success-color: #5DFFA0;
+  --sp-dash-kpi-tile-w: 56px;
+  --sp-dash-chart-line: #5B4BE8;
+  --sp-dash-chart-grid: #F0EEF8;
+  --sp-dash-chart-label: #C4C0D4;
+  --sp-dash-latency-good: #13B07C;
+  --sp-dash-latency-warn: #F0982C;
+  --sp-dash-latency-bad: #EF4444;
+  --sp-dash-card-gap: 16px;
+  --sp-dash-grid-gap: 14px;
 }

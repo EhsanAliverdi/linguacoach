@@ -15,6 +15,10 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminLoadingStateComponent,
   SpAdminKpiCardComponent,
+  SpAdminHeroSummaryComponent,
+  SpAdminSystemHealthComponent,
+  SpAdminDonutChartComponent,
+  SpAdminSparklineCardComponent,
 } from '../../../design-system/admin';
 import { onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
@@ -31,6 +35,10 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     SpAdminEmptyStateComponent,
     SpAdminLoadingStateComponent,
     SpAdminKpiCardComponent,
+    SpAdminHeroSummaryComponent,
+    SpAdminSystemHealthComponent,
+    SpAdminDonutChartComponent,
+    SpAdminSparklineCardComponent,
   ],
   template: `
     <sp-admin-page-header title="Dashboard" [subtitle]="subtitle()" />
@@ -38,68 +46,33 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <sp-admin-page-body>
 
     <!-- ── Weekly snapshot banner ── -->
-    <div class="sp-dash-hero">
-      @for (col of heroColumns(); track col.label; let i = $index) {
-        <div class="sp-dash-hero-col" [class.sp-dash-hero-col--last]="i === 3">
-          <div class="sp-dash-hero-eyebrow">{{ col.label }}</div>
-          <div class="sp-dash-hero-value" [style.color]="col.valueColor">{{ col.value }}</div>
-          <div class="sp-dash-hero-sub" [style.color]="col.subColor">{{ col.sub }}</div>
-        </div>
-      }
-    </div>
+    <sp-admin-hero-summary [columns]="heroColumns()" />
 
     <!-- ── KPI row ── -->
     <div class="sp-dash-kpi-row">
 
-      <div class="sp-dash-kpi-card">
-        <div class="sp-dash-kpi-icon" style="background:#EDEBFF">
-          <svg width="20" height="20" fill="none" stroke="#5B4BE8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="sp-dash-kpi-body">
-          <div class="sp-dash-kpi-label">TOTAL STUDENTS</div>
-          <div class="sp-dash-kpi-value">{{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}</div>
-          <div class="sp-dash-kpi-delta">Pilot cohort</div>
-        </div>
-      </div>
+      <sp-admin-kpi-card layout="tile" variant="indigo" label="TOTAL STUDENTS" delta="Pilot cohort">
+        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        {{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}
+      </sp-admin-kpi-card>
 
-      <div class="sp-dash-kpi-card">
-        <div class="sp-dash-kpi-icon" style="background:#FFEAE4">
-          <svg width="20" height="20" fill="none" stroke="#FF7A59" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        </div>
-        <div class="sp-dash-kpi-body">
-          <div class="sp-dash-kpi-label">ACTIVE THIS WEEK</div>
-          <div class="sp-dash-kpi-value">
-            @if (loadingStats()) { — } @else { {{ (stats()?.onboardedStudents ?? 0) }}/{{ (stats()?.totalStudents ?? 0) }} }
-          </div>
-          <div class="sp-dash-kpi-delta" style="color:#13B07C">{{ heroEngagementPct() ?? 0 }}% engagement</div>
-        </div>
-      </div>
+      <sp-admin-kpi-card layout="tile" variant="coral" label="ACTIVE THIS WEEK"
+        [delta]="(heroEngagementPct() ?? 0) + '% engagement'" deltaColor="#13B07C">
+        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        @if (loadingStats()) { — } @else { {{ (stats()?.onboardedStudents ?? 0) }}/{{ (stats()?.totalStudents ?? 0) }} }
+      </sp-admin-kpi-card>
 
-      <div class="sp-dash-kpi-card">
-        <div class="sp-dash-kpi-icon" style="background:#F2E9FF">
-          <svg width="20" height="20" fill="none" stroke="#B45CF0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
-        <div class="sp-dash-kpi-body">
-          <div class="sp-dash-kpi-label">ACTIVITIES DONE</div>
-          <div class="sp-dash-kpi-value">{{ loadingStats() ? '—' : (stats()?.totalActivityAttempts ?? 0) }}</div>
-          <div class="sp-dash-kpi-delta" style="color:#13B07C">+12 since yesterday</div>
-        </div>
-      </div>
+      <sp-admin-kpi-card layout="tile" variant="violet" label="ACTIVITIES DONE" delta="+12 since yesterday" deltaColor="#13B07C">
+        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        {{ loadingStats() ? '—' : (stats()?.totalActivityAttempts ?? 0) }}
+      </sp-admin-kpi-card>
 
-      <div class="sp-dash-kpi-card">
-        <div class="sp-dash-kpi-icon" style="background:#FFF1DC">
-          <svg width="20" height="20" fill="none" stroke="#F0982C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <div class="sp-dash-kpi-body">
-          <div class="sp-dash-kpi-label">AI COST (7 DAYS)</div>
-          <div class="sp-dash-kpi-value">
-            @if (loadingAiUsageTrends7d()) { — }
-            @else if (aiUsageTrends7dError()) { <span class="sp-dash-kpi-na">N/A</span> }
-            @else { {{ aiCost7dFormatted() }} }
-          </div>
-          <div class="sp-dash-kpi-delta">Per active student</div>
-        </div>
-      </div>
+      <sp-admin-kpi-card layout="tile" variant="amber" label="AI COST (7 DAYS)" delta="Per active student">
+        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        @if (loadingAiUsageTrends7d()) { — }
+        @else if (aiUsageTrends7dError()) { <span style="font-size:12px;font-style:italic">N/A</span> }
+        @else { {{ aiCost7dFormatted() }} }
+      </sp-admin-kpi-card>
 
     </div>
 
@@ -150,34 +123,11 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       </div>
 
       <!-- System health -->
-      <div class="sp-dash-card sp-dash-card-p" style="display:flex;flex-direction:column">
-        <div class="sp-dash-card-header" style="margin-bottom:14px">
-          <span class="sp-dash-card-title">System health</span>
-          <span style="font-size:12px;font-weight:700;color:#13B07C;display:flex;align-items:center;gap:4px">
-            <span class="sp-dash-dot sp-dash-dot-g sp-dash-dot-pulse"></span>All clear
-          </span>
-        </div>
-        @for (svc of services; track svc.name; let last = $last) {
-          <div class="sp-dash-svc-row" [class.sp-dash-svc-row--last]="last">
-            <span class="sp-dash-dot sp-dash-dot-g" style="flex-shrink:0"></span>
-            <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--ink)">{{ svc.name }}</span>
-            <div class="sp-dash-latency-bar-wrap">
-              <div class="sp-dash-latency-bar"
-                [style.width]="latencyBarPct(svc.ms) + '%'"
-                [style.background]="latencyColor(svc.ms)"></div>
-            </div>
-            <span style="font-size:11px;color:var(--muted);font-weight:700;width:36px;text-align:right">{{ svc.ms }}ms</span>
-          </div>
-        }
-        <div class="sp-dash-svc-footer">
-          @for (row of systemFooter; track row.k) {
-            <div style="display:flex;justify-content:space-between">
-              <span style="font-size:12px;color:var(--muted)">{{ row.k }}</span>
-              <span style="font-size:12px;font-weight:700;color:var(--ink)">{{ row.v }}</span>
-            </div>
-          }
-        </div>
-        <a routerLink="/admin/diagnostics" class="sp-dash-card-link" style="margin-top:14px;font-size:12.5px">View diagnostics →</a>
+      <div class="sp-dash-card sp-dash-card-p">
+        <sp-admin-system-health
+          [services]="services"
+          [footer]="systemFooter"
+          diagnosticsLink="/admin/diagnostics" />
       </div>
 
     </div>
@@ -287,27 +237,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
 
       <!-- AI cost donut -->
       <div class="sp-dash-card sp-dash-card-p">
-        <div class="sp-dash-card-title" style="margin-bottom:14px">AI cost by type</div>
-        <div style="display:flex;align-items:center;gap:16px">
-          <svg viewBox="0 0 100 100" width="80" height="80" style="flex-shrink:0">
-            @for (seg of costDonutSegments; track seg.label; let i = $index) {
-              <circle cx="50" cy="50" r="36" fill="none"
-                [attr.stroke]="seg.color" stroke-width="14"
-                [attr.stroke-dasharray]="seg.dashArray"
-                [attr.stroke-dashoffset]="seg.dashOffset"/>
-            }
-            <circle cx="50" cy="50" r="22" fill="white"/>
-          </svg>
-          <div style="flex:1;display:flex;flex-direction:column;gap:7px">
-            @for (seg of costDonutSegments; track seg.label) {
-              <div style="display:flex;align-items:center;gap:7px">
-                <div [style.background]="seg.color" style="width:9px;height:9px;border-radius:3px;flex-shrink:0"></div>
-                <span style="flex:1;font-size:12px;color:var(--text)">{{ seg.label }}</span>
-                <span style="font-size:12px;font-weight:800;color:var(--ink)">{{ seg.pct }}%</span>
-              </div>
-            }
-          </div>
-        </div>
+        <sp-admin-donut-chart title="AI cost by type" [segments]="costDonutSegments" [size]="80" />
       </div>
 
       <!-- Session duration mini bars -->
@@ -419,22 +349,13 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       </div>
 
       <!-- AI spend sparkline -->
-      <div class="sp-dash-card sp-dash-card-p" style="display:flex;align-items:center;gap:14px">
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:5px">AI spend (30d)</div>
-          @if (loadingAiUsageTrends7d()) {
-            <div style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.03em">—</div>
-          } @else {
-            <div style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.03em">{{ aiCost7dFormatted() }}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px">Last 7 days</div>
-          }
-        </div>
-        @if (!loadingAiUsageTrends7d() && sparklinePoints().length > 1) {
-          <svg width="80" height="32" [attr.viewBox]="'0 0 80 32'" style="display:block;flex-shrink:0">
-            <path [attr.d]="sparklinePath()" fill="none" stroke="#F0982C" stroke-width="1.75" stroke-linecap="round"/>
-            <circle [attr.cx]="sparklineLastPt()[0]" [attr.cy]="sparklineLastPt()[1]" r="2.5" fill="#F0982C" stroke="white" stroke-width="1.5"/>
-          </svg>
-        }
+      <div class="sp-dash-card sp-dash-card-p">
+        <sp-admin-sparkline-card
+          title="AI spend (30d)"
+          [value]="loadingAiUsageTrends7d() ? '—' : aiCost7dFormatted()"
+          sub="Last 7 days"
+          [data]="aiUsageTrendValues()"
+          color="#F0982C" />
       </div>
 
       <!-- CEFR distribution -->
@@ -539,33 +460,8 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     /* ── Tokens / theme vars (mirrors adm-* design) ── */
     :host { --ink: #211B36; --text: #4B4462; --muted: #8B85A0; --faint: #C5BFD8; --border: #ECE9F5; --canvas: #F8F7FF; }
 
-    /* ── Hero banner ── */
-    .sp-dash-hero {
-      background: linear-gradient(135deg,#211B36 0%,#2D2455 100%);
-      border-radius: 16px;
-      display: grid;
-      grid-template-columns: repeat(4,1fr);
-      gap: 0;
-      margin-bottom: 0;
-    }
-    .sp-dash-hero-col {
-      padding: 18px 22px;
-      border-right: 1px solid rgba(255,255,255,.1);
-    }
-    .sp-dash-hero-col--last { border-right: none; }
-    .sp-dash-hero-eyebrow { font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px }
-    .sp-dash-hero-value { font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1 }
-    .sp-dash-hero-sub { font-size:12px;margin-top:6px;font-weight:600 }
-
-    /* ── KPI row ── */
+    /* ── KPI row grid (layout delegated to sp-admin-kpi-card) ── */
     .sp-dash-kpi-row { display:grid;grid-template-columns:repeat(4,1fr);gap:14px }
-    .sp-dash-kpi-card { background:#fff;border:1px solid var(--border);border-radius:12px;display:flex;align-items:stretch;overflow:hidden }
-    .sp-dash-kpi-icon { width:56px;flex-shrink:0;display:grid;place-items:center;border-right:1px solid var(--border) }
-    .sp-dash-kpi-body { padding:13px 15px;flex:1 }
-    .sp-dash-kpi-label { font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:6px }
-    .sp-dash-kpi-value { font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.04em;line-height:1 }
-    .sp-dash-kpi-delta { font-size:11.5px;font-weight:600;margin-top:5px;color:var(--muted) }
-    .sp-dash-kpi-na { font-size:12px;font-style:italic }
 
     /* ── Generic card ── */
     .sp-dash-card { background:#fff;border:1px solid var(--border);border-radius:12px }
@@ -584,16 +480,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     /* ── Main 2-col ── */
     .sp-dash-main-grid { display:grid;grid-template-columns:1fr 272px;gap:16px }
 
-    /* ── System health dots ── */
-    .sp-dash-dot { display:inline-block;width:7px;height:7px;border-radius:50% }
-    .sp-dash-dot-g { background:#13B07C }
-    .sp-dash-dot-pulse { animation:sp-pulse 2s infinite }
-    @keyframes sp-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-    .sp-dash-svc-row { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border) }
-    .sp-dash-svc-row--last { border-bottom:none }
-    .sp-dash-latency-bar-wrap { width:48px;height:4px;border-radius:99px;background:#F0EEF8;overflow:hidden }
-    .sp-dash-latency-bar { height:100%;border-radius:99px }
-    .sp-dash-svc-footer { margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px }
+    /* system health rendering delegated to sp-admin-system-health */
 
     /* ── Area chart empty ── */
     .sp-dash-chart-empty { min-height:150px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);background:var(--canvas);border-radius:8px }
@@ -745,6 +632,9 @@ export class AdminDashboardComponent implements OnInit {
     if (!d) return null;
     return d.buckets.reduce((s, b) => s + b.cost, 0);
   });
+  readonly aiUsageTrendValues = computed<number[]>(() =>
+    this.aiUsageTrends7d()?.buckets.map(b => b.cost) ?? [],
+  );
   readonly aiCost7dFormatted = computed(() => {
     const v = this.heroAiCost7d() ?? 0;
     return '$' + v.toFixed(2);
@@ -948,26 +838,7 @@ export class AdminDashboardComponent implements OnInit {
     ];
   });
 
-  // ── computed: AI sparkline ───────────────────────────────────────
-  readonly sparklinePoints = computed<[number, number][]>(() => {
-    const d = this.aiUsageTrends7d();
-    if (!d || d.buckets.length < 2) return [];
-    const vals = d.buckets.map(b => b.cost);
-    const min = Math.min(...vals); const max = Math.max(...vals); const r = max - min || 1;
-    const W = 80; const H = 32;
-    return vals.map((v, i) => [
-      (i / (vals.length - 1)) * W,
-      H - ((v - min) / r) * H * 0.8 - H * 0.1,
-    ]);
-  });
-  readonly sparklinePath = computed(() => {
-    const pts = this.sparklinePoints();
-    return pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
-  });
-  readonly sparklineLastPt = computed(() => {
-    const pts = this.sparklinePoints();
-    return pts.length ? pts[pts.length - 1] : [0, 0];
-  });
+  // sparkline rendering delegated to SpAdminSparklineCardComponent
 
   // ── computed: CEFR strip ─────────────────────────────────────────
   readonly cefrStripRows = computed(() => {
@@ -999,8 +870,6 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   // ── helpers ──────────────────────────────────────────────────────
-  latencyBarPct(ms: number): number { return Math.min(100, Math.round((ms / 250) * 100)); }
-  latencyColor(ms: number): string  { return ms < 100 ? '#13B07C' : ms < 200 ? '#F0982C' : '#EF4444'; }
   avatarInitial(email: string): string { return (email?.[0] ?? '?').toUpperCase(); }
   studentStatusColor(s: StudentListItem): string {
     if (s.onboardingStatus === 'Completed' && s.cefrLevel) return '#13B07C';

@@ -180,30 +180,28 @@ describe('AdminDashboardComponent', () => {
     expect(adminApi.listAiCategories).toHaveBeenCalledTimes(1);
   });
 
-  it('renders total students stat card from stats', async () => {
+  it('renders total students KPI tile from stats', async () => {
     await setup([], STATS);
-    expect(fixture.nativeElement.textContent).toContain('Total students');
+    expect(fixture.nativeElement.textContent).toContain('TOTAL STUDENTS');
     expect(fixture.nativeElement.textContent).toContain('5');
   });
 
-  it('renders active this week stat card from stats', async () => {
+  it('renders active this week KPI tile from stats', async () => {
     await setup([], STATS);
-    expect(fixture.nativeElement.textContent).toContain('Active this week');
+    expect(fixture.nativeElement.textContent).toContain('ACTIVE THIS WEEK');
     expect(fixture.nativeElement.textContent).toContain('3');
   });
 
-  it('renders activities done stat card', async () => {
+  it('renders activities done KPI tile', async () => {
     await setup([], STATS);
-    expect(fixture.nativeElement.textContent).toContain('Activities done');
+    expect(fixture.nativeElement.textContent).toContain('ACTIVITIES DONE');
     expect(fixture.nativeElement.textContent).toContain('120');
   });
 
-  it('renders quick action cards', async () => {
+  it('renders admin actions section', async () => {
     await setup();
-    expect(fixture.nativeElement.textContent).toContain('Add student');
-    expect(fixture.nativeElement.textContent).toContain('Manage students');
-    expect(fixture.nativeElement.textContent).toContain('AI Config');
-    expect(fixture.nativeElement.textContent).toContain('Prompts');
+    expect(fixture.nativeElement.textContent).toContain('Admin actions');
+    expect(fixture.nativeElement.textContent).toContain('System health');
   });
 
   it('renders recent students table with display name', async () => {
@@ -211,14 +209,14 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Alice Smith');
   });
 
-  it('renders onboarding badge using shared label', async () => {
+  it('renders active status label for completed+CEFR student', async () => {
     await setup([STUDENT]);
-    expect(fixture.nativeElement.textContent).toContain('Completed');
+    expect(fixture.nativeElement.textContent).toContain('Active');
   });
 
-  it('renders not-started badge for unboarded student', async () => {
+  it('renders inactive status label for not-started student', async () => {
     await setup([STUDENT_NO_CEFR]);
-    expect(fixture.nativeElement.textContent).toContain('Not started');
+    expect(fixture.nativeElement.textContent).toContain('Inactive');
   });
 
   it('renders CEFR badge when level present', async () => {
@@ -244,66 +242,52 @@ describe('AdminDashboardComponent', () => {
       email: `student${i}@example.com`,
     }));
     await setup(many);
-    const rows = fixture.nativeElement.querySelectorAll('tbody tr');
-    expect(rows.length).toBe(5);
+    const rows = fixture.nativeElement.querySelectorAll('.sp-dash-tbl-row');
+    expect(rows.length).toBe(8);
   });
 
-  // AI System card — live status (AI provider KPI card was removed; status is shown in the AI System card)
-  it('shows "Configured" provider in AI System card when all categories have a provider', async () => {
+  // Admin actions list — AI config status (surfaced as action card when unconfigured categories exist)
+  it('shows no AI config action when all categories have a provider', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
-    expect(fixture.nativeElement.textContent).toContain('AI System');
-    expect(fixture.nativeElement.textContent).toContain('OpenAI');
+    expect(fixture.nativeElement.textContent).not.toContain('categories not set');
   });
 
-  it('shows partial configured in AI System card', async () => {
+  it('shows AI config action card when partial categories unconfigured', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_PARTIAL);
-    expect(fixture.nativeElement.textContent).toContain('OpenAI');
-    expect(fixture.nativeElement.textContent).toContain('Not configured');
+    expect(fixture.nativeElement.textContent).toContain('categories not set');
   });
 
-  it('shows "Not configured" badge in AI System when no categories configured', async () => {
+  it('shows AI config action card when no categories configured', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_NONE_CONFIGURED);
-    expect(fixture.nativeElement.textContent).toContain('Not configured');
+    expect(fixture.nativeElement.textContent).toContain('categories not set');
   });
 
-  it('shows "Action needed" in AI System when categories list is empty', async () => {
+  it('shows no AI config action when categories list is empty', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_EMPTY);
-    expect(fixture.nativeElement.textContent).toContain('Action needed');
+    expect(fixture.nativeElement.textContent).not.toContain('categories not set');
   });
 
-  it('shows "Unavailable" in AI System when AI config API errors', async () => {
+  it('shows no AI config action when AI config API errors', async () => {
     await setup([STUDENT], STATS, 'error');
-    expect(fixture.nativeElement.textContent).toContain('Unavailable');
+    expect(fixture.nativeElement.textContent).not.toContain('categories not set');
   });
 
-  // AI System card — live categories
-  it('renders AI System section with live category names', async () => {
-    await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
-    expect(fixture.nativeElement.textContent).toContain('AI System');
-    expect(fixture.nativeElement.textContent).toContain('Writing activities');
-    expect(fixture.nativeElement.textContent).toContain('Text to speech');
-    expect(fixture.nativeElement.textContent).toContain('OpenAI');
-  });
-
-  it('shows "Not configured" badge for unconfigured category', async () => {
+  // Admin actions — links to AI config page
+  it('renders link to /admin/ai-config when categories partially unconfigured', async () => {
     await setup([STUDENT], STATS, AI_CATEGORIES_PARTIAL);
-    expect(fixture.nativeElement.textContent).toContain('Not configured');
-  });
-
-  it('shows "Action needed" when AI System has no configured categories', async () => {
-    await setup([STUDENT], STATS, AI_CATEGORIES_EMPTY);
-    expect(fixture.nativeElement.textContent).toContain('Action needed');
-  });
-
-  it('shows "Unavailable" in AI System when API errors', async () => {
-    await setup([STUDENT], STATS, 'error');
-    expect(fixture.nativeElement.textContent).toContain('Unavailable');
-  });
-
-  it('renders link to /admin/ai-config', async () => {
-    await setup();
     const link = fixture.nativeElement.querySelector('a[href="/admin/ai-config"]');
     expect(link).toBeTruthy();
+  });
+
+  it('no AI config action card when all categories configured', async () => {
+    await setup([STUDENT], STATS, AI_CATEGORIES_CONFIGURED);
+    expect(fixture.nativeElement.textContent).not.toContain('categories not set');
+  });
+
+  it('shows no AI config action when AI categories API errors', async () => {
+    await setup([STUDENT], STATS, 'error');
+    const text: string = fixture.nativeElement.textContent;
+    expect(text).not.toContain('categories not set');
   });
 
   it('does not display any API key or secret value', async () => {
@@ -319,7 +303,7 @@ describe('AdminDashboardComponent', () => {
   describe('weekly-snapshot hero banner', () => {
     it('renders the hero banner section', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('This week');
+      expect(fixture.nativeElement.textContent).toContain('THIS WEEK');
     });
 
     it('shows THIS WEEK eyebrow and activity count', async () => {
@@ -345,21 +329,21 @@ describe('AdminDashboardComponent', () => {
   });
 
   describe('KPI icon tile row', () => {
-    it('renders AI cost (7 days) tile', async () => {
+    it('renders AI COST (7 DAYS) tile', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('AI cost (7 days)');
+      expect(fixture.nativeElement.textContent).toContain('AI COST (7 DAYS)');
     });
 
-    it('renders Active this week tile', async () => {
+    it('renders ACTIVE THIS WEEK tile', async () => {
       await setup([], STATS);
-      expect(fixture.nativeElement.textContent).toContain('Active this week');
+      expect(fixture.nativeElement.textContent).toContain('ACTIVE THIS WEEK');
     });
   });
 
   describe('activity trends chart', () => {
-    it('renders activity trends card', async () => {
+    it('renders activities completed card', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Activity trends');
+      expect(fixture.nativeElement.textContent).toContain('Activities completed');
     });
   });
 
@@ -369,14 +353,18 @@ describe('AdminDashboardComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('Onboarding funnel');
     });
 
-    it('shows not-started count derived from students', async () => {
+    it('funnel shows signed-up count matching students length', async () => {
       await setup([STUDENT_NO_CEFR], STATS);
-      expect(component.onboardingCounts().notStarted).toBe(1);
+      const stages = component.funnelStages();
+      expect(stages[0].label).toBe('Signed up');
+      expect(stages[0].count).toBe(1);
     });
 
-    it('shows in-progress count derived from students', async () => {
+    it('funnel in-progress students appear in not-onboarded stage', async () => {
       await setup([STUDENT_IN_PROGRESS], STATS);
-      expect(component.onboardingCounts().inProgress).toBe(1);
+      const stages = component.funnelStages();
+      const onboarded = stages.find(s => s.label === 'Onboarded');
+      expect(onboarded?.count).toBe(0);
     });
 
     it('shows total students from stats in funnel', async () => {
@@ -404,14 +392,14 @@ describe('AdminDashboardComponent', () => {
       expect(component.atRiskStudents()[0].email).toBe('bob@example.com');
     });
 
-    it('identifies in-progress students as at-risk', async () => {
+    it('does not flag in-progress students as at-risk', async () => {
       await setup([STUDENT_IN_PROGRESS]);
-      expect(component.atRiskStudents().length).toBe(1);
+      expect(component.atRiskStudents().length).toBe(0);
     });
 
-    it('shows note about aggregate risk score not available', async () => {
+    it('shows all-on-track message when no at-risk students', async () => {
       await setup([STUDENT]);
-      expect(fixture.nativeElement.textContent).toContain('backend not available yet');
+      expect(fixture.nativeElement.textContent).toContain('All students are engaged');
     });
   });
 
@@ -423,23 +411,27 @@ describe('AdminDashboardComponent', () => {
 
     it('derives CEFR counts from students list', async () => {
       await setup([STUDENT, STUDENT_IN_PROGRESS, STUDENT_PLACEMENT]);
-      const dist = component.cefrDistribution();
-      const b2 = dist.find(d => d.level === 'B2');
-      const a2 = dist.find(d => d.level === 'A2');
-      const b1 = dist.find(d => d.level === 'B1');
+      const rows = component.cefrStripRows();
+      const b2 = rows.find(r => r.level === 'B2');
+      const a2 = rows.find(r => r.level === 'A2');
+      const b1 = rows.find(r => r.level === 'B1');
       expect(b2?.count).toBe(1);
       expect(a2?.count).toBe(1);
       expect(b1?.count).toBe(1);
     });
 
-    it('excludes students with no CEFR level', async () => {
+    it('includes no-CEFR row when students lack CEFR level', async () => {
       await setup([STUDENT_NO_CEFR]);
-      expect(component.cefrDistribution().length).toBe(0);
+      const rows = component.cefrStripRows();
+      const noLevel = rows.find(r => r.level === '—');
+      expect(noLevel).toBeTruthy();
     });
 
-    it('shows empty state when no CEFR data', async () => {
+    it('shows dash row for students without CEFR level', async () => {
       await setup([STUDENT_NO_CEFR]);
-      expect(fixture.nativeElement.textContent).toContain('No CEFR data yet');
+      const rows = component.cefrStripRows();
+      const noLevel = rows.find(r => r.level === '—');
+      expect(noLevel?.count).toBe(1);
     });
   });
 
@@ -449,14 +441,14 @@ describe('AdminDashboardComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('Score distribution');
     });
 
-    it('renders AI spend by type card with placeholder', async () => {
+    it('renders AI cost by type card', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('AI spend by type');
+      expect(fixture.nativeElement.textContent).toContain('AI cost by type');
     });
 
-    it('renders avg session duration card with placeholder', async () => {
+    it('renders avg session card', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Avg session duration');
+      expect(fixture.nativeElement.textContent).toContain('Avg session');
     });
 
     it('renders streak leaderboard card with placeholder', async () => {
@@ -464,9 +456,9 @@ describe('AdminDashboardComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('Streak leaderboard');
     });
 
-    it('renders live events feed card', async () => {
+    it('renders live events card', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Live events feed');
+      expect(fixture.nativeElement.textContent).toContain('Live events');
     });
   });
 
@@ -476,32 +468,18 @@ describe('AdminDashboardComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('Cohort engagement');
     });
 
-    it('derives course-ready count from students', async () => {
+    it('computes active segment from completed+cefrLevel students', async () => {
       await setup([STUDENT, STUDENT_PLACEMENT]);
-      expect(component.lifecycleCounts().courseReady).toBe(1);
-    });
-
-    it('derives placement-pending count from students', async () => {
-      await setup([STUDENT_PLACEMENT]);
-      expect(component.lifecycleCounts().placementPending).toBe(1);
-    });
-
-    it('derives onboarding-pending count from students', async () => {
-      await setup([STUDENT_IN_PROGRESS]);
-      expect(component.lifecycleCounts().onboardingPending).toBe(1);
-    });
-
-    it('shows note about activity-based rate not available', async () => {
-      await setup();
-      expect(fixture.nativeElement.textContent).toContain('Activity-based engagement rate');
+      const segs = component.engagementSegments();
+      // STUDENT has onboardingStatus Completed + cefrLevel B2 => active
+      expect(segs.find(s => s.status === 'active')!.count).toBeGreaterThanOrEqual(1);
     });
   });
 
   describe('no fake data', () => {
-    it('does not render hardcoded placeholder values', async () => {
+    it('does not render Not implemented placeholder text', async () => {
       await setup([], { totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 });
       const text: string = fixture.nativeElement.textContent;
-      expect(text).not.toContain('All clear');
       expect(text).not.toContain('Not implemented');
     });
   });
@@ -512,7 +490,7 @@ describe('AdminDashboardComponent', () => {
       expect(adminApi.getDashboardActivityTrends).toHaveBeenCalledTimes(1);
     });
 
-    it('heroActivitiesThisWeek sums activityCount from real trend data', async () => {
+    it('activityTrendTotal sums activityCount from real trend data', async () => {
       adminApi = makeAdminApi();
       adminApi.getDashboardActivityTrends.and.returnValue(of(REAL_ACTIVITY_TRENDS));
       await TestBed.configureTestingModule({
@@ -526,14 +504,14 @@ describe('AdminDashboardComponent', () => {
       component = fixture.componentInstance;
       fixture.detectChanges();
       await fixture.whenStable();
-      expect(component.heroActivitiesThisWeek()).toBe(8); // 3 + 5
+      expect(component.activityTrendTotal()).toBe(8); // 3 + 5
     });
 
-    it('heroActivitiesThisWeek is null while loading', async () => {
+    it('activityTrendTotal is 0 while loading', async () => {
       await setup();
       component.loadingActivityTrends.set(true);
       component.activityTrends.set(null);
-      expect(component.heroActivitiesThisWeek()).toBeNull();
+      expect(component.activityTrendTotal()).toBe(0);
     });
   });
 
