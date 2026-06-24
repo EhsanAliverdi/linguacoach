@@ -1,6 +1,11 @@
 **/.git
 **/.github
 **/.claude
+**/.codex
+**/.qwen
+**/.gstack
+**/.claire
+**/.vscode
 **/obj
 **/bin
 **/*.user
@@ -11,6 +16,10 @@
 frontend/
 docs/
 tests/
+graphify-out/
+test-results/
+scripts/
 *.md
 .dockerignore
 docker-compose.yml
+docker-compose.prod.yml
