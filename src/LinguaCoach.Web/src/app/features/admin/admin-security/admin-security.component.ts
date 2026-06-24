@@ -59,6 +59,8 @@ import {
     .sp-sec-tab-bar{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--sp-admin-border,#ECE9F5);}
     .sp-sec-tab{padding:8px 20px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:var(--sp-admin-muted,#8B85A0);transition:color 0.15s,border-color 0.15s;}
     .sp-sec-tab--active{color:var(--sp-admin-primary,#5B4BE8);border-bottom-color:var(--sp-admin-primary,#5B4BE8);}
+    .sp-sec-cols{display:grid;grid-template-columns:1fr;gap:20px;align-items:start;margin-bottom:20px;}
+    @media(min-width:1000px){.sp-sec-cols{grid-template-columns:1fr 1fr;}}
     .sp-sec-setting-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
     @media(min-width:700px){.sp-sec-setting-grid{grid-template-columns:repeat(3,1fr);}}
     .sp-sec-field{display:flex;flex-direction:column;gap:4px;}

@@ -24,6 +24,8 @@ import {
   SpAdminLoadingStateComponent,
 } from '../../../design-system/admin';
 
+type AiConfigTab = 'llm' | 'tts' | 'credentials' | 'pricing' | 'rate-limits';
+
 interface CategoryState {
   item: AiConfigCategoryItem;
   saving: boolean;
@@ -111,7 +113,21 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     } @else if (loadError()) {
       <sp-admin-error-state title="AI configuration unavailable" [message]="loadError()" />
     } @else {
+      <!-- ── Tab bar ───────────────────────────────────────────────────── -->
+      <div class="sp-aic-tabs" role="tablist" aria-label="AI configuration sections">
+        @for (t of tabs; track t.key) {
+          <button
+            type="button"
+            role="tab"
+            class="sp-aic-tab"
+            [class.sp-aic-tab--active]="activeTab() === t.key"
+            [attr.aria-selected]="activeTab() === t.key"
+            (click)="activeTab.set(t.key)">{{ t.label }}</button>
+        }
+      </div>
+
       <!-- ── Section 1: LLM Categories ─────────────────────────────────── -->
+      @if (activeTab() === 'llm') {
       <sp-admin-card title="LLM Categories">
         <div slot="actions">
           <sp-admin-badge [tone]="configSummary().llmConfigured === configSummary().llmTotal ? 'success' : 'warning'">
@@ -172,7 +188,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+      }
+
       <!-- ── Section 2: TTS Categories ─────────────────────────────────── -->
+      @if (activeTab() === 'tts') {
       <sp-admin-card title="Text-to-Speech">
         <p class="text-sm text-slate-500 mb-4">
           TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
@@ -235,7 +254,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+      }
+
       <!-- ── Section 3: Provider credentials ────────────────────────────── -->
+      @if (activeTab() === 'credentials') {
       <sp-admin-card title="Provider credentials">
         <p class="text-sm text-slate-500 mb-4">
           One API key per provider applies to all features using it.
@@ -362,7 +384,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+      }
+
       <!-- ── Section 4: Model Pricing ─────────────────────────────────────── -->
+      @if (activeTab() === 'pricing') {
       <sp-admin-card title="Model Pricing">
         <!-- Config pricing (read-only) -->
         <p class="text-sm font-semibold text-slate-700 mb-2">Config pricing</p>
@@ -504,7 +529,10 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
         </div>
       </sp-admin-card>
 
+      }
+
       <!-- ── Section 5: Rate Limits — Not implemented ─────────────────────── -->
+      @if (activeTab() === 'rate-limits') {
       <sp-admin-card title="Rate limits and quotas">
         <div class="sp-aic-not-impl" aria-label="Rate limits not implemented">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#8B85A0;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -517,6 +545,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
           </div>
         </div>
       </sp-admin-card>
+      }
 
     }
     </sp-admin-page-body>
@@ -529,6 +558,32 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       padding: 16px 24px 0;
     }
     @media (max-width: 800px) { .sp-aic-kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+    .sp-aic-tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      border-bottom: 1.5px solid var(--sp-admin-border, #ECE9F5);
+      margin-bottom: 20px;
+    }
+    .sp-aic-tab {
+      appearance: none;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1.5px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--sp-admin-muted, #8B85A0);
+      cursor: pointer;
+      transition: color .12s ease, border-color .12s ease;
+    }
+    .sp-aic-tab:hover { color: var(--sp-admin-text, #211B36); }
+    .sp-aic-tab--active {
+      color: var(--sp-admin-primary, #5B4BE8);
+      border-bottom-color: var(--sp-admin-primary, #5B4BE8);
+    }
     .sp-aic-not-impl {
       display: flex;
       gap: 12px;
@@ -552,6 +607,15 @@ export class AdminAiConfigComponent implements OnInit {
   deactivateBusy = signal<string | null>(null);
   loading = signal(true);
   loadError = signal('');
+
+  readonly tabs: { key: AiConfigTab; label: string }[] = [
+    { key: 'llm', label: 'LLM Categories' },
+    { key: 'tts', label: 'Text-to-Speech' },
+    { key: 'credentials', label: 'Provider Credentials' },
+    { key: 'pricing', label: 'Model Pricing' },
+    { key: 'rate-limits', label: 'Rate Limits' },
+  ];
+  activeTab = signal<AiConfigTab>('llm');
 
   readonly configSummary = computed(() => {
     const cats = this.categories();
