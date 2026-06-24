@@ -112,3 +112,19 @@ placeholders, usage-analytics period pills + KPI strip + graph cards). Charts us
 
 **Change in this phase:** added `/admin/students/create` redirect alias so the
 design-canonical create-student path resolves alongside existing aliases.
+
+## 10UI-PARITY-REBUILD-2A (2026-06-24) — bounded tables
+
+Screenshot-driven pass. Three admin tables rendered all rows unbounded versus the
+paginated design reference, producing very long pages:
+
+- AI Usage "By feature" table (now paginated, 8/page).
+- AI Usage "Calls over time" table (now paginated, 8/page).
+- Curriculum objectives table (now paginated, 12/page).
+
+All three now use the shared `SpAdminPaginationComponent`. Exercise Types and
+Diagnostics already matched (skill tiles + compact paginated table; KPIs + side-by-side
+events/severity + status grid + paginated event log). Diagnostics Background Jobs
+section remains absent and is deferred to a backend-aggregation phase.
+
+Review: `docs/reviews/2026-06-24-phase-10ui-parity-rebuild-2-screenshot-driven-admin-visual-fixes.md`

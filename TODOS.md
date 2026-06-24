@@ -473,3 +473,14 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **Outcome:** All 15 design nav entries map to existing routes and components. Added `/admin/students/create` redirect alias. Sidebar sections/labels match design exactly.
 **Review:** `docs/reviews/2026-06-24-phase-10ui-parity-rebuild-1-admin-page-by-page-exact-design-match.md`
 **Follow-up:** Run frontend build/test in shared checkout before merge (worktree lacks node_modules).
+
+### TODO-REBUILD-2A — Bound unbounded admin tables (DONE 2026-06-24)
+**What:** Screenshot-driven visual fix. AI Usage "By feature" and "Calls over time" tables, and Curriculum objectives table, rendered all rows unbounded, making pages extremely long versus paginated design.
+**Done:** Added client-side pagination (reuse `SpAdminPaginationComponent`) to those three tables. Build green, 1361 tests pass.
+**Review:** `docs/reviews/2026-06-24-phase-10ui-parity-rebuild-2-screenshot-driven-admin-visual-fixes.md`
+**Phase:** 10UI-PARITY-REBUILD-2A
+
+### TODO-REBUILD-2B — Diagnostics Background Jobs section (P2)
+**What:** Design shows Background Jobs (4 KPI tiles + recent batches table). No background-jobs API exists.
+**Needs:** Backend endpoint for job batch summary. Out of scope for visual-only phase.
+**Phase:** 10UI-PARITY-REBUILD-2B / backend-agg

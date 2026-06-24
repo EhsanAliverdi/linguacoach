@@ -188,6 +188,29 @@ export class AdminAiUsageComponent implements OnInit {
   // Items already filtered server-side; expose directly for template
   filteredRecentItems = computed(() => this.recentItems());
 
+  // Client-side pagination for bounded summary tables (design reference paginates these)
+  readonly featurePageSize = 8;
+  byFeaturePage = signal(1);
+  readonly byFeatureTotalPages = computed(() =>
+    Math.max(1, Math.ceil((this.summary()?.byFeature.length ?? 0) / this.featurePageSize)));
+  readonly byFeaturePaged = computed(() => {
+    const rows = this.summary()?.byFeature ?? [];
+    const start = (this.byFeaturePage() - 1) * this.featurePageSize;
+    return rows.slice(start, start + this.featurePageSize);
+  });
+  onByFeaturePageChange(page: number): void { this.byFeaturePage.set(page); }
+
+  readonly trendPageSize = 8;
+  trendPage = signal(1);
+  readonly trendTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.trendBuckets().length / this.trendPageSize)));
+  readonly trendBucketsPaged = computed(() => {
+    const rows = this.trendBuckets();
+    const start = (this.trendPage() - 1) * this.trendPageSize;
+    return rows.slice(start, start + this.trendPageSize);
+  });
+  onTrendPageChange(page: number): void { this.trendPage.set(page); }
+
   private readonly doc = inject<Document>(DOCUMENT);
 
   constructor(private svc: AiUsageService, private adminApi: AdminApiService) {}
@@ -255,7 +278,7 @@ export class AdminAiUsageComponent implements OnInit {
     this.summaryError.set('');
 
     this.svc.getSummary(range, filters).subscribe({
-      next: s => { this.summary.set(s); this.loadingSummary.set(false); },
+      next: s => { this.summary.set(s); this.byFeaturePage.set(1); this.loadingSummary.set(false); },
       error: err => { this.summaryError.set(err.error?.error ?? 'Could not load summary.'); this.loadingSummary.set(false); },
     });
     this.loadRecent();
@@ -295,7 +318,7 @@ export class AdminAiUsageComponent implements OnInit {
     this.loadingTrends.set(true);
     this.trendError.set('');
     this.svc.getTrends(range, filters).subscribe({
-      next: buckets => { this.trendBuckets.set(buckets); this.loadingTrends.set(false); },
+      next: buckets => { this.trendBuckets.set(buckets); this.trendPage.set(1); this.loadingTrends.set(false); },
       error: err    => { this.trendError.set(err.error?.error ?? 'Could not load trends.'); this.loadingTrends.set(false); },
     });
   }

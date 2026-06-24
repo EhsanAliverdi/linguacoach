@@ -12,6 +12,20 @@ Last updated: 2026-06-24 (10UI-PARITY-FINAL)
 
 ---
 
+## Admin Visual Fixes — Bounded Tables (Phase 10UI-PARITY-REBUILD-2A, 2026-06-24)
+
+Screenshot-driven visual pass against `e2e/screenshots/prod/`. Three admin tables
+rendered all rows unbounded versus the paginated design, producing very long pages.
+Added client-side pagination (reusing `SpAdminPaginationComponent`) to: AI Usage
+"By feature" (8/page), AI Usage "Calls over time" (8/page), and Curriculum objectives
+(12/page). Exercise Types and Diagnostics already matched the design. Diagnostics
+Background Jobs section remains absent (needs backend endpoint, deferred to 2B). Build
+green, 1361 frontend tests pass. No secrets, no fake data, no student-UI or backend
+changes. Review:
+`docs/reviews/2026-06-24-phase-10ui-parity-rebuild-2-screenshot-driven-admin-visual-fixes.md`
+
+---
+
 ## Admin Design Route Map — VERIFIED (Phase 10UI-PARITY-REBUILD-1, 2026-06-24)
 
 Verified Angular admin shell, sidebar nav, and routes against the new design source

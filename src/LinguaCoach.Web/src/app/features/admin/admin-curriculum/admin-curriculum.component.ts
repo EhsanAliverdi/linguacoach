@@ -22,6 +22,7 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminSelectComponent,
   SpAdminTableComponent,
+  SpAdminPaginationComponent,
 } from '../../../design-system/admin';
 import type { SpAdminSelectOption } from '../../../design-system/admin';
 import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
@@ -52,6 +53,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
     SpAdminPageHeaderComponent,
     SpAdminSelectComponent,
     SpAdminTableComponent,
+    SpAdminPaginationComponent,
     SpAdminRingMetricComponent,
     SpAdminBreakdownBarsComponent,
   ],
@@ -162,7 +164,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
                 </tr>
               </thead>
               <tbody>
-                @for (obj of objectives(); track obj.key) {
+                @for (obj of objectivesPaged(); track obj.key) {
                   <tr style="border-bottom:1px solid #f1f5f9">
                     <td style="padding:12px;min-width:260px">
                       <strong>{{ obj.title }}</strong>
@@ -198,6 +200,12 @@ function parseJsonArray(json: string | null | undefined): string[] {
                 }
               </tbody>
             </table>
+            @if (objectivesTotalPages() > 1) {
+              <sp-admin-pagination
+                [page]="objectivesPage()"
+                [totalPages]="objectivesTotalPages()"
+                (pageChange)="onObjectivesPageChange($event)" />
+            }
           }
         </sp-admin-table>
       }
@@ -418,6 +426,18 @@ export class AdminCurriculumComponent implements OnInit {
     { value: 'false', label: 'Inactive only' },
   ];
 
+  // Client-side pagination for objectives table (design reference paginates this)
+  readonly objectivesPageSize = 12;
+  objectivesPage = signal(1);
+  readonly objectivesTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.objectives().length / this.objectivesPageSize)));
+  readonly objectivesPaged = computed(() => {
+    const rows = this.objectives();
+    const start = (this.objectivesPage() - 1) * this.objectivesPageSize;
+    return rows.slice(start, start + this.objectivesPageSize);
+  });
+  onObjectivesPageChange(page: number): void { this.objectivesPage.set(page); }
+
   readonly coverageSummary = computed(() => {
     const all = this.allObjectives();
     const cefrBands = new Set(all.map(o => o.cefrLevel)).size;
@@ -469,7 +489,7 @@ export class AdminCurriculumComponent implements OnInit {
       this.filterSkill || undefined,
       active,
     ).subscribe({
-      next: items => { this.objectives.set(items); this.loading.set(false); },
+      next: items => { this.objectives.set(items); this.objectivesPage.set(1); this.loading.set(false); },
       error: () => { this.globalError.set('Could not load objectives.'); this.loading.set(false); },
     });
   }
