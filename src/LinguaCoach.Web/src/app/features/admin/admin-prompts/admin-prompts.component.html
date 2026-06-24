@@ -5,7 +5,7 @@
 <sp-admin-page-body>
 
 <!-- KPI strip -->
-<div class="sp-pt-kpi-strip" aria-label="Prompt template summary">
+<div class="sp-admin-kpi-row" aria-label="Prompt template summary">
   <sp-admin-kpi-card label="Templates" variant="indigo" layout="tile" icon="document" [value]="uniqueKeyCount()" />
   <sp-admin-kpi-card label="Active versions" [variant]="activeCount() > 0 ? 'green' : 'slate'" layout="tile" icon="check" [value]="activeCount()" />
   <sp-admin-kpi-card label="Total versions" variant="violet" layout="tile" icon="plus" [value]="prompts().length" />

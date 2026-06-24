@@ -56,23 +56,11 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
 
     <!-- ── Exercise type KPI strip ── -->
     @if (typeSummary().total > 0) {
-      <div class="sp-et-kpi-strip" aria-label="Exercise types summary">
-        <sp-admin-kpi-card label="Total types" variant="indigo">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          {{ typeSummary().total }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Enabled" [variant]="typeSummary().enabled > 0 ? 'green' : 'slate'">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          {{ typeSummary().enabled }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Ready" [variant]="typeSummary().ready > 0 ? 'teal' : 'amber'">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {{ typeSummary().ready }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Skills covered" variant="violet">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          {{ typeSummary().skills }}
-        </sp-admin-kpi-card>
+      <div class="sp-admin-kpi-row" aria-label="Exercise types summary">
+        <sp-admin-kpi-card label="Total types" variant="indigo" layout="tile" icon="layers" [value]="typeSummary().total" />
+        <sp-admin-kpi-card label="Enabled" [variant]="typeSummary().enabled > 0 ? 'green' : 'slate'" layout="tile" icon="check" [value]="typeSummary().enabled" />
+        <sp-admin-kpi-card label="Ready" [variant]="typeSummary().ready > 0 ? 'teal' : 'amber'" layout="tile" icon="clock" [value]="typeSummary().ready" />
+        <sp-admin-kpi-card label="Skills covered" variant="violet" layout="tile" icon="bar-chart" [value]="typeSummary().skills" />
       </div>
 
       <!-- Ready ring + skill breakdown strip -->
@@ -225,15 +213,6 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     </sp-admin-page-body>
   `,
   styles: [`
-    .sp-et-kpi-strip {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 16px 24px 0;
-    }
-    @media (max-width: 800px) {
-      .sp-et-kpi-strip { grid-template-columns: repeat(2, 1fr); }
-    }
     .sp-et-name-cell { min-width: 220px; max-width: 300px; }
     .sp-et-name-row { display: flex; gap: 10px; align-items: flex-start; }
     .sp-et-icon-tile {

@@ -28,8 +28,6 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
     SpAdminVisualPlaceholderComponent,
   ],
   styles: [`
-    .sp-les-kpi-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
-    @media(min-width: 900px) { .sp-les-kpi-strip { grid-template-columns: repeat(4, 1fr); } }
     .sp-les-pool-grid { display: grid; gap: 16px; margin-bottom: 24px; }
     @media(min-width: 700px) { .sp-les-pool-grid { grid-template-columns: 1fr 1fr; } }
     .sp-les-settings-grid { display: grid; gap: 16px; }

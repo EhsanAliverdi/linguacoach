@@ -9,29 +9,17 @@
 <sp-admin-page-body>
   <!-- Channel KPI strip — loaded from real config on init -->
   @if (channelSummary()) {
-    <div class="sp-notif-kpi-strip" aria-label="Notification channel summary">
-      <sp-admin-kpi-card label="In-App" [variant]="channelSummary()!.inApp.tone === 'success' ? 'green' : 'slate'">
-        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-        </svg>
+    <div class="sp-admin-kpi-row" aria-label="Notification channel summary">
+      <sp-admin-kpi-card label="In-App" [variant]="channelSummary()!.inApp.tone === 'success' ? 'green' : 'slate'" layout="tile" icon="bell">
         <sp-admin-badge [tone]="channelSummary()!.inApp.tone">{{ channelSummary()!.inApp.label }}</sp-admin-badge>
       </sp-admin-kpi-card>
-      <sp-admin-kpi-card label="Email" [variant]="channelSummary()!.email.tone === 'success' ? 'teal' : 'amber'">
-        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-        </svg>
+      <sp-admin-kpi-card label="Email" [variant]="channelSummary()!.email.tone === 'success' ? 'teal' : 'amber'" layout="tile" icon="mail">
         <sp-admin-badge [tone]="channelSummary()!.email.tone">{{ channelSummary()!.email.label }}</sp-admin-badge>
       </sp-admin-kpi-card>
-      <sp-admin-kpi-card label="SMS" variant="amber">
-        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-        </svg>
+      <sp-admin-kpi-card label="SMS" variant="amber" layout="tile" icon="phone">
         <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
       </sp-admin-kpi-card>
-      <sp-admin-kpi-card label="Dispatch job" [variant]="channelSummary()!.dispatch.tone === 'success' ? 'indigo' : 'slate'">
-        <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-        </svg>
+      <sp-admin-kpi-card label="Dispatch job" [variant]="channelSummary()!.dispatch.tone === 'success' ? 'indigo' : 'slate'" layout="tile" icon="send">
         <sp-admin-badge [tone]="channelSummary()!.dispatch.tone">{{ channelSummary()!.dispatch.label }}</sp-admin-badge>
       </sp-admin-kpi-card>
     </div>
@@ -240,29 +228,17 @@
       </div>
 
       <!-- Channel status KPI strip -->
-      <div class="sp-notif-kpi-strip" aria-label="Channel configuration status">
-        <sp-admin-kpi-card label="In-App" [variant]="configTone(config()!.inApp.statusLabel) === 'success' ? 'green' : 'slate'">
-          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-          </svg>
+      <div class="sp-admin-kpi-row" aria-label="Channel configuration status">
+        <sp-admin-kpi-card label="In-App" [variant]="configTone(config()!.inApp.statusLabel) === 'success' ? 'green' : 'slate'" layout="tile" icon="bell">
           <sp-admin-badge [tone]="configTone(config()!.inApp.statusLabel)">{{ config()!.inApp.statusLabel }}</sp-admin-badge>
         </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Email" [variant]="configTone(config()!.email.statusLabel) === 'success' ? 'teal' : 'amber'">
-          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-          </svg>
+        <sp-admin-kpi-card label="Email" [variant]="configTone(config()!.email.statusLabel) === 'success' ? 'teal' : 'amber'" layout="tile" icon="mail">
           <sp-admin-badge [tone]="configTone(config()!.email.statusLabel)">{{ config()!.email.statusLabel }}</sp-admin-badge>
         </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="SMS" variant="amber">
-          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-          </svg>
+        <sp-admin-kpi-card label="SMS" variant="amber" layout="tile" icon="phone">
           <sp-admin-badge tone="warning">Foundation only</sp-admin-badge>
         </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Dispatch job" [variant]="config()!.dispatchJob.enabled ? 'indigo' : 'slate'">
-          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-          </svg>
+        <sp-admin-kpi-card label="Dispatch job" [variant]="config()!.dispatchJob.enabled ? 'indigo' : 'slate'" layout="tile" icon="send">
           <sp-admin-badge [tone]="config()!.dispatchJob.enabled ? 'success' : 'neutral'">
             {{ config()!.dispatchJob.enabled ? 'Enabled' : 'Disabled' }}
           </sp-admin-badge>

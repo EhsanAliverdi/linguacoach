@@ -38,8 +38,6 @@ type Period = '7d' | '30d' | '90d';
     .sp-ua-period-pills { display: flex; gap: 4px; margin-bottom: 20px; }
     .sp-ua-pill { padding: 5px 14px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--sp-admin-border-2,#E2DEF0); border-radius: 99px; background: transparent; color: var(--sp-admin-muted,#8B85A0); cursor: pointer; transition: background 0.12s, color 0.12s; }
     .sp-ua-pill--active { background: var(--sp-admin-primary,#5B4BE8); color: #fff; border-color: var(--sp-admin-primary,#5B4BE8); }
-    .sp-ua-kpi-strip { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 24px; }
-    @media(min-width:900px) { .sp-ua-kpi-strip { grid-template-columns: repeat(4,1fr); } }
     .sp-ua-graph-row { display: grid; gap: 16px; margin-bottom: 24px; }
     @media(min-width:700px) { .sp-ua-graph-row { grid-template-columns: 1fr 1fr; } }
   `],

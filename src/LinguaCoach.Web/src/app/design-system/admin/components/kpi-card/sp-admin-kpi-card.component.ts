@@ -7,7 +7,8 @@ export type KpiLayout = 'standard' | 'tile';
 export type KpiIcon =
   | 'users' | 'user' | 'activity' | 'zap' | 'dollar' | 'document' | 'check'
   | 'plus' | 'clock' | 'alert' | 'shield' | 'database' | 'book'
-  | 'microphone' | 'headphones' | 'target' | 'refresh';
+  | 'microphone' | 'headphones' | 'target' | 'refresh'
+  | 'layers' | 'bar-chart' | 'bell' | 'mail' | 'phone' | 'send' | 'key' | 'cpu';
 
 const ICON_PATHS: Record<KpiIcon, string> = {
   users:       '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
@@ -27,6 +28,14 @@ const ICON_PATHS: Record<KpiIcon, string> = {
   headphones:  '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
   target:      '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   refresh:     '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  layers:      '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  'bar-chart': '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  bell:        '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  mail:        '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+  phone:       '<path d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/>',
+  send:        '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  key:         '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>',
+  cpu:         '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
 };
 
 @Component({
@@ -43,7 +52,7 @@ const ICON_PATHS: Record<KpiIcon, string> = {
         }
       </div>
       <div class="sp-kpi-body" [class.sp-kpi-body--tile]="layout === 'tile'">
-        <div class="sp-kpi-label">{{ label }}</div>
+        <div class="sp-kpi-label" [class.sp-kpi-label--tile]="layout === 'tile'">{{ label }}</div>
         <div class="sp-kpi-value" [class.sp-kpi-value--tile]="layout === 'tile'">
           @if (loading) {
             <span class="sp-kpi-placeholder">—</span>
@@ -89,20 +98,48 @@ const ICON_PATHS: Record<KpiIcon, string> = {
       color: #211B36; letter-spacing: -.04em; line-height: 1;
     }
     .sp-kpi-delta { font-size: 11.5px; font-weight: 600; margin-top: 5px; color: #8B85A0; }
+    /* Icon wrapper — normalizes both built-in and projected icons to 20px */
     .sp-kpi-icon-svg { display: flex; align-items: center; justify-content: center; line-height: 0; }
+    .sp-kpi-icon-svg svg { width: 20px; height: 20px; flex-shrink: 0; }
+    /* Normalize projected slot=icon content to same size */
+    :host ::ng-deep .sp-kpi-icon svg { width: 20px !important; height: 20px !important; flex-shrink: 0; }
     .sp-kpi-placeholder { color: #BDB8CC; }
     .sp-kpi-fallback { font-size: 14px; font-style: italic; color: #8B85A0; }
 
-    /* tile layout */
-    .sp-kpi-card--tile { padding: 0; gap: 0; overflow: hidden; border-radius: 12px; align-items: stretch; }
+    /* tile layout — grid ensures icon strip always fills full card height */
+    .sp-kpi-card--tile {
+      display: grid;
+      grid-template-columns: var(--sp-dash-kpi-tile-w, 56px) 1fr;
+      align-items: stretch;
+      gap: 0;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      min-height: 80px;
+      height: 100%;
+    }
     .sp-kpi-icon--tile {
-      width: var(--sp-dash-kpi-tile-w, 56px);
+      grid-column: 1;
+      width: auto;
+      height: auto;
+      align-self: stretch;
       border-radius: 0;
       border-right: 1px solid var(--sp-admin-border, #ECE9F5);
-      min-height: 72px; height: auto;
+      display: grid;
+      place-items: center;
     }
-    .sp-kpi-body--tile { padding: 13px 15px; }
-    .sp-kpi-value--tile { font-size: 24px; }
+    .sp-kpi-body--tile { grid-column: 2; padding: 13px 15px; min-width: 0; align-self: center; }
+    .sp-kpi-value--tile {
+      font-size: 24px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 100%;
+    }
+    /* label in tile: same as standard but fits narrower body */
+    .sp-kpi-label--tile { margin-bottom: 6px; }
+    .sp-kpi-delta {
+      font-size: 11.5px; font-weight: 600; margin-top: 4px; color: #8B85A0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+    }
 
     /* variants */
     .sp-kpi-icon-indigo { background: #EDEBFF; color: #5B4BE8; }
@@ -137,8 +174,8 @@ export class SpAdminKpiCardComponent {
   get iconSvg(): SafeHtml | null {
     if (!this.icon) return null;
     const paths = ICON_PATHS[this.icon] ?? '';
-    const size = this.layout === 'tile' ? 20 : 18;
-    const svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    // Size is controlled by CSS (.sp-kpi-icon-svg svg); attrs are set to 20 as fallback
+    const svg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
     return this.sanitizer.bypassSecurityTrustHtml(svg);
   }
 }

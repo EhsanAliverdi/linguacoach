@@ -126,4 +126,22 @@
   --sp-dash-latency-bad: #EF4444;
   --sp-dash-card-gap: 16px;
   --sp-dash-grid-gap: 14px;
+
+  /* ── KPI row token ───────────────────────────────────────────────────── */
+  --sp-admin-kpi-row-gap: 14px;
+  --sp-admin-kpi-row-cols: 4;
+}
+
+/* ── Shared KPI row grid — use class="sp-admin-kpi-row" on every KPI strip ── */
+.sp-admin-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(var(--sp-admin-kpi-row-cols, 4), minmax(0, 1fr));
+  gap: var(--sp-admin-kpi-row-gap, 14px);
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .sp-admin-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 500px) {
+  .sp-admin-kpi-row { grid-template-columns: 1fr; }
 }

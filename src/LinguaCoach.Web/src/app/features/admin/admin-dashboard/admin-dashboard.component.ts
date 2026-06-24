@@ -49,7 +49,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <sp-admin-hero-summary [columns]="heroColumns()" />
 
     <!-- ── KPI row ── -->
-    <div class="sp-dash-kpi-row">
+    <div class="sp-admin-kpi-row">
 
       <sp-admin-kpi-card layout="tile" variant="indigo" label="TOTAL STUDENTS" delta="Pilot cohort"
         icon="users" [loading]="loadingStats()" [value]="stats()?.totalStudents ?? 0" />
@@ -453,8 +453,6 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     /* ── Tokens / theme vars (mirrors adm-* design) ── */
     :host { --ink: #211B36; --text: #4B4462; --muted: #8B85A0; --faint: #C5BFD8; --border: #ECE9F5; --canvas: #F8F7FF; }
 
-    /* ── KPI row grid (layout delegated to sp-admin-kpi-card) ── */
-    .sp-dash-kpi-row { display:grid;grid-template-columns:repeat(4,1fr);gap:14px }
 
     /* ── Generic card ── */
     .sp-dash-card { background:#fff;border:1px solid var(--border);border-radius:12px }

@@ -14,13 +14,11 @@
 
 <!-- Summary stat cards -->
 @if (!loading() && !error()) {
-  <div class="sp-up-stats">
-    <sp-admin-stat-card label="Total Policies" [value]="totalPolicies()" tone="indigo" />
-    <sp-admin-stat-card label="Active" [value]="activePolicies()" tone="success" />
-    <sp-admin-stat-card
-      label="Default Policy"
-      [value]="defaultPolicy()?.name ?? 'None'"
-      tone="violet" />
+  <div class="sp-admin-kpi-row" style="--sp-admin-kpi-row-cols:3">
+    <sp-admin-kpi-card label="Total Policies" variant="indigo" layout="tile" icon="shield" [value]="totalPolicies()" />
+    <sp-admin-kpi-card label="Active" variant="green" layout="tile" icon="check" [value]="activePolicies()" />
+    <sp-admin-kpi-card label="Default Policy" variant="violet" layout="tile" icon="document"
+      value="Default" [delta]="defaultPolicy()?.name ?? 'None'" />
   </div>
 }
 

@@ -21,7 +21,6 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminSelectComponent,
-  SpAdminStatCardComponent,
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
@@ -51,7 +50,6 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
-    SpAdminStatCardComponent,
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
@@ -61,8 +59,6 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
   ],
   templateUrl: './admin-diagnostics.component.html',
   styles: [`
-    .sp-diag-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
-    @media(min-width:900px){.sp-diag-kpi-strip{grid-template-columns:repeat(4,1fr);}}
     .sp-diag-overview{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:20px;align-items:start;}
     @media(min-width:900px){.sp-diag-overview{grid-template-columns:1.6fr 1fr;}}
     .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

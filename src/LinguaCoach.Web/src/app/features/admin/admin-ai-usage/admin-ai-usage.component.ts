@@ -64,8 +64,6 @@ import { SpAdminGraphCardComponent } from '../../../design-system/admin/componen
   ],
   templateUrl: './admin-ai-usage.component.html',
   styles: [`
-    .sp-au-kpi-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
-    @media(min-width: 900px) { .sp-au-kpi-strip { grid-template-columns: repeat(4, 1fr); } }
     .sp-au-two-col { display: grid; gap: 24px; margin-bottom: 24px; }
     @media(min-width: 1100px) { .sp-au-two-col { grid-template-columns: 1fr 1fr; align-items: start; } }
     .sp-au-num    { text-align: right; white-space: nowrap; }

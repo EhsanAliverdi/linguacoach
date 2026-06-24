@@ -58,15 +58,6 @@ function parseJsonArray(json: string | null | undefined): string[] {
     SpAdminBreakdownBarsComponent,
   ],
   styles: [`
-    .sp-curr-kpi-strip {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 16px 24px 0;
-    }
-    @media (max-width: 800px) {
-      .sp-curr-kpi-strip { grid-template-columns: repeat(2, 1fr); }
-    }
   `],
   template: `
     <sp-admin-page-header
@@ -78,23 +69,11 @@ function parseJsonArray(json: string | null | undefined): string[] {
 
     <!-- ── Coverage summary strip ── -->
     @if (coverageSummary().total > 0) {
-      <div class="sp-curr-kpi-strip" aria-label="Curriculum coverage summary">
-        <sp-admin-kpi-card label="Total objectives" variant="indigo">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-          {{ coverageSummary().total }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Active" [variant]="coverageSummary().active > 0 ? 'green' : 'slate'">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          {{ coverageSummary().active }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="CEFR bands" variant="violet">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          {{ coverageSummary().cefrBands }}
-        </sp-admin-kpi-card>
-        <sp-admin-kpi-card label="Skills covered" variant="amber">
-          <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-          {{ coverageSummary().skills }}
-        </sp-admin-kpi-card>
+      <div class="sp-admin-kpi-row" aria-label="Curriculum coverage summary">
+        <sp-admin-kpi-card label="Total objectives" variant="indigo" layout="tile" icon="book" [value]="coverageSummary().total" />
+        <sp-admin-kpi-card label="Active" [variant]="coverageSummary().active > 0 ? 'green' : 'slate'" layout="tile" icon="check" [value]="coverageSummary().active" />
+        <sp-admin-kpi-card label="CEFR bands" variant="violet" layout="tile" icon="bar-chart" [value]="coverageSummary().cefrBands" />
+        <sp-admin-kpi-card label="Skills covered" variant="amber" layout="tile" icon="target" [value]="coverageSummary().skills" />
       </div>
 
       <!-- Active/total ring + CEFR breakdown strip -->

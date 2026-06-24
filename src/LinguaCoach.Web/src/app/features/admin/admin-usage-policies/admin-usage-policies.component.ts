@@ -30,7 +30,7 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminSectionCardComponent,
   SpAdminSelectComponent,
-  SpAdminStatCardComponent,
+  SpAdminKpiCardComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
 
@@ -57,12 +57,11 @@ import {
     SpAdminPageHeaderComponent,
     SpAdminSectionCardComponent,
     SpAdminSelectComponent,
-    SpAdminStatCardComponent,
+    SpAdminKpiCardComponent,
     SpAdminTableComponent,
   ],
   templateUrl: './admin-usage-policies.component.html',
   styles: [`
-    .sp-up-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
     .sp-up-form-stack { display:flex; flex-direction:column; gap:14px; }
     .sp-up-cb-stack { display:flex; flex-direction:column; gap:10px; }
     .sp-up-actions { display:flex; gap:10px; }
