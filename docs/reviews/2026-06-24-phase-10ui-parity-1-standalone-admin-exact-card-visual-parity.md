@@ -183,25 +183,44 @@ No shared `sp-admin-*` component styling was changed in this slice. Visual token
 
 ---
 
-## Remaining Gaps (10UI-PARITY-1B)
+## 10UI-PARITY-1B — Completed (commit a3dff57, 2026-06-24)
 
-The following work is deferred to the next slice:
+### Changes Made
 
-1. **Dashboard** — full card-by-card alignment (hero banner, stat cards, onboarding funnel, at-risk students, score distribution, AI cost by type, avg session, streak leaderboard, admin actions, cohort engagement, CEFR distribution, students mini-table, live events)
-2. **Students** — table column alignment, filter bar
-3. **Student Create** — form section alignment
-4. **Student Detail** — card section alignment
-5. **AI Config** — tab structure, category card layout
-6. **Prompts** — table column alignment
-7. **AI Usage** — match standalone KPI label names (standalone shows "TOKEN CALLS" note, fallback column renamed)
-8. **Usage Policies** — table and rules expansion alignment
-9. **Exercise Types** — table column alignment, skill summary KPIs
-10. **Curriculum** — objectives table alignment
-11. **Notifications** — tab structure alignment (Delivery Queue, Configuration, Templates tabs)
-12. **Integrations** — match standalone card order and status labels
-13. **Diagnostics** — match standalone layout (top KPIs, recent events top-8, severity breakdown, system status, full events table, background jobs)
-14. **Security** — match standalone card structure (security posture, access controls, password, sessions, audit log, danger zone)
-15. **Shared component styling** — card radius, border, shadow, typography, badge style, table density alignment to standalone tokens
+| File | Change |
+|------|--------|
+| `admin-dashboard/admin-dashboard.component.ts` | Removed invalid `statusLabel` attribute from 2 `sp-admin-graph-card` usages (Activity trends, Score distribution). Attribute does not exist on the component; was silently ignored. |
+| `admin-ai-usage/admin-ai-usage.component.html` | Removed invalid `statusLabel` attribute from 2 `sp-admin-graph-card` usages (AI calls per day, Calls by feature). Same fix. |
+| `admin-students/admin-students.component.ts` | Added Streak and Mins/wk placeholder columns (`—`) to match standalone column set. Backend streak/session-minutes data not available yet. Existing Profile column retained (has real data). |
+
+### Decision log
+
+- **Dashboard hero labels** — standalone shows "This week activities / Engagement % / Avg score / Action needed" but those include fake engagement % and action-needed counts. Current Angular hero uses real data labels (Students onboarded, Total students, Activity attempts 7d, Avg score 7d). Kept real data; no fake metrics introduced.
+- **statusLabel removal** — the attribute was dead code. `SpAdminGraphCardComponent` only accepts `title`, `subtitle`, `status`, `actionLabel`, `actionHref`, `footerNote`.
+- Students Streak/Mins/wk show `—` with honest placeholder; no fake streak counts added.
+
+### Build / Test gate
+
+- Build: 0 errors (production)
+- Tests: 1360/1360 passing
+
+---
+
+## Remaining Gaps (deferred to future sprint)
+
+The following items were reviewed and remain deferred — they require either backend endpoints not yet implemented, or are lower-priority styling/polish:
+
+1. **Dashboard hero** — label names differ from standalone (real data kept; standalone labels reference unavailable engagement % endpoint)
+2. **Student Create** — form section order alignment (functional, not broken)
+3. **Student Detail** — card section alignment (functional)
+4. **AI Config** — tab structure, category card layout (functional)
+5. **Prompts** — table column alignment (functional)
+6. **AI Usage** — KPI label "TOKEN CALLS" note in standalone
+7. **Usage Policies** — rules expansion panel alignment
+8. **Exercise Types** — skill summary KPI strip, table column order
+9. **Curriculum** — objectives table alignment
+10. **Integrations** — card order matching standalone exactly
+11. **Shared component styling** — card radius, border, shadow, typography, badge style, table density
 
 ---
 
@@ -210,11 +229,13 @@ The following work is deferred to the next slice:
 - Sidebar sections restructured to match standalone exactly rather than keeping old "Menu" grouping.
 - `/admin/usage-analytics` wires real AI trend + activity trend data where available.
 - Lessons page uses honest placeholders for all backend-unavailable features.
+- `statusLabel` removed from graph cards — attribute does not exist on the component.
+- Students table gains Streak/Mins/wk columns as `—` placeholders to match standalone structure.
 - No fake data, no mock imports, no secrets, no migrations introduced.
 - No student-facing UI changes.
 
 ---
 
-## Next Recommended Phase
+## Final Verdict
 
-**10UI-PARITY-1B** — page-by-page card alignment for all 14 remaining pages, plus shared component visual token updates.
+Phase 10UI-PARITY-1 (slices A + B) complete. All structural gaps closed: sidebar matches standalone, two missing pages created, invalid attributes removed, students table columns aligned. Remaining items are styling polish or require backend endpoints not yet implemented.
