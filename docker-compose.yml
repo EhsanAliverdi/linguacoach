@@ -24,9 +24,10 @@ services:
       MINIO_ROOT_USER: "${MINIO_ACCESS_KEY:-speakpath}"
       MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY:-speakpath-dev-secret}"
     ports:
-      # API port for the app; console (9001) should NOT be exposed publicly in production.
-      - "9000:9000"
-      - "9001:9001"
+      # API port for the app; console (9002) should NOT be exposed publicly in production.
+      # Host port 9000 is reserved by ZSATunnel (Zscaler) on this machine.
+      - "9010:9000"
+      - "9011:9001"
     volumes:
       - minio_data:/data
     healthcheck:
