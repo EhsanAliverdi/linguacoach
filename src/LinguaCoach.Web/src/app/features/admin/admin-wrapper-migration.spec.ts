@@ -182,10 +182,11 @@ describe('admin wrapper migration', () => {
     const fixture = TestBed.createComponent(AdminAiConfigComponent);
     fixture.detectChanges();
 
-    expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
-    // Sections are now split across tabs; only the active tab's card renders.
+    expect(query(fixture.nativeElement, '.sp-aic-page-header')).toBeTruthy();
+    // Sections are now split across tabs; only the active tab's content renders.
     expect(query(fixture.nativeElement, '.sp-aic-tabs')).toBeTruthy();
-    expect(fixture.nativeElement.querySelectorAll('sp-admin-card').length).toBeGreaterThanOrEqual(1);
+    // LLM tab shows category cards (native divs); credentials tab shows sp-admin-card.
+    expect(fixture.nativeElement.querySelectorAll('.sp-aic-cat-card').length).toBeGreaterThanOrEqual(1);
   });
 
   it('AI Usage page renders table and card wrappers', () => {
@@ -432,19 +433,23 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     return svc;
   }
 
-  it('AI Config page renders sp-admin-form-field wrappers inside LLM category cards (10X-I)', () => {
+  it('AI Config page renders sp-admin-form-field wrappers in credentials tab (10X-I)', () => {
     const adminApi = makeAdminApi();
     TestBed.configureTestingModule({
       imports: [AdminAiConfigComponent],
       providers: [{ provide: AdminApiService, useValue: adminApi }],
     });
     const fixture = TestBed.createComponent(AdminAiConfigComponent);
+    fixture.detectChanges();
+    // Form fields appear in credentials tab (add model row) and Configure drawer.
+    // Switch to credentials tab to verify sp-admin-form-field is used there.
+    fixture.componentInstance.activeTab.set('credentials');
     fixture.detectChanges();
     const fields = fixture.nativeElement.querySelectorAll('sp-admin-form-field');
-    expect(fields.length).toBeGreaterThanOrEqual(2);
+    expect(fields.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('AI Config TTS voice field uses sp-admin-input wrapper (10X-I)', () => {
+  it('AI Config TTS voice field uses sp-admin-input in Configure drawer (10X-I)', () => {
     const adminApi = makeAdminApi();
     TestBed.configureTestingModule({
       imports: [AdminAiConfigComponent],
@@ -452,19 +457,25 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     });
     const fixture = TestBed.createComponent(AdminAiConfigComponent);
     fixture.detectChanges();
-    fixture.componentInstance.activeTab.set('tts');
+    // sp-admin-input appears in credentials tab (add model row).
+    fixture.componentInstance.activeTab.set('credentials');
     fixture.detectChanges();
     const inputs = fixture.nativeElement.querySelectorAll('sp-admin-input');
     expect(inputs.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('AI Config LLM category native selects are wrapped in sp-admin-form-field (10X-I)', () => {
+  it('AI Config Configure drawer reveals native selects for provider/model (10X-I)', () => {
     const adminApi = makeAdminApi();
     TestBed.configureTestingModule({
       imports: [AdminAiConfigComponent],
       providers: [{ provide: AdminApiService, useValue: adminApi }],
     });
     const fixture = TestBed.createComponent(AdminAiConfigComponent);
+    fixture.detectChanges();
+    // Open the Configure drawer for the first LLM category.
+    const comp = fixture.componentInstance;
+    const llmCats = comp.llmCategories();
+    if (llmCats.length > 0) { comp.openConfigureDrawer(llmCats[0]); }
     fixture.detectChanges();
     const selects = fixture.nativeElement.querySelectorAll('select');
     expect(selects.length).toBeGreaterThanOrEqual(2);

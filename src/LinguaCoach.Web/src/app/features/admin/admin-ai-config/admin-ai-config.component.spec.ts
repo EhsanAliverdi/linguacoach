@@ -60,6 +60,9 @@ function makeAdminApi(
     listAiPricingOverrides: jasmine.createSpy('listAiPricingOverrides').and.returnValue(of([])),
     updateAiCategory: jasmine.createSpy('updateAiCategory').and.returnValue(of(CAT_LLM)),
     testAiCategory: jasmine.createSpy('testAiCategory').and.returnValue(of({ ok: true, latencyMs: 200, error: null })),
+    createAiPricingOverride: jasmine.createSpy('createAiPricingOverride').and.returnValue(of({})),
+    updateAiPricingOverride: jasmine.createSpy('updateAiPricingOverride').and.returnValue(of({})),
+    deactivateAiPricingOverride: jasmine.createSpy('deactivateAiPricingOverride').and.returnValue(of(void 0)),
     setProviderApiKey: jasmine.createSpy('setProviderApiKey').and.returnValue(of(PROVIDER)),
     setProviderEndpoint: jasmine.createSpy('setProviderEndpoint').and.returnValue(of(PROVIDER)),
     testProvider: jasmine.createSpy('testProvider').and.returnValue(of(PROVIDER)),
@@ -173,7 +176,7 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders model test chips for each model', async () => {
-    await setup([CAT_LLM], [PROVIDER]);
+    await setup([CAT_LLM], [PROVIDER], 'credentials');
     expect(fixture.nativeElement.textContent).toContain('claude-sonnet-4-6');
     expect(fixture.nativeElement.textContent).toContain('claude-haiku-4-5-20251001');
   });
@@ -393,13 +396,13 @@ describe('AdminAiConfigComponent', () => {
     expect(component.overrideForm()).toBeNull();
   });
 
-  it('saveOverride with empty provider sets error', async () => {
+  it('saveOverride with empty modelName sets error', async () => {
     await setup();
     component.openCreateOverride();
     const f = component.overrideForm()!;
-    component['overrideForm'].set({ ...f, providerName: '', modelName: 'gpt-4o', inputPricePer1KTokens: 0.002, outputPricePer1KTokens: 0.008 });
+    component['overrideForm'].set({ ...f, providerName: '', modelName: '', inputPricePer1KTokens: 0.002, outputPricePer1KTokens: 0.008 });
     component.saveOverride();
-    expect(component.overrideForm()!.error).toContain('Provider and model are required');
+    expect(component.overrideForm()!.error).toContain('Select a model');
   });
 
   it('saveOverride with negative price sets error', async () => {
@@ -431,9 +434,9 @@ describe('AdminAiConfigComponent', () => {
 
   // ── REDESIGN-5 KPI strip and configSummary ────────────────────────────────
 
-  it('renders sp-admin-kpi-card elements for the summary strip', async () => {
+  it('renders kpi tile cards for the summary strip', async () => {
     await setup([CAT_LLM, CAT_TTS], [PROVIDER]);
-    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card');
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-aic-kpi-card');
     expect(cards.length).toBeGreaterThanOrEqual(4);
   });
 

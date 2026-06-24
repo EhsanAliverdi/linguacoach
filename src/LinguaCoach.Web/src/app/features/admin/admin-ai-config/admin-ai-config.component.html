@@ -1,0 +1,576 @@
+<!-- ── Page header ───────────────────────────────────────────────── -->
+<div class="sp-aic-page-header">
+  <div>
+    <h1 class="sp-aic-page-title">AI Configuration</h1>
+    <p class="sp-aic-page-sub">Category-level AI provider config, TTS voices, and provider credentials</p>
+  </div>
+  <button type="button" class="sp-aic-btn-ghost" [disabled]="testAllBusy()" (click)="testAllConnections()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
+  </button>
+</div>
+
+<!-- ── KPI strip ─────────────────────────────────────────────────── -->
+@if (!loading() && !loadError()) {
+  <div class="sp-aic-kpi-strip" aria-label="AI configuration summary">
+    <div class="sp-aic-kpi-card">
+      <div class="sp-aic-kpi-icon" style="background:var(--sp-admin-primary-soft,#EDEBFF)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sp-admin-primary,#5B4BE8)" stroke-width="1.75" aria-hidden="true"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/><path d="M12 10a2 2 0 0 1 2 2"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+      </div>
+      <div class="sp-aic-kpi-body">
+        <div class="sp-aic-kpi-label">LLM CONFIGURED</div>
+        <div class="sp-aic-kpi-value">{{ configSummary().llmConfigured }}/{{ configSummary().llmTotal }}</div>
+      </div>
+    </div>
+    <div class="sp-aic-kpi-card">
+      <div class="sp-aic-kpi-icon" style="background:#F2E9FF">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B45CF0" stroke-width="1.75" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+      </div>
+      <div class="sp-aic-kpi-body">
+        <div class="sp-aic-kpi-label">TTS CONFIGURED</div>
+        <div class="sp-aic-kpi-value">{{ configSummary().ttsConfigured }}/{{ configSummary().ttsTotal }}</div>
+      </div>
+    </div>
+    <div class="sp-aic-kpi-card">
+      <div class="sp-aic-kpi-icon" style="background:var(--sp-admin-success-soft,#E0F6EE)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sp-admin-success,#13B07C)" stroke-width="1.75" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      </div>
+      <div class="sp-aic-kpi-body">
+        <div class="sp-aic-kpi-label">PROVIDERS WITH KEY</div>
+        <div class="sp-aic-kpi-value">{{ configSummary().providersWithKey }}</div>
+      </div>
+    </div>
+    <div class="sp-aic-kpi-card">
+      <div class="sp-aic-kpi-icon" style="background:#FFF8DC">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="1.75" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="sp-aic-kpi-body">
+        <div class="sp-aic-kpi-label">PRICING MODELS</div>
+        <div class="sp-aic-kpi-value">{{ configSummary().pricingModels }}</div>
+      </div>
+    </div>
+  </div>
+}
+
+<sp-admin-page-body>
+@if (loading()) {
+  <sp-admin-loading-state message="Loading AI configuration" />
+} @else if (loadError()) {
+  <sp-admin-error-state title="AI configuration unavailable" [message]="loadError()" />
+} @else {
+
+  <!-- ── Tab bar ──────────────────────────────────────────────────── -->
+  <div class="sp-aic-tabs" role="tablist" aria-label="AI configuration sections">
+    @for (t of tabs; track t.key) {
+      <button
+        type="button"
+        role="tab"
+        class="sp-aic-tab"
+        [class.sp-aic-tab--active]="activeTab() === t.key"
+        [attr.aria-selected]="activeTab() === t.key"
+        (click)="activeTab.set(t.key)">{{ t.label }}</button>
+    }
+  </div>
+
+  <!-- ══ LLM CATEGORIES ═══════════════════════════════════════════ -->
+  @if (activeTab() === 'llm') {
+    <div>
+      <div class="sp-aic-section-header">
+        <p class="sp-aic-section-sub">
+          Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
+        </p>
+        <sp-admin-badge [tone]="configSummary().llmConfigured === configSummary().llmTotal ? 'success' : 'warning'">
+          {{ configSummary().llmConfigured }}/{{ configSummary().llmTotal }} configured
+        </sp-admin-badge>
+      </div>
+
+      <div class="sp-aic-cat-grid">
+        @for (cs of llmCategories(); track cs.item.categoryKey) {
+          <div class="sp-aic-cat-card" [class.sp-aic-cat-card--configured]="isConfigured(cs)">
+            <div class="sp-aic-cat-header">
+              <div class="sp-aic-cat-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sp-admin-primary,#5B4BE8)" stroke-width="1.75" aria-hidden="true"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/><path d="M12 10a2 2 0 0 1 2 2"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+              </div>
+              <div class="sp-aic-cat-meta">
+                <div class="sp-aic-cat-name">{{ cs.item.displayName }}</div>
+                <code class="sp-aic-code-pill">{{ cs.item.categoryKey }}</code>
+              </div>
+              @if (isConfigured(cs)) {
+                <sp-admin-badge tone="success" class="sp-aic-cat-badge">Configured</sp-admin-badge>
+              } @else {
+                <sp-admin-badge tone="warning" class="sp-aic-cat-badge">Not set</sp-admin-badge>
+              }
+            </div>
+            <p class="sp-aic-cat-desc">{{ categoryDesc(cs.item.categoryKey) }}</p>
+            <div class="sp-aic-cat-fields">
+              <div class="sp-aic-cat-field-group">
+                <div class="sp-aic-field-label">PROVIDER</div>
+                <div class="sp-aic-field-value">{{ cs.item.providerName || '—' }}</div>
+              </div>
+              <div class="sp-aic-cat-field-group">
+                <div class="sp-aic-field-label">MODEL</div>
+                <div class="sp-aic-field-value sp-aic-field-mono">{{ cs.item.modelName || '—' }}</div>
+              </div>
+            </div>
+            <div class="sp-aic-cat-actions">
+              <button type="button" class="sp-aic-btn-ghost sp-aic-btn-full" (click)="openConfigureDrawer(cs)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Configure
+              </button>
+              <button type="button" class="sp-aic-btn-ghost" [disabled]="cs.testBusy" (click)="testCategory(cs)">
+                {{ cs.testBusy ? '…' : cs.testResult ? cs.testResult : 'Test' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══ TTS CATEGORIES ═══════════════════════════════════════════ -->
+  @if (activeTab() === 'tts') {
+    <div>
+      <div class="sp-aic-section-header">
+        <p class="sp-aic-section-sub">
+          TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
+        </p>
+        <sp-admin-badge [tone]="configSummary().ttsConfigured > 0 ? 'success' : 'neutral'">
+          {{ configSummary().ttsConfigured }}/{{ configSummary().ttsTotal }} configured
+        </sp-admin-badge>
+      </div>
+
+      <div class="sp-aic-cat-grid">
+        @for (cs of ttsCategories(); track cs.item.categoryKey) {
+          <div class="sp-aic-cat-card" [class.sp-aic-cat-card--configured]="isConfigured(cs)">
+            <div class="sp-aic-cat-header">
+              <div class="sp-aic-cat-icon" style="background:#F2E9FF">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45CF0" stroke-width="1.75" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+              </div>
+              <div class="sp-aic-cat-meta">
+                <div class="sp-aic-cat-name">{{ cs.item.displayName }}</div>
+                <code class="sp-aic-code-pill">{{ cs.item.categoryKey }}</code>
+              </div>
+              @if (isConfigured(cs)) {
+                <sp-admin-badge tone="success" class="sp-aic-cat-badge">Configured</sp-admin-badge>
+              } @else {
+                <sp-admin-badge tone="warning" class="sp-aic-cat-badge">TTS disabled</sp-admin-badge>
+              }
+            </div>
+            <p class="sp-aic-cat-desc">{{ categoryDesc(cs.item.categoryKey) }}</p>
+            <div class="sp-aic-cat-fields sp-aic-cat-fields--3col">
+              <div class="sp-aic-cat-field-group">
+                <div class="sp-aic-field-label">PROVIDER</div>
+                <div class="sp-aic-field-value">{{ cs.item.providerName || '—' }}</div>
+              </div>
+              <div class="sp-aic-cat-field-group">
+                <div class="sp-aic-field-label">MODEL</div>
+                <div class="sp-aic-field-value sp-aic-field-mono">{{ cs.item.modelName || '—' }}</div>
+              </div>
+              <div class="sp-aic-cat-field-group">
+                <div class="sp-aic-field-label">VOICE</div>
+                <div class="sp-aic-field-value">{{ cs.item.voiceName || '—' }}</div>
+              </div>
+            </div>
+            <div class="sp-aic-cat-actions">
+              <button type="button" class="sp-aic-btn-ghost sp-aic-btn-full" (click)="openConfigureDrawer(cs)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Configure
+              </button>
+              <button type="button" class="sp-aic-btn-ghost" [disabled]="cs.testBusy" (click)="testCategory(cs)">
+                {{ cs.testBusy ? '…' : 'Test audio' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══ PROVIDER CREDENTIALS ═════════════════════════════════════ -->
+  @if (activeTab() === 'credentials') {
+    <sp-admin-card title="Provider credentials">
+      <p class="sp-aic-section-sub" style="margin-bottom:16px">
+        One API key per provider applies to all features using it.
+        "Test connection" checks every model with the stored key.
+      </p>
+      <div class="sp-aic-providers-stack">
+        @for (ps of providers(); track ps.catalog.providerName) {
+          <div class="sp-aic-provider-card">
+            <div class="sp-aic-provider-header">
+              <span class="sp-aic-provider-name">{{ ps.catalog.providerName }}</span>
+              @if (ps.catalog.hasApiKey) {
+                <sp-admin-badge tone="success" [dot]="true">Key stored</sp-admin-badge>
+              } @else {
+                <sp-admin-badge tone="neutral" [dot]="true">Env var</sp-admin-badge>
+              }
+              @if (hasEndpointConfig(ps.catalog.providerName) && ps.catalog.apiEndpoint) {
+                <sp-admin-badge tone="info">Endpoint set</sp-admin-badge>
+              }
+              <div class="sp-aic-provider-btns">
+                @if (hasEndpointConfig(ps.catalog.providerName)) {
+                  <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="toggleQwenConfig(ps)">Configure</sp-admin-button>
+                } @else {
+                  <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="toggleKeyEdit(ps)">{{ ps.catalog.hasApiKey ? 'Update key' : 'Set key' }}</sp-admin-button>
+                }
+                <sp-admin-button variant="neutral" appearance="outline" size="sm" [loading]="ps.testBusy" [disabled]="ps.testBusy" (click)="runTest(ps)">Test connection</sp-admin-button>
+              </div>
+            </div>
+            <div class="sp-aic-model-chips">
+              @for (m of ps.catalog.modelTests; track m.modelName) {
+                <sp-admin-badge [tone]="modelChipTone(m)" [dot]="true" [title]="modelChipTitle(m)">
+                  <span class="font-mono">{{ m.modelName }}</span>
+                  @if (hasBeenTested(m) && m.ok) { <span style="opacity:.6;margin-left:4px">{{ m.latencyMs }}ms</span> }
+                  @if (hasBeenTested(m) && !m.ok) { <span style="margin-left:4px">&#x2717;</span> }
+                </sp-admin-badge>
+              }
+            </div>
+            <div class="sp-aic-add-model-row">
+              <sp-admin-form-field label="Add model" style="flex:1;min-width:200px">
+                <sp-admin-input [(ngModel)]="ps.newModelName" placeholder="provider model name" />
+              </sp-admin-form-field>
+              <sp-admin-button variant="secondary" size="sm" [disabled]="ps.addModelBusy || !ps.newModelName.trim()" [loading]="ps.addModelBusy" (click)="addModel(ps)">Add</sp-admin-button>
+              <sp-admin-button variant="secondary" size="sm" [disabled]="ps.testBusy || !ps.newModelName.trim()" (click)="testOneModel(ps)">Test model</sp-admin-button>
+              @if (ps.addModelError) { <p class="sp-aic-field-error">{{ ps.addModelError }}</p> }
+            </div>
+            @if (!hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
+              <div class="sp-aic-key-form">
+                <sp-admin-form-field label="API Key" hint="blank clears and falls back to env var" style="flex:1;min-width:220px">
+                  <sp-admin-input type="password" [(ngModel)]="ps.editKeyValue" [placeholder]="keyPlaceholder(ps.catalog.providerName)" />
+                </sp-admin-form-field>
+                <sp-admin-button [loading]="ps.saveKeyBusy" [disabled]="ps.saveKeyBusy" (click)="saveKey(ps)">Save</sp-admin-button>
+                @if (ps.catalog.hasApiKey) {
+                  <sp-admin-button variant="danger" (click)="clearKey(ps)">Clear key</sp-admin-button>
+                }
+                <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
+                @if (ps.saveKeyError) { <sp-admin-alert variant="error" style="width:100%">{{ ps.saveKeyError }}</sp-admin-alert> }
+              </div>
+            }
+            @if (hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
+              <div class="sp-aic-qwen-form">
+                <p class="sp-aic-section-sub" style="margin-bottom:10px">Qwen uses a workspace-specific endpoint. Find these values in Alibaba Cloud Model Studio.</p>
+                <div class="sp-aic-qwen-fields">
+                  <sp-admin-form-field label="API Key" hint="sk-... from your workspace">
+                    <sp-admin-input type="password" [(ngModel)]="ps.editKeyValue" placeholder="sk-..." />
+                  </sp-admin-form-field>
+                  <sp-admin-form-field label="API Host" hint="OpenAI-compatible endpoint. Leave blank to use global DashScope.">
+                    <sp-admin-input [(ngModel)]="ps.editEndpointValue" placeholder="https://ws-xxx.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1" />
+                  </sp-admin-form-field>
+                </div>
+                <div class="sp-aic-qwen-actions">
+                  <sp-admin-button [loading]="ps.saveKeyBusy || ps.saveEndpointBusy" [disabled]="ps.saveKeyBusy || ps.saveEndpointBusy" (click)="saveQwenConfig(ps)">Save</sp-admin-button>
+                  <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
+                  @if (ps.saveKeyError || ps.saveEndpointError) {
+                    <sp-admin-alert variant="error" style="width:100%">{{ ps.saveKeyError || ps.saveEndpointError }}</sp-admin-alert>
+                  }
+                </div>
+                @if (ps.catalog.hasApiKey || ps.catalog.apiEndpoint) {
+                  <div class="sp-aic-current-summary">
+                    @if (ps.catalog.hasApiKey) { <div><strong>Key:</strong> stored &#x2713;</div> }
+                    @if (ps.catalog.apiEndpoint) { <div><strong>Endpoint:</strong> <span class="sp-aic-field-mono" style="word-break:break-all">{{ ps.catalog.apiEndpoint }}</span></div> }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </sp-admin-card>
+  }
+
+  <!-- ══ MODEL PRICING ════════════════════════════════════════════ -->
+  @if (activeTab() === 'pricing') {
+    <div>
+      <div class="sp-aic-section-header" style="margin-bottom:16px">
+        <p class="sp-aic-section-sub">
+          <strong style="color:var(--sp-admin-text,#211B36)">Config pricing</strong> — Read from openrouter.com. Add overrides to change runtime pricing without redeploying.
+        </p>
+        <button type="button" class="sp-aic-btn-primary" (click)="openCreateOverride()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add override
+        </button>
+      </div>
+
+      @if (pricing().length === 0) {
+        <sp-admin-empty-state title="No pricing configured" message="Add pricing entries to appsettings.json under the provider pricing sections." />
+      } @else {
+        <div class="sp-aic-provider-pricing-list">
+          @for (group of pricingByProvider(); track group.provider) {
+            <div class="sp-aic-pricing-provider-card">
+              <div class="sp-aic-pricing-provider-header">
+                <span class="sp-aic-pricing-provider-name">{{ group.provider | uppercase }}</span>
+                <span class="sp-aic-muted-badge">{{ group.rows.length }} models</span>
+              </div>
+              <table class="sp-aic-pricing-table">
+                <thead>
+                  <tr class="sp-aic-table-head-row">
+                    <th class="sp-aic-th sp-aic-th-left">Model</th>
+                    <th class="sp-aic-th sp-aic-th-right">Input /K</th>
+                    <th class="sp-aic-th sp-aic-th-right">Output /K</th>
+                    <th class="sp-aic-th sp-aic-th-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (prow of group.rows; track prow.modelName; let last = $last) {
+                    <tr [class.sp-aic-table-row-last]="last" class="sp-aic-table-row">
+                      <td class="sp-aic-td sp-aic-td-mono">{{ prow.modelName }}</td>
+                      <td class="sp-aic-td sp-aic-td-right sp-aic-td-mono">${{ prow.inputPer1KTokens.toFixed(5) }}</td>
+                      <td class="sp-aic-td sp-aic-td-right sp-aic-td-mono">${{ prow.outputPer1KTokens.toFixed(5) }}</td>
+                      <td class="sp-aic-td sp-aic-td-center">
+                        @if (prow.isConfigured) {
+                          <sp-admin-badge tone="success">Configured</sp-admin-badge>
+                        } @else {
+                          <sp-admin-badge tone="warning">Missing</sp-admin-badge>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Pricing overrides -->
+      <div class="sp-aic-overrides-card" aria-label="Pricing overrides">
+        <div class="sp-aic-overrides-header">
+          <div>
+            <div class="sp-aic-overrides-title">Pricing overrides</div>
+            <div class="sp-aic-section-sub" style="margin-top:2px">Overrides take precedence over config at runtime. Active overrides with a valid effective range are applied.</div>
+          </div>
+          <span [class]="overrides().length ? 'sp-aic-warn-badge' : 'sp-aic-muted-badge'">{{ overrides().length }} active</span>
+        </div>
+
+        @if (overrides().length === 0) {
+          <div class="sp-aic-overrides-empty">
+            <div class="sp-aic-empty-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--sp-admin-muted,#8B85A0)" stroke-width="1.5" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="sp-aic-empty-title">No overrides</div>
+            <div class="sp-aic-empty-sub">Config pricing is used. Add an override to change runtime pricing.</div>
+          </div>
+        } @else {
+          <table class="sp-aic-pricing-table">
+            <thead>
+              <tr class="sp-aic-table-head-row" style="background:#FAFAFE">
+                @for (h of overrideTableHeaders; track h) {
+                  <th class="sp-aic-th sp-aic-th-left">{{ h }}</th>
+                }
+                <th class="sp-aic-th"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ovr of overrides(); track ovr.id; let last = $last) {
+                <tr class="sp-aic-table-row" [class.sp-aic-table-row-last]="last" [class.sp-aic-row-inactive]="!ovr.isActive">
+                  <td class="sp-aic-td sp-aic-td-mono">{{ ovr.modelName }}</td>
+                  <td class="sp-aic-td"><sp-admin-badge tone="neutral">{{ ovr.providerName }}</sp-admin-badge></td>
+                  <td class="sp-aic-td sp-aic-td-right sp-aic-td-mono" style="color:var(--sp-admin-warn-ink,#D97706)">${{ ovr.inputPricePer1KTokens.toFixed(5) }}</td>
+                  <td class="sp-aic-td sp-aic-td-right sp-aic-td-mono" style="color:var(--sp-admin-warn-ink,#D97706)">${{ ovr.outputPricePer1KTokens.toFixed(5) }}</td>
+                  <td class="sp-aic-td" style="font-size:12px;color:var(--sp-admin-muted,#8B85A0)">
+                    {{ ovr.effectiveFromUtc ? (ovr.effectiveFromUtc | date:'yyyy-MM-dd':'UTC') : 'Always' }}
+                  </td>
+                  <td class="sp-aic-td" style="font-size:12px;color:var(--sp-admin-muted,#8B85A0);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ovr.notes || '—' }}</td>
+                  <td class="sp-aic-td sp-aic-td-right">
+                    @if (ovr.isActive) {
+                      <div style="display:flex;gap:6px;justify-content:flex-end">
+                        <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="openEditOverride(ovr)">Edit</sp-admin-button>
+                        <sp-admin-button variant="danger" appearance="ghost" size="sm"
+                          [loading]="deactivateBusy() === ovr.id" [disabled]="deactivateBusy() === ovr.id"
+                          (click)="deactivateOverride(ovr.id)">Deactivate</sp-admin-button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══ RATE LIMITS ══════════════════════════════════════════════ -->
+  @if (activeTab() === 'rate-limits') {
+    <sp-admin-card title="Rate limits and quotas">
+      <div class="sp-aic-not-impl" aria-label="Rate limits not implemented">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#8B85A0;flex-shrink:0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <div class="sp-aic-not-impl-title">Backend not available yet</div>
+          <div class="sp-aic-not-impl-body">
+            Real-time rate limit usage (requests per minute, tokens per day, daily cost cap) requires a backend endpoint that is not yet implemented.
+            Cost and token usage totals are visible on the <a href="/admin/usage" style="color:var(--sp-admin-primary,#5B4BE8);text-decoration:underline">AI Usage</a> page.
+          </div>
+        </div>
+      </div>
+    </sp-admin-card>
+  }
+
+}
+</sp-admin-page-body>
+
+<!-- ══ CONFIGURE LLM / TTS SLIDE-OVER ══════════════════════════ -->
+<sp-admin-slide-over
+  [open]="!!configuringCategory()"
+  [title]="configuringCategory()?.item?.displayName ?? ''"
+  [subtitle]="configuringCategory()?.item?.categoryKey ?? ''"
+  size="md"
+  [closeOnBackdrop]="true"
+  (closed)="closeConfigureDrawer()">
+
+  @if (configuringCategory(); as cs) {
+    <div class="sp-aic-drawer-callout">{{ categoryDesc(cs.item.categoryKey) }}</div>
+
+    <div class="sp-aic-drawer-form">
+      <div class="sp-aic-drawer-field-group">
+        <label class="sp-aic-drawer-label">Provider</label>
+        <select class="sp-aic-select" [(ngModel)]="cs.editingProvider" (ngModelChange)="onCategoryProviderChange(cs, $event)">
+          <option [ngValue]="null">-- inherit --</option>
+          <option value="fake">fake (disable)</option>
+          @for (p of providers(); track p.catalog.providerName) {
+            <option [value]="p.catalog.providerName">{{ p.catalog.providerName }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sp-aic-drawer-field-group">
+        <label class="sp-aic-drawer-label">Model</label>
+        <select class="sp-aic-select sp-aic-select-mono" [(ngModel)]="cs.editingModel" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'">
+          <option [ngValue]="null">-- inherit --</option>
+          @for (m of modelsFor(cs.editingProvider ?? ''); track m) {
+            <option [value]="m">{{ m }}</option>
+          }
+        </select>
+      </div>
+
+      @if (isTtsKey(cs.item.categoryKey)) {
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">Voice</label>
+          <sp-admin-input [(ngModel)]="cs.editingVoice" [disabled]="!cs.editingProvider || cs.editingProvider === 'fake'" placeholder="e.g. onyx" />
+          <div class="sp-aic-drawer-hint">Leave blank to disable TTS for this category (returns 503).</div>
+        </div>
+      }
+
+      <div class="sp-aic-drawer-resolution">
+        <strong style="color:var(--sp-admin-text,#211B36)">Resolution order:</strong>
+        {{ cs.item.displayName }} &#x2192; Default LLM &#x2192; 503 error
+      </div>
+    </div>
+
+    @if (cs.error) {
+      <sp-admin-alert variant="error">{{ cs.error }}</sp-admin-alert>
+    }
+  }
+
+  <div slot="footer" style="display:flex;gap:10px;width:100%">
+    <sp-admin-button
+      style="flex:1"
+      [loading]="configuringCategory()?.saving ?? false"
+      [disabled]="configuringCategory()?.saving ?? false"
+      (click)="saveConfigureDrawer()">
+      {{ configuringCategory()?.saved ? 'Saved' : 'Save changes' }}
+    </sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="ghost" (click)="closeConfigureDrawer()">Cancel</sp-admin-button>
+  </div>
+</sp-admin-slide-over>
+
+<!-- ══ ADD / EDIT PRICING OVERRIDE SLIDE-OVER ══════════════════ -->
+<sp-admin-slide-over
+  [open]="!!overrideForm()"
+  [title]="overrideForm()?.mode === 'create' ? 'Add pricing override' : 'Edit pricing override'"
+  subtitle="Overrides take precedence over config pricing at runtime"
+  size="md"
+  [closeOnBackdrop]="true"
+  (closed)="cancelOverrideForm()">
+
+  @if (overrideForm(); as f) {
+    <div class="sp-aic-drawer-warn-callout">
+      Overrides apply at runtime without a redeploy. Set an effective date range to auto-expire them.
+    </div>
+
+    <div class="sp-aic-drawer-form">
+      @if (f.mode === 'create') {
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">Model <span class="sp-aic-required">*</span></label>
+          <select class="sp-aic-select" [(ngModel)]="f.modelName" (ngModelChange)="onOverrideModelChange(f, $event)">
+            <option value="">-- select a model --</option>
+            @for (group of pricingByProvider(); track group.provider) {
+              <optgroup [label]="group.provider | uppercase">
+                @for (prow of group.rows; track prow.modelName) {
+                  <option [value]="prow.modelName">{{ prow.modelName }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+        </div>
+
+        @if (f.modelName && baseConfigPricing(f.modelName); as base) {
+          <div class="sp-aic-config-price-hint">
+            Config input: <strong class="sp-aic-mono">${{ base.input }}</strong>
+            &nbsp;&nbsp;Config output: <strong class="sp-aic-mono">${{ base.output }}</strong>
+          </div>
+        }
+      } @else {
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">Model</label>
+          <div class="sp-aic-field-value-readonly sp-aic-field-mono">{{ f.modelName }}</div>
+        </div>
+      }
+
+      <div class="sp-aic-drawer-row">
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">Input price / 1K tokens <span class="sp-aic-required">*</span></label>
+          <div class="sp-aic-price-input-wrap">
+            <span class="sp-aic-price-prefix">$</span>
+            <input class="sp-aic-select sp-aic-price-input" type="number" step="0.00001" min="0"
+              [(ngModel)]="f.inputPricePer1KTokens" placeholder="0.00100" />
+          </div>
+        </div>
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">Output price / 1K tokens <span class="sp-aic-required">*</span></label>
+          <div class="sp-aic-price-input-wrap">
+            <span class="sp-aic-price-prefix">$</span>
+            <input class="sp-aic-select sp-aic-price-input" type="number" step="0.00001" min="0"
+              [(ngModel)]="f.outputPricePer1KTokens" placeholder="0.00300" />
+          </div>
+        </div>
+      </div>
+
+      <div class="sp-aic-drawer-divider"></div>
+      <div class="sp-aic-drawer-section-title">
+        Effective date range
+        <span class="sp-aic-drawer-section-hint">(optional -- blank = always active)</span>
+      </div>
+
+      <div class="sp-aic-drawer-row">
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">From</label>
+          <input class="sp-aic-select" type="date" [(ngModel)]="f.effectiveFromUtc" />
+        </div>
+        <div class="sp-aic-drawer-field-group">
+          <label class="sp-aic-drawer-label">To</label>
+          <input class="sp-aic-select" type="date" [(ngModel)]="f.effectiveToUtc" />
+        </div>
+      </div>
+
+      <div class="sp-aic-drawer-field-group">
+        <label class="sp-aic-drawer-label">Note <span class="sp-aic-drawer-section-hint">(optional)</span></label>
+        <input class="sp-aic-select" type="text" [(ngModel)]="f.notes" placeholder="e.g. Negotiated rate, valid Q3 2026" />
+      </div>
+
+      @if (f.error) {
+        <sp-admin-alert variant="error">{{ f.error }}</sp-admin-alert>
+      }
+    </div>
+  }
+
+  <div slot="footer" style="display:flex;gap:10px;width:100%">
+    <sp-admin-button
+      style="flex:1"
+      [loading]="overrideForm()?.busy ?? false"
+      [disabled]="overrideForm()?.busy ?? false"
+      (click)="saveOverride()">
+      {{ overrideForm()?.mode === 'create' ? 'Save override' : 'Save changes' }}
+    </sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="ghost" (click)="cancelOverrideForm()">Cancel</sp-admin-button>
+  </div>
+</sp-admin-slide-over>
