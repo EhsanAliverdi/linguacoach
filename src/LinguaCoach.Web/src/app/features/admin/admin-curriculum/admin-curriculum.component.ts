@@ -148,11 +148,11 @@ function parseJsonArray(json: string | null | undefined): string[] {
           @if (loading()) {
             <sp-admin-loading-state message="Loading objectives" />
           } @else if (objectives().length === 0) {
-            <p style="padding:16px;color:#64748b">No objectives found.</p>
+            <p style="padding:16px;color:#8B85A0">No objectives found.</p>
           } @else {
             <table>
               <thead>
-                <tr style="text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">
+                <tr style="text-align:left;color:#8B85A0;border-bottom:1px solid #e2e8f0">
                   <th style="padding:12px">Objective</th>
                   <th style="padding:12px">CEFR</th>
                   <th style="padding:12px">Skill</th>
@@ -166,8 +166,8 @@ function parseJsonArray(json: string | null | undefined): string[] {
                   <tr style="border-bottom:1px solid #f1f5f9">
                     <td style="padding:12px;min-width:260px">
                       <strong>{{ obj.title }}</strong>
-                      <div style="color:#64748b;font-size:12px">{{ obj.key }}</div>
-                      <div style="color:#64748b;font-size:12px;max-width:320px">{{ obj.description }}</div>
+                      <div style="color:#8B85A0;font-size:12px">{{ obj.key }}</div>
+                      <div style="color:#8B85A0;font-size:12px;max-width:320px">{{ obj.description }}</div>
                     </td>
                     <td style="padding:12px">
                       <span style="font-weight:600">{{ obj.cefrLevel }}</span>
@@ -175,7 +175,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
                     <td style="padding:12px;text-transform:capitalize">
                       {{ obj.primarySkill }}
                       @if (parseJsonArray(obj.secondarySkillsJson).length) {
-                        <div style="color:#64748b;font-size:12px">+ {{ parseJsonArray(obj.secondarySkillsJson).join(', ') }}</div>
+                        <div style="color:#8B85A0;font-size:12px">+ {{ parseJsonArray(obj.secondarySkillsJson).join(', ') }}</div>
                       }
                     </td>
                     <td style="padding:12px">{{ obj.difficultyBand }}/5</td>
@@ -183,8 +183,8 @@ function parseJsonArray(json: string | null | undefined): string[] {
                       <sp-admin-badge [tone]="obj.isActive ? 'success' : 'neutral'">
                         {{ obj.isActive ? 'Active' : 'Inactive' }}
                       </sp-admin-badge>
-                      @if (obj.isReviewable) { <div style="font-size:11px;color:#64748b">Reviewable</div> }
-                      @if (obj.isExamInspired) { <div style="font-size:11px;color:#64748b">Exam-inspired</div> }
+                      @if (obj.isReviewable) { <div style="font-size:11px;color:#8B85A0">Reviewable</div> }
+                      @if (obj.isExamInspired) { <div style="font-size:11px;color:#8B85A0">Exam-inspired</div> }
                     </td>
                     <td style="padding:12px;white-space:nowrap">
                       <sp-admin-button variant="ghost" size="sm" type="button" (click)="startEdit(obj)">Edit</sp-admin-button>
@@ -300,7 +300,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
       <!-- ── Routing preview ── -->
       @if (view() === 'preview') {
         <sp-admin-card title="Routing preview" style="display:block;max-width:640px">
-          <p style="color:#64748b;font-size:14px;margin-bottom:16px">
+          <p style="color:#8B85A0;font-size:14px;margin-bottom:16px">
             Test routing without generating AI content or mutating any student state.
           </p>
           <div style="display:grid;gap:14px">
@@ -353,9 +353,9 @@ function parseJsonArray(json: string | null | undefined): string[] {
                   <div><strong>Target CEFR:</strong> {{ previewResult()!.targetCefrLevel }}</div>
                   <div><strong>Objective:</strong>
                     @if (previewResult()!.curriculumObjectiveKey) {
-                      {{ previewResult()!.curriculumObjectiveTitle }} <span style="color:#64748b">({{ previewResult()!.curriculumObjectiveKey }})</span>
+                      {{ previewResult()!.curriculumObjectiveTitle }} <span style="color:#8B85A0">({{ previewResult()!.curriculumObjectiveKey }})</span>
                     } @else {
-                      <span style="color:#64748b">None matched</span>
+                      <span style="color:#8B85A0">None matched</span>
                     }
                   </div>
                   <div><strong>Routing reason:</strong> {{ previewResult()!.routingReason }}</div>
@@ -373,7 +373,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
                     </div>
                   }
                   @if (previewResult()!.explanation) {
-                    <div style="color:#475569"><strong>Explanation:</strong> {{ previewResult()!.explanation }}</div>
+                    <div style="color:#4B4462"><strong>Explanation:</strong> {{ previewResult()!.explanation }}</div>
                   }
                   @for (warning of previewResult()!.warnings; track warning) {
                     <div style="color:#b45309;background:#fffbeb;padding:6px 10px;border-radius:4px;font-size:13px">{{ warning }}</div>

@@ -64,28 +64,28 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
   ],
   templateUrl: './admin-notifications.component.html',
   styles: [`
-    .sp-notif-tab-bar { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 1px solid var(--sp-admin-border, #e5e7eb); }
-    .sp-notif-tab { padding: 8px 16px; font-size: 13px; font-weight: 500; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; color: var(--sp-admin-muted, #6b7280); transition: color 0.12s, border-color 0.12s; }
-    .sp-notif-tab:hover { color: var(--sp-admin-text, #0f172a); }
+    .sp-notif-tab-bar { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 1px solid var(--sp-admin-border, #ECE9F5); }
+    .sp-notif-tab { padding: 8px 16px; font-size: 13px; font-weight: 600; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; color: var(--sp-admin-muted, #8B85A0); transition: color 0.12s, border-color 0.12s; }
+    .sp-notif-tab:hover { color: var(--sp-admin-text, #211B36); }
     .sp-notif-tab--active { border-bottom-color: var(--sp-admin-primary, #5B4BE8); color: var(--sp-admin-primary, #5B4BE8); }
     .sp-notif-kpi-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
     @media(min-width: 900px) { .sp-notif-kpi-strip { grid-template-columns: repeat(4, 1fr); } }
     .sp-notif-channel-grid { display: grid; gap: 24px; margin-bottom: 24px; }
     @media(min-width: 900px) { .sp-notif-channel-grid { grid-template-columns: 1fr 1fr; } }
-    .sp-notif-config-meta { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); margin-top: 4px; }
-    .sp-notif-config-note { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); margin-top: 12px; }
-    .sp-notif-source-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 12px; color: var(--sp-admin-muted, #9ca3af); }
+    .sp-notif-config-meta { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 4px; }
+    .sp-notif-config-note { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 12px; }
+    .sp-notif-source-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 12px; color: var(--sp-admin-muted, #8B85A0); }
     .sp-notif-source-row button { margin-left: auto; font-size: 12px; color: var(--sp-admin-primary, #5B4BE8); background: none; border: none; cursor: pointer; }
     .sp-notif-source-row button:hover { text-decoration: underline; }
     .sp-notif-field-row { display: grid; gap: 16px; margin-bottom: 16px; }
     @media(min-width: 700px) { .sp-notif-field-row { grid-template-columns: 1fr 1fr; } }
     .sp-notif-checkbox-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
     .sp-notif-save-row { margin-top: 16px; }
-    .sp-notif-save-msg-ok  { font-size: 13px; color: var(--sp-admin-green, #16a34a); margin-top: 8px; }
+    .sp-notif-save-msg-ok  { font-size: 13px; color: var(--sp-admin-green, #13B07C); margin-top: 8px; }
     .sp-notif-save-msg-err { font-size: 13px; color: var(--sp-admin-danger, #dc2626); margin-top: 8px; }
     .sp-notif-outbox-actions { display: flex; gap: 8px; }
-    .sp-notif-failed-only { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sp-admin-muted, #6b7280); cursor: pointer; }
-    .sp-notif-sms-note { font-size: 12px; color: var(--sp-admin-muted, #9ca3af); margin-top: 8px; }
+    .sp-notif-failed-only { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sp-admin-muted, #8B85A0); cursor: pointer; }
+    .sp-notif-sms-note { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 8px; }
   `],
 })
 export class AdminNotificationsComponent implements OnInit {

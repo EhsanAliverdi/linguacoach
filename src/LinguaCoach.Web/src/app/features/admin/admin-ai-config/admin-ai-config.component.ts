@@ -507,7 +507,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       <!-- ── Section 5: Rate Limits — Not implemented ─────────────────────── -->
       <sp-admin-card title="Rate limits and quotas">
         <div class="sp-aic-not-impl" aria-label="Rate limits not implemented">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#94a3b8;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#8B85A0;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <div>
             <div class="sp-aic-not-impl-title">Backend not available yet</div>
             <div class="sp-aic-not-impl-body">
@@ -535,8 +535,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
       align-items: flex-start;
       padding: 4px 0;
     }
-    .sp-aic-not-impl-title { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
-    .sp-aic-not-impl-body { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+    .sp-aic-not-impl-title { font-size: 13px; font-weight: 600; color: #8B85A0; margin-bottom: 4px; }
+    .sp-aic-not-impl-body { font-size: 13px; color: #8B85A0; line-height: 1.5; }
     .sp-adm-native-select{width:100%;height:36px;border:1.5px solid #E2DEF0;border-radius:8px;padding:0 12px;font-size:13.5px;background:#fff;color:#211B36;box-sizing:border-box;font-family:inherit;}
     .sp-adm-native-select:disabled{opacity:0.55;cursor:not-allowed;background:#FBFAFE;}
     .sp-adm-native-select:focus{outline:none;border-color:#5B4BE8;}

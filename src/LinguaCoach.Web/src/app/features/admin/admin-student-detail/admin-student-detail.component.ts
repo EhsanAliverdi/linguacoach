@@ -1027,7 +1027,7 @@ interface StudentEditForm {
     .sp-sd-hero-name{font-size:20px;font-weight:800;color:var(--sp-admin-text,#211B36);line-height:1.2;margin-bottom:3px;letter-spacing:-0.025em;}
     .sp-sd-hero-email{font-size:13.5px;color:var(--sp-admin-text-muted,#8B85A0);margin-bottom:10px;}
     .sp-sd-hero-badges{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
-    .sp-sd-hero-chip{font-size:12px;font-weight:600;color:var(--sp-admin-text-muted,#64748B);background:var(--sp-admin-surface-subtle,#FBFAFE);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:99px;padding:2px 10px;}
+    .sp-sd-hero-chip{font-size:12px;font-weight:600;color:var(--sp-admin-text-muted,#8B85A0);background:var(--sp-admin-surface-subtle,#FBFAFE);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:99px;padding:2px 10px;}
     .sp-sd-hero-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-left:auto;}
     @media(max-width:800px){.sp-sd-hero{flex-direction:column;}.sp-sd-hero-actions{margin-left:0;}}
 
@@ -1037,7 +1037,7 @@ interface StudentEditForm {
     @media(max-width:600px){.sp-admin-kpi-strip{grid-template-columns:1fr;}}
     .sp-admin-pool-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
     @media(max-width:700px){.sp-admin-pool-grid{grid-template-columns:1fr;}}
-    .sp-admin-pool-source-title{font-size:13px;font-weight:800;color:var(--sp-admin-text-muted,#64748B);margin-bottom:12px;}
+    .sp-admin-pool-source-title{font-size:13px;font-weight:800;color:var(--sp-admin-text-muted,#8B85A0);margin-bottom:12px;}
     .sp-admin-header-row{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
     .sp-admin-section-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;}
     .sp-admin-section-header-row .sp-admin-card-title{margin-bottom:0;}
@@ -1048,29 +1048,29 @@ interface StudentEditForm {
     .sp-admin-danger-link{color:#DC2626;}
     .sp-admin-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
     .sp-admin-detail-card{padding:20px;}
-    .sp-admin-card-title{font-size:16px;font-weight:800;color:#0F172A;margin-bottom:14px;}
+    .sp-admin-card-title{font-size:16px;font-weight:800;color:#211B36;margin-bottom:14px;}
     .sp-admin-detail-list{display:grid;gap:12px;}
-    .sp-admin-detail-list dt{font-size:12px;font-weight:800;color:#64748B;margin-bottom:2px;}
-    .sp-admin-detail-list dd{font-size:14px;color:#0F172A;}
+    .sp-admin-detail-list dt{font-size:12px;font-weight:800;color:#8B85A0;margin-bottom:2px;}
+    .sp-admin-detail-list dd{font-size:14px;color:#211B36;}
     .sp-admin-memory{display:grid;gap:16px;}
-    .sp-admin-memory h3{font-size:12px;font-weight:800;color:#64748B;margin-bottom:6px;}
-    .sp-admin-memory p{font-size:14px;color:#0F172A;}
-    .sp-admin-memory ul{margin:0;padding-left:18px;font-size:14px;color:#0F172A;}
+    .sp-admin-memory h3{font-size:12px;font-weight:800;color:#8B85A0;margin-bottom:6px;}
+    .sp-admin-memory p{font-size:14px;color:#211B36;}
+    .sp-admin-memory ul{margin:0;padding-left:18px;font-size:14px;color:#211B36;}
     .sp-admin-skill-tags{display:flex;flex-wrap:wrap;gap:8px;}
     .sp-admin-wide{grid-column:1/-1;}
     .sp-admin-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:120;}
-    .sp-admin-modal{position:fixed;right:24px;top:76px;bottom:24px;z-index:121;width:min(720px,calc(100vw - 48px));overflow:auto;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.22);}
+    .sp-admin-modal{position:fixed;right:24px;top:76px;bottom:24px;z-index:121;width:min(720px,calc(100vw - 48px));overflow:auto;background:#fff;border:1px solid #ECE9F5;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.22);}
     .sp-admin-modal-header{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid #E2E8F0;}
-    .sp-admin-modal-header h2{font-size:18px;font-weight:800;color:#0F172A;}
-    .sp-admin-modal-header p{font-size:13px;color:#64748B;margin-top:2px;}
-    .sp-admin-modal-header button{width:34px;height:34px;border-radius:9px;border:1px solid #E2E8F0;background:#fff;color:#64748B;cursor:pointer;display:grid;place-items:center;}
+    .sp-admin-modal-header h2{font-size:18px;font-weight:800;color:#211B36;}
+    .sp-admin-modal-header p{font-size:13px;color:#8B85A0;margin-top:2px;}
+    .sp-admin-modal-header button{width:34px;height:34px;border-radius:9px;border:1px solid #ECE9F5;background:#fff;color:#8B85A0;cursor:pointer;display:grid;place-items:center;}
     .sp-admin-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:22px;}
-    .sp-admin-edit-grid label span{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#475569;}
+    .sp-admin-edit-grid label span{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#8B85A0;}
     .sp-admin-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:8px;}
     .sp-adm-prefs-list{display:grid;gap:14px;}
-    .sp-adm-prefs-list dt{font-size:12px;font-weight:800;color:#64748B;margin-bottom:2px;}
-    .sp-adm-prefs-list dd{font-size:14px;color:#0F172A;}
-    .sp-adm-prefs-list-ul{margin:0;padding-left:18px;font-size:14px;color:#0F172A;}
+    .sp-adm-prefs-list dt{font-size:12px;font-weight:800;color:#8B85A0;margin-bottom:2px;}
+    .sp-adm-prefs-list dd{font-size:14px;color:#211B36;}
+    .sp-adm-prefs-list-ul{margin:0;padding-left:18px;font-size:14px;color:#211B36;}
     .sp-admin-cefr-row{display:flex;align-items:center;gap:8px;}
     .sp-admin-cefr-hint{font-size:11px;color:#94A3B8;margin-top:4px;}
     .sp-admin-audit-change{display:flex;align-items:center;gap:4px;font-size:13px;}
@@ -1089,9 +1089,9 @@ interface StudentEditForm {
     .sp-sd-danger-rows{display:flex;flex-direction:column;gap:0;}
     .sp-sd-danger-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-top:1px solid var(--sp-admin-border,#ECE9F5);}
     .sp-sd-danger-row:first-child{border-top:none;}
-    .sp-sd-danger-row-label{font-size:14px;font-weight:700;color:var(--sp-admin-text,#0F172A);margin-bottom:3px;}
-    .sp-sd-danger-row-sub{font-size:12.5px;color:var(--sp-admin-text-muted,#64748B);}
-    .sp-sd-danger-note{font-size:12px;color:var(--sp-admin-text-muted,#64748B);margin-top:12px;font-style:italic;}
+    .sp-sd-danger-row-label{font-size:14px;font-weight:700;color:var(--sp-admin-text,#211B36);margin-bottom:3px;}
+    .sp-sd-danger-row-sub{font-size:12.5px;color:var(--sp-admin-text-muted,#8B85A0);}
+    .sp-sd-danger-note{font-size:12px;color:var(--sp-admin-text-muted,#8B85A0);margin-top:12px;font-style:italic;}
   `],
 })
 export class AdminStudentDetailComponent implements OnInit {

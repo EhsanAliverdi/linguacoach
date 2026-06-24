@@ -36,9 +36,9 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
     @media(min-width: 700px) { .sp-les-settings-grid { grid-template-columns: 1fr 1fr; } }
     .sp-les-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--sp-admin-border, #ECE9F5); }
     .sp-les-toggle-row:last-child { border-bottom: none; }
-    .sp-les-toggle-label { font-size: 13px; font-weight: 500; color: var(--sp-admin-text, #0F172A); }
+    .sp-les-toggle-label { font-size: 13px; font-weight: 500; color: var(--sp-admin-text, #211B36); }
     .sp-les-generate-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-    .sp-les-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: var(--sp-admin-muted, #6b7280); }
+    .sp-les-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: var(--sp-admin-muted, #8B85A0); }
   `],
   template: `
     <sp-admin-page-header
@@ -49,7 +49,7 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
 
       <!-- Lesson generation card -->
       <sp-admin-card title="Lesson generation">
-        <p style="font-size:13px;color:var(--sp-admin-muted,#6b7280);margin-bottom:16px;">
+        <p style="font-size:13px;color:var(--sp-admin-muted,#8B85A0);margin-bottom:16px;">
           Generate lessons for student
         </p>
         <div class="sp-les-generate-row">
@@ -58,7 +58,7 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
           </sp-admin-button>
         </div>
         @if (generateStatus()) {
-          <p style="font-size:13px;color:var(--sp-admin-muted,#6b7280);">{{ generateStatus() }}</p>
+          <p style="font-size:13px;color:var(--sp-admin-muted,#8B85A0);">{{ generateStatus() }}</p>
         }
       </sp-admin-card>
 
@@ -72,7 +72,7 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
 
       <!-- Lesson buffer settings -->
       <sp-admin-card title="Lesson Buffer Settings">
-        <p style="font-size:13px;color:var(--sp-admin-muted,#6b7280);margin-bottom:16px;">
+        <p style="font-size:13px;color:var(--sp-admin-muted,#8B85A0);margin-bottom:16px;">
           Control background generation of ready lessons and TTS audio.
         </p>
         <div class="sp-les-settings-grid">
@@ -123,7 +123,7 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
         <div style="margin-top:16px;">
           <sp-admin-button variant="primary" size="sm" (clicked)="saveSettings()">Save</sp-admin-button>
         </div>
-        <p style="font-size:12px;color:var(--sp-admin-muted,#9ca3af);margin-top:8px;">
+        <p style="font-size:12px;color:var(--sp-admin-muted,#8B85A0);margin-top:8px;">
           Backend not available yet — settings shown for reference only.
         </p>
       </sp-admin-card>

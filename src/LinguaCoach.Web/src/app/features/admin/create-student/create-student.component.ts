@@ -58,12 +58,12 @@ import {
     .sp-cs-section-title {
       font-size: 15px;
       font-weight: 800;
-      color: var(--sp-admin-text, #0F172A);
+      color: var(--sp-admin-text, #211B36);
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .sp-cs-section-sub { font-size: 13px; color: var(--sp-admin-text-muted, #64748B); }
+    .sp-cs-section-sub { font-size: 13px; color: var(--sp-admin-text-muted, #8B85A0); }
 
     .sp-cs-optional-badge {
       font-size: 10px;
@@ -96,13 +96,13 @@ import {
     .sp-cs-toggle-label {
       font-size: 13.5px;
       font-weight: 600;
-      color: var(--sp-admin-text, #0F172A);
+      color: var(--sp-admin-text, #211B36);
       cursor: pointer;
     }
     .sp-cs-toggle-hint {
       margin: 2px 0 0;
       font-size: 12px;
-      color: var(--sp-admin-text-muted, #64748B);
+      color: var(--sp-admin-text-muted, #8B85A0);
     }
 
     .sp-cs-security-note {
@@ -110,7 +110,7 @@ import {
       align-items: flex-start;
       gap: 8px;
       font-size: 12px;
-      color: #475569;
+      color: #8B85A0;
       background: #fffbeb;
       border: 1px solid #fde68a;
       border-radius: 10px;
@@ -156,7 +156,7 @@ import {
       border-radius: 8px;
       padding: 8px 12px;
       font-size: 13.5px;
-      color: var(--sp-admin-text, #0F172A);
+      color: var(--sp-admin-text, #211B36);
       background: #fff;
     }
 
@@ -180,7 +180,7 @@ import {
     .sp-cs-aside-title {
       font-size: 13px;
       font-weight: 800;
-      color: var(--sp-admin-text, #0F172A);
+      color: var(--sp-admin-text, #211B36);
       text-transform: uppercase;
       letter-spacing: .06em;
       margin-bottom: 16px;
@@ -215,13 +215,13 @@ import {
       background: var(--sp-admin-green-bg, #dcfce7);
       color: var(--sp-admin-green, #16a34a);
     }
-    .sp-cs-step-label { font-size: 13px; font-weight: 700; color: var(--sp-admin-text, #0F172A); }
-    .sp-cs-step-desc { font-size: 12px; color: var(--sp-admin-text-muted, #64748B); margin-top: 2px; }
+    .sp-cs-step-label { font-size: 13px; font-weight: 700; color: var(--sp-admin-text, #211B36); }
+    .sp-cs-step-desc { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); margin-top: 2px; }
 
     .sp-cs-aside-note {
       margin-top: 16px;
       font-size: 11.5px;
-      color: #94a3b8;
+      color: #8B85A0;
       font-style: italic;
       border-top: 1px solid var(--sp-admin-border, #ECE9F5);
       padding-top: 12px;

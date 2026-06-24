@@ -36,7 +36,7 @@ type Period = '7d' | '30d' | '90d';
   templateUrl: './admin-usage-analytics.component.html',
   styles: [`
     .sp-ua-period-pills { display: flex; gap: 4px; margin-bottom: 20px; }
-    .sp-ua-pill { padding: 5px 14px; font-size: 13px; font-weight: 500; border: 1px solid var(--sp-admin-border,#ECE9F5); border-radius: 20px; background: transparent; color: var(--sp-admin-muted,#6b7280); cursor: pointer; transition: background 0.12s, color 0.12s; }
+    .sp-ua-pill { padding: 5px 14px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--sp-admin-border-2,#E2DEF0); border-radius: 99px; background: transparent; color: var(--sp-admin-muted,#8B85A0); cursor: pointer; transition: background 0.12s, color 0.12s; }
     .sp-ua-pill--active { background: var(--sp-admin-primary,#5B4BE8); color: #fff; border-color: var(--sp-admin-primary,#5B4BE8); }
     .sp-ua-kpi-strip { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 24px; }
     @media(min-width:900px) { .sp-ua-kpi-strip { grid-template-columns: repeat(4,1fr); } }

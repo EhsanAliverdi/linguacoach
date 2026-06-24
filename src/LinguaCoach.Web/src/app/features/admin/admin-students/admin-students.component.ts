@@ -407,18 +407,18 @@ interface StudentEditForm {
     .sp-stu-breakdown-row{max-width:480px;margin-bottom:4px;}
 
     .sp-stu-filter-spacer{flex:1;}
-    .sp-stu-rows-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748B;white-space:nowrap;flex-shrink:0;}
-    .sp-stu-rows-select{height:32px;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:0 8px;font-size:13px;color:#0F172A;background:#fff;cursor:pointer;}
+    .sp-stu-rows-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#8B85A0;white-space:nowrap;flex-shrink:0;}
+    .sp-stu-rows-select{height:32px;border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:8px;padding:0 8px;font-size:13px;color:#211B36;background:#fff;cursor:pointer;}
 
     .sp-admin-sortable{cursor:pointer;user-select:none;}
-    .sp-admin-sortable:hover{color:#334155;}
-    .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#475569;}
+    .sp-admin-sortable:hover{color:#3A2EA8;}
+    .sp-admin-filter-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#8B85A0;}
     .sp-admin-filter-toggle input{accent-color:var(--sp-admin-primary,#5B4BE8);}
     .sp-stu-avatar-row{display:flex;align-items:center;gap:9px;}
     .sp-stu-avatar{flex-shrink:0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;line-height:1;}
-    .sp-admin-student-name{font-weight:800;color:#0F172A;}
+    .sp-admin-student-name{font-weight:800;color:#211B36;}
     .sp-admin-profile-cell{max-width:280px;}
-    .sp-admin-archived-row td{background:#F8FAFC;color:#94A3B8;}
+    .sp-admin-archived-row td{background:#FBFAFE;color:#8B85A0;}
     .sp-stu-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
     .sp-stu-wide{grid-column:1/-1;}
     .sp-stu-select{width:100%;height:44px;border:1px solid #E5E7EB;border-radius:8px;padding:0 16px;font-size:13px;background:#fff;color:#1A2130;box-sizing:border-box;}

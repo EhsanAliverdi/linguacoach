@@ -434,7 +434,7 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       gap: 14px;
     }
     @media(min-width:900px){ .sp-dash-kpi-row { grid-template-columns: repeat(4, 1fr); } }
-    .sp-dash-kpi-na { font-size: 12px; color: var(--sp-admin-text-muted, #64748B); font-style: italic; }
+    .sp-dash-kpi-na { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); font-style: italic; }
 
     /* Main 2-col */
     .sp-dash-main-grid { display: grid; gap: 20px; }
@@ -469,12 +469,12 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     .sp-dash-placeholder-label {
       font-size: 13px;
       font-weight: 600;
-      color: var(--sp-admin-text-muted, #64748B);
+      color: var(--sp-admin-text-muted, #8B85A0);
       margin-top: 10px;
     }
     .sp-dash-placeholder-sub {
       font-size: 11px;
-      color: #94a3b8;
+      color: #8B85A0;
       margin-top: 4px;
     }
     .sp-dash-placeholder-block {
@@ -492,16 +492,16 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
       align-items: center;
       justify-content: space-between;
       font-size: 12.5px;
-      color: #475569;
+      color: #4B4462;
     }
-    .sp-dash-status-row--muted { color: #94a3b8; font-size: 11px; }
+    .sp-dash-status-row--muted { color: #8B85A0; font-size: 11px; }
     .sp-dash-student-email { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
 
     /* Funnel */
     .sp-dash-funnel { display: flex; flex-direction: column; gap: 10px; }
     .sp-dash-funnel-row { display: flex; align-items: center; justify-content: space-between; }
-    .sp-dash-funnel-label { font-size: 12.5px; color: #475569; }
-    .sp-dash-funnel-val { font-size: 18px; font-weight: 700; color: var(--sp-admin-text, #0F172A); }
+    .sp-dash-funnel-label { font-size: 12.5px; color: #8B85A0; }
+    .sp-dash-funnel-val { font-size: 18px; font-weight: 700; color: var(--sp-admin-text, #211B36); }
     .sp-dash-funnel-val--green { color: var(--sp-admin-green, #16a34a); }
 
     /* CEFR */
@@ -509,10 +509,10 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     .sp-dash-cefr-row { display: flex; align-items: center; gap: 8px; }
     .sp-dash-cefr-bar-wrap { flex: 1; height: 6px; background: #ECE9F5; border-radius: 3px; overflow: hidden; }
     .sp-dash-cefr-bar { height: 100%; background: var(--sp-admin-primary, #5B4BE8); border-radius: 3px; transition: width .3s; }
-    .sp-dash-cefr-count { font-size: 12px; font-weight: 600; color: #475569; min-width: 20px; text-align: right; }
+    .sp-dash-cefr-count { font-size: 12px; font-weight: 600; color: #8B85A0; min-width: 20px; text-align: right; }
 
     /* At-risk note */
-    .sp-dash-at-risk-note { font-size: 10.5px; color: #94a3b8; margin-top: 10px; font-style: italic; }
+    .sp-dash-at-risk-note { font-size: 10.5px; color: #8B85A0; margin-top: 10px; font-style: italic; }
     /* Pending actions list */
     .sp-dash-actions-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
     .sp-dash-action-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--sp-admin-surface-alt, #F8F7FB); }
@@ -538,8 +538,8 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     .sp-dash-avatar-row > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* Table helpers */
-    .sp-dash-mini-empty { color: #CBD5E1; font-size: 12px; }
-    .sp-dash-table-muted { color: #94a3b8; }
+    .sp-dash-mini-empty { color: #C5BFD8; font-size: 12px; }
+    .sp-dash-table-muted { color: #8B85A0; }
     .sp-dash-empty-action { display: flex; justify-content: center; margin-top: -14px; margin-bottom: 18px; }
 
     /* Link */

@@ -64,9 +64,9 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     .sp-diag-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
     @media(min-width:900px){.sp-diag-kpi-strip{grid-template-columns:repeat(4,1fr);}}
     .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .sp-diag-count { padding: 8px 16px; border-top: 1px solid var(--sp-admin-border,#ECE9F5); color: var(--sp-admin-muted,#64748b); font-size: 12px; font-weight: 600; }
+    .sp-diag-count { padding: 8px 16px; border-top: 1px solid var(--sp-admin-border,#ECE9F5); color: var(--sp-admin-muted,#8B85A0); font-size: 12px; font-weight: 600; }
     .sp-diag-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
-    .sp-diag-muted { color: var(--sp-admin-muted, #9ca3af); }
+    .sp-diag-muted { color: var(--sp-admin-muted, #8B85A0); }
     .sp-diag-th-time { white-space: nowrap; min-width: 130px; }
     .sp-diag-th-level { min-width: 80px; }
     .sp-diag-time { white-space: nowrap; }
@@ -75,7 +75,7 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     .sp-diag-message-cell { max-width: 480px; }
     .sp-diag-corr-cell { white-space: nowrap; }
     .sp-diag-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
-    .sp-diag-meta-item { font-size: 11px; color: var(--sp-admin-muted,#6b7280); }
+    .sp-diag-meta-item { font-size: 11px; color: var(--sp-admin-muted,#8B85A0); }
     .sp-diag-row-error td { background: #fff5f5; }
     .sp-diag-row-warn  td { background: #fffbeb; }
   `],

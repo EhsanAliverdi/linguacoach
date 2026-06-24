@@ -244,14 +244,14 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     }
     .sp-et-name-body { min-width: 0; }
     .sp-et-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
-    .sp-et-desc { display: block; margin-top: 2px; font-size: 11px; color: var(--sp-admin-muted, #6b7280); }
-    .sp-et-not-runnable { font-size: 10px; color: #b45309; background: #fffbeb; border-radius: 4px; padding: 1px 6px; margin-top: 3px; display: inline-block; }
-    .sp-et-secondary { font-size: 11px; color: var(--sp-admin-muted, #6b7280); margin-top: 2px; }
+    .sp-et-desc { display: block; margin-top: 2px; font-size: 11px; color: var(--sp-admin-muted, #8B85A0); }
+    .sp-et-not-runnable { font-size: 10px; color: #B26410; background: #FFF1DC; border-radius: 4px; padding: 1px 6px; margin-top: 3px; display: inline-block; }
+    .sp-et-secondary { font-size: 11px; color: var(--sp-admin-muted, #8B85A0); margin-top: 2px; }
     .sp-et-badges { display: flex; flex-direction: column; gap: 3px; }
     .sp-et-surfaces { white-space: nowrap; font-size: 11px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-    .sp-et-yes { color: #16a34a; font-weight: 600; }
-    .sp-et-no  { color: #9ca3af; }
-    .sp-et-tag { background: #f3f4f6; color: #374151; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 500; }
+    .sp-et-yes { color: #13B07C; font-weight: 600; }
+    .sp-et-no  { color: #8B85A0; }
+    .sp-et-tag { background: #F6F4FB; color: #4B4462; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 500; }
     .sp-et-counts { white-space: nowrap; min-width: 140px; }
     .sp-et-counts input {
       width: 44px;
@@ -342,7 +342,7 @@ export class AdminExerciseTypesComponent implements OnInit {
   };
 
   typeIconBg(skill: string): string {
-    return AdminExerciseTypesComponent.SKILL_COLORS[skill] ?? '#64748b';
+    return AdminExerciseTypesComponent.SKILL_COLORS[skill] ?? '#8B85A0';
   }
 
   typeIconPath(skill: string): string {

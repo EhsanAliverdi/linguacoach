@@ -45,14 +45,14 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
     .sp-int-card{background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;}
     .sp-int-card-header{display:flex;align-items:center;gap:12px;}
     .sp-int-card-icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;}
-    .sp-int-card-name{font-size:14px;font-weight:700;color:var(--sp-admin-text,#0F172A);}
-    .sp-int-card-desc{font-size:13px;color:var(--sp-admin-muted,#6b7280);flex:1;}
+    .sp-int-card-name{font-size:14px;font-weight:700;color:var(--sp-admin-text,#211B36);}
+    .sp-int-card-desc{font-size:13px;color:var(--sp-admin-muted,#8B85A0);flex:1;}
     .sp-int-card-actions{display:flex;gap:8px;margin-top:4px;}
-    .sp-int-card-not-impl{font-size:12px;color:var(--sp-admin-muted,#9ca3af);}
+    .sp-int-card-not-impl{font-size:12px;color:var(--sp-admin-muted,#8B85A0);}
     .sp-int-cb-stack{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
     .sp-int-test-row{display:flex;align-items:center;gap:16px;margin-top:16px;}
     .sp-int-generate-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
-    .sp-int-api-url{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;background:var(--sp-admin-surface-alt,#f6f4fb);border-radius:6px;padding:8px 12px;color:var(--sp-admin-muted,#6b7280);word-break:break-all;}
+    .sp-int-api-url{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;background:var(--sp-admin-surface-alt,#F6F4FB);border-radius:6px;padding:8px 12px;color:var(--sp-admin-muted,#8B85A0);word-break:break-all;}
   `],
 })
 export class AdminIntegrationsComponent implements OnInit {
