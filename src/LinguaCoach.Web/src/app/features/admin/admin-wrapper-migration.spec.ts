@@ -183,7 +183,9 @@ describe('admin wrapper migration', () => {
     fixture.detectChanges();
 
     expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
-    expect(fixture.nativeElement.querySelectorAll('sp-admin-card').length).toBeGreaterThanOrEqual(3);
+    // Sections are now split across tabs; only the active tab's card renders.
+    expect(query(fixture.nativeElement, '.sp-aic-tabs')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-card').length).toBeGreaterThanOrEqual(1);
   });
 
   it('AI Usage page renders table and card wrappers', () => {
@@ -449,6 +451,8 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
       providers: [{ provide: AdminApiService, useValue: adminApi }],
     });
     const fixture = TestBed.createComponent(AdminAiConfigComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.activeTab.set('tts');
     fixture.detectChanges();
     const inputs = fixture.nativeElement.querySelectorAll('sp-admin-input');
     expect(inputs.length).toBeGreaterThanOrEqual(1);

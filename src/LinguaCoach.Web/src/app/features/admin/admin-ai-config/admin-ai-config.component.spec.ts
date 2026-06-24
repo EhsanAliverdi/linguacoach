@@ -76,6 +76,7 @@ describe('AdminAiConfigComponent', () => {
   async function setup(
     categories: AiConfigCategoryItem[] = [CAT_LLM, CAT_TTS],
     catalog: AiProviderCatalogItem[] = [PROVIDER],
+    tab?: 'llm' | 'tts' | 'credentials' | 'pricing' | 'rate-limits',
   ) {
     adminApi = makeAdminApi(categories, catalog);
     await TestBed.configureTestingModule({
@@ -86,6 +87,7 @@ describe('AdminAiConfigComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
+    if (tab) { component.activeTab.set(tab); }
     fixture.detectChanges();
   }
 
@@ -136,7 +138,7 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders TTS category rows', async () => {
-    await setup([CAT_TTS], []);
+    await setup([CAT_TTS], [], 'tts');
     expect(fixture.nativeElement.textContent).toContain('TTS Listening');
   });
 
@@ -151,7 +153,7 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders TTS disabled badge for unset TTS category', async () => {
-    await setup([{ ...CAT_TTS, providerName: null }], []);
+    await setup([{ ...CAT_TTS, providerName: null }], [], 'tts');
     expect(fixture.nativeElement.textContent).toContain('TTS disabled');
   });
 
@@ -161,12 +163,12 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders key-stored badge for provider with key', async () => {
-    await setup([CAT_LLM], [PROVIDER]);
+    await setup([CAT_LLM], [PROVIDER], 'credentials');
     expect(fixture.nativeElement.textContent).toContain('Key stored');
   });
 
   it('renders env-var badge for provider without key', async () => {
-    await setup([CAT_LLM], [{ ...PROVIDER, hasApiKey: false }]);
+    await setup([CAT_LLM], [{ ...PROVIDER, hasApiKey: false }], 'credentials');
     expect(fixture.nativeElement.textContent).toContain('Env var');
   });
 
@@ -314,12 +316,12 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders read-only configuration note', async () => {
-    await setup();
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER], 'pricing');
     expect(fixture.nativeElement.textContent).toContain('Config pricing');
   });
 
   it('renders model names in pricing table', async () => {
-    await setup();
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER], 'pricing');
     expect(fixture.nativeElement.textContent).toContain('claude-sonnet-4-6');
     expect(fixture.nativeElement.textContent).toContain('gpt-4o');
   });
@@ -334,6 +336,7 @@ describe('AdminAiConfigComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
+    component.activeTab.set('pricing');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No pricing configured');
   });
@@ -362,17 +365,17 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders Pricing overrides section heading', async () => {
-    await setup();
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER], 'pricing');
     expect(fixture.nativeElement.textContent).toContain('Pricing overrides');
   });
 
   it('renders empty state when no overrides', async () => {
-    await setup();
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER], 'pricing');
     expect(fixture.nativeElement.textContent).toContain('No overrides');
   });
 
   it('renders Add override button when form is closed', async () => {
-    await setup();
+    await setup([CAT_LLM, CAT_TTS], [PROVIDER], 'pricing');
     expect(fixture.nativeElement.textContent).toContain('Add override');
   });
 
@@ -468,7 +471,7 @@ describe('AdminAiConfigComponent', () => {
   });
 
   it('renders Rate limits card with "Backend not available yet"', async () => {
-    await setup([CAT_LLM], [PROVIDER]);
+    await setup([CAT_LLM], [PROVIDER], 'rate-limits');
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Backend not available yet');
     expect(el.querySelector('[aria-label="Rate limits not implemented"]')).toBeTruthy();
@@ -501,6 +504,7 @@ describe('AdminAiConfigComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
+    component.activeTab.set('pricing');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Edit');
     expect(fixture.nativeElement.textContent).toContain('Deactivate');

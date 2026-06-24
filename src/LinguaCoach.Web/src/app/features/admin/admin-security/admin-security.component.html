@@ -44,6 +44,7 @@
       <sp-admin-error-state [message]="settingsError()" (retry)="loadSettings()" />
     } @else if (settings()) {
 
+      <div class="sp-sec-cols">
       <!-- Password policy -->
       <sp-admin-card title="Password policy">
         <div class="sp-sec-setting-grid">
@@ -83,6 +84,7 @@
           </div>
         </div>
       </sp-admin-card>
+      </div>
 
       <!-- JWT and session -->
       <sp-admin-card title="JWT and session">
@@ -144,6 +146,7 @@
         </sp-admin-table>
       </sp-admin-card>
 
+      <div class="sp-sec-cols">
       <!-- Security headers -->
       <sp-admin-card title="Security headers">
         <div class="sp-sec-setting-grid">
@@ -208,6 +211,7 @@
         </div>
         <p class="sp-sec-config-note">Client secret is never displayed. To update Google provider settings, configure <code>Authentication:ExternalProviders:Google</code> in <code>appsettings.json</code>.</p>
       </sp-admin-card>
+      </div>
 
     } @else {
       <sp-admin-empty-state message="No settings loaded." />

@@ -63,6 +63,8 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
   styles: [`
     .sp-diag-kpi-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
     @media(min-width:900px){.sp-diag-kpi-strip{grid-template-columns:repeat(4,1fr);}}
+    .sp-diag-overview{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:20px;align-items:start;}
+    @media(min-width:900px){.sp-diag-overview{grid-template-columns:1.6fr 1fr;}}
     .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .sp-diag-count { padding: 8px 16px; border-top: 1px solid var(--sp-admin-border,#ECE9F5); color: var(--sp-admin-muted,#8B85A0); font-size: 12px; font-weight: 600; }
     .sp-diag-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }

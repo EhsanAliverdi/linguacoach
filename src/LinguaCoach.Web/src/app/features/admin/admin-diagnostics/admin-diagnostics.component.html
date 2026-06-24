@@ -24,20 +24,22 @@
     </div>
   }
 
-<!-- Recent event feed summary (real data — top 8 from loaded events) -->
-@if (!loadingEvents() && recentFeedItems().length > 0) {
-  <sp-admin-event-feed
-    [items]="recentFeedItems()"
-    title="Recent events (top 8)"
-    ariaLabel="Recent diagnostic events"
-    style="margin-bottom:20px;display:block" />
-}
-
-<!-- Severity breakdown (real data — derived from loaded events) -->
-@if (!loadingEvents() && severityBreakdownItems().length > 0) {
-  <sp-admin-card title="Event severity breakdown" style="margin-bottom:20px">
-    <sp-admin-breakdown-bars [items]="severityBreakdownItems()" [showPct]="true" />
-  </sp-admin-card>
+<!-- Recent events + severity breakdown side by side (real data — derived from loaded events) -->
+@if (!loadingEvents() && (recentFeedItems().length > 0 || severityBreakdownItems().length > 0)) {
+  <div class="sp-diag-overview">
+    @if (recentFeedItems().length > 0) {
+      <sp-admin-event-feed
+        [items]="recentFeedItems()"
+        title="Recent events (top 8)"
+        ariaLabel="Recent diagnostic events"
+        style="display:block" />
+    }
+    @if (severityBreakdownItems().length > 0) {
+      <sp-admin-card title="Event severity breakdown">
+        <sp-admin-breakdown-bars [items]="severityBreakdownItems()" [showPct]="true" />
+      </sp-admin-card>
+    }
+  </div>
 }
 
 <sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
