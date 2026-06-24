@@ -51,7 +51,7 @@ interface StudentEditForm {
         <span>Show archived</span>
       </label>
       @if (hasActiveFilters()) {
-        <sp-admin-button variant="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
+        <sp-admin-button variant="neutral" appearance="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
       }
       <span class="sp-stu-filter-spacer"></span>
       <label class="sp-stu-rows-label">
@@ -83,7 +83,7 @@ interface StudentEditForm {
                 <th>Streak</th>
                 <th>Mins/wk</th>
                 <th class="sp-admin-sortable" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
-                <th>Actions</th>
+                <th style="text-align:right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -115,6 +115,7 @@ interface StudentEditForm {
                   <td class="sp-admin-table-muted">–</td>
                   <td class="sp-admin-table-muted sp-stu-joined">{{ s.createdAt | date:'MMM d, y' }}</td>
                   <td class="sp-admin-actions">
+                    <div class="sp-adm-actions-wrap">
                     <sp-admin-table-actions>
                       <a role="menuitem" [routerLink]="[s.studentProfileId]" class="sp-adm-action-item sp-adm-action-icon-item">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -139,6 +140,7 @@ interface StudentEditForm {
                         </button>
                       }
                     </sp-admin-table-actions>
+                    </div>
                   </td>
                 </tr>
               }
@@ -213,7 +215,7 @@ interface StudentEditForm {
           <div class="sp-admin-alert-error sp-stu-wide">{{ editError() }}</div>
         }
         <div class="sp-stu-wide flex justify-end gap-3 pt-2">
-          <sp-admin-button variant="ghost" size="sm" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="ghost" size="sm" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
           <sp-admin-button size="sm" type="submit" [loading]="savingEdit()" [disabled]="savingEdit()">
             {{ savingEdit() ? 'Saving...' : 'Save changes' }}
           </sp-admin-button>
@@ -257,8 +259,8 @@ interface StudentEditForm {
             <div class="sp-admin-alert-error">{{ resetError() }}</div>
           }
           <div class="flex justify-end gap-3 pt-2">
-            <sp-admin-button variant="ghost" type="button" (click)="generateResetPassword()">Generate password</sp-admin-button>
-            <sp-admin-button variant="ghost" type="button" (click)="cancelResetPassword()">Cancel</sp-admin-button>
+            <sp-admin-button variant="neutral" appearance="ghost" type="button" (click)="generateResetPassword()">Generate password</sp-admin-button>
+            <sp-admin-button variant="neutral" appearance="ghost" type="button" (click)="cancelResetPassword()">Cancel</sp-admin-button>
             <sp-admin-button type="submit" [loading]="savingReset()" [disabled]="savingReset() || resetForm.newPassword.length < 8">
               {{ savingReset() ? 'Saving...' : 'Reset password' }}
             </sp-admin-button>
@@ -354,7 +356,7 @@ interface StudentEditForm {
           }
           @if (resettingData(); as student) {
             <div class="flex justify-end gap-3 pt-2">
-              <sp-admin-button variant="ghost" type="button" (click)="cancelResetData()">Cancel</sp-admin-button>
+              <sp-admin-button variant="neutral" appearance="ghost" type="button" (click)="cancelResetData()">Cancel</sp-admin-button>
               <sp-admin-button variant="danger" type="submit" [loading]="savingResetData()"
                 [disabled]="savingResetData() || resetDataForm.confirmEmail !== student.email || !resetDataForm.reason.trim()">
                 {{ savingResetData() ? 'Resetting...' : 'Reset data' }}

@@ -25,43 +25,6 @@
   margin: 0;
 }
 
-/* ── Buttons ─────────────────────────────────────────────────── */
-.sp-aic-btn-ghost {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 13px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--sp-admin-text, #211B36);
-  background: transparent;
-  border: 1.5px solid var(--sp-admin-border, #ECE9F5);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background .12s, border-color .12s;
-}
-.sp-aic-btn-ghost:hover:not(:disabled) { background: var(--sp-admin-surface, #FBFAFE); }
-.sp-aic-btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
-.sp-aic-btn-full { flex: 1; justify-content: center; }
-.sp-aic-btn-primary {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: inherit;
-  color: #fff;
-  background: var(--sp-admin-primary, #5B4BE8);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.sp-aic-btn-primary:hover { background: #4a3cd0; }
 
 /* ── KPI strip ───────────────────────────────────────────────── */
 .sp-aic-kpi-strip {

@@ -51,28 +51,21 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     <!-- ── KPI row ── -->
     <div class="sp-dash-kpi-row">
 
-      <sp-admin-kpi-card layout="tile" variant="indigo" label="TOTAL STUDENTS" delta="Pilot cohort">
-        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        {{ loadingStats() ? '—' : (stats()?.totalStudents ?? 0) }}
-      </sp-admin-kpi-card>
+      <sp-admin-kpi-card layout="tile" variant="indigo" label="TOTAL STUDENTS" delta="Pilot cohort"
+        icon="users" [loading]="loadingStats()" [value]="stats()?.totalStudents ?? 0" />
 
       <sp-admin-kpi-card layout="tile" variant="coral" label="ACTIVE THIS WEEK"
-        [delta]="(heroEngagementPct() ?? 0) + '% engagement'" deltaColor="#13B07C">
-        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        @if (loadingStats()) { — } @else { {{ (stats()?.onboardedStudents ?? 0) }}/{{ (stats()?.totalStudents ?? 0) }} }
+        [delta]="(heroEngagementPct() ?? 0) + '% engagement'" deltaColor="#13B07C"
+        icon="zap" [loading]="loadingStats()">
+        @if (!loadingStats()) { {{ (stats()?.onboardedStudents ?? 0) }}/{{ (stats()?.totalStudents ?? 0) }} }
       </sp-admin-kpi-card>
 
-      <sp-admin-kpi-card layout="tile" variant="violet" label="ACTIVITIES DONE" delta="+12 since yesterday" deltaColor="#13B07C">
-        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        {{ loadingStats() ? '—' : (stats()?.totalActivityAttempts ?? 0) }}
-      </sp-admin-kpi-card>
+      <sp-admin-kpi-card layout="tile" variant="violet" label="ACTIVITIES DONE" delta="+12 since yesterday" deltaColor="#13B07C"
+        icon="activity" [loading]="loadingStats()" [value]="loadingStats() ? null : (stats()?.totalActivityAttempts ?? 0)" />
 
-      <sp-admin-kpi-card layout="tile" variant="amber" label="AI COST (7 DAYS)" delta="Per active student">
-        <svg slot="icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        @if (loadingAiUsageTrends7d()) { — }
-        @else if (aiUsageTrends7dError()) { <span style="font-size:12px;font-style:italic">N/A</span> }
-        @else { {{ aiCost7dFormatted() }} }
-      </sp-admin-kpi-card>
+      <sp-admin-kpi-card layout="tile" variant="amber" label="AI COST (7 DAYS)" delta="Per active student"
+        icon="dollar" [loading]="loadingAiUsageTrends7d()" [error]="aiUsageTrends7dError()"
+        [value]="aiCost7dFormatted()" />
 
     </div>
 

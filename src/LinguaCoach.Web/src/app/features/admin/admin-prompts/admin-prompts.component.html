@@ -1,0 +1,265 @@
+<sp-admin-page-header title="Prompts" [subtitle]="'Manage and version AI prompt templates · ' + uniqueKeyCount() + ' templates'">
+  <sp-admin-button (click)="openCreate()">New version</sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+<!-- KPI strip -->
+<div class="sp-pt-kpi-strip" aria-label="Prompt template summary">
+  <sp-admin-kpi-card label="Templates" variant="indigo" layout="tile" icon="document" [value]="uniqueKeyCount()" />
+  <sp-admin-kpi-card label="Active versions" [variant]="activeCount() > 0 ? 'green' : 'slate'" layout="tile" icon="check" [value]="activeCount()" />
+  <sp-admin-kpi-card label="Total versions" variant="violet" layout="tile" icon="plus" [value]="prompts().length" />
+  <sp-admin-kpi-card label="Avg token budget" variant="amber" layout="tile" icon="activity" [value]="averageTokenBudget()" />
+</div>
+
+<!-- Prompt library -->
+<sp-admin-card variant="default" padding="none" [hasHeader]="true" [headerDivider]="false">
+  <!-- Library header: title + filter row in one block -->
+  <div slot="header" class="sp-adm-lib-header">
+    <div class="sp-adm-lib-title">Prompt library</div>
+    <sp-admin-filter-bar layout="responsive" density="compact">
+      <sp-admin-form-field search label="Search prompts" size="sm">
+        <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key…" />
+      </sp-admin-form-field>
+      <sp-admin-form-field filters label="Category" size="sm">
+        <sp-admin-select
+          [ngModel]="categoryFilter()"
+          (ngModelChange)="setCategoryFilter($event)"
+          [options]="categoryFilterOptions()"
+          size="sm"
+          placeholder="All categories" />
+      </sp-admin-form-field>
+      <sp-admin-form-field class="sp-adm-status-field" filters label="Status" size="sm">
+        <sp-admin-select
+          [ngModel]="statusFilter()"
+          (ngModelChange)="setStatusFilter($event)"
+          [options]="statusFilterOptions"
+          size="sm" />
+      </sp-admin-form-field>
+      <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()" [loading]="loading()">Refresh</sp-admin-button>
+    </sp-admin-filter-bar>
+  </div>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading prompt templates" />
+  } @else if (loadError()) {
+    <div class="sp-admin-state-wrap">
+      <sp-admin-error-state title="Prompt templates could not load" [message]="loadError()" />
+      <sp-admin-button variant="primary" appearance="outline" size="sm" (click)="load()">Try again</sp-admin-button>
+    </div>
+  } @else if (filteredPrompts().length === 0) {
+    <sp-admin-empty-state [message]="emptyMessage()" />
+  } @else {
+    <sp-admin-table variant="data" density="comfortable" minWidth="860px" [flush]="true">
+      <table style="table-layout:fixed">
+        <colgroup>
+          <col style="width:34%"/>
+          <col style="width:11%"/>
+          <col style="width:9%"/>
+          <col style="width:13%"/>
+          <col style="width:18%"/>
+          <col style="width:15%"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>KEY</th>
+            <th>CATEGORY</th>
+            <th>VERSION</th>
+            <th>STATUS</th>
+            <th style="text-align:right">TOKEN BUDGET</th>
+            <th style="text-align:right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pagedPrompts(); track p.id) {
+            <tr class="sp-adm-row-click" (click)="openView(p)">
+              <!-- KEY -->
+              <td>
+                <div class="sp-adm-key-cell">
+                  <sp-admin-code-pill [value]="p.key" tone="primary" [maxLength]="48" />
+                  @if (p.isActive && isLatestVersion(p)) {
+                    <sp-admin-badge tone="info" size="sm">latest</sp-admin-badge>
+                  }
+                </div>
+              </td>
+              <!-- CATEGORY -->
+              <td>
+                <span class="sp-adm-category">{{ promptCategory(p.key) }}</span>
+              </td>
+              <!-- VERSION -->
+              <td class="sp-adm-version">v{{ p.version }}</td>
+              <!-- STATUS -->
+              <td>
+                <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
+                  {{ p.isActive ? 'Active' : 'Inactive' }}
+                </sp-admin-badge>
+              </td>
+              <!-- TOKEN BUDGET -->
+              <td class="sp-admin-num sp-adm-token-budget">{{ tokenBudgetLabel(p) }}</td>
+              <!-- ACTIONS -->
+              <td class="sp-admin-actions" (click)="$event.stopPropagation()">
+                <div class="sp-adm-actions-wrap">
+                  <sp-admin-table-actions>
+                    <button role="menuitem" type="button" class="sp-adm-action-item" (click)="openView(p)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      View
+                    </button>
+                    <button role="menuitem" type="button" class="sp-adm-action-item" (click)="openEdit(p)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Edit
+                    </button>
+                    @if (p.isActive) {
+                      <button role="menuitem" type="button" class="sp-adm-action-item sp-adm-action-danger" (click)="deactivate(p)" [disabled]="busyPromptId() === p.id">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Deactivate
+                      </button>
+                    } @else {
+                      <button role="menuitem" type="button" class="sp-adm-action-item" (click)="activate(p)" [disabled]="busyPromptId() === p.id">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        Activate
+                      </button>
+                    }
+                  </sp-admin-table-actions>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </sp-admin-table>
+    @if (totalPages() > 1) {
+      <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" [totalRows]="filteredPrompts().length" (pageChange)="page.set($event)" />
+    }
+  }
+</sp-admin-card>
+</sp-admin-page-body>
+
+<!-- VIEW slide-over -->
+<sp-admin-slide-over
+  [open]="!!viewPrompt()"
+  [title]="viewPrompt()?.key ?? ''"
+  [subtitle]="viewSlideOverSubtitle()"
+  size="lg"
+  [loading]="detailLoading()"
+  loadingMessage="Loading prompt"
+  [error]="detailError()"
+  (closed)="closeView()">
+
+  @if (detail()) {
+    <div class="sp-adm-so-meta-grid">
+      <div class="sp-adm-so-meta-item">
+        <div class="sp-adm-so-meta-lbl">CATEGORY</div>
+        <div class="sp-adm-so-meta-val">{{ promptCategory(detail()!.key) }}</div>
+      </div>
+      <div class="sp-adm-so-meta-item">
+        <div class="sp-adm-so-meta-lbl">STATUS</div>
+        <div class="sp-adm-so-meta-val" [class.sp-adm-active]="detail()!.isActive" [class.sp-adm-inactive]="!detail()!.isActive">
+          <span class="sp-adm-dot" [class.sp-adm-dot-active]="detail()!.isActive"></span>
+          {{ detail()!.isActive ? 'Active' : 'Inactive' }}
+        </div>
+      </div>
+      <div class="sp-adm-so-meta-item">
+        <div class="sp-adm-so-meta-lbl">TOKEN IN</div>
+        <div class="sp-adm-so-meta-val">{{ (detail()!.maxInputTokens ?? 0) | number }}</div>
+      </div>
+      <div class="sp-adm-so-meta-item">
+        <div class="sp-adm-so-meta-lbl">TOKEN OUT</div>
+        <div class="sp-adm-so-meta-val">{{ (detail()!.maxOutputTokens ?? 0) | number }}</div>
+      </div>
+    </div>
+
+    @if (viewSiblings().length > 1) {
+      <div class="sp-adm-so-section">
+        <div class="sp-adm-so-section-title">Version history</div>
+        <div class="sp-adm-ver-btns">
+          @for (s of viewSiblings(); track s.id) {
+            <button
+              type="button"
+              class="sp-adm-ver-btn"
+              [class.sp-adm-ver-btn-active]="s.id === viewPrompt()?.id"
+              (click)="switchVersion(s)">
+              v{{ s.version }}
+              @if (s.isActive) {
+                <span class="sp-adm-ver-dot" [class.sp-adm-ver-dot-cur]="s.id === viewPrompt()?.id"></span>
+              }
+            </button>
+          }
+        </div>
+        @if (viewPrompt()?.isActive) {
+          <div class="sp-adm-ver-status sp-adm-active">&#9679; v{{ viewPrompt()?.version }} is the active version</div>
+        } @else {
+          <div class="sp-adm-ver-status sp-adm-inactive">&#9679; v{{ viewPrompt()?.version }} is inactive</div>
+        }
+      </div>
+    }
+
+    @if (promptVars(detail()!.content).length > 0) {
+      <div class="sp-adm-so-section">
+        <div class="sp-adm-so-section-title">Variables <span class="sp-adm-muted">({{ promptVars(detail()!.content).length }})</span></div>
+        <div class="sp-adm-var-pills">
+          @for (v of promptVars(detail()!.content); track v) {
+            <code class="sp-adm-var-pill">{{ '{{' + v + '}}' }}</code>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="sp-adm-so-section">
+      <div class="sp-adm-so-section-title">Prompt template</div>
+      <pre class="sp-adm-prompt-body">{{ detail()!.content }}</pre>
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="secondary" appearance="solid" (click)="openEditFromView()">
+      <svg slot="leading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Edit
+    </sp-admin-button>
+    @if (viewPrompt()?.isActive) {
+      <sp-admin-button variant="danger" appearance="ghost" (click)="deactivateFromView()">Deactivate v{{ viewPrompt()?.version }}</sp-admin-button>
+    }
+    <sp-admin-button variant="neutral" appearance="ghost" (click)="closeView()">Close</sp-admin-button>
+  </div>
+</sp-admin-slide-over>
+
+<!-- EDIT / CREATE slide-over -->
+<sp-admin-slide-over
+  [open]="showEditPanel()"
+  [title]="editRow() ? 'Edit · ' + editRow()!.key : 'New prompt version'"
+  [subtitle]="editRow() ? 'v' + editRow()!.version + ' · ' + promptCategory(editRow()!.key) : ''"
+  size="lg"
+  [stackIndex]="viewPrompt() ? 1 : 0"
+  (closed)="closeEdit()">
+
+  <div class="sp-adm-edit-body">
+    @if (editRow()) {
+      <sp-admin-alert variant="warning">Saving creates a new version and deactivates the current active version.</sp-admin-alert>
+    }
+    <div class="sp-admin-field-grid">
+      @if (!editRow()) {
+        <sp-admin-form-field label="Key" class="sp-admin-wide">
+          <sp-admin-input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" />
+        </sp-admin-form-field>
+      }
+      <sp-admin-form-field label="Token budget — Input">
+        <sp-admin-number-input [(ngModel)]="newMaxInput" [min]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Token budget — Output">
+        <sp-admin-number-input [(ngModel)]="newMaxOutput" [min]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Prompt body" class="sp-admin-wide">
+        <sp-admin-textarea [(ngModel)]="newContent" [rows]="16" placeholder="Prompt content with {{ '{{variable}}' }} placeholders" class="sp-adm-mono-textarea" />
+      </sp-admin-form-field>
+    </div>
+    @if (formError()) {
+      <sp-admin-alert variant="error">{{ formError() }}</sp-admin-alert>
+    }
+  </div>
+
+  <div slot="footer">
+    <sp-admin-button variant="secondary" appearance="solid" (click)="createVersion()" [loading]="creating()">
+      {{ editRow() ? 'Save as new version' : 'Create' }}
+    </sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="ghost" (click)="closeEdit()">Cancel</sp-admin-button>
+  </div>
+</sp-admin-slide-over>

@@ -4,10 +4,10 @@
     <h1 class="sp-aic-page-title">AI Configuration</h1>
     <p class="sp-aic-page-sub">Category-level AI provider config, TTS voices, and provider credentials</p>
   </div>
-  <button type="button" class="sp-aic-btn-ghost" [disabled]="testAllBusy()" (click)="testAllConnections()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  <sp-admin-button variant="neutral" appearance="outline" [disabled]="testAllBusy()" (click)="testAllConnections()">
+    <svg slot="leading" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
-  </button>
+  </sp-admin-button>
 </div>
 
 <!-- ── KPI strip ─────────────────────────────────────────────────── -->
@@ -113,13 +113,13 @@
               </div>
             </div>
             <div class="sp-aic-cat-actions">
-              <button type="button" class="sp-aic-btn-ghost sp-aic-btn-full" (click)="openConfigureDrawer(cs)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <sp-admin-button variant="neutral" appearance="outline" [fullWidth]="true" (click)="openConfigureDrawer(cs)">
+                <svg slot="leading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Configure
-              </button>
-              <button type="button" class="sp-aic-btn-ghost" [disabled]="cs.testBusy" (click)="testCategory(cs)">
+              </sp-admin-button>
+              <sp-admin-button variant="neutral" appearance="outline" [disabled]="cs.testBusy" (click)="testCategory(cs)">
                 {{ cs.testBusy ? '…' : cs.testResult ? cs.testResult : 'Test' }}
-              </button>
+              </sp-admin-button>
             </div>
           </div>
         }
@@ -284,10 +284,10 @@
         <p class="sp-aic-section-sub">
           <strong style="color:var(--sp-admin-text,#211B36)">Config pricing</strong> — Read from openrouter.com. Add overrides to change runtime pricing without redeploying.
         </p>
-        <button type="button" class="sp-aic-btn-primary" (click)="openCreateOverride()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <sp-admin-button variant="secondary" appearance="solid" (click)="openCreateOverride()">
+          <svg slot="leading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add override
-        </button>
+        </sp-admin-button>
       </div>
 
       @if (pricing().length === 0) {
@@ -461,9 +461,8 @@
     }
   }
 
-  <div slot="footer" style="display:flex;gap:10px;width:100%">
-    <sp-admin-button
-      style="flex:1"
+  <div slot="footer">
+    <sp-admin-button variant="secondary" appearance="solid"
       [loading]="configuringCategory()?.saving ?? false"
       [disabled]="configuringCategory()?.saving ?? false"
       (click)="saveConfigureDrawer()">
@@ -563,9 +562,8 @@
     </div>
   }
 
-  <div slot="footer" style="display:flex;gap:10px;width:100%">
-    <sp-admin-button
-      style="flex:1"
+  <div slot="footer">
+    <sp-admin-button variant="secondary" appearance="solid"
       [loading]="overrideForm()?.busy ?? false"
       [disabled]="overrideForm()?.busy ?? false"
       (click)="saveOverride()">

@@ -197,6 +197,10 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       white-space:nowrap;
       text-align:right;
     }
+    :host ::ng-deep .sp-adm-actions-wrap {
+      display:flex;
+      justify-content:flex-end;
+    }
     :host ::ng-deep .sp-admin-table-empty {
       color:#98a2b3;
     }
