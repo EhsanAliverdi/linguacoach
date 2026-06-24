@@ -12,6 +12,18 @@ Last updated: 2026-06-24 (10UI-PARITY-FINAL)
 
 ---
 
+## Admin Design Route Map — VERIFIED (Phase 10UI-PARITY-REBUILD-1, 2026-06-24)
+
+Verified Angular admin shell, sidebar nav, and routes against the new design source
+`docs/design/speakpath/admin/`. All 15 design nav entries map to existing Angular
+routes and components. Sidebar sections and labels match the design exactly
+(desktop sidebar plus mobile drawer). Added `/admin/students/create` redirect alias
+for the design-canonical create-student path. Full route map in
+`docs/design/admin-reference-alignment.md`. No secrets rendered; charts use
+"No data available" placeholders only.
+
+---
+
 ## Admin Standalone Visual Parity — CLOSED (Phase 10UI-PARITY-FINAL, 2026-06-24)
 
 All admin shared components and feature pages aligned to `docs/design/SpeakPath Admin (standalone) V1.html`.

@@ -63,6 +63,10 @@ export const routes: Routes = [
         redirectTo: 'create-student',
       },
       {
+        path: 'students/create',
+        redirectTo: 'create-student',
+      },
+      {
         path: 'ai-config',
         loadComponent: () => import('./features/admin/admin-ai-config/admin-ai-config.component').then(m => m.AdminAiConfigComponent),
       },

@@ -463,3 +463,13 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **What:** Real-time scrollable events feed card. Currently skeleton placeholder.
 **Needs:** SignalR or polling endpoint for live diagnostic events.
 **Phase:** 10UI-BACKEND-AGG-2 (complex)
+
+---
+
+## Admin UI parity
+
+### TODO-REBUILD-1 — Admin design route map verified (DONE 2026-06-24)
+**What:** Verified Angular admin shell, sidebar nav, and routes against new design source `docs/design/speakpath/admin/`.
+**Outcome:** All 15 design nav entries map to existing routes and components. Added `/admin/students/create` redirect alias. Sidebar sections/labels match design exactly.
+**Review:** `docs/reviews/2026-06-24-phase-10ui-parity-rebuild-1-admin-page-by-page-exact-design-match.md`
+**Follow-up:** Run frontend build/test in shared checkout before merge (worktree lacks node_modules).

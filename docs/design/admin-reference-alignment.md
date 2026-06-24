@@ -75,3 +75,40 @@ All phases complete as of commit `2075134`.
 |---|---|---|
 | Graph/chart areas use placeholder divs | No charting library allowed | P3 — acceptable |
 | No live screenshot for all routes | Backend not running in audit session | P3 — documented |
+
+---
+
+## 10UI-PARITY-REBUILD-1 — Route map vs `docs/design/speakpath/admin/` nav
+
+Verified the Angular admin shell and sidebar against the new design source
+`docs/design/speakpath/admin/shell.jsx` nav configuration.
+
+| Design nav (section) | Design page file | Angular route | Status |
+|---|---|---|---|
+| OVERVIEW · Dashboard | `pages/dashboard.jsx` | `/admin` | ✅ exact |
+| STUDENTS · Students | `pages/students.jsx` | `/admin/students` | ✅ exact |
+| (Create student) | `pages/create-student.jsx` | `/admin/create-student` (aliases `/admin/students/new`, `/admin/students/create`) | ✅ aligned |
+| AI SYSTEM · AI Config | `pages/ai-config.jsx` | `/admin/ai-config` | ✅ exact |
+| AI SYSTEM · Prompts | `pages/prompts.jsx` | `/admin/prompts` | ✅ exact |
+| AI SYSTEM · AI Usage | `pages/ai-usage-detail.jsx` | `/admin/usage` (alias `/admin/ai-usage`) | ✅ aligned |
+| AI SYSTEM · Usage Policies | `pages/usage-policies.jsx` | `/admin/usage-policies` | ✅ exact |
+| ANALYTICS · Usage & Analytics | `pages/ai-usage.jsx` | `/admin/usage-analytics` | ✅ exact |
+| CONTENT · Lessons | `pages/lessons.jsx` | `/admin/lessons` | ✅ exact |
+| CONTENT · Curriculum | `pages/curriculum.jsx` | `/admin/curriculum` | ✅ exact |
+| CONTENT · Exercise Types | `pages/exercise-types.jsx` | `/admin/exercise-types` | ✅ exact |
+| SYSTEM · Notifications | `pages/notifications.jsx` | `/admin/notifications` | ✅ exact |
+| SYSTEM · Integrations | `pages/integrations.jsx` | `/admin/integrations` | ✅ exact |
+| SYSTEM · Diagnostics | `pages/diagnostics.jsx` | `/admin/diagnostics` | ✅ exact |
+| SYSTEM · Security | `pages/security.jsx` | `/admin/security` | ✅ exact |
+
+**Sidebar nav sections and labels** match the design exactly across both the desktop
+sidebar and the mobile drawer in `admin-app-layout.component.html`.
+
+**Page content:** all 15 design pages already have substantial production Angular
+components from prior parity phases (dashboard hero + KPIs + graph cards, students
+filter bar + sortable table + pagination, AI usage KPIs + date pills + chart
+placeholders, usage-analytics period pills + KPI strip + graph cards). Charts use
+"No data available" placeholders, never fabricated values. No secrets rendered.
+
+**Change in this phase:** added `/admin/students/create` redirect alias so the
+design-canonical create-student path resolves alongside existing aliases.
