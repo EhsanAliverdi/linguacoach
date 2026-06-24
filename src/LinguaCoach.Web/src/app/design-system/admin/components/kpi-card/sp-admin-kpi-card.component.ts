@@ -21,45 +21,49 @@ export type KpiVariant = 'indigo' | 'green' | 'violet' | 'amber' | 'teal' | 'sla
     </div>
   `,
   styles: [`
+    /* Matches .adm-kpi: padding 20px, flex, gap 16px + .adm-card base styles */
     .sp-kpi-card {
       background: var(--sp-admin-surface, #fff);
       border: 1px solid var(--sp-admin-border, #ECE9F5);
-      border-radius: var(--sp-admin-radius-md, 14px);
+      border-radius: 14px;
       padding: 20px;
       display: flex;
       align-items: center;
       gap: 16px;
-      box-shadow: var(--sp-admin-shadow-card, 0 1px 2px rgba(33,27,54,.06));
+      box-shadow: 0 1px 2px rgba(33,27,54,.06);
     }
+    /* .adm-kpi-icon: 40px, radius 11px */
     .sp-kpi-icon {
       width: 40px;
       height: 40px;
       border-radius: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
       flex-shrink: 0;
     }
-    .sp-kpi-icon-indigo { background: var(--sp-admin-primary-bg, #EDEBFF); color: var(--sp-admin-primary, #5B4BE8); }
-    .sp-kpi-icon-green  { background: var(--sp-admin-green-bg, #ecfdf3);   color: var(--sp-admin-green, #16a34a); }
-    .sp-kpi-icon-violet { background: var(--sp-admin-violet-bg, #f5f3ff);  color: var(--sp-admin-violet, #7c3aed); }
-    .sp-kpi-icon-amber  { background: var(--sp-admin-amber-bg, #fffbeb);   color: var(--sp-admin-amber, #d97706); }
-    .sp-kpi-icon-teal   { background: var(--sp-admin-teal-bg, #f0fdfa);    color: var(--sp-admin-teal, #0d9488); }
-    .sp-kpi-icon-slate  { background: var(--sp-admin-slate-bg, #f2f4f7);   color: var(--sp-admin-slate, #475569); }
-    .sp-kpi-body { min-width: 0; }
+    /* Exact standalone icon tones */
+    .sp-kpi-icon-indigo  { background: #EDEBFF; color: #5B4BE8; }
+    .sp-kpi-icon-green   { background: #E0F6EE; color: #13B07C; }
+    .sp-kpi-icon-violet  { background: #F2E9FF; color: #B45CF0; }
+    .sp-kpi-icon-amber   { background: #FFF1DC; color: #F0982C; }
+    .sp-kpi-icon-teal    { background: #E0F6EE; color: #0A7468; }
+    .sp-kpi-icon-slate   { background: #F6F4FB; color: #8B85A0; }
+    .sp-kpi-body { min-width: 0; flex: 1; }
+    /* .adm-kpi-label: 11px/800/muted/uppercase/0.08em */
     .sp-kpi-label {
       font-size: 11px;
       font-weight: 800;
-      color: var(--sp-admin-text-muted, #8B85A0);
+      color: #8B85A0;
       text-transform: uppercase;
       letter-spacing: .08em;
       margin-bottom: 4px;
     }
+    /* .adm-kpi-val: 30px/800/ink/-0.04em/lh1 */
     .sp-kpi-value {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 800;
-      color: var(--sp-admin-text, #211B36);
-      letter-spacing: -.03em;
+      color: #211B36;
+      letter-spacing: -.04em;
       line-height: 1;
     }
   `],

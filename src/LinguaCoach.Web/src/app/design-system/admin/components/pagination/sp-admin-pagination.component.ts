@@ -1,46 +1,85 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SpAdminButtonComponent } from '../button/sp-admin-button.component';
 
 @Component({
   selector: 'sp-admin-pagination',
   standalone: true,
-  imports: [CommonModule, SpAdminButtonComponent],
+  imports: [CommonModule],
   template: `
-    <!--
-      TailAdmin pagination pattern: flex items-center justify-between px-4 py-3
-      border-t border-gray-100, prev/next as rounded-lg border buttons,
-      page indicator text-sm text-gray-500.
-    -->
+    <!-- Matches .adm-pagination: flex space-between, 12/16px padding, border-top border -->
     <nav class="sp-adm-pagination" aria-label="Pagination">
-      <span class="sp-adm-pagination-label">Page {{ safePage }} of {{ safeTotalPages }}</span>
-      <div class="sp-adm-pagination-actions">
-        <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="safePage <= 1" (click)="goTo(safePage - 1)">Previous</sp-admin-button>
-        <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="safePage >= safeTotalPages" (click)="goTo(safePage + 1)">Next</sp-admin-button>
+      <span class="sp-adm-pag-info">Page {{ safePage }} of {{ safeTotalPages }}</span>
+      <div class="sp-adm-pag-btns">
+        <button
+          class="sp-adm-pag-btn"
+          [disabled]="safePage <= 1 || null"
+          (click)="goTo(safePage - 1)"
+          aria-label="Previous page"
+        >Previous</button>
+        @for (p of pageNumbers; track p) {
+          <button
+            class="sp-adm-pag-btn"
+            [class.sp-adm-pag-btn-cur]="p === safePage"
+            (click)="goTo(p)"
+            [attr.aria-current]="p === safePage ? 'page' : null"
+          >{{ p }}</button>
+        }
+        <button
+          class="sp-adm-pag-btn"
+          [disabled]="safePage >= safeTotalPages || null"
+          (click)="goTo(safePage + 1)"
+          aria-label="Next page"
+        >Next</button>
       </div>
     </nav>
   `,
   styles: [`
+    /* .adm-pagination: flex, space-between, 12/16px padding, border-top */
     .sp-adm-pagination {
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
-      padding:10px 20px;
-      border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC);
+      padding:12px 16px;
+      border-top:1px solid #ECE9F5;
       background:#fff;
     }
-    .sp-adm-pagination-label {
-      color:var(--sp-admin-text-muted,#64748B);
-      font-size:12px;
+    /* .adm-pag-info: 13px/muted */
+    .sp-adm-pag-info {
+      font-size:13px;
+      color:#8B85A0;
       font-weight:500;
     }
-    .sp-adm-pagination-actions {
+    .sp-adm-pag-btns {
       display:flex;
+      gap:6px;
       align-items:center;
-      gap:8px;
     }
+    /* .adm-pag-btn: 30px height, 0/11px padding, 7px radius, 13px/600, border-2 */
+    .sp-adm-pag-btn {
+      height:30px;
+      padding:0 11px;
+      border-radius:7px;
+      font-size:13px;
+      font-weight:600;
+      border:1.5px solid #E2DEF0;
+      background:#fff;
+      color:#211B36;
+      cursor:pointer;
+      transition:background .1s;
+      font-family:inherit;
+      line-height:1;
+    }
+    .sp-adm-pag-btn:hover:not(:disabled) { background:#F6F4FB; }
+    .sp-adm-pag-btn:disabled { opacity:.35; cursor:default; }
+    /* .adm-pag-btn.cur: indigo bg, white text, indigo border */
+    .sp-adm-pag-btn-cur {
+      background:#5B4BE8;
+      color:#fff;
+      border-color:#5B4BE8;
+    }
+    .sp-adm-pag-btn-cur:hover:not(:disabled) { background:#3A2EA8; }
   `],
 })
 export class SpAdminPaginationComponent {
@@ -61,5 +100,14 @@ export class SpAdminPaginationComponent {
     if (nextPage !== this.safePage) {
       this.pageChange.emit(nextPage);
     }
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.safeTotalPages;
+    const cur = this.safePage;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    // show first, last, current ±2 with ellipsis condensed to numbers only
+    const pages = new Set([1, total, cur - 1, cur, cur + 1].filter(p => p >= 1 && p <= total));
+    return [...pages].sort((a, b) => a - b);
   }
 }

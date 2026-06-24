@@ -46,22 +46,30 @@ export type SpAdminInputState = 'default' | 'error' | 'success' | 'disabled';
   `,
   styles: [`
     :host { display:block; min-width:0; }
-    /* TailAdmin-backed: h-11 rounded-lg border border-gray-200 input pattern */
-    .sp-adm-input { box-sizing:border-box; width:100%; border-radius:8px; border:1px solid var(--sp-admin-border,#ECE9F5); background:transparent; color:var(--sp-admin-text,#0F172A); transition:border-color .15s, box-shadow .15s; }
-    .sp-adm-input::placeholder { color:var(--sp-admin-text-faint,#CBD5E1); }
-    .sp-adm-input:focus { outline:none; border-color:var(--sp-admin-primary,#5B4BE8); box-shadow:var(--sp-admin-focus-ring,0 0 0 3px rgba(91,75,232,.15)); }
-    .sp-adm-input:disabled { opacity:.55; cursor:not-allowed; background:var(--sp-admin-surface-subtle,#FBFAFE); }
+    /* .adm-input: 36px, 1.5px border, 8px radius, 13.5px, border-2 (#E2DEF0) */
+    .sp-adm-input {
+      box-sizing:border-box; width:100%;
+      height:36px; padding:0 12px;
+      border-radius:8px; border:1.5px solid #E2DEF0;
+      background:#fff; color:#211B36;
+      font-size:13.5px; font-family:inherit;
+      outline:none;
+      transition:border-color .15s;
+    }
+    .sp-adm-input::placeholder { color:#BDB8CC; }
+    .sp-adm-input:focus { border-color:#5B4BE8; }
+    .sp-adm-input:disabled { opacity:.55; cursor:not-allowed; background:#FBFAFE; }
 
-    /* Sizes */
-    .sp-adm-input-sm { height:32px; padding:6px 12px; font-size:12px; }
-    .sp-adm-input-md { height:44px; padding:10px 16px; font-size:13px; }
-    .sp-adm-input-lg { height:52px; padding:12px 20px; font-size:15px; }
+    /* Sizes — sm matches .adm-btn-sm feel, lg for larger forms */
+    .sp-adm-input-sm { height:30px; padding:0 10px; font-size:12.5px; }
+    .sp-adm-input-md { height:36px; padding:0 12px; font-size:13.5px; }
+    .sp-adm-input-lg { height:44px; padding:0 14px; font-size:14px; }
 
     /* States */
-    .sp-adm-input-error   { border-color:#ef4444; }
-    .sp-adm-input-error:focus   { box-shadow:0 0 0 3px rgba(239,68,68,.15); border-color:#ef4444; }
-    .sp-adm-input-success { border-color:#16a34a; }
-    .sp-adm-input-success:focus { box-shadow:0 0 0 3px rgba(22,163,74,.15); border-color:#16a34a; }
+    .sp-adm-input-error   { border-color:#EF4444; }
+    .sp-adm-input-error:focus   { border-color:#EF4444; }
+    .sp-adm-input-success { border-color:#13B07C; }
+    .sp-adm-input-success:focus { border-color:#13B07C; }
 
     /* Width */
     .sp-adm-input-auto { width:auto; }

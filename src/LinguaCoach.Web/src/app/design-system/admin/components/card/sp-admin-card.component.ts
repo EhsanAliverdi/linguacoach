@@ -14,7 +14,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
   imports: [CommonModule],
   template: `
     <section
-      class="sp-adm-card bg-white dark:bg-white/[0.03]"
+      class="sp-adm-card"
       [class]="hostClasses"
     >
       @if (loading) {
@@ -23,7 +23,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
         </div>
       }
       @if (title || hasActions) {
-        <header class="sp-adm-card-header px-6 py-5" [class.sp-adm-card-header-divider]="headerDivider">
+        <header class="sp-adm-card-header" [class.sp-adm-card-header-divider]="headerDivider">
           @if (title) {
             <h2 class="sp-adm-card-title">{{ title }}</h2>
           }
@@ -39,48 +39,55 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
   styles: [`
     :host { display:block; min-width:0; }
 
-    /* Base */
-    .sp-adm-card { min-width:0; position:relative; overflow:hidden; }
+    /* Base — matches .adm-card: bg white, border ECE9F5, radius 14px, shadow sh-xs */
+    .sp-adm-card {
+      min-width:0; position:relative; overflow:hidden;
+      background: var(--sp-admin-surface, #FFFFFF);
+    }
 
-    /* Variant borders/shadows */
-    .sp-adm-card-default   { border:1px solid var(--sp-admin-border,#ECE9F5); }
-    .sp-adm-card-bordered  { border:2px solid var(--sp-admin-border,#ECE9F5); }
-    .sp-adm-card-elevated  { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-card,0 4px 12px rgba(60,48,140,.07)); }
-    .sp-adm-card-flat      { border:none; background:var(--sp-admin-surface-subtle,#FBFAFE) !important; }
-    .sp-adm-card-metric    { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-card,0 1px 3px rgba(60,48,140,.05)); }
-    .sp-adm-card-section   { border:none; border-top:2px solid var(--sp-admin-primary,#5B4BE8); }
-    .sp-adm-card-dashed    { border-style:dashed; }
+    /* Variant borders/shadows — all use the standalone card baseline */
+    .sp-adm-card-default  { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
+    .sp-adm-card-bordered { border:1.5px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
+    .sp-adm-card-elevated { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-sm,0 2px 8px rgba(60,48,140,.07)); }
+    .sp-adm-card-flat     { border:none; background:var(--sp-admin-surface-subtle,#FBFAFE) !important; box-shadow:none; }
+    .sp-adm-card-metric   { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
+    .sp-adm-card-section  { border:none; border-top:2px solid var(--sp-admin-primary,#5B4BE8); box-shadow:none; }
+    .sp-adm-card-dashed   { border-style:dashed; }
 
-    /* Radius */
-    .sp-adm-card-radius-md  { border-radius:var(--sp-admin-radius-md,14px); }
-    .sp-adm-card-radius-lg  { border-radius:var(--sp-admin-radius-lg,18px); }
-    .sp-adm-card-radius-xl  { border-radius:var(--sp-admin-radius-xl,22px); }
-    .sp-adm-card-radius-2xl { border-radius:var(--sp-admin-radius-xl,22px); }
+    /* Radius — standalone card is 14px */
+    .sp-adm-card-radius-md  { border-radius:14px; }
+    .sp-adm-card-radius-lg  { border-radius:18px; }
+    .sp-adm-card-radius-xl  { border-radius:22px; }
+    .sp-adm-card-radius-2xl { border-radius:22px; }
 
     /* Hover */
     .sp-adm-card-hover { cursor:pointer; transition:box-shadow .15s,border-color .15s; }
-    .sp-adm-card-hover:hover { box-shadow:0 4px 16px rgba(91,75,232,.12); border-color:var(--sp-admin-primary-focus,#C0BAF9); }
+    .sp-adm-card-hover:hover { box-shadow:var(--sp-admin-shadow-sm,0 2px 8px rgba(60,48,140,.07)); border-color:var(--sp-admin-primary-focus,#C0BAF9); }
 
-    /* Header */
+    /* Header — matches .adm-card-header: flex, space-between, margin-bottom:16px, padding 20px */
     .sp-adm-card-header {
       display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:20px 20px 0;
+      margin-bottom:16px;
     }
-    .sp-adm-card-header-divider { border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
-    .sp-adm-card-title { margin:0; font-size:13.5px; font-weight:700; color:var(--sp-admin-text,#211B36); }
+    .sp-adm-card-header-divider { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); padding-bottom:16px; margin-bottom:0; }
 
-    /* Body padding */
+    /* Title — matches .adm-card-title: 13.5px/700/ink */
+    .sp-adm-card-title { margin:0; font-size:13.5px; font-weight:700; color:var(--sp-admin-text,#211B36); line-height:1.3; }
+
+    /* Body padding — standalone .adm-card-p: padding 20px */
     .sp-adm-card-body-none { padding:0; }
-    .sp-adm-card-body-sm   { padding:12px 16px; }
-    .sp-adm-card-body-md   { padding:16px 24px; }
-    .sp-adm-card-body-lg   { padding:24px 32px; }
+    .sp-adm-card-body-sm   { padding:14px 16px; }
+    .sp-adm-card-body-md   { padding:20px; }
+    .sp-adm-card-body-lg   { padding:24px; }
 
-    /* Body border (when header present) */
-    .sp-adm-card-body-bordered { border-top:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
+    /* Body border when header present — use a 16px top gap not a border */
+    .sp-adm-card-body-bordered { padding-top:0; }
 
     /* Loading overlay */
     .sp-adm-card-loading {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      background:rgba(255,255,255,.75); z-index:10;
+      background:rgba(255,255,255,.75); z-index:10; border-radius:inherit;
     }
     .sp-adm-card-spinner {
       width:24px; height:24px; border-radius:50%;

@@ -125,35 +125,41 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     :host ::ng-deep table {
       width:100%;
       min-width:var(--sp-admin-table-min-width, 720px);
-      border-collapse:separate;
+      border-collapse:collapse;
       border-spacing:0;
       table-layout:auto;
     }
-    :host ::ng-deep thead tr { border-bottom:1px solid var(--sp-admin-border,#ECE9F5); }
+    :host ::ng-deep thead tr { border-bottom:1px solid #ECE9F5; }
+    /* .adm-table th: 11px/800/muted/0.07em/uppercase, 10/16px padding, border-bottom border */
     :host ::ng-deep th {
-      padding:11px 16px;
-      background:var(--sp-admin-surface-subtle,#FBFAFE);
-      color:var(--sp-admin-text-muted,#64748B);
+      padding:10px 16px;
+      background:transparent;
+      color:#8B85A0;
       font-size:11px;
-      font-weight:700;
+      font-weight:800;
       line-height:1.4;
       text-align:left;
       white-space:nowrap;
       vertical-align:middle;
-      letter-spacing:0.06em;
+      letter-spacing:0.07em;
       text-transform:uppercase;
+      border-bottom:1px solid #ECE9F5;
+      user-select:none;
     }
+    /* .adm-table td: 12/16px, 13.5px/text color, border-bottom border */
     :host ::ng-deep td {
-      padding:13px 16px;
-      color:var(--sp-admin-text-secondary,#334155);
-      font-size:13px;
+      padding:12px 16px;
+      color:#4B4462;
+      font-size:13.5px;
       line-height:1.5;
       vertical-align:middle;
-      border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC);
+      border-bottom:1px solid #ECE9F5;
       min-width:72px;
     }
+    /* .adm-table tr:last-child td: no border-bottom */
     :host ::ng-deep tbody tr:last-child td { border-bottom:0; }
-    :host ::ng-deep tbody tr:hover td { background:var(--sp-admin-bg,#F6F4FB); }
+    /* .adm-table tbody tr:hover: background rgb(250,250,254) */
+    :host ::ng-deep tbody tr:hover td { background:rgb(250,250,254); }
     :host ::ng-deep td:first-child,
     :host ::ng-deep th:first-child { padding-left:20px; }
     :host ::ng-deep td:last-child,
@@ -223,12 +229,13 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-th-striped  { background:var(--sp-admin-surface-subtle,#FBFAFE); }
 
     /* Density — th/td padding */
-    .sp-adm-th-compact    { padding:6px 12px; }
-    .sp-adm-th-comfortable{ padding:10px 20px; }
-    .sp-adm-th-spacious   { padding:14px 24px; }
-    .sp-adm-td-compact    { padding:6px 12px; font-size:12px; }
-    .sp-adm-td-comfortable{ padding:14px 20px; font-size:13px; }
-    .sp-adm-td-spacious   { padding:18px 24px; font-size:14px; }
+    /* Density — comfortable matches .adm-table baseline exactly */
+    .sp-adm-th-compact    { padding:6px 12px; font-size:11px; }
+    .sp-adm-th-comfortable{ padding:10px 16px; font-size:11px; }
+    .sp-adm-th-spacious   { padding:14px 20px; font-size:11px; }
+    .sp-adm-td-compact    { padding:8px 12px;  font-size:12.5px; }
+    .sp-adm-td-comfortable{ padding:12px 16px; font-size:13.5px; }
+    .sp-adm-td-spacious   { padding:16px 20px; font-size:14px; }
 
     /* td */
     .sp-adm-td        { color:var(--sp-admin-text-secondary,#334155); vertical-align:middle; border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }

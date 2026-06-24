@@ -55,35 +55,37 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     }
     .sp-tog-root.sp-tog-disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 
+    /* .adm-toggle: 38px x 22px, 99px radius, border none, indigo on, border-2 off */
     .sp-tog-track {
       flex-shrink: 0;
-      width: 40px; height: 22px; border-radius: 11px;
+      width: 38px; height: 22px; border-radius: 99px;
       border: none; padding: 0; margin: 0;
-      background: var(--sp-admin-border, #D1D5DB);
+      background: #E2DEF0;
       position: relative; cursor: pointer;
-      transition: background 0.18s ease;
+      transition: background 0.2s;
       display: flex; align-items: center;
     }
     .sp-tog-track:focus-visible {
-      outline: 2px solid var(--sp-admin-primary, #5B4BE8);
+      outline: 2px solid #5B4BE8;
       outline-offset: 2px;
     }
     .sp-tog-track--on {
-      background: var(--sp-admin-primary, #5B4BE8);
+      background: #5B4BE8;
     }
     .sp-tog-track--loading {
       opacity: 0.7; cursor: wait;
     }
 
+    /* .adm-toggle::after: top 3px, left 3px/19px, 16px x 16px, shadow sh-xs */
     .sp-tog-thumb {
-      position: absolute; left: 3px;
+      position: absolute; left: 3px; top: 3px;
       width: 16px; height: 16px; border-radius: 50%;
       background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,.2);
-      transition: left 0.18s ease;
+      box-shadow: 0 1px 2px rgba(33,27,54,.06);
+      transition: left 0.18s;
       display: flex; align-items: center; justify-content: center;
     }
-    .sp-tog-thumb--on { left: 21px; }
+    .sp-tog-thumb--on { left: 19px; }
 
     .sp-tog-spinner {
       width: 10px; height: 10px; border-radius: 50%;
