@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-AUDIT-0)
+lastUpdated: 2026-06-24 (10UI-PARITY-FINAL)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,38 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-23 (10UI-AUDIT-0)
+Last updated: 2026-06-24 (10UI-PARITY-FINAL)
+
+---
+
+## Admin Standalone Visual Parity — CLOSED (Phase 10UI-PARITY-FINAL, 2026-06-24)
+
+All admin shared components and feature pages aligned to `docs/design/SpeakPath Admin (standalone) V1.html`.
+
+**Commits:** `104624a` (1C-A), `c051eb8` (1C-B1), `5a0d921` (docs), `6e9196d` (shared DS), `2075134` (FINAL sweep)
+
+### What was aligned
+
+- **Design tokens** — `admin-tokens.css` matches standalone `:root` exactly (`--ink`, `--muted`, `--border`, `--border-2`, `--surface`, `--canvas`, shadow vars, font)
+- **Shared components** — card, kpi-card, button, badge, table, pagination, input, toggle all at exact token parity
+- **Student detail hero** — radius 14px, gap 18px, sh-xs shadow, `#211B36` name, `#8B85A0` email, no monospace
+- **AI config native select** — 36px height, 1.5px `#E2DEF0` border, focus indigo
+- **Usage policies rules expansion** — `#FBFAFE` bg, `#ECE9F5` border, `#8B85A0` muted
+- **Notifications/Security tabs** — `#8B85A0` inactive, `#5B4BE8` active + underline
+- **Color sweep (16 files)** — all Tailwind gray fallbacks replaced with standalone tokens (`#8B85A0`, `#211B36`, `#E2DEF0`, `#ECE9F5`, `#13B07C`, `#F6F4FB`)
+
+### Accepted gaps (P3)
+
+- Graph/chart areas show placeholder divs — no charting library added (policy)
+- No live screenshot comparison (backend not running this session)
+
+### Gates
+
+- ✅ Production build clean
+- ✅ 1361/1361 frontend tests passing
+- ✅ No fake data, no secrets, no student UI changes, no backend changes
+
+Full audit: `docs/reviews/2026-06-24-phase-10ui-parity-final-standalone-admin-screenshot-closure-audit.md`
 
 ---
 
