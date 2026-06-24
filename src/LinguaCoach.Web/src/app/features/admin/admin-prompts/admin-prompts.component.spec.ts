@@ -24,7 +24,7 @@ const PROMPT_INACTIVE: PromptTemplateItem = {
 
 const PROMPT_DETAIL: PromptTemplateDetail = {
   ...PROMPT_ACTIVE,
-  content: 'You are a helpful language coach. {input}',
+  content: 'You are a helpful language coach. {{input}}',
 };
 
 function makeAdminApi(prompts: PromptTemplateItem[] = [PROMPT_ACTIVE]) {
@@ -55,7 +55,7 @@ describe('AdminPromptsComponent', () => {
     fixture.detectChanges();
   }
 
-  it('renders the page', async () => {
+  it('renders the page title', async () => {
     await setup();
     expect(fixture.nativeElement.textContent).toContain('Prompts');
   });
@@ -165,23 +165,30 @@ describe('AdminPromptsComponent', () => {
 
   it('calls getPrompt when viewing detail', fakeAsync(async () => {
     await setup([PROMPT_ACTIVE]);
-    component.viewDetail('id-1');
+    component.openView(PROMPT_ACTIVE);
     tick();
     expect(adminApi.getPrompt).toHaveBeenCalledWith('id-1');
     expect(component.detail()).toEqual(PROMPT_DETAIL);
   }));
 
-  it('shows form on toggleForm', async () => {
+  it('opens edit panel via openCreate', async () => {
     await setup();
-    expect(component.showForm()).toBeFalse();
-    component.toggleForm();
-    fixture.detectChanges();
-    expect(component.showForm()).toBeTrue();
+    expect(component.showEditPanel()).toBeFalse();
+    component.openCreate();
+    expect(component.showEditPanel()).toBeTrue();
+    expect(component.editRow()).toBeNull();
   });
 
-  it('calls createPromptVersion with form values', fakeAsync(async () => {
+  it('opens edit panel via openEdit', async () => {
+    await setup([PROMPT_ACTIVE]);
+    component.openEdit(PROMPT_ACTIVE);
+    expect(component.showEditPanel()).toBeTrue();
+    expect(component.editRow()).toEqual(PROMPT_ACTIVE);
+  });
+
+  it('calls createPromptVersion with form values on create', fakeAsync(async () => {
     await setup();
-    component.toggleForm();
+    component.openCreate();
     component.newKey = 'test.key.v1';
     component.newContent = 'Test prompt content';
     component.newMaxInput = 500;
@@ -196,10 +203,36 @@ describe('AdminPromptsComponent', () => {
     });
   }));
 
-  it('sets formError when key or content is missing', async () => {
+  it('calls createPromptVersion using editRow key on edit', fakeAsync(async () => {
+    await setup([PROMPT_ACTIVE]);
+    component.openEdit(PROMPT_ACTIVE);
+    component.newContent = 'Updated prompt content';
+    component.newMaxInput = 800;
+    component.newMaxOutput = 600;
+    component.createVersion();
+    tick();
+    expect(adminApi.createPromptVersion).toHaveBeenCalledWith({
+      key: PROMPT_ACTIVE.key,
+      content: 'Updated prompt content',
+      maxInputTokens: 800,
+      maxOutputTokens: 600,
+    });
+  }));
+
+  it('sets formError when content is missing', async () => {
     await setup();
-    component.newKey = '';
+    component.openCreate();
+    component.newKey = 'test.key';
     component.newContent = '';
+    component.createVersion();
+    expect(component.formError()).toBeTruthy();
+  });
+
+  it('sets formError when key is missing on create', async () => {
+    await setup();
+    component.openCreate();
+    component.newKey = '';
+    component.newContent = 'some content';
     component.createVersion();
     expect(component.formError()).toBeTruthy();
   });
@@ -214,7 +247,7 @@ describe('AdminPromptsComponent', () => {
     expect(component.activeCount()).toBe(1);
   });
 
-  // ── REDESIGN-5 KPI strip, category badge, category filter ─────────────────
+  // ── KPI strip ────────────────────────────────────────────────────────────────
 
   it('renders sp-admin-kpi-card elements for the summary strip', async () => {
     await setup([PROMPT_ACTIVE]);
@@ -231,18 +264,36 @@ describe('AdminPromptsComponent', () => {
   it('page header subtitle includes template count', async () => {
     await setup([PROMPT_ACTIVE, PROMPT_INACTIVE]);
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    // uniqueKeyCount() — both have different keys, so 2 templates
     expect(text).toContain('2 templates');
   });
 
-  it('promptCategory extracts first key segment capitalised', async () => {
+  // ── Category ─────────────────────────────────────────────────────────────────
+
+  it('promptCategory extracts first key segment capitalised (dot key)', async () => {
     await setup();
     expect(component.promptCategory('writing.exercise.feedback.v1')).toBe('Writing');
     expect(component.promptCategory('speaking.practice.score.v1')).toBe('Speaking');
   });
 
-  it('promptCategory returns Other for single-segment key', async () => {
+  it('promptCategory returns Other for underscore activity_ prefix', async () => {
     await setup();
-    expect(component.promptCategory('toplevel')).toBe('Other');
+    expect(component.promptCategory('activity_evaluate_answer_short_q')).toBe('Other');
+  });
+
+  it('promptCategory maps system_ prefix to Curriculum', async () => {
+    await setup();
+    expect(component.promptCategory('system_build_lesson_plan')).toBe('Curriculum');
+  });
+
+  it('promptCategory maps placement_ prefix to Assessment', async () => {
+    await setup();
+    expect(component.promptCategory('placement_evaluate_writing')).toBe('Assessment');
+  });
+
+  it('promptCategory maps memory_ prefix to Memory', async () => {
+    await setup();
+    expect(component.promptCategory('memory_build_profile')).toBe('Memory');
   });
 
   it('renders category badge in table row', async () => {
@@ -282,5 +333,47 @@ describe('AdminPromptsComponent', () => {
   it('categoryTone returns neutral for unknown category', async () => {
     await setup();
     expect(component.categoryTone('Zoology')).toBe('neutral');
+  });
+
+  // ── "latest" badge ───────────────────────────────────────────────────────────
+
+  it('isLatestVersion returns true for the highest version of a key', async () => {
+    const v1: PromptTemplateItem = { id: 'k-v1', key: 'foo.bar', version: 1, isActive: false, maxInputTokens: 100, maxOutputTokens: 100 };
+    const v2: PromptTemplateItem = { id: 'k-v2', key: 'foo.bar', version: 2, isActive: true,  maxInputTokens: 100, maxOutputTokens: 100 };
+    await setup([v1, v2]);
+    expect(component.isLatestVersion(v2)).toBeTrue();
+    expect(component.isLatestVersion(v1)).toBeFalse();
+  });
+
+  // ── promptVars ───────────────────────────────────────────────────────────────
+
+  it('promptVars extracts unique variable names from content', async () => {
+    await setup();
+    const vars = component.promptVars('Hello {{name}}, your score is {{score}}. Good luck {{name}}!');
+    expect(vars).toEqual(['name', 'score']);
+  });
+
+  it('promptVars returns empty array for content with no variables', async () => {
+    await setup();
+    expect(component.promptVars('No variables here.')).toEqual([]);
+  });
+
+  // ── slide-over state ─────────────────────────────────────────────────────────
+
+  it('closeView clears viewPrompt and detail', fakeAsync(async () => {
+    await setup([PROMPT_ACTIVE]);
+    component.openView(PROMPT_ACTIVE);
+    tick();
+    component.closeView();
+    expect(component.viewPrompt()).toBeNull();
+    expect(component.detail()).toBeNull();
+  }));
+
+  it('closeEdit clears showEditPanel and editRow', async () => {
+    await setup([PROMPT_ACTIVE]);
+    component.openEdit(PROMPT_ACTIVE);
+    component.closeEdit();
+    expect(component.showEditPanel()).toBeFalse();
+    expect(component.editRow()).toBeNull();
   });
 });
