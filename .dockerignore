@@ -8,11 +8,15 @@
 **/.vscode
 **/obj
 **/bin
+src/obj/
 **/*.user
 **/*.suo
 **/.vs
 **/node_modules
 **/dist
+**/.angular
+**/playwright-report
+src/LinguaCoach.Web/
 frontend/
 docs/
 tests/
