@@ -19,6 +19,7 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminNotImplementedStateComponent,
   SpAdminIconComponent,
+  SpAdminProviderAvatarComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
@@ -101,7 +102,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminSlideOverComponent,
     SpAdminStackComponent, SpAdminTableActionsComponent, SpAdminTableComponent,
-    SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent, SpAdminIconComponent,
+    SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent, SpAdminIconComponent, SpAdminProviderAvatarComponent,
   ],
   templateUrl: './admin-ai-config.component.html',
   styleUrl: './admin-ai-config.component.css',
@@ -501,13 +502,7 @@ export class AdminAiConfigComponent implements OnInit {
     return provider === 'qwen';
   }
 
-  providerInitial(name: string): string {
-    return name.charAt(0).toUpperCase();
-  }
 
-  providerKey(name: string): string {
-    return name.toLowerCase();
-  }
 
   toggleKeyEdit(ps: ProviderState): void {
     ps.editingKey = !ps.editingKey;

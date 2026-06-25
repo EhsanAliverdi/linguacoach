@@ -99,8 +99,7 @@
         One API key per provider applies to all features using it.
         "Test connection" checks every model with the stored key.
       </p>
-      <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="testAllBusy()" (click)="testAllConnections()">
-        <sp-admin-icon slot="leading" name="refresh" size="xs" />
+      <sp-admin-button variant="neutral" appearance="outline" size="sm" leadingIcon="refresh" [disabled]="testAllBusy()" (click)="testAllConnections()">
         {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
       </sp-admin-button>
     </div>
@@ -110,16 +109,7 @@
 
         <!-- Provider header row -->
         <div class="sp-admin-card-list-item-header">
-          <div class="sp-admin-provider-avatar" [attr.aria-label]="ps.catalog.providerName">
-            @switch (providerKey(ps.catalog.providerName)) {
-              @case ('openai') { <sp-admin-icon name="radio" size="sm" tone="primary" /> }
-              @case ('anthropic') { <sp-admin-icon name="alert-triangle" size="sm" tone="primary" /> }
-              @case ('gemini') { <sp-admin-icon name="cpu-chip" size="sm" tone="primary" /> }
-              @case ('qwen') { <sp-admin-icon name="zap" size="sm" tone="primary" /> }
-              @case ('fake') { <sp-admin-icon name="zap" size="sm" tone="muted" /> }
-              @default { <span aria-hidden="true">{{ providerInitial(ps.catalog.providerName) }}</span> }
-            }
-          </div>
+          <sp-admin-provider-avatar [provider]="ps.catalog.providerName" />
           <span class="sp-admin-card-list-item-name">{{ ps.catalog.providerName }}</span>
           @if (ps.catalog.hasApiKey) {
           <sp-admin-badge tone="success" [dot]="true">Key stored</sp-admin-badge>
@@ -448,15 +438,15 @@
 
     <div class="sp-admin-form-row">
       <sp-admin-form-field label="From">
-        <input class="sp-admin-native-select" type="date" [(ngModel)]="f.effectiveFromUtc" />
+        <input class="sp-admin-native-input" type="date" [(ngModel)]="f.effectiveFromUtc" />
       </sp-admin-form-field>
       <sp-admin-form-field label="To">
-        <input class="sp-admin-native-select" type="date" [(ngModel)]="f.effectiveToUtc" />
+        <input class="sp-admin-native-input" type="date" [(ngModel)]="f.effectiveToUtc" />
       </sp-admin-form-field>
     </div>
 
     <sp-admin-form-field label="Note" hint="optional">
-      <input class="sp-admin-native-select" type="text" [(ngModel)]="f.notes"
+      <input class="sp-admin-native-input" type="text" [(ngModel)]="f.notes"
         placeholder="e.g. Negotiated rate, valid Q3 2026" />
     </sp-admin-form-field>
 

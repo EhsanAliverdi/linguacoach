@@ -151,16 +151,6 @@ import {
     .sp-cs-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media(max-width: 600px) { .sp-cs-two-col { grid-template-columns: 1fr; } }
 
-    .sp-cs-native-select {
-      width: 100%;
-      border: 1px solid var(--sp-admin-border, #ECE9F5);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 13.5px;
-      color: var(--sp-admin-text, #211B36);
-      background: #fff;
-    }
-
     .sp-cs-actions {
       display: flex;
       align-items: center;

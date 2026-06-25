@@ -454,13 +454,11 @@
                 </td>
                 <td>{{ t.version }}</td>
                 <td>{{ t.updatedAtUtc ? timeAgo(t.updatedAtUtc) : '—' }}</td>
-                <td>
-                  <div class="sp-notif-outbox-actions">
-                    <sp-admin-button size="sm" variant="ghost" (clicked)="openEditTemplate(t)">Edit</sp-admin-button>
-                    @if (t.isActive) {
-                      <sp-admin-button size="sm" variant="ghost" (clicked)="deactivateTemplate(t)">Deactivate</sp-admin-button>
-                    }
-                  </div>
+                <td class="sp-admin-actions">
+                  <sp-admin-table-actions mode="buttons" [richActions]="[
+                    { id: 'edit', label: 'Edit', icon: 'edit' },
+                    { id: 'deactivate', label: 'Deactivate', icon: 'deactivate', tone: 'danger', hidden: !t.isActive }
+                  ]" (actionSelected)="$event === 'edit' ? openEditTemplate(t) : deactivateTemplate(t)" />
                 </td>
               </tr>
             }

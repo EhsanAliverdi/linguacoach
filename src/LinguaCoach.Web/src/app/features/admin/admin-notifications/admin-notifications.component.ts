@@ -30,6 +30,8 @@ import {
   SpAdminPaginationComponent,
   SpAdminSelectComponent, SpAdminSelectOption,
   SpAdminSlideOverComponent,
+  SpAdminTableActionsComponent,
+  SpAdminRowAction,
   SpAdminTableComponent,
   SpAdminToggleComponent,
 } from '../../../design-system/admin';
@@ -58,6 +60,7 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
+    SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminVisualPlaceholderComponent,
     SpAdminBreakdownBarsComponent,

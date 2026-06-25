@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SpAdminIconComponent, SpAdminIconName, SpAdminIconSize, SpAdminIconTone } from '../icon/sp-admin-icon.component';
 
 export type SpAdminButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'neutral'
   | 'ghost'; // @deprecated: use appearance='ghost' variant='neutral'
@@ -9,7 +10,7 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 @Component({
   selector: 'sp-admin-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SpAdminIconComponent],
   template: `
     <!--
       TailAdmin button pattern (shared/components/ui/button/button.component.html):
@@ -28,9 +29,15 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
       @if (loading) {
         <span class="sp-adm-btn-spinner" aria-hidden="true"></span>
       }
-      <ng-content select="[leading]" />
+      @if (leadingIcon) {
+        <sp-admin-icon [name]="leadingIcon" [size]="iconSize" [tone]="iconTone" />
+      }
+      <ng-content select="[slot=leading],[leading]" />
       <ng-content />
-      <ng-content select="[trailing]" />
+      <ng-content select="[slot=trailing],[trailing]" />
+      @if (trailingIcon) {
+        <sp-admin-icon [name]="trailingIcon" [size]="iconSize" [tone]="iconTone" />
+      }
     </button>
   `,
   styles: [`
@@ -169,6 +176,10 @@ export class SpAdminButtonComponent {
   @Input() iconOnly = false;
   /** @deprecated use fullWidth */
   @Input() block = false;
+  @Input() leadingIcon?: SpAdminIconName;
+  @Input() trailingIcon?: SpAdminIconName;
+  @Input() iconSize: SpAdminIconSize = 'xs';
+  @Input() iconTone: SpAdminIconTone = 'inherit';
 
   get hostClasses(): string {
     // Legacy: variant='ghost' maps to appearance=ghost + variant=neutral

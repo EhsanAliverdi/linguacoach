@@ -108,7 +108,7 @@
             </sp-admin-form-field>
 
             <sp-admin-form-field label="Preferred session duration">
-              <select id="sessionDuration" [(ngModel)]="preferredSessionDurationMinutes" name="sessionDuration" class="sp-cs-native-select">
+              <select id="sessionDuration" [(ngModel)]="preferredSessionDurationMinutes" name="sessionDuration" class="sp-admin-native-select">
                 <option [ngValue]="null">Not specified</option>
                 @for (d of sessionDurations; track d) {
                   <option [ngValue]="d">{{ d }} minutes</option>
@@ -118,7 +118,7 @@
 
             <div class="sp-cs-two-col">
               <sp-admin-form-field label="Experience level">
-                <select id="experienceLevel" [(ngModel)]="professionalExperienceLevel" name="experienceLevel" class="sp-cs-native-select">
+                <select id="experienceLevel" [(ngModel)]="professionalExperienceLevel" name="experienceLevel" class="sp-admin-native-select">
                   <option [ngValue]="null">Not specified</option>
                   @for (l of experienceLevels; track l.value) {
                     <option [ngValue]="l.value">{{ l.label }}</option>
@@ -126,7 +126,7 @@
                 </select>
               </sp-admin-form-field>
               <sp-admin-form-field label="Role familiarity">
-                <select id="roleFamiliarity" [(ngModel)]="roleFamiliarity" name="roleFamiliarity" class="sp-cs-native-select">
+                <select id="roleFamiliarity" [(ngModel)]="roleFamiliarity" name="roleFamiliarity" class="sp-admin-native-select">
                   <option [ngValue]="null">Not specified</option>
                   @for (f of familiarityLevels; track f.value) {
                     <option [ngValue]="f.value">{{ f.label }}</option>
