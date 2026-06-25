@@ -13,6 +13,12 @@ export interface SpAdminTableColumn {
   align?: 'left' | 'center' | 'right';
 }
 
+/** Column definition for projection-mode tables — drives colgroup and table-layout:fixed. */
+export interface SpAdminColDef {
+  width: string;
+  align?: 'left' | 'center' | 'right';
+}
+
 export type SortDirection = 'asc' | 'desc';
 export interface SpAdminSortChange { column: string; direction: SortDirection; }
 export type SpAdminTableVariant = 'basic' | 'data' | 'bordered' | 'striped' | 'simple' | 'card';
@@ -40,7 +46,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       } @else if (error) {
         <sp-admin-error-state [title]="errorTitle" [message]="error" />
       } @else if (columns.length === 0) {
-        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
+        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout">
           <ng-content />
         </div>
       } @else if (!rows.length) {
@@ -264,6 +270,15 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 
     /* Check column */
     .sp-adm-th-check, .sp-adm-td-check { width:40px; padding:0 12px; text-align:center; }
+
+    /* Fixed layout — applies table-layout:fixed to any projected <table> */
+    :host ::ng-deep .sp-adm-fixed-layout table { table-layout:fixed !important; }
+
+    /* Shared column alignment helpers */
+    :host ::ng-deep .sp-admin-th-right { text-align:right !important; }
+    :host ::ng-deep .sp-admin-th-center { text-align:center !important; }
+    :host ::ng-deep .sp-admin-td-right  { text-align:right !important; }
+    :host ::ng-deep .sp-admin-td-center { text-align:center !important; }
   `],
 })
 export class SpAdminTableComponent {
@@ -284,6 +299,9 @@ export class SpAdminTableComponent {
   @Input() stickyHeader = false;
   @Input() minWidth = '720px';
   @Input() flush = false;
+  @Input() fixedLayout = false;
+  /** Column definitions for projection-mode tables (width + optional align). */
+  @Input() colDefs: SpAdminColDef[] = [];
   @Output() sortChange = new EventEmitter<SpAdminSortChange>();
   @Output() selectionChange = new EventEmitter<number[]>();
 

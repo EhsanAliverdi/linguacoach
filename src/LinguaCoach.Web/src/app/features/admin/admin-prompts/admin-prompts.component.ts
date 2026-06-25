@@ -7,6 +7,8 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminButtonGroupComponent,
+  SpAdminButtonGroupAction,
   SpAdminCardComponent,
   SpAdminCodePillComponent,
   SpAdminEmptyStateComponent,
@@ -20,6 +22,7 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
+  SpAdminRowAction,
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminStackComponent,
@@ -40,6 +43,7 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminButtonGroupComponent,
     SpAdminCardComponent,
     SpAdminCodePillComponent,
     SpAdminEmptyStateComponent,
@@ -262,6 +266,55 @@ export class AdminPromptsComponent implements OnInit {
       next: () => { this.busyPromptId.set(null); this.load(); },
       error: () => { this.loadError.set('Prompt version could not be deactivated.'); this.busyPromptId.set(null); },
     });
+  }
+
+  viewFooterActions(): SpAdminButtonGroupAction[] {
+    return [
+      { id: 'edit', label: 'Edit', variant: 'secondary', appearance: 'solid', icon: 'edit', iconColor: '#fff' },
+      ...(this.viewPrompt()?.isActive ? [{ id: 'deactivate', label: `Deactivate v${this.viewPrompt()?.version}`, variant: 'danger' as const, appearance: 'ghost' as const }] : []),
+      { id: 'close', label: 'Close', variant: 'neutral', appearance: 'ghost' },
+    ];
+  }
+
+  onViewFooterAction(actionId: string): void {
+    switch (actionId) {
+      case 'edit':       this.openEditFromView(); break;
+      case 'deactivate': this.deactivateFromView(); break;
+      case 'close':      this.closeView(); break;
+    }
+  }
+
+  editFooterActions(): SpAdminButtonGroupAction[] {
+    return [
+      { id: 'save', label: this.editRow() ? 'Save as new version' : 'Create', variant: 'secondary', appearance: 'solid', loading: this.creating() },
+      { id: 'cancel', label: 'Cancel', variant: 'neutral', appearance: 'ghost' },
+    ];
+  }
+
+  onEditFooterAction(actionId: string): void {
+    switch (actionId) {
+      case 'save':   this.createVersion(); break;
+      case 'cancel': this.closeEdit(); break;
+    }
+  }
+
+  promptRowActions(p: PromptTemplateItem): SpAdminRowAction[] {
+    return [
+      { id: 'view',       label: 'View',       icon: 'view' },
+      { id: 'edit',       label: 'Edit',       icon: 'edit' },
+      p.isActive
+        ? { id: 'deactivate', label: 'Deactivate', icon: 'deactivate', tone: 'danger', disabled: this.busyPromptId() === p.id }
+        : { id: 'activate',   label: 'Activate',   icon: 'activate',   disabled: this.busyPromptId() === p.id },
+    ];
+  }
+
+  onPromptRowAction(p: PromptTemplateItem, actionId: string): void {
+    switch (actionId) {
+      case 'view':       this.openView(p); break;
+      case 'edit':       this.openEdit(p); break;
+      case 'deactivate': this.deactivate(p); break;
+      case 'activate':   this.activate(p); break;
+    }
   }
 
   setSearchTerm(term: string): void { this.searchTerm.set(term); this.page.set(1); }
