@@ -68,12 +68,14 @@ export interface SpAdminButtonGroupAction {
       flex-shrink: 0; line-height: 0;
     }
     .sp-adm-btngrp-icon svg { width: 13px; height: 13px; }
+
   `],
 })
 export class SpAdminButtonGroupComponent {
   @Input() actions: SpAdminButtonGroupAction[] = [];
   @Input() align: SpAdminButtonGroupAlign = 'left';
-  @Input() size: SpAdminButtonSize = 'md';
+  /** Default 'sm' — matches drawer footer standard. Override only when button-group is used outside a footer. */
+  @Input() size: SpAdminButtonSize = 'sm';
   @Input() fullWidth = false;
   @Output() actionSelected = new EventEmitter<string>();
 

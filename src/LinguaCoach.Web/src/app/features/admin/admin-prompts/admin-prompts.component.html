@@ -87,7 +87,7 @@
             <!-- TOKEN BUDGET -->
             <td class="sp-admin-num sp-admin-mono-cell sp-admin-td-right">{{ tokenBudgetLabel(p) }}</td>
             <!-- ACTIONS -->
-            <td class="sp-admin-actions sp-admin-td-right justify-end" (click)="$event.stopPropagation()">
+            <td class="sp-admin-td-right justify-end" (click)="$event.stopPropagation()">
               <sp-admin-table-actions [richActions]="promptRowActions(p)"
                 (actionSelected)="onPromptRowAction(p, $event)" />
             </td>
@@ -106,7 +106,7 @@
 
 <!-- VIEW slide-over -->
 <sp-admin-slide-over [open]="!!viewPrompt()" [title]="viewPrompt()?.key ?? ''" [subtitle]="viewSlideOverSubtitle()"
-  size="lg" [loading]="detailLoading()" loadingMessage="Loading prompt" [error]="detailError()" (closed)="closeView()">
+  [loading]="detailLoading()" loadingMessage="Loading prompt" [error]="detailError()" (closed)="closeView()">
 
   @if (detail()) {
   <div class="sp-admin-meta-grid">
@@ -165,7 +165,7 @@
 
 <!-- EDIT / CREATE slide-over -->
 <sp-admin-slide-over [open]="showEditPanel()" [title]="editRow() ? 'Edit · ' + editRow()!.key : 'New prompt version'"
-  [subtitle]="editRow() ? 'v' + editRow()!.version + ' · ' + promptCategory(editRow()!.key) : ''" size="lg"
+  [subtitle]="editRow() ? 'v' + editRow()!.version + ' · ' + promptCategory(editRow()!.key) : ''"
   [stackIndex]="viewPrompt() ? 1 : 0" (closed)="closeEdit()">
 
   <sp-admin-stack>

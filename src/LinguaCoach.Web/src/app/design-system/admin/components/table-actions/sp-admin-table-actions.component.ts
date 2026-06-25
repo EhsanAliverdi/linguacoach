@@ -137,7 +137,7 @@ export interface SpAdminTableAction {
     }
   `,
   styles: [`
-    :host { display: inline-block; }
+    :host { display: block; }
 
     /* Trigger */
     .sp-adm-actions-trigger {
@@ -183,7 +183,7 @@ export interface SpAdminTableAction {
     :host ::ng-deep .sp-adm-action-item:disabled,
     :host ::ng-deep .sp-adm-action-item.sp-adm-action-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-    .sp-adm-row-actions { display: flex; justify-content: flex-end; }
+    .sp-adm-row-actions { display: flex; justify-content: flex-end; align-items: center; min-height: 100%; }
     /* Button group mode */
     .sp-adm-action-btn-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   `],

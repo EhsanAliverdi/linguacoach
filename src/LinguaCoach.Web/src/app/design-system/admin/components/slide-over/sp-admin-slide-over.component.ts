@@ -3,13 +3,34 @@ import { CommonModule } from '@angular/common';
 import { SpAdminLoadingStateComponent } from '../loading-state/sp-admin-loading-state.component';
 import { SpAdminErrorStateComponent } from '../error-state/sp-admin-error-state.component';
 
-export type SpAdminSlideOverSize = 'sm' | 'md' | 'lg' | 'xl';
+/**
+ * Width standard: ALL admin slide-overs render at 600px by default.
+ * Do NOT set a custom size on normal create/edit/configure drawers.
+ * The size input is for rare exceptions only.
+ *
+ * Size vocabulary:
+ *   default / md / lg / wide  -- 600px  standard for all admin forms
+ *   compact / sm              -- 420px  only for tiny confirm panels (avoid)
+ *   extra-wide / xl           -- 768px  only for dashboard/large-data panels (avoid)
+ *
+ * Rules:
+ *   - Do NOT pass size on normal admin drawers -- omit the attribute entirely.
+ *   - Do NOT style the footer in page components -- footer CSS lives here.
+ *   - Do NOT use sp-admin-modal for admin create/edit/configure flows.
+ *   - Place <sp-admin-button-group slot="footer" .../> directly -- no wrapper div.
+ *   - Footer button sizing is controlled here, not by page-level size/appearance inputs.
+ */
+export type SpAdminSlideOverSize = 'sm' | 'md' | 'lg' | 'xl' | 'compact' | 'default' | 'wide' | 'extra-wide';
 
 const SIZE_MAP: Record<SpAdminSlideOverSize, string> = {
-  sm:  '360px',
-  md:  '480px',
-  lg:  '600px',
-  xl:  '768px',
+  default:      '600px',
+  md:           '600px',
+  lg:           '600px',
+  wide:         '600px',
+  compact:      '420px',
+  sm:           '420px',
+  'extra-wide': '768px',
+  xl:          '768px',
 };
 
 /** Base z-index for the first (non-stacked) slide-over backdrop. */
@@ -220,14 +241,15 @@ const Z_STACK_STEP = 50;
       padding: 20px;
     }
 
-    /* Footer — JSX: left-aligned flex row, gap 10px */
+    /* Footer: right-aligned flex row. Pages must NOT override this.
+       Place <sp-admin-button-group slot="footer" .../> directly — no wrapper div. */
     .sp-adm-so-footer {
       flex-shrink: 0;
       border-top: 1px solid var(--sp-admin-border-subtle,#F4F2FC);
       padding: 14px 20px;
       display: flex;
       gap: 10px;
-      justify-content: flex-start;
+      justify-content: flex-end;
       align-items: center;
     }
 

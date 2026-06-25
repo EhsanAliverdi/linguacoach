@@ -270,7 +270,7 @@ export class AdminAiConfigComponent implements OnInit {
   configureFooterActions = computed(() => {
     const cs = this.configuringCategory();
     return [
-      { id: 'save', label: cs?.saved ? 'Saved' : 'Save changes', variant: 'secondary' as const, appearance: 'solid' as const, loading: cs?.saving ?? false, disabled: cs?.saving ?? false },
+      { id: 'save', label: cs?.saved ? 'Saved' : 'Save changes', variant: 'primary' as const, appearance: 'solid' as const, loading: cs?.saving ?? false, disabled: cs?.saving ?? false },
       { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
     ];
   });
@@ -283,7 +283,7 @@ export class AdminAiConfigComponent implements OnInit {
   overrideFooterActions = computed(() => {
     const f = this.overrideForm();
     return [
-      { id: 'save', label: f?.mode === 'create' ? 'Save override' : 'Save changes', variant: 'secondary' as const, appearance: 'solid' as const, loading: f?.busy ?? false, disabled: f?.busy ?? false },
+      { id: 'save', label: f?.mode === 'create' ? 'Save override' : 'Save changes', variant: 'primary' as const, appearance: 'solid' as const, loading: f?.busy ?? false, disabled: f?.busy ?? false },
       { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
     ];
   });

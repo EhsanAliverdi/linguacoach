@@ -297,7 +297,7 @@
               <td class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ ovr.outputPricePer1KTokens.toFixed(5) }}</td>
               <td class="sp-admin-table-cell-compact">{{ ovr.effectiveFromUtc ? (ovr.effectiveFromUtc | date:'yyyy-MM-dd':'UTC') : 'Always' }}</td>
               <td class="sp-admin-table-cell-note sp-admin-truncate">{{ ovr.notes || '—' }}</td>
-              <td class="sp-admin-actions">
+              <td class="">
                 @if (ovr.isActive) {
                 <sp-admin-table-actions mode="buttons" [richActions]="[
                     { id: 'edit', label: 'Edit', icon: 'edit' },
@@ -333,7 +333,7 @@
 
 <!-- ══ CONFIGURE LLM / TTS SLIDE-OVER ══════════════════════════ -->
 <sp-admin-slide-over [open]="!!configuringCategory()" [title]="configuringCategory()?.item?.displayName ?? ''"
-  [subtitle]="configuringCategory()?.item?.categoryKey ?? ''" size="md" [closeOnBackdrop]="true"
+  [subtitle]="configuringCategory()?.item?.categoryKey ?? ''" [closeOnBackdrop]="true"
   (closed)="closeConfigureDrawer()">
 
   @if (configuringCategory(); as cs) {
@@ -385,7 +385,7 @@
 <!-- ══ ADD / EDIT PRICING OVERRIDE SLIDE-OVER ══════════════════ -->
 <sp-admin-slide-over [open]="!!overrideForm()"
   [title]="overrideForm()?.mode === 'create' ? 'Add pricing override' : 'Edit pricing override'"
-  subtitle="Overrides take precedence over config pricing at runtime" size="md" [closeOnBackdrop]="true"
+  subtitle="Overrides take precedence over config pricing at runtime" [closeOnBackdrop]="true"
   (closed)="cancelOverrideForm()">
 
   @if (overrideForm(); as f) {

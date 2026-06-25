@@ -199,11 +199,6 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       font-variant-numeric:tabular-nums;
       white-space:nowrap;
     }
-    :host ::ng-deep .sp-admin-actions {
-      min-width:128px;
-      white-space:nowrap;
-      text-align:right;
-    }
     :host ::ng-deep .sp-adm-actions-wrap {
       display:flex;
       justify-content:flex-end;

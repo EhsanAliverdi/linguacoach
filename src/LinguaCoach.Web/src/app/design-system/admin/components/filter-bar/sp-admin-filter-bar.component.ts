@@ -17,7 +17,7 @@ export type SpAdminFilterBarDensity = 'compact' | 'comfortable';
   imports: [CommonModule],
   template: `
     <div class="sp-adm-filter" [class]="hostClasses">
-      <div class="sp-adm-filter-left flex items-end flex-wrap flex-1 min-w-0" [class.gap-2]="density === 'compact'" [class.gap-3]="density === 'comfortable'">
+      <div class="sp-adm-filter-left flex items-center flex-wrap flex-1 min-w-0" [class.gap-2]="density === 'compact'" [class.gap-3]="density === 'comfortable'">
         <ng-content select="[search]" />
         <ng-content select="[filters]" />
         <ng-content />
@@ -28,8 +28,8 @@ export type SpAdminFilterBarDensity = 'compact' | 'comfortable';
     </div>
   `,
   styles: [`
-    /* TailAdmin-backed: flex items-end justify-between gap-3 filter bar */
-    .sp-adm-filter          { display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; }
+    /* TailAdmin-backed: flex items-center justify-between gap-3 filter bar */
+    .sp-adm-filter          { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; }
     .sp-adm-filter-compact  { gap:10px; margin-bottom:0; }
     .sp-adm-filter-comfortable { gap:12px; margin-bottom:16px; }
     .sp-adm-filter-inline   { flex-direction:row; flex-wrap:nowrap; align-items:center; }

@@ -1,0 +1,272 @@
+<sp-admin-page-header title="Students" subtitle="Manage pilot student accounts">
+  <sp-admin-button routerLink="../create-student" leadingIcon="plus">Create student</sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  <sp-admin-filter-bar density="comfortable">
+    <sp-admin-input
+      search
+      type="search"
+      placeholder="Search by email or name"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="onSearchChange($event)" />
+    <sp-admin-select
+      filters
+      [options]="lifecycleStageOptions"
+      placeholder="All lifecycle stages"
+      size="sm"
+      [fullWidth]="true"
+      [ngModel]="filterLifecycleStage()"
+      (ngModelChange)="onLifecycleStageChange($event)" />
+    <sp-admin-checkbox
+      filters
+      label="Show archived"
+      [ngModel]="includeArchived"
+      (ngModelChange)="onArchivedChange($event)" />
+    @if (hasActiveFilters()) {
+      <sp-admin-button filters variant="neutral" appearance="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
+    }
+    <div actions class="flex items-center gap-2">
+      <span class="sp-admin-text-muted sp-admin-text-xs sp-admin-nowrap">Rows per page</span>
+      <sp-admin-native-select
+        size="sm"
+        [ngModel]="pageSize"
+        (ngModelChange)="onPageSizeSelectChange($event)"
+        [options]="pageSizeSelectOptions"
+        class="w-16" />
+    </div>
+  </sp-admin-filter-bar>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading students" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Could not load students" [message]="error()" />
+  } @else {
+    @if (students().length === 0) {
+      <sp-admin-empty-state message="No students found." />
+    } @else {
+      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="900px">
+        <table>
+          <thead>
+            <tr>
+              <th class="sp-admin-sortable-th" (click)="setSort('name')">Student{{ sortIndicator('name') }}</th>
+              <th>Lifecycle</th>
+              <th class="sp-admin-sortable-th" (click)="setSort('onboarding')">Onboarding{{ sortIndicator('onboarding') }}</th>
+              <th>CEFR</th>
+              <th>Streak</th>
+              <th>Mins / WK</th>
+              <th class="sp-admin-sortable-th" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
+              <th class="sp-admin-th-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of students(); track s.studentProfileId) {
+              <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
+                <td>
+                  <sp-admin-identity-cell>
+                    <sp-admin-avatar slot="avatar" size="md" [initials]="avatarInitial(s)" [seed]="s.email || s.studentProfileId" [ariaLabel]="displayName(s)" />
+                    <span class="sp-admin-identity-name">{{ displayName(s) }}</span>
+                    <sp-admin-copyable-text [value]="s.email" [maxLength]="40" class="sp-admin-table-muted" />
+                  </sp-admin-identity-cell>
+                </td>
+                <td>
+                  <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
+                </td>
+                <td>
+                  <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
+                </td>
+                <td>
+                  @if (s.cefrLevel) {
+                    <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-table-empty">-</span>
+                  }
+                </td>
+                <td class="sp-admin-table-muted">{{ s.onboardingStatus === 'Completed' ? '🔥 0' : '0' }}</td>
+                <td class="sp-admin-table-muted">–</td>
+                <td class="sp-admin-table-muted sp-admin-nowrap">{{ s.createdAt | date:'MMM d, y' }}</td>
+                <td>
+                  <sp-admin-table-actions
+                    [richActions]="rowActions(s)"
+                    (actionSelected)="onRowAction($event, s)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+
+      <sp-admin-table-footer>
+        Showing {{ showingFrom() }}–{{ showingTo() }} of {{ totalCount() }} students
+        @if (totalPages() > 1) {
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        }
+      </sp-admin-table-footer>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- Edit student slide-over -->
+<sp-admin-slide-over
+  [open]="!!editing()"
+  title="Edit student"
+  [subtitle]="editing()?.email ?? ''"
+  (closed)="cancelEdit()">
+  <form (ngSubmit)="saveEdit()">
+    <sp-admin-form-grid [columns]="2">
+      <sp-admin-form-field label="First name">
+        <sp-admin-input [(ngModel)]="editForm.firstName" name="firstName" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Last name">
+        <sp-admin-input [(ngModel)]="editForm.lastName" name="lastName" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Display name" class="sp-admin-col-span-2">
+        <sp-admin-input [(ngModel)]="editForm.displayName" name="displayName" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Career or work context" class="sp-admin-col-span-2">
+        <sp-admin-input [(ngModel)]="editForm.careerContext" name="careerContext" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Learning goal" class="sp-admin-col-span-2">
+        <sp-admin-input [(ngModel)]="editForm.learningGoal" name="learningGoal" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Learning goal description" class="sp-admin-col-span-2">
+        <sp-admin-textarea [rows]="3" [(ngModel)]="editForm.learningGoalDescription" name="learningGoalDescription" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Difficult situations" class="sp-admin-col-span-2">
+        <sp-admin-textarea [rows]="3" [(ngModel)]="editForm.difficultSituationsText" name="difficultSituationsText" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Preferred duration">
+        <sp-admin-native-select
+          [(ngModel)]="editForm.preferredSessionDurationMinutes"
+          name="preferredSessionDurationMinutes"
+          [options]="sessionDurationOptions"
+          placeholder="Not set" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Experience level">
+        <sp-admin-native-select
+          [(ngModel)]="editForm.professionalExperienceLevel"
+          name="professionalExperienceLevel"
+          [options]="experienceLevelOptions"
+          placeholder="Not set" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Role familiarity">
+        <sp-admin-native-select
+          [(ngModel)]="editForm.roleFamiliarity"
+          name="roleFamiliarity"
+          [options]="familiarityLevelOptions"
+          placeholder="Not set" />
+      </sp-admin-form-field>
+    </sp-admin-form-grid>
+    @if (editError()) {
+      <sp-admin-alert variant="error" class="sp-admin-mt-3">{{ editError() }}</sp-admin-alert>
+    }
+  </form>
+  <sp-admin-button-group slot="footer"
+    [actions]="editFooterActions()"
+    (actionSelected)="onEditFooterAction($event)" />
+</sp-admin-slide-over>
+
+<!-- Reset password slide-over -->
+<sp-admin-slide-over
+  [open]="!!resetting()"
+  title="Reset password"
+  [subtitle]="resetting()?.email ?? ''"
+  (closed)="cancelResetPassword()">
+  @if (resetSuccessPassword()) {
+    <div class="sp-admin-stack">
+      <sp-admin-alert variant="success">
+        Password reset. Share this temporary password with the student securely — it will not be shown again.
+      </sp-admin-alert>
+      <sp-admin-form-field label="New temporary password">
+        <sp-admin-input [value]="resetSuccessPassword()" [readonly]="true" />
+      </sp-admin-form-field>
+    </div>
+  } @else {
+    <form (ngSubmit)="saveResetPassword()">
+      <div class="sp-admin-stack">
+        <sp-admin-form-field label="New temporary password">
+          <sp-admin-input
+            [(ngModel)]="resetForm.newPassword"
+            name="newPassword"
+            placeholder="At least 8 characters, with a digit"
+            autocomplete="off" />
+        </sp-admin-form-field>
+        <sp-admin-checkbox
+          label="Require password change on next login"
+          [(ngModel)]="resetForm.mustChangePassword"
+          name="mustChangePassword" />
+        @if (resetError()) {
+          <sp-admin-alert variant="error">{{ resetError() }}</sp-admin-alert>
+        }
+      </div>
+    </form>
+  }
+  <sp-admin-button-group slot="footer"
+    [actions]="resetPasswordFooterActions()"
+    (actionSelected)="onResetPasswordFooterAction($event)" />
+</sp-admin-slide-over>
+
+<!-- Reset student data slide-over -->
+<sp-admin-slide-over
+  [open]="!!resettingData()"
+  title="Reset student data"
+  [subtitle]="resettingData()?.email ?? ''"
+  (closed)="cancelResetData()">
+  @if (resetDataResult(); as result) {
+    <div class="sp-admin-stack">
+      <sp-admin-alert variant="success">
+        Reset complete. New stage: {{ result.newStage }} (was {{ result.previousStage }}).
+      </sp-admin-alert>
+      <p class="sp-admin-text-muted sp-admin-text-xs">
+        Cleared: onboarding={{ result.clearedItems.onboardingAnswers }},
+        placement={{ result.clearedItems.placementResults }},
+        courses/sessions={{ result.clearedItems.coursesAndSessions }},
+        attempts={{ result.clearedItems.activityAttempts }},
+        vocabulary={{ result.clearedItems.vocabulary }},
+        memory={{ result.clearedItems.learningMemory }},
+        audio files deleted={{ result.clearedItems.audioFilesDeleted }},
+        progress={{ result.clearedItems.progressData }}.
+      </p>
+      <p class="sp-admin-text-xxs sp-admin-text-subtle">Reset log: {{ result.resetLogId }}</p>
+    </div>
+  } @else {
+    <form (ngSubmit)="saveResetData()">
+      <div class="sp-admin-stack">
+        <sp-admin-form-field label="Preset">
+          <sp-admin-native-select
+            [(ngModel)]="resetDataForm.preset"
+            name="preset"
+            (ngModelChange)="applyResetPreset()"
+            [options]="resetPresetOptions" />
+        </sp-admin-form-field>
+        <div class="sp-admin-checkbox-stack">
+          <sp-admin-checkbox label="Clear onboarding answers"   [(ngModel)]="resetDataForm.clearOnboardingAnswers"   name="clearOnboardingAnswers" />
+          <sp-admin-checkbox label="Clear placement results"    [(ngModel)]="resetDataForm.clearPlacementResults"    name="clearPlacementResults" />
+          <sp-admin-checkbox label="Clear courses and sessions" [(ngModel)]="resetDataForm.clearCoursesAndSessions"  name="clearCoursesAndSessions" />
+          <sp-admin-checkbox label="Clear activity attempts"    [(ngModel)]="resetDataForm.clearActivityAttempts"    name="clearActivityAttempts" />
+          <sp-admin-checkbox label="Clear vocabulary"           [(ngModel)]="resetDataForm.clearVocabulary"          name="clearVocabulary" />
+          <sp-admin-checkbox label="Clear learning memory"      [(ngModel)]="resetDataForm.clearLearningMemory"      name="clearLearningMemory" />
+          <sp-admin-checkbox label="Delete audio files"         [(ngModel)]="resetDataForm.clearAudioFiles"          name="clearAudioFiles" />
+          <sp-admin-checkbox label="Recalculate progress data"  [(ngModel)]="resetDataForm.clearProgressData"        name="clearProgressData" />
+        </div>
+        <sp-admin-form-field label="Reason (required)">
+          <sp-admin-textarea [rows]="2" [(ngModel)]="resetDataForm.reason" name="reason"
+            placeholder="Why is this reset being performed?" />
+        </sp-admin-form-field>
+        @if (resettingData(); as student) {
+          <sp-admin-form-field [label]="confirmEmailLabel(student.email)">
+            <sp-admin-input [(ngModel)]="resetDataForm.confirmEmail" name="confirmEmail" autocomplete="off" />
+          </sp-admin-form-field>
+        }
+        @if (resetDataError()) {
+          <sp-admin-alert variant="error">{{ resetDataError() }}</sp-admin-alert>
+        }
+      </div>
+    </form>
+  }
+  <sp-admin-button-group slot="footer"
+    [actions]="resetDataFooterActions()"
+    (actionSelected)="onResetDataFooterAction($event)" />
+</sp-admin-slide-over>

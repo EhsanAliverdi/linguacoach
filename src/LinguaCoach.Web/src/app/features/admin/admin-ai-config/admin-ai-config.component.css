@@ -13,7 +13,7 @@
 .sp-aic-pricing-table th.sp-admin-th-center:last-child,
 .sp-aic-pricing-table td.sp-admin-td-center:last-child  { padding-right: 16px; }
 .sp-aic-pricing-table th:last-child,
-.sp-aic-pricing-table td.sp-admin-actions               { padding-right: 16px; }
+.sp-aic-pricing-table td:last-child                     { padding-right: 16px; }
 
 /* Override table: note column capped so it never crowds actions. */
 .sp-aic-note-col { width: 160px; }

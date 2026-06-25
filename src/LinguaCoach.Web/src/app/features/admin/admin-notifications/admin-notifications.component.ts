@@ -651,7 +651,7 @@ export class AdminNotificationsComponent implements OnInit {
   closeTemplateForm(): void { this.templateFormOpen.set(false); }
 
   templateFooterActions = computed(() => [
-    { id: 'save', label: this.templateFormLoading() ? 'Saving…' : (this.templateFormMode === 'create' ? 'Create' : 'Save changes'), variant: 'secondary' as const, appearance: 'solid' as const, disabled: this.templateFormLoading(), loading: this.templateFormLoading() },
+    { id: 'save', label: this.templateFormLoading() ? 'Saving…' : (this.templateFormMode === 'create' ? 'Create' : 'Save changes'), variant: 'primary' as const, appearance: 'solid' as const, disabled: this.templateFormLoading(), loading: this.templateFormLoading() },
     { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
   ]);
 
@@ -661,7 +661,7 @@ export class AdminNotificationsComponent implements OnInit {
   }
 
   sendFooterActions = computed(() => [
-    { id: 'send', label: this.sending() ? 'Sending…' : 'Send notification', variant: 'secondary' as const, appearance: 'solid' as const, disabled: this.sending(), loading: this.sending(), ariaLabel: 'Submit send notification' },
+    { id: 'send', label: this.sending() ? 'Sending…' : 'Send notification', variant: 'primary' as const, appearance: 'solid' as const, disabled: this.sending(), loading: this.sending(), ariaLabel: 'Submit send notification' },
     { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
   ]);
 

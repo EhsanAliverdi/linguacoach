@@ -537,10 +537,66 @@
 .sp-admin-th-right { text-align: right; }
 .sp-admin-th-center { text-align: center; }
 .sp-admin-td-center { text-align: center; }
+.sp-admin-td-right { text-align: right; }
 .sp-admin-num { text-align: right; white-space: nowrap; }
 .sp-admin-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+.sp-admin-nowrap { white-space: nowrap; }
 /* actions cell — shrink to fit its buttons */
 .sp-admin-actions { width: 1%; white-space: nowrap; text-align: right; }
+
+/* Sortable th — cursor + hover colour */
+.sp-admin-sortable-th { cursor: pointer; user-select: none; }
+.sp-admin-sortable-th:hover { color: var(--sp-admin-primary-hover, #3A2EA8); }
+
+/* Right-align Actions column header */
+.sp-admin-th-actions { text-align: right; }
+
+/* Archived table row */
+.sp-admin-archived-row td { background: var(--sp-admin-surface-subtle, #FBFAFE); color: var(--sp-admin-text-muted, #8B85A0); }
+
+/* Table footer: count left, pagination right */
+.sp-admin-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Identity cell text utilities ───────────────────────────────────────── */
+/* Primary label inside sp-admin-identity-cell */
+.sp-admin-identity-name {
+  font-weight: 700;
+  color: var(--sp-admin-text, #211B36);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13.5px;
+}
+
+/* ── Text size utilities ─────────────────────────────────────────────────── */
+.sp-admin-text-xs     { font-size: 12px; }
+.sp-admin-text-xxs    { font-size: 11px; }
+.sp-admin-text-subtle { color: var(--sp-admin-text-dim, #BDB8CC); }
+
+/* ── Form/layout utilities ──────────────────────────────────────────────── */
+/* Vertical stack — use inside slide-overs/forms */
+.sp-admin-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* Checkbox list stack */
+.sp-admin-checkbox-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* Span full width inside a 2-col grid */
+.sp-admin-col-span-2 { grid-column: 1 / -1; }
+/* Top margin after a form grid */
+.sp-admin-mt-3 { margin-top: 14px; }
 
 /* ── Card / section heading utilities ───────────────────────────────────── */
 .sp-admin-card-title { font-size: 14px; font-weight: 700; color: var(--sp-admin-text, #211B36); }
