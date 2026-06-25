@@ -27,6 +27,8 @@ export * from './components/system-health/sp-admin-system-health.component';
 export * from './components/donut-chart/sp-admin-donut-chart.component';
 export * from './components/sparkline-card/sp-admin-sparkline-card.component';
 export * from './components/layout/sp-admin-layout.component';
+export * from './components/config-category-card/sp-admin-config-category-card.component';
+export * from './components/not-implemented-state/sp-admin-not-implemented-state.component';
 export * from './components/loading-state/sp-admin-loading-state.component';
 export * from './components/modal/sp-admin-modal.component';
 export * from './components/slide-over/sp-admin-slide-over.component';

@@ -284,6 +284,60 @@
   margin: 0;
 }
 
+/* ── Shared callout blocks ───────────────────────────────────────────────── */
+.sp-admin-callout {
+  padding: 12px 14px;
+  background: var(--sp-admin-surface-subtle, #FBFAFE);
+  border-radius: 9px;
+  font-size: 13px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  line-height: 1.6;
+}
+.sp-admin-callout--warn {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+/* ── Shared readonly display field ──────────────────────────────────────── */
+.sp-admin-readonly-field {
+  height: 36px;
+  border: 1.5px solid var(--sp-admin-border, #ECE9F5);
+  border-radius: 8px;
+  background: var(--sp-admin-surface-subtle, #FBFAFE);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+}
+.sp-admin-readonly-field--mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+/* ── Shared form-row (2-col field grid inside drawers/modals) ────────────── */
+.sp-admin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 500px) { .sp-admin-form-row { grid-template-columns: 1fr; } }
+
+/* ── Shared divider ─────────────────────────────────────────────────────── */
+.sp-admin-divider {
+  border: none;
+  border-top: 1px solid var(--sp-admin-border, #ECE9F5);
+  margin: 2px 0;
+}
+
+/* ── Shared form stack ──────────────────────────────────────────────────── */
+.sp-admin-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 /* ── Shared metric strip — ring + breakdown side-by-side ────────────────── */
 .sp-admin-metric-strip {
   display: flex;
@@ -351,6 +405,126 @@
   background: var(--sp-admin-primary, #5B4BE8);
   color: #fff;
   border-color: var(--sp-admin-primary, #5B4BE8);
+}
+
+/* ── Provider credential card layout ────────────────────────────────────── */
+/* Header row inside a padding-none card: icon-label + badges + action buttons */
+.sp-admin-provider-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  background: var(--sp-admin-surface-subtle, #FAFAFE);
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-provider-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #211B36);
+  flex: 1;
+  text-transform: capitalize;
+}
+.sp-admin-provider-btns { display: flex; gap: 6px; margin-left: auto; }
+
+/* Chip / badge row inside provider card */
+.sp-admin-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 18px;
+}
+
+/* Inline field + button rows inside provider card */
+.sp-admin-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--sp-admin-border-subtle, #F4F2FC);
+}
+
+/* Inset summary block (Qwen stored key/endpoint display) */
+.sp-admin-inset-summary {
+  border-radius: 8px;
+  background: var(--sp-admin-surface-subtle, #F8FAFE);
+  border: 1px solid var(--sp-admin-border, #ECE9F5);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Native <select> styled to match sp-admin-input */
+.sp-admin-native-select {
+  width: 100%;
+  height: 36px;
+  border: 1.5px solid var(--sp-admin-border, #ECE9F5);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  background: #fff;
+  color: var(--sp-admin-text, #211B36);
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color .15s;
+}
+.sp-admin-native-select:disabled { opacity: .55; cursor: not-allowed; background: var(--sp-admin-surface-subtle, #FBFAFE); }
+.sp-admin-native-select:focus { outline: none; border-color: var(--sp-admin-primary, #5B4BE8); box-shadow: var(--sp-admin-focus-ring, 0 0 0 3px rgba(91,75,232,.15)); }
+.sp-admin-native-select--mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+
+/* Section title + muted hint on same line (drawer/form headings) */
+.sp-admin-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sp-admin-text, #211B36);
+}
+.sp-admin-section-hint {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  margin-left: 6px;
+}
+
+/* Validation error text under form fields */
+.sp-admin-field-error {
+  font-size: 12px;
+  color: #EF4444;
+  width: 100%;
+}
+
+/* ── Generic layout utilities ───────────────────────────────────────────── */
+.sp-admin-flex-1 { flex: 1; min-width: 200px; }
+.sp-admin-w-full { width: 100%; }
+.sp-admin-break-all { word-break: break-all; }
+.sp-admin-mb-4 { margin-bottom: 16px; }
+.sp-admin-ml-1 { margin-left: 4px; }
+.sp-admin-muted-chip { opacity: .6; }
+/* Flex column override — turns a flex-row into a stacked column */
+.sp-admin-form-column { flex-direction: column; align-items: stretch; }
+
+/* ── Text tone utilities ─────────────────────────────────────────────────── */
+.sp-admin-text-strong { font-weight: 700; color: var(--sp-admin-text, #211B36); }
+.sp-admin-text-warning { color: var(--sp-admin-warn-ink, #D97706); }
+.sp-admin-link { color: var(--sp-admin-primary, #5B4BE8); text-decoration: underline; }
+
+/* ── Table row / cell utilities ─────────────────────────────────────────── */
+.sp-admin-table-row-inactive { opacity: .4; }
+.sp-admin-table-cell-compact { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); }
+.sp-admin-table-cell-note { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); max-width: 140px; }
+
+/* ── Card / section heading utilities ───────────────────────────────────── */
+.sp-admin-card-title { font-size: 14px; font-weight: 700; color: var(--sp-admin-text, #211B36); }
+.sp-admin-provider-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  flex: 1;
 }
 
 /* ── Shared 3-column card grid ──────────────────────────────────────────── */

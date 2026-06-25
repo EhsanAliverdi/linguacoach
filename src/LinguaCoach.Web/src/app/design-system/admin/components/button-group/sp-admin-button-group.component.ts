@@ -29,6 +29,7 @@ export interface SpAdminButtonGroupAction {
   disabled?: boolean;
   loading?: boolean;
   hidden?: boolean;
+  ariaLabel?: string;
 }
 
 @Component({
@@ -45,6 +46,7 @@ export interface SpAdminButtonGroupAction {
           [disabled]="action.disabled ?? false"
           [loading]="action.loading ?? false"
           [fullWidth]="fullWidth"
+          [attr.aria-label]="action.ariaLabel || null"
           (click)="emit(action)">
           @if (action.icon && iconSvg(action.icon, action.iconColor)) {
             <span [innerHTML]="iconSvg(action.icon, action.iconColor)" class="sp-adm-btngrp-icon" slot="leading"></span>

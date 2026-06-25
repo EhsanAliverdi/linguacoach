@@ -16,6 +16,7 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminButtonGroupComponent,
   SpAdminCardComponent,
   SpAdminCheckboxComponent,
   SpAdminCodePillComponent,
@@ -59,6 +60,7 @@ import {
     SpAdminSelectComponent,
     SpAdminKpiCardComponent,
     SpAdminTableComponent,
+    SpAdminButtonGroupComponent,
   ],
   templateUrl: './admin-usage-policies.component.html',
   styles: [`
@@ -391,6 +393,26 @@ export class AdminUsagePoliciesComponent implements OnInit {
 
   closeDeleteModal(): void {
     this.deleteModalOpen.set(false);
+  }
+
+  ruleModalFooterActions = computed(() => [
+    { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
+    { id: 'save', label: this.ruleEditingId() ? 'Update Rule' : 'Add Rule', variant: 'primary' as const, appearance: 'solid' as const, loading: this.ruleSaving(), disabled: this.ruleSaving() },
+  ]);
+
+  onRuleModalFooterAction(id: string): void {
+    if (id === 'save') this.saveRule();
+    else this.closeRuleModal();
+  }
+
+  deleteModalFooterActions = computed(() => [
+    { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
+    { id: 'delete', label: 'Delete', variant: 'primary' as const, appearance: 'solid' as const, loading: this.deleteConfirming(), disabled: this.deleteConfirming() },
+  ]);
+
+  onDeleteModalFooterAction(id: string): void {
+    if (id === 'delete') this.confirmDelete();
+    else this.closeDeleteModal();
   }
 
   confirmDelete(): void {

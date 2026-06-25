@@ -282,12 +282,7 @@
     </div>
   </div>
 
-  <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (click)="closeRuleModal()">Cancel</sp-admin-button>
-    <sp-admin-button (click)="saveRule()" [loading]="ruleSaving()">
-      {{ ruleEditingId() ? 'Update Rule' : 'Add Rule' }}
-    </sp-admin-button>
-  </div>
+  <sp-admin-button-group slot="footer" [actions]="ruleModalFooterActions()" (actionSelected)="onRuleModalFooterAction($event)" />
 </sp-admin-modal>
 
 <!-- ── Delete confirmation modal ─────────────────────────────────────────── -->
@@ -306,8 +301,5 @@
     This cannot be undone.
   </p>
 
-  <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (click)="closeDeleteModal()">Cancel</sp-admin-button>
-    <sp-admin-button (click)="confirmDelete()" [loading]="deleteConfirming()">Delete</sp-admin-button>
-  </div>
+  <sp-admin-button-group slot="footer" [actions]="deleteModalFooterActions()" (actionSelected)="onDeleteModalFooterAction($event)" />
 </sp-admin-modal>

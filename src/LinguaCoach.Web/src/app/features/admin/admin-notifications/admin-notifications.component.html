@@ -598,12 +598,7 @@
       }
     </div>
 
-    <div slot="footer">
-      <sp-admin-button variant="secondary" appearance="solid" [disabled]="templateFormLoading()" (clicked)="submitTemplateForm()">
-        {{ templateFormLoading() ? 'Saving…' : (templateFormMode === 'create' ? 'Create' : 'Save changes') }}
-      </sp-admin-button>
-      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeTemplateForm()">Cancel</sp-admin-button>
-    </div>
+    <sp-admin-button-group slot="footer" [actions]="templateFooterActions()" (actionSelected)="onTemplateFooterAction($event)" />
   </sp-admin-slide-over>
 
   <!-- ── Send notification slide-over ─────────────────────────────────────── -->
@@ -720,15 +715,7 @@
       }
     </div>
 
-    <!-- Footer -->
-    <div slot="footer">
-      <sp-admin-button variant="secondary" appearance="solid"
-        [disabled]="sending()"
-        (clicked)="submitSend()"
-        aria-label="Submit send notification"
-      >{{ sending() ? 'Sending…' : 'Send notification' }}</sp-admin-button>
-      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeSendForm()">Cancel</sp-admin-button>
-    </div>
+    <sp-admin-button-group slot="footer" [actions]="sendFooterActions()" (actionSelected)="onSendFooterAction($event)" />
   </sp-admin-slide-over>
 
 </sp-admin-page-body>

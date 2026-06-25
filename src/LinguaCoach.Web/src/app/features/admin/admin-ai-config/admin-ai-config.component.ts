@@ -12,17 +12,24 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminButtonGroupComponent,
   SpAdminCardComponent,
   SpAdminCodePillComponent,
+  SpAdminConfigCategoryCardComponent,
   SpAdminEmptyStateComponent,
+  SpAdminNotImplementedStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
+  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminSlideOverComponent,
+  SpAdminStackComponent,
+  SpAdminTableActionsComponent,
+  SpAdminTableComponent,
 } from '../../../design-system/admin';
 
 type AiConfigTab = 'llm' | 'tts' | 'credentials' | 'pricing' | 'rate-limits';
@@ -85,13 +92,16 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   imports: [
     CommonModule, FormsModule,
     SpAdminAlertComponent, SpAdminBadgeComponent, SpAdminButtonComponent,
-    SpAdminCardComponent, SpAdminCodePillComponent, SpAdminEmptyStateComponent,
-    SpAdminErrorStateComponent, SpAdminFormFieldComponent, SpAdminInputComponent,
+    SpAdminCardComponent, SpAdminCodePillComponent, SpAdminConfigCategoryCardComponent,
+    SpAdminEmptyStateComponent, SpAdminErrorStateComponent,
+    SpAdminFormFieldComponent, SpAdminInputComponent,
     SpAdminKpiCardComponent, SpAdminLoadingStateComponent,
+    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminSlideOverComponent,
+    SpAdminStackComponent, SpAdminTableActionsComponent, SpAdminTableComponent,
+    SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent,
   ],
   templateUrl: './admin-ai-config.component.html',
-  styleUrl: './admin-ai-config.component.css',
 })
 export class AdminAiConfigComponent implements OnInit {
   categories = signal<CategoryState[]>([]);
@@ -250,6 +260,32 @@ export class AdminAiConfigComponent implements OnInit {
 
   cancelOverrideForm(): void {
     this.overrideForm.set(null);
+  }
+
+  configureFooterActions = computed(() => {
+    const cs = this.configuringCategory();
+    return [
+      { id: 'save', label: cs?.saved ? 'Saved' : 'Save changes', variant: 'secondary' as const, appearance: 'solid' as const, loading: cs?.saving ?? false, disabled: cs?.saving ?? false },
+      { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
+    ];
+  });
+
+  onConfigureFooterAction(id: string): void {
+    if (id === 'save') this.saveConfigureDrawer();
+    else this.closeConfigureDrawer();
+  }
+
+  overrideFooterActions = computed(() => {
+    const f = this.overrideForm();
+    return [
+      { id: 'save', label: f?.mode === 'create' ? 'Save override' : 'Save changes', variant: 'secondary' as const, appearance: 'solid' as const, loading: f?.busy ?? false, disabled: f?.busy ?? false },
+      { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
+    ];
+  });
+
+  onOverrideFooterAction(id: string): void {
+    if (id === 'save') this.saveOverride();
+    else this.cancelOverrideForm();
   }
 
   saveOverride(): void {
