@@ -104,6 +104,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent, SpAdminIconComponent,
   ],
   templateUrl: './admin-ai-config.component.html',
+  styleUrl: './admin-ai-config.component.css',
 })
 export class AdminAiConfigComponent implements OnInit {
   categories = signal<CategoryState[]>([]);

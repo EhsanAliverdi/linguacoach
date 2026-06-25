@@ -227,13 +227,19 @@
     } @else {
     <div class="sp-admin-section-stack">
       @for (group of pricingByProvider(); track group.provider) {
-      <sp-admin-card padding="none" variant="bordered">
+      <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
         <div slot="header" class="sp-admin-provider-header">
           <span class="sp-admin-provider-label">{{ group.provider | uppercase }}</span>
-          <sp-admin-badge tone="neutral">{{ group.rows.length }} models</sp-admin-badge>
+          <sp-admin-badge tone="neutral">{{ group.rows.length }} model{{ group.rows.length === 1 ? '' : 's' }}</sp-admin-badge>
         </div>
         <sp-admin-table [columns]="[]" variant="simple" [flush]="true" minWidth="400px">
-          <table>
+          <table class="sp-aic-pricing-table">
+            <colgroup>
+              <col class="sp-aic-model-col" />
+              <col class="sp-aic-price-col" />
+              <col class="sp-aic-price-col" />
+              <col class="sp-aic-status-col" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Model</th>
@@ -262,11 +268,9 @@
         </sp-admin-table>
       </sp-admin-card>
       }
-    </div>
-    }
 
     <!-- Pricing overrides -->
-    <sp-admin-card padding="none" variant="bordered" aria-label="Pricing overrides">
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true" aria-label="Pricing overrides">
       <div slot="header" class="sp-admin-provider-header">
         <div>
           <div class="sp-admin-card-title">Pricing overrides</div>
@@ -278,7 +282,16 @@
       <sp-admin-empty-state title="No overrides" message="Config pricing is used. Add an override to change runtime pricing." />
       } @else {
       <sp-admin-table [columns]="[]" variant="simple" [flush]="true" minWidth="600px">
-        <table>
+        <table class="sp-aic-pricing-table">
+          <colgroup>
+            <col class="sp-aic-model-col" />
+            <col />
+            <col class="sp-aic-price-col" />
+            <col class="sp-aic-price-col" />
+            <col class="sp-aic-price-col" />
+            <col class="sp-aic-note-col" />
+            <col class="sp-aic-actions-col" />
+          </colgroup>
           <thead>
             <tr>
               @for (h of overrideTableHeaders; track h) { <th>{{ h }}</th> }
@@ -309,6 +322,8 @@
       </sp-admin-table>
       }
     </sp-admin-card>
+    </div>
+    }
   </div>
   }
 

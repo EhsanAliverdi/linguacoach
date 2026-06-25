@@ -516,6 +516,15 @@
 .sp-admin-table-cell-compact { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); }
 .sp-admin-table-cell-note { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); max-width: 140px; }
 
+/* th/td alignment helpers */
+.sp-admin-th-right { text-align: right; }
+.sp-admin-th-center { text-align: center; }
+.sp-admin-td-center { text-align: center; }
+.sp-admin-num { text-align: right; white-space: nowrap; }
+.sp-admin-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+/* actions cell — shrink to fit its buttons */
+.sp-admin-actions { width: 1%; white-space: nowrap; text-align: right; }
+
 /* ── Card / section heading utilities ───────────────────────────────────── */
 .sp-admin-card-title { font-size: 14px; font-weight: 700; color: var(--sp-admin-text, #211B36); }
 .sp-admin-provider-label {

@@ -1,0 +1,19 @@
+/* AI Config page-specific styles — pricing table column widths and edge padding only.
+   Do NOT add reusable card/table/badge/button/form/spacing rules here. */
+
+/* Pricing table: model column fills remaining space; numeric/status columns are fixed-width. */
+.sp-aic-pricing-table { table-layout: fixed; width: 100%; }
+.sp-aic-model-col   { width: auto; }
+.sp-aic-price-col   { width: 110px; }
+.sp-aic-status-col  { width: 110px; }
+.sp-aic-actions-col { width: 100px; }
+
+/* Right-edge breathing room on the last visible column — status badge and actions
+   must not feel flush against the card border. */
+.sp-aic-pricing-table th.sp-admin-th-center:last-child,
+.sp-aic-pricing-table td.sp-admin-td-center:last-child  { padding-right: 16px; }
+.sp-aic-pricing-table th:last-child,
+.sp-aic-pricing-table td.sp-admin-actions               { padding-right: 16px; }
+
+/* Override table: note column capped so it never crowds actions. */
+.sp-aic-note-col { width: 160px; }
