@@ -13,6 +13,7 @@ import {
   SpAdminInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminIconComponent,
 } from '../../../design-system/admin';
 
 @Component({
@@ -27,7 +28,7 @@ import {
     SpAdminCardComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
-    SpAdminPageBodyComponent,
+    SpAdminPageBodyComponent, SpAdminIconComponent,
     SpAdminPageHeaderComponent,
   ],
   templateUrl: './create-student.component.html',

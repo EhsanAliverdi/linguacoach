@@ -527,6 +527,81 @@
   flex: 1;
 }
 
+/* ── Card list (grouped row pattern) ───────────────────────────────────── */
+/* One bordered container; items separated by hairline dividers. No inner card boxing. */
+.sp-admin-card-list {
+  border: 1.5px solid var(--sp-admin-border, #ECE9F5);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--sp-admin-surface, #fff);
+}
+.sp-admin-card-list-item {
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-card-list-item:last-child { border-bottom: none; }
+
+/* Item header: avatar + name + badges + actions */
+.sp-admin-card-list-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--sp-admin-surface-subtle, #FAFAFE);
+}
+/* Item body rows (chip row, input row, etc.) */
+.sp-admin-card-list-item-body {
+  padding: 0;
+}
+/* Row inside item body with top divider */
+.sp-admin-card-list-item-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 7px 16px 9px;
+  border-top: 1px solid var(--sp-admin-border-subtle, #F4F2FC);
+}
+/* Chip row — no top border, tighter vertical */
+.sp-admin-card-list-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 16px 8px;
+  border-top: 1px solid var(--sp-admin-border-subtle, #F4F2FC);
+}
+
+/* Avatar tile — small coloured square with initial/icon */
+.sp-admin-provider-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--sp-admin-primary-bg, #EDEBFF);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--sp-admin-primary, #5B4BE8);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+/* Item name inside card list header */
+.sp-admin-card-list-item-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sp-admin-text, #211B36);
+  flex: 1;
+  text-transform: capitalize;
+  min-width: 0;
+}
+/* Right-side action buttons inside card list header */
+.sp-admin-card-list-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 /* ── Shared 3-column card grid ──────────────────────────────────────────── */
 /* Collapses: 3col → 2col at 1100px → 1col at 700px */
 .sp-admin-card-grid-3 {

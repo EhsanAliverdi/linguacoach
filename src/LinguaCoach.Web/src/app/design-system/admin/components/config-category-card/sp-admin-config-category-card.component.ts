@@ -55,10 +55,17 @@ export interface ConfigCategoryField {
         <sp-admin-button variant="neutral" appearance="outline" [fullWidth]="true" (click)="configure.emit()">
           Configure
         </sp-admin-button>
-        <sp-admin-button variant="neutral" appearance="outline" [disabled]="testBusy" (click)="test.emit()">
-          {{ testBusy ? '…' : testLabel }}
+        <sp-admin-button variant="neutral" appearance="outline" [loading]="testBusy" [disabled]="testBusy" (click)="test.emit()">
+          {{ testLabel }}
         </sp-admin-button>
       </div>
+
+      <!-- Test result -->
+      @if (testResult) {
+        <div class="sp-ccc-test-result" [class.sp-ccc-test-result--error]="testResultTone === 'error'" [class.sp-ccc-test-result--success]="testResultTone === 'success'">
+          {{ testResult }}
+        </div>
+      }
 
     </div>
   `,
@@ -167,6 +174,16 @@ export interface ConfigCategoryField {
       gap: 8px;
       margin-top: 4px;
     }
+    .sp-ccc-test-result {
+      font-size: 12px;
+      color: var(--sp-admin-text-muted, #8B85A0);
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sp-ccc-test-result--error { color: var(--sp-admin-danger, #EF4444); }
+    .sp-ccc-test-result--success { color: var(--sp-admin-green, #13B07C); }
   `],
 })
 export class SpAdminConfigCategoryCardComponent {
@@ -179,6 +196,8 @@ export class SpAdminConfigCategoryCardComponent {
   @Input() fields: ConfigCategoryField[] = [];
   @Input() testBusy = false;
   @Input() testLabel = 'Test';
+  @Input() testResult = '';
+  @Input() testResultTone: 'success' | 'error' | 'neutral' = 'neutral';
 
   @Output() configure = new EventEmitter<void>();
   @Output() test = new EventEmitter<void>();

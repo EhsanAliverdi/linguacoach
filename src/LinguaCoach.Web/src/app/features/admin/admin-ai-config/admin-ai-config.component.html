@@ -1,15 +1,6 @@
 <!-- ── Page header ───────────────────────────────────────────────── -->
 <sp-admin-page-header title="AI Configuration"
   subtitle="Category-level AI provider config, TTS voices, and provider credentials">
-  <sp-admin-button variant="neutral" appearance="outline" [disabled]="testAllBusy()" (click)="testAllConnections()">
-    <svg slot="leading" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-      aria-hidden="true">
-      <polyline points="23 4 23 10 17 10" />
-      <polyline points="1 20 1 14 7 14" />
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-    </svg>
-    {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
-  </sp-admin-button>
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -60,17 +51,11 @@
       @for (cs of llmCategories(); track cs.item.categoryKey) {
       <sp-admin-config-category-card [name]="cs.item.displayName" [categoryKey]="cs.item.categoryKey"
         [description]="categoryDesc(cs.item.categoryKey)" [configured]="isConfigured(cs)" [testBusy]="cs.testBusy"
-        [testLabel]="cs.testResult ? cs.testResult : 'Test'" [fields]="[
+        testLabel="Test" [testResult]="cs.testResult" [testResultTone]="cs.testResultOk === true ? 'success' : cs.testResultOk === false ? 'error' : 'neutral'" [fields]="[
               { label: 'PROVIDER', value: cs.item.providerName },
               { label: 'MODEL', value: cs.item.modelName, mono: true }
             ]" (configure)="openConfigureDrawer(cs)" (test)="testCategory(cs)">
-        <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sp-admin-primary,#5B4BE8)"
-          stroke-width="1.75" aria-hidden="true">
-          <path d="M12 2a10 10 0 0 1 10 10" />
-          <path d="M12 6a6 6 0 0 1 6 6" />
-          <path d="M12 10a2 2 0 0 1 2 2" />
-          <line x1="12" y1="22" x2="12" y2="12" />
-        </svg>
+        <sp-admin-icon slot="icon" name="radio" size="md" tone="primary" [strokeWidth]="1.75" />
       </sp-admin-config-category-card>
       }
     </div>
@@ -94,17 +79,12 @@
       @for (cs of ttsCategories(); track cs.item.categoryKey) {
       <sp-admin-config-category-card [name]="cs.item.displayName" [categoryKey]="cs.item.categoryKey"
         [description]="categoryDesc(cs.item.categoryKey)" [configured]="isConfigured(cs)" notSetLabel="TTS disabled"
-        iconBg="#F2E9FF" [testBusy]="cs.testBusy" testLabel="Test audio" [fields]="[
+        iconBg="#F2E9FF" [testBusy]="cs.testBusy" testLabel="Test audio" [testResult]="cs.testResult" [testResultTone]="cs.testResultOk === true ? 'success' : cs.testResultOk === false ? 'error' : 'neutral'" [fields]="[
               { label: 'PROVIDER', value: cs.item.providerName },
               { label: 'MODEL', value: cs.item.modelName, mono: true },
               { label: 'VOICE', value: cs.item.voiceName }
             ]" (configure)="openConfigureDrawer(cs)" (test)="testCategory(cs)">
-        <svg slot="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45CF0" stroke-width="1.75"
-          aria-hidden="true">
-          <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-          <path
-            d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-        </svg>
+        <sp-admin-icon slot="icon" name="headphones" size="md" tone="purple" [strokeWidth]="1.75" />
       </sp-admin-config-category-card>
       }
     </div>
@@ -113,16 +93,34 @@
 
   <!-- ══ PROVIDER CREDENTIALS ═════════════════════════════════════ -->
   @if (activeTab() === 'credentials') {
-  <sp-admin-card title="Provider credentials" [headerDivider]="true">
-    <p class="sp-admin-section-sub sp-admin-mb-4">
-      One API key per provider applies to all features using it.
-      "Test connection" checks every model with the stored key.
-    </p>
-    <sp-admin-stack gap="sm">
+  <div>
+    <div class="sp-admin-section-header-row sp-admin-mb-4">
+      <p class="sp-admin-section-sub">
+        One API key per provider applies to all features using it.
+        "Test connection" checks every model with the stored key.
+      </p>
+      <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="testAllBusy()" (click)="testAllConnections()">
+        <sp-admin-icon slot="leading" name="refresh" size="xs" />
+        {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
+      </sp-admin-button>
+    </div>
+    <div class="sp-admin-card-list">
       @for (ps of providers(); track ps.catalog.providerName) {
-      <sp-admin-card padding="none" variant="bordered">
-        <div class="sp-admin-provider-header">
-          <span class="sp-admin-provider-name">{{ ps.catalog.providerName }}</span>
+      <div class="sp-admin-card-list-item">
+
+        <!-- Provider header row -->
+        <div class="sp-admin-card-list-item-header">
+          <div class="sp-admin-provider-avatar" [attr.aria-label]="ps.catalog.providerName">
+            @switch (providerKey(ps.catalog.providerName)) {
+              @case ('openai') { <sp-admin-icon name="radio" size="sm" tone="primary" /> }
+              @case ('anthropic') { <sp-admin-icon name="alert-triangle" size="sm" tone="primary" /> }
+              @case ('gemini') { <sp-admin-icon name="cpu-chip" size="sm" tone="primary" /> }
+              @case ('qwen') { <sp-admin-icon name="zap" size="sm" tone="primary" /> }
+              @case ('fake') { <sp-admin-icon name="zap" size="sm" tone="muted" /> }
+              @default { <span aria-hidden="true">{{ providerInitial(ps.catalog.providerName) }}</span> }
+            }
+          </div>
+          <span class="sp-admin-card-list-item-name">{{ ps.catalog.providerName }}</span>
           @if (ps.catalog.hasApiKey) {
           <sp-admin-badge tone="success" [dot]="true">Key stored</sp-admin-badge>
           } @else {
@@ -131,7 +129,7 @@
           @if (hasEndpointConfig(ps.catalog.providerName) && ps.catalog.apiEndpoint) {
           <sp-admin-badge tone="info">Endpoint set</sp-admin-badge>
           }
-          <div class="sp-admin-provider-btns">
+          <div class="sp-admin-card-list-item-actions">
             @if (hasEndpointConfig(ps.catalog.providerName)) {
             <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="toggleQwenConfig(ps)">Configure</sp-admin-button>
             } @else {
@@ -140,25 +138,31 @@
             <sp-admin-button variant="neutral" appearance="outline" size="sm" [loading]="ps.testBusy" [disabled]="ps.testBusy" (click)="runTest(ps)">Test connection</sp-admin-button>
           </div>
         </div>
-        <div class="sp-admin-chip-row">
+
+        <!-- Model chips -->
+        <div class="sp-admin-card-list-chip-row">
           @for (m of ps.catalog.modelTests; track m.modelName) {
-          <sp-admin-badge [tone]="modelChipTone(m)" [dot]="true" [title]="modelChipTitle(m)">
+          <sp-admin-badge [tone]="modelChipTone(m)" [appearance]="hasBeenTested(m) ? 'soft' : 'outline'" [dot]="hasBeenTested(m)" [title]="modelChipTitle(m)">
             <span class="sp-admin-mono">{{ m.modelName }}</span>
             @if (hasBeenTested(m) && m.ok) { <span class="sp-admin-table-cell-compact sp-admin-ml-1 sp-admin-muted-chip">{{ m.latencyMs }}ms</span> }
             @if (hasBeenTested(m) && !m.ok) { <span class="sp-admin-ml-1">&#x2717;</span> }
           </sp-admin-badge>
           }
         </div>
-        <div class="sp-admin-input-row">
+
+        <!-- Add model row -->
+        <div class="sp-admin-card-list-item-row">
           <sp-admin-form-field label="Add model" class="sp-admin-flex-1">
-            <sp-admin-input [(ngModel)]="ps.newModelName" placeholder="provider model name" />
+            <sp-admin-input size="sm" [(ngModel)]="ps.newModelName" placeholder="provider model name" />
           </sp-admin-form-field>
           <sp-admin-button variant="secondary" size="sm" [disabled]="ps.addModelBusy || !ps.newModelName.trim()" [loading]="ps.addModelBusy" (click)="addModel(ps)">Add</sp-admin-button>
-          <sp-admin-button variant="secondary" size="sm" [disabled]="ps.testBusy || !ps.newModelName.trim()" (click)="testOneModel(ps)">Test model</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="ghost" size="sm" [disabled]="ps.testBusy || !ps.newModelName.trim()" (click)="testOneModel(ps)">Test model</sp-admin-button>
           @if (ps.addModelError) { <p class="sp-admin-field-error">{{ ps.addModelError }}</p> }
         </div>
+
+        <!-- Key edit form (standard providers) -->
         @if (!hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
-        <div class="sp-admin-input-row">
+        <div class="sp-admin-card-list-item-row">
           <sp-admin-form-field label="API Key" hint="blank clears and falls back to env var" class="sp-admin-flex-1">
             <sp-admin-input type="password" [(ngModel)]="ps.editKeyValue" [placeholder]="keyPlaceholder(ps.catalog.providerName)" />
           </sp-admin-form-field>
@@ -170,8 +174,10 @@
           @if (ps.saveKeyError) { <sp-admin-alert variant="error" class="sp-admin-w-full">{{ ps.saveKeyError }}</sp-admin-alert> }
         </div>
         }
+
+        <!-- Qwen endpoint config form -->
         @if (hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
-        <div class="sp-admin-input-row sp-admin-form-column">
+        <div class="sp-admin-card-list-item-row sp-admin-form-column">
           <p class="sp-admin-section-sub sp-admin-w-full">Qwen uses a workspace-specific endpoint. Find these values in Alibaba Cloud Model Studio.</p>
           <div class="sp-admin-form-row sp-admin-w-full">
             <sp-admin-form-field label="API Key" hint="sk-... from your workspace">
@@ -194,10 +200,11 @@
           }
         </div>
         }
-      </sp-admin-card>
+
+      </div>
       }
-    </sp-admin-stack>
-  </sp-admin-card>
+    </div>
+  </div>
   }
 
   <!-- ══ MODEL PRICING ════════════════════════════════════════════ -->
@@ -209,11 +216,7 @@
         overrides to change runtime pricing without redeploying.
       </p>
       <sp-admin-button variant="secondary" appearance="solid" (click)="openCreateOverride()">
-        <svg slot="leading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.5" aria-hidden="true">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <sp-admin-icon slot="leading" name="plus" size="xs" [strokeWidth]="2.5" />
         Add override
       </sp-admin-button>
     </div>

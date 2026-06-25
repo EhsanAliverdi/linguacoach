@@ -11,13 +11,14 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminButtonComponent,
+  SpAdminIconComponent,
 } from '../../../design-system/admin';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 
 @Component({
   selector: 'app-admin-integrations',
   standalone: true,
-  imports: [CommonModule, RouterLink, SpAdminBadgeComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminVisualPlaceholderComponent],
+  imports: [CommonModule, RouterLink, SpAdminBadgeComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminVisualPlaceholderComponent, SpAdminIconComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
     .sp-int-card{background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;}

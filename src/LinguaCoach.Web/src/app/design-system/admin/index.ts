@@ -51,6 +51,7 @@ export * from './components/copyable-text/sp-admin-copyable-text.component';
 export * from './components/code-pill/sp-admin-code-pill.component';
 export * from './components/graph-card/sp-admin-graph-card.component';
 export * from './components/button-group/sp-admin-button-group.component';
+export * from './components/icon/sp-admin-icon.component';
 export * from './components/toggle/sp-admin-toggle.component';
 export * from './components/stack/sp-admin-stack.component';
 export * from './components/version-selector/sp-admin-version-selector.component';

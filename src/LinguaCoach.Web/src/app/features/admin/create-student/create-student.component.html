@@ -58,7 +58,7 @@
 
         <!-- Security note -->
         <div class="sp-cs-security-note">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <sp-admin-icon name="shield" size="sm" style="flex-shrink:0;margin-top:1px" />
           <span>The temporary password is shown once — save it before sharing with the student. The student must sign in and set their own password before starting onboarding.</span>
         </div>
 
@@ -80,10 +80,7 @@
           (click)="showOptional = !showOptional"
         >
           <span>{{ showOptional ? 'Hide profile fields' : 'Add profile fields' }}</span>
-          <svg class="sp-cs-toggle-chevron" [class.sp-cs-toggle-chevron--open]="showOptional"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-          </svg>
+          <sp-admin-icon name="chevron-down" size="sm" [class.sp-cs-toggle-chevron--open]="showOptional" class="sp-cs-toggle-chevron" />
         </button>
 
         @if (showOptional) {

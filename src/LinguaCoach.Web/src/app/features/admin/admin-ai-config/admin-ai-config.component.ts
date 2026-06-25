@@ -18,6 +18,7 @@ import {
   SpAdminConfigCategoryCardComponent,
   SpAdminEmptyStateComponent,
   SpAdminNotImplementedStateComponent,
+  SpAdminIconComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
@@ -44,6 +45,7 @@ interface CategoryState {
   editingVoice: string | null;
   testBusy: boolean;
   testResult: string;
+  testResultOk: boolean | null;
 }
 
 interface OverrideFormState {
@@ -99,7 +101,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminSlideOverComponent,
     SpAdminStackComponent, SpAdminTableActionsComponent, SpAdminTableComponent,
-    SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent,
+    SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent, SpAdminIconComponent,
   ],
   templateUrl: './admin-ai-config.component.html',
 })
@@ -160,6 +162,7 @@ export class AdminAiConfigComponent implements OnInit {
           editingVoice: item.voiceName,
           testBusy: false,
           testResult: '',
+          testResultOk: null,
         })));
         this.providers.set(catalog.map(c => ({
           catalog: c,
@@ -435,13 +438,16 @@ export class AdminAiConfigComponent implements OnInit {
   testCategory(cs: CategoryState): void {
     cs.testBusy = true;
     cs.testResult = '';
+    cs.testResultOk = null;
     this.adminApi.testAiCategory(cs.item.categoryKey).subscribe({
       next: result => {
         cs.testBusy = false;
+        cs.testResultOk = result.ok;
         cs.testResult = result.ok ? `OK (${result.latencyMs}ms)` : (result.error ?? 'Test failed.');
       },
       error: err => {
         cs.testBusy = false;
+        cs.testResultOk = false;
         cs.testResult = err.error?.error ?? 'Test failed.';
       },
     });
@@ -492,6 +498,14 @@ export class AdminAiConfigComponent implements OnInit {
 
   hasEndpointConfig(provider: string): boolean {
     return provider === 'qwen';
+  }
+
+  providerInitial(name: string): string {
+    return name.charAt(0).toUpperCase();
+  }
+
+  providerKey(name: string): string {
+    return name.toLowerCase();
   }
 
   toggleKeyEdit(ps: ProviderState): void {
