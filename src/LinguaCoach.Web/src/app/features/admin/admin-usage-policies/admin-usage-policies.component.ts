@@ -23,15 +23,16 @@ import {
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
+  SpAdminIconComponent,
   SpAdminInputComponent,
+  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
-  SpAdminModalComponent,
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminSectionCardComponent,
   SpAdminSelectComponent,
-  SpAdminKpiCardComponent,
+  SpAdminSlideOverComponent,
+  SpAdminTableActionsComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
 
@@ -44,45 +45,27 @@ import {
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminButtonGroupComponent,
     SpAdminCardComponent,
     SpAdminCheckboxComponent,
     SpAdminCodePillComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
+    SpAdminIconComponent,
     SpAdminInputComponent,
+    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
-    SpAdminModalComponent,
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminSectionCardComponent,
     SpAdminSelectComponent,
-    SpAdminKpiCardComponent,
+    SpAdminSlideOverComponent,
+    SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminButtonGroupComponent,
   ],
   templateUrl: './admin-usage-policies.component.html',
-  styles: [`
-    .sp-up-form-stack { display:flex; flex-direction:column; gap:14px; }
-    .sp-up-cb-stack { display:flex; flex-direction:column; gap:10px; }
-    .sp-up-actions { display:flex; gap:10px; }
-    .sp-up-rules-row td { padding-top:0 !important; background:#FBFAFE; }
-    .sp-up-rules-inner { padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
-    .sp-up-rule-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #ECE9F5; }
-    .sp-up-rule-row:last-child { border-bottom:none; }
-    .sp-up-rule-actions { display:flex; gap:4px; margin-left:auto; }
-    .sp-up-rule-limits { display:flex; flex-wrap:wrap; gap:6px; font-size:12px; color:#8B85A0; }
-    .sp-up-rule-limit { background:#fff; border:1px solid #ECE9F5; border-radius:6px; padding:2px 8px; }
-    .sp-up-expand-btn { background:none; border:none; cursor:pointer; color:#5B4BE8; font-size:12px; padding:0; font-weight:600; font-family:inherit; }
-    .sp-up-expand-btn:hover { text-decoration:underline; }
-    .sp-up-rule-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .sp-up-rule-limits-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-    @media (max-width:640px) {
-      .sp-up-rule-form-grid { grid-template-columns:1fr; }
-      .sp-up-rule-limits-grid { grid-template-columns:1fr 1fr; }
-    }
-  `],
+  styleUrl: './admin-usage-policies.component.css',
 })
 export class AdminUsagePoliciesComponent implements OnInit {
   policies = signal<UsagePolicy[]>([]);
@@ -93,7 +76,8 @@ export class AdminUsagePoliciesComponent implements OnInit {
   saveError = signal('');
   saveSuccess = signal('');
 
-  showForm = signal(false);
+  // Policy slide-over
+  policyDrawerOpen = signal(false);
   editingId = signal<string | null>(null);
   expandedPolicyId = signal<string | null>(null);
 
@@ -104,15 +88,15 @@ export class AdminUsagePoliciesComponent implements OnInit {
   formIsDefault = signal(false);
   formIsActive = signal(true);
 
-  // Rule editor state
-  ruleModalOpen = signal(false);
-  ruleModalPolicyId = signal<string | null>(null);
-  ruleEditingId = signal<string | null>(null);  // null = create
+  // Rule slide-over
+  ruleDrawerOpen = signal(false);
+  ruleDrawerPolicyId = signal<string | null>(null);
+  ruleEditingId = signal<string | null>(null);
   ruleSaving = signal(false);
   ruleSaveError = signal('');
 
-  // Delete confirmation state
-  deleteModalOpen = signal(false);
+  // Delete slide-over
+  deleteDrawerOpen = signal(false);
   deleteTargetPolicyId = signal<string | null>(null);
   deleteTargetRuleId = signal<string | null>(null);
   deleteTargetRuleKey = signal('');
@@ -156,26 +140,23 @@ export class AdminUsagePoliciesComponent implements OnInit {
     { value: 'Cost', label: 'Cost ($)' },
   ];
 
-  // Computed summary stats
   totalPolicies = computed(() => this.policies().length);
   activePolicies = computed(() => this.policies().filter(p => p.isActive).length);
   defaultPolicy = computed(() => this.policies().find(p => p.isDefault) ?? null);
 
-  // Feature name lookup map
   featureNameMap = computed<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     for (const f of this.features()) map[f.key] = f.name;
     return map;
   });
 
-  // Feature select options built from definitions
   featureOptions = computed(() =>
     this.features().map(f => ({ value: f.key, label: `${f.name} (${f.key})` }))
   );
 
-  ruleModalTitle = computed(() =>
-    this.ruleEditingId() ? 'Edit Rule' : 'Add Rule'
-  );
+  policyDrawerTitle = computed(() => this.editingId() ? 'Edit Policy' : 'New Policy');
+
+  ruleDrawerTitle = computed(() => this.ruleEditingId() ? 'Edit Rule' : 'Add Rule');
 
   constructor(private svc: UsageGovernanceService) {}
 
@@ -194,7 +175,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
     });
   }
 
-  // ── Policy form ──────────────────────────────────────────────────────────
+  // ── Policy slide-over ────────────────────────────────────────────────────
 
   openCreate(): void {
     this.editingId.set(null);
@@ -205,7 +186,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.formIsActive.set(true);
     this.saveError.set('');
     this.saveSuccess.set('');
-    this.showForm.set(true);
+    this.policyDrawerOpen.set(true);
   }
 
   openEdit(p: UsagePolicy): void {
@@ -217,11 +198,11 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.formIsActive.set(p.isActive);
     this.saveError.set('');
     this.saveSuccess.set('');
-    this.showForm.set(true);
+    this.policyDrawerOpen.set(true);
   }
 
-  cancel(): void {
-    this.showForm.set(false);
+  closePolicyDrawer(): void {
+    this.policyDrawerOpen.set(false);
   }
 
   toggleExpanded(policyId: string): void {
@@ -245,7 +226,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
         isActive: this.formIsActive(),
       };
       this.svc.updateUsagePolicy(id, req).subscribe({
-        next: () => { this.saving.set(false); this.saveSuccess.set('Policy updated.'); this.showForm.set(false); this.load(); },
+        next: () => { this.saving.set(false); this.saveSuccess.set('Policy updated.'); this.policyDrawerOpen.set(false); this.load(); },
         error: err => { this.saving.set(false); this.saveError.set(err.error?.message ?? 'Save failed.'); },
       });
     } else {
@@ -258,16 +239,26 @@ export class AdminUsagePoliciesComponent implements OnInit {
         rules: [],
       };
       this.svc.createUsagePolicy(req).subscribe({
-        next: () => { this.saving.set(false); this.saveSuccess.set('Policy created.'); this.showForm.set(false); this.load(); },
+        next: () => { this.saving.set(false); this.saveSuccess.set('Policy created.'); this.policyDrawerOpen.set(false); this.load(); },
         error: err => { this.saving.set(false); this.saveError.set(err.error?.message ?? 'Create failed.'); },
       });
     }
   }
 
-  // ── Rule editor ──────────────────────────────────────────────────────────
+  policyFooterActions = computed(() => [
+    { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
+    { id: 'save', label: this.editingId() ? 'Update Policy' : 'Create Policy', variant: 'primary' as const, appearance: 'solid' as const, loading: this.saving(), disabled: this.saving() },
+  ]);
+
+  onPolicyFooterAction(id: string): void {
+    if (id === 'save') this.save();
+    else this.closePolicyDrawer();
+  }
+
+  // ── Rule slide-over ──────────────────────────────────────────────────────
 
   openAddRule(policyId: string): void {
-    this.ruleModalPolicyId.set(policyId);
+    this.ruleDrawerPolicyId.set(policyId);
     this.ruleEditingId.set(null);
     this.ruleFeatureKey.set('');
     this.ruleEnforcementMode.set('TrackOnly');
@@ -281,11 +272,11 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.ruleTrackingEnabled.set(true);
     this.ruleIsActive.set(true);
     this.ruleSaveError.set('');
-    this.ruleModalOpen.set(true);
+    this.ruleDrawerOpen.set(true);
   }
 
   openEditRule(policyId: string, rule: UsagePolicyRule): void {
-    this.ruleModalPolicyId.set(policyId);
+    this.ruleDrawerPolicyId.set(policyId);
     this.ruleEditingId.set(rule.id);
     this.ruleFeatureKey.set(rule.featureKey);
     this.ruleEnforcementMode.set(rule.enforcementMode);
@@ -299,11 +290,11 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.ruleTrackingEnabled.set(rule.trackingEnabled);
     this.ruleIsActive.set(rule.isActive);
     this.ruleSaveError.set('');
-    this.ruleModalOpen.set(true);
+    this.ruleDrawerOpen.set(true);
   }
 
-  closeRuleModal(): void {
-    this.ruleModalOpen.set(false);
+  closeRuleDrawer(): void {
+    this.ruleDrawerOpen.set(false);
   }
 
   saveRule(): void {
@@ -330,7 +321,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.ruleSaving.set(true);
     this.ruleSaveError.set('');
 
-    const policyId = this.ruleModalPolicyId()!;
+    const policyId = this.ruleDrawerPolicyId()!;
     const editId = this.ruleEditingId();
 
     if (editId) {
@@ -349,7 +340,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
       this.svc.updateRule(policyId, editId, req).subscribe({
         next: updatedRule => {
           this.ruleSaving.set(false);
-          this.ruleModalOpen.set(false);
+          this.ruleDrawerOpen.set(false);
           this.updateRuleInPlace(policyId, updatedRule);
           this.saveSuccess.set('Rule updated.');
         },
@@ -372,7 +363,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
       this.svc.addRule(policyId, req).subscribe({
         next: newRule => {
           this.ruleSaving.set(false);
-          this.ruleModalOpen.set(false);
+          this.ruleDrawerOpen.set(false);
           this.addRuleInPlace(policyId, newRule);
           this.saveSuccess.set('Rule added.');
         },
@@ -381,38 +372,38 @@ export class AdminUsagePoliciesComponent implements OnInit {
     }
   }
 
-  // ── Delete confirmation ──────────────────────────────────────────────────
+  ruleFooterActions = computed(() => [
+    { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
+    { id: 'save', label: this.ruleEditingId() ? 'Update Rule' : 'Add Rule', variant: 'primary' as const, appearance: 'solid' as const, loading: this.ruleSaving(), disabled: this.ruleSaving() },
+  ]);
+
+  onRuleFooterAction(id: string): void {
+    if (id === 'save') this.saveRule();
+    else this.closeRuleDrawer();
+  }
+
+  // ── Delete slide-over ────────────────────────────────────────────────────
 
   openDeleteRule(policyId: string, rule: UsagePolicyRule): void {
     this.deleteTargetPolicyId.set(policyId);
     this.deleteTargetRuleId.set(rule.id);
     this.deleteTargetRuleKey.set(rule.featureKey);
     this.deleteError.set('');
-    this.deleteModalOpen.set(true);
+    this.deleteDrawerOpen.set(true);
   }
 
-  closeDeleteModal(): void {
-    this.deleteModalOpen.set(false);
+  closeDeleteDrawer(): void {
+    this.deleteDrawerOpen.set(false);
   }
 
-  ruleModalFooterActions = computed(() => [
+  deleteFooterActions = computed(() => [
     { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
-    { id: 'save', label: this.ruleEditingId() ? 'Update Rule' : 'Add Rule', variant: 'primary' as const, appearance: 'solid' as const, loading: this.ruleSaving(), disabled: this.ruleSaving() },
+    { id: 'delete', label: 'Delete Rule', variant: 'danger' as const, appearance: 'solid' as const, loading: this.deleteConfirming(), disabled: this.deleteConfirming() },
   ]);
 
-  onRuleModalFooterAction(id: string): void {
-    if (id === 'save') this.saveRule();
-    else this.closeRuleModal();
-  }
-
-  deleteModalFooterActions = computed(() => [
-    { id: 'cancel', label: 'Cancel', variant: 'neutral' as const, appearance: 'outline' as const },
-    { id: 'delete', label: 'Delete', variant: 'primary' as const, appearance: 'solid' as const, loading: this.deleteConfirming(), disabled: this.deleteConfirming() },
-  ]);
-
-  onDeleteModalFooterAction(id: string): void {
+  onDeleteFooterAction(id: string): void {
     if (id === 'delete') this.confirmDelete();
-    else this.closeDeleteModal();
+    else this.closeDeleteDrawer();
   }
 
   confirmDelete(): void {
@@ -424,7 +415,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
     this.svc.deleteRule(policyId, ruleId).subscribe({
       next: () => {
         this.deleteConfirming.set(false);
-        this.deleteModalOpen.set(false);
+        this.deleteDrawerOpen.set(false);
         this.removeRuleInPlace(policyId, ruleId);
         this.saveSuccess.set('Rule deleted.');
       },
@@ -432,7 +423,7 @@ export class AdminUsagePoliciesComponent implements OnInit {
     });
   }
 
-  // ── Local state update helpers (avoid full reload) ───────────────────────
+  // ── Local state update helpers ───────────────────────────────────────────
 
   private addRuleInPlace(policyId: string, rule: UsagePolicyRule): void {
     this.policies.update(list =>
@@ -474,8 +465,8 @@ export class AdminUsagePoliciesComponent implements OnInit {
     if (rule.dailyLimit != null) parts.push(`Daily: ${rule.dailyLimit}`);
     if (rule.weeklyLimit != null) parts.push(`Weekly: ${rule.weeklyLimit}`);
     if (rule.monthlyLimit != null) parts.push(`Monthly: ${rule.monthlyLimit}`);
-    if (rule.dailyCostLimit != null) parts.push(`Daily cost: $${rule.dailyCostLimit}`);
-    if (rule.monthlyCostLimit != null) parts.push(`Monthly cost: $${rule.monthlyCostLimit}`);
+    if (rule.dailyCostLimit != null) parts.push(`Daily $${rule.dailyCostLimit}`);
+    if (rule.monthlyCostLimit != null) parts.push(`Monthly $${rule.monthlyCostLimit}`);
     return parts;
   }
 }

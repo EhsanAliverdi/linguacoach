@@ -86,7 +86,7 @@
       @if (summary()!.byProvider.length === 0) {
         <sp-admin-empty-state message="No calls yet." />
       } @else {
-        <sp-admin-table variant="data" density="compact" minWidth="480px">
+        <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
           <table>
             <thead>
               <tr>
@@ -127,7 +127,7 @@
       @if (summary()!.byFeature.length === 0) {
         <sp-admin-empty-state message="No calls yet." />
       } @else {
-        <sp-admin-table variant="data" density="compact" minWidth="480px">
+        <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
           <table>
             <thead>
               <tr>

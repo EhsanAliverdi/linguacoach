@@ -1,0 +1,93 @@
+.sp-up-kpi-3 { --sp-admin-kpi-row-cols: 3; }
+.sp-up-desc { margin-top: 2px; }
+.sp-up-feature-name { margin-left: 6px; }
+
+/* Expand toggle button */
+.sp-up-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sp-admin-primary, #5B4BE8);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 2px 0;
+  white-space: nowrap;
+}
+.sp-up-expand-btn:hover { text-decoration: underline; }
+
+/* Expanded row — no padding, tinted bg */
+.sp-up-rules-row > td {
+  padding: 0 !important;
+  background: var(--sp-admin-surface-subtle, #FBFAFE);
+}
+.sp-up-rules-inner { padding: 0 0 12px 0; }
+
+/* Nested rules table — fluid first column */
+.sp-up-rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+.sp-up-rules-table th,
+.sp-up-rules-table td {
+  white-space: nowrap;
+  padding: 7px 16px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+/* Feature column absorbs all spare space */
+.sp-up-rules-table th:first-child,
+.sp-up-rules-table td:first-child {
+  width: 9999px;
+  white-space: normal;
+}
+.sp-up-rules-table thead th {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  background: var(--sp-admin-surface-subtle, #FBFAFE);
+}
+.sp-up-rules-table tbody tr { background: var(--sp-admin-surface-subtle, #FBFAFE); }
+.sp-up-rules-table tbody tr:last-child td { border-bottom: none; }
+/* Actions column: right-aligned, compact */
+.sp-up-rules-table th:last-child,
+.sp-up-rules-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Limits chips — flex inside td (td stays table-cell) */
+.sp-up-limits-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.sp-up-rule-limit {
+  font-size: 11.5px;
+  background: #fff;
+  border: 1px solid var(--sp-admin-border, #ECE9F5);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  color: var(--sp-admin-text-muted, #8B85A0);
+}
+
+.sp-up-add-rule-row { padding: 10px 16px 4px; }
+
+/* Rule slide-over limits grid */
+.sp-up-limits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .sp-up-limits-grid { grid-template-columns: 1fr 1fr; }
+}

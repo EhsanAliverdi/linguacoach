@@ -22,6 +22,7 @@ export interface SpAdminColDef {
 export type SortDirection = 'asc' | 'desc';
 export interface SpAdminSortChange { column: string; direction: SortDirection; }
 export type SpAdminTableVariant = 'basic' | 'data' | 'bordered' | 'striped' | 'simple' | 'card';
+export type SpAdminTableLayout = 'auto' | 'first-column-fluid';
 export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 
 /**
@@ -46,7 +47,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       } @else if (error) {
         <sp-admin-error-state [title]="errorTitle" [message]="error" />
       } @else if (columns.length === 0) {
-        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout">
+        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout" [class.sp-adm-fluid-layout]="layout === 'first-column-fluid'">
           <ng-content />
         </div>
       } @else if (!rows.length) {
@@ -279,6 +280,41 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     :host ::ng-deep .sp-admin-th-center { text-align:center !important; }
     :host ::ng-deep .sp-admin-td-right  { text-align:right !important; }
     :host ::ng-deep .sp-admin-td-center { text-align:center !important; }
+
+    /* first-column-fluid layout:
+       table-layout:auto (browser sizes columns naturally).
+       First th/td gets a large min-width so it wins the spare space race.
+       Other cells stay nowrap so they shrink to content.
+       sp-admin-fluid-col marks an explicit fluid column (Part B). */
+    :host ::ng-deep .sp-adm-fluid-layout table {
+      table-layout: auto;
+      width: 100%;
+    }
+    :host ::ng-deep .sp-adm-fluid-layout table th,
+    :host ::ng-deep .sp-adm-fluid-layout table td {
+      white-space: nowrap;
+    }
+    /* First column is greedy — takes all spare width */
+    :host ::ng-deep .sp-adm-fluid-layout table th:first-child,
+    :host ::ng-deep .sp-adm-fluid-layout table td:first-child {
+      width: 9999px;
+      white-space: normal;
+    }
+    /* Explicit fluid column marker (overrides first-child) */
+    :host ::ng-deep .sp-adm-fluid-layout table th.sp-admin-fluid-col,
+    :host ::ng-deep .sp-adm-fluid-layout table td.sp-admin-fluid-col {
+      width: 9999px;
+      white-space: normal;
+    }
+    :host ::ng-deep .sp-adm-fluid-layout table tr:has(th.sp-admin-fluid-col) th:first-child,
+    :host ::ng-deep .sp-adm-fluid-layout table tr:has(td.sp-admin-fluid-col) td:first-child {
+      width: auto;
+    }
+    /* Actions column stays right-aligned and compact */
+    :host ::ng-deep .sp-adm-fluid-layout table .sp-admin-actions {
+      text-align: right;
+      white-space: nowrap;
+    }
   `],
 })
 export class SpAdminTableComponent {
@@ -300,6 +336,7 @@ export class SpAdminTableComponent {
   @Input() minWidth = '720px';
   @Input() flush = false;
   @Input() fixedLayout = false;
+  @Input() layout: SpAdminTableLayout = 'auto';
   /** Column definitions for projection-mode tables (width + optional align). */
   @Input() colDefs: SpAdminColDef[] = [];
   @Output() sortChange = new EventEmitter<SpAdminSortChange>();
