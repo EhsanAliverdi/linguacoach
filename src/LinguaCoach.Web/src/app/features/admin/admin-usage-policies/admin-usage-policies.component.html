@@ -123,11 +123,13 @@
                                   }
                                 </div>
                               </td>
-                              <td class="sp-admin-actions">
-                                <sp-admin-table-actions mode="buttons" [richActions]="[
-                                  { id: 'edit', label: 'Edit', icon: 'edit' },
-                                  { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger' }
-                                ]" (actionSelected)="$event === 'edit' ? openEditRule(p.id, rule) : openDeleteRule(p.id, rule)" />
+                              <td class="sp-up-rule-actions-cell">
+                                <div class="sp-up-rule-actions-inner">
+                                  <sp-admin-table-actions [richActions]="[
+                                    { id: 'edit', label: 'Edit', icon: 'edit' },
+                                    { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger' }
+                                  ]" (actionSelected)="$event === 'edit' ? openEditRule(p.id, rule) : openDeleteRule(p.id, rule)" />
+                                </div>
                               </td>
                             </tr>
                           }

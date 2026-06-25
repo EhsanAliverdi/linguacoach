@@ -48,16 +48,8 @@
     } @else if (filteredPrompts().length === 0) {
     <sp-admin-empty-state [message]="emptyMessage()" />
     } @else {
-    <sp-admin-table variant="data" density="comfortable" minWidth="860px" [flush]="true" [fixedLayout]="true">
+    <sp-admin-table variant="data" density="comfortable" [flush]="true" layout="first-column-fluid">
       <table>
-        <colgroup>
-          <col style="width:34%" />
-          <col style="width:11%" />
-          <col style="width:9%" />
-          <col style="width:13%" />
-          <col style="width:18%" />
-          <col style="width:15%" />
-        </colgroup>
         <thead>
           <tr>
             <th>KEY</th>

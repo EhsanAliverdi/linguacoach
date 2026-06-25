@@ -58,10 +58,8 @@
 .sp-up-rules-table tbody tr:last-child td { border-bottom: none; }
 /* Actions column: right-aligned, compact */
 .sp-up-rules-table th:last-child,
-.sp-up-rules-table td:last-child {
-  text-align: right;
-  white-space: nowrap;
-}
+.sp-up-rule-actions-cell { text-align: right; white-space: nowrap; }
+.sp-up-rule-actions-inner { display: flex; justify-content: flex-end; }
 
 /* Limits chips — flex inside td (td stays table-cell) */
 .sp-up-limits-cell {

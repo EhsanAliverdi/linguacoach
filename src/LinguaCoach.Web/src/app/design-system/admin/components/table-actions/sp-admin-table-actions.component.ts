@@ -183,8 +183,9 @@ export interface SpAdminTableAction {
     :host ::ng-deep .sp-adm-action-item:disabled,
     :host ::ng-deep .sp-adm-action-item.sp-adm-action-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
+    .sp-adm-row-actions { display: flex; justify-content: flex-end; }
     /* Button group mode */
-    .sp-adm-action-btn-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .sp-adm-action-btn-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   `],
 })
 export class SpAdminTableActionsComponent {
