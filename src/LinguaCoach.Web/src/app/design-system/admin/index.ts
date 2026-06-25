@@ -64,6 +64,7 @@ export * from './utils/admin-badge.utils';
 export * from './components/toast-outlet/sp-admin-toast-outlet.component';
 export * from './components/ring-metric/sp-admin-ring-metric.component';
 export * from './components/breakdown-bars/sp-admin-breakdown-bars.component';
+export * from './components/distribution-breakdown/sp-admin-distribution-breakdown.component';
 export * from './services/admin-drawer.service';
 export * from './services/admin-modal.service';
 export * from './services/admin-toast.service';

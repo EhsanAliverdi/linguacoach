@@ -29,6 +29,8 @@ import { CommonModule } from '@angular/common';
       justify-content: space-between;
       gap: 12px;
       margin-top: 8px;
+      padding: 12px 20px;
+      border-top: 1px solid var(--sp-admin-border, #ECE9F5);
       flex-wrap: wrap;
     }
     .sp-adm-tf-left {

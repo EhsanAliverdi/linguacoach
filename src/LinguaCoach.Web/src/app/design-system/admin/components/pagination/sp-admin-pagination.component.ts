@@ -45,9 +45,6 @@ import { CommonModule } from '@angular/common';
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
-      padding:12px 16px;
-      border-top:1px solid #ECE9F5;
-      background:#fff;
     }
     /* .adm-pag-info: 13px/muted */
     .sp-adm-pag-info {

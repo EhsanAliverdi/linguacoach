@@ -893,3 +893,102 @@
 @media (min-width: 1100px) {
   .sp-admin-card-grid-3 { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── Table cell typography — use inside td for primary/code/desc patterns ── */
+.sp-admin-cell-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sp-admin-text, #211B36);
+  margin-bottom: 2px;
+}
+.sp-admin-cell-code {
+  display: block;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  margin-bottom: 2px;
+}
+.sp-admin-cell-desc {
+  font-size: 12px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  line-height: 1.4;
+  max-width: 360px;
+}
+
+/* ── Status label — paired with sp-admin-status-dot ─────────────────────── */
+.sp-admin-status-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sp-admin-text-muted, #8B85A0);
+}
+.sp-admin-status-label--active { color: var(--sp-admin-green, #13B07C); }
+.sp-admin-status-dot--inactive { background: var(--sp-admin-text-muted, #8B85A0); }
+
+/* ── Filter bar right-side count ─────────────────────────────────────────── */
+.sp-admin-filter-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Form error banner — above a form inside a slide-over ───────────────── */
+.sp-admin-form-error {
+  color: #991b1b;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Checkbox group — horizontal wrap row of labelled checkboxes ──────────── */
+.sp-admin-check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.sp-admin-check-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--sp-admin-text-secondary, #4B4462);
+}
+
+/* ── Inline flags row — horizontal wrap of checkbox labels (Active/Reviewable) */
+.sp-admin-flags-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* ── Textarea token — use with .sp-input ─────────────────────────────────── */
+.sp-admin-textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+/* ── Result panel — bordered info block for API preview results ──────────── */
+.sp-admin-result-panel {
+  border: 1px solid var(--sp-admin-border, #ECE9F5);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--sp-admin-surface-subtle, #F8FAFC);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.sp-admin-result-row {
+  font-size: 14px;
+  color: var(--sp-admin-text, #211B36);
+  line-height: 1.5;
+}
