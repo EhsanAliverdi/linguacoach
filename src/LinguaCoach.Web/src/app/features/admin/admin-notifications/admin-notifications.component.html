@@ -602,7 +602,7 @@
       <sp-admin-button variant="secondary" appearance="solid" [disabled]="templateFormLoading()" (clicked)="submitTemplateForm()">
         {{ templateFormLoading() ? 'Saving…' : (templateFormMode === 'create' ? 'Create' : 'Save changes') }}
       </sp-admin-button>
-      <sp-admin-button variant="neutral" appearance="ghost" (clicked)="closeTemplateForm()">Cancel</sp-admin-button>
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeTemplateForm()">Cancel</sp-admin-button>
     </div>
   </sp-admin-slide-over>
 
@@ -727,7 +727,7 @@
         (clicked)="submitSend()"
         aria-label="Submit send notification"
       >{{ sending() ? 'Sending…' : 'Send notification' }}</sp-admin-button>
-      <sp-admin-button variant="neutral" appearance="ghost" (clicked)="closeSendForm()">Cancel</sp-admin-button>
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeSendForm()">Cancel</sp-admin-button>
     </div>
   </sp-admin-slide-over>
 

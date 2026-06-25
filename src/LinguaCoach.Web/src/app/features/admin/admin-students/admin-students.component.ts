@@ -215,7 +215,7 @@ interface StudentEditForm {
           <div class="sp-admin-alert-error sp-stu-wide">{{ editError() }}</div>
         }
         <div class="sp-stu-wide flex justify-end gap-3 pt-2">
-          <sp-admin-button variant="neutral" appearance="ghost" size="sm" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
           <sp-admin-button size="sm" type="submit" [loading]="savingEdit()" [disabled]="savingEdit()">
             {{ savingEdit() ? 'Saving...' : 'Save changes' }}
           </sp-admin-button>
@@ -260,7 +260,7 @@ interface StudentEditForm {
           }
           <div class="flex justify-end gap-3 pt-2">
             <sp-admin-button variant="neutral" appearance="ghost" type="button" (click)="generateResetPassword()">Generate password</sp-admin-button>
-            <sp-admin-button variant="neutral" appearance="ghost" type="button" (click)="cancelResetPassword()">Cancel</sp-admin-button>
+            <sp-admin-button variant="neutral" appearance="outline" type="button" (click)="cancelResetPassword()">Cancel</sp-admin-button>
             <sp-admin-button type="submit" [loading]="savingReset()" [disabled]="savingReset() || resetForm.newPassword.length < 8">
               {{ savingReset() ? 'Saving...' : 'Reset password' }}
             </sp-admin-button>
@@ -356,7 +356,7 @@ interface StudentEditForm {
           }
           @if (resettingData(); as student) {
             <div class="flex justify-end gap-3 pt-2">
-              <sp-admin-button variant="neutral" appearance="ghost" type="button" (click)="cancelResetData()">Cancel</sp-admin-button>
+              <sp-admin-button variant="neutral" appearance="outline" type="button" (click)="cancelResetData()">Cancel</sp-admin-button>
               <sp-admin-button variant="danger" type="submit" [loading]="savingResetData()"
                 [disabled]="savingResetData() || resetDataForm.confirmEmail !== student.email || !resetDataForm.reason.trim()">
                 {{ savingResetData() ? 'Resetting...' : 'Reset data' }}

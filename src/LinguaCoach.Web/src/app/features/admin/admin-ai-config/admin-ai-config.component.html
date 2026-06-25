@@ -213,7 +213,7 @@
                 @if (ps.catalog.hasApiKey) {
                   <sp-admin-button variant="danger" (click)="clearKey(ps)">Clear key</sp-admin-button>
                 }
-                <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
+                <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
                 @if (ps.saveKeyError) { <sp-admin-alert variant="error" style="width:100%">{{ ps.saveKeyError }}</sp-admin-alert> }
               </div>
             }
@@ -230,7 +230,7 @@
                 </div>
                 <div class="sp-aic-qwen-actions">
                   <sp-admin-button [loading]="ps.saveKeyBusy || ps.saveEndpointBusy" [disabled]="ps.saveKeyBusy || ps.saveEndpointBusy" (click)="saveQwenConfig(ps)">Save</sp-admin-button>
-                  <sp-admin-button variant="neutral" appearance="ghost" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
+                  <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="ps.editingKey = false">Cancel</sp-admin-button>
                   @if (ps.saveKeyError || ps.saveEndpointError) {
                     <sp-admin-alert variant="error" style="width:100%">{{ ps.saveKeyError || ps.saveEndpointError }}</sp-admin-alert>
                   }
@@ -440,7 +440,7 @@
       (click)="saveConfigureDrawer()">
       {{ configuringCategory()?.saved ? 'Saved' : 'Save changes' }}
     </sp-admin-button>
-    <sp-admin-button variant="neutral" appearance="ghost" (click)="closeConfigureDrawer()">Cancel</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (click)="closeConfigureDrawer()">Cancel</sp-admin-button>
   </div>
 </sp-admin-slide-over>
 
@@ -541,6 +541,6 @@
       (click)="saveOverride()">
       {{ overrideForm()?.mode === 'create' ? 'Save override' : 'Save changes' }}
     </sp-admin-button>
-    <sp-admin-button variant="neutral" appearance="ghost" (click)="cancelOverrideForm()">Cancel</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (click)="cancelOverrideForm()">Cancel</sp-admin-button>
   </div>
 </sp-admin-slide-over>

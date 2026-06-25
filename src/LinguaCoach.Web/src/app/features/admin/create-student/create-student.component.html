@@ -145,7 +145,7 @@
 
       <!-- Section 3: Actions -->
       <div class="sp-cs-actions">
-        <sp-admin-button variant="ghost" type="button" routerLink="/admin/students">Cancel</sp-admin-button>
+        <sp-admin-button variant="neutral" appearance="outline" type="button" routerLink="/admin/students">Cancel</sp-admin-button>
         <sp-admin-button type="submit" [disabled]="loading()" [loading]="loading()">
           {{ loading() ? 'Creating...' : 'Create student' }}
         </sp-admin-button>

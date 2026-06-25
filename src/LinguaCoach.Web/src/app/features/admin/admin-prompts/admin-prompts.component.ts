@@ -272,7 +272,7 @@ export class AdminPromptsComponent implements OnInit {
     return [
       { id: 'edit', label: 'Edit', variant: 'secondary', appearance: 'solid', icon: 'edit', iconColor: '#fff' },
       ...(this.viewPrompt()?.isActive ? [{ id: 'deactivate', label: `Deactivate v${this.viewPrompt()?.version}`, variant: 'danger' as const, appearance: 'ghost' as const }] : []),
-      { id: 'close', label: 'Close', variant: 'neutral', appearance: 'ghost' },
+      { id: 'close', label: 'Close', variant: 'neutral', appearance: 'outline' },
     ];
   }
 
@@ -287,7 +287,7 @@ export class AdminPromptsComponent implements OnInit {
   editFooterActions(): SpAdminButtonGroupAction[] {
     return [
       { id: 'save', label: this.editRow() ? 'Save as new version' : 'Create', variant: 'secondary', appearance: 'solid', loading: this.creating() },
-      { id: 'cancel', label: 'Cancel', variant: 'neutral', appearance: 'ghost' },
+      { id: 'cancel', label: 'Cancel', variant: 'neutral', appearance: 'outline' },
     ];
   }
 

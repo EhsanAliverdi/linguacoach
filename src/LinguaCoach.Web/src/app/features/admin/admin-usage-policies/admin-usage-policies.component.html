@@ -63,7 +63,7 @@
         <sp-admin-button (click)="save()" [loading]="saving()">
           {{ editingId() ? 'Update Policy' : 'Create Policy' }}
         </sp-admin-button>
-        <sp-admin-button variant="ghost" (click)="cancel()">Cancel</sp-admin-button>
+        <sp-admin-button variant="neutral" appearance="outline" (click)="cancel()">Cancel</sp-admin-button>
       </div>
     </div>
   </sp-admin-card>
@@ -283,7 +283,7 @@
   </div>
 
   <div slot="footer">
-    <sp-admin-button variant="ghost" (click)="closeRuleModal()">Cancel</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (click)="closeRuleModal()">Cancel</sp-admin-button>
     <sp-admin-button (click)="saveRule()" [loading]="ruleSaving()">
       {{ ruleEditingId() ? 'Update Rule' : 'Add Rule' }}
     </sp-admin-button>
@@ -307,7 +307,7 @@
   </p>
 
   <div slot="footer">
-    <sp-admin-button variant="ghost" (click)="closeDeleteModal()">Cancel</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (click)="closeDeleteModal()">Cancel</sp-admin-button>
     <sp-admin-button (click)="confirmDelete()" [loading]="deleteConfirming()">Delete</sp-admin-button>
   </div>
 </sp-admin-modal>

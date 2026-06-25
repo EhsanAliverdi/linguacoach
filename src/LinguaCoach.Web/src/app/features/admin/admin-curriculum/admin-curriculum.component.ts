@@ -278,7 +278,7 @@ function parseJsonArray(json: string | null | undefined): string[] {
               <sp-admin-button type="button" [loading]="saving()" [disabled]="saving()" (click)="save()">
                 {{ view() === 'create' ? 'Create' : 'Save changes' }}
               </sp-admin-button>
-              <sp-admin-button variant="secondary" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
+              <sp-admin-button variant="neutral" appearance="outline" type="button" (click)="cancelEdit()">Cancel</sp-admin-button>
             </div>
           </div>
         </sp-admin-card>
