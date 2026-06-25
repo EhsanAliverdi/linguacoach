@@ -15,8 +15,8 @@
 <!-- Prompt library -->
 <sp-admin-card variant="default" padding="none" [hasHeader]="true" [headerDivider]="false">
   <!-- Library header: title + filter row in one block -->
-  <div slot="header" class="sp-adm-lib-header">
-    <div class="sp-adm-lib-title">Prompt library</div>
+  <div slot="header" class="sp-admin-card-header-block">
+    <div class="sp-admin-card-section-title">Prompt library</div>
     <sp-admin-filter-bar layout="responsive" density="compact">
       <sp-admin-form-field search label="Search prompts" size="sm">
         <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm" placeholder="Search by key…" />
@@ -29,7 +29,7 @@
           size="sm"
           placeholder="All categories" />
       </sp-admin-form-field>
-      <sp-admin-form-field class="sp-adm-status-field" filters label="Status" size="sm">
+      <sp-admin-form-field filters label="Status" size="sm" fixedWidth="160px">
         <sp-admin-select
           [ngModel]="statusFilter()"
           (ngModelChange)="setStatusFilter($event)"
@@ -72,10 +72,10 @@
         </thead>
         <tbody>
           @for (p of pagedPrompts(); track p.id) {
-            <tr class="sp-adm-row-click" (click)="openView(p)">
+            <tr class="sp-admin-row-click" (click)="openView(p)">
               <!-- KEY -->
               <td>
-                <div class="sp-adm-key-cell">
+                <div class="sp-admin-key-cell">
                   <sp-admin-code-pill [value]="p.key" tone="primary" [maxLength]="48" />
                   @if (p.isActive && isLatestVersion(p)) {
                     <sp-admin-badge tone="info" size="sm">latest</sp-admin-badge>
@@ -84,10 +84,10 @@
               </td>
               <!-- CATEGORY -->
               <td>
-                <span class="sp-adm-category">{{ promptCategory(p.key) }}</span>
+                <span class="sp-admin-cell-text">{{ promptCategory(p.key) }}</span>
               </td>
               <!-- VERSION -->
-              <td class="sp-adm-version">v{{ p.version }}</td>
+              <td class="sp-admin-version">v{{ p.version }}</td>
               <!-- STATUS -->
               <td>
                 <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
@@ -95,7 +95,7 @@
                 </sp-admin-badge>
               </td>
               <!-- TOKEN BUDGET -->
-              <td class="sp-admin-num sp-adm-token-budget">{{ tokenBudgetLabel(p) }}</td>
+              <td class="sp-admin-num sp-admin-mono-cell">{{ tokenBudgetLabel(p) }}</td>
               <!-- ACTIONS -->
               <td class="sp-admin-actions" (click)="$event.stopPropagation()">
                 <div class="sp-adm-actions-wrap">
@@ -146,67 +146,52 @@
   (closed)="closeView()">
 
   @if (detail()) {
-    <div class="sp-adm-so-meta-grid">
-      <div class="sp-adm-so-meta-item">
-        <div class="sp-adm-so-meta-lbl">CATEGORY</div>
-        <div class="sp-adm-so-meta-val">{{ promptCategory(detail()!.key) }}</div>
+    <div class="sp-admin-meta-grid">
+      <div class="sp-admin-meta-item">
+        <div class="sp-admin-meta-label">CATEGORY</div>
+        <div class="sp-admin-meta-value">{{ promptCategory(detail()!.key) }}</div>
       </div>
-      <div class="sp-adm-so-meta-item">
-        <div class="sp-adm-so-meta-lbl">STATUS</div>
-        <div class="sp-adm-so-meta-val" [class.sp-adm-active]="detail()!.isActive" [class.sp-adm-inactive]="!detail()!.isActive">
-          <span class="sp-adm-dot" [class.sp-adm-dot-active]="detail()!.isActive"></span>
+      <div class="sp-admin-meta-item">
+        <div class="sp-admin-meta-label">STATUS</div>
+        <div class="sp-admin-meta-value" [class.sp-admin-meta-value--active]="detail()!.isActive" [class.sp-admin-meta-value--inactive]="!detail()!.isActive">
+          <span class="sp-admin-status-dot" [class.sp-admin-status-dot--active]="detail()!.isActive"></span>
           {{ detail()!.isActive ? 'Active' : 'Inactive' }}
         </div>
       </div>
-      <div class="sp-adm-so-meta-item">
-        <div class="sp-adm-so-meta-lbl">TOKEN IN</div>
-        <div class="sp-adm-so-meta-val">{{ (detail()!.maxInputTokens ?? 0) | number }}</div>
+      <div class="sp-admin-meta-item">
+        <div class="sp-admin-meta-label">TOKEN IN</div>
+        <div class="sp-admin-meta-value">{{ (detail()!.maxInputTokens ?? 0) | number }}</div>
       </div>
-      <div class="sp-adm-so-meta-item">
-        <div class="sp-adm-so-meta-lbl">TOKEN OUT</div>
-        <div class="sp-adm-so-meta-val">{{ (detail()!.maxOutputTokens ?? 0) | number }}</div>
+      <div class="sp-admin-meta-item">
+        <div class="sp-admin-meta-label">TOKEN OUT</div>
+        <div class="sp-admin-meta-value">{{ (detail()!.maxOutputTokens ?? 0) | number }}</div>
       </div>
     </div>
 
     @if (viewSiblings().length > 1) {
-      <div class="sp-adm-so-section">
-        <div class="sp-adm-so-section-title">Version history</div>
-        <div class="sp-adm-ver-btns">
-          @for (s of viewSiblings(); track s.id) {
-            <button
-              type="button"
-              class="sp-adm-ver-btn"
-              [class.sp-adm-ver-btn-active]="s.id === viewPrompt()?.id"
-              (click)="switchVersion(s)">
-              v{{ s.version }}
-              @if (s.isActive) {
-                <span class="sp-adm-ver-dot" [class.sp-adm-ver-dot-cur]="s.id === viewPrompt()?.id"></span>
-              }
-            </button>
-          }
-        </div>
-        @if (viewPrompt()?.isActive) {
-          <div class="sp-adm-ver-status sp-adm-active">&#9679; v{{ viewPrompt()?.version }} is the active version</div>
-        } @else {
-          <div class="sp-adm-ver-status sp-adm-inactive">&#9679; v{{ viewPrompt()?.version }} is inactive</div>
-        }
+      <div class="sp-admin-so-section">
+        <div class="sp-admin-so-section-title">Version history</div>
+        <sp-admin-version-selector
+          [versions]="viewSiblings()"
+          [selectedId]="viewPrompt()?.id ?? null"
+          (versionChange)="onVersionChange($event)" />
       </div>
     }
 
     @if (promptVars(detail()!.content).length > 0) {
-      <div class="sp-adm-so-section">
-        <div class="sp-adm-so-section-title">Variables <span class="sp-adm-muted">({{ promptVars(detail()!.content).length }})</span></div>
-        <div class="sp-adm-var-pills">
+      <div class="sp-admin-so-section">
+        <div class="sp-admin-so-section-title">Variables <span class="sp-admin-text-muted">({{ promptVars(detail()!.content).length }})</span></div>
+        <div class="sp-admin-var-pills">
           @for (v of promptVars(detail()!.content); track v) {
-            <code class="sp-adm-var-pill">{{ '{{' + v + '}}' }}</code>
+            <code class="sp-admin-var-pill">{{ '{{' + v + '}}' }}</code>
           }
         </div>
       </div>
     }
 
-    <div class="sp-adm-so-section">
-      <div class="sp-adm-so-section-title">Prompt template</div>
-      <pre class="sp-adm-prompt-body">{{ detail()!.content }}</pre>
+    <div class="sp-admin-so-section">
+      <div class="sp-admin-so-section-title">Prompt template</div>
+      <pre class="sp-admin-code-block">{{ detail()!.content }}</pre>
     </div>
   }
 
@@ -231,13 +216,13 @@
   [stackIndex]="viewPrompt() ? 1 : 0"
   (closed)="closeEdit()">
 
-  <div class="sp-adm-edit-body">
+  <sp-admin-stack>
     @if (editRow()) {
       <sp-admin-alert variant="warning">Saving creates a new version and deactivates the current active version.</sp-admin-alert>
     }
     <div class="sp-admin-field-grid">
       @if (!editRow()) {
-        <sp-admin-form-field label="Key" class="sp-admin-wide">
+        <sp-admin-form-field label="Key" [wide]="true">
           <sp-admin-input [(ngModel)]="newKey" placeholder="key (e.g. writing.exercise.v2)" />
         </sp-admin-form-field>
       }
@@ -247,14 +232,14 @@
       <sp-admin-form-field label="Token budget — Output">
         <sp-admin-number-input [(ngModel)]="newMaxOutput" [min]="1" />
       </sp-admin-form-field>
-      <sp-admin-form-field label="Prompt body" class="sp-admin-wide">
-        <sp-admin-textarea [(ngModel)]="newContent" [rows]="16" placeholder="Prompt content with {{ '{{variable}}' }} placeholders" class="sp-adm-mono-textarea" />
+      <sp-admin-form-field label="Prompt body" [wide]="true">
+        <sp-admin-textarea [(ngModel)]="newContent" [rows]="16" [monospace]="true" placeholder="Prompt content with {{ '{{variable}}' }} placeholders" />
       </sp-admin-form-field>
     </div>
     @if (formError()) {
       <sp-admin-alert variant="error">{{ formError() }}</sp-admin-alert>
     }
-  </div>
+  </sp-admin-stack>
 
   <div slot="footer">
     <sp-admin-button variant="secondary" appearance="solid" (click)="createVersion()" [loading]="creating()">

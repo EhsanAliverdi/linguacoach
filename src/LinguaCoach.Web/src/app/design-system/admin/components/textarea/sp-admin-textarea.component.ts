@@ -59,10 +59,13 @@ export type SpAdminTextareaState = 'default' | 'error' | 'success' | 'disabled';
 
     /* Width */
     .sp-adm-textarea-auto { width:auto; }
+    /* Monospace variant */
+    .sp-adm-textarea-mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12.5px; line-height:1.7; }
   `],
 })
 export class SpAdminTextareaComponent implements ControlValueAccessor {
   @Input() rows = 4;
+  @Input() monospace = false;
   @Input() placeholder = '';
   @Input() readonly = false;
   @Input() required = false;
@@ -93,6 +96,7 @@ export class SpAdminTextareaComponent implements ControlValueAccessor {
     const effectiveState = this.state !== 'default' ? this.state : (this.invalid ? 'error' : null);
     if (effectiveState && effectiveState !== 'disabled') cls.push(`sp-adm-textarea-${effectiveState}`);
     if (!this.fullWidth) cls.push('sp-adm-textarea-auto');
+    if (this.monospace) cls.push('sp-adm-textarea-mono');
     return cls.join(' ');
   }
 

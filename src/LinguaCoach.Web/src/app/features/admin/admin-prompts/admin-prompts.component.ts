@@ -22,9 +22,11 @@ import {
   SpAdminPaginationComponent,
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
+  SpAdminStackComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTextareaComponent,
+  SpAdminVersionSelectorComponent,
 } from '../../../design-system/admin';
 
 type PromptStatusFilter = 'all' | 'active' | 'inactive';
@@ -53,12 +55,13 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
+    SpAdminStackComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTextareaComponent,
+    SpAdminVersionSelectorComponent,
   ],
   templateUrl: './admin-prompts.component.html',
-  styleUrl: './admin-prompts.component.scss',
 })
 export class AdminPromptsComponent implements OnInit {
   prompts = signal<PromptTemplateItem[]>([]);
@@ -176,6 +179,11 @@ export class AdminPromptsComponent implements OnInit {
         this.detailLoading.set(false);
       },
     });
+  }
+
+  onVersionChange(v: { id: string }): void {
+    const sibling = this.viewSiblings().find(s => s.id === v.id);
+    if (sibling) this.switchVersion(sibling);
   }
 
   switchVersion(sibling: PromptTemplateItem): void {

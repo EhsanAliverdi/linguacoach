@@ -12,7 +12,7 @@ export type SpAdminFormFieldSize = 'sm' | 'md' | 'lg';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <label class="sp-adm-field" [class]="hostClasses">
+    <label class="sp-adm-field" [class]="hostClasses" [style.flex]="fixedWidth ? '0 0 ' + fixedWidth : null" [style.min-width]="fixedWidth ? '80px' : null" [style.grid-column]="wide ? '1 / -1' : null">
       @if (label) {
         <span class="sp-adm-field-label font-medium text-gray-700 dark:text-gray-400" [class]="labelSizeClass">
           {{ label }}
@@ -64,6 +64,10 @@ export class SpAdminFormFieldComponent {
   @Input() error = '';
   @Input() required = false;
   @Input() layout: SpAdminFormFieldLayout = 'vertical';
+  /** Fixed flex-basis width, e.g. '160px'. Overrides filter-bar slot default. */
+  @Input() fixedWidth: string | null = null;
+  /** Span full grid width (grid-column: 1 / -1). */
+  @Input() wide = false;
   @Input() size: SpAdminFormFieldSize = 'md';
 
   get hostClasses(): string {

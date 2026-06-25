@@ -132,6 +132,110 @@
   --sp-admin-kpi-row-cols: 4;
 }
 
+/* ── Shared slide-over meta grid ────────────────────────────────────────── */
+.sp-admin-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) { .sp-admin-meta-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.sp-admin-meta-item {
+  padding: 12px;
+  background: var(--sp-admin-surface-subtle, #FBFAFE);
+  border-radius: 9px;
+}
+.sp-admin-meta-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  margin-bottom: 5px;
+}
+.sp-admin-meta-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #0F172A);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sp-admin-meta-value--active { color: #13B07C; }
+.sp-admin-meta-value--inactive { color: var(--sp-admin-text-muted, #8B85A0); }
+.sp-admin-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--sp-admin-text-muted, #8B85A0);
+  flex-shrink: 0;
+}
+.sp-admin-status-dot--active { background: #13B07C; }
+
+/* ── Shared slide-over sections ─────────────────────────────────────────── */
+.sp-admin-so-section { margin-bottom: 20px; }
+.sp-admin-so-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sp-admin-text, #0F172A);
+  margin-bottom: 8px;
+}
+.sp-admin-text-muted { color: var(--sp-admin-text-muted, #8B85A0); font-weight: 500; }
+
+/* ── Shared variable pills ───────────────────────────────────────────────── */
+.sp-admin-var-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-admin-var-pill {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #B45CF0;
+  background: #F2E9FF;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+/* ── Shared code/pre block ───────────────────────────────────────────────── */
+.sp-admin-code-block {
+  background: #1E1B3A;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #E8E4FF;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  max-height: 360px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* ── Shared card section header ─────────────────────────────────────────── */
+.sp-admin-card-header-block {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sp-admin-card-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #211B36);
+  margin-bottom: 14px;
+}
+
+/* ── Shared form field grid ──────────────────────────────────────────────── */
+.sp-admin-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) { .sp-admin-field-grid { grid-template-columns: 1fr; } }
+
+/* ── Shared table row helpers ────────────────────────────────────────────── */
+.sp-admin-row-click { cursor: pointer; }
+.sp-admin-key-cell { display: flex; align-items: center; gap: 8px; overflow: hidden; min-width: 0; }
+.sp-admin-state-wrap { display: grid; gap: 12px; padding: 16px; }
+
 /* ── Shared KPI row grid — use class="sp-admin-kpi-row" on every KPI strip ── */
 .sp-admin-kpi-row {
   display: grid;

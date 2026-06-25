@@ -201,6 +201,10 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       display:flex;
       justify-content:flex-end;
     }
+    /* Shared table cell helpers */
+    :host ::ng-deep .sp-admin-version  { font-size:13.5px; font-weight:700; }
+    :host ::ng-deep .sp-admin-mono-cell { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; color:var(--sp-admin-text-muted,#64748B); }
+    :host ::ng-deep .sp-admin-cell-text { font-size:13px; font-weight:600; color:var(--sp-admin-text,#0F172A); }
     :host ::ng-deep .sp-admin-table-empty {
       color:#98a2b3;
     }
