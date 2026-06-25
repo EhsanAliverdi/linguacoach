@@ -684,6 +684,182 @@
   flex-shrink: 0;
 }
 
+/* ── Hero row — avatar + body + actions ────────────────────────────────── */
+/* Use on a card body that contains an avatar, identity block, and action buttons. */
+.sp-admin-hero-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.sp-admin-hero-body {
+  flex: 1;
+  min-width: 0;
+}
+.sp-admin-hero-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #211B36);
+  line-height: 1.2;
+  margin-bottom: 3px;
+  letter-spacing: -0.025em;
+}
+.sp-admin-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  margin-top: 10px;
+}
+.sp-admin-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  margin-left: auto;
+}
+@media (max-width: 800px) {
+  .sp-admin-hero-row { flex-direction: column; }
+  .sp-admin-hero-actions { margin-left: 0; }
+}
+
+/* ── Detail grid sidebar layout — content + narrow right panel ──────────── */
+/* Left: main content. Right: ~280px sidebar. Collapses to 1 col at 900px. */
+.sp-admin-detail-grid-sidebar {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .sp-admin-detail-grid-sidebar { grid-template-columns: 1fr; }
+}
+
+/* ── Narrow right column stack ──────────────────────────────────────────── */
+/* Used inside sp-admin-detail-grid-sidebar right panel. Tighter gap than section-stack. */
+.sp-admin-sidebar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Stat strip — 3-N equal-width stat tiles in a card ─────────────────── */
+.sp-admin-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.sp-admin-stat-strip-item {
+  padding: 14px 12px;
+  text-align: center;
+  border-right: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-stat-strip-item:last-child { border-right: none; }
+.sp-admin-stat-strip-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #211B36);
+  letter-spacing: -0.03em;
+}
+.sp-admin-stat-strip-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-top: 3px;
+}
+
+/* ── Flex row — generic horizontal flex utility ─────────────────────────── */
+.sp-admin-flex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Detail list — label/value key-value pairs ──────────────────────────── */
+/* Shared DL pattern. dt = small label, dd = value. Used in cards and drawers. */
+.sp-admin-detail-list { display: grid; gap: 12px; }
+.sp-admin-detail-list dt {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  margin-bottom: 2px;
+}
+.sp-admin-detail-list dd {
+  font-size: 14px;
+  color: var(--sp-admin-text, #211B36);
+  margin: 0;
+}
+
+/* ── Simple list — compact bulleted list inside cards/drawers ───────────── */
+.sp-admin-simple-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  color: var(--sp-admin-text, #211B36);
+}
+
+/* ── Value change — old → new inline in audit tables ───────────────────── */
+.sp-admin-value-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* ── Form footer — right-aligned action row at bottom of a form grid ────── */
+.sp-admin-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* ── Danger zone — destructive action section inside a card ─────────────── */
+.sp-admin-danger-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.sp-admin-danger-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sp-admin-danger-ink, #DC2626);
+}
+.sp-admin-danger-rows {
+  display: flex;
+  flex-direction: column;
+}
+.sp-admin-danger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-danger-row:first-child { border-top: none; }
+.sp-admin-danger-row-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sp-admin-text, #211B36);
+  margin-bottom: 3px;
+}
+
+/* ── Danger card — red border tint for destructive-action sections ───────── */
+.sp-admin-card-danger {
+  border-color: #FECACA !important;
+  background: #FFF8F8 !important;
+}
+
+/* ── Score tone text utilities ───────────────────────────────────────────── */
+.sp-admin-score-high   { color: #0A7468; font-weight: 700; }
+.sp-admin-score-mid    { color: #B26410; font-weight: 700; }
+.sp-admin-score-low    { color: #DC2626; font-weight: 700; }
+.sp-admin-score-none   { color: var(--sp-admin-text-muted, #8B85A0); }
+
+/* ── Hero row alignment fix — center-align vertically ───────────────────── */
+.sp-admin-hero-row { align-items: center; }
+
 /* ── Shared 3-column card grid ──────────────────────────────────────────── */
 /* Collapses: 3col → 2col at 1100px → 1col at 700px */
 .sp-admin-card-grid-3 {

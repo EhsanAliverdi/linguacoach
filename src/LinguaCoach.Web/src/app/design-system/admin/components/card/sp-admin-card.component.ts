@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type SpAdminCardVariant = 'default' | 'bordered' | 'elevated' | 'flat' | 'metric' | 'section';
+export type SpAdminCardVariant = 'default' | 'bordered' | 'elevated' | 'flat' | 'metric' | 'section' | 'danger';
 export type SpAdminCardPadding = 'none' | 'sm' | 'md' | 'lg';
 export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
 
@@ -52,6 +52,7 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     .sp-adm-card-flat     { border:none; background:var(--sp-admin-surface-subtle,#FBFAFE) !important; box-shadow:none; }
     .sp-adm-card-metric   { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
     .sp-adm-card-section  { border:1px solid var(--sp-admin-border,#ECE9F5); box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
+    .sp-adm-card-danger   { border:1.5px solid #FECACA; background:#FFF8F8 !important; box-shadow:var(--sp-admin-shadow-xs,0 1px 2px rgba(33,27,54,.06)); }
     .sp-adm-card-dashed   { border-style:dashed; }
 
     /* Radius — standalone card is 14px */

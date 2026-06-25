@@ -62,6 +62,8 @@ export * from './components/stack/sp-admin-stack.component';
 export * from './components/version-selector/sp-admin-version-selector.component';
 export * from './utils/admin-badge.utils';
 export * from './components/toast-outlet/sp-admin-toast-outlet.component';
+export * from './components/ring-metric/sp-admin-ring-metric.component';
+export * from './components/breakdown-bars/sp-admin-breakdown-bars.component';
 export * from './services/admin-drawer.service';
 export * from './services/admin-modal.service';
 export * from './services/admin-toast.service';
