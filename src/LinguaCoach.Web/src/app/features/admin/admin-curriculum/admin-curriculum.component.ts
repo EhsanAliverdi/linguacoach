@@ -67,6 +67,8 @@ function parseJsonArray(json: string | null | undefined): string[] {
       <sp-admin-button variant="secondary" type="button" (click)="view.set('preview')">Routing preview</sp-admin-button>
     </sp-admin-page-header>
 
+    <sp-admin-page-body>
+
     <!-- ── Coverage summary strip ── -->
     @if (coverageSummary().total > 0) {
       <div class="sp-admin-kpi-row" aria-label="Curriculum coverage summary">
@@ -77,23 +79,19 @@ function parseJsonArray(json: string | null | undefined): string[] {
       </div>
 
       <!-- Active/total ring + CEFR breakdown strip -->
-      @if (coverageSummary().total > 0) {
-        <div style="display:flex;align-items:flex-start;gap:24px;padding:12px 24px 4px;flex-wrap:wrap;">
-          <sp-admin-ring-metric
-            [pct]="activeRingPct()"
-            label="Active"
-            [sub]="coverageSummary().active + ' of ' + coverageSummary().total"
-            tone="green"
-            [size]="72"
-            ariaLabel="Active objectives ring" />
-          <div style="flex:1;min-width:240px;">
-            <sp-admin-breakdown-bars [items]="cefrBreakdownItems()" [showPct]="true" title="CEFR distribution" />
-          </div>
+      <div class="sp-admin-metric-strip">
+        <sp-admin-ring-metric
+          [pct]="activeRingPct()"
+          label="Active"
+          [sub]="coverageSummary().active + ' of ' + coverageSummary().total"
+          tone="green"
+          [size]="72"
+          ariaLabel="Active objectives ring" />
+        <div class="sp-admin-metric-strip-body">
+          <sp-admin-breakdown-bars [items]="cefrBreakdownItems()" [showPct]="true" title="CEFR distribution" />
         </div>
-      }
+      </div>
     }
-
-    <sp-admin-page-body>
 
       @if (globalError()) {
         <sp-admin-error-state title="Curriculum unavailable" [message]="globalError()!" />

@@ -91,10 +91,10 @@ interface StudentEditForm {
       </div>
 
       <!-- Tab bar -->
-      <div class="sp-sd-tabs" role="tablist">
-        <button role="tab" type="button" class="sp-sd-tab" [class.sp-sd-tab--active]="activeTab() === 'overview'" (click)="activeTab.set('overview')">Overview</button>
-        <button role="tab" type="button" class="sp-sd-tab" [class.sp-sd-tab--active]="activeTab() === 'activity'" (click)="activeTab.set('activity')">Activity</button>
-        <button role="tab" type="button" class="sp-sd-tab" [class.sp-sd-tab--active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Settings</button>
+      <div class="sp-admin-tab-bar" role="tablist" aria-label="Student detail sections">
+        <button role="tab" type="button" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'overview'" [attr.aria-selected]="activeTab() === 'overview'" (click)="activeTab.set('overview')">Overview</button>
+        <button role="tab" type="button" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'activity'" [attr.aria-selected]="activeTab() === 'activity'" (click)="activeTab.set('activity')">Activity</button>
+        <button role="tab" type="button" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'settings'" [attr.aria-selected]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Settings</button>
       </div>
 
       <!-- Overview tab -->
@@ -814,10 +814,7 @@ interface StudentEditForm {
   `,
   styles: [`
     /* ── Tabs ── */
-    .sp-sd-tabs{display:flex;gap:2px;border-bottom:2px solid var(--sp-admin-border,#ECE9F5);margin-bottom:20px;}
-    .sp-sd-tab{padding:10px 20px;font-size:14px;font-weight:700;color:var(--sp-admin-text-muted,#8B85A0);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:color .15s,border-color .15s;}
-    .sp-sd-tab:hover{color:var(--sp-admin-text,#211B36);}
-    .sp-sd-tab--active{color:var(--sp-admin-primary,#5B4BE8);border-bottom-color:var(--sp-admin-primary,#5B4BE8);}
+
 
     /* ── Overview grid ── */
     .sp-sd-overview-grid{display:grid;grid-template-columns:1fr 280px;gap:16px;margin-bottom:0;}

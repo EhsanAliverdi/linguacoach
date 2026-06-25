@@ -26,14 +26,14 @@
   }
 
   <!-- Tab bar -->
-  <div class="sp-notif-tab-bar">
-    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'notifications'"
+  <div class="sp-admin-tab-bar" role="tablist" aria-label="Notification sections">
+    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'notifications'" [attr.aria-selected]="activeTab === 'notifications'"
       (click)="activeTab = 'notifications'">Notifications</button>
-    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'outbox'"
+    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'outbox'" [attr.aria-selected]="activeTab === 'outbox'"
       (click)="activeTab = 'outbox'">Delivery Queue</button>
-    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'config'"
+    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'config'" [attr.aria-selected]="activeTab === 'config'"
       (click)="activeTab = 'config'; onConfigTabActivated()">Configuration</button>
-    <button class="sp-notif-tab" [class.sp-notif-tab--active]="activeTab === 'templates'"
+    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'templates'" [attr.aria-selected]="activeTab === 'templates'"
       (click)="activeTab = 'templates'; onTemplatesTabActivated()">Templates</button>
   </div>
 

@@ -249,3 +249,120 @@
 @media (max-width: 500px) {
   .sp-admin-kpi-row { grid-template-columns: 1fr; }
 }
+
+/* ── Shared 2-column card grid ───────────────────────────────────────────── */
+/* Use for LLM/TTS category grids, any 2-col card layout. */
+.sp-admin-card-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .sp-admin-card-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Shared section stack — vertical page sections with consistent gap ───── */
+/* Wrap groups of cards/grids. Gap matches sp-admin-page-body. */
+.sp-admin-section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Section header row — title/subtitle + action on same row ────────────── */
+.sp-admin-section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sp-admin-section-sub {
+  font-size: 13px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Shared metric strip — ring + breakdown side-by-side ────────────────── */
+.sp-admin-metric-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.sp-admin-metric-strip-body {
+  flex: 1;
+  min-width: 240px;
+}
+
+/* ── Shared tab bar — underline style ───────────────────────────────────── */
+/* Use class="sp-admin-tab-bar" on the container, sp-admin-tab on each button */
+.sp-admin-tab-bar {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  border-bottom: 1.5px solid var(--sp-admin-border, #ECE9F5);
+  margin-bottom: 20px;
+}
+.sp-admin-tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+  white-space: nowrap;
+}
+.sp-admin-tab:hover { color: var(--sp-admin-text, #211B36); }
+.sp-admin-tab--active {
+  color: var(--sp-admin-primary, #5B4BE8);
+  border-bottom-color: var(--sp-admin-primary, #5B4BE8);
+}
+
+/* ── Shared period pill row ─────────────────────────────────────────────── */
+/* Use class="sp-admin-period-pills" on the container, sp-admin-period-pill on each button */
+.sp-admin-period-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.sp-admin-period-pill {
+  padding: 4px 14px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--sp-admin-border, #E2DEF0);
+  background: transparent;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  transition: background .12s, color .12s;
+  font-family: inherit;
+}
+.sp-admin-period-pill:hover { background: var(--sp-admin-surface-subtle, #F6F4FB); }
+.sp-admin-period-pill--active {
+  background: var(--sp-admin-primary, #5B4BE8);
+  color: #fff;
+  border-color: var(--sp-admin-primary, #5B4BE8);
+}
+
+/* ── Shared 3-column card grid ──────────────────────────────────────────── */
+/* Collapses: 3col → 2col at 1100px → 1col at 700px */
+.sp-admin-card-grid-3 {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 700px) {
+  .sp-admin-card-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1100px) {
+  .sp-admin-card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+}

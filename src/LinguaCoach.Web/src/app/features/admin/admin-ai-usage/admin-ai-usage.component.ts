@@ -78,10 +78,6 @@ import { SpAdminGraphCardComponent } from '../../../design-system/admin/componen
     .sp-au-fail-reason { font-size: 11px; color: var(--sp-admin-danger, #dc2626); margin-top: 2px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sp-au-filter-note { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin: 0 0 8px; }
     .sp-au-trend-zero td { color: var(--sp-admin-muted, #8B85A0); }
-    .sp-au-period-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-    .sp-au-pill { padding: 4px 14px; border-radius: 99px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--sp-admin-border, #E2DEF0); background: transparent; color: var(--sp-admin-muted, #8B85A0); transition: background 0.12s, color 0.12s; }
-    .sp-au-pill:hover { background: var(--sp-admin-surface-subtle, #F6F4FB); }
-    .sp-au-pill--active { background: var(--sp-admin-primary, #5B4BE8); color: #fff; border-color: var(--sp-admin-primary, #5B4BE8); }
     .sp-au-mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
     .sp-au-mini-bar { flex: 1; min-width: 3px; border-radius: 2px 2px 0 0; background: var(--sp-admin-primary, #5B4BE8); opacity: 0.75; transition: height 0.2s; }
     .sp-au-chart-empty { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); padding: 8px 0; }

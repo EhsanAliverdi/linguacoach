@@ -5,9 +5,9 @@
 <sp-admin-page-body>
 
   <!-- Period pills -->
-  <div class="sp-ua-period-pills" aria-label="Date range">
+  <div class="sp-admin-period-pills" aria-label="Date range">
     @for (p of periods; track p.value) {
-      <button class="sp-ua-pill" [class.sp-ua-pill--active]="period() === p.value"
+      <button class="sp-admin-period-pill" [class.sp-admin-period-pill--active]="period() === p.value"
         (click)="setPeriod(p.value)" type="button">{{ p.label }}</button>
     }
   </div>

@@ -20,9 +20,6 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
   imports: [CommonModule, RouterLink, SpAdminBadgeComponent, SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminButtonComponent, SpAdminVisualPlaceholderComponent],
   templateUrl: './admin-integrations.component.html',
   styles: [`
-    .sp-int-card-grid{display:grid;gap:16px;margin-bottom:24px;}
-    @media(min-width:700px){.sp-int-card-grid{grid-template-columns:1fr 1fr;}}
-    @media(min-width:1100px){.sp-int-card-grid{grid-template-columns:repeat(3,1fr);}}
     .sp-int-card{background:var(--sp-admin-surface,#fff);border:1px solid var(--sp-admin-border,#ECE9F5);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;}
     .sp-int-card-header{display:flex;align-items:center;gap:12px;}
     .sp-int-card-icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;}

@@ -5,11 +5,11 @@
 <sp-admin-page-body>
 
 <!-- Period pill buttons -->
-<div class="sp-au-period-pills" aria-label="Quick date range selection">
+<div class="sp-admin-period-pills" aria-label="Quick date range selection">
   @for (pill of periodPillOptions; track pill.value) {
     <button
-      class="sp-au-pill"
-      [class.sp-au-pill--active]="periodPreset() === pill.value"
+      class="sp-admin-period-pill"
+      [class.sp-admin-period-pill--active]="periodPreset() === pill.value"
       (click)="onPillClick(pill.value)"
       [attr.aria-pressed]="periodPreset() === pill.value"
       type="button">{{ pill.label }}</button>

@@ -5,6 +5,7 @@ import {
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
+  SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminToggleComponent,
 } from '../../../design-system/admin';
@@ -49,6 +50,7 @@ export interface PostureItemVm {
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
+    SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminToggleComponent,
   ],

@@ -1,14 +1,12 @@
 <!-- ── Page header ───────────────────────────────────────────────── -->
-<div class="sp-aic-page-header">
-  <div>
-    <h1 class="sp-aic-page-title">AI Configuration</h1>
-    <p class="sp-aic-page-sub">Category-level AI provider config, TTS voices, and provider credentials</p>
-  </div>
+<sp-admin-page-header title="AI Configuration" subtitle="Category-level AI provider config, TTS voices, and provider credentials">
   <sp-admin-button variant="neutral" appearance="outline" [disabled]="testAllBusy()" (click)="testAllConnections()">
     <svg slot="leading" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
   </sp-admin-button>
-</div>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
 
 <!-- ── KPI strip ─────────────────────────────────────────────────── -->
 @if (!loading() && !loadError()) {
@@ -24,7 +22,6 @@
   </div>
 }
 
-<sp-admin-page-body>
 @if (loading()) {
   <sp-admin-loading-state message="Loading AI configuration" />
 } @else if (loadError()) {
@@ -32,13 +29,13 @@
 } @else {
 
   <!-- ── Tab bar ──────────────────────────────────────────────────── -->
-  <div class="sp-aic-tabs" role="tablist" aria-label="AI configuration sections">
+  <div class="sp-admin-tab-bar" role="tablist" aria-label="AI configuration sections">
     @for (t of tabs; track t.key) {
       <button
         type="button"
         role="tab"
-        class="sp-aic-tab"
-        [class.sp-aic-tab--active]="activeTab() === t.key"
+        class="sp-admin-tab"
+        [class.sp-admin-tab--active]="activeTab() === t.key"
         [attr.aria-selected]="activeTab() === t.key"
         (click)="activeTab.set(t.key)">{{ t.label }}</button>
     }
@@ -46,9 +43,9 @@
 
   <!-- ══ LLM CATEGORIES ═══════════════════════════════════════════ -->
   @if (activeTab() === 'llm') {
-    <div>
-      <div class="sp-aic-section-header">
-        <p class="sp-aic-section-sub">
+    <div class="sp-admin-section-stack">
+      <div class="sp-admin-section-header-row">
+        <p class="sp-admin-section-sub">
           Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
         </p>
         <sp-admin-badge [tone]="configSummary().llmConfigured === configSummary().llmTotal ? 'success' : 'warning'">
@@ -56,7 +53,7 @@
         </sp-admin-badge>
       </div>
 
-      <div class="sp-aic-cat-grid">
+      <div class="sp-admin-card-grid-2">
         @for (cs of llmCategories(); track cs.item.categoryKey) {
           <div class="sp-aic-cat-card" [class.sp-aic-cat-card--configured]="isConfigured(cs)">
             <div class="sp-aic-cat-header">
@@ -101,9 +98,9 @@
 
   <!-- ══ TTS CATEGORIES ═══════════════════════════════════════════ -->
   @if (activeTab() === 'tts') {
-    <div>
-      <div class="sp-aic-section-header">
-        <p class="sp-aic-section-sub">
+    <div class="sp-admin-section-stack">
+      <div class="sp-admin-section-header-row">
+        <p class="sp-admin-section-sub">
           TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503).
         </p>
         <sp-admin-badge [tone]="configSummary().ttsConfigured > 0 ? 'success' : 'neutral'">
@@ -111,7 +108,7 @@
         </sp-admin-badge>
       </div>
 
-      <div class="sp-aic-cat-grid">
+      <div class="sp-admin-card-grid-2">
         @for (cs of ttsCategories(); track cs.item.categoryKey) {
           <div class="sp-aic-cat-card" [class.sp-aic-cat-card--configured]="isConfigured(cs)">
             <div class="sp-aic-cat-header">
@@ -144,13 +141,13 @@
               </div>
             </div>
             <div class="sp-aic-cat-actions">
-              <button type="button" class="sp-aic-btn-ghost sp-aic-btn-full" (click)="openConfigureDrawer(cs)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <sp-admin-button variant="neutral" appearance="outline" [fullWidth]="true" (click)="openConfigureDrawer(cs)">
+                <svg slot="leading" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Configure
-              </button>
-              <button type="button" class="sp-aic-btn-ghost" [disabled]="cs.testBusy" (click)="testCategory(cs)">
+              </sp-admin-button>
+              <sp-admin-button variant="neutral" appearance="outline" [disabled]="cs.testBusy" (click)="testCategory(cs)">
                 {{ cs.testBusy ? '…' : 'Test audio' }}
-              </button>
+              </sp-admin-button>
             </div>
           </div>
         }
@@ -161,7 +158,7 @@
   <!-- ══ PROVIDER CREDENTIALS ═════════════════════════════════════ -->
   @if (activeTab() === 'credentials') {
     <sp-admin-card title="Provider credentials">
-      <p class="sp-aic-section-sub" style="margin-bottom:16px">
+      <p class="sp-admin-section-sub" style="margin-bottom:16px">
         One API key per provider applies to all features using it.
         "Test connection" checks every model with the stored key.
       </p>
@@ -219,7 +216,7 @@
             }
             @if (hasEndpointConfig(ps.catalog.providerName) && ps.editingKey) {
               <div class="sp-aic-qwen-form">
-                <p class="sp-aic-section-sub" style="margin-bottom:10px">Qwen uses a workspace-specific endpoint. Find these values in Alibaba Cloud Model Studio.</p>
+                <p class="sp-admin-section-sub" style="margin-bottom:10px">Qwen uses a workspace-specific endpoint. Find these values in Alibaba Cloud Model Studio.</p>
                 <div class="sp-aic-qwen-fields">
                   <sp-admin-form-field label="API Key" hint="sk-... from your workspace">
                     <sp-admin-input type="password" [(ngModel)]="ps.editKeyValue" placeholder="sk-..." />
@@ -252,8 +249,8 @@
   <!-- ══ MODEL PRICING ════════════════════════════════════════════ -->
   @if (activeTab() === 'pricing') {
     <div>
-      <div class="sp-aic-section-header" style="margin-bottom:16px">
-        <p class="sp-aic-section-sub">
+      <div class="sp-admin-section-header-row">
+        <p class="sp-admin-section-sub">
           <strong style="color:var(--sp-admin-text,#211B36)">Config pricing</strong> — Read from openrouter.com. Add overrides to change runtime pricing without redeploying.
         </p>
         <sp-admin-button variant="secondary" appearance="solid" (click)="openCreateOverride()">
@@ -308,7 +305,7 @@
         <div class="sp-aic-overrides-header">
           <div>
             <div class="sp-aic-overrides-title">Pricing overrides</div>
-            <div class="sp-aic-section-sub" style="margin-top:2px">Overrides take precedence over config at runtime. Active overrides with a valid effective range are applied.</div>
+            <div class="sp-admin-section-sub" style="margin-top:2px">Overrides take precedence over config at runtime. Active overrides with a valid effective range are applied.</div>
           </div>
           <span [class]="overrides().length ? 'sp-aic-warn-badge' : 'sp-aic-muted-badge'">{{ overrides().length }} active</span>
         </div>

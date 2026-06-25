@@ -64,10 +64,6 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
   ],
   templateUrl: './admin-notifications.component.html',
   styles: [`
-    .sp-notif-tab-bar { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 1px solid var(--sp-admin-border, #ECE9F5); }
-    .sp-notif-tab { padding: 8px 16px; font-size: 13px; font-weight: 600; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; color: var(--sp-admin-muted, #8B85A0); transition: color 0.12s, border-color 0.12s; }
-    .sp-notif-tab:hover { color: var(--sp-admin-text, #211B36); }
-    .sp-notif-tab--active { border-bottom-color: var(--sp-admin-primary, #5B4BE8); color: var(--sp-admin-primary, #5B4BE8); }
     .sp-notif-channel-grid { display: grid; gap: 24px; margin-bottom: 24px; }
     @media(min-width: 900px) { .sp-notif-channel-grid { grid-template-columns: 1fr 1fr; } }
     .sp-notif-config-meta { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 4px; }
