@@ -11,6 +11,8 @@ import {
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
   StudentAuditHistoryItem, StudentReadinessPoolHealth,
+  AdminGenerationSettings, AdminUpdateGenerationSettingsRequest,
+  AdminGenerationBatchesResponse, AdminGenerateLessonsResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -90,6 +92,21 @@ export class AdminApiService {
   }
   getStudentReadinessPoolHealth(studentProfileId: string): Observable<StudentReadinessPoolHealth> {
     return this.http.get<StudentReadinessPoolHealth>(`${this.api}/students/${studentProfileId}/readiness-pool/health`);
+  }
+  generateLessonsForStudent(studentProfileId: string, count?: number): Observable<AdminGenerateLessonsResponse> {
+    const qs = count !== undefined ? `?count=${count}` : '';
+    return this.http.post<AdminGenerateLessonsResponse>(`${this.api}/students/${studentProfileId}/generate-lessons${qs}`, null);
+  }
+
+  // Generation settings + batches
+  getGenerationSettings(): Observable<AdminGenerationSettings> {
+    return this.http.get<AdminGenerationSettings>(`${this.api}/generation/settings`);
+  }
+  updateGenerationSettings(req: AdminUpdateGenerationSettingsRequest): Observable<AdminGenerationSettings> {
+    return this.http.patch<AdminGenerationSettings>(`${this.api}/generation/settings`, req);
+  }
+  getGenerationBatches(): Observable<AdminGenerationBatchesResponse> {
+    return this.http.get<AdminGenerationBatchesResponse>(`${this.api}/generation/batches`);
   }
 
   // Prompts

@@ -1,152 +1,189 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  SpAdminAlertComponent,
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminCardComponent,
+  SpAdminErrorStateComponent,
+  SpAdminFormFieldComponent,
+  SpAdminFormGridComponent,
+  SpAdminInputComponent,
+  SpAdminKpiCardComponent,
+  SpAdminLoadingStateComponent,
+  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminCardComponent,
-  SpAdminButtonComponent,
-  SpAdminNumberInputComponent,
-  SpAdminFormFieldComponent,
+  SpAdminTableComponent,
   SpAdminToggleComponent,
 } from '../../../design-system/admin';
-import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
+import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
+import { AdminApiService } from '../../../core/services/admin.api.service';
+import { AdminGenerationBatchesResponse } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
   standalone: true,
+  templateUrl: './admin-lessons.component.html',
   imports: [
     CommonModule,
     FormsModule,
+    SpAdminAlertComponent,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminCardComponent,
+    SpAdminErrorStateComponent,
+    SpAdminFormFieldComponent,
+    SpAdminFormGridComponent,
+    SpAdminInputComponent,
+    SpAdminKpiCardComponent,
+    SpAdminLoadingStateComponent,
+    SpAdminNotImplementedStateComponent,
+    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminCardComponent,
-    SpAdminButtonComponent,
-    SpAdminNumberInputComponent,
-    SpAdminFormFieldComponent,
+    SpAdminTableComponent,
     SpAdminToggleComponent,
-    SpAdminVisualPlaceholderComponent,
   ],
-  styles: [`
-    .sp-les-pool-grid { display: grid; gap: 16px; margin-bottom: 24px; }
-    @media(min-width: 700px) { .sp-les-pool-grid { grid-template-columns: 1fr 1fr; } }
-    .sp-les-settings-grid { display: grid; gap: 16px; }
-    @media(min-width: 700px) { .sp-les-settings-grid { grid-template-columns: 1fr 1fr; } }
-    .sp-les-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--sp-admin-border, #ECE9F5); }
-    .sp-les-toggle-row:last-child { border-bottom: none; }
-    .sp-les-toggle-label { font-size: 13px; font-weight: 500; color: var(--sp-admin-text, #211B36); }
-    .sp-les-generate-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-    .sp-les-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: var(--sp-admin-muted, #8B85A0); }
-  `],
-  template: `
-    <sp-admin-page-header
-      title="Lessons"
-      subtitle="Lesson generation, ready buffer per student, and readiness pool health." />
-
-    <sp-admin-page-body>
-
-      <!-- Lesson generation card -->
-      <sp-admin-card title="Lesson generation">
-        <p style="font-size:13px;color:var(--sp-admin-muted,#8B85A0);margin-bottom:16px;">
-          Generate lessons for student
-        </p>
-        <div class="sp-les-generate-row">
-          <sp-admin-button variant="primary" size="sm" (clicked)="generateLessons()">
-            Generate lessons now
-          </sp-admin-button>
-        </div>
-        @if (generateStatus()) {
-          <p style="font-size:13px;color:var(--sp-admin-muted,#8B85A0);">{{ generateStatus() }}</p>
-        }
-      </sp-admin-card>
-
-      <!-- Ready lesson buffer per student -->
-      <sp-admin-card title="Ready lesson buffer per student">
-        <sp-admin-visual-placeholder
-          state="not-available"
-          title="Ready lesson buffer"
-          message="Per-student ready lesson buffer is available on the student detail page. Aggregate view: backend not available yet." />
-      </sp-admin-card>
-
-      <!-- Lesson buffer settings -->
-      <sp-admin-card title="Lesson Buffer Settings">
-        <p style="font-size:13px;color:var(--sp-admin-muted,#8B85A0);margin-bottom:16px;">
-          Control background generation of ready lessons and TTS audio.
-        </p>
-        <div class="sp-les-settings-grid">
-          <sp-admin-form-field label="Ready lesson buffer size">
-            <sp-admin-number-input placeholder="e.g. 5" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Refill threshold">
-            <sp-admin-number-input placeholder="e.g. 2" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Refill batch size">
-            <sp-admin-number-input placeholder="e.g. 3" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Max generation attempts">
-            <sp-admin-number-input placeholder="e.g. 3" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Generation timeout (s)">
-            <sp-admin-number-input placeholder="e.g. 120" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="TTS timeout (s)">
-            <sp-admin-number-input placeholder="e.g. 60" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Max concurrent generation jobs">
-            <sp-admin-number-input placeholder="e.g. 2" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Max concurrent TTS jobs">
-            <sp-admin-number-input placeholder="e.g. 4" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Practice ready per type">
-            <sp-admin-number-input placeholder="e.g. 3" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Practice refill threshold">
-            <sp-admin-number-input placeholder="e.g. 1" />
-          </sp-admin-form-field>
-          <sp-admin-form-field label="Practice refill count">
-            <sp-admin-number-input placeholder="e.g. 2" />
-          </sp-admin-form-field>
-        </div>
-        <div style="margin-top:16px;">
-          <div class="sp-les-toggle-row">
-            <span class="sp-les-toggle-label">Background generation</span>
-            <sp-admin-toggle [checked]="bgGenEnabled()" (changed)="bgGenEnabled.set($event)" />
-          </div>
-          <div class="sp-les-toggle-row">
-            <span class="sp-les-toggle-label">TTS generation</span>
-            <sp-admin-toggle [checked]="ttsEnabled()" (changed)="ttsEnabled.set($event)" />
-          </div>
-        </div>
-        <div style="margin-top:16px;">
-          <sp-admin-button variant="primary" size="sm" (clicked)="saveSettings()">Save</sp-admin-button>
-        </div>
-        <p style="font-size:12px;color:var(--sp-admin-muted,#8B85A0);margin-top:8px;">
-          Backend not available yet — settings shown for reference only.
-        </p>
-      </sp-admin-card>
-
-      <!-- Readiness pool aggregate health -->
-      <sp-admin-card title="Readiness pool — aggregate health">
-        <sp-admin-visual-placeholder
-          state="not-available"
-          title="Aggregate pool health"
-          message="A system-wide readiness pool aggregate endpoint is not yet implemented. Per-student pool health is available on the student detail page." />
-      </sp-admin-card>
-
-    </sp-admin-page-body>
-  `,
 })
-export class AdminLessonsComponent {
-  generateStatus = signal('');
+export class AdminLessonsComponent implements OnInit {
+  constructor(private adminApi: AdminApiService) {}
+
+  // ── Settings load state ───────────────────────────────────────────────────
+  settingsLoading = signal(false);
+  settingsError = signal('');
+  settingsUpdatedAt = signal<string | null>(null);
+
+  // Form fields — plain properties for ngModel / CVA binding
+  readyLessonBufferSize: number | null = 5;
+  refillThreshold: number | null = 2;
+  refillBatchSize: number | null = 3;
+  maxGenerationAttempts: number | null = 3;
+  generationTimeoutSeconds: number | null = 120;
+  ttsTimeoutSeconds: number | null = 60;
+  maxConcurrentGenerationJobs: number | null = 2;
+  maxConcurrentTtsJobs: number | null = 4;
+  practiceGymReadyExercisesPerType: number | null = 3;
+  practiceGymRefillThresholdPerType: number | null = 1;
+  practiceGymRefillCountPerType: number | null = 2;
   bgGenEnabled = signal(true);
   ttsEnabled = signal(true);
 
+  saveStatus = signal('');
+  savePending = signal(false);
+
+  // ── Batches / buffer table ────────────────────────────────────────────────
+  batchesLoading = signal(false);
+  batchesError = signal('');
+  batches = signal<AdminGenerationBatchesResponse | null>(null);
+
+  totalReady = computed(() =>
+    this.batches()?.readyBufferPerStudent.reduce((s, e) => s + e.readyCount, 0) ?? null
+  );
+  studentsBuffered = computed(() =>
+    this.batches()?.readyBufferPerStudent.filter(e => e.readyCount > 0).length ?? null
+  );
+
+  // ── Generate for student ──────────────────────────────────────────────────
+  studentProfileId = '';
+  generatePending = signal(false);
+  generateStatus = signal('');
+  generateError = signal('');
+
+  ngOnInit(): void {
+    this.loadSettings();
+    this.loadBatches();
+  }
+
+  private loadSettings(): void {
+    this.settingsLoading.set(true);
+    this.settingsError.set('');
+    this.adminApi.getGenerationSettings().subscribe({
+      next: s => {
+        this.readyLessonBufferSize = s.readyLessonBufferSize;
+        this.refillThreshold = s.refillThreshold;
+        this.refillBatchSize = s.refillBatchSize;
+        this.maxGenerationAttempts = s.maxGenerationAttempts;
+        this.generationTimeoutSeconds = s.generationTimeoutSeconds;
+        this.ttsTimeoutSeconds = s.ttsTimeoutSeconds;
+        this.maxConcurrentGenerationJobs = s.maxConcurrentGenerationJobs;
+        this.maxConcurrentTtsJobs = s.maxConcurrentTtsJobs;
+        this.practiceGymReadyExercisesPerType = s.practiceGymReadyExercisesPerType;
+        this.practiceGymRefillThresholdPerType = s.practiceGymRefillThresholdPerType;
+        this.practiceGymRefillCountPerType = s.practiceGymRefillCountPerType;
+        this.bgGenEnabled.set(s.enableBackgroundGeneration);
+        this.ttsEnabled.set(s.enableTtsGeneration);
+        this.settingsUpdatedAt.set(s.updatedAtUtc);
+        this.settingsLoading.set(false);
+      },
+      error: err => {
+        this.settingsError.set(err?.error?.error ?? err?.message ?? 'Failed to load generation settings.');
+        this.settingsLoading.set(false);
+      },
+    });
+  }
+
+  private loadBatches(): void {
+    this.batchesLoading.set(true);
+    this.batchesError.set('');
+    this.adminApi.getGenerationBatches().subscribe({
+      next: b => { this.batches.set(b); this.batchesLoading.set(false); },
+      error: err => {
+        this.batchesError.set(err?.error?.error ?? err?.message ?? 'Failed to load generation batches.');
+        this.batchesLoading.set(false);
+      },
+    });
+  }
+
   generateLessons(): void {
-    this.generateStatus.set('Backend not available yet — lesson generation not implemented.');
+    const id = this.studentProfileId.trim();
+    if (!id) { this.generateError.set('Enter a student profile ID.'); return; }
+    this.generatePending.set(true);
+    this.generateStatus.set('');
+    this.generateError.set('');
+    this.adminApi.generateLessonsForStudent(id).subscribe({
+      next: res => {
+        this.generateStatus.set(`Queued — ${res.requestedCount} lesson(s) requested.`);
+        this.generatePending.set(false);
+        this.loadBatches();
+      },
+      error: err => {
+        this.generateError.set(err?.error?.error ?? err?.message ?? 'Generation request failed.');
+        this.generatePending.set(false);
+      },
+    });
   }
 
   saveSettings(): void {
-    this.generateStatus.set('Backend not available yet — settings not saved.');
+    this.savePending.set(true);
+    this.saveStatus.set('');
+    this.adminApi.updateGenerationSettings({
+      readyLessonBufferSize: this.readyLessonBufferSize ?? 5,
+      refillThreshold: this.refillThreshold ?? 2,
+      refillBatchSize: this.refillBatchSize ?? 3,
+      maxGenerationAttempts: this.maxGenerationAttempts ?? 3,
+      generationTimeoutSeconds: this.generationTimeoutSeconds ?? 120,
+      ttsTimeoutSeconds: this.ttsTimeoutSeconds ?? 60,
+      maxConcurrentGenerationJobs: this.maxConcurrentGenerationJobs ?? 2,
+      maxConcurrentTtsJobs: this.maxConcurrentTtsJobs ?? 4,
+      enableBackgroundGeneration: this.bgGenEnabled(),
+      enableTtsGeneration: this.ttsEnabled(),
+      practiceGymReadyExercisesPerType: this.practiceGymReadyExercisesPerType ?? 3,
+      practiceGymRefillThresholdPerType: this.practiceGymRefillThresholdPerType ?? 1,
+      practiceGymRefillCountPerType: this.practiceGymRefillCountPerType ?? 2,
+    }).subscribe({
+      next: s => {
+        this.settingsUpdatedAt.set(s.updatedAtUtc);
+        this.saveStatus.set('Settings saved.');
+        this.savePending.set(false);
+      },
+      error: err => {
+        this.saveStatus.set(err?.error?.error ?? err?.message ?? 'Save failed.');
+        this.savePending.set(false);
+      },
+    });
   }
+
+  refreshBatches(): void { this.loadBatches(); }
 }

@@ -695,3 +695,78 @@ export interface AdminAiUsageTrendResponse { period: string; buckets: AdminAggAi
 
 export interface AiUsageCategoryBreakdownItem { category: string; requestCount: number; totalTokens: number; cost: number; failedCalls: number; }
 export interface AdminAiUsageCategoryBreakdownResponse { period: string; categories: AiUsageCategoryBreakdownItem[]; }
+
+// ── Generation settings ────────────────────────────────────────────────────────
+
+export interface AdminGenerationSettings {
+  readyLessonBufferSize: number;
+  refillThreshold: number;
+  refillBatchSize: number;
+  maxGenerationAttempts: number;
+  generationTimeoutSeconds: number;
+  ttsTimeoutSeconds: number;
+  maxConcurrentGenerationJobs: number;
+  maxConcurrentTtsJobs: number;
+  enableBackgroundGeneration: boolean;
+  enableTtsGeneration: boolean;
+  practiceGymReadyExercisesPerType: number;
+  practiceGymRefillThresholdPerType: number;
+  practiceGymRefillCountPerType: number;
+  updatedAtUtc: string | null;
+}
+
+export interface AdminUpdateGenerationSettingsRequest {
+  readyLessonBufferSize: number;
+  refillThreshold: number;
+  refillBatchSize: number;
+  maxGenerationAttempts: number;
+  generationTimeoutSeconds: number;
+  ttsTimeoutSeconds: number;
+  maxConcurrentGenerationJobs: number;
+  maxConcurrentTtsJobs: number;
+  enableBackgroundGeneration: boolean;
+  enableTtsGeneration: boolean;
+  practiceGymReadyExercisesPerType: number;
+  practiceGymRefillThresholdPerType: number;
+  practiceGymRefillCountPerType: number;
+}
+
+// ── Generation batches ─────────────────────────────────────────────────────────
+
+export interface AdminGenerationBatchSummary {
+  queued: number;
+  running: number;
+  failed: number;
+  lastSuccessfulGenerationUtc: string | null;
+}
+
+export interface AdminReadyBufferEntry {
+  studentProfileId: string;
+  readyCount: number;
+}
+
+export interface AdminGenerationBatchItem {
+  id: string;
+  studentProfileId: string;
+  triggerReason: string;
+  status: string;
+  requestedSessionCount: number;
+  completedSessionCount: number;
+  providerName: string | null;
+  modelName: string | null;
+  startedAtUtc: string | null;
+  completedAtUtc: string | null;
+  failureReason: string | null;
+  createdAt: string;
+}
+
+export interface AdminGenerationBatchesResponse {
+  summary: AdminGenerationBatchSummary;
+  readyBufferPerStudent: AdminReadyBufferEntry[];
+  batches: AdminGenerationBatchItem[];
+}
+
+export interface AdminGenerateLessonsResponse {
+  queued: boolean;
+  requestedCount: number;
+}

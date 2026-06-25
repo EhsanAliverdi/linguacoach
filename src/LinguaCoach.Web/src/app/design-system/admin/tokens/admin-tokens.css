@@ -813,6 +813,26 @@
   padding-top: 4px;
 }
 
+/* ── Settings list — toggle/checkbox rows inside a card ─────────────────── */
+.sp-admin-settings-list {
+  margin-top: 16px;
+}
+.sp-admin-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-settings-row:last-child {
+  border-bottom: none;
+}
+.sp-admin-settings-row-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sp-admin-text, #211B36);
+}
+
 /* ── Danger zone — destructive action section inside a card ─────────────── */
 .sp-admin-danger-header {
   display: flex;
