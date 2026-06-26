@@ -1,182 +1,219 @@
-<sp-admin-page-header title="Diagnostics" subtitle="System status, health indicators, recent events, and correlation ID lookup." />
+<sp-admin-page-header title="Diagnostics" subtitle="System status, health indicators, recent events, and correlation ID lookup.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus(); loadEvents()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
 
 <sp-admin-page-body>
 
-  <!-- ── Status KPI strip ───────────────────────────────────────────────────── -->
+  <!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
   @if (kpiSummary(); as kpi) {
     <div class="sp-admin-kpi-row" aria-label="System health summary">
-      <sp-admin-kpi-card label="Database" [variant]="kpi.database.variant" layout="tile" icon="database" [value]="kpi.database.label" />
-      <sp-admin-kpi-card label="AI provider" [variant]="kpi.ai.variant" layout="tile" icon="cpu" [value]="kpi.ai.label" />
-      <sp-admin-kpi-card label="Errors (loaded)" [variant]="kpi.errors > 0 ? 'amber' : 'green'" layout="tile" icon="alert" [value]="kpi.errors" />
-      <sp-admin-kpi-card label="Warnings (loaded)" [variant]="kpi.warnings > 0 ? 'amber' : 'slate'" layout="tile" icon="zap" [value]="kpi.warnings" />
+      <sp-admin-kpi-card label="Database"          [variant]="kpi.database.variant"                  layout="tile" icon="database" [value]="kpi.database.label" />
+      <sp-admin-kpi-card label="AI provider"       [variant]="kpi.ai.variant"                        layout="tile" icon="cpu"      [value]="kpi.ai.label" />
+      <sp-admin-kpi-card label="Errors (loaded)"   [variant]="kpi.errors > 0 ? 'amber' : 'green'"   layout="tile" icon="alert"    [value]="kpi.errors" />
+      <sp-admin-kpi-card label="Warnings (loaded)" [variant]="kpi.warnings > 0 ? 'amber' : 'slate'" layout="tile" icon="zap"      [value]="kpi.warnings" />
     </div>
   }
 
-<!-- Recent events + severity breakdown side by side (real data — derived from loaded events) -->
-@if (!loadingEvents() && (recentFeedItems().length > 0 || severityBreakdownItems().length > 0)) {
-  <div class="sp-diag-overview">
-    @if (recentFeedItems().length > 0) {
-      <sp-admin-event-feed
-        [items]="recentFeedItems()"
-        title="Recent events (top 8)"
-        ariaLabel="Recent diagnostic events"
-        style="display:block" />
-    }
-    @if (severityBreakdownItems().length > 0) {
-      <sp-admin-card title="Event severity breakdown">
-        <sp-admin-breakdown-bars [items]="severityBreakdownItems()" [showPct]="true" />
+  <!-- ── Recent events feed + severity breakdown ───────────────────────────── -->
+  @if (!loadingEvents() && (recentFeedItems().length > 0 || severityBreakdownItems().length > 0)) {
+    <div class="sp-admin-card-grid-2">
+      <sp-admin-card title="Recent events (top 8)" variant="section" padding="md">
+        <sp-admin-event-feed [items]="recentFeedItems()" ariaLabel="Recent diagnostic events" />
       </sp-admin-card>
-    }
-  </div>
-}
-
-<sp-admin-card title="System status" variant="section" padding="md" [headerDivider]="true">
-  <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus()">
-    Refresh
-  </sp-admin-button>
-
-  @if (loadingStatus()) {
-    <sp-admin-loading-state message="Loading system status" />
-  } @else if (statusError()) {
-    <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
-  } @else if (status()) {
-    <sp-admin-status-grid [columns]="4">
-      <sp-admin-status-card label="Environment"  [value]="status()!.environment"                                                                          tone="neutral" />
-      <sp-admin-status-card label="Version"      [value]="status()!.version"                                                                              tone="neutral" />
-      <sp-admin-status-card label="Uptime"       [value]="uptimeLabel(status()!.uptimeSeconds)"                                                           tone="info" />
-      <sp-admin-status-card label="Log level"    [value]="status()!.logLevel"                                                                             tone="neutral" />
-      <sp-admin-status-card
-        label="Database"
-        [value]="status()!.database.reachable ? 'Reachable' : 'Unreachable'"
-        [tone]="status()!.database.reachable ? 'success' : 'danger'" />
-      <sp-admin-status-card
-        label="AI provider"
-        [value]="status()!.ai.providerConfigured ? (status()!.ai.activeProvider ?? 'Configured') : 'Not configured'"
-        [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'" />
-      <sp-admin-status-card
-        label="Event buffer"
-        [value]="status()!.diagnosticEventsEnabled ? (status()!.diagnosticEventCount + ' events') : 'Disabled'"
-        [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'" />
-      <sp-admin-status-card label="Server time"  [value]="formatDateTime(status()!.serverTimeUtc)"                                                        tone="neutral" />
-    </sp-admin-status-grid>
-  }
-</sp-admin-card>
-
-<sp-admin-card title="Recent events" variant="section" padding="none" [headerDivider]="true">
-  <div slot="actions" class="sp-diag-header-actions">
-    <sp-admin-button
-      size="sm"
-      [variant]="autoRefresh() ? 'success' : 'neutral'"
-      [appearance]="autoRefresh() ? 'solid' : 'outline'"
-      (clicked)="toggleAutoRefresh()">
-      {{ autoRefresh() ? 'Stop auto-refresh' : 'Auto-refresh' }}
-    </sp-admin-button>
-    <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadEvents()">Refresh</sp-admin-button>
-  </div>
-
-  <sp-admin-filter-bar layout="responsive" density="compact">
-    <sp-admin-form-field search label="Level" size="sm">
-      <sp-admin-select
-        [ngModel]="filterLevel"
-        (ngModelChange)="filterLevel = $event; loadEvents()"
-        [options]="levelOptions"
-        size="sm" />
-    </sp-admin-form-field>
-    <sp-admin-form-field filters label="Category" size="sm">
-      <sp-admin-input
-        [(ngModel)]="filterCategory"
-        (change)="loadEvents()"
-        placeholder="e.g. Activity"
-        size="sm" />
-    </sp-admin-form-field>
-    <sp-admin-form-field filters label="Correlation ID" size="sm">
-      <sp-admin-input
-        [(ngModel)]="filterCorrelationId"
-        (change)="loadEvents()"
-        placeholder="e.g. abc123ef0012"
-        size="sm" />
-    </sp-admin-form-field>
-    <sp-admin-form-field filters label="Search" size="sm">
-      <sp-admin-input
-        [(ngModel)]="filterQ"
-        (change)="loadEvents()"
-        placeholder="Search messages"
-        size="sm" />
-    </sp-admin-form-field>
-    <sp-admin-form-field filters label="Limit" size="sm">
-      <sp-admin-select
-        [ngModel]="filterLimit.toString()"
-        (ngModelChange)="filterLimit = +$event; loadEvents()"
-        [options]="limitOptions"
-        size="sm" />
-    </sp-admin-form-field>
-  </sp-admin-filter-bar>
-
-  @if (loadingEvents()) {
-    <sp-admin-loading-state message="Loading diagnostic events" />
-  } @else if (eventsError()) {
-    <sp-admin-error-state title="Could not load events" [message]="eventsError()" />
-  } @else if (events().length === 0) {
-    <sp-admin-empty-state [message]="filterLevel || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
-  } @else {
-    <div class="sp-diag-count">
-      Showing {{ pagedEvents().length }} of {{ events().length }} loaded &mdash; {{ total() }} total matching.
+      @if (severityBreakdownItems().length > 0) {
+        <sp-admin-card title="Event severity breakdown" variant="section" padding="md">
+          <sp-admin-breakdown-bars [items]="severityBreakdownItems()" [showPct]="true" />
+        </sp-admin-card>
+      }
     </div>
-    <sp-admin-table variant="data" density="compact" minWidth="960px">
-      <table>
-        <thead>
-          <tr>
-            <th class="sp-diag-th-time">Time</th>
-            <th class="sp-diag-th-level">Level</th>
-            <th>Category</th>
-            <th>Message</th>
-            <th>Correlation</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (event of pagedEvents(); track $index) {
-            <tr [class.sp-diag-row-error]="event.level?.toLowerCase() === 'error'"
-                [class.sp-diag-row-warn]="event.level?.toLowerCase() === 'warning'">
-              <td class="sp-diag-mono sp-diag-time">{{ formatDateTime(event.timestampUtc) }}</td>
-              <td class="sp-diag-level-cell">
-                <sp-admin-badge [tone]="levelTone(event.level)">{{ eventLevelLabel(event.level) }}</sp-admin-badge>
-              </td>
-              <td class="sp-diag-category-cell">
-                <sp-admin-code-pill [value]="event.category" tone="neutral" [maxLength]="32" />
-              </td>
-              <td class="sp-diag-message-cell">
-                <sp-admin-truncated-text [value]="event.message" [maxLength]="120" />
-                @if (event.path || event.statusCode || event.elapsedMs != null) {
-                  <div class="sp-diag-meta">
-                    @if (event.path) {
-                      <span class="sp-diag-meta-item sp-diag-mono">{{ event.path }}</span>
-                    }
-                    @if (event.statusCode) {
-                      <sp-admin-badge [tone]="event.statusCode >= 500 ? 'danger' : event.statusCode >= 400 ? 'warning' : 'neutral'" >
-                        {{ event.statusCode }}
-                      </sp-admin-badge>
-                    }
-                    @if (event.elapsedMs != null) {
-                      <span class="sp-diag-meta-item sp-diag-mono">{{ event.elapsedMs }}ms</span>
-                    }
-                  </div>
-                }
-              </td>
-              <td class="sp-diag-corr-cell">
-                @if (event.correlationId) {
-                  <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
-                } @else {
-                  <span class="sp-diag-muted">—</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </sp-admin-table>
-    @if (eventsTotalPages() > 1) {
-      <sp-admin-pagination [page]="eventsPage()" [totalPages]="eventsTotalPages()" (pageChange)="eventsPage.set($event)" />
-    }
   }
-</sp-admin-card>
+
+  <!-- ── System status ─────────────────────────────────────────────────────── -->
+  <sp-admin-card title="System status" variant="section" padding="md">
+    <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus()">
+      Refresh
+    </sp-admin-button>
+
+    @if (loadingStatus()) {
+      <sp-admin-loading-state message="Loading system status" />
+    } @else if (statusError()) {
+      <sp-admin-error-state title="Could not load diagnostics" [message]="statusError()" />
+    } @else if (status()) {
+      <sp-admin-status-grid [columns]="4">
+        <sp-admin-status-card label="Environment"  [value]="status()!.environment"                                                         tone="neutral" />
+        <sp-admin-status-card label="Version"      [value]="status()!.version"                                                             tone="neutral" />
+        <sp-admin-status-card label="Uptime"       [value]="uptimeLabel(status()!.uptimeSeconds)"                                          tone="info" />
+        <sp-admin-status-card label="Log level"    [value]="status()!.logLevel"                                                            tone="neutral" />
+        <sp-admin-status-card
+          label="Database"
+          [value]="status()!.database.reachable ? 'Reachable' : 'Unreachable'"
+          [tone]="status()!.database.reachable ? 'success' : 'danger'" />
+        <sp-admin-status-card
+          label="AI provider"
+          [value]="status()!.ai.providerConfigured ? (status()!.ai.activeProvider ?? 'Configured') : 'Not configured'"
+          [tone]="status()!.ai.providerConfigured ? 'success' : 'warning'" />
+        <sp-admin-status-card
+          label="Event buffer"
+          [value]="status()!.diagnosticEventsEnabled ? (status()!.diagnosticEventCount + ' events') : 'Disabled'"
+          [tone]="status()!.diagnosticEventsEnabled ? 'success' : 'neutral'" />
+        <sp-admin-status-card label="Server time"  [value]="formatDateTime(status()!.serverTimeUtc)"                                      tone="neutral" />
+      </sp-admin-status-grid>
+    }
+  </sp-admin-card>
+
+  <!-- ── Recent events table ───────────────────────────────────────────────── -->
+  <div class="sp-admin-table-section" aria-label="Recent events">
+    <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+      <h2 class="sp-admin-table-section-title">Recent events</h2>
+      <div class="sp-admin-badge-row">
+        <sp-admin-button
+          size="sm"
+          [variant]="autoRefresh() ? 'success' : 'neutral'"
+          [appearance]="autoRefresh() ? 'solid' : 'outline'"
+          (clicked)="toggleAutoRefresh()">
+          {{ autoRefresh() ? 'Stop auto-refresh' : 'Auto-refresh' }}
+        </sp-admin-button>
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadEvents()">Refresh</sp-admin-button>
+      </div>
+    </div>
+
+    <div class="sp-admin-table-section-filters">
+      <sp-admin-filter-bar layout="responsive" density="compact">
+        <sp-admin-form-field search label="Level" size="sm">
+          <sp-admin-select
+            [ngModel]="filterLevel"
+            (ngModelChange)="filterLevel = $event; loadEvents()"
+            [options]="levelOptions"
+            size="sm" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Category" size="sm">
+          <sp-admin-input
+            [(ngModel)]="filterCategory"
+            (change)="loadEvents()"
+            placeholder="e.g. Activity"
+            size="sm" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Correlation ID" size="sm">
+          <sp-admin-input
+            [(ngModel)]="filterCorrelationId"
+            (change)="loadEvents()"
+            placeholder="e.g. abc123ef0012"
+            size="sm" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Search" size="sm">
+          <sp-admin-input
+            [(ngModel)]="filterQ"
+            (change)="loadEvents()"
+            placeholder="Search messages"
+            size="sm" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Limit" size="sm">
+          <sp-admin-select
+            [ngModel]="filterLimit.toString()"
+            (ngModelChange)="filterLimit = +$event; loadEvents()"
+            [options]="limitOptions"
+            size="sm" />
+        </sp-admin-form-field>
+      </sp-admin-filter-bar>
+    </div>
+
+    @if (loadingEvents()) {
+      <div class="sp-admin-card-body-md">
+        <sp-admin-loading-state message="Loading diagnostic events" />
+      </div>
+    } @else if (eventsError()) {
+      <div class="sp-admin-card-body-md">
+        <sp-admin-error-state title="Could not load events" [message]="eventsError()" />
+      </div>
+    } @else if (events().length === 0) {
+      <div class="sp-admin-card-body-md">
+        <sp-admin-empty-state [message]="filterLevel || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
+      </div>
+    } @else {
+      <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="960px">
+        <table>
+          <thead>
+            <tr>
+              <th class="sp-admin-nowrap">Time</th>
+              <th class="sp-admin-nowrap">Level</th>
+              <th>Category</th>
+              <th>Message</th>
+              <th class="sp-admin-nowrap">Correlation</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of pagedEvents(); track $index) {
+              <tr [class.sp-admin-table-row--danger]="event.level?.toLowerCase() === 'error'"
+                  [class.sp-admin-table-row--warning]="event.level?.toLowerCase() === 'warning'">
+                <td class="sp-admin-nowrap sp-admin-text-mono sp-admin-table-cell-compact">{{ formatDateTime(event.timestampUtc) }}</td>
+                <td class="sp-admin-nowrap">
+                  <sp-admin-badge [tone]="levelTone(event.level)">{{ eventLevelLabel(event.level) }}</sp-admin-badge>
+                </td>
+                <td class="sp-admin-nowrap">
+                  <sp-admin-code-pill [value]="event.category" tone="neutral" [maxLength]="32" />
+                </td>
+                <td>
+                  <sp-admin-truncated-text [value]="event.message" [maxLength]="120" />
+                  @if (event.path || event.statusCode || event.elapsedMs != null) {
+                    <div class="sp-admin-badge-row sp-admin-mt-3">
+                      @if (event.path) {
+                        <span class="sp-admin-cell-code">{{ event.path }}</span>
+                      }
+                      @if (event.statusCode) {
+                        <sp-admin-badge [tone]="event.statusCode >= 500 ? 'danger' : event.statusCode >= 400 ? 'warning' : 'neutral'">
+                          {{ event.statusCode }}
+                        </sp-admin-badge>
+                      }
+                      @if (event.elapsedMs != null) {
+                        <span class="sp-admin-table-cell-compact sp-admin-text-mono">{{ event.elapsedMs }}ms</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td class="sp-admin-nowrap">
+                  @if (event.correlationId) {
+                    <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+      <div class="sp-admin-table-section-footer">
+        <span>Showing {{ pagedEvents().length }} of {{ events().length }} loaded &mdash; {{ total() }} total matching.</span>
+        @if (eventsTotalPages() > 1) {
+          <sp-admin-pagination
+            [page]="eventsPage()"
+            [totalPages]="eventsTotalPages()"
+            (pageChange)="eventsPage.set($event)" />
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── Background Jobs ───────────────────────────────────────────────────── -->
+  <div class="sp-admin-table-section" aria-label="Background jobs">
+    <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+      <h2 class="sp-admin-table-section-title">Background jobs</h2>
+    </div>
+    <div class="sp-admin-table-section-body">
+      <sp-admin-status-grid [columns]="4">
+        <sp-admin-status-card label="Queued"       value="—" tone="neutral" />
+        <sp-admin-status-card label="Running"      value="—" tone="neutral" />
+        <sp-admin-status-card label="Failed"       value="—" tone="neutral" />
+        <sp-admin-status-card label="Last success" value="—" tone="neutral" />
+      </sp-admin-status-grid>
+    </div>
+    <div class="sp-admin-table-section-footer">
+      <sp-admin-not-implemented-state title="Pending endpoint">
+        Background job history requires a dedicated jobs/queue API endpoint not yet available.
+      </sp-admin-not-implemented-state>
+    </div>
+  </div>
+
 </sp-admin-page-body>

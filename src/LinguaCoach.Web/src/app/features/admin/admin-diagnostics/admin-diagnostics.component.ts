@@ -17,6 +17,7 @@ import {
   SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
+  SpAdminNotImplementedStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
@@ -24,6 +25,7 @@ import {
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
+  SpAdminTableFooterComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
 import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
@@ -46,6 +48,7 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
+    SpAdminNotImplementedStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
@@ -53,30 +56,12 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
+    SpAdminTableFooterComponent,
     SpAdminTruncatedTextComponent,
     SpAdminEventFeedComponent,
     SpAdminBreakdownBarsComponent,
   ],
   templateUrl: './admin-diagnostics.component.html',
-  styles: [`
-    .sp-diag-overview{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:20px;align-items:start;}
-    @media(min-width:900px){.sp-diag-overview{grid-template-columns:1.6fr 1fr;}}
-    .sp-diag-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .sp-diag-count { padding: 8px 16px; border-top: 1px solid var(--sp-admin-border,#ECE9F5); color: var(--sp-admin-muted,#8B85A0); font-size: 12px; font-weight: 600; }
-    .sp-diag-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
-    .sp-diag-muted { color: var(--sp-admin-muted, #8B85A0); }
-    .sp-diag-th-time { white-space: nowrap; min-width: 130px; }
-    .sp-diag-th-level { min-width: 80px; }
-    .sp-diag-time { white-space: nowrap; }
-    .sp-diag-level-cell { white-space: nowrap; }
-    .sp-diag-category-cell { white-space: nowrap; }
-    .sp-diag-message-cell { max-width: 480px; }
-    .sp-diag-corr-cell { white-space: nowrap; }
-    .sp-diag-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
-    .sp-diag-meta-item { font-size: 11px; color: var(--sp-admin-muted,#8B85A0); }
-    .sp-diag-row-error td { background: #fff5f5; }
-    .sp-diag-row-warn  td { background: #fffbeb; }
-  `],
 })
 export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   status = signal<DiagnosticsStatus | null>(null);

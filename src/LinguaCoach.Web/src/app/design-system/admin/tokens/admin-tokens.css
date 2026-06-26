@@ -558,6 +558,63 @@
 /* Archived table row */
 .sp-admin-archived-row td { background: var(--sp-admin-surface-subtle, #FBFAFE); color: var(--sp-admin-text-muted, #8B85A0); }
 
+/* Table row tone — warning / danger highlight */
+.sp-admin-table-row--warning td { background: #FFFBEB; }
+.sp-admin-table-row--danger  td { background: #FFF5F5; }
+
+/* Card body padding wrappers — use inside padding="none" cards to pad a sub-section */
+.sp-admin-card-body-sm { padding: 14px 16px; }
+.sp-admin-card-body-md { padding: 20px; }
+
+/* ── Table section — standalone card wrapping header + filters + table + footer ── */
+/* Use when sp-admin-table IS the card (no sp-admin-card wrapper needed).          */
+.sp-admin-table-section {
+  border-radius: 14px;
+  border: 1px solid var(--sp-admin-border, #ECE9F5);
+  background: var(--sp-admin-surface, #fff);
+  overflow: hidden;
+  box-shadow: var(--sp-admin-shadow-xs, 0 1px 2px rgba(33,27,54,.06));
+}
+/* Header row: title left + actions right */
+.sp-admin-table-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-table-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #211B36);
+  margin: 0;
+  line-height: 1.3;
+}
+.sp-admin-table-section-header--no-divider { border-bottom: none; }
+/* Filter strip — sits between header and table, with horizontal padding */
+.sp-admin-table-section-filters {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--sp-admin-border-subtle, #F4F2FC);
+}
+/* Sub-section body with padding — use for status-grid or other non-table content */
+.sp-admin-table-section-body {
+  padding: 20px;
+}
+/* Footer: count left, pagination right */
+.sp-admin-table-section-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--sp-admin-border, #ECE9F5);
+  font-size: 13px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+
 /* Table footer: count left, pagination right */
 .sp-admin-table-footer {
   display: flex;
