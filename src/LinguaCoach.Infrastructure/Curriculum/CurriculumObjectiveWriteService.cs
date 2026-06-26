@@ -175,12 +175,18 @@ public sealed class CurriculumObjectiveWriteService : ICurriculumObjectiveWriteS
             LearningGoals = request.LearningGoals ?? [],
             FocusAreas = request.FocusAreas ?? [],
             DifficultyPreference = request.DifficultyPreference,
-            AllowReviewOrScaffold = request.AllowReviewOrScaffold
+            AllowReviewOrScaffold = request.AllowReviewOrScaffold,
+            Mode = request.Mode
+            // MasteredObjectiveKeys intentionally not set: admin preview does not apply
+            // student-specific mastery filtering. See warning added below.
         };
 
         var recommendation = await _routingService.RecommendAsync(routingRequest, ct);
 
-        var warnings = new List<string>();
+        var warnings = new List<string>
+        {
+            "Student-specific mastery filtering is not applied in generic preview."
+        };
         if (recommendation.IsLowerLevelContent)
             warnings.Add($"Lower-level content selected ({recommendation.TargetCefrLevel} vs requested {cefrLevel}).");
         if (recommendation.RoutingReason == Domain.Enums.RoutingReason.Fallback)

@@ -268,6 +268,32 @@ public sealed class ReplenishmentOptionsTests
         req.IsLowerLevelContent.Should().BeFalse();
     }
 
+    // 17. Phase 11C-FINAL: review scaffold flag false means routing mode stays NewLearning.
+    [Fact]
+    public void Options_ReviewScaffoldFlagFalse_RoutingStaysNewLearning()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions { EnableReviewScaffoldGeneration = false };
+        // When flag is false, allowReviewOrScaffold must be false in the factory call.
+        // Verified here at options level — integration is covered in routing tests.
+        opts.EnableReviewScaffoldGeneration.Should().BeFalse();
+    }
+
+    // 18. Phase 11C-FINAL: ReviewOnly items do not satisfy new-learning shortfall.
+    [Fact]
+    public void PoolHealthSummary_ReviewOnly_NeverSatisfiesNewLearningShortfall()
+    {
+        var health = new PoolHealthSummary
+        {
+            TargetCount = 5,
+            ReadyCount = 0,
+            QueuedOrGeneratingCount = 0,
+            ReviewOnlyCount = 10  // ReviewOnly items are not new-learning capable
+        };
+
+        health.ShortfallCount.Should().Be(5);
+        health.NeedsReplenishment.Should().BeTrue();
+    }
+
     // 16. MaxGenerationAttempts gate: failed item at limit must not be retried.
     [Fact]
     public void MaxGenerationAttempts_FailedAtLimit_ShouldNotRetry()

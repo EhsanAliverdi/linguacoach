@@ -180,7 +180,7 @@ export class AdminCurriculumComponent implements OnInit {
   ]);
 
   form: AdminCurriculumObjectiveUpsertRequest = this.emptyForm();
-  preview: AdminRoutingPreviewRequest = { allowReviewOrScaffold: false, source: 'admin_preview' };
+  preview: AdminRoutingPreviewRequest = { allowReviewOrScaffold: false, source: 'admin_preview', mode: 'NewLearning' };
 
   readonly parseJsonArray = parseJsonArray;
 

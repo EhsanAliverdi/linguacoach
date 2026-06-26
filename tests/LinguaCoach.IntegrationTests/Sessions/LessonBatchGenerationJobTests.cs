@@ -1,5 +1,6 @@
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Curriculum;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -39,6 +40,7 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
             NullLogger<AiExecutionService>.Instance);
 
         var routing = scope.ServiceProvider.GetRequiredService<ICurriculumRoutingService>();
+        var mastery = scope.ServiceProvider.GetRequiredService<IStudentMasteryEvaluationService>();
         var readinessPool = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
         var jobLogger = new CapturingLogger<LessonBatchGenerationJob>();
         var job = new LessonBatchGenerationJob(
@@ -47,6 +49,7 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
             new SingleSchedulerFactory(scheduler),
             new LearningGoalContextResolver(),
             routing,
+            mastery,
             readinessPool,
             jobLogger);
 

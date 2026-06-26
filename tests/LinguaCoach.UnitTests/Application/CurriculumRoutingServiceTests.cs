@@ -333,6 +333,229 @@ public sealed class CurriculumRoutingServiceTests
         Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
     }
 
+    // ── Phase 11C: RoutingMode on request ───────────────────────────────────
+
+    [Fact]
+    public async Task Recommend_NewLearningMode_ExcludesMasteredObjective()
+    {
+        var mastered = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+        var other = MakeObjective("b2_listening_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Listening, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([mastered, other]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            Mode = RoutingMode.NewLearning,
+            ResolvedLearningGoalContext = new ResolvedLearningGoalContext
+            {
+                WorkplaceSpecific = false, ContextSummary = "test", Source = "Structured"
+            },
+            MasteredObjectiveKeys = ["b2_writing_general"],
+            AllowReviewOfMastered = false
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal("b2_listening_general", rec.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public async Task Recommend_ReviewMode_IncludesMasteredReviewableObjective()
+    {
+        var masteredReviewable = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish],
+            isReviewable: true);
+
+        var svc = BuildService([masteredReviewable]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            Mode = RoutingMode.Review,
+            AllowReviewOfMastered = true,
+            ResolvedLearningGoalContext = new ResolvedLearningGoalContext
+            {
+                WorkplaceSpecific = false, ContextSummary = "test", Source = "Structured"
+            },
+            MasteredObjectiveKeys = ["b2_writing_general"]
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Phase 11C: non-runnable skill filter ─────────────────────────────────
+
+    [Fact]
+    public async Task Recommend_GrammarOnlyObjective_FilteredOut_FallsBackToGeneral()
+    {
+        var grammarObj = MakeObjective("b2_grammar_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([grammarObj]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Grammar has no runnable format — routing should fall back.
+        Assert.Equal(RoutingReason.Fallback, rec.RoutingReason);
+        Assert.Null(rec.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public async Task Recommend_PronunciationOnlyObjective_FilteredOut_FallsBackToGeneral()
+    {
+        var pronObj = MakeObjective("b2_pronunciation_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Pronunciation, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([pronObj]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.Fallback, rec.RoutingReason);
+        Assert.Null(rec.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public async Task Recommend_MixedSkills_RunnableSelectedOverNonRunnable()
+    {
+        var grammarObj = MakeObjective("b2_grammar_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish], difficultyBand: 1);
+        var writingObj = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish], difficultyBand: 2);
+
+        var svc = BuildService([grammarObj, writingObj]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Writing is runnable; grammar is not — writing must be selected.
+        Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
+        Assert.Equal(RoutingReason.Normal, rec.RoutingReason);
+    }
+
+    // ── Phase 11C-FINAL: non-runnable filter applies to lower-level review path ─
+
+    [Fact]
+    public async Task Recommend_LowerLevelReviewPath_NonRunnableFilteredOut()
+    {
+        // B2 student, no B2 candidates, but B1 grammar (non-runnable) exists.
+        // AllowReviewOrScaffold=true — would normally select B1 content.
+        // Grammar must still be filtered → fallback expected.
+        var grammarB1 = MakeObjective("b1_grammar_general", CefrLevelConstants.B1,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([grammarB1]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false, allowReviewOrScaffold: true);
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Grammar is non-runnable even at lower level — must fall back.
+        Assert.Equal(RoutingReason.Fallback, rec.RoutingReason);
+        Assert.Null(rec.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public async Task Recommend_LowerLevelReviewPath_RunnableSelectedOverNonRunnable()
+    {
+        // B2 student, no B2 candidates.
+        // B1 has both grammar (non-runnable) and writing (runnable).
+        // Writing must be selected.
+        var grammarB1 = MakeObjective("b1_grammar_general", CefrLevelConstants.B1,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish]);
+        var writingB1 = MakeObjective("b1_writing_general", CefrLevelConstants.B1,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([grammarB1, writingB1]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false, allowReviewOrScaffold: true);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.Review, rec.RoutingReason);
+        Assert.Equal("b1_writing_general", rec.CurriculumObjectiveKey);
+        Assert.True(rec.IsLowerLevelContent);
+    }
+
+    [Fact]
+    public async Task Recommend_MasteredFilterDoesNotReintroduceNonRunnable()
+    {
+        // Both writing (mastered) and grammar (non-runnable) exist at B2.
+        // After non-runnable filter: only writing remains.
+        // After mastered filter: writing is excluded, list empties → fallback to original filtered set.
+        // Original filtered set has only writing (mastered). Mastered fallback keeps it.
+        // Key: grammar must never be selected even as mastered-fallback.
+        var writing = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+        var grammar = MakeObjective("b2_grammar_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([writing, grammar]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            Mode = RoutingMode.NewLearning,
+            ResolvedLearningGoalContext = new ResolvedLearningGoalContext
+            {
+                WorkplaceSpecific = false, ContextSummary = "test", Source = "Structured"
+            },
+            // Writing is mastered; grammar is non-runnable.
+            // Non-runnable filter runs first, so grammar is already gone.
+            // Mastered filter then removes writing → fallback keeps writing (mastered).
+            // Grammar must not be selected.
+            MasteredObjectiveKeys = ["b2_writing_general"],
+            AllowReviewOfMastered = false
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Grammar is non-runnable and must never appear, even as fallback.
+        if (rec.CurriculumObjectiveKey is not null)
+            Assert.NotEqual("b2_grammar_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Phase 11C-FINAL: general learner still gets general objectives ────────────
+
+    [Fact]
+    public async Task Recommend_GeneralLearner_GetsGeneralObjective()
+    {
+        var generalObj = MakeObjective("b1_writing_general", CefrLevelConstants.B1,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([generalObj]);
+        var req = MakeRequest(CefrLevelConstants.B1, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal("b1_writing_general", rec.CurriculumObjectiveKey);
+        Assert.DoesNotContain(CurriculumContextTagConstants.Workplace, rec.ContextTags);
+    }
+
+    [Fact]
+    public async Task Recommend_WorkplaceObjective_OnlyWhenWorkplaceContextSelected()
+    {
+        var workplaceObj = MakeObjective("b2_writing_workplace", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.Workplace]);
+        var generalObj = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([workplaceObj, generalObj]);
+        var nonWorkplaceReq = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(nonWorkplaceReq);
+
+        Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
+        Assert.DoesNotContain(CurriculumContextTagConstants.Workplace, rec.ContextTags);
+    }
+
     [Fact]
     public async Task Recommend_InactiveObjective_NotReturned()
     {

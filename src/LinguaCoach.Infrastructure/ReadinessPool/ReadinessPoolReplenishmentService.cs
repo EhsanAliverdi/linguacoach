@@ -1,5 +1,6 @@
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
@@ -33,6 +34,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
     private readonly LinguaCoachDbContext _db;
     private readonly IStudentActivityReadinessPoolService _pool;
     private readonly IStudentLearningLedger _ledger;
+    private readonly IStudentMasteryEvaluationService _mastery;
     private readonly ILearningGoalContextResolver _goalResolver;
     private readonly ICurriculumRoutingService _routing;
     private readonly ReadinessPoolReplenishmentOptions _opts;
@@ -42,6 +44,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         LinguaCoachDbContext db,
         IStudentActivityReadinessPoolService pool,
         IStudentLearningLedger ledger,
+        IStudentMasteryEvaluationService mastery,
         ILearningGoalContextResolver goalResolver,
         ICurriculumRoutingService routing,
         IOptions<ReadinessPoolReplenishmentOptions> opts,
@@ -50,6 +53,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         _db = db;
         _pool = pool;
         _ledger = ledger;
+        _mastery = mastery;
         _goalResolver = goalResolver;
         _routing = routing;
         _opts = opts.Value;
@@ -419,6 +423,11 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             allowReviewOrScaffold = weakEvents.Count > 0;
         }
 
+        // Fetch mastered objective keys so routing can exclude them from new-learning slots.
+        var masteryReport = await _mastery.EvaluateStudentAsync(
+            profile.Id, MasteryEvaluationReason.BeforeReplenishment, ct);
+        var masteredKeys = (IReadOnlyList<string>)masteryReport.MasteredObjectiveKeys;
+
         var resolvedGoalContext = _goalResolver.Resolve(
             profile, new LearningGoalResolutionContext { Source = "ReadinessPoolReplenishment" });
 
@@ -451,11 +460,15 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             var skill = skills[skillIndex % skills.Length];
             skillIndex++;
 
+            var routingMode = allowReviewOrScaffold ? RoutingMode.Review : RoutingMode.NewLearning;
             var routingRequest = CurriculumRoutingRequestFactory.Build(
                 profile, resolvedGoalContext,
                 source: $"ReadinessPoolReplenishment:{source}",
                 primarySkill: skill,
-                allowReviewOrScaffold: allowReviewOrScaffold);
+                allowReviewOrScaffold: allowReviewOrScaffold,
+                masteredObjectiveKeys: masteredKeys,
+                allowReviewOfMastered: allowReviewOrScaffold,
+                mode: routingMode);
 
             CurriculumRoutingRecommendation routing;
             try

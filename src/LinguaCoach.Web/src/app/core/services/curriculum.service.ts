@@ -50,6 +50,8 @@ export interface CurriculumTaxonomyDto {
   contextTags: string[];
 }
 
+export type RoutingMode = 'NewLearning' | 'Review' | 'Reinforcement' | 'Preview';
+
 export interface AdminRoutingPreviewRequest {
   studentId?: string | null;
   cefrLevelOverride?: string | null;
@@ -59,6 +61,7 @@ export interface AdminRoutingPreviewRequest {
   source?: string | null;
   difficultyPreference?: string | null;
   allowReviewOrScaffold: boolean;
+  mode?: RoutingMode;
 }
 
 export interface AdminRoutingPreviewResult {

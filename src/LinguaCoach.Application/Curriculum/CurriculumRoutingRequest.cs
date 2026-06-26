@@ -37,6 +37,13 @@ public sealed class CurriculumRoutingRequest
     public string? TranslationHelpPreference { get; init; }
 
     /// <summary>
+    /// Expresses the caller's intent: NewLearning, Review, Reinforcement, or Preview.
+    /// Defaults to NewLearning. Controls mastery filtering and review scaffold eligibility.
+    /// Phase 11C.
+    /// </summary>
+    public RoutingMode Mode { get; init; } = RoutingMode.NewLearning;
+
+    /// <summary>
     /// When true, routing may select lower-level content and will mark it as
     /// review/scaffold/remediation. When false, lower-level content is never silently selected.
     /// </summary>

@@ -1,6 +1,7 @@
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
@@ -33,6 +34,7 @@ public sealed class PracticeGymGenerationJob : IJob
     private readonly ListeningAudioService _listeningAudio;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ICurriculumRoutingService _routing;
+    private readonly IStudentMasteryEvaluationService _mastery;
     private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly ILogger<PracticeGymGenerationJob> _logger;
 
@@ -44,6 +46,7 @@ public sealed class PracticeGymGenerationJob : IJob
         ListeningAudioService listeningAudio,
         ILearningGoalContextResolver goalContextResolver,
         ICurriculumRoutingService routing,
+        IStudentMasteryEvaluationService mastery,
         IStudentActivityReadinessPoolService readinessPool,
         ILogger<PracticeGymGenerationJob> logger)
     {
@@ -54,6 +57,7 @@ public sealed class PracticeGymGenerationJob : IJob
         _listeningAudio = listeningAudio;
         _goalContextResolver = goalContextResolver;
         _routing = routing;
+        _mastery = mastery;
         _readinessPool = readinessPool;
         _logger = logger;
     }
@@ -132,11 +136,16 @@ public sealed class PracticeGymGenerationJob : IJob
         var resolvedGoalContext = _goalContextResolver.Resolve(
             profile, new LearningGoalResolutionContext { Source = "PracticeGymGenerationJob" });
 
+        var masteryReport = await _mastery.EvaluateStudentAsync(
+            profile.Id, MasteryEvaluationReason.BeforeReplenishment, ct);
+
         var routingRequest = CurriculumRoutingRequestFactory.Build(
             profile, resolvedGoalContext,
             source: "PracticeGymGenerationJob",
             requestedPatternKey: pattern.Key,
-            allowReviewOrScaffold: false);
+            allowReviewOrScaffold: false,
+            masteredObjectiveKeys: masteryReport.MasteredObjectiveKeys,
+            mode: RoutingMode.NewLearning);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
         // Record pool item with routing snapshot before generation.

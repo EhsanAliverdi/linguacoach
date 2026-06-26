@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Curriculum;
@@ -35,6 +36,7 @@ public sealed class LessonBatchGenerationJob : IJob
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ICurriculumRoutingService _routing;
+    private readonly IStudentMasteryEvaluationService _mastery;
     private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly ILogger<LessonBatchGenerationJob> _logger;
 
@@ -44,6 +46,7 @@ public sealed class LessonBatchGenerationJob : IJob
         ISchedulerFactory schedulerFactory,
         ILearningGoalContextResolver goalContextResolver,
         ICurriculumRoutingService routing,
+        IStudentMasteryEvaluationService mastery,
         IStudentActivityReadinessPoolService readinessPool,
         ILogger<LessonBatchGenerationJob> logger)
     {
@@ -52,6 +55,7 @@ public sealed class LessonBatchGenerationJob : IJob
         _schedulerFactory = schedulerFactory;
         _goalContextResolver = goalContextResolver;
         _routing = routing;
+        _mastery = mastery;
         _readinessPool = readinessPool;
         _logger = logger;
     }
@@ -366,10 +370,15 @@ public sealed class LessonBatchGenerationJob : IJob
         var resolvedGoalContext = _goalContextResolver.Resolve(
             profile, new LearningGoalResolutionContext { Source = "LessonBatchGenerationJob" });
 
+        var masteryReport = await _mastery.EvaluateStudentAsync(
+            profile.Id, MasteryEvaluationReason.BeforeReplenishment, ct);
+
         var routingRequest = CurriculumRoutingRequestFactory.Build(
             profile, resolvedGoalContext,
             source: "lesson_batch",
-            allowReviewOrScaffold: false);
+            allowReviewOrScaffold: false,
+            masteredObjectiveKeys: masteryReport.MasteredObjectiveKeys,
+            mode: RoutingMode.NewLearning);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
         var summary = new

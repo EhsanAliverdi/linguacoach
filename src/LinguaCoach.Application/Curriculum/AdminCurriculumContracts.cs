@@ -79,7 +79,8 @@ public sealed record AdminRoutingPreviewRequest(
     string? PrimarySkill,
     string? Source,
     string? DifficultyPreference,
-    bool AllowReviewOrScaffold);
+    bool AllowReviewOrScaffold,
+    RoutingMode Mode = RoutingMode.NewLearning);
 
 /// <summary>Admin routing preview response.</summary>
 public sealed record AdminRoutingPreviewResult(

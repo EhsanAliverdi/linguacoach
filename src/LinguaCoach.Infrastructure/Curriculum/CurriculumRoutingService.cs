@@ -84,6 +84,9 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
                 candidates = skillFiltered;
         }
 
+        // Step 2a: exclude objectives whose primary skill has no runnable exercise format.
+        candidates = FilterNonRunnable(candidates, request.Source);
+
         // Step 2b: exclude mastered objectives from new-learning route.
         candidates = FilterByMastered(candidates, request);
 
@@ -117,6 +120,9 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
                         lowerCandidates = skillFiltered;
                 }
 
+                // Apply non-runnable filter to lower-level candidates as well.
+                lowerCandidates = FilterNonRunnable(lowerCandidates, request.Source);
+
                 if (lowerCandidates.Count > 0)
                 {
                     var best = SelectBestCandidate(lowerCandidates, preferredBand);
@@ -136,6 +142,25 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
             normalizedLevel, request.Source, string.Join(",", contextTags));
 
         return BuildFallback(request, normalizedLevel, contextTags, preferredBand);
+    }
+
+    private IReadOnlyList<CurriculumObjective> FilterNonRunnable(
+        IReadOnlyList<CurriculumObjective> candidates,
+        string source)
+    {
+        var runnable = candidates
+            .Where(o => ActivityCompatibilityConstants.IsRunnable(o.PrimarySkill))
+            .ToList();
+
+        if (runnable.Count < candidates.Count)
+        {
+            var skipped = candidates.Count - runnable.Count;
+            _logger.LogDebug(
+                "CurriculumRouting: filtered {Skipped} non-runnable objective(s) from candidates. Source={Source}",
+                skipped, source);
+        }
+
+        return runnable;
     }
 
     private static IReadOnlyList<CurriculumObjective> FilterByMastered(

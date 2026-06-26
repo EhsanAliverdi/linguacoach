@@ -17,7 +17,10 @@ public static class CurriculumRoutingRequestFactory
         string? primarySkill = null,
         string? requestedPatternKey = null,
         bool allowReviewOrScaffold = false,
-        IReadOnlyList<string>? recentWeakPatternKeys = null)
+        IReadOnlyList<string>? recentWeakPatternKeys = null,
+        IReadOnlyList<string>? masteredObjectiveKeys = null,
+        bool allowReviewOfMastered = false,
+        RoutingMode mode = RoutingMode.NewLearning)
     {
         return new CurriculumRoutingRequest
         {
@@ -36,7 +39,10 @@ public static class CurriculumRoutingRequestFactory
             SupportLanguageCode = profile.SupportLanguageCode,
             SupportLanguageName = profile.SupportLanguageName,
             AllowReviewOrScaffold = allowReviewOrScaffold,
-            RecentWeakPatternKeys = recentWeakPatternKeys ?? []
+            RecentWeakPatternKeys = recentWeakPatternKeys ?? [],
+            MasteredObjectiveKeys = masteredObjectiveKeys ?? [],
+            AllowReviewOfMastered = allowReviewOfMastered,
+            Mode = mode
         };
     }
 }
