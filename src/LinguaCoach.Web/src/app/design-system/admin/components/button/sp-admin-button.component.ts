@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpAdminIconComponent, SpAdminIconName, SpAdminIconSize, SpAdminIconTone } from '../icon/sp-admin-icon.component';
 
@@ -25,6 +25,7 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
       [attr.type]="type"
       [attr.aria-disabled]="disabled || loading ? 'true' : null"
       [attr.aria-busy]="loading ? 'true' : null"
+      (click)="!disabled && !loading && clicked.emit()"
     >
       @if (loading) {
         <span class="sp-adm-btn-spinner" aria-hidden="true"></span>
@@ -166,6 +167,8 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
   `],
 })
 export class SpAdminButtonComponent {
+  @Output() clicked = new EventEmitter<void>();
+
   @Input() variant: SpAdminButtonVariant = 'primary';
   @Input() appearance: SpAdminButtonAppearance = 'solid';
   @Input() size: SpAdminButtonSize = 'md';
