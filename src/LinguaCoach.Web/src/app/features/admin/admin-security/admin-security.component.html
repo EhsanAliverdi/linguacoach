@@ -1,234 +1,277 @@
 <sp-admin-page-header
   title="Security"
-  subtitle="Authentication, sessions, access controls and audit trail">
-  <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="refresh()">
+  subtitle="Application-level authentication, access controls, policies, and audit readiness.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadSettings(); loadEvents()">
     Refresh
   </sp-admin-button>
 </sp-admin-page-header>
 
 <sp-admin-page-body>
 
-<!-- ── ROW 1: Security posture + access controls ── -->
-<div class="sp-sec-row sp-sec-g2">
+  @if (loadingSettings()) {
+    <sp-admin-loading-state message="Loading security settings" />
+  } @else if (settingsError()) {
+    <sp-admin-error-state title="Could not load security settings" [message]="settingsError()" />
+  } @else if (settings()) {
 
-  <!-- Security posture -->
-  <sp-admin-card>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
-      <div style="font-size:13.5px;font-weight:700;color:var(--sp-admin-text);">Security posture</div>
-      <sp-admin-badge [tone]="postureTone()">{{ postureLabel() }}</sp-admin-badge>
+    <!-- ── KPI strip ───────────────────────────────────────────────────────── -->
+    <div class="sp-admin-kpi-row" aria-label="Security policy summary">
+      <sp-admin-kpi-card
+        label="Password policy"
+        variant="green"
+        layout="tile"
+        icon="key"
+        [value]="settings()!.passwordPolicy.requiredLength + '+ chars'" />
+      <sp-admin-kpi-card
+        label="Lockout"
+        variant="green"
+        layout="tile"
+        icon="shield"
+        [value]="settings()!.lockout.maxFailedAccessAttempts + ' attempts'" />
+      <sp-admin-kpi-card
+        label="Google login"
+        [variant]="settings()!.externalLogin.google.enabled ? 'indigo' : 'slate'"
+        layout="tile"
+        icon="cpu"
+        [value]="settings()!.externalLogin.google.enabled ? 'Enabled' : 'Disabled'" />
+      <sp-admin-kpi-card
+        label="Security headers"
+        variant="green"
+        layout="tile"
+        icon="zap"
+        value="Active" />
     </div>
 
-    <div class="sp-sec-posture">
-      <svg class="sp-sec-ring" width="80" height="80" viewBox="0 0 80 80" aria-label="Security score">
-        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--sp-admin-border)" stroke-width="8"></circle>
-        <circle cx="40" cy="40" r="34" fill="none" [attr.stroke]="ringColor()" stroke-width="8"
-          [attr.stroke-dasharray]="ringDash()"
-          [attr.stroke-dashoffset]="ringOffset"
-          stroke-linecap="round"></circle>
-        <text x="40" y="45" text-anchor="middle"
-          style="font-family:inherit;font-size:18px;font-weight:800;fill:var(--sp-admin-text);">{{ postureScore() }}</text>
-      </svg>
+    <!-- ── Password policy + Lockout ──────────────────────────────────────── -->
+    <div class="sp-admin-card-grid-2">
+      <sp-admin-card title="Password policy" variant="section" padding="md">
+        <sp-admin-badge slot="actions" tone="success">Implemented</sp-admin-badge>
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Min length"   [value]="settings()!.passwordPolicy.requiredLength + ' chars'"         tone="neutral" />
+          <sp-admin-status-card label="Uppercase"    [value]="boolLabel(settings()!.passwordPolicy.requireUppercase)"        [tone]="boolTone(settings()!.passwordPolicy.requireUppercase)" />
+          <sp-admin-status-card label="Lowercase"    [value]="boolLabel(settings()!.passwordPolicy.requireLowercase)"        [tone]="boolTone(settings()!.passwordPolicy.requireLowercase)" />
+          <sp-admin-status-card label="Digit"        [value]="boolLabel(settings()!.passwordPolicy.requireDigit)"            [tone]="boolTone(settings()!.passwordPolicy.requireDigit)" />
+          <sp-admin-status-card label="Special char" [value]="boolLabel(settings()!.passwordPolicy.requireNonAlphanumeric)"  [tone]="boolTone(settings()!.passwordPolicy.requireNonAlphanumeric)" />
+        </sp-admin-status-grid>
+      </sp-admin-card>
 
-      <div class="sp-sec-check-list">
-        @for (item of postureItems(); track item.label) {
-          <div class="sp-sec-check-row">
-            <div class="sp-sec-check-box" [class.on]="item.done" [class.off]="!item.done">
-              {{ item.done ? '✓' : '✕' }}
-            </div>
-            <span class="sp-sec-check-label" [class.off]="!item.done">{{ item.label }}</span>
+      <sp-admin-card title="Account lockout" variant="section" padding="md">
+        <sp-admin-badge slot="actions" tone="success">Implemented</sp-admin-badge>
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Max attempts"     [value]="settings()!.lockout.maxFailedAccessAttempts + ' failures'" tone="neutral" />
+          <sp-admin-status-card label="Lockout duration" [value]="settings()!.lockout.lockoutDurationMinutes + ' min'"        tone="neutral" />
+        </sp-admin-status-grid>
+      </sp-admin-card>
+    </div>
+
+    <!-- ── JWT + Refresh tokens ────────────────────────────────────────────── -->
+    <div class="sp-admin-card-grid-2">
+      <sp-admin-card title="JWT / access tokens" variant="section" padding="md">
+        <sp-admin-badge slot="actions" tone="success">Implemented</sp-admin-badge>
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Access token expiry" [value]="settings()!.jwt.accessTokenExpiryHours + 'h'"                              tone="neutral" />
+          <sp-admin-status-card label="Issuer configured"   [value]="boolLabel(settings()!.jwt.issuerConfigured)"   [tone]="boolTone(settings()!.jwt.issuerConfigured)" />
+          <sp-admin-status-card label="Audience configured" [value]="boolLabel(settings()!.jwt.audienceConfigured)" [tone]="boolTone(settings()!.jwt.audienceConfigured)" />
+        </sp-admin-status-grid>
+      </sp-admin-card>
+
+      <sp-admin-card title="Refresh tokens" variant="section" padding="md">
+        <sp-admin-badge slot="actions" tone="success">Implemented</sp-admin-badge>
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Expiry"               [value]="settings()!.refreshToken.expiryDays + ' days'"                                        tone="neutral" />
+          <sp-admin-status-card label="Rotation"             [value]="boolLabel(settings()!.refreshToken.rotationEnabled, 'Enabled', 'Disabled')"            [tone]="boolTone(settings()!.refreshToken.rotationEnabled)" />
+          <sp-admin-status-card label="Revoke on pw change"  [value]="boolLabel(settings()!.refreshToken.revokeOnPasswordChange)"                            [tone]="boolTone(settings()!.refreshToken.revokeOnPasswordChange)" />
+          <sp-admin-status-card label="Revoke on pw reset"   [value]="boolLabel(settings()!.refreshToken.revokeOnPasswordReset)"                             [tone]="boolTone(settings()!.refreshToken.revokeOnPasswordReset)" />
+        </sp-admin-status-grid>
+      </sp-admin-card>
+    </div>
+
+    <!-- ── Rate limit policies ─────────────────────────────────────────────── -->
+    <div class="sp-admin-table-section" aria-label="Rate limit policies">
+      <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+        <h2 class="sp-admin-table-section-title">Rate limit policies</h2>
+        <sp-admin-badge tone="success">Implemented</sp-admin-badge>
+      </div>
+      <sp-admin-table [flush]="true" variant="data" density="compact">
+        <table>
+          <thead>
+            <tr>
+              <th>Policy</th>
+              <th class="sp-admin-nowrap">Permit limit</th>
+              <th class="sp-admin-nowrap">Window</th>
+              <th class="sp-admin-nowrap">Keyed by</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (policy of settings()!.rateLimitPolicies; track policy.policyName) {
+              <tr>
+                <td><sp-admin-code-pill [value]="policy.policyName" tone="neutral" /></td>
+                <td class="sp-admin-nowrap">{{ policy.permitLimit }} req</td>
+                <td class="sp-admin-nowrap">{{ policy.windowMinutes }} min</td>
+                <td class="sp-admin-nowrap sp-admin-text-muted">{{ policy.keyedBy }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    </div>
+
+    <!-- ── Google OAuth + Security headers ────────────────────────────────── -->
+    <div class="sp-admin-card-grid-2">
+      <sp-admin-card title="Google OAuth / External login" variant="section" padding="md">
+        <sp-admin-badge slot="actions" [tone]="settings()!.externalLogin.google.enabled ? 'success' : 'neutral'">
+          {{ settings()!.externalLogin.google.enabled ? 'Enabled' : 'Disabled' }}
+        </sp-admin-badge>
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Client ID"          [value]="boolLabel(settings()!.externalLogin.google.clientIdConfigured, 'Configured', 'Missing')"     [tone]="boolTone(settings()!.externalLogin.google.clientIdConfigured)" />
+          <sp-admin-status-card label="Client secret"      [value]="boolLabel(settings()!.externalLogin.google.clientSecretConfigured, 'Configured', 'Missing')" [tone]="boolTone(settings()!.externalLogin.google.clientSecretConfigured)" />
+          <sp-admin-status-card label="Auto-link by email" [value]="boolLabel(settings()!.externalLogin.google.allowAutoLinkByEmail)"                            [tone]="boolTone(settings()!.externalLogin.google.allowAutoLinkByEmail)" />
+          <sp-admin-status-card label="Auto-provision"     [value]="boolLabel(settings()!.externalLogin.google.allowStudentAutoProvisioning)"                    [tone]="boolTone(settings()!.externalLogin.google.allowStudentAutoProvisioning)" />
+        </sp-admin-status-grid>
+        @if (settings()!.externalLogin.google.allowedDomains.length > 0) {
+          <div class="sp-admin-card-body-sm sp-admin-text-muted">
+            Allowed domains: {{ settings()!.externalLogin.google.allowedDomains.join(', ') }}
           </div>
+        } @else {
+          <div class="sp-admin-card-body-sm sp-admin-text-muted">No domain restriction — all verified Google accounts allowed.</div>
         }
-      </div>
-    </div>
-  </sp-admin-card>
+      </sp-admin-card>
 
-  <!-- Access controls -->
-  <sp-admin-card title="Access controls">
-    <p class="sp-sec-card-sub" style="margin-bottom:16px;">Manage authentication policies for the admin panel.</p>
-
-    <div class="sp-sec-toggle-row">
-      <div>
-        <div class="sp-sec-toggle-label">Two-factor authentication</div>
-        <div class="sp-sec-toggle-sub">Require TOTP for all admin sign-ins</div>
-      </div>
-      <sp-admin-toggle [checked]="mfa()" (changed)="mfa.set($event)"
-        label="Two-factor authentication"></sp-admin-toggle>
+      <sp-admin-card title="Security headers" variant="section" padding="md">
+        <sp-admin-badge slot="actions" tone="success">Active</sp-admin-badge>
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="X-Content-Type-Options" [value]="boolLabel(settings()!.securityHeaders.xContentTypeOptionsEnabled, 'Enabled', 'Off')" [tone]="boolTone(settings()!.securityHeaders.xContentTypeOptionsEnabled)" />
+          <sp-admin-status-card label="X-Frame-Options"        [value]="boolLabel(settings()!.securityHeaders.xFrameOptionsEnabled, 'Enabled', 'Off')"        [tone]="boolTone(settings()!.securityHeaders.xFrameOptionsEnabled)" />
+          <sp-admin-status-card label="Referrer-Policy"        [value]="boolLabel(settings()!.securityHeaders.referrerPolicyEnabled, 'Enabled', 'Off')"        [tone]="boolTone(settings()!.securityHeaders.referrerPolicyEnabled)" />
+          <sp-admin-status-card label="Permissions-Policy"     [value]="boolLabel(settings()!.securityHeaders.permissionsPolicyEnabled, 'Enabled', 'Off')"     [tone]="boolTone(settings()!.securityHeaders.permissionsPolicyEnabled)" />
+          <sp-admin-status-card label="CSP"  [value]="settings()!.securityHeaders.cspStatus"  tone="warning" />
+          <sp-admin-status-card label="HSTS" [value]="settings()!.securityHeaders.hstsStatus" tone="warning" />
+        </sp-admin-status-grid>
+      </sp-admin-card>
     </div>
 
-    <div class="sp-sec-toggle-row">
-      <div>
-        <div class="sp-sec-toggle-label">New session alerts</div>
-        <div class="sp-sec-toggle-sub">Email me when a new device signs in</div>
-      </div>
-      <sp-admin-toggle [checked]="sessionAlerts()" (changed)="sessionAlerts.set($event)"
-        label="New session alerts"></sp-admin-toggle>
+    <!-- ── Deferred enterprise capabilities ───────────────────────────────── -->
+    <sp-admin-card title="Enterprise security capabilities" variant="section" padding="md">
+      <sp-admin-status-grid [columns]="4">
+        <sp-admin-status-card label="MFA enforcement"    value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="SSO / SAML"         value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="IP allowlist"        value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="Captcha"             value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="API / service keys"  value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="Admin session mgmt"  value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="Audit retention UI"  value="Not implemented" tone="neutral" />
+        <sp-admin-status-card label="CSP management"      value="Deferred"        tone="warning" />
+      </sp-admin-status-grid>
+    </sp-admin-card>
+
+  } <!-- end @if settings -->
+
+  <!-- ── Auth security events ────────────────────────────────────────────── -->
+  <div class="sp-admin-table-section" aria-label="Authentication security events">
+    <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+      <h2 class="sp-admin-table-section-title">Authentication events</h2>
+      <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadEvents()">Refresh</sp-admin-button>
     </div>
 
-    <div class="sp-sec-toggle-row">
-      <div>
-        <div class="sp-sec-toggle-label">IP allowlist</div>
-        <div class="sp-sec-toggle-sub">Only allow sign-ins from trusted IP ranges</div>
-      </div>
-      <sp-admin-toggle [checked]="ipWhitelist()" (changed)="ipWhitelist.set($event)"
-        label="IP allowlist"></sp-admin-toggle>
+    <div class="sp-admin-table-section-filters">
+      <sp-admin-filter-bar layout="responsive" density="compact">
+        <sp-admin-form-field filters label="Event type" size="sm">
+          <sp-admin-select
+            [ngModel]="filterEventType"
+            (ngModelChange)="filterEventType = $event; onFilterChange()"
+            [options]="eventTypeOptions"
+            size="sm" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Outcome" size="sm">
+          <sp-admin-select
+            [ngModel]="filterOutcome"
+            (ngModelChange)="filterOutcome = $event; onFilterChange()"
+            [options]="outcomeOptions"
+            size="sm" />
+        </sp-admin-form-field>
+        <sp-admin-form-field filters label="Email" size="sm">
+          <sp-admin-input
+            [(ngModel)]="filterEmail"
+            (change)="onFilterChange()"
+            placeholder="Filter by email"
+            size="sm" />
+        </sp-admin-form-field>
+      </sp-admin-filter-bar>
     </div>
 
-    <div class="sp-sec-toggle-row">
-      <div>
-        <div class="sp-sec-toggle-label">Extended audit retention</div>
-        <div class="sp-sec-toggle-sub">Keep audit logs for 365 days (default 90)</div>
+    @if (loadingEvents()) {
+      <div class="sp-admin-card-body-md">
+        <sp-admin-loading-state message="Loading auth events" />
       </div>
-      <sp-admin-toggle [checked]="auditRetention()" (changed)="auditRetention.set($event)"
-        label="Extended audit retention"></sp-admin-toggle>
-    </div>
-  </sp-admin-card>
-</div>
-
-<!-- ── ROW 2: Password + active sessions ── -->
-<div class="sp-sec-row sp-sec-g2-skew">
-
-  <!-- Password -->
-  <sp-admin-card>
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">
-      <div>
-        <div style="font-size:13.5px;font-weight:700;color:var(--sp-admin-text);">Password</div>
-        <div class="sp-sec-card-sub">Last changed 47 days ago</div>
+    } @else if (eventsError()) {
+      <div class="sp-admin-card-body-md">
+        <sp-admin-error-state title="Could not load auth events" [message]="eventsError()" />
       </div>
-      <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="togglePasswordForm()">
-        {{ showPasswordForm() ? 'Cancel' : 'Change' }}
-      </sp-admin-button>
-    </div>
-
-    @if (!showPasswordForm()) {
-      <div class="sp-sec-pw-summary">
-        <div class="sp-sec-pw-icon" aria-hidden="true">🔑</div>
-        <div>
-          <div class="sp-sec-pw-dots">••••••••••••</div>
-          <div class="sp-sec-pw-meta">Strong · 12+ characters</div>
-        </div>
+    } @else if (events().length === 0) {
+      <div class="sp-admin-card-body-md">
+        <sp-admin-empty-state message="No authentication events match the current filters." />
       </div>
     } @else {
-      <div class="sp-sec-pw-form">
-        <div class="sp-sec-field">
-          <label class="sp-sec-field-label" for="sp-sec-pw-current">Current password</label>
-          <input id="sp-sec-pw-current" class="sp-sec-field-input" type="password" autocomplete="off"
-            placeholder="••••••••" [(ngModel)]="passwordForm.current" name="current" />
-        </div>
-        <div class="sp-sec-field">
-          <label class="sp-sec-field-label" for="sp-sec-pw-next">New password</label>
-          <input id="sp-sec-pw-next" class="sp-sec-field-input" type="password" autocomplete="off"
-            placeholder="••••••••" [(ngModel)]="passwordForm.next" name="next" />
-        </div>
-        <div class="sp-sec-field">
-          <label class="sp-sec-field-label" for="sp-sec-pw-confirm">Confirm new</label>
-          <input id="sp-sec-pw-confirm" class="sp-sec-field-input" type="password" autocomplete="off"
-            placeholder="••••••••" [(ngModel)]="passwordForm.confirm" name="confirm" />
-        </div>
-        <div class="sp-sec-pw-actions">
-          <sp-admin-button variant="secondary" size="sm" [fullWidth]="true" (click)="updatePassword()">
-            Update password
-          </sp-admin-button>
-          <sp-admin-button variant="neutral" appearance="outline" size="sm" (click)="cancelPasswordForm()">
-            Cancel
-          </sp-admin-button>
-        </div>
-      </div>
-    }
-  </sp-admin-card>
-
-  <!-- Active sessions -->
-  <sp-admin-card padding="none">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid var(--sp-admin-border);">
-      <div>
-        <div style="font-size:13.5px;font-weight:700;color:var(--sp-admin-text);">Active sessions</div>
-        <div class="sp-sec-card-sub">{{ sessions().length }} session{{ sessions().length === 1 ? '' : 's' }}</div>
-      </div>
-      <sp-admin-button variant="danger" appearance="soft" size="sm" (click)="revokeAllOthers()">
-        Revoke all others
-      </sp-admin-button>
-    </div>
-
-    @for (s of sessions(); track s.id) {
-      <div class="sp-sec-session-row">
-        <div class="sp-sec-session-icon" [class.current]="s.current" aria-hidden="true">💻</div>
-        <div class="sp-sec-session-main">
-          <div class="sp-sec-session-title">
-            <span class="sp-sec-session-device">{{ s.device }}</span>
-            @if (s.current) {
-              <sp-admin-badge tone="success">Current</sp-admin-badge>
+      <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="760px">
+        <table>
+          <thead>
+            <tr>
+              <th class="sp-admin-nowrap">Time</th>
+              <th class="sp-admin-nowrap">Event type</th>
+              <th class="sp-admin-nowrap">Outcome</th>
+              <th>Email</th>
+              <th class="sp-admin-nowrap">IP</th>
+              <th class="sp-admin-nowrap">Correlation</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of events(); track event.id) {
+              <tr [class.sp-admin-table-row--danger]="event.outcome?.toLowerCase() === 'failure'">
+                <td class="sp-admin-nowrap sp-admin-text-mono sp-admin-table-cell-compact">{{ formatDateTime(event.occurredAtUtc) }}</td>
+                <td class="sp-admin-nowrap">
+                  <sp-admin-code-pill [value]="event.eventType" tone="neutral" />
+                </td>
+                <td class="sp-admin-nowrap">
+                  <sp-admin-badge [tone]="outcomeTone(event.outcome)">{{ event.outcome }}</sp-admin-badge>
+                </td>
+                <td>
+                  <sp-admin-truncated-text [value]="event.emailOrUserName ?? '—'" [maxLength]="48" />
+                  @if (event.failureReasonCode) {
+                    <div class="sp-admin-table-cell-compact sp-admin-text-mono">{{ event.failureReasonCode }}</div>
+                  }
+                </td>
+                <td class="sp-admin-nowrap sp-admin-table-cell-compact sp-admin-text-mono">{{ event.ipAddress ?? '—' }}</td>
+                <td class="sp-admin-nowrap">
+                  @if (event.correlationId) {
+                    <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
+                </td>
+              </tr>
             }
-          </div>
-          <div class="sp-sec-session-meta">{{ s.location }} · {{ s.ip }} · {{ s.last }}</div>
-        </div>
-        @if (!s.current) {
-          <sp-admin-button variant="danger" appearance="ghost" size="xs" (click)="revokeSession(s.id)">
-            Revoke
-          </sp-admin-button>
+          </tbody>
+        </table>
+      </sp-admin-table>
+      <div class="sp-admin-table-section-footer">
+        <span>{{ events().length }} of {{ eventsTotal() }} total events.</span>
+        @if (eventsTotalPages() > 1) {
+          <sp-admin-pagination
+            [page]="eventsPage()"
+            [totalPages]="eventsTotalPages()"
+            (pageChange)="onPageChange($event)" />
         }
       </div>
     }
+  </div>
+
+  <!-- ── Restricted operations ───────────────────────────────────────────── -->
+  <sp-admin-card title="Restricted security operations" variant="danger" padding="md">
+    <sp-admin-status-grid [columns]="3">
+      <sp-admin-status-card label="Rotate signing keys"  value="Not implemented"  tone="neutral" />
+      <sp-admin-status-card label="Revoke all sessions"  value="Pending endpoint" tone="neutral" />
+      <sp-admin-status-card label="Purge audit logs"     value="Not recommended"  tone="neutral" />
+    </sp-admin-status-grid>
   </sp-admin-card>
-</div>
-
-<!-- ── Audit log ── -->
-<sp-admin-card padding="none">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid var(--sp-admin-border);">
-    <div>
-      <div style="font-size:13.5px;font-weight:700;color:var(--sp-admin-text);">Audit log</div>
-      <div class="sp-sec-card-sub">All admin actions, last 90 days</div>
-    </div>
-    <sp-admin-button variant="neutral" appearance="outline" size="sm">Export</sp-admin-button>
-  </div>
-
-  @for (entry of auditLog; track entry.id) {
-    <div class="sp-sec-log-row" [class.danger]="entry.level === 'danger'">
-      <span class="sp-sec-log-time">{{ entry.time }}</span>
-      <span class="sp-sec-log-level" [style.color]="levelColor[entry.level]">{{ levelLabel[entry.level] }}</span>
-      <span class="sp-sec-log-actor">{{ entry.actor }}</span>
-      <span class="sp-sec-log-msg">{{ entry.action }}</span>
-    </div>
-  }
-
-  <div class="sp-sec-pagination">
-    <span class="sp-sec-pag-info">Showing 8 of 234 events</span>
-    <div class="sp-sec-pag-btns">
-      <button class="sp-sec-pag-btn" disabled>Prev</button>
-      <button class="sp-sec-pag-btn cur">1</button>
-      <button class="sp-sec-pag-btn">2</button>
-      <button class="sp-sec-pag-btn">3</button>
-      <button class="sp-sec-pag-btn">Next</button>
-    </div>
-  </div>
-</sp-admin-card>
-
-<!-- ── Danger zone ── -->
-<div class="sp-sec-danger">
-  <div class="sp-sec-danger-title">Danger zone</div>
-  <div class="sp-sec-danger-sub">Irreversible actions — proceed with care.</div>
-
-  <div class="sp-sec-danger-row">
-    <div>
-      <div class="sp-sec-danger-label">Revoke all sessions</div>
-      <div class="sp-sec-danger-item-sub">Sign out of every device, including this one.</div>
-    </div>
-    <sp-admin-button variant="danger" size="sm" (click)="dangerRevokeAll()">Revoke all</sp-admin-button>
-  </div>
-
-  <div class="sp-sec-danger-row">
-    <div>
-      <div class="sp-sec-danger-label">Reset 2FA</div>
-      <div class="sp-sec-danger-item-sub">Remove current TOTP device and re-enroll.</div>
-    </div>
-    <sp-admin-button variant="danger" size="sm" (click)="dangerReset2fa()">Reset 2FA</sp-admin-button>
-  </div>
-
-  <div class="sp-sec-danger-row">
-    <div>
-      <div class="sp-sec-danger-label">Wipe audit log</div>
-      <div class="sp-sec-danger-item-sub">Permanently delete all audit records.</div>
-    </div>
-    <sp-admin-button variant="danger" size="sm" (click)="dangerWipeLog()">Wipe log</sp-admin-button>
-  </div>
-</div>
 
 </sp-admin-page-body>
