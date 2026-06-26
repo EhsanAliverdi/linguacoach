@@ -143,11 +143,13 @@ describe('admin wrapper migration', () => {
   });
 
   it('curriculum create form uses sp-admin-form-field wrappers (10X-G-F)', () => {
-    const curriculum = jasmine.createSpyObj('CurriculumService', ['listObjectives', 'getTaxonomy']);
+    const curriculum = jasmine.createSpyObj('CurriculumService', ['listObjectives', 'getTaxonomy', 'getValidationSummary', 'getCoverageMatrix']);
     curriculum.listObjectives.and.returnValue(of([]));
     curriculum.getTaxonomy.and.returnValue(of({
       cefrLevels: ['A1', 'B1'], skills: ['writing', 'speaking'], contextTags: ['general_english'], focusTags: [],
     }));
+    curriculum.getValidationSummary.and.returnValue(of({ isValid: true, totalObjectivesChecked: 0, errorCount: 0, warningCount: 0, coverageGapCount: 0, errors: [], warnings: [], coverageGaps: [] }));
+    curriculum.getCoverageMatrix.and.returnValue(of({ cefrLevels: [], skills: [], cells: [] }));
 
     TestBed.configureTestingModule({
       imports: [AdminCurriculumComponent],

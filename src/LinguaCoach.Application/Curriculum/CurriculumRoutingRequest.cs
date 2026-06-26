@@ -44,4 +44,17 @@ public sealed class CurriculumRoutingRequest
 
     /// <summary>Optional recent ledger signals for weakness detection.</summary>
     public IReadOnlyList<string> RecentWeakPatternKeys { get; init; } = [];
+
+    /// <summary>
+    /// Keys of objectives the student has already mastered.
+    /// These are excluded from new-learning routing unless AllowReviewOfMastered is true.
+    /// Phase 11B.
+    /// </summary>
+    public IReadOnlyList<string> MasteredObjectiveKeys { get; init; } = [];
+
+    /// <summary>
+    /// When true and the student has mastered an objective, routing may still return it
+    /// if the objective is marked IsReviewable. Phase 11B.
+    /// </summary>
+    public bool AllowReviewOfMastered { get; init; } = false;
 }

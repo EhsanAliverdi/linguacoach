@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-26 (11A)
+lastUpdated: 2026-06-26 (11B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,12 @@ Last updated: 2026-06-26
 ---
 
 ## Active sprint
+
+**Phase 11B — Curriculum Objective Coverage and Mapping Hardening** — complete (2026-06-26)
+
+Curriculum hardening across Parts A–K. Seed expanded from 22 to 33 objectives, closing all A1–B2 × {speaking, listening, reading, writing, grammar, vocabulary, pronunciation} coverage gaps. New: `ICurriculumValidationService` (Application) + `CurriculumValidationService` (Infrastructure) with 10 validation checks (duplicate keys, invalid CEFR/skill, missing fields, dangling/circular/disabled prerequisites, invalid context/focus tags, coverage gaps, non-runnable skill warnings). `ActivityCompatibilityConstants` documents runnable vs planned skill/exercise format mapping. Routing hardened: `CurriculumRoutingRequest` adds `MasteredObjectiveKeys` and `AllowReviewOfMastered` fields so mastered objectives can be excluded from new-learning routes. Two new admin endpoints: `GET /api/admin/curriculum/validation` and `GET /api/admin/curriculum/coverage`. Admin curriculum UI at `/admin/curriculum` shows live validation summary card, error/warning alerts, and coverage gap list — all from real backend data. 12 new unit tests + 3 routing tests + 2 integration tests + 10 Angular tests = 27 new tests. All 1344 unit / 1103 integration / 3 arch / 1381 Angular tests pass. No migration. No student UI. No admin visual redesign. Review: `docs/reviews/2026-06-26-phase-11b-curriculum-objective-coverage-mapping-hardening-review.md`.
+
+---
 
 **Phase 11A — Admin Onboarding Builder** — complete (2026-06-26)
 

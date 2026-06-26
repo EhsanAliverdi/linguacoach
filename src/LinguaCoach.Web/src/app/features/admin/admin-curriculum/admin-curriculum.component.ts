@@ -8,6 +8,8 @@ import {
   AdminCurriculumObjectiveUpsertRequest,
   AdminRoutingPreviewRequest,
   AdminRoutingPreviewResult,
+  CurriculumValidationSummaryDto,
+  CurriculumCoverageMatrixDto,
 } from '../../../core/services/curriculum.service';
 import {
   SpAdminBadgeComponent,
@@ -37,6 +39,7 @@ import {
   SpAdminDistributionItem,
   SpAdminDistributionTone,
 } from '../../../design-system/admin/components/distribution-breakdown/sp-admin-distribution-breakdown.component';
+import { SpAdminAlertComponent } from '../../../design-system/admin/components/alert/sp-admin-alert.component';
 
 function parseJsonArray(json: string | null | undefined): string[] {
   if (!json || json === '[]') return [];
@@ -74,22 +77,27 @@ const CEFR_TONES: SpAdminDistributionTone[] = ['green', 'teal', 'indigo', 'viole
     SpAdminPaginationComponent,
     SpAdminTextareaComponent,
     SpAdminDistributionBreakdownComponent,
+    SpAdminAlertComponent,
   ],
 })
 export class AdminCurriculumComponent implements OnInit {
-  objectives    = signal<AdminCurriculumObjectiveDto[]>([]);
-  allObjectives = signal<AdminCurriculumObjectiveDto[]>([]);
-  taxonomy      = signal<CurriculumTaxonomyDto | null>(null);
-  loading       = signal(false);
-  saving        = signal(false);
-  previewing    = signal(false);
-  actionKey     = signal<string | null>(null);
-  globalError   = signal<string | null>(null);
-  formError     = signal<string | null>(null);
-  previewResult = signal<AdminRoutingPreviewResult | null>(null);
-  slideOverOpen = signal(false);
-  previewOpen   = signal(false);
-  editMode      = signal<'create' | 'edit'>('create');
+  objectives        = signal<AdminCurriculumObjectiveDto[]>([]);
+  allObjectives     = signal<AdminCurriculumObjectiveDto[]>([]);
+  taxonomy          = signal<CurriculumTaxonomyDto | null>(null);
+  loading           = signal(false);
+  saving            = signal(false);
+  previewing        = signal(false);
+  actionKey         = signal<string | null>(null);
+  globalError       = signal<string | null>(null);
+  formError         = signal<string | null>(null);
+  previewResult     = signal<AdminRoutingPreviewResult | null>(null);
+  slideOverOpen     = signal(false);
+  previewOpen       = signal(false);
+  editMode          = signal<'create' | 'edit'>('create');
+  validationSummary = signal<CurriculumValidationSummaryDto | null>(null);
+  loadingValidation = signal(false);
+  coverageMatrix    = signal<CurriculumCoverageMatrixDto | null>(null);
+  loadingCoverage   = signal(false);
 
   filterCefr          = '';
   filterSkill         = '';
@@ -182,6 +190,8 @@ export class AdminCurriculumComponent implements OnInit {
     this.loadTaxonomy();
     this.load();
     this.loadAll();
+    this.loadValidation();
+    this.loadCoverage();
   }
 
   load(): void {
@@ -207,6 +217,22 @@ export class AdminCurriculumComponent implements OnInit {
   loadTaxonomy(): void {
     this.curriculum.getTaxonomy().subscribe({
       next: tax => this.taxonomy.set(tax),
+    });
+  }
+
+  loadValidation(): void {
+    this.loadingValidation.set(true);
+    this.curriculum.getValidationSummary().subscribe({
+      next:  summary => { this.validationSummary.set(summary); this.loadingValidation.set(false); },
+      error: ()      => { this.loadingValidation.set(false); },
+    });
+  }
+
+  loadCoverage(): void {
+    this.loadingCoverage.set(true);
+    this.curriculum.getCoverageMatrix().subscribe({
+      next:  matrix => { this.coverageMatrix.set(matrix); this.loadingCoverage.set(false); },
+      error: ()     => { this.loadingCoverage.set(false); },
     });
   }
 

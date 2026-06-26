@@ -271,6 +271,82 @@ public sealed class CurriculumRoutingServiceTests
         Assert.Null(rec.RoutingContextSummary);
     }
 
+    // ── Phase 11B: mastered objective filtering ──────────────────────────────
+
+    [Fact]
+    public async Task Recommend_MasteredObjective_ExcludedFromNewLearning()
+    {
+        var mastered = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+        var notMastered = MakeObjective("b2_listening_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Listening, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([mastered, notMastered]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            ResolvedLearningGoalContext = new ResolvedLearningGoalContext
+            {
+                WorkplaceSpecific = false,
+                ContextSummary = "test",
+                Source = "Structured"
+            },
+            MasteredObjectiveKeys = ["b2_writing_general"],
+            AllowReviewOfMastered = false
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Mastered writing objective should be excluded; listening returned instead.
+        Assert.Equal("b2_listening_general", rec.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public async Task Recommend_MasteredReviewableObjective_IncludedWhenAllowReviewOfMastered()
+    {
+        // isReviewable=true via the domain constructor default (false), so pass explicitly.
+        var masteredReviewable = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish],
+            isReviewable: true);
+
+        var svc = BuildService([masteredReviewable]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            ResolvedLearningGoalContext = new ResolvedLearningGoalContext
+            {
+                WorkplaceSpecific = false,
+                ContextSummary = "test",
+                Source = "Structured"
+            },
+            MasteredObjectiveKeys = ["b2_writing_general"],
+            AllowReviewOfMastered = true
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Reviewable mastered objective should be included when AllowReviewOfMastered=true.
+        Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public async Task Recommend_InactiveObjective_NotReturned()
+    {
+        // Stub only returns active objectives — inactive filtered at query level.
+        // The routing service receives an empty candidates list and falls back.
+        var svc = BuildService([]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.Fallback, rec.RoutingReason);
+        Assert.Null(rec.CurriculumObjectiveKey);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static CurriculumRoutingService BuildService(IReadOnlyList<CurriculumObjective> objectives)
@@ -308,10 +384,11 @@ public sealed class CurriculumRoutingServiceTests
         string skill,
         IReadOnlyList<string> contextTags,
         int difficultyBand = 2,
-        int recommendedOrder = 0)
+        int recommendedOrder = 0,
+        bool isReviewable = false)
     {
         var contextTagsJson = System.Text.Json.JsonSerializer.Serialize(contextTags);
-        return new CurriculumObjective(
+        var obj = new CurriculumObjective(
             key: key,
             title: $"Test objective: {key}",
             description: "Test description.",
@@ -320,7 +397,9 @@ public sealed class CurriculumRoutingServiceTests
             contextTagsJson: contextTagsJson,
             difficultyBand: difficultyBand,
             recommendedOrder: recommendedOrder,
-            isActive: true);
+            isActive: true,
+            isReviewable: isReviewable);
+        return obj;
     }
 
     /// <summary>

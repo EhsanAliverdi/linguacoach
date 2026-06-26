@@ -450,5 +450,164 @@ public static class CurriculumObjectiveSeeder
             isReviewable: true,
             isExamInspired: true,
             teachingNotes: "Exam-inspired format. Teach PEEL or similar paragraph structure."),
+
+        // ── Phase 11B coverage-gap objectives ────────────────────────────────
+
+        // A1 reading
+        new(
+            key: "a1.reading.simple_signs_labels",
+            title: "Reading Simple Signs and Labels",
+            description: "Recognise familiar words and very simple phrases on signs, labels, and notices.",
+            cefrLevel: CefrLevelConstants.A1,
+            primarySkill: CurriculumSkillConstants.Reading,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.Travel}"]""",
+            prerequisiteKeysJson: "[]",
+            recommendedOrder: 35,
+            difficultyBand: 1,
+            isActive: true),
+
+        // A1 writing
+        new(
+            key: "a1.writing.personal_forms",
+            title: "Completing Simple Personal Forms",
+            description: "Fill in simple forms with personal details: name, address, date of birth, nationality.",
+            cefrLevel: CefrLevelConstants.A1,
+            primarySkill: CurriculumSkillConstants.Writing,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.MigrationSettlement}"]""",
+            prerequisiteKeysJson: "[]",
+            recommendedOrder: 40,
+            difficultyBand: 1,
+            isActive: true),
+
+        // A2 grammar
+        new(
+            key: "a2.grammar.past_tense_forms",
+            title: "Past Tense Forms",
+            description: "Form and use regular and common irregular past tense verbs in sentences.",
+            cefrLevel: CefrLevelConstants.A2,
+            primarySkill: CurriculumSkillConstants.Grammar,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}"]""",
+            prerequisiteKeysJson: $"""["a1.grammar.simple_present"]""",
+            recommendedOrder: 160,
+            difficultyBand: 2,
+            isActive: true),
+
+        // A2 listening
+        new(
+            key: "a2.listening.short_announcements",
+            title: "Understanding Short Announcements",
+            description: "Identify key information from short public announcements and recorded messages.",
+            cefrLevel: CefrLevelConstants.A2,
+            primarySkill: CurriculumSkillConstants.Listening,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.ListeningConfidence}","{CurriculumContextTagConstants.Travel}"]""",
+            prerequisiteKeysJson: $"""["a1.listening.familiar_words"]""",
+            recommendedOrder: 170,
+            difficultyBand: 2,
+            isActive: true),
+
+        // A2 vocabulary
+        new(
+            key: "a2.vocabulary.shopping_services",
+            title: "Vocabulary for Shopping and Services",
+            description: "Use vocabulary for common shopping situations, prices, and service transactions.",
+            cefrLevel: CefrLevelConstants.A2,
+            primarySkill: CurriculumSkillConstants.Vocabulary,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.Travel}"]""",
+            prerequisiteKeysJson: $"""["a1.vocabulary.everyday_basics"]""",
+            recommendedOrder: 180,
+            difficultyBand: 2,
+            isActive: true),
+
+        // B1 vocabulary
+        new(
+            key: "b1.vocabulary.topic_word_families",
+            title: "Topic-Based Word Families",
+            description: "Extend vocabulary through word families and collocations on familiar topics.",
+            cefrLevel: CefrLevelConstants.B1,
+            primarySkill: CurriculumSkillConstants.Vocabulary,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.StudyAcademic}"]""",
+            prerequisiteKeysJson: $"""["a2.vocabulary.shopping_services"]""",
+            recommendedOrder: 280,
+            difficultyBand: 3,
+            isActive: true),
+
+        // B1 grammar
+        new(
+            key: "b1.grammar.modal_verbs",
+            title: "Modal Verbs for Ability, Permission, and Obligation",
+            description: "Use modal verbs correctly: can, could, must, should, have to, might.",
+            cefrLevel: CefrLevelConstants.B1,
+            primarySkill: CurriculumSkillConstants.Grammar,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.Workplace}"]""",
+            prerequisiteKeysJson: $"""["a2.grammar.past_tense_forms"]""",
+            recommendedOrder: 290,
+            difficultyBand: 3,
+            isActive: true),
+
+        // B1 reading
+        new(
+            key: "b1.reading.understanding_texts",
+            title: "Understanding Descriptive and Narrative Texts",
+            description: "Read and understand the main points of clear standard texts on familiar topics.",
+            cefrLevel: CefrLevelConstants.B1,
+            primarySkill: CurriculumSkillConstants.Reading,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.DayToDay}","{CurriculumContextTagConstants.StudyAcademic}"]""",
+            prerequisiteKeysJson: $"""["a1.reading.simple_signs_labels"]""",
+            recommendedOrder: 295,
+            difficultyBand: 3,
+            isActive: true),
+
+        // B2 vocabulary
+        new(
+            key: "b2.vocabulary.nuance_and_register",
+            title: "Vocabulary Nuance and Register",
+            description: "Choose precise vocabulary and appropriate register for formal and informal contexts.",
+            cefrLevel: CefrLevelConstants.B2,
+            primarySkill: CurriculumSkillConstants.Vocabulary,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.Workplace}","{CurriculumContextTagConstants.StudyAcademic}","{CurriculumContextTagConstants.WritingConfidence}"]""",
+            prerequisiteKeysJson: $"""["b1.vocabulary.topic_word_families"]""",
+            recommendedOrder: 360,
+            difficultyBand: 4,
+            isActive: true),
+
+        // B2 grammar
+        new(
+            key: "b2.grammar.complex_sentences",
+            title: "Complex Sentence Structures",
+            description: "Construct complex sentences using relative clauses, conditionals, and passive voice accurately.",
+            cefrLevel: CefrLevelConstants.B2,
+            primarySkill: CurriculumSkillConstants.Grammar,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.StudyAcademic}","{CurriculumContextTagConstants.WritingConfidence}"]""",
+            prerequisiteKeysJson: $"""["b1.grammar.modal_verbs"]""",
+            recommendedOrder: 370,
+            difficultyBand: 4,
+            isActive: true),
+
+        // B2 pronunciation
+        new(
+            key: "b2.pronunciation.stress_and_intonation",
+            title: "Stress and Intonation Patterns",
+            description: "Use sentence stress and intonation to convey meaning and sound natural in conversation.",
+            cefrLevel: CefrLevelConstants.B2,
+            primarySkill: CurriculumSkillConstants.Pronunciation,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.Pronunciation}","{CurriculumContextTagConstants.SocialConversation}"]""",
+            prerequisiteKeysJson: $"""["a2.pronunciation.basic_clarity"]""",
+            recommendedOrder: 380,
+            difficultyBand: 4,
+            isActive: true),
+
+        // B2 reading
+        new(
+            key: "b2.reading.implicit_meaning",
+            title: "Reading for Implicit Meaning",
+            description: "Identify implied meaning, author stance, and purpose in moderately complex texts.",
+            cefrLevel: CefrLevelConstants.B2,
+            primarySkill: CurriculumSkillConstants.Reading,
+            contextTagsJson: $"""["{CurriculumContextTagConstants.GeneralEnglish}","{CurriculumContextTagConstants.StudyAcademic}","{CurriculumContextTagConstants.ExamInspired}"]""",
+            prerequisiteKeysJson: $"""["b1.reading.understanding_texts"]""",
+            recommendedOrder: 385,
+            difficultyBand: 4,
+            isActive: true,
+            isExamInspired: true),
     ];
 }

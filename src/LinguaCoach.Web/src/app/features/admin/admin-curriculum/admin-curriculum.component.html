@@ -35,6 +35,71 @@
     </sp-admin-card>
   }
 
+  <!-- Validation summary (Phase 11B) -->
+  @if (validationSummary(); as vs) {
+    <sp-admin-card>
+      <div class="sp-admin-kpi-row" aria-label="Curriculum validation summary">
+        <sp-admin-kpi-card
+          label="Validation"
+          [variant]="vs.isValid ? 'green' : 'coral'"
+          layout="tile"
+          icon="check"
+          [value]="vs.isValid ? 'Pass' : 'Fail'" />
+        <sp-admin-kpi-card
+          label="Errors"
+          [variant]="vs.errorCount > 0 ? 'coral' : 'green'"
+          layout="tile"
+          icon="alert"
+          [value]="vs.errorCount" />
+        <sp-admin-kpi-card
+          label="Warnings"
+          [variant]="vs.warningCount > 0 ? 'amber' : 'green'"
+          layout="tile"
+          icon="alert"
+          [value]="vs.warningCount" />
+        <sp-admin-kpi-card
+          label="Coverage gaps"
+          [variant]="vs.coverageGapCount > 0 ? 'amber' : 'green'"
+          layout="tile"
+          icon="bar-chart"
+          [value]="vs.coverageGapCount" />
+      </div>
+
+      @if (vs.errorCount > 0) {
+        <sp-admin-alert variant="error">
+          <strong>Validation errors</strong>
+          <ul>
+            @for (e of vs.errors; track e.objectiveKey + e.code) {
+              <li>[{{ e.code }}] {{ e.objectiveKey || '(global)' }}: {{ e.message }}</li>
+            }
+          </ul>
+        </sp-admin-alert>
+      }
+
+      @if (vs.warningCount > 0) {
+        <sp-admin-alert variant="warning">
+          <strong>Validation warnings</strong>
+          <ul>
+            @for (w of vs.warnings; track w.objectiveKey + w.code) {
+              <li>[{{ w.code }}] {{ w.objectiveKey || '(global)' }}: {{ w.message }}</li>
+            }
+          </ul>
+        </sp-admin-alert>
+      }
+
+      @if (vs.coverageGapCount > 0) {
+        <sp-admin-alert variant="warning">
+          <strong>Coverage gaps</strong>
+          <ul>
+            @for (g of vs.coverageGaps; track g.cefrLevel + g.skill) {
+              <li>{{ g.cefrLevel }} / {{ g.skill }}: {{ g.message }}</li>
+            }
+          </ul>
+        </sp-admin-alert>
+      }
+    </sp-admin-card>
+  }
+
   <!-- Filters -->
   <sp-admin-filter-bar>
     <sp-admin-select

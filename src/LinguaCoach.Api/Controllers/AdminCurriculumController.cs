@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Curriculum;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,15 +19,18 @@ public sealed class AdminCurriculumController : ControllerBase
     private readonly ICurriculumSyllabusQuery _query;
     private readonly IAdminCurriculumSyllabusQuery _adminQuery;
     private readonly ICurriculumObjectiveWriteService _writeService;
+    private readonly ICurriculumValidationService _validationService;
 
     public AdminCurriculumController(
         ICurriculumSyllabusQuery query,
         IAdminCurriculumSyllabusQuery adminQuery,
-        ICurriculumObjectiveWriteService writeService)
+        ICurriculumObjectiveWriteService writeService,
+        ICurriculumValidationService validationService)
     {
         _query = query;
         _adminQuery = adminQuery;
         _writeService = writeService;
+        _validationService = validationService;
     }
 
     // ── Read endpoints ────────────────────────────────────────────────────────
@@ -138,6 +142,54 @@ public sealed class AdminCurriculumController : ControllerBase
         {
             return NotFound(new { error = ex.Message });
         }
+    }
+
+    // ── Validation and coverage endpoints (Phase 11B) ─────────────────────────
+
+    /// <summary>Validates all active curriculum objectives and returns a summary of issues.</summary>
+    [HttpGet("validation")]
+    public async Task<IActionResult> GetValidationSummary(CancellationToken ct)
+    {
+        var result = await _validationService.ValidateAllActiveAsync(ct);
+        var dto = new CurriculumValidationSummaryDto(
+            IsValid: result.IsValid,
+            TotalObjectivesChecked: result.TotalObjectivesChecked,
+            ErrorCount: result.Errors.Count,
+            WarningCount: result.Warnings.Count,
+            CoverageGapCount: result.CoverageGaps.Count,
+            Errors: result.Errors.Select(e => new CurriculumValidationIssueDto(e.ObjectiveKey, e.Code, e.Message)).ToList(),
+            Warnings: result.Warnings.Select(w => new CurriculumValidationIssueDto(w.ObjectiveKey, w.Code, w.Message)).ToList(),
+            CoverageGaps: result.CoverageGaps.Select(g => new CurriculumCoverageGapDto(g.CefrLevel, g.Skill, g.Message)).ToList());
+        return Ok(dto);
+    }
+
+    /// <summary>Returns a coverage matrix of active objectives across CEFR levels and core skills.</summary>
+    [HttpGet("coverage")]
+    public async Task<IActionResult> GetCoverageMatrix(CancellationToken ct)
+    {
+        var objectives = await _query.GetActiveObjectivesAsync(ct);
+
+        var cefrLevels = new[] { CefrLevelConstants.A1, CefrLevelConstants.A2, CefrLevelConstants.B1, CefrLevelConstants.B2 };
+        var skills = CurriculumSkillConstants.All;
+
+        var grouped = objectives
+            .GroupBy(o => (o.CefrLevel.ToUpperInvariant(), o.PrimarySkill.ToLowerInvariant()))
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var cells = cefrLevels
+            .SelectMany(level => skills.Select(skill =>
+            {
+                var key = (level.ToUpperInvariant(), skill.ToLowerInvariant());
+                var count = grouped.TryGetValue(key, out var c) ? c : 0;
+                return new CurriculumCoverageMatrixCellDto(level, skill, count, count > 0);
+            }))
+            .ToList();
+
+        var matrixDto = new CurriculumCoverageMatrixDto(
+            CefrLevels: cefrLevels,
+            Skills: skills,
+            Cells: cells);
+        return Ok(matrixDto);
     }
 
     /// <summary>

@@ -76,6 +76,44 @@ export interface AdminRoutingPreviewResult {
   warnings: string[];
 }
 
+// ── Phase 11B: validation and coverage types ──────────────────────────────────
+
+export interface CurriculumValidationIssueDto {
+  objectiveKey: string;
+  code: string;
+  message: string;
+}
+
+export interface CurriculumCoverageGapDto {
+  cefrLevel: string;
+  skill: string;
+  message: string;
+}
+
+export interface CurriculumValidationSummaryDto {
+  isValid: boolean;
+  totalObjectivesChecked: number;
+  errorCount: number;
+  warningCount: number;
+  coverageGapCount: number;
+  errors: CurriculumValidationIssueDto[];
+  warnings: CurriculumValidationIssueDto[];
+  coverageGaps: CurriculumCoverageGapDto[];
+}
+
+export interface CurriculumCoverageMatrixCellDto {
+  cefrLevel: string;
+  skill: string;
+  activeCount: number;
+  hasCoverage: boolean;
+}
+
+export interface CurriculumCoverageMatrixDto {
+  cefrLevels: string[];
+  skills: string[];
+  cells: CurriculumCoverageMatrixCellDto[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class CurriculumService {
   private readonly api = environment.apiUrl;
@@ -116,5 +154,13 @@ export class CurriculumService {
 
   previewRouting(request: AdminRoutingPreviewRequest): Observable<AdminRoutingPreviewResult> {
     return this.http.post<AdminRoutingPreviewResult>(`${this.api}/admin/curriculum/routing-preview`, request);
+  }
+
+  getValidationSummary(): Observable<CurriculumValidationSummaryDto> {
+    return this.http.get<CurriculumValidationSummaryDto>(`${this.api}/admin/curriculum/validation`);
+  }
+
+  getCoverageMatrix(): Observable<CurriculumCoverageMatrixDto> {
+    return this.http.get<CurriculumCoverageMatrixDto>(`${this.api}/admin/curriculum/coverage`);
   }
 }

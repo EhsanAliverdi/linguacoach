@@ -71,6 +71,8 @@ describe('AdminCurriculumComponent', () => {
       'activateObjective',
       'deactivateObjective',
       'previewRouting',
+      'getValidationSummary',
+      'getCoverageMatrix',
     ]);
 
     svc.listObjectives.and.returnValue(of([makeObjective()]));
@@ -81,6 +83,14 @@ describe('AdminCurriculumComponent', () => {
     svc.activateObjective.and.returnValue(of(makeObjective({ isActive: true })));
     svc.deactivateObjective.and.returnValue(of(makeObjective({ isActive: false })));
     svc.previewRouting.and.returnValue(of(makePreviewResult()));
+    svc.getValidationSummary.and.returnValue(of({
+      isValid: true, totalObjectivesChecked: 0,
+      errorCount: 0, warningCount: 0, coverageGapCount: 0,
+      errors: [], warnings: [], coverageGaps: [],
+    }));
+    svc.getCoverageMatrix.and.returnValue(of({
+      cefrLevels: [], skills: [], cells: [],
+    }));
 
     TestBed.configureTestingModule({
       imports: [AdminCurriculumComponent],

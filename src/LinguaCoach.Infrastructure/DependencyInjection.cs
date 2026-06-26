@@ -360,6 +360,9 @@ public static class DependencyInjection
         // Curriculum routing (Phase 10L)
         services.AddScoped<ICurriculumRoutingService, CurriculumRoutingService>();
 
+        // Curriculum validation (Phase 11B)
+        services.AddScoped<ICurriculumValidationService, CurriculumValidationService>();
+
         // Student activity readiness pool (Phase 10M)
         services.AddScoped<IStudentActivityReadinessPoolService, StudentActivityReadinessPoolService>();
 

@@ -116,6 +116,39 @@ public interface ICurriculumObjectiveWriteService
     Task<AdminRoutingPreviewResult> PreviewRoutingAsync(AdminRoutingPreviewRequest request, CancellationToken ct = default);
 }
 
+// ── Validation summary DTOs (Phase 11B) ──────────────────────────────────────
+
+public sealed record CurriculumValidationSummaryDto(
+    bool IsValid,
+    int TotalObjectivesChecked,
+    int ErrorCount,
+    int WarningCount,
+    int CoverageGapCount,
+    IReadOnlyList<CurriculumValidationIssueDto> Errors,
+    IReadOnlyList<CurriculumValidationIssueDto> Warnings,
+    IReadOnlyList<CurriculumCoverageGapDto> CoverageGaps);
+
+public sealed record CurriculumValidationIssueDto(
+    string ObjectiveKey,
+    string Code,
+    string Message);
+
+public sealed record CurriculumCoverageGapDto(
+    string CefrLevel,
+    string Skill,
+    string Message);
+
+public sealed record CurriculumCoverageMatrixDto(
+    IReadOnlyList<string> CefrLevels,
+    IReadOnlyList<string> Skills,
+    IReadOnlyList<CurriculumCoverageMatrixCellDto> Cells);
+
+public sealed record CurriculumCoverageMatrixCellDto(
+    string CefrLevel,
+    string Skill,
+    int ActiveCount,
+    bool HasCoverage);
+
 // ── Admin query extension ─────────────────────────────────────────────────────
 
 /// <summary>Admin-only query extensions that include inactive objectives.</summary>

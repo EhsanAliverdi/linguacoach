@@ -84,6 +84,9 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
                 candidates = skillFiltered;
         }
 
+        // Step 2b: exclude mastered objectives from new-learning route.
+        candidates = FilterByMastered(candidates, request);
+
         // Step 3: pick best exact-level candidate.
         if (candidates.Count > 0)
         {
@@ -133,6 +136,22 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
             normalizedLevel, request.Source, string.Join(",", contextTags));
 
         return BuildFallback(request, normalizedLevel, contextTags, preferredBand);
+    }
+
+    private static IReadOnlyList<CurriculumObjective> FilterByMastered(
+        IReadOnlyList<CurriculumObjective> candidates,
+        CurriculumRoutingRequest request)
+    {
+        if (request.MasteredObjectiveKeys.Count == 0)
+            return candidates;
+
+        var filtered = candidates
+            .Where(o => !request.MasteredObjectiveKeys.Contains(o.Key, StringComparer.OrdinalIgnoreCase)
+                        || (request.AllowReviewOfMastered && o.IsReviewable))
+            .ToList();
+
+        // If filtering empties the list, keep original (don't fail).
+        return filtered.Count > 0 ? filtered : candidates;
     }
 
     private static CurriculumObjective SelectBestCandidate(
