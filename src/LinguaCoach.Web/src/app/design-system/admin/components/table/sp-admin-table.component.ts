@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, ContentChild, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpAdminEmptyStateComponent } from '../empty-state/sp-admin-empty-state.component';
 import { SpAdminErrorStateComponent } from '../error-state/sp-admin-error-state.component';
@@ -101,7 +101,13 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                       [class]="tdClass(column)"
                       [style.text-align]="column.align || 'left'"
                       [style.width]="column.width || null"
-                    >{{ row[column.key] }}</td>
+                    >
+                    @if (cellTemplate) {
+                      <ng-container *ngTemplateOutlet="cellTemplate; context: { $implicit: row, col: column }" />
+                    } @else {
+                      {{ row[column.key] }}
+                    }
+                  </td>
                   }
                   @if (hasActions) {
                     <td [class]="tdClass(null)">
@@ -313,6 +319,8 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
   `],
 })
 export class SpAdminTableComponent {
+  @ContentChild('cell') cellTemplate?: TemplateRef<{ $implicit: Record<string, unknown>; col: SpAdminTableColumn }>;
+
   @Input() columns: SpAdminTableColumn[] = [];
   @Input() rows: Record<string, unknown>[] = [];
   @Input() loading = false;
