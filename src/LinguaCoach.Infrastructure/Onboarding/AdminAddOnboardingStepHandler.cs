@@ -16,6 +16,8 @@ public sealed class AdminAddOnboardingStepHandler : IAdminAddOnboardingStepHandl
     public async Task<AdminOnboardingStepDto> HandleAsync(
         AddOnboardingStepCommand command, CancellationToken ct = default)
     {
+        OnboardingStepKeyGuard.Validate(command.StepKey);
+
         var flowExists = await _db.OnboardingFlowDefinitions
             .AnyAsync(f => f.Id == command.FlowId, ct);
         if (!flowExists)

@@ -165,6 +165,41 @@ public sealed class AdminOnboardingEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.NoContent, reorderResp.StatusCode);
     }
 
+    // ── Reserved step key validation ──────────────────────────────────────────
+
+    [Theory]
+    [InlineData("reorder")]
+    [InlineData("activate")]
+    [InlineData("flows")]
+    [InlineData("delete")]
+    public async Task AddStep_WithReservedKey_Returns400(string reservedKey)
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var createResp = await client.PostAsJsonAsync("/api/admin/onboarding/flows",
+            new { name = $"ReservedKeyFlow {Guid.NewGuid():N}", version = 11 });
+        var flowBody = await createResp.Content.ReadFromJsonAsync<JsonElement>();
+        var flowId = GetFlowId(flowBody);
+
+        var addResp = await client.PostAsJsonAsync($"/api/admin/onboarding/flows/{flowId}/steps", new
+        {
+            stepKey = reservedKey,
+            title = "Test",
+            description = (string?)null,
+            stepType = "Welcome",
+            requirementType = "AdminConfigured",
+            answerMapping = "None",
+            stepOrder = 1,
+            isEnabled = true,
+            options = (object?)null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, addResp.StatusCode);
+        var body = await addResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("reserved", body.GetProperty("error").GetString()!, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private System.Net.Http.HttpClient ClientWithToken(string token)

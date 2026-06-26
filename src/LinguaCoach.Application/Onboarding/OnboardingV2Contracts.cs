@@ -192,6 +192,30 @@ public interface IAdminReorderOnboardingStepsHandler
     Task HandleAsync(ReorderOnboardingStepsCommand command, CancellationToken ct = default);
 }
 
+// ── Reserved step key guard ───────────────────────────────────────────────────
+
+public static class OnboardingStepKeyGuard
+{
+    // These keywords are used as URL path segments in the admin onboarding API.
+    // Allowing them as step keys would cause routing ambiguity.
+    private static readonly HashSet<string> Reserved = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "reorder", "activate", "steps", "flow", "flows", "new", "edit",
+        "delete", "remove", "create", "update", "list", "index"
+    };
+
+    public static bool IsReserved(string key) => Reserved.Contains(key);
+
+    public static void Validate(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            throw new OnboardingV2ValidationException("Step key is required.");
+        if (IsReserved(key))
+            throw new OnboardingV2ValidationException(
+                $"'{key}' is a reserved word and cannot be used as a step key.");
+    }
+}
+
 // ── Validation error ──────────────────────────────────────────────────────────
 
 public sealed class OnboardingV2ValidationException : Exception
