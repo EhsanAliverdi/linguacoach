@@ -251,14 +251,215 @@
 }
 
 /* ── Shared 2-column card grid ───────────────────────────────────────────── */
-/* Use for LLM/TTS category grids, any 2-col card layout. */
 .sp-admin-card-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  align-items: stretch;
 }
 @media (max-width: 700px) {
   .sp-admin-card-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Shared 3-column equal card grid ────────────────────────────────────── */
+.sp-admin-card-grid-3-equal {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .sp-admin-card-grid-3-equal { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .sp-admin-card-grid-3-equal { grid-template-columns: 1fr; }
+}
+
+/* ── Shared 4-column equal card grid ────────────────────────────────────── */
+.sp-admin-card-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .sp-admin-card-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .sp-admin-card-grid-4 { grid-template-columns: 1fr; }
+}
+
+/* ── Dashboard main grid: large chart + narrow sidebar ──────────────────── */
+.sp-admin-dash-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 272px;
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 1000px) {
+  .sp-admin-dash-main-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Dashboard bottom grid: wide table + narrow feed ────────────────────── */
+.sp-admin-dash-bottom-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .sp-admin-dash-bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Dashboard chart empty state ─────────────────────────────────────────── */
+.sp-admin-chart-empty {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  background: var(--sp-admin-bg, #F6F4FB);
+  border-radius: 8px;
+}
+
+/* ── Breakdown track/fill — reusable progress bar primitives ─────────────── */
+.sp-admin-breakdown-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--sp-admin-border, #ECE9F5);
+  overflow: hidden;
+}
+.sp-admin-breakdown-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .4s;
+  min-width: 0;
+}
+
+/* ── Dashboard warn banner ───────────────────────────────────────────────── */
+.sp-admin-warn-banner {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #FFF1DC;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #B26410;
+}
+
+/* ── Dashboard list row — avatar + body + trailing ──────────────────────── */
+.sp-admin-dash-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-admin-dash-row:last-child { border-bottom: none; }
+.sp-admin-dash-row--link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity .1s;
+  color: inherit;
+}
+.sp-admin-dash-row--link:hover { opacity: .75; }
+
+/* ── Dashboard avatar square ─────────────────────────────────────────────── */
+.sp-admin-dash-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #3A2EA8;
+  background: #EDEBFF;
+}
+
+/* ── Dashboard status dot ────────────────────────────────────────────────── */
+.sp-admin-dash-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Dashboard feed icon ──────────────────────────────────────────────────── */
+.sp-admin-dash-feed-icon {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Dashboard action icon ────────────────────────────────────────────────── */
+.sp-admin-dash-action-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Dashboard two-column AI Usage layout ────────────────────────────────── */
+.sp-admin-two-col-start {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 1100px) {
+  .sp-admin-two-col-start { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
+/* ── Skewed 2-col: wider left (1.6fr) narrower right (1fr) ──────────────── */
+.sp-admin-card-grid-2-skew {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+@media (min-width: 800px) {
+  .sp-admin-card-grid-2-skew { grid-template-columns: 1.6fr 1fr; }
+}
+
+/* ── Chart card: header with title/sub on left and value on right ─────────── */
+.sp-admin-chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sp-admin-chart-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sp-admin-text, #211B36);
+  margin: 0;
+}
+.sp-admin-chart-sub {
+  font-size: 12px;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  margin-top: 2px;
+}
+.sp-admin-chart-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--sp-admin-text, #211B36);
+  letter-spacing: -.03em;
+  text-align: right;
+  white-space: nowrap;
+}
+.sp-admin-chart-value-sub {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  margin-top: 2px;
 }
 
 /* ── Shared section stack — vertical page sections with consistent gap ───── */
@@ -408,6 +609,101 @@
 .sp-admin-period-pill--active {
   background: var(--sp-admin-primary, #5B4BE8);
   color: #fff;
+  border-color: var(--sp-admin-primary, #5B4BE8);
+}
+/* Header toggle button — matches reference adm-header-toggle */
+.sp-adm-hdr-toggle {
+  background: none;
+  border: none;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  transition: background .12s, color .12s, border-color .12s;
+}
+.sp-adm-hdr-toggle:hover {
+  background: var(--sp-admin-bg, #F6F4FB);
+  color: var(--sp-admin-text, #211B36);
+}
+.sp-adm-hdr-toggle--outlined {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1.5px solid var(--sp-admin-border, #ECE9F5);
+}
+.sp-adm-hdr-toggle--outlined:hover {
+  border-color: var(--sp-admin-primary, #5B4BE8);
+  color: var(--sp-admin-primary, #5B4BE8);
+  background: var(--sp-admin-primary-bg, #EDEBFF);
+}
+
+/* Flyout anchor — wraps the trigger + sp-admin-flyout component */
+.sp-admin-period-pill-wrap {
+  position: relative;
+  display: inline-block;
+}
+/* Date range flyout form content tokens */
+.sp-admin-flyout-date-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sp-admin-flyout-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 2px;
+  display: block;
+}
+.sp-admin-flyout-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.sp-admin-flyout-btn-apply {
+  flex: 1;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: var(--sp-admin-primary, #5B4BE8);
+  color: #fff;
+  transition: opacity .12s;
+}
+.sp-admin-flyout-btn-apply:hover { opacity: .88; }
+.sp-admin-flyout-btn-ghost {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid var(--sp-admin-border, #E2DEF0);
+  background: transparent;
+  color: var(--sp-admin-text-muted, #8B85A0);
+  transition: background .12s;
+}
+.sp-admin-flyout-btn-ghost:hover { background: var(--sp-admin-surface-subtle, #F6F4FB); }
+.sp-admin-period-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.sp-admin-period-date-input {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1.5px solid var(--sp-admin-border, #E2DEF0);
+  background: var(--sp-admin-surface, #fff);
+  color: var(--sp-admin-text, #211B36);
+  outline: none;
+}
+.sp-admin-period-date-input:focus {
   border-color: var(--sp-admin-primary, #5B4BE8);
 }
 
@@ -948,6 +1244,7 @@
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr;
+  align-items: stretch;
 }
 @media (min-width: 700px) {
   .sp-admin-card-grid-3 { grid-template-columns: repeat(2, 1fr); }

@@ -14,8 +14,8 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <aside
-      class="fixed flex flex-col top-0 left-0 h-screen bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-in-out z-[99] overflow-hidden"
-      style="border-right: 1px solid var(--sp-admin-border);"
+      class="fixed flex flex-col top-0 left-0 h-screen transition-all duration-300 ease-in-out z-[99] overflow-hidden"
+      style="background:#fff;border-right:1px solid var(--sp-admin-border);"
       [ngClass]="{
         'w-[240px]': !collapsed,
         'w-[64px]': collapsed,

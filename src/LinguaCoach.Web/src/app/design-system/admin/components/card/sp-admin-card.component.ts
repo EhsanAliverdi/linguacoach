@@ -37,7 +37,8 @@ export type SpAdminCardRadius = 'md' | 'lg' | 'xl' | '2xl';
     </section>
   `,
   styles: [`
-    :host { display:block; min-width:0; }
+    :host { display:block; min-width:0; height:100%; }
+    section.sp-adm-card { height:100%; box-sizing:border-box; }
 
     /* Base — matches .adm-card: bg white, border ECE9F5, radius 14px, shadow sh-xs */
     .sp-adm-card {

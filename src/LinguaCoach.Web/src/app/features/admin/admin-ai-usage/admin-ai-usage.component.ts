@@ -25,6 +25,7 @@ import {
   SpAdminSelectComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
+  SpAdminFlyoutComponent,
 } from '../../../design-system/admin';
 import { SpAdminMiniBarChartComponent, MiniBarItem } from '../../../design-system/admin/components/mini-bar-chart/sp-admin-mini-bar-chart.component';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
@@ -61,30 +62,9 @@ import { SpAdminGraphCardComponent } from '../../../design-system/admin/componen
     SpAdminRingMetricComponent,
     SpAdminBreakdownBarsComponent,
     SpAdminGraphCardComponent,
+    SpAdminFlyoutComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
-  styles: [`
-    .sp-au-two-col { display: grid; gap: 24px; margin-bottom: 24px; }
-    @media(min-width: 1100px) { .sp-au-two-col { grid-template-columns: 1fr 1fr; align-items: start; } }
-    .sp-au-num    { text-align: right; white-space: nowrap; }
-    .sp-au-num-th { text-align: right; }
-    .sp-au-mono   { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
-    .sp-au-muted  { color: var(--sp-admin-muted, #8B85A0); }
-    .sp-au-time   { white-space: nowrap; font-size: 12px; }
-    .sp-au-feature { min-width: 140px; }
-    .sp-au-key    { margin-top: 2px; }
-    .sp-au-model  { margin-top: 2px; }
-    .sp-au-badges { display: flex; flex-wrap: wrap; gap: 3px; }
-    .sp-au-fail-reason { font-size: 11px; color: var(--sp-admin-danger, #dc2626); margin-top: 2px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sp-au-filter-note { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin: 0 0 8px; }
-    .sp-au-trend-zero td { color: var(--sp-admin-muted, #8B85A0); }
-    .sp-au-mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
-    .sp-au-mini-bar { flex: 1; min-width: 3px; border-radius: 2px 2px 0 0; background: var(--sp-admin-primary, #5B4BE8); opacity: 0.75; transition: height 0.2s; }
-    .sp-au-chart-empty { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); padding: 8px 0; }
-    .sp-au-not-impl { font-size: 13px; color: var(--sp-admin-muted, #8B85A0); padding: 12px 0; }
-    .sp-au-visual-row { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); margin-bottom: 24px; }
-    @media(min-width: 1100px) { .sp-au-visual-row { grid-template-columns: repeat(3, 1fr); } }
-  `],
 })
 export class AdminAiUsageComponent implements OnInit {
   summary = signal<AiUsageSummary | null>(null);
@@ -495,9 +475,11 @@ export class AdminAiUsageComponent implements OnInit {
   });
 
   readonly periodPillOptions: { value: PeriodPreset; label: string }[] = [
-    { value: '7d',  label: '7d' },
-    { value: '30d', label: '30d' },
-    { value: 'all', label: 'All' },
+    { value: 'today',  label: 'Today' },
+    { value: '7d',     label: '7 days' },
+    { value: '30d',    label: '30 days' },
+    { value: 'month',  label: '3 months' },
+    { value: 'custom', label: 'Custom' },
   ];
 
   onPillClick(value: PeriodPreset): void {

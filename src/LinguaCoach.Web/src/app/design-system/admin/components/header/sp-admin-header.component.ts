@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SpAdminThemeToggleComponent } from '../theme-toggle/sp-admin-theme-toggle.component';
-
 /**
  * Admin sticky header wrapper.
  * Adapts TailAdmin Layout One app-header pattern.
@@ -21,15 +19,15 @@ import { SpAdminThemeToggleComponent } from '../theme-toggle/sp-admin-theme-togg
 @Component({
   selector: 'sp-admin-header',
   standalone: true,
-  imports: [CommonModule, SpAdminThemeToggleComponent],
+  imports: [CommonModule],
   template: `
-    <header class="sticky top-0 z-[999] flex w-full items-center bg-white px-4 dark:bg-gray-900 xl:px-6" style="height:var(--sp-admin-header-h);border-bottom:1px solid var(--sp-admin-border);">
+    <header class="sticky top-0 z-[999] flex w-full items-center"
+      style="height:var(--sp-admin-header-h);background:#fff;border-bottom:1px solid var(--sp-admin-border);padding:0 24px;">
       <div class="flex w-full items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <ng-content />
         </div>
         <div class="flex items-center gap-2">
-          <sp-admin-theme-toggle />
           <ng-content select="[actions]" />
           <ng-content select="[user]" />
         </div>

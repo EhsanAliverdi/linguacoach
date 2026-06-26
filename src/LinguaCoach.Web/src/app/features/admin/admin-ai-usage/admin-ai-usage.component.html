@@ -1,56 +1,50 @@
 <sp-admin-page-header
   title="AI Usage"
-  subtitle="Token usage, cost, provider performance, and fallback rates." />
+  subtitle="Token usage, cost, provider performance, and fallback rates.">
+  <div class="sp-admin-period-pills" aria-label="Quick date range selection">
+    @for (pill of periodPillOptions; track pill.value) {
+      <div class="sp-admin-period-pill-wrap">
+        <button
+          class="sp-admin-period-pill"
+          [class.sp-admin-period-pill--active]="periodPreset() === pill.value"
+          (click)="onPillClick(pill.value)"
+          [attr.aria-pressed]="periodPreset() === pill.value"
+          type="button">{{ pill.label }}</button>
+        @if (pill.value === 'custom') {
+          <sp-admin-flyout [open]="periodPreset() === 'custom'" (closed)="onPillClick('30d')" ariaLabel="Custom date range">
+            <div class="sp-admin-flyout-date-form">
+              <div>
+                <label class="sp-admin-flyout-field-label">From</label>
+                <input class="sp-admin-period-date-input" type="date" aria-label="From date"
+                  [(ngModel)]="customFromValue" (ngModelChange)="customFrom.set($event)" />
+              </div>
+              <div>
+                <label class="sp-admin-flyout-field-label">To</label>
+                <input class="sp-admin-period-date-input" type="date" aria-label="To date"
+                  [(ngModel)]="customToValue" (ngModelChange)="customTo.set($event)" />
+              </div>
+              @if (customRangeError()) {
+                <p class="sp-admin-field-error">{{ customRangeError() }}</p>
+              }
+              <div class="sp-admin-flyout-actions">
+                <button class="sp-admin-flyout-btn-apply" type="button"
+                  (click)="applyCustomRange()">Apply</button>
+                @if (customFrom() || customTo()) {
+                  <button class="sp-admin-flyout-btn-ghost" type="button"
+                    (click)="clearCustomRange()">Clear</button>
+                }
+              </div>
+            </div>
+          </sp-admin-flyout>
+        }
+      </div>
+    }
+  </div>
+</sp-admin-page-header>
 
 <sp-admin-page-body>
 
-<!-- Period pill buttons -->
-<div class="sp-admin-period-pills" aria-label="Quick date range selection">
-  @for (pill of periodPillOptions; track pill.value) {
-    <button
-      class="sp-admin-period-pill"
-      [class.sp-admin-period-pill--active]="periodPreset() === pill.value"
-      (click)="onPillClick(pill.value)"
-      [attr.aria-pressed]="periodPreset() === pill.value"
-      type="button">{{ pill.label }}</button>
-  }
-</div>
 
-<sp-admin-filter-bar density="compact">
-  <sp-admin-select
-    filters
-    size="sm"
-    placeholder="All time"
-    [options]="periodOptions"
-    [(ngModel)]="periodPresetValue"
-    (ngModelChange)="onPeriodChange($event)"
-    aria-label="Filter by time period" />
-  @if (periodPreset() === 'custom') {
-    <sp-admin-input
-      filters
-      type="date"
-      size="sm"
-      placeholder="From"
-      [(ngModel)]="customFromValue"
-      (ngModelChange)="customFrom.set($event)"
-      aria-label="Custom range from date" />
-    <sp-admin-input
-      filters
-      type="date"
-      size="sm"
-      placeholder="To"
-      [(ngModel)]="customToValue"
-      (ngModelChange)="customTo.set($event)"
-      aria-label="Custom range to date" />
-    <sp-admin-button size="sm" variant="primary" (click)="applyCustomRange()">Apply</sp-admin-button>
-    @if (customFrom() || customTo()) {
-      <sp-admin-button size="sm" variant="ghost" (click)="clearCustomRange()">Clear dates</sp-admin-button>
-    }
-  }
-</sp-admin-filter-bar>
-@if (customRangeError()) {
-  <sp-admin-alert variant="error">{{ customRangeError() }}</sp-admin-alert>
-}
 
 <!-- KPI summary strip -->
 @if (loadingSummary()) {
@@ -59,7 +53,7 @@
   <sp-admin-error-state title="Usage summary unavailable" [message]="summaryError()" />
 } @else if (kpiSummary()) {
   @if (hasActiveRecentFilters()) {
-    <p class="sp-au-filter-note">Summary totals reflect active filters.</p>
+    <p class="sp-admin-table-cell-compact sp-admin-text-muted">Summary totals reflect active filters.</p>
   }
   <div class="sp-admin-kpi-row" aria-label="AI usage summary">
     <sp-admin-kpi-card label="Total requests" variant="indigo" layout="tile" icon="bar-chart">{{ kpiSummary()!.totalCalls | number }}</sp-admin-kpi-card>
@@ -81,60 +75,68 @@
     </sp-admin-alert>
   }
 
-  <div class="sp-au-two-col">
-    <sp-admin-card title="By provider">
+  <!-- By provider + By feature -->
+  <div class="sp-admin-two-col-start">
+
+    <div class="sp-admin-table-section" aria-label="By provider">
+      <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+        <h2 class="sp-admin-table-section-title">By provider</h2>
+      </div>
       @if (summary()!.byProvider.length === 0) {
-        <sp-admin-empty-state message="No calls yet." />
+        <div class="sp-admin-card-body-md">
+          <sp-admin-empty-state message="No calls yet." />
+        </div>
       } @else {
-        <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
+        <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid">
           <table>
             <thead>
               <tr>
                 <th>Provider</th>
-                <th class="sp-au-num-th">Calls</th>
-                <th class="sp-au-num-th">OK</th>
-                <th class="sp-au-num-th">Fallback</th>
-                <th class="sp-au-num-th">Cost</th>
+                <th class="sp-admin-th-right">Calls</th>
+                <th class="sp-admin-th-right">OK</th>
+                <th class="sp-admin-th-right">Fallback</th>
+                <th class="sp-admin-th-right">Cost</th>
               </tr>
             </thead>
             <tbody>
               @for (p of summary()!.byProvider; track p.provider) {
                 <tr>
-                  <td>
-                    <sp-admin-code-pill [value]="p.provider" tone="neutral" />
-                  </td>
-                  <td class="sp-au-num">{{ p.calls }}</td>
-                  <td class="sp-au-num">
-                    <sp-admin-badge tone="success">{{ p.successful }}</sp-admin-badge>
-                  </td>
-                  <td class="sp-au-num">
+                  <td><sp-admin-code-pill [value]="p.provider" tone="neutral" /></td>
+                  <td class="sp-admin-num">{{ p.calls }}</td>
+                  <td class="sp-admin-num"><sp-admin-badge tone="success">{{ p.successful }}</sp-admin-badge></td>
+                  <td class="sp-admin-num">
                     @if (p.fallback > 0) {
                       <sp-admin-badge tone="warning">{{ p.fallback }}</sp-admin-badge>
                     } @else {
-                      <span class="sp-au-muted">0</span>
+                      <span class="sp-admin-text-muted">0</span>
                     }
                   </td>
-                  <td class="sp-au-num sp-au-mono">${{ p.costUsd.toFixed(4) }}</td>
+                  <td class="sp-admin-num sp-admin-text-mono">${{ p.costUsd.toFixed(4) }}</td>
                 </tr>
               }
             </tbody>
           </table>
         </sp-admin-table>
       }
-    </sp-admin-card>
+    </div>
 
-    <sp-admin-card title="By feature">
+    <div class="sp-admin-table-section" aria-label="By feature">
+      <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+        <h2 class="sp-admin-table-section-title">By feature</h2>
+      </div>
       @if (summary()!.byFeature.length === 0) {
-        <sp-admin-empty-state message="No calls yet." />
+        <div class="sp-admin-card-body-md">
+          <sp-admin-empty-state message="No calls yet." />
+        </div>
       } @else {
-        <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
+        <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid">
           <table>
             <thead>
               <tr>
                 <th>Feature</th>
-                <th class="sp-au-num-th">Calls</th>
-                <th class="sp-au-num-th">OK</th>
-                <th class="sp-au-num-th">Cost</th>
+                <th class="sp-admin-th-right">Calls</th>
+                <th class="sp-admin-th-right">OK</th>
+                <th class="sp-admin-th-right">Cost</th>
               </tr>
             </thead>
             <tbody>
@@ -142,32 +144,34 @@
                 <tr>
                   <td>
                     <sp-admin-truncated-text [value]="featureLabel(f.feature)" [maxLength]="36" />
-                    <div class="sp-au-key"><sp-admin-code-pill [value]="f.feature" tone="neutral" /></div>
+                    <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="f.feature" tone="neutral" /></div>
                   </td>
-                  <td class="sp-au-num">{{ f.calls }}</td>
-                  <td class="sp-au-num">
-                    <sp-admin-badge tone="success">{{ f.successful }}</sp-admin-badge>
-                  </td>
-                  <td class="sp-au-num sp-au-mono">${{ f.costUsd.toFixed(4) }}</td>
+                  <td class="sp-admin-num">{{ f.calls }}</td>
+                  <td class="sp-admin-num"><sp-admin-badge tone="success">{{ f.successful }}</sp-admin-badge></td>
+                  <td class="sp-admin-num sp-admin-text-mono">${{ f.costUsd.toFixed(4) }}</td>
                 </tr>
               }
             </tbody>
           </table>
         </sp-admin-table>
         @if (byFeatureTotalPages() > 1) {
-          <sp-admin-pagination
-            [page]="byFeaturePage()"
-            [totalPages]="byFeatureTotalPages()"
-            (pageChange)="onByFeaturePageChange($event)" />
+          <div class="sp-admin-table-section-footer">
+            <span></span>
+            <sp-admin-pagination
+              [page]="byFeaturePage()"
+              [totalPages]="byFeatureTotalPages()"
+              (pageChange)="onByFeaturePageChange($event)" />
+          </div>
         }
       }
-    </sp-admin-card>
+    </div>
+
   </div>
 }
 
-<!-- Visual analytics row: success ring + token breakdown + provider share -->
+<!-- Visual analytics: success ring + token breakdown + provider share -->
 @if (!loadingSummary() && !summaryError() && summary()) {
-  <div class="sp-au-visual-row">
+  <div class="sp-admin-card-grid-3-equal">
     <sp-admin-card title="Success rate">
       <sp-admin-ring-metric
         [pct]="successRingPct()"
@@ -175,7 +179,6 @@
         sublabel="of calls succeeded"
         [tone]="successRingPct() >= 90 ? 'green' : successRingPct() >= 70 ? 'amber' : 'danger'" />
     </sp-admin-card>
-
     <sp-admin-card title="Token split">
       @if (tokenBreakdownItems().length > 0) {
         <sp-admin-breakdown-bars [items]="tokenBreakdownItems()" [showPct]="true" />
@@ -183,7 +186,6 @@
         <sp-admin-visual-placeholder state="not-available" title="Token split" message="No token data in this range" />
       }
     </sp-admin-card>
-
     <sp-admin-card title="Calls by provider">
       @if (providerBreakdownItems().length > 0) {
         <sp-admin-breakdown-bars [items]="providerBreakdownItems()" [showPct]="true" />
@@ -194,76 +196,77 @@
   </div>
 }
 
-<sp-admin-card title="Calls over time">
+<!-- Calls over time -->
+<div class="sp-admin-table-section" aria-label="Calls over time">
+  <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+    <h2 class="sp-admin-table-section-title">Calls over time</h2>
+  </div>
   @if (loadingTrends()) {
-    <sp-admin-loading-state message="Loading trend" />
+    <div class="sp-admin-card-body-md">
+      <sp-admin-loading-state message="Loading trend" />
+    </div>
   } @else if (trendError()) {
-    <sp-admin-error-state title="Trend unavailable" [message]="trendError()" />
+    <div class="sp-admin-card-body-md">
+      <sp-admin-error-state title="Trend unavailable" [message]="trendError()" />
+    </div>
   } @else if (trendBuckets().length === 0) {
-    <sp-admin-empty-state message="No trend data for selected filters." />
+    <div class="sp-admin-card-body-md">
+      <sp-admin-empty-state message="No trend data for selected filters." />
+    </div>
   } @else {
-    <sp-admin-mini-bar-chart
-      [items]="trendItems()"
-      tone="indigo"
-      [height]="56"
-      ariaLabel="Daily calls bar chart" />
-    <sp-admin-table variant="data" density="compact" minWidth="640px">
+    <div class="sp-admin-card-body-md">
+      <sp-admin-mini-bar-chart [items]="trendItems()" tone="indigo" [height]="56" ariaLabel="Daily calls bar chart" />
+    </div>
+    <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="640px">
       <table>
         <thead>
           <tr>
             <th>Date</th>
-            <th class="sp-au-num-th">Calls</th>
-            <th class="sp-au-num-th">Success</th>
-            <th class="sp-au-num-th">Failed</th>
-            <th class="sp-au-num-th">Fallback</th>
-            <th class="sp-au-num-th">Tokens</th>
-            <th class="sp-au-num-th">Cost</th>
+            <th class="sp-admin-th-right">Calls</th>
+            <th class="sp-admin-th-right">Success</th>
+            <th class="sp-admin-th-right">Failed</th>
+            <th class="sp-admin-th-right">Fallback</th>
+            <th class="sp-admin-th-right">Tokens</th>
+            <th class="sp-admin-th-right">Cost</th>
           </tr>
         </thead>
         <tbody>
           @for (b of trendBucketsPaged(); track b.date) {
-            <tr [class.sp-au-trend-zero]="b.callCount === 0">
-              <td class="sp-au-mono sp-au-time">{{ b.date }}</td>
-              <td class="sp-au-num">{{ b.callCount | number }}</td>
-              <td class="sp-au-num">
-                @if (b.successCount > 0) {
-                  <sp-admin-badge tone="success">{{ b.successCount }}</sp-admin-badge>
-                } @else {
-                  <span class="sp-au-muted">0</span>
-                }
+            <tr [class.sp-admin-table-row-inactive]="b.callCount === 0">
+              <td class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ b.date }}</td>
+              <td class="sp-admin-num">{{ b.callCount | number }}</td>
+              <td class="sp-admin-num">
+                @if (b.successCount > 0) { <sp-admin-badge tone="success">{{ b.successCount }}</sp-admin-badge> }
+                @else { <span class="sp-admin-text-muted">0</span> }
               </td>
-              <td class="sp-au-num">
-                @if (b.failureCount > 0) {
-                  <sp-admin-badge tone="danger">{{ b.failureCount }}</sp-admin-badge>
-                } @else {
-                  <span class="sp-au-muted">0</span>
-                }
+              <td class="sp-admin-num">
+                @if (b.failureCount > 0) { <sp-admin-badge tone="danger">{{ b.failureCount }}</sp-admin-badge> }
+                @else { <span class="sp-admin-text-muted">0</span> }
               </td>
-              <td class="sp-au-num">
-                @if (b.fallbackCount > 0) {
-                  <sp-admin-badge tone="warning">{{ b.fallbackCount }}</sp-admin-badge>
-                } @else {
-                  <span class="sp-au-muted">0</span>
-                }
+              <td class="sp-admin-num">
+                @if (b.fallbackCount > 0) { <sp-admin-badge tone="warning">{{ b.fallbackCount }}</sp-admin-badge> }
+                @else { <span class="sp-admin-text-muted">0</span> }
               </td>
-              <td class="sp-au-num sp-au-mono">{{ b.totalTokens | number }}</td>
-              <td class="sp-au-num sp-au-mono">${{ b.costUsd.toFixed(4) }}</td>
+              <td class="sp-admin-num sp-admin-text-mono">{{ b.totalTokens | number }}</td>
+              <td class="sp-admin-num sp-admin-text-mono">${{ b.costUsd.toFixed(4) }}</td>
             </tr>
           }
         </tbody>
       </table>
     </sp-admin-table>
     @if (trendTotalPages() > 1) {
-      <sp-admin-pagination
-        [page]="trendPage()"
-        [totalPages]="trendTotalPages()"
-        (pageChange)="onTrendPageChange($event)" />
+      <div class="sp-admin-table-section-footer">
+        <span></span>
+        <sp-admin-pagination [page]="trendPage()" [totalPages]="trendTotalPages()" (pageChange)="onTrendPageChange($event)" />
+      </div>
     }
   }
-</sp-admin-card>
+</div>
 
-<div class="sp-au-two-col">
-  <sp-admin-graph-card title="AI calls per day (30d)" [status]="loadingAggTrends() ? 'loading' : aggTrendsError() ? 'unavailable' : aggTrendItems().length === 0 ? 'unavailable' : 'live'">
+<!-- Graph cards -->
+<div class="sp-admin-two-col-start">
+  <sp-admin-graph-card title="AI calls per day (30d)"
+    [status]="loadingAggTrends() ? 'loading' : aggTrendsError() ? 'unavailable' : aggTrendItems().length === 0 ? 'unavailable' : 'live'">
     @if (loadingAggTrends()) {
       <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="AI calls per day" message="Loading..." />
     } @else if (aggTrendsError() || aggTrendItems().length === 0) {
@@ -273,7 +276,8 @@
     }
   </sp-admin-graph-card>
 
-  <sp-admin-graph-card title="Calls by feature (30d)" [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryItems().length === 0 ? 'unavailable' : 'live'">
+  <sp-admin-graph-card title="Calls by feature (30d)"
+    [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryItems().length === 0 ? 'unavailable' : 'live'">
     @if (loadingAggCategory()) {
       <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="Loading..." />
     } @else if (aggCategoryError() || aggCategoryItems().length === 0) {
@@ -284,65 +288,61 @@
   </sp-admin-graph-card>
 </div>
 
-<sp-admin-card title="Recent calls">
+<!-- Recent calls -->
+<div class="sp-admin-table-section" aria-label="Recent calls">
+  <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+    <h2 class="sp-admin-table-section-title">Recent calls</h2>
+    <sp-admin-button size="sm" variant="secondary" [disabled]="exporting()" (click)="exportCsv()">
+      {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+    </sp-admin-button>
+  </div>
+
   @if (exportError()) {
-    <sp-admin-alert variant="error">{{ exportError() }}</sp-admin-alert>
+    <div class="sp-admin-card-body-md">
+      <sp-admin-alert variant="error">{{ exportError() }}</sp-admin-alert>
+    </div>
   }
+
   @if (loadingRecent()) {
-    <sp-admin-loading-state message="Loading recent calls" />
+    <div class="sp-admin-card-body-md">
+      <sp-admin-loading-state message="Loading recent calls" />
+    </div>
   } @else if (recentError()) {
-    <sp-admin-error-state title="Recent calls unavailable" [message]="recentError()" />
+    <div class="sp-admin-card-body-md">
+      <sp-admin-error-state title="Recent calls unavailable" [message]="recentError()" />
+    </div>
   } @else {
-    <sp-admin-filter-bar density="compact">
-      <sp-admin-select
-        filters size="sm"
-        placeholder="All providers"
-        [options]="providerOptions()"
-        [(ngModel)]="recentProviderFilterValue"
-        (ngModelChange)="onRecentProviderChange($event)"
-        aria-label="Filter by provider" />
-      <sp-admin-select
-        filters size="sm"
-        placeholder="All models"
-        [options]="modelOptions()"
-        [(ngModel)]="recentModelFilterValue"
-        (ngModelChange)="onRecentModelChange($event)"
-        aria-label="Filter by model" />
-      <sp-admin-select
-        filters size="sm"
-        placeholder="All features"
-        [options]="featureOptions()"
-        [(ngModel)]="recentFeatureFilterValue"
-        (ngModelChange)="onRecentFeatureChange($event)"
-        aria-label="Filter by feature" />
-      <sp-admin-select
-        filters size="sm"
-        placeholder="All statuses"
-        [options]="recentStatusOptions"
-        [(ngModel)]="recentStatusFilterValue"
-        (ngModelChange)="onRecentStatusChange($event)"
-        aria-label="Filter by status" />
-      @if (studentOptions().length > 0) {
-        <sp-admin-select
-          filters size="sm"
-          placeholder="All students"
-          [options]="studentOptions()"
-          [(ngModel)]="recentStudentFilterValue"
-          (ngModelChange)="onRecentStudentChange($event)"
-          aria-label="Filter by student" />
-      }
-      @if (hasActiveRecentFilters()) {
-        <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
-      }
-      <sp-admin-button size="sm" variant="secondary" [disabled]="exporting()" (click)="exportCsv()">
-        {{ exporting() ? 'Exporting…' : 'Export CSV' }}
-      </sp-admin-button>
-    </sp-admin-filter-bar>
+    <div class="sp-admin-table-section-filters">
+      <sp-admin-filter-bar density="compact">
+        <sp-admin-select filters size="sm" placeholder="All providers"
+          [options]="providerOptions()" [(ngModel)]="recentProviderFilterValue"
+          (ngModelChange)="onRecentProviderChange($event)" aria-label="Filter by provider" />
+        <sp-admin-select filters size="sm" placeholder="All models"
+          [options]="modelOptions()" [(ngModel)]="recentModelFilterValue"
+          (ngModelChange)="onRecentModelChange($event)" aria-label="Filter by model" />
+        <sp-admin-select filters size="sm" placeholder="All features"
+          [options]="featureOptions()" [(ngModel)]="recentFeatureFilterValue"
+          (ngModelChange)="onRecentFeatureChange($event)" aria-label="Filter by feature" />
+        <sp-admin-select filters size="sm" placeholder="All statuses"
+          [options]="recentStatusOptions" [(ngModel)]="recentStatusFilterValue"
+          (ngModelChange)="onRecentStatusChange($event)" aria-label="Filter by status" />
+        @if (studentOptions().length > 0) {
+          <sp-admin-select filters size="sm" placeholder="All students"
+            [options]="studentOptions()" [(ngModel)]="recentStudentFilterValue"
+            (ngModelChange)="onRecentStudentChange($event)" aria-label="Filter by student" />
+        }
+        @if (hasActiveRecentFilters()) {
+          <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
+        }
+      </sp-admin-filter-bar>
+    </div>
 
     @if (recentItems().length === 0) {
-      <sp-admin-empty-state message="No calls match your filters." />
+      <div class="sp-admin-card-body-md">
+        <sp-admin-empty-state message="No calls match your filters." />
+      </div>
     } @else {
-      <sp-admin-table variant="data" density="compact" minWidth="1080px">
+      <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="1080px">
         <table>
           <thead>
             <tr>
@@ -350,26 +350,26 @@
               <th>Feature</th>
               <th>Provider / Model</th>
               <th>Status</th>
-              <th class="sp-au-num-th">Tokens in/out</th>
-              <th class="sp-au-num-th">Cost</th>
-              <th class="sp-au-num-th">Duration</th>
+              <th class="sp-admin-th-right">Tokens in/out</th>
+              <th class="sp-admin-th-right">Cost</th>
+              <th class="sp-admin-th-right">Duration</th>
               <th>Correlation</th>
             </tr>
           </thead>
           <tbody>
             @for (item of filteredRecentItems(); track item.id) {
               <tr>
-                <td class="sp-au-mono sp-au-time">{{ formatDateTime(item.createdAt) }}</td>
-                <td class="sp-au-feature">
+                <td class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ formatDateTime(item.createdAt) }}</td>
+                <td>
                   <sp-admin-truncated-text [value]="featureLabel(item.featureKey)" [maxLength]="28" />
-                  <div class="sp-au-key"><sp-admin-code-pill [value]="item.featureKey" tone="neutral" /></div>
+                  <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="item.featureKey" tone="neutral" /></div>
                 </td>
                 <td>
                   <sp-admin-code-pill [value]="item.provider" tone="neutral" />
-                  <div class="sp-au-model"><sp-admin-code-pill [value]="item.model" tone="neutral" [maxLength]="28" /></div>
+                  <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="item.model" tone="neutral" [maxLength]="28" /></div>
                 </td>
                 <td>
-                  <div class="sp-au-badges">
+                  <div class="sp-admin-badge-row">
                     <sp-admin-badge [tone]="item.wasSuccessful ? 'success' : 'danger'">
                       {{ item.wasSuccessful ? 'OK' : 'Failed' }}
                     </sp-admin-badge>
@@ -378,19 +378,19 @@
                     }
                   </div>
                   @if (!item.wasSuccessful && item.failureReason) {
-                    <div class="sp-au-fail-reason">{{ item.failureReason }}</div>
+                    <div class="sp-admin-field-error sp-admin-text-xxs">{{ item.failureReason }}</div>
                   }
                 </td>
-                <td class="sp-au-num sp-au-mono">
+                <td class="sp-admin-num sp-admin-text-mono">
                   {{ item.inputTokens | number }}&nbsp;/&nbsp;{{ item.outputTokens | number }}
                 </td>
-                <td class="sp-au-num sp-au-mono">${{ item.costUsd.toFixed(4) }}</td>
-                <td class="sp-au-num sp-au-mono">{{ item.durationMs | number }}ms</td>
+                <td class="sp-admin-num sp-admin-text-mono">${{ item.costUsd.toFixed(4) }}</td>
+                <td class="sp-admin-num sp-admin-text-mono">{{ item.durationMs | number }}ms</td>
                 <td>
                   @if (item.correlationId) {
                     <sp-admin-copyable-text [value]="item.correlationId" [maxLength]="12" [mono]="true" />
                   } @else {
-                    <span class="sp-au-muted">—</span>
+                    <span class="sp-admin-text-muted">—</span>
                   }
                 </td>
               </tr>
@@ -398,14 +398,14 @@
           </tbody>
         </table>
       </sp-admin-table>
-
       @if (recentTotalPages() > 1) {
-        <sp-admin-pagination
-          [page]="recentPage()"
-          [totalPages]="recentTotalPages()"
-          (pageChange)="onRecentPageChange($event)" />
+        <div class="sp-admin-table-section-footer">
+          <span>{{ recentItems().length }} of {{ recentTotalPages() * recentPageSize }} loaded.</span>
+          <sp-admin-pagination [page]="recentPage()" [totalPages]="recentTotalPages()" (pageChange)="onRecentPageChange($event)" />
+        </div>
       }
     }
   }
-</sp-admin-card>
+</div>
+
 </sp-admin-page-body>

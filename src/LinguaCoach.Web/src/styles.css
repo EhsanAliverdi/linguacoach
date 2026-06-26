@@ -117,11 +117,17 @@ body.admin-layout {
   color: #4B4462;
   font-size: 13px;
   font-weight: 600;
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   transition: background .12s, color .12s;
   text-decoration: none;
   user-select: none;
+}
+/* Collapsed: tighter margin so the highlight fills the 64px sidebar */
+.sp-nav-item.justify-center {
+  margin: 1px 4px;
 }
 .sp-nav-item:hover {
   background: var(--sp-admin-bg, #F6F4FB);

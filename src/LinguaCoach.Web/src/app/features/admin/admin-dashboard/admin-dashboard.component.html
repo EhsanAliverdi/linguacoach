@@ -1,0 +1,248 @@
+<sp-admin-page-header title="Dashboard" [subtitle]="subtitle()" />
+
+<sp-admin-page-body>
+
+  <!-- ── Weekly snapshot banner ─────────────────────────────────────────── -->
+  <sp-admin-hero-summary [columns]="heroColumns()" />
+
+  <!-- ── KPI row ────────────────────────────────────────────────────────── -->
+  <div class="sp-admin-kpi-row">
+    <sp-admin-kpi-card layout="tile" variant="indigo" label="TOTAL STUDENTS" delta="Pilot cohort"
+      icon="users" [loading]="loadingStats()" [value]="stats()?.totalStudents ?? 0" />
+
+    <sp-admin-kpi-card layout="tile" variant="coral" label="ACTIVE THIS WEEK"
+      [delta]="(heroEngagementPct() ?? 0) + '% engagement'" deltaColor="#13B07C"
+      icon="zap" [loading]="loadingStats()">
+      @if (!loadingStats()) { {{ (stats()?.onboardedStudents ?? 0) }}/{{ (stats()?.totalStudents ?? 0) }} }
+    </sp-admin-kpi-card>
+
+    <sp-admin-kpi-card layout="tile" variant="violet" label="ACTIVITIES DONE"
+      icon="activity" [loading]="loadingStats()" [value]="loadingStats() ? null : (stats()?.totalActivityAttempts ?? 0)" />
+
+    <sp-admin-kpi-card layout="tile" variant="amber" label="AI COST (7 DAYS)" delta="Per active student"
+      icon="dollar" [loading]="loadingAiUsageTrends7d()" [error]="aiUsageTrends7dError()"
+      [value]="aiCost7dFormatted()" />
+  </div>
+
+  <!-- ── Activity chart + System health ────────────────────────────────── -->
+  <div class="sp-admin-dash-main-grid">
+
+    <sp-admin-card padding="md">
+      @if (loadingActivityTrends()) {
+        <sp-admin-loading-state message="Loading activity trends" />
+      } @else {
+        <sp-admin-sparkline-card
+          title="Activities completed"
+          [value]="activityTrendTotal().toString()"
+          sub="Past 14 days"
+          [data]="activityTrendValues()"
+          color="#5B4BE8" />
+      }
+    </sp-admin-card>
+
+    <sp-admin-card padding="md">
+      <sp-admin-system-health
+        [services]="services"
+        [footer]="systemFooter"
+        diagnosticsLink="/admin/diagnostics" />
+    </sp-admin-card>
+
+  </div>
+
+  <!-- ── Funnel + At-risk + Score distribution ──────────────────────────── -->
+  <div class="sp-admin-card-grid-3-equal">
+
+    <sp-admin-card title="Onboarding funnel" variant="section" padding="md">
+      @if (loadingStudents() || loadingStats()) {
+        <sp-admin-loading-state message="Loading" />
+      } @else {
+        <sp-admin-progress-list [items]="funnelProgressItems()" />
+        @if (noCefrCount() > 0) {
+          <div class="sp-admin-warn-banner">
+            ⚠ {{ noCefrCount() }} student{{ noCefrCount() !== 1 ? 's' : '' }} awaiting CEFR placement
+          </div>
+        }
+      }
+    </sp-admin-card>
+
+    <sp-admin-card title="At-risk students" variant="section" padding="md">
+      <span slot="actions">
+        @if (atRiskStudents().length > 0) {
+          <sp-admin-badge tone="warning">{{ atRiskStudents().length }} students</sp-admin-badge>
+        } @else {
+          <sp-admin-badge tone="success">All on track</sp-admin-badge>
+        }
+      </span>
+      @if (loadingStudents()) {
+        <sp-admin-loading-state message="Loading" />
+      } @else if (atRiskStudents().length === 0) {
+        <sp-admin-empty-state message="All students are engaged this week." />
+      } @else {
+        <sp-admin-dashboard-list [items]="atRiskListItems()" />
+        <a routerLink="/admin/students" class="sp-admin-link sp-admin-text-xs sp-admin-mt-3">View all students →</a>
+      }
+    </sp-admin-card>
+
+    <sp-admin-card title="Score distribution" variant="section" padding="md">
+      <span slot="actions">
+        @if (heroAvgScore() !== null) {
+          <sp-admin-badge tone="success">Avg {{ heroAvgScore()! | number:'1.0-1' }}/100</sp-admin-badge>
+        }
+      </span>
+      @if (loadingScoreDistribution()) {
+        <sp-admin-loading-state message="Loading" />
+      } @else if (scoreDistributionError() || scoreBins().length === 0) {
+        <sp-admin-empty-state message="No scored activities yet." />
+      } @else {
+        <sp-admin-progress-list [items]="scoreProgressItems()" [barHeight]="20" />
+        <div class="sp-admin-table-footer sp-admin-mt-3">
+          <span class="sp-admin-table-cell-compact">{{ scoreTotalCount() }} activities graded</span>
+          <span class="sp-admin-text-xs sp-admin-text-strong">Target ≥ 80/100</span>
+        </div>
+      }
+    </sp-admin-card>
+
+  </div>
+
+  <!-- ── AI cost + Session + Streak + Admin actions ─────────────────────── -->
+  <div class="sp-admin-card-grid-4">
+
+    <sp-admin-card title="AI cost by type" variant="section" padding="md">
+      <sp-admin-donut-chart [segments]="costDonutSegments" [size]="80" />
+    </sp-admin-card>
+
+    <sp-admin-card title="Avg session" variant="section" padding="md">
+      <sp-admin-not-implemented-state title="Pending endpoint">
+        Session duration data requires a dedicated endpoint.
+      </sp-admin-not-implemented-state>
+    </sp-admin-card>
+
+    <sp-admin-card title="Streak leaderboard" variant="section" padding="md">
+      @if (loadingStudents()) {
+        <sp-admin-loading-state message="Loading" />
+      } @else if (streakLeaderboard().length === 0) {
+        <sp-admin-empty-state message="No streak data yet." />
+      } @else {
+        <sp-admin-dashboard-list [items]="streakListItems()" />
+      }
+    </sp-admin-card>
+
+    <sp-admin-card title="Admin actions" variant="section" padding="md">
+      <span slot="actions">
+        @if (pendingActionsUrgentCount() > 0) {
+          <sp-admin-badge tone="warning">{{ pendingActionsUrgentCount() }} urgent</sp-admin-badge>
+        } @else {
+          <sp-admin-badge tone="success">All clear</sp-admin-badge>
+        }
+      </span>
+      <sp-admin-dashboard-list [items]="actionListItems()" />
+    </sp-admin-card>
+
+  </div>
+
+  <!-- ── Cohort engagement + AI spend sparkline + CEFR distribution ────── -->
+  <div class="sp-admin-card-grid-3-equal">
+
+    <sp-admin-card title="Cohort engagement" variant="section" padding="md">
+      <span slot="actions">
+        <sp-admin-badge tone="success">{{ heroEngagementPct() ?? 0 }}%</sp-admin-badge>
+      </span>
+      @if (loadingStudents()) {
+        <sp-admin-loading-state message="Loading" />
+      } @else {
+        <sp-admin-breakdown-bars [items]="engagementBreakdownItems()" [showPct]="false" />
+      }
+    </sp-admin-card>
+
+    <sp-admin-card padding="md">
+      <sp-admin-sparkline-card
+        title="AI spend (30d)"
+        [value]="loadingAiUsageTrends7d() ? '—' : aiCost7dFormatted()"
+        sub="Last 7 days"
+        [data]="aiUsageTrendValues()"
+        color="#F0982C" />
+    </sp-admin-card>
+
+    <sp-admin-card title="CEFR distribution" variant="section" padding="md">
+      @if (loadingStudents()) {
+        <sp-admin-loading-state message="Loading" />
+      } @else {
+        <sp-admin-progress-list [items]="cefrProgressItems()" />
+      }
+    </sp-admin-card>
+
+  </div>
+
+  <!-- ── Students table + Live events ──────────────────────────────────── -->
+  <div class="sp-admin-dash-bottom-grid">
+
+    <div class="sp-admin-table-section" aria-label="Students">
+      <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+        <h2 class="sp-admin-table-section-title">Students</h2>
+        <a routerLink="/admin/students" class="sp-admin-link sp-admin-text-xs">Manage all →</a>
+      </div>
+      @if (loadingStudents()) {
+        <div class="sp-admin-card-body-md">
+          <sp-admin-loading-state message="Loading students" />
+        </div>
+      } @else if (students().length === 0) {
+        <div class="sp-admin-card-body-md">
+          <sp-admin-empty-state message="No students yet." />
+        </div>
+      } @else {
+        <sp-admin-table [flush]="true" variant="data" density="compact">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th class="sp-admin-nowrap">CEFR</th>
+                <th class="sp-admin-nowrap">Joined</th>
+                <th class="sp-admin-nowrap">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of students().slice(0, 8); track s.userId) {
+                <tr [routerLink]="['/admin/students']" class="sp-admin-row-click">
+                  <td>
+                    <div class="sp-admin-key-cell">
+                      <div class="sp-admin-dash-avatar">{{ avatarInitial(s.email) }}</div>
+                      <div>
+                        <div class="sp-admin-cell-title">{{ s.displayName || s.email.split('@')[0] }}</div>
+                        <div class="sp-admin-cell-code">{{ s.email }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="sp-admin-nowrap">
+                    @if (s.cefrLevel) {
+                      <sp-admin-badge tone="info">{{ s.cefrLevel }}</sp-admin-badge>
+                    } @else {
+                      <span class="sp-admin-text-muted">—</span>
+                    }
+                  </td>
+                  <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ s.createdAt | date:'MMM d' }}</td>
+                  <td class="sp-admin-nowrap">
+                    <div class="sp-admin-flex-row">
+                      <span class="sp-admin-status-dot sp-admin-status-dot--active"
+                        [class.sp-admin-status-dot--active]="studentStatusLabel(s) === 'Active'"
+                        [class.sp-admin-status-dot--inactive]="studentStatusLabel(s) !== 'Active'"></span>
+                      <span class="sp-admin-text-xs sp-admin-status-label"
+                        [class.sp-admin-status-label--active]="studentStatusLabel(s) === 'Active'">{{ studentStatusLabel(s) }}</span>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+      }
+    </div>
+
+    <sp-admin-card title="Live events" variant="section" padding="md">
+      <sp-admin-not-implemented-state title="Pending endpoint">
+        Real-time event feed requires a WebSocket or polling endpoint not yet available.
+      </sp-admin-not-implemented-state>
+    </sp-admin-card>
+
+  </div>
+
+</sp-admin-page-body>

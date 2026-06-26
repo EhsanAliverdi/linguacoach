@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   AdminDashboardActivityTrendResponse,
@@ -8,111 +9,145 @@ import {
   AdminAggAiUsageTrendBucket,
 } from '../../../core/models/admin.models';
 import {
+  SpAdminCardComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminKpiCardComponent,
-  SpAdminGraphCardComponent,
   SpAdminLoadingStateComponent,
+  SpAdminErrorStateComponent,
+  SpAdminNotImplementedStateComponent,
+  SpAdminAreaChartComponent,
+  SpAdminBarChartComponent,
+  SpAdminHeatmapComponent,
+  SpAdminFlyoutComponent,
 } from '../../../design-system/admin';
-import { SpAdminMiniBarChartComponent, MiniBarItem } from '../../../design-system/admin/components/mini-bar-chart/sp-admin-mini-bar-chart.component';
-import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 
-type Period = '7d' | '30d' | '90d';
+type Period = 'today' | '7d' | '30d' | 'month' | 'custom';
 
 @Component({
   selector: 'app-admin-usage-analytics',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
+    SpAdminCardComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminKpiCardComponent,
-    SpAdminGraphCardComponent,
     SpAdminLoadingStateComponent,
-    SpAdminMiniBarChartComponent,
-    SpAdminVisualPlaceholderComponent,
+    SpAdminErrorStateComponent,
+    SpAdminNotImplementedStateComponent,
+    SpAdminAreaChartComponent,
+    SpAdminBarChartComponent,
+    SpAdminHeatmapComponent,
+    SpAdminFlyoutComponent,
   ],
   providers: [DecimalPipe],
   templateUrl: './admin-usage-analytics.component.html',
-  styles: [`
-    .sp-ua-graph-row { display: grid; gap: 16px; margin-bottom: 24px; }
-    @media(min-width:700px) { .sp-ua-graph-row { grid-template-columns: 1fr 1fr; } }
-  `],
 })
 export class AdminUsageAnalyticsComponent implements OnInit {
   readonly periods: { label: string; value: Period }[] = [
-    { label: '7 days', value: '7d' },
-    { label: '30 days', value: '30d' },
-    { label: '90 days', value: '90d' },
+    { label: 'Today',     value: 'today'  },
+    { label: '7 days',    value: '7d'     },
+    { label: '30 days',   value: '30d'    },
+    { label: '3 months',  value: 'month'  },
+    { label: 'Custom',    value: 'custom' },
   ];
 
   period = signal<Period>('30d');
+  customFrom = signal('');
+  customTo   = signal('');
+  customFromValue = '';
+  customToValue   = '';
+  customRangeError = signal('');
 
-  loadingAiTrends = signal(true);
-  aiTrendsError = signal('');
-  aiTrends = signal<AdminAggAiUsageTrendBucket[]>([]);
+  loadingAiTrends    = signal(true);
+  aiTrendsError      = signal('');
+  aiTrends           = signal<AdminAggAiUsageTrendBucket[]>([]);
 
-  loadingActivityTrends = signal(true);
-  activityTrendsError = signal('');
-  activityTrends = signal<ActivityTrendBucket[]>([]);
+  loadingActivityTrends  = signal(true);
+  activityTrendsError    = signal('');
+  activityTrends         = signal<ActivityTrendBucket[]>([]);
 
-  totalCost = computed(() => this.aiTrends().reduce((s, b) => s + b.cost, 0));
-  totalCalls = computed(() => this.aiTrends().reduce((s, b) => s + b.requestCount, 0));
+  // ── KPI computed ─────────────────────────────────────────────────
+  totalCost        = computed(() => this.aiTrends().reduce((s, b) => s + b.cost, 0));
+  totalCalls       = computed(() => this.aiTrends().reduce((s, b) => s + b.requestCount, 0));
   avgCostPerStudent = computed(() => this.totalCost() / Math.max(1, 8));
-  totalActivities = computed(() => this.activityTrends().reduce((s, b) => s + b.activityCount, 0));
+  totalActivities  = computed(() => this.activityTrends().reduce((s, b) => s + b.activityCount, 0));
 
-  totalCostDisplay = computed(() => '$' + this.totalCost().toFixed(2));
-  totalCallsDisplay = computed(() => this.totalCalls().toLocaleString());
-  avgCostDisplay = computed(() => '$' + this.avgCostPerStudent().toFixed(2));
-  totalActivitiesDisplay = computed(() => this.totalActivities().toLocaleString());
-  periodLabel = computed(() => this.periods.find(p => p.value === this.period())?.label ?? '');
+  totalCostDisplay        = computed(() => '$' + this.totalCost().toFixed(2));
+  totalCallsDisplay       = computed(() => this.totalCalls().toLocaleString());
+  avgCostDisplay          = computed(() => '$' + this.avgCostPerStudent().toFixed(2));
+  totalActivitiesDisplay  = computed(() => this.totalActivities().toLocaleString());
+  periodLabel             = computed(() => this.periods.find(p => p.value === this.period())?.label ?? '');
 
-  aiTrendItems = computed<MiniBarItem[]>(() =>
-    this.aiTrends().slice(-14).map(b => ({ label: b.date.slice(5), value: b.cost }))
-  );
+  // ── Area chart: AI cost ───────────────────────────────────────────
+  aiCostChartData = computed<number[]>(() => this.aiTrends().map(b => b.cost));
+  aiCostChartLabels = computed<string[]>(() => {
+    const buckets = this.aiTrends();
+    if (!buckets.length) return [];
+    // Show label only at a few evenly spaced indices to avoid crowding
+    const n = buckets.length;
+    const step = Math.max(1, Math.floor(n / 6));
+    return buckets.map((b, i) => (i % step === 0 || i === n - 1) ? b.date.slice(5) : '');
+  });
 
-  activityTrendItems = computed<MiniBarItem[]>(() =>
-    this.activityTrends().slice(-14).map(b => ({ label: b.date.slice(5), value: b.activityCount }))
-  );
+  // ── Bar chart: activities ─────────────────────────────────────────
+  activityChartData = computed<number[]>(() => this.activityTrends().slice(-14).map(b => b.activityCount));
+  activityChartLabels = computed<string[]>(() => {
+    const buckets = this.activityTrends().slice(-14);
+    if (!buckets.length) return [];
+    const n = buckets.length;
+    const step = Math.max(1, Math.floor(n / 5));
+    return buckets.map((b, i) => (i % step === 0 || i === n - 1) ? b.date.slice(5) : '');
+  });
 
   constructor(private api: AdminApiService) {}
 
-  ngOnInit(): void {
-    this.load();
-  }
+  ngOnInit(): void { this.load(); }
 
   setPeriod(p: Period): void {
     this.period.set(p);
+    this.customRangeError.set('');
+    if (p !== 'custom') this.load();
+  }
+
+  applyCustomRange(): void {
+    if (!this.customFrom() || !this.customTo()) {
+      this.customRangeError.set('Select both a start and end date.');
+      return;
+    }
+    if (this.customFrom() > this.customTo()) {
+      this.customRangeError.set('Start date must be before end date.');
+      return;
+    }
+    this.customRangeError.set('');
     this.load();
   }
 
   private load(): void {
     const p = this.period();
+    // For custom, build a range string the API can interpret; fall back to 30d if dates missing
+    let apiPeriod = p;
+    if (p === 'custom') {
+      const from = this.customFrom();
+      const to   = this.customTo();
+      if (!from || !to) return;
+      apiPeriod = `custom:${from}:${to}` as Period;
+    }
 
     this.loadingAiTrends.set(true);
     this.aiTrendsError.set('');
-    this.api.getAiUsageTrends(p).subscribe({
-      next: (r: AdminAiUsageTrendResponse) => {
-        this.aiTrends.set(r.buckets ?? []);
-        this.loadingAiTrends.set(false);
-      },
-      error: () => {
-        this.aiTrendsError.set('Backend not available yet.');
-        this.loadingAiTrends.set(false);
-      },
+    this.api.getAiUsageTrends(apiPeriod).subscribe({
+      next: (r: AdminAiUsageTrendResponse) => { this.aiTrends.set(r.buckets ?? []); this.loadingAiTrends.set(false); },
+      error: () => { this.aiTrendsError.set('Backend not available yet.'); this.loadingAiTrends.set(false); },
     });
 
     this.loadingActivityTrends.set(true);
     this.activityTrendsError.set('');
-    this.api.getDashboardActivityTrends(p).subscribe({
-      next: (r: AdminDashboardActivityTrendResponse) => {
-        this.activityTrends.set(r.buckets ?? []);
-        this.loadingActivityTrends.set(false);
-      },
-      error: () => {
-        this.activityTrendsError.set('Backend not available yet.');
-        this.loadingActivityTrends.set(false);
-      },
+    this.api.getDashboardActivityTrends(apiPeriod).subscribe({
+      next: (r: AdminDashboardActivityTrendResponse) => { this.activityTrends.set(r.buckets ?? []); this.loadingActivityTrends.set(false); },
+      error: () => { this.activityTrendsError.set('Backend not available yet.'); this.loadingActivityTrends.set(false); },
     });
   }
 }

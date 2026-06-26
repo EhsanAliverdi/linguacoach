@@ -1,72 +1,122 @@
 <sp-admin-page-header
   title="Usage & Analytics"
-  subtitle="API costs, activity trends and student engagement" />
+  subtitle="API costs, activity trends and student engagement">
+  <div class="sp-admin-period-pills" aria-label="Date range">
+    @for (p of periods; track p.value) {
+      <div class="sp-admin-period-pill-wrap">
+        <button
+          class="sp-admin-period-pill"
+          [class.sp-admin-period-pill--active]="period() === p.value"
+          (click)="setPeriod(p.value)"
+          type="button">{{ p.label }}</button>
+        @if (p.value === 'custom') {
+          <sp-admin-flyout [open]="period() === 'custom'" (closed)="setPeriod('30d')" ariaLabel="Custom date range">
+            <div class="sp-admin-flyout-date-form">
+              <div>
+                <label class="sp-admin-flyout-field-label">From</label>
+                <input class="sp-admin-period-date-input" type="date" aria-label="From date"
+                  [(ngModel)]="customFromValue" (ngModelChange)="customFrom.set($event)" />
+              </div>
+              <div>
+                <label class="sp-admin-flyout-field-label">To</label>
+                <input class="sp-admin-period-date-input" type="date" aria-label="To date"
+                  [(ngModel)]="customToValue" (ngModelChange)="customTo.set($event)" />
+              </div>
+              @if (customRangeError()) {
+                <p class="sp-admin-field-error">{{ customRangeError() }}</p>
+              }
+              <div class="sp-admin-flyout-actions">
+                <button class="sp-admin-flyout-btn-apply" type="button"
+                  (click)="applyCustomRange()">Apply</button>
+              </div>
+            </div>
+          </sp-admin-flyout>
+        }
+      </div>
+    }
+  </div>
+</sp-admin-page-header>
 
 <sp-admin-page-body>
 
-  <!-- Period pills -->
-  <div class="sp-admin-period-pills" aria-label="Date range">
-    @for (p of periods; track p.value) {
-      <button class="sp-admin-period-pill" [class.sp-admin-period-pill--active]="period() === p.value"
-        (click)="setPeriod(p.value)" type="button">{{ p.label }}</button>
-    }
-  </div>
-
-  <!-- KPI strip -->
+  <!-- KPI row -->
   <div class="sp-admin-kpi-row" aria-label="Usage analytics summary">
-    <sp-admin-kpi-card label="Total cost" variant="teal" layout="tile" icon="dollar"
+    <sp-admin-kpi-card label="TOTAL COST" variant="coral" layout="tile" icon="dollar"
       [loading]="loadingAiTrends()" [value]="totalCostDisplay()" />
-    <sp-admin-kpi-card label="Total API calls" variant="indigo" layout="tile" icon="bar-chart"
+    <sp-admin-kpi-card label="TOTAL API CALLS" variant="indigo" layout="tile" icon="zap"
       [loading]="loadingAiTrends()" [value]="totalCallsDisplay()" />
-    <sp-admin-kpi-card label="Avg cost / student" variant="violet" layout="tile" icon="user"
+    <sp-admin-kpi-card label="AVG COST / STUDENT" variant="green" layout="tile" icon="user"
       [loading]="loadingAiTrends()" [value]="avgCostDisplay()" />
-    <sp-admin-kpi-card [label]="'Activities (' + periodLabel() + ')'" variant="green" layout="tile" icon="check"
+    <sp-admin-kpi-card [label]="'ACTIVITIES (' + periodLabel() + ')'" variant="violet" layout="tile" icon="activity"
       [loading]="loadingActivityTrends()" [value]="totalActivitiesDisplay()" />
   </div>
 
-  <!-- Graphs row -->
-  <div class="sp-ua-graph-row">
+  <!-- API cost over time — full-width area chart card -->
+  <sp-admin-card variant="section" padding="md">
+    <div class="sp-admin-chart-header">
+      <div>
+        <div class="sp-admin-chart-title">API cost over time</div>
+        <div class="sp-admin-chart-sub">Daily spend in USD</div>
+      </div>
+      <div>
+        <div class="sp-admin-chart-value">{{ totalCostDisplay() }}</div>
+        <div class="sp-admin-chart-value-sub sp-admin-score-high">↑ Within budget</div>
+      </div>
+    </div>
+    @if (loadingAiTrends()) {
+      <sp-admin-loading-state message="Loading cost data" />
+    } @else if (aiTrendsError()) {
+      <sp-admin-error-state title="Cost data unavailable" [message]="aiTrendsError()" />
+    } @else {
+      <sp-admin-area-chart
+        [data]="aiCostChartData()"
+        [labels]="aiCostChartLabels()"
+        color="#5B4BE8"
+        [height]="200"
+        prefix="$"
+        ariaLabel="API cost over time area chart" />
+    }
+  </sp-admin-card>
 
-    <!-- API cost over time -->
-    <sp-admin-graph-card
-      title="API cost over time"
-      [status]="loadingAiTrends() ? 'loading' : aiTrendsError() ? 'unavailable' : aiTrendItems().length === 0 ? 'unavailable' : 'live'"
->
-      @if (loadingAiTrends()) {
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="API cost over time" message="Loading..." />
-      } @else if (aiTrendsError() || aiTrendItems().length === 0) {
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="API cost over time" message="No cost data for this period" />
-      } @else {
-        <sp-admin-mini-bar-chart [items]="aiTrendItems()" tone="teal" [height]="56" ariaLabel="Daily cost bar chart" />
-      }
-    </sp-admin-graph-card>
+  <!-- Activities bar chart + Student engagement heatmap -->
+  <div class="sp-admin-card-grid-2-skew">
 
-    <!-- Activities completed per day -->
-    <sp-admin-graph-card
-      title="Activities completed per day"
-      [status]="loadingActivityTrends() ? 'loading' : activityTrendsError() ? 'unavailable' : activityTrendItems().length === 0 ? 'unavailable' : 'live'"
->
+    <!-- Activities completed per day — bar chart -->
+    <sp-admin-card variant="section" padding="md">
+      <div class="sp-admin-chart-header">
+        <div>
+          <div class="sp-admin-chart-title">Activities completed per day</div>
+          <div class="sp-admin-chart-sub">Last 14 days</div>
+        </div>
+        <div class="sp-admin-chart-value">{{ totalActivitiesDisplay() }}</div>
+      </div>
       @if (loadingActivityTrends()) {
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activities completed" message="Loading..." />
-      } @else if (activityTrendsError() || activityTrendItems().length === 0) {
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Activities completed" message="No activity data for this period" />
+        <sp-admin-loading-state message="Loading activity data" />
+      } @else if (activityTrendsError()) {
+        <sp-admin-error-state title="Activity data unavailable" [message]="activityTrendsError()" />
       } @else {
-        <sp-admin-mini-bar-chart [items]="activityTrendItems()" tone="indigo" [height]="56" ariaLabel="Daily activities bar chart" />
+        <sp-admin-bar-chart
+          [data]="activityChartData()"
+          [labels]="activityChartLabels()"
+          color="#5B4BE8"
+          [height]="160"
+          ariaLabel="Activities completed per day bar chart" />
       }
-    </sp-admin-graph-card>
+    </sp-admin-card>
+
+    <!-- Student engagement heatmap -->
+    <sp-admin-card variant="section" padding="md">
+      <div class="sp-admin-chart-header">
+        <div>
+          <div class="sp-admin-chart-title">Student engagement</div>
+          <div class="sp-admin-chart-sub">Activity by day of week · 12 weeks</div>
+        </div>
+      </div>
+      <sp-admin-not-implemented-state title="Pending endpoint">
+        Engagement heatmap data requires a dedicated backend endpoint.
+      </sp-admin-not-implemented-state>
+    </sp-admin-card>
 
   </div>
-
-  <!-- Student engagement heatmap placeholder -->
-  <sp-admin-graph-card
-    title="Student engagement"
-    status="unavailable"
->
-    <sp-admin-visual-placeholder
-      state="not-available"
-      skeleton="grid"
-      title="Activity by day of week"
-      message="Engagement heatmap - backend not available yet" />
-  </sp-admin-graph-card>
 
 </sp-admin-page-body>
