@@ -1,0 +1,267 @@
+<sp-admin-page-header
+  title="Exercise Types"
+  subtitle="Control which exercise types are available for SpeakPath lessons and Practice Gym generation." />
+
+<sp-admin-page-body>
+
+  @if (error()) {
+    <sp-admin-error-state title="Exercise types unavailable" [message]="error()!" />
+  }
+
+  <!-- KPI strip -->
+  @if (typeSummary().total > 0) {
+    <div class="sp-admin-kpi-row" aria-label="Exercise types summary">
+      <sp-admin-kpi-card label="Total types"    variant="indigo"  layout="tile" icon="layers"    [value]="typeSummary().total" />
+      <sp-admin-kpi-card label="Enabled"        [variant]="typeSummary().enabled > 0 ? 'green' : 'slate'" layout="tile" icon="check" [value]="typeSummary().enabled" />
+      <sp-admin-kpi-card label="Ready"          [variant]="typeSummary().ready > 0 ? 'violet' : 'amber'" layout="tile" icon="zap"   [value]="typeSummary().ready" />
+      <sp-admin-kpi-card label="Skills covered" variant="amber"   layout="tile" icon="bar-chart" [value]="typeSummary().skills" />
+    </div>
+
+    <sp-admin-card>
+      <sp-admin-distribution-breakdown
+        title="Exercise breakdown by skill"
+        [items]="skillDistributionItems()"
+        [total]="typeSummary().total"
+        [statusLabel]="distributionStatusLabel()"
+        [statusTone]="distributionStatusTone()"
+        emptyMessage="No exercise types loaded yet." />
+    </sp-admin-card>
+  }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading exercise types" />
+  } @else if (exerciseTypes().length === 0) {
+    <sp-admin-empty-state message="No exercise types found." />
+  } @else {
+
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search
+        size="sm"
+        placeholder="Search by name or key..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Search exercise types" />
+      <sp-admin-select
+        size="sm"
+        placeholder="All skills"
+        [options]="skillOptions()"
+        [(ngModel)]="skillFilterValue"
+        (ngModelChange)="onSkillFilterChange($event)"
+        aria-label="Filter by skill" />
+      <sp-admin-select
+        size="sm"
+        placeholder="All statuses"
+        [options]="statusOptions"
+        [(ngModel)]="statusFilterValue"
+        (ngModelChange)="onStatusFilterChange($event)"
+        aria-label="Filter by status" />
+      <span class="sp-admin-filter-count">{{ filteredExerciseTypes().length }} type{{ filteredExerciseTypes().length !== 1 ? 's' : '' }}</span>
+    </sp-admin-filter-bar>
+
+    @if (filteredExerciseTypes().length === 0) {
+      <sp-admin-empty-state message="No exercise types match your filters." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Exercise</th>
+              <th>Skill</th>
+              <th>Status</th>
+              <th>Generation</th>
+              <th>Surfaces</th>
+              <th>Items M/D/M</th>
+              <th>Options M/D/M</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (type of pagedExerciseTypes(); track type.key) {
+              <tr>
+                <!-- Exercise -->
+                <td>
+                  <div class="sp-admin-flex-row sp-admin-flex-row--start">
+                    <div class="sp-admin-skill-avatar"
+                         [style.background]="skillBg(type.primarySkill)"
+                         [style.color]="skillColor(type.primarySkill)">
+                      {{ skillShort(type.primarySkill) }}
+                    </div>
+                    <div>
+                      <div class="sp-admin-cell-title">{{ type.displayName }}</div>
+                      <sp-admin-code-pill [value]="type.key" tone="neutral" />
+                      @if (type.description) {
+                        <sp-admin-truncated-text [value]="type.description" [maxLength]="72" class="sp-admin-cell-desc" />
+                      }
+                      @if (type.implementationStatus !== 'ready') {
+                        <div class="sp-admin-not-runnable-tag">Not runnable yet — foundation only</div>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <!-- Skill -->
+                <td>
+                  <div class="sp-admin-text-strong">{{ skillLabel(type.primarySkill) }}</div>
+                  @if (type.secondarySkills?.length) {
+                    <div class="sp-admin-text-muted sp-admin-text-xs">+{{ type.secondarySkills.join(', ') }}</div>
+                  }
+                </td>
+                <!-- Status -->
+                <td>
+                  <div class="sp-admin-flex-col sp-admin-flex-col--gap4">
+                    <div class="sp-admin-flex-row">
+                      <span class="sp-admin-status-dot"
+                            [class.sp-admin-status-dot--active]="type.implementationStatus === 'ready'"></span>
+                      <span class="sp-admin-status-label"
+                            [class.sp-admin-status-label--active]="type.implementationStatus === 'ready'">
+                        {{ type.implementationStatus === 'ready' ? 'Ready' : 'Not impl.' }}
+                      </span>
+                    </div>
+                    <div class="sp-admin-flex-row">
+                      <span class="sp-admin-status-dot"
+                            [class.sp-admin-status-dot--active]="type.isEnabled"></span>
+                      <span class="sp-admin-status-label"
+                            [class.sp-admin-status-label--active]="type.isEnabled">
+                        {{ type.isEnabled ? 'Enabled' : 'Disabled' }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <!-- Generation -->
+                <td>
+                  <sp-admin-badge [tone]="type.isAvailableForGeneration ? 'success' : 'danger'">
+                    {{ type.isAvailableForGeneration ? 'Available' : 'Blocked' }}
+                  </sp-admin-badge>
+                </td>
+                <!-- Surfaces -->
+                <td class="sp-admin-nowrap">
+                  <div class="sp-admin-badge-row sp-admin-badge-row--nowrap">
+                    @for (s of surfaceBadges(type); track s) {
+                      <sp-admin-badge tone="neutral">{{ s }}</sp-admin-badge>
+                    }
+                  </div>
+                </td>
+                <!-- Items M/D/M -->
+                <td class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
+                  {{ type.minItemsPerPractice }} / {{ type.defaultItemsPerPractice }} / {{ type.maxItemsPerPractice }}
+                </td>
+                <!-- Options M/D/M -->
+                <td class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
+                  {{ type.minOptionsPerItem }} / {{ type.defaultOptionsPerItem }} / {{ type.maxOptionsPerItem }}
+                </td>
+                <!-- Actions -->
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(type)"
+                    (actionSelected)="onRowAction($event, type)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ filteredExerciseTypes().length }} types
+          <sp-admin-pagination
+            slot="actions"
+            [page]="page()"
+            [totalPages]="totalPages()"
+            (pageChange)="page.set($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- Configure slide-over -->
+<sp-admin-slide-over
+  [open]="configOpen()"
+  [title]="configType()?.displayName ?? 'Configure'"
+  [subtitle]="configType()?.key ?? ''"
+  (closed)="closeConfig()">
+
+  @if (configType()) {
+    <div class="sp-admin-form-stack">
+
+      @if (configError()) {
+        <div class="sp-admin-form-error">{{ configError() }}</div>
+      }
+
+      <!-- Skill info panel -->
+      <div class="sp-admin-result-panel">
+        <div class="sp-admin-flex-row">
+          <span class="sp-admin-skill-avatar sp-admin-skill-avatar--sm"
+                [style.background]="skillBg(configType()!.primarySkill)"
+                [style.color]="skillColor(configType()!.primarySkill)">
+            {{ skillShort(configType()!.primarySkill) }}
+          </span>
+          <span class="sp-admin-text-strong">{{ skillLabel(configType()!.primarySkill) }}</span>
+          @for (s of configType()!.secondarySkills ?? []; track s) {
+            <sp-admin-badge tone="neutral">+{{ s }}</sp-admin-badge>
+          }
+        </div>
+        @if (configType()!.description) {
+          <div class="sp-admin-result-row">{{ configType()!.description }}</div>
+        }
+      </div>
+
+      <!-- Enabled toggle -->
+      <sp-admin-form-field label="Enabled">
+        <sp-admin-checkbox
+          label="Available for lesson and gym generation"
+          [ngModel]="configForm().isEnabled"
+          (checkedChange)="patchForm({ isEnabled: $event })" />
+      </sp-admin-form-field>
+
+      <!-- Items -->
+      <sp-admin-form-field label="Items per practice (min / default / max)">
+        <div class="sp-admin-form-row sp-admin-form-row--3col">
+          <sp-admin-form-field label="Min">
+            <sp-admin-number-input [min]="0"
+              [ngModel]="configForm().minItemsPerPractice"
+              (ngModelChange)="patchForm({ minItemsPerPractice: $event })" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Default">
+            <sp-admin-number-input [min]="0"
+              [ngModel]="configForm().defaultItemsPerPractice"
+              (ngModelChange)="patchForm({ defaultItemsPerPractice: $event })" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Max">
+            <sp-admin-number-input [min]="0"
+              [ngModel]="configForm().maxItemsPerPractice"
+              (ngModelChange)="patchForm({ maxItemsPerPractice: $event })" />
+          </sp-admin-form-field>
+        </div>
+      </sp-admin-form-field>
+
+      <!-- Options -->
+      <sp-admin-form-field label="Options per item (min / default / max)">
+        <div class="sp-admin-form-row sp-admin-form-row--3col">
+          <sp-admin-form-field label="Min">
+            <sp-admin-number-input [min]="0"
+              [ngModel]="configForm().minOptionsPerItem"
+              (ngModelChange)="patchForm({ minOptionsPerItem: $event })" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Default">
+            <sp-admin-number-input [min]="0"
+              [ngModel]="configForm().defaultOptionsPerItem"
+              (ngModelChange)="patchForm({ defaultOptionsPerItem: $event })" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Max">
+            <sp-admin-number-input [min]="0"
+              [ngModel]="configForm().maxOptionsPerItem"
+              (ngModelChange)="patchForm({ maxOptionsPerItem: $event })" />
+          </sp-admin-form-field>
+        </div>
+      </sp-admin-form-field>
+
+    </div>
+  }
+
+  <sp-admin-button-group
+    slot="footer"
+    [actions]="configActions()"
+    (actionSelected)="onConfigAction($event)" />
+
+</sp-admin-slide-over>
