@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import {
   AdminNotificationItem, AdminOutboxItem, PagedResponse,
   AdminSendNotificationResult,
-  AdminNotificationConfigStatusV2, AdminTestEmailResult,
+  AdminNotificationConfigStatusV2,
   AdminUpdateConfigResult,
   AdminTemplateItem, AdminTemplatePreviewResult,
 } from '../../../core/models/admin.models';
@@ -363,29 +363,6 @@ describe('AdminNotificationsComponent', () => {
     expect(apiSpy.getNotificationConfig).toHaveBeenCalledTimes(1);
   });
 
-  it('sendTestEmail calls testEmail with trimmed address', () => {
-    const result: AdminTestEmailResult = { succeeded: true, wasSkipped: false, message: 'Sent.' };
-    apiSpy.testEmail.and.returnValue(of(result));
-    component.testEmailAddress = '  test@example.com  ';
-    component.sendTestEmail();
-    expect(apiSpy.testEmail).toHaveBeenCalledWith('test@example.com');
-    expect(component.testEmailResult()!.succeeded).toBeTrue();
-  });
-
-  it('sendTestEmail does nothing when address is blank', () => {
-    component.testEmailAddress = '   ';
-    component.sendTestEmail();
-    expect(apiSpy.testEmail).not.toHaveBeenCalled();
-  });
-
-  it('sendTestEmail sets failure result on API error', () => {
-    apiSpy.testEmail.and.returnValue(throwError(() => new Error('fail')));
-    component.testEmailAddress = 'test@example.com';
-    component.sendTestEmail();
-    expect(component.testEmailResult()!.succeeded).toBeFalse();
-    expect(component.testEmailResult()!.message).toBe('Request failed.');
-  });
-
   it('configTone returns success for Enabled and Configured', () => {
     expect(component.configTone('Enabled')).toBe('success');
     expect(component.configTone('Configured')).toBe('success');
@@ -402,49 +379,6 @@ describe('AdminNotificationsComponent', () => {
 
   it('config signal is populated after ngOnInit', () => {
     expect(component.config()).not.toBeNull();
-  });
-
-  it('loadConfig syncs emailForm from loaded config', () => {
-    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig({
-      email: { enabled: true, configured: true, statusLabel: 'Configured',
-               host: 'smtp.test.com', port: 465, fromAddress: 'a@b.com',
-               fromDisplayName: 'Test', useSsl: true, hasUsername: true, hasPassword: true },
-    })));
-    component.loadConfig();
-    expect(component.emailForm.isEnabled).toBeTrue();
-    expect(component.emailForm.host).toBe('smtp.test.com');
-    expect(component.emailForm.port).toBe(465);
-    expect(component.emailForm.fromAddress).toBe('a@b.com');
-  });
-
-  it('saveEmailConfig calls updateEmailConfig without exposing newSecret in signal', () => {
-    apiSpy.updateEmailConfig.and.returnValue(of(makeUpdateResult()));
-    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
-    component.emailForm.isEnabled = false;
-    component.emailForm.newSecret = 'my-secret';
-    component.saveEmailConfig();
-    expect(apiSpy.updateEmailConfig).toHaveBeenCalledWith(jasmine.objectContaining({ isEnabled: false }));
-    // After save, newSecret is cleared from form
-    expect(component.emailForm.newSecret).toBe('');
-    expect(component.emailSaveSuccess()).toBe('Saved.');
-  });
-
-  it('saveEmailConfig shows error on failure', () => {
-    apiSpy.updateEmailConfig.and.returnValue(throwError(() => ({ error: { error: 'Host required.' } })));
-    component.emailForm.isEnabled = true;
-    component.saveEmailConfig();
-    expect(component.emailSaveError()).toBe('Host required.');
-  });
-
-  it('saveSmsConfig calls updateSmsConfig and clears newSecret', () => {
-    apiSpy.updateSmsConfig.and.returnValue(of(makeUpdateResult({ message: 'SMS saved.' })));
-    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
-    component.smsForm.isEnabled = false;
-    component.smsForm.newSecret = 'api-key';
-    component.saveSmsConfig();
-    expect(apiSpy.updateSmsConfig).toHaveBeenCalled();
-    expect(component.smsForm.newSecret).toBe('');
-    expect(component.smsSaveSuccess()).toBe('SMS saved.');
   });
 
   it('saveInAppConfig calls updateInAppConfig', () => {
@@ -685,15 +619,6 @@ describe('AdminNotificationsComponent', () => {
     expect(inAppCard?.textContent).not.toContain('Foundation only');
     const emailCard = cards.find(c => c.textContent?.includes('Email') && !c.textContent?.includes('SMS'));
     expect(emailCard?.textContent).not.toContain('Foundation only');
-  });
-
-  it('SMS config card shows visual placeholder for foundation-only state', () => {
-    apiSpy.getNotificationConfig.and.returnValue(of(makeConfig()));
-    component.activeTab = 'config';
-    component.loadConfig();
-    fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    expect(html.querySelector('sp-admin-visual-placeholder')).toBeTruthy();
   });
 
   it('renders sp-admin-page-header with title Notifications', () => {

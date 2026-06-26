@@ -1,167 +1,262 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
 import { AdminSecurityComponent } from './admin-security.component';
+import { AdminSecurityService } from '../../../core/services/admin-security.service';
+import type { AdminSecuritySettings, AdminAuthEventItem } from '../../../core/services/admin-security.service';
+
+const SETTINGS: AdminSecuritySettings = {
+  passwordPolicy: {
+    requiredLength: 12,
+    requireUppercase: true,
+    requireDigit: true,
+    requireSpecial: true,
+  } as any,
+  lockout: { maxFailedAttempts: 5, lockoutDurationMinutes: 15 } as any,
+  rateLimitPolicies: [],
+  jwt: { accessTokenExpiryMinutes: 60, issuer: 'test', audience: 'test' } as any,
+  refreshToken: { expiryDays: 30, rotateOnUse: true } as any,
+  securityHeaders: { hstsEnabled: true } as any,
+  externalLogin: { google: { enabled: false, clientIdConfigured: false, clientSecretConfigured: false, allowAutoLinkByEmail: false, allowStudentAutoProvisioning: false, allowedDomains: [] } },
+};
+
+const EVENT: AdminAuthEventItem = {
+  id: 'evt-1',
+  userId: 'u1',
+  emailOrUserName: 'alice@example.com',
+  eventType: 'Login',
+  outcome: 'Success',
+  ipAddress: '1.2.3.4',
+  failureReasonCode: null,
+  correlationId: null,
+  occurredAtUtc: '2026-06-01T10:00:00Z',
+};
+
+const EVENTS_RESPONSE = { items: [EVENT], total: 1, page: 1, pageSize: 20 };
+
+function makeSvc(settingsOk = true, eventsOk = true) {
+  return {
+    getSettings: jasmine.createSpy('getSettings').and.returnValue(
+      settingsOk ? of(SETTINGS) : throwError(() => ({ error: { error: 'Settings unavailable' } }))
+    ),
+    getAuthEvents: jasmine.createSpy('getAuthEvents').and.returnValue(
+      eventsOk ? of(EVENTS_RESPONSE) : throwError(() => ({ error: { error: 'Events unavailable' } }))
+    ),
+  };
+}
 
 describe('AdminSecurityComponent', () => {
   let fixture: ComponentFixture<AdminSecurityComponent>;
   let component: AdminSecurityComponent;
-  let el: HTMLElement;
+  let svc: ReturnType<typeof makeSvc>;
 
-  beforeEach(async () => {
+  async function setup(settingsOk = true, eventsOk = true) {
+    svc = makeSvc(settingsOk, eventsOk);
     await TestBed.configureTestingModule({
       imports: [AdminSecurityComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AdminSecurityService, useValue: svc },
+      ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(AdminSecurityComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-    el = fixture.nativeElement as HTMLElement;
-  });
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
 
-  it('creates the component', () => {
+  // ── Init ─────────────────────────────────────────────────────────────────────
+
+  it('creates the component', async () => {
+    await setup();
     expect(component).toBeTruthy();
   });
 
-  // ── Page header ────────────────────────────────────────────────────────────
-
-  it('renders page header with title Security', () => {
-    const header = el.querySelector('sp-admin-page-header');
-    expect(header).toBeTruthy();
-    expect(header!.getAttribute('title')).toBe('Security');
+  it('calls getSettings on init', async () => {
+    await setup();
+    expect(svc.getSettings).toHaveBeenCalledTimes(1);
   });
 
-  it('page header subtitle mentions authentication', () => {
-    const header = el.querySelector('sp-admin-page-header');
-    expect(header!.getAttribute('subtitle')).toContain('Authentication');
+  it('calls getAuthEvents on init', async () => {
+    await setup();
+    expect(svc.getAuthEvents).toHaveBeenCalledTimes(1);
   });
 
-  // ── Security posture ─────────────────────────────────────────────────────────
+  // ── Page structure ────────────────────────────────────────────────────────────
 
-  it('renders the security posture card', () => {
-    expect(el.textContent).toContain('Security posture');
+  it('renders page header', async () => {
+    await setup();
+    expect(fixture.nativeElement.querySelector('sp-admin-page-header')).toBeTruthy();
   });
 
-  it('renders the posture score ring', () => {
-    expect(el.querySelector('svg[aria-label="Security score"]')).toBeTruthy();
+  it('page header has title Security', async () => {
+    await setup();
+    const header = fixture.nativeElement.querySelector('sp-admin-page-header');
+    expect(header?.getAttribute('title')).toBe('Security');
   });
 
-  it('default posture score is 82 rounded (three of four checks pass)', () => {
-    expect(component.postureScore()).toBe(75);
+  it('renders page body', async () => {
+    await setup();
+    expect(fixture.nativeElement.querySelector('sp-admin-page-body')).toBeTruthy();
   });
 
-  it('posture score increases when IP whitelist enabled', () => {
-    component.ipWhitelist.set(true);
-    expect(component.postureScore()).toBe(100);
+  // ── Settings signal ───────────────────────────────────────────────────────────
+
+  it('settings signal is populated after load', async () => {
+    await setup();
+    expect(component.settings()).toEqual(SETTINGS);
   });
 
-  it('posture score drops when MFA disabled', () => {
-    component.mfa.set(false);
-    expect(component.postureScore()).toBe(50);
+  it('loadingSettings is false after successful load', async () => {
+    await setup();
+    expect(component.loadingSettings()).toBeFalse();
   });
 
-  it('renders four posture checklist items', () => {
-    expect(component.postureItems().length).toBe(4);
+  it('settingsError is empty after successful load', async () => {
+    await setup();
+    expect(component.settingsError()).toBe('');
   });
 
-  // ── Access controls ──────────────────────────────────────────────────────────
+  // ── Auth events signal ────────────────────────────────────────────────────────
 
-  it('renders the access controls card', () => {
-    expect(el.textContent).toContain('Access controls');
+  it('events signal is populated after load', async () => {
+    await setup();
+    expect(component.events().length).toBe(1);
+    expect(component.events()[0].emailOrUserName).toBe('alice@example.com');
   });
 
-  it('renders four access control toggles', () => {
-    const toggles = el.querySelectorAll('sp-admin-toggle');
-    expect(toggles.length).toBe(4);
+  it('eventsTotal reflects response', async () => {
+    await setup();
+    expect(component.eventsTotal()).toBe(1);
   });
 
-  it('mfa and session alerts default on; ip allowlist and audit retention off', () => {
-    expect(component.mfa()).toBeTrue();
-    expect(component.sessionAlerts()).toBeTrue();
-    expect(component.ipWhitelist()).toBeFalse();
-    expect(component.auditRetention()).toBeFalse();
+  it('eventsPage defaults to 1', async () => {
+    await setup();
+    expect(component.eventsPage()).toBe(1);
   });
 
-  // ── Password ─────────────────────────────────────────────────────────────────
-
-  it('renders the password card', () => {
-    expect(el.textContent).toContain('Password');
-    expect(el.textContent).toContain('Last changed 47 days ago');
+  it('eventsTotalPages is 1 when total <= pageSize', async () => {
+    await setup();
+    expect(component.eventsTotalPages()).toBe(1);
   });
 
-  it('password form hidden by default', () => {
-    expect(component.showPasswordForm()).toBeFalse();
+  it('loadingEvents is false after successful load', async () => {
+    await setup();
+    expect(component.loadingEvents()).toBeFalse();
   });
 
-  it('toggling reveals password form fields', () => {
-    component.togglePasswordForm();
-    fixture.detectChanges();
-    expect(component.showPasswordForm()).toBeTrue();
-    expect(el.querySelector('#sp-sec-pw-current')).toBeTruthy();
-    expect(el.querySelector('#sp-sec-pw-next')).toBeTruthy();
-    expect(el.querySelector('#sp-sec-pw-confirm')).toBeTruthy();
+  // ── Error states ──────────────────────────────────────────────────────────────
+
+  it('sets settingsError when getSettings fails', async () => {
+    await setup(false, true);
+    expect(component.settingsError()).toContain('Settings unavailable');
   });
 
-  it('cancelling clears password form fields', () => {
-    component.passwordForm = { current: 'a', next: 'b', confirm: 'c' };
-    component.cancelPasswordForm();
-    expect(component.showPasswordForm()).toBeFalse();
-    expect(component.passwordForm).toEqual({ current: '', next: '', confirm: '' });
+  it('sets eventsError when getAuthEvents fails', async () => {
+    await setup(true, false);
+    expect(component.eventsError()).toContain('Events unavailable');
   });
 
-  // ── Sessions ─────────────────────────────────────────────────────────────────
-
-  it('renders four sessions by default', () => {
-    expect(component.sessions().length).toBe(4);
-    expect(el.textContent).toContain('Active sessions');
-    expect(el.textContent).toContain('Chrome on macOS');
+  it('settings signal remains null when load fails', async () => {
+    await setup(false, true);
+    expect(component.settings()).toBeNull();
   });
 
-  it('marks the current session', () => {
-    expect(component.sessions()[0].current).toBeTrue();
+  // ── Pagination ────────────────────────────────────────────────────────────────
+
+  it('onPageChange updates eventsPage and reloads events', async () => {
+    await setup();
+    svc.getAuthEvents.calls.reset();
+    component.onPageChange(2);
+    expect(component.eventsPage()).toBe(2);
+    expect(svc.getAuthEvents).toHaveBeenCalledTimes(1);
   });
 
-  it('revoking a session removes it', () => {
-    component.revokeSession(2);
-    expect(component.sessions().some(s => s.id === 2)).toBeFalse();
-    expect(component.sessions().length).toBe(3);
+  // ── Filter ────────────────────────────────────────────────────────────────────
+
+  it('onFilterChange resets page to 1 and reloads events', async () => {
+    await setup();
+    component.eventsPage.set(3);
+    svc.getAuthEvents.calls.reset();
+    component.onFilterChange();
+    expect(component.eventsPage()).toBe(1);
+    expect(svc.getAuthEvents).toHaveBeenCalledTimes(1);
   });
 
-  it('revoke all others keeps only the current session', () => {
-    component.revokeAllOthers();
-    expect(component.sessions().length).toBe(1);
-    expect(component.sessions()[0].current).toBeTrue();
+  // ── Helper methods ────────────────────────────────────────────────────────────
+
+  it('outcomeTone returns success for Success', async () => {
+    await setup();
+    expect(component.outcomeTone('Success')).toBe('success');
   });
 
-  // ── Audit log ────────────────────────────────────────────────────────────────
-
-  it('renders the audit log with eight entries', () => {
-    expect(el.textContent).toContain('Audit log');
-    expect(component.auditLog.length).toBe(8);
+  it('outcomeTone returns danger for Failure', async () => {
+    await setup();
+    expect(component.outcomeTone('Failure')).toBe('danger');
   });
 
-  it('renders audit log pagination summary', () => {
-    expect(el.textContent).toContain('Showing 8 of 234 events');
+  it('outcomeTone returns neutral for unknown', async () => {
+    await setup();
+    expect(component.outcomeTone('Unknown')).toBe('neutral');
   });
 
-  it('audit log includes an error level entry', () => {
-    expect(component.auditLog.some(e => e.level === 'danger')).toBeTrue();
+  it('boolTone returns success for true', async () => {
+    await setup();
+    expect(component.boolTone(true)).toBe('success');
   });
 
-  // ── Danger zone ──────────────────────────────────────────────────────────────
-
-  it('renders the danger zone with three actions', () => {
-    expect(el.textContent).toContain('Danger zone');
-    expect(el.textContent).toContain('Revoke all sessions');
-    expect(el.textContent).toContain('Reset 2FA');
-    expect(el.textContent).toContain('Wipe audit log');
+  it('boolTone returns neutral for false', async () => {
+    await setup();
+    expect(component.boolTone(false)).toBe('neutral');
   });
 
-  // ── Secret handling ──────────────────────────────────────────────────────────
+  it('boolLabel returns yes label for true', async () => {
+    await setup();
+    expect(component.boolLabel(true, 'Enabled', 'Disabled')).toBe('Enabled');
+  });
 
-  it('does not display any secret key value', () => {
-    const text = el.textContent ?? '';
+  it('boolLabel returns no label for false', async () => {
+    await setup();
+    expect(component.boolLabel(false, 'Enabled', 'Disabled')).toBe('Disabled');
+  });
+
+  it('formatDateTime returns a formatted string for valid ISO', async () => {
+    await setup();
+    const result = component.formatDateTime('2026-06-01T10:00:00Z');
+    expect(result).toBeTruthy();
+    expect(result).not.toBe('2026-06-01T10:00:00Z'); // should be transformed
+  });
+
+  it('formatDateTime returns original string for invalid input', async () => {
+    await setup();
+    expect(component.formatDateTime('not-a-date')).toBeTruthy();
+  });
+
+  // ── Secret handling ───────────────────────────────────────────────────────────
+
+  it('does not expose any secret key in rendered content', async () => {
+    await setup();
+    const text = fixture.nativeElement.textContent ?? '';
     expect(text).not.toContain('JWT_KEY');
     expect(text).not.toContain('OPENAI_API_KEY');
     expect(text).not.toContain('ANTHROPIC_API_KEY');
+    expect(text).not.toContain('sk-');
+  });
+
+  // ── Filter option arrays ──────────────────────────────────────────────────────
+
+  it('eventTypeOptions includes All types and Login', async () => {
+    await setup();
+    const labels = component.eventTypeOptions.map(o => o.label);
+    expect(labels).toContain('All types');
+    expect(labels).toContain('Login');
+  });
+
+  it('outcomeOptions includes All outcomes and Success', async () => {
+    await setup();
+    const labels = component.outcomeOptions.map(o => o.label);
+    expect(labels).toContain('All outcomes');
+    expect(labels).toContain('Success');
   });
 });

@@ -202,8 +202,7 @@ describe('AdminStudentsComponent', () => {
   it('calls listStudents when includeArchived toggle changes', async () => {
     await setup([STUDENT_ACTIVE]);
     adminApi.listStudents.calls.reset();
-    component.includeArchived = true;
-    component.onIncludeArchivedChange();
+    component.onArchivedChange(true);
     expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
   });
 
@@ -330,7 +329,9 @@ describe('AdminStudentsComponent', () => {
     await setup([STUDENT_ACTIVE]);
     component.page.set(2);
     adminApi.listStudents.calls.reset();
-    component.onOnboardingStatusChange('Complete');
+    component.filterOnboardingStatus.set('Complete');
+    component.page.set(1);
+    component.load();
     expect(component.page()).toBe(1);
     expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
     const call = adminApi.listStudents.calls.mostRecent().args[0];
@@ -341,7 +342,9 @@ describe('AdminStudentsComponent', () => {
     await setup([STUDENT_ACTIVE]);
     component.page.set(2);
     adminApi.listStudents.calls.reset();
-    component.onCefrLevelChange('B2');
+    component.filterCefrLevel.set('B2');
+    component.page.set(1);
+    component.load();
     expect(component.page()).toBe(1);
     expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
     const call = adminApi.listStudents.calls.mostRecent().args[0];
@@ -435,30 +438,6 @@ describe('AdminStudentsComponent', () => {
     });
   });
 
-  describe('avatarColor', () => {
-    it('returns a hex colour string', async () => {
-      await setup();
-      const colour = component.avatarColor(STUDENT_ACTIVE);
-      expect(colour).toMatch(/^#[0-9a-fA-F]{6}$/);
-    });
-
-    it('returns consistent colour for same email', async () => {
-      await setup();
-      expect(component.avatarColor(STUDENT_ACTIVE)).toBe(component.avatarColor(STUDENT_ACTIVE));
-    });
-
-    it('renders avatar element in student name cell', async () => {
-      await setup([STUDENT_ACTIVE]);
-      const avatar = fixture.nativeElement.querySelector('.sp-stu-avatar');
-      expect(avatar).not.toBeNull();
-    });
-
-    it('renders correct initial in avatar', async () => {
-      await setup([STUDENT_ACTIVE]);
-      const avatar = fixture.nativeElement.querySelector('.sp-stu-avatar');
-      expect(avatar.textContent.trim()).toBe('A');
-    });
-  });
 
   // ── Rows per page ────────────────────────────────────────────
 
@@ -474,7 +453,7 @@ describe('AdminStudentsComponent', () => {
       component.page.set(3);
       component.pageSize = 50;
       adminApi.listStudents.calls.reset();
-      component.onPageSizeChange();
+      component.onPageChange(1);
       expect(component.page()).toBe(1);
       expect(adminApi.listStudents).toHaveBeenCalledTimes(1);
       const call = adminApi.listStudents.calls.mostRecent().args[0];

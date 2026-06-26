@@ -644,11 +644,10 @@ describe('admin wrapper components — Phase 10X-F', () => {
     }).not.toThrow();
   });
 
-  // sp-admin-header now includes theme toggle
-  it('header renders theme toggle button', () => {
+  it('header renders semantic header element', () => {
     const fixture = TestBed.createComponent(SpAdminHeaderComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('button[aria-label]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('header')).not.toBeNull();
   });
 
   // sp-admin-filter-bar named slots
@@ -1738,7 +1737,8 @@ describe('SpAdminKpiCardComponent tile layout (10UI-DASHBOARD-PARITY-2)', () => 
   });
 
   it('defaults to standard layout', () => {
-    const c = new SpAdminKpiCardComponent();
-    expect(c.layout).toBe('standard');
+    TestBed.configureTestingModule({ imports: [SpAdminKpiCardComponent] });
+    const fix = TestBed.createComponent(SpAdminKpiCardComponent);
+    expect(fix.componentInstance.layout).toBe('standard');
   });
 });

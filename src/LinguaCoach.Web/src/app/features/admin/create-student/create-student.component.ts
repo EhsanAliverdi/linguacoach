@@ -8,7 +8,6 @@ import { ToastService } from '../../../core/services/toast.service';
 import {
   SpAdminAlertComponent,
   SpAdminButtonComponent,
-  SpAdminCardComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminPageBodyComponent,
@@ -25,199 +24,13 @@ import {
     RouterLink,
     SpAdminAlertComponent,
     SpAdminButtonComponent,
-    SpAdminCardComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminPageBodyComponent, SpAdminIconComponent,
     SpAdminPageHeaderComponent,
   ],
   templateUrl: './create-student.component.html',
-  styles: [`
-    .sp-cs-layout {
-      display: grid;
-      gap: 24px;
-    }
-    @media(min-width: 1100px) {
-      .sp-cs-layout {
-        grid-template-columns: 1fr 300px;
-        align-items: start;
-      }
-    }
-
-    .sp-cs-section {
-      background: var(--sp-admin-surface, #fff);
-      border: 1px solid var(--sp-admin-border, #ECE9F5);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .sp-cs-section-header { display: flex; flex-direction: column; gap: 4px; }
-    .sp-cs-section-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--sp-admin-text, #211B36);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .sp-cs-section-sub { font-size: 13px; color: var(--sp-admin-text-muted, #8B85A0); }
-
-    .sp-cs-optional-badge {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      background: var(--sp-admin-primary-bg, #EDEBFF);
-      color: var(--sp-admin-primary, #5B4BE8);
-      padding: 2px 7px;
-      border-radius: 99px;
-    }
-
-    .sp-cs-toggle-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      border-radius: 12px;
-      border: 1px solid var(--sp-admin-border, #ECE9F5);
-      background: var(--sp-admin-surface-subtle, #FBFAFE);
-      padding: 12px;
-    }
-    .sp-cs-toggle-checkbox {
-      margin-top: 2px;
-      width: 16px;
-      height: 16px;
-      accent-color: var(--sp-admin-primary, #5B4BE8);
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .sp-cs-toggle-label {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--sp-admin-text, #211B36);
-      cursor: pointer;
-    }
-    .sp-cs-toggle-hint {
-      margin: 2px 0 0;
-      font-size: 12px;
-      color: var(--sp-admin-text-muted, #8B85A0);
-    }
-
-    .sp-cs-security-note {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 12px;
-      color: #8B85A0;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-radius: 10px;
-      padding: 10px 12px;
-    }
-
-    .sp-cs-toggle-btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--sp-admin-primary, #5B4BE8);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      width: 100%;
-    }
-    .sp-cs-toggle-chevron {
-      width: 16px;
-      height: 16px;
-      transition: transform .2s;
-    }
-    .sp-cs-toggle-chevron--open { transform: rotate(180deg); }
-
-    .sp-cs-optional-fields {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      border-radius: 12px;
-      border: 1px solid var(--sp-admin-border, #ECE9F5);
-      background: var(--sp-admin-surface-subtle, #FBFAFE);
-      padding: 16px;
-    }
-
-    .sp-cs-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media(max-width: 600px) { .sp-cs-two-col { grid-template-columns: 1fr; } }
-
-    .sp-cs-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      padding-top: 4px;
-    }
-
-    /* Aside panel */
-    .sp-cs-aside-card {
-      background: var(--sp-admin-surface, #fff);
-      border: 1px solid var(--sp-admin-border, #ECE9F5);
-      border-radius: 16px;
-      padding: 20px;
-      position: sticky;
-      top: 24px;
-    }
-    .sp-cs-aside-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--sp-admin-text, #211B36);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin-bottom: 16px;
-    }
-    .sp-cs-aside-steps {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .sp-cs-aside-steps li {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .sp-cs-step-dot {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--sp-admin-primary-bg, #EDEBFF);
-      color: var(--sp-admin-primary, #5B4BE8);
-      font-size: 11px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .sp-cs-step-dot--done {
-      background: var(--sp-admin-green-bg, #dcfce7);
-      color: var(--sp-admin-green, #16a34a);
-    }
-    .sp-cs-step-label { font-size: 13px; font-weight: 700; color: var(--sp-admin-text, #211B36); }
-    .sp-cs-step-desc { font-size: 12px; color: var(--sp-admin-text-muted, #8B85A0); margin-top: 2px; }
-
-    .sp-cs-aside-note {
-      margin-top: 16px;
-      font-size: 11.5px;
-      color: #8B85A0;
-      font-style: italic;
-      border-top: 1px solid var(--sp-admin-border, #ECE9F5);
-      padding-top: 12px;
-    }
-  `],
+  styleUrl: './create-student.component.css',
 })
 export class CreateStudentComponent {
   // Required fields

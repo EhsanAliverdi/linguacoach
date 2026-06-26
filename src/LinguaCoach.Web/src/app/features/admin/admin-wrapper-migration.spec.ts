@@ -182,11 +182,9 @@ describe('admin wrapper migration', () => {
     const fixture = TestBed.createComponent(AdminAiConfigComponent);
     fixture.detectChanges();
 
-    expect(query(fixture.nativeElement, '.sp-aic-page-header')).toBeTruthy();
+    expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
     // Sections are now split across tabs; only the active tab's content renders.
-    expect(query(fixture.nativeElement, '.sp-aic-tabs')).toBeTruthy();
-    // LLM tab shows category cards (native divs); credentials tab shows sp-admin-card.
-    expect(fixture.nativeElement.querySelectorAll('.sp-aic-cat-card').length).toBeGreaterThanOrEqual(1);
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-kpi-card').length).toBeGreaterThanOrEqual(1);
   });
 
   it('AI Usage page renders table and card wrappers', () => {
@@ -295,7 +293,7 @@ describe('admin wrapper migration', () => {
     fixture.detectChanges();
     const menuItems = fixture.nativeElement.querySelectorAll('sp-admin-table-actions button') as NodeListOf<HTMLButtonElement>;
     const viewButton = Array.from(menuItems)
-      .find(button => button.textContent?.includes('View content')) as HTMLButtonElement;
+      .find(button => button.textContent?.includes('View')) as HTMLButtonElement;
     viewButton.click();
     fixture.detectChanges();
 
@@ -320,39 +318,26 @@ describe('admin wrapper migration', () => {
   });
 
   it('Integrations page renders wrapper cards', () => {
-    const svc = jasmine.createSpyObj('AdminIntegrationsService', ['getStorage', 'getGenerationSettings', 'getBatches']);
+    const svc = jasmine.createSpyObj('AdminIntegrationsService', ['getStorage']);
     svc.getStorage.and.returnValue(of({ provider: 'none', endpoint: null, bucketName: null, accessKey: null, secretKey: null, useSsl: false, signedUrlExpiryMinutes: 15 }));
-    svc.getGenerationSettings.and.returnValue(of({
-      readyLessonBufferSize: 5,
-      refillThreshold: 2,
-      refillBatchSize: 2,
-      maxGenerationAttempts: 2,
-      generationTimeoutSeconds: 60,
-      ttsTimeoutSeconds: 30,
-      maxConcurrentGenerationJobs: 1,
-      maxConcurrentTtsJobs: 1,
-      practiceGymReadyExercisesPerType: 2,
-      practiceGymRefillThresholdPerType: 1,
-      practiceGymRefillCountPerType: 1,
-      enableBackgroundGeneration: true,
-      enableTtsGeneration: false,
-    }));
-    svc.getBatches.and.returnValue(of({
-      summary: { queued: 0, running: 0, failed: 0, lastSuccessfulGenerationUtc: null },
-      readyBufferPerStudent: [],
-      batches: [],
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['getNotificationConfig']);
+    adminApi.getNotificationConfig.and.returnValue(of({
+      email: { enabled: false, configured: false, statusLabel: 'Disabled', host: null, port: 587, fromAddress: null, fromDisplayName: 'SpeakPath', useSsl: true, hasUsername: false, hasPassword: false },
+      sms: { enabled: false, configured: false, statusLabel: 'Disabled', provider: null, senderId: null, hasApiKey: false },
+      inApp: { enabled: true },
+      source: 'AppSettings',
     }));
 
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }, { provide: AdminApiService, useValue: adminApi }],
     });
 
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
 
     expect(query(fixture.nativeElement, 'sp-admin-page-header')).toBeTruthy();
-    expect(fixture.nativeElement.querySelectorAll('.sp-int-card').length).toBeGreaterThanOrEqual(5);
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-config-card').length).toBeGreaterThanOrEqual(2);
   });
 
   it('dashboard renders KPI grid cards', () => {
@@ -421,16 +406,26 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
   }
 
   function makeIntegrationsSvc() {
-    const svc = jasmine.createSpyObj('AdminIntegrationsService', ['getStorage', 'getGenerationSettings', 'getBatches']);
+    const svc = jasmine.createSpyObj('AdminIntegrationsService', ['getStorage']);
     svc.getStorage.and.returnValue(of({ provider: 's3', endpoint: 'http://minio:9000', bucketName: 'lc', accessKey: 'key', secretKey: 'sec', useSsl: false, signedUrlExpiryMinutes: 15 }));
-    svc.getGenerationSettings.and.returnValue(of({
-      readyLessonBufferSize: 5, refillThreshold: 2, refillBatchSize: 2, maxGenerationAttempts: 2,
-      generationTimeoutSeconds: 60, ttsTimeoutSeconds: 30, maxConcurrentGenerationJobs: 1, maxConcurrentTtsJobs: 1,
-      practiceGymReadyExercisesPerType: 2, practiceGymRefillThresholdPerType: 1, practiceGymRefillCountPerType: 1,
-      enableBackgroundGeneration: true, enableTtsGeneration: false,
-    }));
-    svc.getBatches.and.returnValue(of({ summary: { queued: 0, running: 0, failed: 0, lastSuccessfulGenerationUtc: null }, readyBufferPerStudent: [], batches: [] }));
     return svc;
+  }
+
+  function makeIntegrationsAdminApi() {
+    const adminApi = jasmine.createSpyObj('AdminApiService', ['getNotificationConfig', 'listAiCategories', 'listAiProviders', 'listAiPricing', 'listAiPricingOverrides', 'listStudents', 'getStats']);
+    adminApi.getNotificationConfig.and.returnValue(of({
+      email: { enabled: false, configured: false, statusLabel: 'Disabled', host: null, port: 587, fromAddress: null, fromDisplayName: 'SpeakPath', useSsl: true, hasUsername: false, hasPassword: false },
+      sms: { enabled: false, configured: false, statusLabel: 'Disabled', provider: null, senderId: null, hasApiKey: false },
+      inApp: { enabled: true },
+      source: 'AppSettings',
+    }));
+    adminApi.listAiCategories.and.returnValue(of([]));
+    adminApi.listAiProviders.and.returnValue(of([]));
+    adminApi.listAiPricing.and.returnValue(of([]));
+    adminApi.listAiPricingOverrides.and.returnValue(of([]));
+    adminApi.listStudents.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 25, totalPages: 1 }));
+    adminApi.getStats.and.returnValue(of({ totalStudents: 0, onboardedStudents: 0, totalActivityAttempts: 0 }));
+    return adminApi;
   }
 
   it('AI Config page renders sp-admin-form-field wrappers in credentials tab (10X-I)', () => {
@@ -483,21 +478,23 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
 
   it('Integrations page renders integration cards grid (10X-I)', () => {
     const svc = makeIntegrationsSvc();
+    const adminApi = makeIntegrationsAdminApi();
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }, { provide: AdminApiService, useValue: adminApi }],
     });
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
-    const cards = fixture.nativeElement.querySelectorAll('.sp-int-card');
-    expect(cards.length).toBeGreaterThanOrEqual(5);
+    const cards = fixture.nativeElement.querySelectorAll('sp-admin-config-card');
+    expect(cards.length).toBeGreaterThanOrEqual(2);
   });
 
   it('Integrations page renders sp-admin-button for test connection action (10X-I)', () => {
     const svc = makeIntegrationsSvc();
+    const adminApi = makeIntegrationsAdminApi();
     TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }, { provide: AdminApiService, useValue: adminApi }],
     });
     const fixture = TestBed.createComponent(AdminIntegrationsComponent);
     fixture.detectChanges();
@@ -505,7 +502,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     expect(buttons.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('Students edit modal opens as sp-admin-modal on startEdit (10X-I)', () => {
+  it('Students edit modal signal is set on startEdit (10X-I)', () => {
     const student = {
       studentProfileId: 'p1', email: 'ann@example.com', firstName: 'Ann', lastName: 'Lee',
       displayName: null, lifecycleStage: 'CourseReady', onboardingStatus: 'Complete', cefrLevel: 'B1',
@@ -525,10 +522,8 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     fixture.detectChanges();
     fixture.componentInstance.startEdit(student as any);
     fixture.detectChanges();
-    const modal = fixture.nativeElement.querySelector('sp-admin-modal');
-    expect(modal).toBeTruthy();
-    const inputs = modal.querySelectorAll('sp-admin-input');
-    expect(inputs.length).toBeGreaterThanOrEqual(2);
+    expect(fixture.componentInstance.editing()).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-slide-over').length).toBeGreaterThanOrEqual(1);
   });
 
   it('Students edit modal closes on cancelEdit (10X-I)', () => {
@@ -549,7 +544,7 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     expect(fixture.componentInstance.editing()).toBeNull();
   });
 
-  it('Students reset password modal opens as sp-admin-modal (10X-I)', () => {
+  it('Students reset password modal signal is set on startResetPassword (10X-I)', () => {
     const student = {
       studentProfileId: 'p2', email: 'bob@example.com', firstName: 'Bob', lastName: 'Smith',
       displayName: null, lifecycleStage: 'CourseReady', onboardingStatus: 'Complete', cefrLevel: null,
@@ -569,12 +564,11 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     fixture.detectChanges();
     fixture.componentInstance.startResetPassword(student as any);
     fixture.detectChanges();
-    const modals = fixture.nativeElement.querySelectorAll('sp-admin-modal');
-    const openModal = (Array.from(modals) as Element[]).find(m => m.getAttribute('ng-reflect-open') !== 'false');
-    expect(openModal).toBeTruthy();
+    expect(fixture.componentInstance.resetting()).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-slide-over').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('Students reset data modal opens as sp-admin-modal (10X-I)', () => {
+  it('Students reset data modal opens on startResetData (10X-I)', () => {
     const student = {
       studentProfileId: 'p3', email: 'carol@example.com', firstName: 'Carol', lastName: 'Jones',
       displayName: null, lifecycleStage: 'CourseReady', onboardingStatus: 'Complete', cefrLevel: null,
@@ -594,9 +588,8 @@ describe('Phase 10X-I — AI Config, Integrations, student modal CVA migration',
     fixture.detectChanges();
     fixture.componentInstance.startResetData(student as any);
     fixture.detectChanges();
-    const modals = fixture.nativeElement.querySelectorAll('sp-admin-modal');
-    expect(modals.length).toBeGreaterThanOrEqual(1);
     expect(fixture.componentInstance.resettingData()).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-slide-over').length).toBeGreaterThanOrEqual(1);
   });
 });
 

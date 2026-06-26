@@ -2,95 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import {
+  AdminSecuritySettings,
+  AdminAuthEventItem,
+  AdminAuthEventListQuery as AdminAuthEventListParams,
+} from '../models/admin.models';
 
-export interface AdminPasswordPolicySettings {
-  requiredLength: number;
-  requireUppercase: boolean;
-  requireLowercase: boolean;
-  requireDigit: boolean;
-  requireNonAlphanumeric: boolean;
-}
+export type { AdminSecuritySettings, AdminAuthEventItem, AdminAuthEventListParams };
 
-export interface AdminLockoutSettings {
-  maxFailedAccessAttempts: number;
-  lockoutDurationMinutes: number;
-}
-
-export interface AdminRateLimitPolicyInfo {
-  policyName: string;
-  permitLimit: number;
-  windowMinutes: number;
-  keyedBy: string;
-}
-
-export interface AdminJwtSettings {
-  accessTokenExpiryHours: number;
-  issuerConfigured: boolean;
-  audienceConfigured: boolean;
-}
-
-export interface AdminRefreshTokenSettings {
-  expiryDays: number;
-  rotationEnabled: boolean;
-  revokeOnPasswordChange: boolean;
-  revokeOnPasswordReset: boolean;
-}
-
-export interface AdminSecurityHeadersSettings {
-  xContentTypeOptionsEnabled: boolean;
-  xFrameOptionsEnabled: boolean;
-  referrerPolicyEnabled: boolean;
-  permissionsPolicyEnabled: boolean;
-  cspStatus: string;
-  hstsStatus: string;
-}
-
-export interface AdminGoogleExternalLoginSettings {
-  enabled: boolean;
-  clientIdConfigured: boolean;
-  clientSecretConfigured: boolean;
-  allowAutoLinkByEmail: boolean;
-  allowStudentAutoProvisioning: boolean;
-  allowedDomains: string[];
-}
-
-export interface AdminExternalLoginSettings {
-  google: AdminGoogleExternalLoginSettings;
-}
-
-export interface AdminSecuritySettings {
-  passwordPolicy: AdminPasswordPolicySettings;
-  lockout: AdminLockoutSettings;
-  rateLimitPolicies: AdminRateLimitPolicyInfo[];
-  jwt: AdminJwtSettings;
-  refreshToken: AdminRefreshTokenSettings;
-  securityHeaders: AdminSecurityHeadersSettings;
-  externalLogin: AdminExternalLoginSettings;
-}
-
-export interface AdminAuthEventItem {
-  id: string;
-  eventType: string;
-  outcome: string;
-  userId: string | null;
-  emailOrUserName: string | null;
-  failureReasonCode: string | null;
-  ipAddress: string | null;
-  correlationId: string | null;
-  occurredAtUtc: string;
-}
-
-export interface AdminAuthEventListParams {
-  page?: number;
-  pageSize?: number;
-  userId?: string;
-  email?: string;
-  eventType?: string;
-  outcome?: string;
-  from?: string;
-  to?: string;
-}
-
+/** Security-specific paged response — uses `total` (not `totalCount`) to match the auth-events endpoint. */
 export interface PagedResponse<T> {
   items: T[];
   total: number;

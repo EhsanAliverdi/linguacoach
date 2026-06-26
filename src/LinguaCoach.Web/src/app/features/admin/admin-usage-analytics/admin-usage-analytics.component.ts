@@ -18,7 +18,6 @@ import {
   SpAdminNotImplementedStateComponent,
   SpAdminAreaChartComponent,
   SpAdminBarChartComponent,
-  SpAdminHeatmapComponent,
   SpAdminFlyoutComponent,
 } from '../../../design-system/admin';
 
@@ -39,7 +38,6 @@ type Period = 'today' | '7d' | '30d' | 'month' | 'custom';
     SpAdminNotImplementedStateComponent,
     SpAdminAreaChartComponent,
     SpAdminBarChartComponent,
-    SpAdminHeatmapComponent,
     SpAdminFlyoutComponent,
   ],
   providers: [DecimalPipe],
@@ -72,12 +70,14 @@ export class AdminUsageAnalyticsComponent implements OnInit {
   // ── KPI computed ─────────────────────────────────────────────────
   totalCost        = computed(() => this.aiTrends().reduce((s, b) => s + b.cost, 0));
   totalCalls       = computed(() => this.aiTrends().reduce((s, b) => s + b.requestCount, 0));
-  avgCostPerStudent = computed(() => this.totalCost() / Math.max(1, 8));
+  // studentCount comes from the activity-trends buckets (distinct active students not yet available from this endpoint)
+  // Using total activities as a proxy denominator is misleading — mark as not-implemented until a student-count endpoint is wired.
+  avgCostPerStudent = computed<number | null>(() => null);
   totalActivities  = computed(() => this.activityTrends().reduce((s, b) => s + b.activityCount, 0));
 
   totalCostDisplay        = computed(() => '$' + this.totalCost().toFixed(2));
   totalCallsDisplay       = computed(() => this.totalCalls().toLocaleString());
-  avgCostDisplay          = computed(() => '$' + this.avgCostPerStudent().toFixed(2));
+  avgCostDisplay          = computed(() => this.avgCostPerStudent() !== null ? '$' + this.avgCostPerStudent()!.toFixed(2) : 'N/A');
   totalActivitiesDisplay  = computed(() => this.totalActivities().toLocaleString());
   periodLabel             = computed(() => this.periods.find(p => p.value === this.period())?.label ?? '');
 

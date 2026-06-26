@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminIntegrationsComponent } from './admin-integrations.component';
@@ -7,6 +7,7 @@ import {
   StorageSettings,
   StorageTestResult,
 } from '../../../core/services/admin-integrations.service';
+import { AdminApiService } from '../../../core/services/admin.api.service';
 
 const STORAGE: StorageSettings = {
   provider: 'minio',
@@ -27,6 +28,19 @@ function makeSvc() {
   };
 }
 
+const NOTIF_CONFIG = {
+  email: { enabled: false, configured: false, statusLabel: 'Disabled', host: null, port: 587, fromAddress: null, fromDisplayName: 'SpeakPath', useSsl: true, hasUsername: false, hasPassword: false },
+  sms: { enabled: false, configured: false, statusLabel: 'Disabled', provider: null, senderId: null, hasApiKey: false },
+  inApp: { enabled: true },
+  source: 'AppSettings',
+};
+
+function makeAdminApi() {
+  const spy = jasmine.createSpyObj('AdminApiService', ['getNotificationConfig', 'updateEmailConfig', 'updateSmsConfig', 'testEmail']);
+  spy.getNotificationConfig.and.returnValue(of(NOTIF_CONFIG));
+  return spy;
+}
+
 describe('AdminIntegrationsComponent', () => {
   let fixture: ComponentFixture<AdminIntegrationsComponent>;
   let component: AdminIntegrationsComponent;
@@ -36,7 +50,7 @@ describe('AdminIntegrationsComponent', () => {
     svc = makeSvc();
     await TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }, { provide: AdminApiService, useValue: makeAdminApi() }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminIntegrationsComponent);
     component = fixture.componentInstance;
@@ -75,7 +89,7 @@ describe('AdminIntegrationsComponent', () => {
     svc.getStorage.and.returnValue(of({ ...STORAGE, accessKey: null, secretKey: null }));
     await TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }, { provide: AdminApiService, useValue: makeAdminApi() }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminIntegrationsComponent);
     component = fixture.componentInstance;
@@ -85,28 +99,28 @@ describe('AdminIntegrationsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Credentials missing');
   });
 
-  it('calls testStorage on testConnection', fakeAsync(async () => {
+  it('calls testStorage on testConnection', async () => {
     await setup();
     component.testConnection();
-    tick();
+    await fixture.whenStable();
     expect(svc.testStorage).toHaveBeenCalledTimes(1);
     expect(component.storageTest()?.ok).toBeTrue();
-  }));
+  });
 
-  it('sets storageTest to failed result on test error', fakeAsync(async () => {
+  it('sets storageTest to failed result on test error', async () => {
     await setup();
     svc.testStorage.and.returnValue(throwError(() => ({ error: { error: 'Connection refused' } })));
     component.testConnection();
-    tick();
+    await fixture.whenStable();
     expect(component.storageTest()?.ok).toBeFalse();
-  }));
+  });
 
   it('shows error state when storage fails to load', async () => {
     svc = makeSvc();
     svc.getStorage.and.returnValue(throwError(() => ({ error: { error: 'Storage down' } })));
     await TestBed.configureTestingModule({
       imports: [AdminIntegrationsComponent],
-      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminIntegrationsService, useValue: svc }, { provide: AdminApiService, useValue: makeAdminApi() }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminIntegrationsComponent);
     component = fixture.componentInstance;

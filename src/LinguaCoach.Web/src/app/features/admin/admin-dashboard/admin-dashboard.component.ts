@@ -16,8 +16,6 @@ import {
   SpAdminLoadingStateComponent,
   SpAdminKpiCardComponent,
   SpAdminHeroSummaryComponent,
-  SpAdminSystemHealthComponent,
-  SpAdminDonutChartComponent,
   SpAdminSparklineCardComponent,
   SpAdminNotImplementedStateComponent,
   SpAdminTableComponent,
@@ -41,8 +39,6 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
     SpAdminLoadingStateComponent,
     SpAdminKpiCardComponent,
     SpAdminHeroSummaryComponent,
-    SpAdminSystemHealthComponent,
-    SpAdminDonutChartComponent,
     SpAdminSparklineCardComponent,
     SpAdminNotImplementedStateComponent,
     SpAdminTableComponent,
@@ -70,37 +66,6 @@ export class AdminDashboardComponent implements OnInit {
   aiUsageTrends7d = signal<AdminAiUsageTrendResponse | null>(null);
   loadingAiUsageTrends7d = signal(true);
   aiUsageTrends7dError = signal(false);
-
-  // ── static config (no backend endpoint — service latency is hardcoded) ──
-  readonly services = [
-    { name: 'Writing AI',  ms: 0 },
-    { name: 'Feedback AI', ms: 0 },
-    { name: 'Speaking AI', ms: 0 },
-    { name: 'Database',    ms: 0 },
-    { name: 'Auth',        ms: 0 },
-  ];
-  readonly systemFooter = [
-    { k: 'Provider',         v: 'Configured — see AI Config' },
-    { k: 'Error rate (24h)', v: '—' },
-    { k: 'API calls today',  v: '—' },
-  ];
-
-  // ── AI cost donut — uses real category data if available ────────
-  readonly costDonutSegments = (() => {
-    const segs = [
-      { label: 'Writing',    pct: 42, color: '#5B4BE8' },
-      { label: 'Feedback',   pct: 38, color: '#B45CF0' },
-      { label: 'Speaking',   pct: 12, color: '#FF7A59' },
-      { label: 'Assessment', pct: 8,  color: '#13B07C' },
-    ];
-    const circ = 2 * Math.PI * 36;
-    let cum = 0;
-    return segs.map(s => {
-      const offset = circ * (0.25 - cum);
-      cum += s.pct / 100;
-      return { ...s, dashArray: `${(s.pct / 100) * circ} ${circ}`, dashOffset: offset };
-    });
-  })();
 
   // ── computed: subtitle ──────────────────────────────────────────
   readonly subtitle = computed(() => {

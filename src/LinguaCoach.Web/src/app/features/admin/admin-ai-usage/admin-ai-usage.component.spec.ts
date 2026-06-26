@@ -1216,7 +1216,7 @@ describe('AdminAiUsageComponent', () => {
   it('period pill buttons render', () => {
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const pills = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-au-pill');
+    const pills = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-admin-period-pill');
     expect(pills.length).toBeGreaterThanOrEqual(3);
   });
 

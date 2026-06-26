@@ -57,14 +57,6 @@ describe('AdminExerciseTypesComponent', () => {
     expect(html.querySelector('sp-admin-table')).toBeTruthy();
   });
 
-  it('renders count input fields', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    expect(html.querySelector('[aria-label="min items"]')).toBeTruthy();
-    expect(html.querySelector('[aria-label="max options"]')).toBeTruthy();
-  });
-
   it('renders filter bar with search and selects', () => {
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     fixture.detectChanges();
@@ -103,58 +95,55 @@ describe('AdminExerciseTypesComponent', () => {
     expect(c.filteredExerciseTypes()[0].key).toBe('a');
   });
 
-  it('submits valid count edits through the patch flow', () => {
+  it('openConfig populates configForm and opens slide-over', () => {
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     const c = fixture.componentInstance;
     fixture.detectChanges();
     const type = c.exerciseTypes()[0];
 
-    c.saveCounts(type);
+    c.openConfig(type);
+
+    expect(c.configOpen()).toBeTrue();
+    expect((c.configForm() as ExerciseTypeDefinition).key).toBe('reading_fill_in_blanks');
+  });
+
+  it('configCountError returns null for valid form', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    expect(c.configCountError(makeType())).toBeNull();
+  });
+
+  it('configCountError returns error when min > max', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    const invalid = makeType({ minItemsPerPractice: 9, maxItemsPerPractice: 6 });
+    expect(c.configCountError(invalid)).toBeTruthy();
+  });
+
+  it('onRowAction configure opens the config slide-over', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    const type = c.exerciseTypes()[0];
+
+    c.onRowAction('configure', type);
+    expect(c.configOpen()).toBeTrue();
+  });
+
+  it('saveConfig calls updateExerciseType with form values', () => {
+    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
+    const c = fixture.componentInstance;
+    fixture.detectChanges();
+    const type = c.exerciseTypes()[0];
+    c.openConfig(type);
+
+    c.saveConfig();
 
     expect(admin.updateExerciseType).toHaveBeenCalledWith('reading_fill_in_blanks', jasmine.objectContaining({
       minItemsPerPractice: 3,
       maxItemsPerPractice: 6,
-    }));
-  });
-
-  it('rejects invalid range and does not call the API', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    const c = fixture.componentInstance;
-    fixture.detectChanges();
-    const type = c.exerciseTypes()[0];
-    type.minItemsPerPractice = 9;
-
-    expect(c.countError(type)).toBeTruthy();
-
-    c.saveCounts(type);
-    expect(admin.updateExerciseType).not.toHaveBeenCalled();
-  });
-
-  it('flags negative values', () => {
-    const type = makeType({ minOptionsPerItem: -1 });
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    expect(fixture.componentInstance.countError(type)).toBe('No negative values.');
-  });
-
-  it('onRowAction dispatches toggle for Enable/Disable', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    const c = fixture.componentInstance;
-    fixture.detectChanges();
-    const type = c.exerciseTypes()[0];
-
-    c.onRowAction({ label: 'Disable' }, type);
-    expect(admin.updateExerciseType).toHaveBeenCalledWith('reading_fill_in_blanks', jasmine.objectContaining({ isEnabled: false }));
-  });
-
-  it('onRowAction dispatches saveCounts for Save counts', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    const c = fixture.componentInstance;
-    fixture.detectChanges();
-    const type = c.exerciseTypes()[0];
-
-    c.onRowAction({ label: 'Save counts' }, type);
-    expect(admin.updateExerciseType).toHaveBeenCalledWith('reading_fill_in_blanks', jasmine.objectContaining({
-      minItemsPerPractice: 3,
     }));
   });
 
@@ -227,41 +216,17 @@ describe('AdminExerciseTypesComponent', () => {
     expect(html.querySelector('[aria-label="Exercise types summary"]')).toBeTruthy();
   });
 
-  it('typeIconBg returns non-empty string for known skill', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    fixture.detectChanges();
-    const bg = fixture.componentInstance.typeIconBg('speaking');
-    expect(bg).toBeTruthy();
-    expect(bg.startsWith('#')).toBeTrue();
-  });
-
-  it('typeIconBg returns fallback for unknown skill', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    fixture.detectChanges();
-    expect(fixture.componentInstance.typeIconBg('unknown_skill')).toBeTruthy();
-  });
-
-  it('renders icon tile in name cell', () => {
-    const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
-    fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    expect(html.querySelector('.sp-et-icon-tile')).toBeTruthy();
-  });
-
   it('shows "Not runnable yet" label for non-ready type', () => {
     admin.listExerciseTypes.and.returnValue(of([makeType({ implementationStatus: 'not_implemented' })]));
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    expect(html.querySelector('.sp-et-not-runnable')).toBeTruthy();
-    expect(html.textContent).toContain('Not runnable yet');
+    expect(fixture.nativeElement.textContent).toContain('Not runnable yet');
   });
 
   it('does not show "Not runnable yet" label for ready type', () => {
     admin.listExerciseTypes.and.returnValue(of([makeType({ implementationStatus: 'ready' })]));
     const fixture = TestBed.createComponent(AdminExerciseTypesComponent);
     fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    expect(html.querySelector('.sp-et-not-runnable')).toBeFalsy();
+    expect(fixture.nativeElement.textContent).not.toContain('Not runnable yet');
   });
 });

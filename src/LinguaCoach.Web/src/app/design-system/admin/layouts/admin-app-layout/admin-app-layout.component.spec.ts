@@ -130,9 +130,9 @@ describe('AdminAppLayoutComponent (Phase 10UI-FIX-2)', () => {
     expect(auth.logout).toHaveBeenCalled();
   });
 
-  it('renders sp-admin-theme-toggle inside the header', () => {
+  it('renders sp-admin-header inside the layout', () => {
     const { host } = setup();
-    expect(host.querySelector('sp-admin-theme-toggle')).toBeTruthy();
+    expect(host.querySelector('sp-admin-header')).toBeTruthy();
   });
 
   it('renders router-outlet for page content', () => {

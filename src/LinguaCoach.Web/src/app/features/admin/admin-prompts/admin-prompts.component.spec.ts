@@ -296,11 +296,10 @@ describe('AdminPromptsComponent', () => {
     expect(component.promptCategory('memory_build_profile')).toBe('Memory');
   });
 
-  it('renders category badge in table row', async () => {
+  it('renders status badge in table row', async () => {
     await setup([PROMPT_ACTIVE]);
     const badges = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge');
-    const badgeTexts = Array.from(badges).map(b => b.textContent?.trim());
-    expect(badgeTexts.some(t => t === 'Writing')).toBeTrue();
+    expect(badges.length).toBeGreaterThanOrEqual(1);
   });
 
   it('categoryFilter filters rows by derived category', async () => {

@@ -85,7 +85,7 @@ describe('AdminUsagePoliciesComponent', () => {
     const fixture = TestBed.createComponent(AdminUsagePoliciesComponent);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
-    const statCards = html.querySelectorAll('sp-admin-stat-card');
+    const statCards = html.querySelectorAll('sp-admin-kpi-card');
     expect(statCards.length).toBeGreaterThanOrEqual(3);
   });
 
@@ -129,7 +129,7 @@ describe('AdminUsagePoliciesComponent', () => {
     c.openCreate();
     fixture.detectChanges();
 
-    expect(c.showForm()).toBeTrue();
+    expect(c.policyDrawerOpen()).toBeTrue();
     expect(c.editingId()).toBeNull();
   });
 
@@ -216,9 +216,9 @@ describe('AdminUsagePoliciesComponent', () => {
     const c = fixture.componentInstance;
 
     c.openCreate();
-    expect(c.showForm()).toBeTrue();
-    c.cancel();
-    expect(c.showForm()).toBeFalse();
+    expect(c.policyDrawerOpen()).toBeTrue();
+    c.closePolicyDrawer();
+    expect(c.policyDrawerOpen()).toBeFalse();
   });
 
   // ── 10. Page body wrapper present ────────────────────────────────────────

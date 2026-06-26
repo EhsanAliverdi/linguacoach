@@ -40,11 +40,11 @@
       }
     </sp-admin-card>
 
-    <sp-admin-card padding="md">
-      <sp-admin-system-health
-        [services]="services"
-        [footer]="systemFooter"
-        diagnosticsLink="/admin/diagnostics" />
+    <sp-admin-card title="System health" variant="section" padding="md">
+      <sp-admin-not-implemented-state title="Pending endpoint">
+        Live service latency requires a dedicated diagnostics endpoint.
+        <a routerLink="/admin/diagnostics" class="sp-admin-link">View diagnostics →</a>
+      </sp-admin-not-implemented-state>
     </sp-admin-card>
 
   </div>
@@ -108,7 +108,10 @@
   <div class="sp-admin-card-grid-4">
 
     <sp-admin-card title="AI cost by type" variant="section" padding="md">
-      <sp-admin-donut-chart [segments]="costDonutSegments" [size]="80" />
+      <sp-admin-not-implemented-state title="Pending endpoint">
+        Per-category cost breakdown requires the usage analytics endpoint.
+        <a routerLink="/admin/usage-analytics" class="sp-admin-link">View usage analytics →</a>
+      </sp-admin-not-implemented-state>
     </sp-admin-card>
 
     <sp-admin-card title="Avg session" variant="section" padding="md">

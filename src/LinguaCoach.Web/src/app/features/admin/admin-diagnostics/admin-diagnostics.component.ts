@@ -25,7 +25,6 @@ import {
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
-  SpAdminTableFooterComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
 import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
@@ -56,7 +55,6 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
     SpAdminTruncatedTextComponent,
     SpAdminEventFeedComponent,
     SpAdminBreakdownBarsComponent,

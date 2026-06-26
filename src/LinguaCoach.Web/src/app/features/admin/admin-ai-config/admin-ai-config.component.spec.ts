@@ -436,7 +436,7 @@ describe('AdminAiConfigComponent', () => {
 
   it('renders kpi tile cards for the summary strip', async () => {
     await setup([CAT_LLM, CAT_TTS], [PROVIDER]);
-    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('.sp-aic-kpi-card');
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-kpi-card');
     expect(cards.length).toBeGreaterThanOrEqual(4);
   });
 

@@ -182,8 +182,8 @@ describe('AdminCurriculumComponent', () => {
     comp.startCreate();
     fixture.detectChanges();
 
-    expect(comp.view()).toBe('create');
-    // Phase 10X-G: create/edit form is wrapped in sp-admin-card.
+    expect(comp.slideOverOpen()).toBeTrue();
+    expect(comp.editMode()).toBe('create');
     expect((fixture.nativeElement as HTMLElement).querySelector('sp-admin-card')).toBeTruthy();
   });
 
@@ -197,7 +197,8 @@ describe('AdminCurriculumComponent', () => {
     comp.startEdit(makeObjective());
     fixture.detectChanges();
 
-    expect(comp.view()).toBe('edit');
+    expect(comp.editMode()).toBe('edit');
+    expect(comp.slideOverOpen()).toBeTrue();
   });
 
   it('populates form fields from objective in startEdit', () => {
@@ -212,15 +213,15 @@ describe('AdminCurriculumComponent', () => {
 
   // ── Routing preview ───────────────────────────────────────────────────────
 
-  it('switches view to preview via view signal', () => {
+  it('opens preview panel via openPreview', () => {
     const fixture = TestBed.createComponent(AdminCurriculumComponent);
     const comp = fixture.componentInstance as any;
     fixture.detectChanges();
 
-    comp.view.set('preview');
+    comp.openPreview();
     fixture.detectChanges();
 
-    expect(comp.view()).toBe('preview');
+    expect(comp.previewOpen()).toBeTrue();
   });
 
   it('calls previewRouting and sets previewResult signal', () => {
@@ -228,7 +229,6 @@ describe('AdminCurriculumComponent', () => {
     const comp = fixture.componentInstance as any;
     fixture.detectChanges();
 
-    comp.view.set('preview');
     comp.runPreview();
     fixture.detectChanges();
 
@@ -244,7 +244,6 @@ describe('AdminCurriculumComponent', () => {
     const comp = fixture.componentInstance as any;
     fixture.detectChanges();
 
-    comp.view.set('preview');
     comp.runPreview();
     fixture.detectChanges();
 

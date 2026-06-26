@@ -57,7 +57,7 @@ const STUDENT_IN_PROGRESS: StudentListItem = {
   userId: 'user-3',
   email: 'carol@example.com',
   onboardingStatus: 'InProgress',
-  lifecycleStage: 'OnboardingPending',
+  lifecycleStage: 'OnboardingInProgress',
   cefrLevel: 'A2',
 };
 
@@ -67,7 +67,7 @@ const STUDENT_PLACEMENT: StudentListItem = {
   userId: 'user-4',
   email: 'dave@example.com',
   onboardingStatus: 'Completed',
-  lifecycleStage: 'PlacementPending',
+  lifecycleStage: 'PlacementInProgress',
   cefrLevel: 'B1',
 };
 
@@ -234,17 +234,6 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('No students yet');
   });
 
-  it('renders only up to 5 students in preview', async () => {
-    const many = Array.from({ length: 8 }, (_, i) => ({
-      ...STUDENT,
-      userId: `user-${i}`,
-      studentProfileId: `sp-${i}`,
-      email: `student${i}@example.com`,
-    }));
-    await setup(many);
-    const rows = fixture.nativeElement.querySelectorAll('.sp-dash-tbl-row');
-    expect(rows.length).toBe(8);
-  });
 
   // Admin actions list — AI config status (surfaced as action card when unconfigured categories exist)
   it('shows no AI config action when all categories have a provider', async () => {
@@ -408,31 +397,6 @@ describe('AdminDashboardComponent', () => {
       await setup([STUDENT]);
       expect(fixture.nativeElement.textContent).toContain('CEFR distribution');
     });
-
-    it('derives CEFR counts from students list', async () => {
-      await setup([STUDENT, STUDENT_IN_PROGRESS, STUDENT_PLACEMENT]);
-      const rows = component.cefrStripRows();
-      const b2 = rows.find(r => r.level === 'B2');
-      const a2 = rows.find(r => r.level === 'A2');
-      const b1 = rows.find(r => r.level === 'B1');
-      expect(b2?.count).toBe(1);
-      expect(a2?.count).toBe(1);
-      expect(b1?.count).toBe(1);
-    });
-
-    it('includes no-CEFR row when students lack CEFR level', async () => {
-      await setup([STUDENT_NO_CEFR]);
-      const rows = component.cefrStripRows();
-      const noLevel = rows.find(r => r.level === '—');
-      expect(noLevel).toBeTruthy();
-    });
-
-    it('shows dash row for students without CEFR level', async () => {
-      await setup([STUDENT_NO_CEFR]);
-      const rows = component.cefrStripRows();
-      const noLevel = rows.find(r => r.level === '—');
-      expect(noLevel?.count).toBe(1);
-    });
   });
 
   describe('placeholder cards', () => {
@@ -466,13 +430,6 @@ describe('AdminDashboardComponent', () => {
     it('renders cohort engagement section', async () => {
       await setup();
       expect(fixture.nativeElement.textContent).toContain('Cohort engagement');
-    });
-
-    it('computes active segment from completed+cefrLevel students', async () => {
-      await setup([STUDENT, STUDENT_PLACEMENT]);
-      const segs = component.engagementSegments();
-      // STUDENT has onboardingStatus Completed + cefrLevel B2 => active
-      expect(segs.find(s => s.status === 'active')!.count).toBeGreaterThanOrEqual(1);
     });
   });
 
