@@ -47,9 +47,23 @@ public sealed class DiagnosticsController : ControllerBase
             dbReachable = false;
         }
 
-        var aiProvider = _config["AI:WritingFeedback:Provider"];
-        var aiModel = _config["AI:WritingFeedback:Model"];
-        var aiConfigured = !string.IsNullOrWhiteSpace(aiProvider) && !string.IsNullOrWhiteSpace(aiModel);
+        // AI status: check the DB-backed category config (llm.default) that the real
+        // provider resolver uses — not the legacy AI:WritingFeedback env-var which is never set.
+        string? aiProvider = null;
+        string? aiModel = null;
+        bool aiConfigured = false;
+        try
+        {
+            var defaultLlm = await _db.AiConfigCategories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CategoryKey == "llm.default", ct);
+            if (defaultLlm != null && defaultLlm.IsConfigured)
+            {
+                aiProvider = defaultLlm.ProviderName;
+                aiModel = defaultLlm.ModelName;
+                aiConfigured = true;
+            }
+        }
+        catch { /* db already checked above; silently leave aiConfigured false */ }
 
         var logLevel = _config["LOG_LEVEL"] ?? _config["Logging:LogLevel:Default"] ?? "Information";
 
