@@ -158,7 +158,8 @@ Backend tests not run — only frontend changed.
 
 | Issue | Severity | Action Required |
 |---|---|---|
-| AI provider "Not configured" in diagnostics despite LLM config | P2 | Investigate diagnostics status endpoint — check what env var or health check it uses vs what AI Config stores |
+| AI provider "Not configured" in diagnostics | P2 | **FIXED in Phase 11E-FINAL** — `DiagnosticsController` now reads DB category config |
+| SpAdminTableComponent cell template ignored (Edit/Remove row actions empty) | P2 | **FIXED in Phase 11E-FINAL** — added `ContentChild('cell')` + `NgTemplateOutlet` |
 | Welcome email not sent on create-student | P3 | Backend SMTP endpoint not wired |
 | Aggregate lesson pool health endpoint | P3 | Backend endpoint not yet implemented |
 | Student engagement heatmap | P3 | Backend endpoint not yet implemented |
@@ -167,8 +168,6 @@ Backend tests not run — only frontend changed.
 
 ---
 
-## Next Recommended Action
+## Phase 11E-FINAL Summary
 
-1. **Deploy the button fix** — all admin button interactions were silently broken; this is the highest priority.
-2. **Investigate F-02** — check why diagnostics reports AI provider as "Not configured" when AI Config shows Gemini configured.
-3. Begin Phase 12 product work.
+All P1/P2 issues resolved. See full final report: [2026-06-27-phase-11e-final-report.md](2026-06-27-phase-11e-final-report.md)
