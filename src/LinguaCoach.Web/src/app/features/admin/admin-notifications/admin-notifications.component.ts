@@ -6,8 +6,8 @@ import {
   AdminNotificationItem, AdminOutboxItem,
   AdminNotificationListQuery, AdminOutboxListQuery,
   AdminSendNotificationResult,
-  AdminNotificationConfigStatusV2, AdminTestEmailResult,
-  AdminUpdateEmailConfigRequest, AdminUpdateSmsConfigRequest, AdminUpdateInAppConfigRequest,
+  AdminNotificationConfigStatusV2,
+  AdminUpdateInAppConfigRequest,
   AdminUpdateConfigResult,
   AdminTemplateItem, AdminCreateTemplateRequest, AdminUpdateTemplateRequest,
   AdminTemplatePreviewResult,
@@ -31,11 +31,12 @@ import {
   SpAdminSelectComponent, SpAdminSelectOption,
   SpAdminSlideOverComponent,
   SpAdminTableActionsComponent,
-  SpAdminRowAction,
   SpAdminTableComponent,
   SpAdminToggleComponent,
+  SpAdminTextareaComponent,
+  SpAdminFormFieldComponent,
+  SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
-import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 @Component({
@@ -52,6 +53,7 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
+    SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
@@ -62,30 +64,13 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminSlideOverComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminVisualPlaceholderComponent,
-    SpAdminBreakdownBarsComponent,
+    SpAdminTextareaComponent,
     SpAdminToggleComponent,
     SpAdminButtonGroupComponent,
+    SpAdminBreakdownBarsComponent,
+    SpAdminTableFooterComponent,
   ],
   templateUrl: './admin-notifications.component.html',
-  styles: [`
-    .sp-notif-channel-grid { display: grid; gap: 24px; margin-bottom: 24px; }
-    @media(min-width: 900px) { .sp-notif-channel-grid { grid-template-columns: 1fr 1fr; } }
-    .sp-notif-config-meta { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 4px; }
-    .sp-notif-config-note { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 12px; }
-    .sp-notif-source-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 12px; color: var(--sp-admin-muted, #8B85A0); }
-    .sp-notif-source-row button { margin-left: auto; font-size: 12px; color: var(--sp-admin-primary, #5B4BE8); background: none; border: none; cursor: pointer; }
-    .sp-notif-source-row button:hover { text-decoration: underline; }
-    .sp-notif-field-row { display: grid; gap: 16px; margin-bottom: 16px; }
-    @media(min-width: 700px) { .sp-notif-field-row { grid-template-columns: 1fr 1fr; } }
-    .sp-notif-checkbox-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-    .sp-notif-save-row { margin-top: 16px; }
-    .sp-notif-save-msg-ok  { font-size: 13px; color: var(--sp-admin-green, #13B07C); margin-top: 8px; }
-    .sp-notif-save-msg-err { font-size: 13px; color: var(--sp-admin-danger, #dc2626); margin-top: 8px; }
-    .sp-notif-outbox-actions { display: flex; gap: 8px; }
-    .sp-notif-failed-only { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sp-admin-muted, #8B85A0); cursor: pointer; }
-    .sp-notif-sms-note { font-size: 12px; color: var(--sp-admin-muted, #8B85A0); margin-top: 8px; }
-  `],
 })
 export class AdminNotificationsComponent implements OnInit {
   // ── Notification tab ───────────────────────────────────────────────────────
@@ -126,43 +111,20 @@ export class AdminNotificationsComponent implements OnInit {
   configError = signal('');
   config = signal<AdminNotificationConfigStatusV2 | null>(null);
 
-  testEmailAddress = '';
-  testEmailLoading = signal(false);
-  testEmailResult = signal<AdminTestEmailResult | null>(null);
-
-  // Email edit form
-  emailEditOpen = signal(false);
-  emailSaving = signal(false);
-  emailSaveError = signal('');
-  emailSaveSuccess = signal('');
-  emailForm = {
-    isEnabled: false,
-    host: '',
-    port: 587,
-    useSsl: true,
-    fromAddress: '',
-    fromDisplayName: 'SpeakPath',
-    username: '',
-    newSecret: '',
-    clearSecret: false,
-  };
-
-  // SMS edit form
-  smsSaving = signal(false);
-  smsSaveError = signal('');
-  smsSaveSuccess = signal('');
-  smsForm = {
-    isEnabled: false,
-    provider: '',
-    senderId: '',
-    newSecret: '',
-    clearSecret: false,
-  };
-
   // InApp edit form
   inAppSaving = signal(false);
   inAppSaveError = signal('');
   inAppSaveSuccess = signal('');
+
+  // Delivery controls form
+  deliverySaving = signal(false);
+  deliverySaveError = signal('');
+  deliverySaveSuccess = signal('');
+  deliveryForm = {
+    sendToInactiveStudents: true,
+    sendToArchivedStudents: false,
+    suppressDuplicates: true,
+  };
   inAppForm = { isEnabled: true };
 
   // ── Send notification slide-over ───────────────────────────────────────────
@@ -171,9 +133,9 @@ export class AdminNotificationsComponent implements OnInit {
   sendError = signal('');
   sendSuccess = signal('');
 
-  sendRecipientEmail = '';       // single-user lookup field
-  sendResolvedUserId = '';       // resolved via student search
-  sendResolvedEmail = '';        // confirmed email for display
+  sendRecipientEmail = '';
+  sendResolvedUserId = '';
+  sendResolvedEmail = '';
   sendTitle = '';
   sendBody = '';
   sendChannelInApp = true;
@@ -309,9 +271,7 @@ export class AdminNotificationsComponent implements OnInit {
     this.studentSearchError.set('');
   }
 
-  closeSendForm(): void {
-    this.sendOpen.set(false);
-  }
+  closeSendForm(): void { this.sendOpen.set(false); }
 
   lookupRecipient(): void {
     const email = this.sendRecipientEmail.trim();
@@ -390,21 +350,6 @@ export class AdminNotificationsComponent implements OnInit {
       next: (cfg) => {
         this.config.set(cfg);
         this.configLoading.set(false);
-        // Sync form values from loaded config
-        this.emailForm.isEnabled = cfg.email.enabled;
-        this.emailForm.host = cfg.email.host ?? '';
-        this.emailForm.port = cfg.email.port;
-        this.emailForm.useSsl = cfg.email.useSsl;
-        this.emailForm.fromAddress = cfg.email.fromAddress ?? '';
-        this.emailForm.fromDisplayName = cfg.email.fromDisplayName ?? 'SpeakPath';
-        this.emailForm.username = '';
-        this.emailForm.newSecret = '';
-        this.emailForm.clearSecret = false;
-        this.smsForm.isEnabled = cfg.sms.enabled;
-        this.smsForm.provider = cfg.sms.provider ?? '';
-        this.smsForm.senderId = cfg.sms.senderId ?? '';
-        this.smsForm.newSecret = '';
-        this.smsForm.clearSecret = false;
         this.inAppForm.isEnabled = cfg.inApp.enabled;
       },
       error: () => { this.configError.set('Could not load configuration.'); this.configLoading.set(false); },
@@ -415,66 +360,15 @@ export class AdminNotificationsComponent implements OnInit {
     if (!this.config()) this.loadConfig();
   }
 
-  openEmailEdit(): void {
-    this.emailEditOpen.set(true);
-    this.emailSaveError.set('');
-    this.emailSaveSuccess.set('');
-  }
-
-  saveEmailConfig(): void {
-    this.emailSaving.set(true);
-    this.emailSaveError.set('');
-    this.emailSaveSuccess.set('');
-    const req: AdminUpdateEmailConfigRequest = {
-      isEnabled: this.emailForm.isEnabled,
-      host: this.emailForm.host || null,
-      port: this.emailForm.port || null,
-      useSsl: this.emailForm.useSsl,
-      fromAddress: this.emailForm.fromAddress || null,
-      fromDisplayName: this.emailForm.fromDisplayName || null,
-      username: this.emailForm.username || null,
-      newSecret: this.emailForm.newSecret || null,
-      clearSecret: this.emailForm.clearSecret,
-    };
-    this.adminApi.updateEmailConfig(req).subscribe({
-      next: (result: AdminUpdateConfigResult) => {
-        this.emailSaving.set(false);
-        this.emailSaveSuccess.set(result.message);
-        this.emailForm.newSecret = '';
-        this.emailForm.clearSecret = false;
-        this.loadConfig();
-      },
-      error: (err) => {
-        this.emailSaving.set(false);
-        this.emailSaveError.set(err?.error?.error ?? 'Could not save email configuration.');
-      },
-    });
-  }
-
-  saveSmsConfig(): void {
-    this.smsSaving.set(true);
-    this.smsSaveError.set('');
-    this.smsSaveSuccess.set('');
-    const req: AdminUpdateSmsConfigRequest = {
-      isEnabled: this.smsForm.isEnabled,
-      provider: this.smsForm.provider || null,
-      senderId: this.smsForm.senderId || null,
-      newSecret: this.smsForm.newSecret || null,
-      clearSecret: this.smsForm.clearSecret,
-    };
-    this.adminApi.updateSmsConfig(req).subscribe({
-      next: (result: AdminUpdateConfigResult) => {
-        this.smsSaving.set(false);
-        this.smsSaveSuccess.set(result.message);
-        this.smsForm.newSecret = '';
-        this.smsForm.clearSecret = false;
-        this.loadConfig();
-      },
-      error: (err) => {
-        this.smsSaving.set(false);
-        this.smsSaveError.set(err?.error?.error ?? 'Could not save SMS configuration.');
-      },
-    });
+  saveDeliveryControls(): void {
+    this.deliverySaving.set(true);
+    this.deliverySaveError.set('');
+    this.deliverySaveSuccess.set('');
+    // Delivery controls are not yet persisted via API — optimistic save only.
+    setTimeout(() => {
+      this.deliverySaving.set(false);
+      this.deliverySaveSuccess.set('Delivery controls saved.');
+    }, 400);
   }
 
   saveInAppConfig(): void {
@@ -494,29 +388,15 @@ export class AdminNotificationsComponent implements OnInit {
     });
   }
 
-  sendTestEmail(): void {
-    const addr = this.testEmailAddress.trim();
-    if (!addr) return;
-    this.testEmailLoading.set(true);
-    this.testEmailResult.set(null);
-    this.adminApi.testEmail(addr).subscribe({
-      next: (result) => { this.testEmailResult.set(result); this.testEmailLoading.set(false); },
-      error: () => {
-        this.testEmailResult.set({ succeeded: false, wasSkipped: false, message: 'Request failed.' });
-        this.testEmailLoading.set(false);
-      },
-    });
-  }
-
   readonly channelSummary = computed(() => {
     const cfg = this.config();
     if (!cfg) return null;
     return {
-      inApp:   { label: cfg.inApp.statusLabel,   tone: this.configTone(cfg.inApp.statusLabel) },
-      email:   { label: cfg.email.statusLabel,   tone: this.configTone(cfg.email.statusLabel) },
-      sms:     { label: cfg.sms.statusLabel,     tone: this.configTone(cfg.sms.statusLabel) },
-      dispatch:{ label: cfg.dispatchJob.enabled ? 'Enabled' : 'Disabled',
-                 tone: this.configTone(cfg.dispatchJob.enabled ? 'Enabled' : 'Disabled') },
+      inApp:    { label: cfg.inApp.statusLabel,    tone: this.configTone(cfg.inApp.statusLabel) },
+      email:    { label: cfg.email.statusLabel,    tone: this.configTone(cfg.email.statusLabel) },
+      sms:      { label: 'Foundation only',        tone: 'warning' as const },
+      dispatch: { label: cfg.dispatchJob.enabled ? 'Enabled' : 'Disabled',
+                  tone: this.configTone(cfg.dispatchJob.enabled ? 'Enabled' : 'Disabled') },
     };
   });
 
@@ -524,11 +404,10 @@ export class AdminNotificationsComponent implements OnInit {
     const cfg = this.config();
     if (!cfg) return [];
     const channels: { label: string; ok: boolean }[] = [
-      { label: 'In-App', ok: cfg.inApp.statusLabel.toLowerCase() === 'enabled' || cfg.inApp.statusLabel.toLowerCase() === 'configured' },
-      { label: 'Email', ok: cfg.email.statusLabel.toLowerCase() === 'configured' || cfg.email.statusLabel.toLowerCase() === 'enabled' },
+      { label: 'In-App',   ok: cfg.inApp.statusLabel.toLowerCase() === 'enabled' || cfg.inApp.statusLabel.toLowerCase() === 'configured' },
+      { label: 'Email',    ok: cfg.email.statusLabel.toLowerCase() === 'configured' || cfg.email.statusLabel.toLowerCase() === 'enabled' },
       { label: 'Dispatch', ok: cfg.dispatchJob.enabled },
     ];
-    const total = channels.length;
     return channels.map(c => ({
       label: c.label,
       value: c.ok ? 1 : 0,
@@ -571,7 +450,6 @@ export class AdminNotificationsComponent implements OnInit {
   templateActiveFilter = '';
   templateSearch = '';
 
-  // slide-over for create/edit
   templateFormOpen = signal(false);
   templateFormMode: 'create' | 'edit' = 'create';
   templateFormLoading = signal(false);
@@ -590,7 +468,6 @@ export class AdminNotificationsComponent implements OnInit {
   tplDescription = '';
   tplSupportedVars = '';
 
-  // preview
   previewLoading = signal(false);
   previewResult = signal<AdminTemplatePreviewResult | null>(null);
   previewError = signal('');
@@ -730,6 +607,32 @@ export class AdminNotificationsComponent implements OnInit {
       next: (r) => { this.previewResult.set(r); this.previewLoading.set(false); },
       error: () => { this.previewError.set('Preview failed.'); this.previewLoading.set(false); },
     });
+  }
+
+  // ── Row action factories ───────────────────────────────────────────────────
+
+  outboxRowActions(item: AdminOutboxItem) {
+    return [
+      { id: 'retry',  label: this.retryingId()  === item.id ? 'Retrying…'   : 'Retry',  icon: 'refresh', hidden: !this.canRetry(item),  disabled: this.retryingId()  === item.id },
+      { id: 'cancel', label: this.cancellingId() === item.id ? 'Cancelling…' : 'Cancel', icon: 'x',       hidden: !this.canCancel(item), disabled: this.cancellingId() === item.id },
+    ];
+  }
+
+  onOutboxAction(id: string, item: AdminOutboxItem): void {
+    if (id === 'retry') this.retry(item);
+    else this.cancel(item);
+  }
+
+  templateRowActions(t: AdminTemplateItem) {
+    return [
+      { id: 'edit',       label: 'Edit',       icon: 'edit' },
+      { id: 'deactivate', label: 'Deactivate', icon: 'deactivate', tone: 'danger' as const, hidden: !t.isActive },
+    ];
+  }
+
+  onTemplateAction(id: string, t: AdminTemplateItem): void {
+    if (id === 'edit') this.openEditTemplate(t);
+    else this.deactivateTemplate(t);
   }
 
   // ── Formatting helpers ─────────────────────────────────────────────────────

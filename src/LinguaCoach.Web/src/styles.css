@@ -750,7 +750,7 @@ button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-f
 .sp-admin-stack{display:grid;gap:16px;}
 .sp-admin-section-wrap{display:block;margin-bottom:24px;}
 .sp-admin-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.sp-admin-form-stack{display:grid;gap:12px;max-width:520px;}
+
 .sp-admin-check{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--sp-admin-text-secondary);cursor:pointer;}
 .sp-admin-check input{accent-color:var(--sp-admin-primary);}
 .sp-admin-form-desc{font-size:13.5px;color:var(--sp-admin-text-secondary);line-height:1.6;margin-bottom:20px;}

@@ -338,6 +338,8 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  max-width: none;
 }
 
 /* ── Shared metric strip — ring + breakdown side-by-side ────────────────── */
@@ -966,6 +968,21 @@
   color: var(--sp-admin-text-secondary, #4B4462);
 }
 
+/* ── Tab count badge — small pill count inside a tab label ─────────────────── */
+.sp-admin-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--sp-admin-surface-subtle, #F6F4FB);
+  color: var(--sp-admin-text-muted, #8B85A0);
+  padding: 1px 7px;
+  border-radius: 99px;
+  line-height: 1.6;
+}
+
 /* ── Inline flags row — horizontal wrap of checkbox labels (Active/Reviewable) */
 .sp-admin-flags-row {
   display: flex;
@@ -1047,3 +1064,4 @@
   padding: 1px 6px;
   margin-top: 3px;
 }
+

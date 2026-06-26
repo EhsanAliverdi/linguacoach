@@ -1,112 +1,307 @@
 <sp-admin-page-header
   title="Integrations"
-  subtitle="Connected services, storage, background jobs, and API/webhook readiness." />
+  subtitle="Connected services, storage, email delivery, SMS, webhooks, and API readiness." />
 
 <sp-admin-page-body>
 
-  <!-- ── Integration cards ────────────────────────────────────────────────── -->
-  <div class="sp-admin-card-grid-3" aria-label="Integration connections">
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading integrations…" />
+  } @else {
 
-    <!-- Object storage — real data -->
-    <div class="sp-int-card">
-      <div class="sp-int-card-header">
-        <div class="sp-int-card-icon" style="background:var(--sp-admin-surface-alt,#f6f4fb)">
-          <sp-admin-icon name="database" size="lg" [strokeWidth]="1.5" />
-        </div>
-        <div>
-          <div class="sp-int-card-name">Object Storage</div>
-          @if (storage(); as s) {
-            <sp-admin-badge [tone]="s.accessKey && s.secretKey ? 'success' : 'warning'" [dot]="true" size="sm">
-              {{ s.accessKey && s.secretKey ? 'Connected' : 'Credentials missing' }}
+    <div class="sp-admin-card-grid-2" aria-label="Integration connections">
+
+      <!-- Object Storage — real data -->
+      <sp-admin-config-card
+        title="Object Storage"
+        description="MinIO / S3-compatible storage for audio files, lesson assets, and uploads."
+        icon="database"
+        iconTone="green"
+        [state]="storageConnected() ? 'success' : 'warning'"
+        [statusLabel]="storageBadgeLabel()"
+        [statusTone]="storageBadgeTone()"
+        [statusDot]="true"
+        primaryLabel="Configure"
+        secondaryLabel="Test"
+        [secondaryBusy]="testing()"
+        (primary)="openStorageSlideOver()"
+        (secondary)="testConnection()">
+        @if (storageError()) {
+          <sp-admin-alert variant="error">{{ storageError() }}</sp-admin-alert>
+        }
+        @if (storageTest()) {
+          <sp-admin-alert [variant]="storageTest()!.ok ? 'success' : 'error'">
+            {{ storageTest()!.ok ? 'Connection successful.' : (storageTest()!.error ?? 'Test failed.') }}
+          </sp-admin-alert>
+        }
+      </sp-admin-config-card>
+
+      <!-- SMTP / Email -->
+      <sp-admin-config-card
+        title="SMTP / Email"
+        description="Transactional email delivery for notifications, password resets, and admin alerts."
+        icon="mail"
+        iconTone="indigo"
+        [state]="emailStatusTone() === 'success' ? 'success' : 'default'"
+        [statusLabel]="emailConfigLoading() ? 'Loading…' : (notifConfig()?.email?.statusLabel ?? 'Unknown')"
+        [statusTone]="emailConfigLoading() ? 'neutral' : emailStatusTone()"
+        [statusDot]="true"
+        primaryLabel="Configure"
+        [primaryDisabled]="emailConfigLoading()"
+        (primary)="openEmailSlideOver()">
+        @if (emailConfigError()) {
+          <sp-admin-alert variant="error">{{ emailConfigError() }}</sp-admin-alert>
+        }
+      </sp-admin-config-card>
+
+      <!-- SMS — foundation only -->
+      <sp-admin-config-card
+        title="SMS"
+        description="SMS delivery for notifications and alerts. No provider is connected yet."
+        icon="message-square"
+        iconTone="amber"
+        state="warning"
+        statusLabel="Foundation only"
+        statusTone="warning"
+        [statusDot]="true"
+        primaryLabel="Configure"
+        [primaryDisabled]="emailConfigLoading()"
+        (primary)="openSmsSlideOver()">
+      </sp-admin-config-card>
+
+      <!-- Webhook — not implemented -->
+      <sp-admin-config-card
+        title="Webhook"
+        description="Outbound webhook delivery for lesson completion, score events, and student lifecycle hooks."
+        icon="webhook"
+        iconTone="purple"
+        state="neutral"
+        statusLabel="Not implemented"
+        statusTone="neutral">
+      </sp-admin-config-card>
+
+      <!-- Analytics — not implemented -->
+      <sp-admin-config-card
+        title="Analytics"
+        description="Third-party analytics pipeline (Segment, Mixpanel, PostHog) for product and engagement data."
+        icon="trending-up"
+        iconTone="orange"
+        state="neutral"
+        statusLabel="Not implemented"
+        statusTone="neutral">
+      </sp-admin-config-card>
+
+      <!-- Admin API — not implemented -->
+      <sp-admin-config-card
+        title="Admin API"
+        description="Programmatic admin access for external tooling, CI/CD pipelines, and partner integrations."
+        icon="monitor"
+        iconTone="slate"
+        state="neutral"
+        statusLabel="Not implemented"
+        statusTone="neutral">
+      </sp-admin-config-card>
+
+    </div>
+
+  }
+
+  <!-- ── Object Storage slide-over ─────────────────────────────────────────── -->
+  <sp-admin-slide-over
+    [open]="storageOpen()"
+    title="Object Storage"
+    subtitle="MinIO / S3-compatible configuration. Credentials are sourced from environment variables and never displayed."
+    (closed)="storageOpen.set(false)">
+
+    <div class="sp-admin-form-stack">
+      @if (storage(); as s) {
+        <sp-admin-form-field label="Provider">
+          <sp-admin-input size="sm" [value]="s.provider" [disabled]="true" aria-label="Provider" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Endpoint">
+          <sp-admin-input size="sm" [value]="s.endpoint ?? ''" [disabled]="true" aria-label="Endpoint" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Bucket name">
+          <sp-admin-input size="sm" [value]="s.bucketName ?? ''" [disabled]="true" aria-label="Bucket name" />
+        </sp-admin-form-field>
+        <div class="sp-admin-form-row">
+          <sp-admin-form-field label="Access key">
+            <sp-admin-badge [tone]="s.accessKey ? 'success' : 'neutral'" [dot]="true">
+              {{ s.accessKey ? 'Configured' : 'Not set' }}
             </sp-admin-badge>
-          } @else {
-            <sp-admin-badge tone="neutral" [dot]="true" size="sm">Loading…</sp-admin-badge>
-          }
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Secret key">
+            <sp-admin-badge [tone]="s.secretKey ? 'success' : 'neutral'" [dot]="true">
+              {{ s.secretKey ? 'Configured' : 'Not set' }}
+            </sp-admin-badge>
+          </sp-admin-form-field>
         </div>
-      </div>
-      <p class="sp-int-card-desc">MinIO / S3-compatible storage for audio files, lesson assets, and uploads.</p>
-      <div class="sp-int-card-actions">
-        <sp-admin-button variant="secondary" size="sm" [loading]="testing()" [disabled]="testing()" (clicked)="testConnection()">Test connection</sp-admin-button>
-      </div>
+        <sp-admin-alert variant="info">Storage credentials are managed via environment variables or Docker secrets and cannot be edited here.</sp-admin-alert>
+      } @else {
+        <sp-admin-alert variant="warning">Storage settings not available.</sp-admin-alert>
+      }
+
+      @if (storageTest()) {
+        <sp-admin-alert [variant]="storageTest()!.ok ? 'success' : 'error'">
+          {{ storageTest()!.ok ? 'Connection successful.' : (storageTest()!.error ?? 'Test failed.') }}
+        </sp-admin-alert>
+      }
+
+      <sp-admin-button size="sm" variant="secondary" [loading]="testing()" [disabled]="testing()" (clicked)="testConnection()">
+        {{ testing() ? 'Testing…' : 'Test connection' }}
+      </sp-admin-button>
     </div>
 
-    <!-- SMTP / Email — link to Notifications -->
-    <div class="sp-int-card">
-      <div class="sp-int-card-header">
-        <div class="sp-int-card-icon" style="background:#f0fdf4;color:#16a34a">
-          <sp-admin-icon name="mail" size="lg" [strokeWidth]="1.5" />
-        </div>
-        <div>
-          <div class="sp-int-card-name">SMTP / Email</div>
-          <sp-admin-badge tone="info" size="sm">See Notifications</sp-admin-badge>
+    <sp-admin-button-group slot="footer" [actions]="storageFooterActions()" (actionSelected)="storageOpen.set(false)" />
+  </sp-admin-slide-over>
+
+  <!-- ── SMTP / Email slide-over ────────────────────────────────────────────── -->
+  <sp-admin-slide-over
+    [open]="emailOpen()"
+    title="SMTP / Email"
+    subtitle="Email delivery configuration for notifications, password resets, and admin alerts."
+    (closed)="emailOpen.set(false)">
+
+    <div class="sp-admin-form-stack">
+
+      <div class="sp-admin-settings-list">
+        <div class="sp-admin-settings-row">
+          <span class="sp-admin-settings-row-label">Enabled</span>
+          <sp-admin-toggle [(ngModel)]="emailForm.isEnabled" label="" />
         </div>
       </div>
-      <p class="sp-int-card-desc">Email delivery is configured on the Notifications page under Email configuration (SMTP).</p>
-      <div class="sp-int-card-actions">
-        <a routerLink="/admin/notifications" class="sp-int-card-not-impl" style="color:var(--sp-admin-primary,#5B4BE8);font-size:13px;text-decoration:none;">Go to Notifications →</a>
+
+      <div class="sp-admin-form-row">
+        <sp-admin-form-field label="SMTP host">
+          <sp-admin-input size="sm" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" aria-label="SMTP host" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Port">
+          <sp-admin-number-input [(ngModel)]="emailForm.port" [min]="1" [max]="65535" placeholder="587" aria-label="Port" />
+        </sp-admin-form-field>
       </div>
+
+      <div class="sp-admin-form-row">
+        <sp-admin-form-field label="From email">
+          <sp-admin-input size="sm" placeholder="noreply@example.com" [(ngModel)]="emailForm.fromAddress" aria-label="From email" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Sender name">
+          <sp-admin-input size="sm" placeholder="SpeakPath" [(ngModel)]="emailForm.fromDisplayName" aria-label="Sender name" />
+        </sp-admin-form-field>
+      </div>
+
+      <sp-admin-form-field label="Username">
+        <sp-admin-input size="sm" placeholder="smtp-username" [(ngModel)]="emailForm.username" aria-label="Username" />
+      </sp-admin-form-field>
+
+      <sp-admin-form-field label="Password (replace)" hint="Leave blank to keep existing password">
+        <sp-admin-input size="sm" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="emailForm.newSecret" aria-label="Password" />
+        @if (notifConfig()) {
+          <div class="sp-admin-badge-row sp-admin-badge-row--spaced">
+            <sp-admin-badge [tone]="notifConfig()!.email.hasPassword ? 'success' : 'neutral'">
+              {{ notifConfig()!.email.hasPassword ? 'Password configured' : 'No password stored' }}
+            </sp-admin-badge>
+            @if (notifConfig()!.email.hasPassword) {
+              <sp-admin-checkbox [(ngModel)]="emailForm.clearSecret" label="Clear stored password" />
+            }
+          </div>
+        }
+      </sp-admin-form-field>
+
+      <div class="sp-admin-settings-list">
+        <div class="sp-admin-settings-row">
+          <span class="sp-admin-settings-row-label">Use SSL/TLS</span>
+          <sp-admin-toggle [(ngModel)]="emailForm.useSsl" label="" />
+        </div>
+      </div>
+
+      @if (emailSaveSuccess()) {
+        <sp-admin-alert variant="success">{{ emailSaveSuccess() }}</sp-admin-alert>
+      }
+      @if (emailSaveError()) {
+        <sp-admin-alert variant="error">{{ emailSaveError() }}</sp-admin-alert>
+      }
+
+      <hr class="sp-admin-divider" />
+      <p class="sp-admin-section-title">Send test email</p>
+      <div class="sp-admin-flex-row">
+        <sp-admin-input
+          size="sm"
+          placeholder="recipient@example.com"
+          [(ngModel)]="testEmailAddress"
+          (keyup.enter)="sendTestEmail()"
+          aria-label="Test email recipient" />
+        <sp-admin-button
+          size="sm" variant="secondary"
+          [disabled]="testEmailLoading() || !testEmailAddress.trim()"
+          (clicked)="sendTestEmail()">{{ testEmailLoading() ? 'Sending…' : 'Send test' }}</sp-admin-button>
+      </div>
+      @if (testEmailResult()) {
+        <sp-admin-alert [variant]="testEmailResult()!.succeeded ? 'success' : testEmailResult()!.wasSkipped ? 'warning' : 'error'">
+          {{ testEmailResult()!.message }}
+        </sp-admin-alert>
+      }
+
     </div>
 
-    <!-- Webhook — not implemented -->
-    <div class="sp-int-card">
-      <div class="sp-int-card-header">
-        <div class="sp-int-card-icon" style="background:#faf5ff;color:#7c3aed">
-          <sp-admin-icon name="webhook" size="lg" [strokeWidth]="1.5" />
-        </div>
-        <div>
-          <div class="sp-int-card-name">Webhook</div>
-          <sp-admin-badge tone="neutral" size="sm">Not implemented</sp-admin-badge>
+    <sp-admin-button-group slot="footer" [actions]="emailFooterActions()" (actionSelected)="onEmailFooterAction($event)" />
+  </sp-admin-slide-over>
+
+  <!-- ── SMS slide-over ─────────────────────────────────────────────────────── -->
+  <sp-admin-slide-over
+    [open]="smsOpen()"
+    title="SMS Configuration"
+    subtitle="Pre-configure SMS provider credentials for when a provider is integrated."
+    (closed)="smsOpen.set(false)">
+
+    <div class="sp-admin-form-stack">
+
+      <sp-admin-visual-placeholder
+        state="foundation-only"
+        title="SMS — foundation only"
+        message="No SMS provider is connected. Sending is disabled regardless of the enabled toggle. Phone number collection and verification are deferred." />
+
+      <div class="sp-admin-settings-list">
+        <div class="sp-admin-settings-row">
+          <div>
+            <div class="sp-admin-settings-row-label">Enabled</div>
+            <p class="sp-admin-section-sub">No-op until provider is implemented.</p>
+          </div>
+          <sp-admin-toggle [(ngModel)]="smsForm.isEnabled" label="" />
         </div>
       </div>
-      <p class="sp-int-card-desc">Outbound webhook delivery for lesson completion, score events, and student lifecycle hooks.</p>
-      <sp-admin-visual-placeholder state="not-available" title="Webhook" message="No webhook endpoint is implemented." />
-    </div>
 
-    <!-- Slack — not implemented -->
-    <div class="sp-int-card">
-      <div class="sp-int-card-header">
-        <div class="sp-int-card-icon" style="background:#fffbeb;color:#d97706">
-          <sp-admin-icon name="slack" size="lg" [strokeWidth]="1.5" />
-        </div>
-        <div>
-          <div class="sp-int-card-name">Slack</div>
-          <sp-admin-badge tone="neutral" size="sm">Not implemented</sp-admin-badge>
-        </div>
+      <div class="sp-admin-form-row">
+        <sp-admin-form-field label="Provider">
+          <sp-admin-input size="sm" placeholder="e.g. Twilio" [(ngModel)]="smsForm.provider" aria-label="Provider" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Sender ID">
+          <sp-admin-input size="sm" placeholder="SpeakPath" [(ngModel)]="smsForm.senderId" aria-label="Sender ID" />
+        </sp-admin-form-field>
       </div>
-      <p class="sp-int-card-desc">Slack workspace notifications for admin alerts, batch failures, and student milestones.</p>
-      <sp-admin-visual-placeholder state="not-available" title="Slack" message="No Slack integration endpoint is implemented." />
+
+      <sp-admin-form-field label="API key (replace)" hint="Leave blank to keep existing key">
+        <sp-admin-input size="sm" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="smsForm.newSecret" aria-label="API key" />
+        @if (notifConfig()) {
+          <div class="sp-admin-badge-row sp-admin-badge-row--spaced">
+            <sp-admin-badge [tone]="notifConfig()!.sms.hasApiKey ? 'success' : 'neutral'">
+              {{ notifConfig()!.sms.hasApiKey ? 'API key configured' : 'No key stored' }}
+            </sp-admin-badge>
+            @if (notifConfig()!.sms.hasApiKey) {
+              <sp-admin-checkbox [(ngModel)]="smsForm.clearSecret" label="Clear stored key" />
+            }
+          </div>
+        }
+      </sp-admin-form-field>
+
+      @if (smsSaveSuccess()) {
+        <sp-admin-alert variant="success">{{ smsSaveSuccess() }}</sp-admin-alert>
+      }
+      @if (smsSaveError()) {
+        <sp-admin-alert variant="error">{{ smsSaveError() }}</sp-admin-alert>
+      }
+
     </div>
 
-    <!-- Analytics — not implemented -->
-    <div class="sp-int-card">
-      <div class="sp-int-card-header">
-        <div class="sp-int-card-icon" style="background:#eff6ff;color:#2563eb">
-          <sp-admin-icon name="trending-up" size="lg" [strokeWidth]="1.5" />
-        </div>
-        <div>
-          <div class="sp-int-card-name">Analytics</div>
-          <sp-admin-badge tone="neutral" size="sm">Not implemented</sp-admin-badge>
-        </div>
-      </div>
-      <p class="sp-int-card-desc">Third-party analytics pipeline (Segment, Mixpanel, PostHog) for product and engagement data.</p>
-      <sp-admin-visual-placeholder state="not-available" title="Analytics" message="No analytics provider is connected." />
-    </div>
-
-    <!-- Admin API — not implemented -->
-    <div class="sp-int-card">
-      <div class="sp-int-card-header">
-        <div class="sp-int-card-icon" style="background:#f0f9ff;color:#0284c7">
-          <sp-admin-icon name="monitor" size="lg" [strokeWidth]="1.5" />
-        </div>
-        <div>
-          <div class="sp-int-card-name">Admin API</div>
-          <sp-admin-badge tone="neutral" size="sm">Not implemented</sp-admin-badge>
-        </div>
-      </div>
-      <p class="sp-int-card-desc">Programmatic admin access for external tooling, CI/CD pipelines, and partner integrations.</p>
-      <sp-admin-visual-placeholder state="not-available" title="Admin API" message="No public Admin API key management endpoint is implemented. API keys are never displayed." />
-    </div>
-
-  </div>
+    <sp-admin-button-group slot="footer" [actions]="smsFooterActions()" (actionSelected)="onSmsFooterAction($event)" />
+  </sp-admin-slide-over>
 
 </sp-admin-page-body>

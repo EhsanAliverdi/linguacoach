@@ -172,7 +172,7 @@ const Z_STACK_STEP = 50;
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      padding: 20px 20px 16px;
+      padding: 20px 24px 16px;
       border-bottom: 1px solid var(--sp-admin-border-subtle,#F4F2FC);
       flex-shrink: 0;
     }
@@ -238,7 +238,7 @@ const Z_STACK_STEP = 50;
     .sp-adm-so-body {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 24px;
     }
 
     /* Footer: right-aligned flex row. Pages must NOT override this.
@@ -246,7 +246,7 @@ const Z_STACK_STEP = 50;
     .sp-adm-so-footer {
       flex-shrink: 0;
       border-top: 1px solid var(--sp-admin-border-subtle,#F4F2FC);
-      padding: 14px 20px;
+      padding: 14px 24px;
       display: flex;
       gap: 10px;
       justify-content: flex-end;
