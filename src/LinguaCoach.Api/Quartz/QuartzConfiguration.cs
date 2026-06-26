@@ -89,6 +89,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{NotificationDispatchJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(2).RepeatForever()));
 
+            // Mastery re-evaluation sweep — daily (Phase 10Z).
+            var masteryKey = new JobKey(StudentMasteryEvaluationJob.JobName);
+            q.AddJob<StudentMasteryEvaluationJob>(opts => opts.WithIdentity(masteryKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(masteryKey)
+                .WithIdentity($"{StudentMasteryEvaluationJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());

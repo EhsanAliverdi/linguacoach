@@ -280,6 +280,45 @@
         }
       </sp-admin-card>
 
+      <!-- Mastery evaluation summary — full width -->
+      <sp-admin-card title="Mastery evaluation">
+        @if (masteryPoolSummaryLoading()) {
+          <sp-admin-loading-state message="Loading mastery summary" />
+        } @else if (masteryPoolSummaryError()) {
+          <sp-admin-error-state title="Mastery summary unavailable" [message]="masteryPoolSummaryError()" />
+        } @else if (masteryPoolSummary()) {
+          @let ms = masteryPoolSummary()!;
+          <div class="sp-admin-card-grid-2">
+            <div>
+              <div class="sp-admin-section-title">Objective status</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Mastered</dt>
+                <dd><sp-admin-badge tone="success">{{ ms.masteredCount }}</sp-admin-badge></dd>
+                <dt>Needs review</dt>
+                <dd><sp-admin-badge tone="warning">{{ ms.needsReviewCount }}</sp-admin-badge></dd>
+                <dt>Review only</dt>
+                <dd><sp-admin-badge tone="primary">{{ ms.reviewOnlyCount }}</sp-admin-badge></dd>
+                <dt>Skipped</dt>
+                <dd><sp-admin-badge tone="neutral">{{ ms.skippedCount }}</sp-admin-badge></dd>
+              </dl>
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Evaluation metadata</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Last evaluated</dt>
+                <dd class="sp-admin-text-muted">{{ ms.lastEvaluatedAtUtc ? (ms.lastEvaluatedAtUtc | date:'medium') : 'Never' }}</dd>
+                <dt>Expired items</dt>
+                <dd class="sp-admin-text-muted">{{ ms.expiredCount }}</dd>
+                <dt>Stale items</dt>
+                <dd class="sp-admin-text-muted">{{ ms.staleCount }}</dd>
+              </dl>
+            </div>
+          </div>
+        } @else {
+          <sp-admin-empty-state message="No mastery evaluation data available." />
+        }
+      </sp-admin-card>
+
     </div>
   }
 

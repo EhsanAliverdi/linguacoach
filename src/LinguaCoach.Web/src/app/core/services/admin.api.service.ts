@@ -10,7 +10,7 @@ import {
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
-  StudentAuditHistoryItem, StudentReadinessPoolHealth,
+  StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
   AdminGenerationSettings, AdminUpdateGenerationSettingsRequest,
   AdminGenerationBatchesResponse, AdminGenerateLessonsResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
@@ -92,6 +92,9 @@ export class AdminApiService {
   }
   getStudentReadinessPoolHealth(studentProfileId: string): Observable<StudentReadinessPoolHealth> {
     return this.http.get<StudentReadinessPoolHealth>(`${this.api}/students/${studentProfileId}/readiness-pool/health`);
+  }
+  getStudentMasteryPoolSummary(studentProfileId: string): Observable<AdminMasteryPoolSummary> {
+    return this.http.get<AdminMasteryPoolSummary>(`${this.api}/students/${studentProfileId}/readiness-pool`);
   }
   generateLessonsForStudent(studentProfileId: string, count?: number): Observable<AdminGenerateLessonsResponse> {
     const qs = count !== undefined ? `?count=${count}` : '';

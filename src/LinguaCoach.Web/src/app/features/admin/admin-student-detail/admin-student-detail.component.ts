@@ -6,7 +6,7 @@ import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
-  AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth,
+  AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -154,6 +154,10 @@ export class AdminStudentDetailComponent implements OnInit {
   poolHealthLoading = signal(true);
   poolHealthError = signal('');
 
+  masteryPoolSummary = signal<AdminMasteryPoolSummary | null>(null);
+  masteryPoolSummaryLoading = signal(true);
+  masteryPoolSummaryError = signal('');
+
   readonly lessonRingPct = computed(() => {
     const ph = this.poolHealth();
     if (!ph) return 0;
@@ -174,11 +178,13 @@ export class AdminStudentDetailComponent implements OnInit {
     const l = ph.todayLesson;
     const tot = l.targetCount || 1;
     return ([
-      { label: 'Ready',    value: l.readyCount,              pct: Math.round((l.readyCount              / tot) * 100), tone: 'green'  as const },
-      { label: 'Queued',   value: l.queuedOrGeneratingCount, pct: Math.round((l.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' as const },
-      { label: 'Shortfall',value: l.shortfallCount,          pct: Math.round((l.shortfallCount          / tot) * 100), tone: 'amber'  as const },
-      { label: 'Failed',   value: l.failedCount,             pct: Math.round((l.failedCount             / tot) * 100), tone: 'danger' as const },
-      { label: 'Stale',    value: l.staleCount,              pct: Math.round((l.staleCount              / tot) * 100), tone: 'slate'  as const },
+      { label: 'Ready',       value: l.readyCount,              pct: Math.round((l.readyCount              / tot) * 100), tone: 'green'  as const },
+      { label: 'Review only', value: l.reviewOnlyCount,         pct: Math.round((l.reviewOnlyCount         / tot) * 100), tone: 'teal'   as const },
+      { label: 'Queued',      value: l.queuedOrGeneratingCount, pct: Math.round((l.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' as const },
+      { label: 'Shortfall',   value: l.shortfallCount,          pct: Math.round((l.shortfallCount          / tot) * 100), tone: 'amber'  as const },
+      { label: 'Skipped',     value: l.skippedCount,            pct: Math.round((l.skippedCount            / tot) * 100), tone: 'slate'   as const },
+      { label: 'Failed',      value: l.failedCount,             pct: Math.round((l.failedCount             / tot) * 100), tone: 'danger' as const },
+      { label: 'Stale',       value: l.staleCount,              pct: Math.round((l.staleCount              / tot) * 100), tone: 'slate'  as const },
     ] as BreakdownBarItem[]).filter(i => i.value > 0);
   });
 
@@ -188,11 +194,13 @@ export class AdminStudentDetailComponent implements OnInit {
     const g = ph.practiceGym;
     const tot = g.targetCount || 1;
     return ([
-      { label: 'Ready',    value: g.readyCount,              pct: Math.round((g.readyCount              / tot) * 100), tone: 'green'  as const },
-      { label: 'Queued',   value: g.queuedOrGeneratingCount, pct: Math.round((g.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' as const },
-      { label: 'Shortfall',value: g.shortfallCount,          pct: Math.round((g.shortfallCount          / tot) * 100), tone: 'amber'  as const },
-      { label: 'Failed',   value: g.failedCount,             pct: Math.round((g.failedCount             / tot) * 100), tone: 'danger' as const },
-      { label: 'Stale',    value: g.staleCount,              pct: Math.round((g.staleCount              / tot) * 100), tone: 'slate'  as const },
+      { label: 'Ready',       value: g.readyCount,              pct: Math.round((g.readyCount              / tot) * 100), tone: 'green'  as const },
+      { label: 'Review only', value: g.reviewOnlyCount,         pct: Math.round((g.reviewOnlyCount         / tot) * 100), tone: 'teal'   as const },
+      { label: 'Queued',      value: g.queuedOrGeneratingCount, pct: Math.round((g.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' as const },
+      { label: 'Shortfall',   value: g.shortfallCount,          pct: Math.round((g.shortfallCount          / tot) * 100), tone: 'amber'  as const },
+      { label: 'Skipped',     value: g.skippedCount,            pct: Math.round((g.skippedCount            / tot) * 100), tone: 'slate'   as const },
+      { label: 'Failed',      value: g.failedCount,             pct: Math.round((g.failedCount             / tot) * 100), tone: 'danger' as const },
+      { label: 'Stale',       value: g.staleCount,              pct: Math.round((g.staleCount              / tot) * 100), tone: 'slate'  as const },
     ] as BreakdownBarItem[]).filter(i => i.value > 0);
   });
 
@@ -260,6 +268,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadAuditHistory(id);
     this.loadPolicy(id);
     this.loadPoolHealth(id);
+    this.loadMasteryPoolSummary(id);
   }
 
   private loadStudent(id: string): void {
@@ -280,6 +289,15 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getStudentReadinessPoolHealth(id).subscribe({
       next: ph => { this.poolHealth.set(ph); this.poolHealthLoading.set(false); },
       error: () => { this.poolHealthError.set('Could not load pool health.'); this.poolHealthLoading.set(false); },
+    });
+  }
+
+  private loadMasteryPoolSummary(id: string): void {
+    this.masteryPoolSummaryLoading.set(true);
+    this.masteryPoolSummaryError.set('');
+    this.adminApi.getStudentMasteryPoolSummary(id).subscribe({
+      next: s => { this.masteryPoolSummary.set(s); this.masteryPoolSummaryLoading.set(false); },
+      error: () => { this.masteryPoolSummaryError.set('Could not load mastery summary.'); this.masteryPoolSummaryLoading.set(false); },
     });
   }
 

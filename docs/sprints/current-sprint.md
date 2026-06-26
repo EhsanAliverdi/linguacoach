@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-26 (10Y)
+lastUpdated: 2026-06-26 (10Z)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,12 @@ Last updated: 2026-06-26
 ---
 
 ## Active sprint
+
+**Phase 10Z — Mastery Re-evaluation Engine** — complete (2026-06-26)
+
+Deterministic mastery engine evaluating student skill/objective mastery from learning event history. No AI calls. Adds `MasteryStatus` and `ReadinessDemotionDecision` enums (Domain), `ObjectiveMasterySignal`/`StudentMasteryReport`/`MasteryOptions` types (Application), `IStudentMasteryEvaluationService` interface (Application), `StudentMasteryEvaluationService` Infrastructure implementation, `StudentMasteryEvaluationJob` Quartz job (daily sweep), `MasteryOptions` config section in appsettings.json, `MasteredCount`/`NeedsReviewCount`/`LastEvaluatedAtUtc` added to `ReadinessPoolSummary` DTO, DI registration in `DependencyInjection.cs`, and Quartz schedule in `QuartzConfiguration.cs`. 11 new unit tests — all 1329 unit tests pass. Build clean. No migration needed (no new DB columns). No student UI changes. No admin UI changes. No AI calls. Review: `docs/reviews/2026-06-26-phase-10z-mastery-engine-review.md`.
+
+---
 
 **Phase 10Y — Learning Activity Lifecycle Completion** — complete (2026-06-26)
 

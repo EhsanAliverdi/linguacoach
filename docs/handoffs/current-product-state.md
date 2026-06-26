@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-24 (10UI-PARITY-FINAL)
+lastUpdated: 2026-06-26 (10Z)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,37 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-24 (10UI-PARITY-FINAL)
+Last updated: 2026-06-26 (10Z)
+
+---
+
+## Mastery Re-evaluation Engine (Phase 10Z, 2026-06-26)
+
+Deterministic mastery classification engine layered on top of the student learning event ledger. Evaluates skill/objective mastery from `StudentLearningEvent` history without any AI calls.
+
+**Mastery thresholds (configurable via `"Mastery"` appsettings section):**
+
+| Rule | Default |
+|------|---------|
+| Evidence required for any classification | 3 events |
+| Mastered: evidence count | ≥ 5 events |
+| Mastered: consecutive successes | last 3 |
+| Mastered: average score | ≥ 80 |
+| AtRisk: consecutive failures | ≥ 2 |
+| AtRisk: average score | < 30 |
+| Stale item age threshold | 90 days |
+
+**Readiness pool demotion decisions:**
+- `Mastered` + review-eligible item → `ConvertToReviewOnly`
+- `Mastered` + not useful for review → `Skip`
+- CEFR mismatch > 1 level → `MarkStale`
+- Item age > 90 days, never consumed → `Expire`
+- `AtRisk` or `NeedsPractice` → `KeepReady`
+- Terminal state (Consumed/Expired/Failed/Skipped) → `NoChange`
+
+**Background job:** `StudentMasteryEvaluationJob` runs daily via Quartz, evaluates all students with learning events.
+
+**No admin UI added. No student UI added. No migration needed.**
 
 ---
 

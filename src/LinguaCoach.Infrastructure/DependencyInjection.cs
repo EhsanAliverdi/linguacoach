@@ -387,6 +387,16 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.UsageGovernance.IUsageGovernanceAdminService,
             LinguaCoach.Infrastructure.UsageGovernance.UsageGovernanceAdminService>();
 
+        // Mastery re-evaluation engine (Phase 10Z)
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Application.Mastery.MasteryOptions>(
+                configuration.GetSection(LinguaCoach.Application.Mastery.MasteryOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Application.Mastery.MasteryOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.Mastery.IStudentMasteryEvaluationService,
+            LinguaCoach.Infrastructure.Mastery.StudentMasteryEvaluationService>();
+        services.AddScoped<Jobs.StudentMasteryEvaluationJob>();
+
         return services;
     }
 }

@@ -50,6 +50,12 @@ public sealed class ReadinessPoolSummary
     public int StaleCount { get; init; }
     public int SkippedCount { get; init; }
     public int ReviewOnlyCount { get; init; }
+
+    // Mastery engine counts (Phase 10Z)
+    public int MasteredCount { get; init; }
+    public int NeedsReviewCount { get; init; }
+    public DateTime? LastEvaluatedAtUtc { get; init; }
+
     public IReadOnlyList<ReadinessItemDto> Items { get; init; } = [];
 }
 

@@ -667,13 +667,33 @@ export interface ReadinessPoolSourceHealth {
   source: string;
   targetCount: number;
   readyCount: number;
+  reservedCount: number;
   queuedOrGeneratingCount: number;
   failedCount: number;
   staleCount: number;
   expiredCount: number;
+  skippedCount: number;
   reviewOnlyCount: number;
   shortfallCount: number;
   needsReplenishment: boolean;
+}
+
+// Full pool summary returned by /readiness-pool (includes mastery engine fields from Phase 10Z)
+export interface AdminMasteryPoolSummary {
+  studentId: string;
+  queuedCount: number;
+  generatingCount: number;
+  readyCount: number;
+  reservedCount: number;
+  consumedCount: number;
+  expiredCount: number;
+  failedCount: number;
+  staleCount: number;
+  skippedCount: number;
+  reviewOnlyCount: number;
+  masteredCount: number;
+  needsReviewCount: number;
+  lastEvaluatedAtUtc: string | null;
 }
 
 export interface StudentReadinessPoolHealth {
