@@ -17,5 +17,12 @@ public enum ReadinessPoolStatus
     Expired = 5,
     Failed = 6,
     Stale = 7,
-    ReviewOnly = 8
+    ReviewOnly = 8,
+
+    /// <summary>
+    /// Intentionally bypassed — student has already mastered this objective or it no longer
+    /// matches their current level/context and is not useful even for review.
+    /// Terminal in the same way as Expired.
+    /// </summary>
+    Skipped = 9
 }

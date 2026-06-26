@@ -48,6 +48,7 @@ public sealed class ReadinessPoolSummary
     public int ExpiredCount { get; init; }
     public int FailedCount { get; init; }
     public int StaleCount { get; init; }
+    public int SkippedCount { get; init; }
     public int ReviewOnlyCount { get; init; }
     public IReadOnlyList<ReadinessItemDto> Items { get; init; } = [];
 }
@@ -73,6 +74,7 @@ public sealed class ReadinessItemDto
     public DateTime? ReservedAt { get; init; }
     public DateTime? ConsumedAt { get; init; }
     public DateTime? ExpiresAt { get; init; }
+    public DateTime? LastEvaluatedAtUtc { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

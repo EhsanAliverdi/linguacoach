@@ -59,6 +59,7 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
                      && i.Status != ReadinessPoolStatus.Expired
                      && i.Status != ReadinessPoolStatus.Failed
                      && i.Status != ReadinessPoolStatus.Stale
+                     && i.Status != ReadinessPoolStatus.Skipped
                      && i.Status != ReadinessPoolStatus.Queued
                      && i.Status != ReadinessPoolStatus.Generating)
             .ToListAsync(ct);

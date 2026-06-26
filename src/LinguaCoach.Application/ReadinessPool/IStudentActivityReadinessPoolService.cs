@@ -50,6 +50,12 @@ public interface IStudentActivityReadinessPoolService
     /// <summary>ready/reserved → review_only (content still useful only as review).</summary>
     Task MarkReviewOnlyAsync(Guid itemId, string? reason = null, CancellationToken ct = default);
 
+    /// <summary>
+    /// Any non-terminal → skipped. Student has mastered the objective or it is no longer
+    /// relevant even for review. Terminal (same as Expired).
+    /// </summary>
+    Task MarkSkippedAsync(Guid itemId, string? reason = null, CancellationToken ct = default);
+
     /// <summary>Links materialized entity ids to an existing item (any non-terminal status).</summary>
     Task LinkMaterializedIdsAsync(
         Guid itemId,

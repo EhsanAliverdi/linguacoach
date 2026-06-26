@@ -70,6 +70,7 @@ internal sealed class StudentActivityReadinessItemConfiguration
         builder.Property(e => e.ConsumedAt).HasColumnName("consumed_at");
         builder.Property(e => e.ExpiresAt).HasColumnName("expires_at");
         builder.Property(e => e.StaleAt).HasColumnName("stale_at");
+        builder.Property(e => e.LastEvaluatedAtUtc).HasColumnName("last_evaluated_at_utc");
 
         // Indexes for common query patterns
         builder.HasIndex(e => new { e.StudentId, e.Status, e.Source })

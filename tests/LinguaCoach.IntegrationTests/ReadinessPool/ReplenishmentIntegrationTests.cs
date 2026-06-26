@@ -255,6 +255,105 @@ public sealed class ReplenishmentIntegrationTests : IClassFixture<ApiTestFactory
         Assert.Equal(0, h2.ReadyCount);
     }
 
+    // 12. ReservedCount is populated in pool health summary (Phase 10Y).
+    [Fact]
+    public async Task GetHealth_ReservedItem_CountedInReservedCount()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
+        var replenish = scope.ServiceProvider.GetRequiredService<IReadinessPoolReplenishmentService>();
+
+        var studentId = Guid.NewGuid();
+
+        var id = await poolSvc.CreateQueuedAsync(MakeRequest(studentId, ReadinessPoolSource.PracticeGym));
+        await poolSvc.MarkGeneratingAsync(id);
+        await poolSvc.MarkReadyAsync(id);
+        await poolSvc.ReserveNextReadyAsync(studentId, ReadinessPoolSource.PracticeGym);
+
+        var health = await replenish.GetHealthAsync(studentId, ReadinessPoolSource.PracticeGym);
+
+        Assert.Equal(0, health.ReadyCount);
+        Assert.Equal(1, health.ReservedCount);
+    }
+
+    // 13. SkippedCount is populated in pool health summary (Phase 10Y).
+    [Fact]
+    public async Task GetHealth_SkippedItem_CountedInSkippedCount()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
+        var replenish = scope.ServiceProvider.GetRequiredService<IReadinessPoolReplenishmentService>();
+
+        var studentId = Guid.NewGuid();
+
+        var id = await poolSvc.CreateQueuedAsync(MakeRequest(studentId, ReadinessPoolSource.TodayLesson));
+        await poolSvc.MarkGeneratingAsync(id);
+        await poolSvc.MarkReadyAsync(id);
+        await poolSvc.MarkSkippedAsync(id, "mastered");
+
+        var health = await replenish.GetHealthAsync(studentId, ReadinessPoolSource.TodayLesson);
+
+        Assert.Equal(0, health.ReadyCount);
+        Assert.Equal(1, health.SkippedCount);
+        Assert.True(health.NeedsReplenishment);
+    }
+
+    // 14. MarkSkippedAsync persists Skipped status to DB (Phase 10Y).
+    [Fact]
+    public async Task MarkSkippedAsync_PersistsSkippedStatus()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        var studentId = Guid.NewGuid();
+        var id = await poolSvc.CreateQueuedAsync(MakeRequest(studentId, ReadinessPoolSource.PracticeGym));
+        await poolSvc.MarkGeneratingAsync(id);
+        await poolSvc.MarkReadyAsync(id);
+        await poolSvc.MarkSkippedAsync(id, "no longer relevant");
+
+        db.ChangeTracker.Clear();
+        var item = await db.StudentActivityReadinessItems.FindAsync(id);
+        Assert.NotNull(item);
+        Assert.Equal(ReadinessPoolStatus.Skipped, item.Status);
+        Assert.Equal("no longer relevant", item.ErrorMessage);
+    }
+
+    // 15. Skipped item does not appear in GetReadyForStudentAsync (Phase 10Y).
+    [Fact]
+    public async Task SkippedItem_NotReturnedByGetReadyForStudent()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
+
+        var studentId = Guid.NewGuid();
+        var id = await poolSvc.CreateQueuedAsync(MakeRequest(studentId, ReadinessPoolSource.TodayLesson));
+        await poolSvc.MarkGeneratingAsync(id);
+        await poolSvc.MarkReadyAsync(id);
+        await poolSvc.MarkSkippedAsync(id, "mastered");
+
+        var ready = await poolSvc.GetReadyForStudentAsync(studentId, ReadinessPoolSource.TodayLesson);
+        Assert.Empty(ready);
+    }
+
+    // 16. Admin health endpoint now includes reservedCount and skippedCount fields (Phase 10Y).
+    [Fact]
+    public async Task AdminHealthEndpoint_IncludesReservedAndSkippedCounts()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var studentId = Guid.NewGuid();
+        var response = await client.GetAsync($"/api/admin/students/{studentId}/readiness-pool/health");
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("reservedCount", body);
+        Assert.Contains("skippedCount", body);
+    }
+
     private static CreateReadinessItemRequest MakeRequest(
         Guid studentId,
         ReadinessPoolSource source,

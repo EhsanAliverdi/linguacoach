@@ -8,12 +8,14 @@ namespace LinguaCoach.Domain.Entities;
  *   queued → generating → ready → reserved → consumed  (terminal)
  *                      ↓            ↓
  *                   failed        expired               (terminal unless re-created)
- *   ready → stale                                       (do not serve as normal)
- *   ready → review_only                                 (serve only for review queries)
+ *   ready/reserved → stale                             (do not serve as normal)
+ *   ready/reserved → review_only                       (serve only for review queries)
+ *   ready/reserved/review_only → skipped               (mastered or irrelevant — terminal)
  *   reserved → expired  (reservation too old or item expired)
  *
  *   IsLowerLevelContent=true requires RoutingReason != Normal.
  *   general_english is the default/fallback context — not workplace.
+ *   LastEvaluatedAtUtc: set whenever the item is evaluated for stale/profile-match.
  */
 
 /// <summary>
@@ -86,6 +88,8 @@ public sealed class StudentActivityReadinessItem : BaseEntity
     public DateTime? ConsumedAt { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
     public DateTime? StaleAt { get; private set; }
+    /// <summary>UTC time the item was last checked for staleness/profile-match by the replenishment sweep.</summary>
+    public DateTime? LastEvaluatedAtUtc { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
     private StudentActivityReadinessItem()
@@ -239,6 +243,31 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         Status = ReadinessPoolStatus.ReviewOnly;
         if (reason is not null)
             ErrorMessage = reason.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Marks this item as intentionally skipped — mastery achieved or content no longer
+    /// relevant even for review. Terminal (same as Expired).
+    /// Valid from: Ready, Reserved, ReviewOnly.
+    /// </summary>
+    public void MarkSkipped(string? reason = null)
+    {
+        if (Status is ReadinessPoolStatus.Consumed
+                    or ReadinessPoolStatus.Expired
+                    or ReadinessPoolStatus.Skipped)
+            throw new InvalidOperationException(
+                $"Cannot skip item {Id} in terminal status {Status}.");
+        Status = ReadinessPoolStatus.Skipped;
+        if (reason is not null)
+            ErrorMessage = reason.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Records that the replenishment engine has evaluated this item for staleness/profile-match.</summary>
+    public void RecordEvaluation()
+    {
+        LastEvaluatedAtUtc = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 

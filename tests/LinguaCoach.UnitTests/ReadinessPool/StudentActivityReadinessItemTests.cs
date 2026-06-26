@@ -297,4 +297,120 @@ public sealed class StudentActivityReadinessItemTests
         item.LearningSessionId.Should().Be(sessionId);
         item.LearningActivityId.Should().Be(activityId);
     }
+
+    // --- Skipped status tests ---
+
+    // 15. Ready item can be marked Skipped (mastered objective).
+    [Fact]
+    public void MarkSkipped_FromReady_SetsSkippedStatus()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+
+        item.MarkSkipped("objective already mastered");
+
+        item.Status.Should().Be(ReadinessPoolStatus.Skipped);
+        item.ErrorMessage.Should().Be("objective already mastered");
+        item.IsServableAsNormalContent.Should().BeFalse();
+        item.IsServableAsReview.Should().BeFalse();
+    }
+
+    // 16. Reserved item can be marked Skipped.
+    [Fact]
+    public void MarkSkipped_FromReserved_SetsSkippedStatus()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+        item.Reserve();
+
+        item.MarkSkipped("profile no longer matches");
+
+        item.Status.Should().Be(ReadinessPoolStatus.Skipped);
+    }
+
+    // 17. ReviewOnly item can be marked Skipped.
+    [Fact]
+    public void MarkSkipped_FromReviewOnly_SetsSkippedStatus()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+        item.MarkReviewOnly("passed");
+
+        item.MarkSkipped("no longer useful");
+
+        item.Status.Should().Be(ReadinessPoolStatus.Skipped);
+    }
+
+    // 18. Consumed item cannot be skipped.
+    [Fact]
+    public void MarkSkipped_FromConsumed_Throws()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+        item.Reserve();
+        item.MarkConsumed();
+
+        var act = () => item.MarkSkipped();
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*terminal status*");
+    }
+
+    // 19. Already-skipped item cannot be skipped again.
+    [Fact]
+    public void MarkSkipped_AlreadySkipped_Throws()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+        item.MarkSkipped();
+
+        var act = () => item.MarkSkipped();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 20. Expired item cannot be skipped.
+    [Fact]
+    public void MarkSkipped_FromExpired_Throws()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+        item.Expire();
+
+        var act = () => item.MarkSkipped();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // --- RecordEvaluation / LastEvaluatedAtUtc tests ---
+
+    // 21. RecordEvaluation stamps LastEvaluatedAtUtc.
+    [Fact]
+    public void RecordEvaluation_SetsLastEvaluatedAtUtc()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+
+        item.LastEvaluatedAtUtc.Should().BeNull();
+        item.RecordEvaluation();
+        item.LastEvaluatedAtUtc.Should().NotBeNull();
+        item.LastEvaluatedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    // 22. RecordEvaluation does not change lifecycle status.
+    [Fact]
+    public void RecordEvaluation_DoesNotChangeStatus()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+
+        item.RecordEvaluation();
+
+        item.Status.Should().Be(ReadinessPoolStatus.Ready);
+    }
 }

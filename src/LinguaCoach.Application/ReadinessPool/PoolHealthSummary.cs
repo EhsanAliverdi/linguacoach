@@ -11,10 +11,12 @@ public sealed class PoolHealthSummary
     public Guid StudentId { get; init; }
     public ReadinessPoolSource Source { get; init; }
     public int ReadyCount { get; init; }
+    public int ReservedCount { get; init; }
     public int QueuedOrGeneratingCount { get; init; }
     public int FailedCount { get; init; }
     public int StaleCount { get; init; }
     public int ExpiredCount { get; init; }
+    public int SkippedCount { get; init; }
     public int ReviewOnlyCount { get; init; }
     public int TargetCount { get; init; }
     public int ShortfallCount => Math.Max(0, TargetCount - ReadyCount - QueuedOrGeneratingCount);

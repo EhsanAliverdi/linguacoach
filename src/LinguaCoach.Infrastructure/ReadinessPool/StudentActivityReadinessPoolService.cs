@@ -182,6 +182,14 @@ public sealed class StudentActivityReadinessPoolService : IStudentActivityReadin
         _logger.LogDebug("ReadinessPool: {ItemId} → ReviewOnly reason={Reason}", itemId, reason);
     }
 
+    public async Task MarkSkippedAsync(Guid itemId, string? reason = null, CancellationToken ct = default)
+    {
+        var item = await RequireItemAsync(itemId, ct);
+        item.MarkSkipped(reason);
+        await _db.SaveChangesAsync(ct);
+        _logger.LogDebug("ReadinessPool: {ItemId} → Skipped reason={Reason}", itemId, reason);
+    }
+
     public async Task LinkMaterializedIdsAsync(
         Guid itemId,
         Guid? learningSessionId,
@@ -239,6 +247,7 @@ public sealed class StudentActivityReadinessPoolService : IStudentActivityReadin
             ReservedAt = i.ReservedAt,
             ConsumedAt = i.ConsumedAt,
             ExpiresAt = i.ExpiresAt,
+            LastEvaluatedAtUtc = i.LastEvaluatedAtUtc,
             CreatedAt = i.CreatedAt,
             UpdatedAt = i.UpdatedAt
         }).ToList();
@@ -254,6 +263,7 @@ public sealed class StudentActivityReadinessPoolService : IStudentActivityReadin
             ExpiredCount = items.Count(i => i.Status == ReadinessPoolStatus.Expired),
             FailedCount = items.Count(i => i.Status == ReadinessPoolStatus.Failed),
             StaleCount = items.Count(i => i.Status == ReadinessPoolStatus.Stale),
+            SkippedCount = items.Count(i => i.Status == ReadinessPoolStatus.Skipped),
             ReviewOnlyCount = items.Count(i => i.Status == ReadinessPoolStatus.ReviewOnly),
             Items = dtos
         };

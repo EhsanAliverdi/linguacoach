@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-23 (10UI-STYLE-1)
+lastUpdated: 2026-06-26 (10Y)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,17 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-23
+Last updated: 2026-06-26
 
 ---
 
 ## Active sprint
+
+**Phase 10Y — Learning Activity Lifecycle Completion** — complete (2026-06-26)
+
+Backend-only lifecycle hardening for the readiness pool. Gaps filled: `Skipped` terminal status (mastered/irrelevant items), CEFR mismatch stale demotion sweep in replenishment service, `ReservedCount` and `SkippedCount` surfaced in pool health and admin diagnostics, `LastEvaluatedAtUtc` timestamp for incremental evaluation tracking, EF migration T60. 13 new tests (8 unit + 5 integration) — 1318 unit + 64 targeted integration all pass. No student UI changes. No admin visual redesign. No fake data. Review: `docs/reviews/2026-06-26-phase-10y-learning-activity-lifecycle-completion-review.md`.
+
+---
 
 **Phase 10UI-STYLE-1 — Admin Reusable Component Visual Alignment** — complete (2026-06-23)
 

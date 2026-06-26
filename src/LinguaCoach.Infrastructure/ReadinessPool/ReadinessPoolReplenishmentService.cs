@@ -73,6 +73,10 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         var expired = await SweepExpiredItemsAsync(ct);
         totalExpired += expired;
 
+        // Step 2b: mark stale items whose CEFR target no longer matches the student's level.
+        var staled = await SweepCefrMismatchedItemsAsync(ct);
+        totalStale += staled;
+
         // Step 3: recover orphaned generating items.
         var recovered = await RecoverOrphanedGeneratingAsync(ct);
         totalRecovered += recovered;
@@ -174,11 +178,13 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             Source = source,
             TargetCount = target,
             ReadyCount = Get(ReadinessPoolStatus.Ready),
+            ReservedCount = Get(ReadinessPoolStatus.Reserved),
             // Queued and Generating count toward "in-flight" — do not over-generate.
             QueuedOrGeneratingCount = Get(ReadinessPoolStatus.Queued) + Get(ReadinessPoolStatus.Generating),
             FailedCount = Get(ReadinessPoolStatus.Failed),
             StaleCount = Get(ReadinessPoolStatus.Stale),
             ExpiredCount = Get(ReadinessPoolStatus.Expired),
+            SkippedCount = Get(ReadinessPoolStatus.Skipped),
             ReviewOnlyCount = Get(ReadinessPoolStatus.ReviewOnly)
         };
     }
@@ -236,6 +242,79 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// Marks Ready/Reserved items stale when the student's current CEFR level has advanced
+    /// beyond the item's target level. A student at B2 should not be served B1 Normal items.
+    /// Only applies to Normal routing — review/scaffold/remediation lower-level items are intentional.
+    /// </summary>
+    private async Task<int> SweepCefrMismatchedItemsAsync(CancellationToken ct)
+    {
+        // Load (studentId, currentCefrLevel) for all active students with a known CEFR level.
+        var studentLevels = await _db.StudentProfiles
+            .Where(p => p.LifecycleStage != StudentLifecycleStage.Archived
+                     && p.LifecycleStage >= StudentLifecycleStage.CourseReady
+                     && p.OnboardingStatus == OnboardingStatus.Complete
+                     && p.CefrLevel != null)
+            .Select(p => new { p.Id, p.CefrLevel })
+            .ToListAsync(ct);
+
+        if (studentLevels.Count == 0) return 0;
+
+        var studentIds = studentLevels.Select(s => s.Id).ToList();
+
+        // Fetch all Ready/Reserved Normal-routing items for active students.
+        var candidates = await _db.StudentActivityReadinessItems
+            .Where(i => studentIds.Contains(i.StudentId)
+                     && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.Reserved)
+                     && i.RoutingReason == RoutingReason.Normal
+                     && !i.IsLowerLevelContent)
+            .ToListAsync(ct);
+
+        if (candidates.Count == 0) return 0;
+
+        var levelMap = studentLevels.ToDictionary(s => s.Id, s => s.CefrLevel!);
+        var count = 0;
+
+        foreach (var item in candidates)
+        {
+            if (!levelMap.TryGetValue(item.StudentId, out var currentLevel)) continue;
+
+            // Compare CEFR levels. If student has advanced, item target is below current level.
+            if (IsBelowCurrentLevel(item.TargetCefrLevel, currentLevel))
+            {
+                item.MarkStale($"CEFR mismatch: item targets {item.TargetCefrLevel}, student is now {currentLevel}.");
+                item.RecordEvaluation();
+                count++;
+                _logger.LogInformation(
+                    "ReadinessPool: marked stale (CEFR mismatch) item {Id} student {StudentId} target={Target} current={Current}.",
+                    item.Id, item.StudentId, item.TargetCefrLevel, currentLevel);
+            }
+            else
+            {
+                item.RecordEvaluation();
+            }
+        }
+
+        if (count > 0)
+            await _db.SaveChangesAsync(ct);
+
+        return count;
+    }
+
+    /// <summary>
+    /// Returns true when <paramref name="itemCefr"/> is strictly below <paramref name="studentCefr"/>.
+    /// Order: A1 &lt; A2 &lt; B1 &lt; B2 &lt; C1 &lt; C2.
+    /// </summary>
+    private static bool IsBelowCurrentLevel(string itemCefr, string studentCefr)
+    {
+        var order = new[] { "A1", "A2", "B1", "B2", "C1", "C2" };
+        var itemIdx = Array.IndexOf(order, itemCefr.ToUpperInvariant().Trim());
+        var studentIdx = Array.IndexOf(order, studentCefr.ToUpperInvariant().Trim());
+        // If either level is unknown/custom, don't demote.
+        if (itemIdx < 0 || studentIdx < 0) return false;
+        return itemIdx < studentIdx;
     }
 
     private async Task<int> RecoverOrphanedGeneratingAsync(CancellationToken ct)
