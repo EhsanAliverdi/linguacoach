@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-26 (10Z)
+lastUpdated: 2026-06-26 (11A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,12 @@ Last updated: 2026-06-26
 ---
 
 ## Active sprint
+
+**Phase 11A — Admin Onboarding Builder** — complete (2026-06-26)
+
+Admin-configurable onboarding system. Admins can create onboarding flow configurations, define/manage/reorder step definitions, and activate a flow from `/admin/onboarding`. No student UI changes. Backend: 7 new handler interfaces + implementations (list flows, create flow, activate flow, add/update/remove/reorder steps), 9 new API endpoints on `AdminOnboardingController`, `Navigation().HasField("_steps")` EF config fix, domain methods `Deactivate`/`RemoveStep`/`ReorderSteps`/`Update`/`SetOrder` added. Frontend: `admin-onboarding.models.ts`, `admin-onboarding.service.ts`, `admin-onboarding` feature page with KPI strip + step table + add/edit slide-over, `/admin/onboarding` route, sidebar nav item. 8 new integration tests. All 2418 tests pass. No migration required (schema pre-existing). Review: `docs/reviews/2026-06-26-phase-11a-admin-onboarding-builder-review.md`.
+
+---
 
 **Phase 10Z — Mastery Re-evaluation Engine** — complete (2026-06-26)
 

@@ -58,4 +58,27 @@ public sealed class OnboardingStepDefinition : BaseEntity
         AnswerMapping = answerMapping;
         AssessmentMetadataJson = assessmentMetadataJson;
     }
+
+    public void Update(
+        string title,
+        string? description,
+        OnboardingStepTypeV2 stepType,
+        OnboardingStepRequirementType requirementType,
+        int stepOrder,
+        bool isEnabled,
+        string? optionsJson,
+        OnboardingAnswerMapping answerMapping)
+    {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required.", nameof(title));
+        Title = title.Trim();
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        StepType = stepType;
+        RequirementType = requirementType;
+        StepOrder = stepOrder;
+        IsEnabled = isEnabled;
+        OptionsJson = optionsJson;
+        AnswerMapping = answerMapping;
+    }
+
+    public void SetOrder(int order) => StepOrder = order;
 }

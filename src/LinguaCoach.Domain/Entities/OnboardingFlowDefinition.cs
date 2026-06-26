@@ -26,6 +26,24 @@ public sealed class OnboardingFlowDefinition : BaseEntity
     }
 
     public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
+
+    public void RemoveStep(string stepKey)
+    {
+        var step = _steps.FirstOrDefault(s => s.StepKey == stepKey)
+            ?? throw new InvalidOperationException($"Step '{stepKey}' not found in flow '{Name}'.");
+        _steps.Remove(step);
+    }
+
+    public void ReorderSteps(IReadOnlyList<string> stepKeyOrder)
+    {
+        for (var i = 0; i < stepKeyOrder.Count; i++)
+        {
+            var step = _steps.FirstOrDefault(s => s.StepKey == stepKeyOrder[i])
+                ?? throw new InvalidOperationException($"Step '{stepKeyOrder[i]}' not found in flow '{Name}'.");
+            step.SetOrder(i + 1);
+        }
+    }
 
     public void AddStep(OnboardingStepDefinition step)
     {

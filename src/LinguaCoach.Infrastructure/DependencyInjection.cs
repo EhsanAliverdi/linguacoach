@@ -235,6 +235,13 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingV2StepHandler, OnboardingV2StepHandler>();
         services.AddScoped<IOnboardingV2CompleteHandler, OnboardingV2CompleteHandler>();
         services.AddScoped<IAdminOnboardingFlowQuery, AdminOnboardingFlowQueryHandler>();
+        services.AddScoped<IAdminOnboardingFlowListQuery, AdminOnboardingFlowListQueryHandler>();
+        services.AddScoped<IAdminCreateOnboardingFlowHandler, AdminCreateOnboardingFlowHandler>();
+        services.AddScoped<IAdminActivateOnboardingFlowHandler, AdminActivateOnboardingFlowHandler>();
+        services.AddScoped<IAdminAddOnboardingStepHandler, AdminAddOnboardingStepHandler>();
+        services.AddScoped<IAdminUpdateOnboardingStepHandler, AdminUpdateOnboardingStepHandler>();
+        services.AddScoped<IAdminRemoveOnboardingStepHandler, AdminRemoveOnboardingStepHandler>();
+        services.AddScoped<IAdminReorderOnboardingStepsHandler, AdminReorderOnboardingStepsHandler>();
 
         // Dashboard
         services.AddScoped<StudentProgressService>();

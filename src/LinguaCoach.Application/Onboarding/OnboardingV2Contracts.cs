@@ -97,6 +97,101 @@ public interface IAdminOnboardingFlowQuery
     Task<AdminOnboardingFlowDto?> HandleAsync(GetAdminOnboardingFlowQuery query, CancellationToken ct = default);
 }
 
+// ── Admin: list all flows ─────────────────────────────────────────────────────
+
+public sealed record ListAdminOnboardingFlowsQuery();
+
+public sealed record AdminOnboardingFlowSummaryDto(
+    Guid FlowId,
+    string Name,
+    int Version,
+    bool IsActive,
+    int TotalSteps,
+    int RequiredSteps,
+    DateTimeOffset CreatedAt
+);
+
+public interface IAdminOnboardingFlowListQuery
+{
+    Task<IReadOnlyList<AdminOnboardingFlowSummaryDto>> HandleAsync(ListAdminOnboardingFlowsQuery query, CancellationToken ct = default);
+}
+
+// ── Admin: create flow ────────────────────────────────────────────────────────
+
+public sealed record CreateOnboardingFlowCommand(string Name, int Version);
+
+public interface IAdminCreateOnboardingFlowHandler
+{
+    Task<AdminOnboardingFlowDto> HandleAsync(CreateOnboardingFlowCommand command, CancellationToken ct = default);
+}
+
+// ── Admin: activate flow ──────────────────────────────────────────────────────
+
+public sealed record ActivateOnboardingFlowCommand(Guid FlowId);
+
+public interface IAdminActivateOnboardingFlowHandler
+{
+    Task HandleAsync(ActivateOnboardingFlowCommand command, CancellationToken ct = default);
+}
+
+// ── Admin: add step ───────────────────────────────────────────────────────────
+
+public sealed record AddOnboardingStepCommand(
+    Guid FlowId,
+    string StepKey,
+    string Title,
+    string? Description,
+    string StepType,
+    string RequirementType,
+    string AnswerMapping,
+    int StepOrder,
+    bool IsEnabled,
+    IReadOnlyList<OnboardingOptionDto>? Options
+);
+
+public interface IAdminAddOnboardingStepHandler
+{
+    Task<AdminOnboardingStepDto> HandleAsync(AddOnboardingStepCommand command, CancellationToken ct = default);
+}
+
+// ── Admin: update step ────────────────────────────────────────────────────────
+
+public sealed record UpdateOnboardingStepCommand(
+    Guid FlowId,
+    string StepKey,
+    string Title,
+    string? Description,
+    string StepType,
+    string RequirementType,
+    string AnswerMapping,
+    int StepOrder,
+    bool IsEnabled,
+    IReadOnlyList<OnboardingOptionDto>? Options
+);
+
+public interface IAdminUpdateOnboardingStepHandler
+{
+    Task<AdminOnboardingStepDto> HandleAsync(UpdateOnboardingStepCommand command, CancellationToken ct = default);
+}
+
+// ── Admin: remove step ────────────────────────────────────────────────────────
+
+public sealed record RemoveOnboardingStepCommand(Guid FlowId, string StepKey);
+
+public interface IAdminRemoveOnboardingStepHandler
+{
+    Task HandleAsync(RemoveOnboardingStepCommand command, CancellationToken ct = default);
+}
+
+// ── Admin: reorder steps ──────────────────────────────────────────────────────
+
+public sealed record ReorderOnboardingStepsCommand(Guid FlowId, IReadOnlyList<string> StepKeyOrder);
+
+public interface IAdminReorderOnboardingStepsHandler
+{
+    Task HandleAsync(ReorderOnboardingStepsCommand command, CancellationToken ct = default);
+}
+
 // ── Validation error ──────────────────────────────────────────────────────────
 
 public sealed class OnboardingV2ValidationException : Exception
