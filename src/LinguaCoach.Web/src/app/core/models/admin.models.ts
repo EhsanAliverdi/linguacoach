@@ -730,6 +730,27 @@ export interface AggregatePoolHealthSummary {
   generatedAt: string;
 }
 
+// ── Admin student practice summary ────────────────────────────────────────────
+
+export interface AdminStudentPracticeSuggestionItem {
+  title: string;
+  primarySkill: string | null;
+  callToAction: string;
+  explanation: string;
+  routingReason: string;
+  targetCefrLevel: string;
+  estimatedDurationMinutes: number | null;
+}
+
+export interface AdminStudentPracticeSummary {
+  status: string; // Ready | ReviewOnly | Preparing | NotAvailable
+  reviewQueueCount: number;
+  reservedCount: number;
+  weakestSkill: string | null;
+  topSuggestion: AdminStudentPracticeSuggestionItem | null;
+  isReplenishmentRecommended: boolean;
+}
+
 // ── Review scaffold dry-run / mastery diagnostics ────────────────────────────
 
 export interface ReviewScaffoldDryRunSummary {

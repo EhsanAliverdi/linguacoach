@@ -28,6 +28,7 @@
   @if (suggestionsLoadState() === 'error') {
     <div class="sp-practice-alert" data-testid="suggestions-error" role="alert">
       We could not load suggestions right now. You can still practise by skill below.
+      <button type="button" class="sp-btn-link sp-practice-retry" (click)="loadSuggestions()" data-testid="suggestions-retry">Try again</button>
     </div>
   }
 
@@ -61,16 +62,20 @@
       </section>
     }
 
-    @if (reviewItems().length > 0) {
-      <section class="sp-practice-section" data-testid="review-section">
-        <p class="sp-eyebrow sp-practice-section-label">Review practice</p>
+    <section class="sp-practice-section" data-testid="review-section">
+      <p class="sp-eyebrow sp-practice-section-label">Review queue</p>
+      @if (reviewItems().length > 0) {
         <div class="sp-suggestion-grid" data-testid="review-grid">
           @for (item of reviewItems(); track item.readinessItemId) {
             <ng-container *ngTemplateOutlet="suggestionCard; context: { $implicit: item }"></ng-container>
           }
         </div>
-      </section>
-    }
+      } @else {
+        <div class="sp-suggestion-empty" data-testid="review-queue-empty">
+          You're all caught up. Nothing needs review right now.
+        </div>
+      }
+    </section>
 
   }
 
@@ -90,6 +95,9 @@
       <div class="sp-suggestion-card-title">{{ item.title }}</div>
       @if (item.description) {
         <div class="sp-suggestion-card-desc">{{ item.description }}</div>
+      }
+      @if (item.explanation) {
+        <div class="sp-suggestion-card-reason" data-testid="suggestion-reason">{{ item.explanation }}</div>
       }
       <div class="sp-suggestion-card-meta">
         @if (item.targetCefrLevel) {

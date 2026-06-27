@@ -247,6 +247,8 @@ public static class DependencyInjection
         services.AddScoped<IAdminRemoveOnboardingStepHandler, AdminRemoveOnboardingStepHandler>();
         services.AddScoped<IAdminReorderOnboardingStepsHandler, AdminReorderOnboardingStepsHandler>();
 
+        services.AddScoped<IAdminStudentPracticeQuery, AdminStudentPracticeQueryHandler>();
+
         // Dashboard
         services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();

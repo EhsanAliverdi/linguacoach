@@ -7,7 +7,7 @@ import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
-  AdminPlacementLatestResponse, AdminPlacementProgress,
+  AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -159,6 +159,10 @@ export class AdminStudentDetailComponent implements OnInit {
   masteryPoolSummaryLoading = signal(true);
   masteryPoolSummaryError = signal('');
 
+  practiceSummary = signal<AdminStudentPracticeSummary | null>(null);
+  practiceSummaryLoading = signal(true);
+  practiceSummaryError = signal('');
+
   // Phase 13A+13B — Adaptive Placement
   placementLatest = signal<AdminPlacementLatestResponse | null>(null);
   placementLoading = signal(true);
@@ -304,6 +308,11 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getStudentReadinessPoolHealth(id).subscribe({
       next: ph => { this.poolHealth.set(ph); this.poolHealthLoading.set(false); },
       error: () => { this.poolHealthError.set('Could not load pool health.'); this.poolHealthLoading.set(false); },
+    });
+
+    this.adminApi.getStudentPracticeSummary(id).subscribe({
+      next: ps => { this.practiceSummary.set(ps); this.practiceSummaryLoading.set(false); },
+      error: () => { this.practiceSummaryError.set('Could not load practice summary.'); this.practiceSummaryLoading.set(false); },
     });
   }
 

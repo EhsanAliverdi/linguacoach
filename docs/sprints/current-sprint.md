@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15C)
+lastUpdated: 2026-06-28 (15D)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,26 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 15D — Adaptive Practice Gym Experience** — complete (2026-06-28)
+
+Exposed existing backend adaptive Practice Gym capabilities in the student UI. No new algorithms or exercise formats — wiring only.
+
+**Explanation render (Part B):** `PracticeGymSuggestionItemDto.Explanation` was populated server-side but never rendered. Added `@if (item.explanation)` block in `practice-gym.component.html` showing the recommendation reason (e.g. "Listening is your weakest skill") below the card description. `data-testid="suggestion-reason"`.
+
+**Review queue empty state (Part C):** Review section was hidden when empty. Changed to always-visible with "You're all caught up. Nothing needs review right now." `data-testid="review-queue-empty"`.
+
+**Retry button (Part D):** Error state now has `data-testid="suggestions-retry"` button. `loadSuggestions()` visibility changed from `private` to accessible so template can call it directly.
+
+**Admin parity (Part E):** New `GET /api/admin/students/{id}/practice-summary` endpoint. Reuses `IPracticeGymSuggestionService`. Returns `AdminStudentPracticeResult` with status, review queue count, reserved count, weakest skill, top suggestion, and replenishment flag. Admin student detail page shows a Practice Gym summary card.
+
+**Tests (Parts F–I):** 6 new Karma tests in `practice-gym.component.spec.ts`. 7 new Karma tests + full spy setup update in `admin-student-detail.component.spec.ts`. 4 new backend integration tests in `AdminStudentPracticeTests.cs`. Suggestions API mock added to `mockPracticeRoute()` in `practice-gym.spec.ts` with 2 new E2E tests.
+
+**Build/test totals:** 0 errors. 3 arch + 1,504 unit + 1,212 integration = **2,719 backend**. 1,427 Angular unit tests. All pass. Playwright E2E pending manual/CI run.
+
+Review: `docs/reviews/2026-06-28-phase-15d-adaptive-practice-gym-experience-review.md`.
+
+---
 
 **Phase 15C — Today Lesson Player Foundation** — complete (2026-06-28)
 

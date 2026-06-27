@@ -931,6 +931,73 @@ describe('PracticeGymComponent', () => {
     const sections = f.nativeElement.querySelectorAll('[data-testid^="practice-skill-section-"]');
     expect(sections.length).toBeGreaterThanOrEqual(4);
   });
+
+  it('renders explanation text on suggestion card when explanation is set', async () => {
+    const item = makeSuggestionItem({ explanation: 'Listening is your weakest skill' });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const reason = f.nativeElement.querySelector('[data-testid="suggestion-reason"]');
+    expect(reason?.textContent).toContain('Listening is your weakest skill');
+  });
+
+  it('does not render explanation element when explanation is empty', async () => {
+    const item = makeSuggestionItem({ explanation: '' });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const reason = f.nativeElement.querySelector('[data-testid="suggestion-reason"]');
+    expect(reason).toBeNull();
+  });
+
+  it('shows review queue section with empty state when suggestions loaded but no review items', async () => {
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, suggestedItems: [makeSuggestionItem()] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const reviewSection = f.nativeElement.querySelector('[data-testid="review-section"]');
+    expect(reviewSection).toBeTruthy();
+    const emptyState = f.nativeElement.querySelector('[data-testid="review-queue-empty"]');
+    expect(emptyState).toBeTruthy();
+    expect(emptyState?.textContent).toContain('all caught up');
+  });
+
+  it('shows review items when review queue is non-empty', async () => {
+    const reviewItem = makeSuggestionItem({ readinessItemId: 'rev-1', routingReason: 'Review' });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, reviewItems: [reviewItem] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const grid = f.nativeElement.querySelector('[data-testid="review-grid"]');
+    expect(grid).toBeTruthy();
+    const emptyState = f.nativeElement.querySelector('[data-testid="review-queue-empty"]');
+    expect(emptyState).toBeNull();
+  });
+
+  it('shows retry button in suggestions error state', async () => {
+    suggestionsService.getSuggestions.and.returnValue(throwError(() => new Error('net')));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const retryBtn = f.nativeElement.querySelector('[data-testid="suggestions-retry"]');
+    expect(retryBtn).toBeTruthy();
+  });
+
+  it('retry button triggers a fresh suggestions load', async () => {
+    suggestionsService.getSuggestions.and.returnValue(throwError(() => new Error('net')));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+    const callsBefore = suggestionsService.getSuggestions.calls.count();
+
+    const retryBtn = f.nativeElement.querySelector('[data-testid="suggestions-retry"]');
+    retryBtn.click();
+    f.detectChanges();
+
+    expect(suggestionsService.getSuggestions.calls.count()).toBeGreaterThan(callsBefore);
+  });
 });
 
 

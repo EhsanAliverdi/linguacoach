@@ -71,6 +71,45 @@ async function mockPracticeRoute(page: Page) {
     });
   });
 
+  await page.route('**/api/practice-gym/suggestions', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        suggestedItems: [
+          {
+            readinessItemId: 'item-1',
+            title: 'Listen and Answer',
+            description: 'Practice listening comprehension',
+            primarySkill: 'listening',
+            secondarySkills: [],
+            patternKey: 'listen_and_answer',
+            activityType: null,
+            targetCefrLevel: 'B2',
+            studentCefrLevelSnapshot: 'B2',
+            curriculumObjectiveKey: null,
+            curriculumObjectiveTitle: null,
+            contextTags: ['general_english'],
+            focusTags: [],
+            routingReason: 'Normal',
+            isLowerLevelContent: false,
+            difficultyBand: 2,
+            estimatedDurationMinutes: 5,
+            supportLanguageName: null,
+            status: 'ready',
+            callToAction: 'Start practice',
+            explanation: 'Listening is your weakest skill',
+            linkedLearningActivityId: null,
+            linkedLearningSessionId: null,
+            linkedSessionExerciseId: null,
+          },
+        ],
+        continueItems: [],
+        reviewItems: [],
+      }),
+    });
+  });
+
 }
 
 // ── Page identity ──────────────────────────────────────────────────────────────
@@ -326,4 +365,27 @@ test('Vocabulary is not in the top-level student sidebar nav', async ({ page }) 
 
   // Vocabulary must not appear as a nav link in the sidebar
   await expect(page.getByRole('link', { name: /^Vocabulary$/i })).toHaveCount(0);
+});
+
+// ── Adaptive suggestions section ───────────────────────────────────────────────
+
+test('suggestions section renders recommended card with explanation', async ({ page }) => {
+  await withAuth(page);
+  await mockPracticeRoute(page);
+
+  await page.goto('/practice');
+
+  await expect(page.getByTestId('suggestions-section')).toBeVisible();
+  await expect(page.getByTestId('suggestion-reason').first()).toContainText('Listening is your weakest skill');
+});
+
+test('review queue section is always visible with empty state when no items', async ({ page }) => {
+  await withAuth(page);
+  await mockPracticeRoute(page);
+
+  await page.goto('/practice');
+
+  await expect(page.getByTestId('review-section')).toBeVisible();
+  await expect(page.getByTestId('review-queue-empty')).toBeVisible();
+  await expect(page.getByTestId('review-queue-empty')).toContainText('all caught up');
 });

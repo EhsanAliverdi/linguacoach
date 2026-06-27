@@ -285,6 +285,61 @@
         }
       </sp-admin-card>
 
+      <!-- Practice Gym summary — Phase 15D -->
+      <sp-admin-card title="Practice Gym" data-testid="practice-summary-card">
+        @if (practiceSummaryLoading()) {
+          <sp-admin-loading-state message="Loading practice summary" />
+        } @else if (practiceSummaryError()) {
+          <sp-admin-error-state title="Practice summary unavailable" [message]="practiceSummaryError()" />
+        } @else if (practiceSummary()) {
+          @let ps = practiceSummary()!;
+          <div class="sp-admin-card-grid-2">
+            <div>
+              <div class="sp-admin-section-title">Queue</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Status</dt>
+                <dd>
+                  <sp-admin-badge [tone]="ps.status === 'Ready' ? 'success' : ps.status === 'ReviewOnly' ? 'warning' : 'neutral'"
+                                  data-testid="practice-status-badge">
+                    {{ ps.status }}
+                  </sp-admin-badge>
+                </dd>
+                <dt>Review queue</dt>
+                <dd data-testid="practice-review-count">
+                  <sp-admin-badge [tone]="ps.reviewQueueCount > 0 ? 'warning' : 'neutral'">{{ ps.reviewQueueCount }}</sp-admin-badge>
+                </dd>
+                <dt>In progress</dt>
+                <dd class="sp-admin-text-muted" data-testid="practice-reserved-count">{{ ps.reservedCount }}</dd>
+                <dt>Weakest skill</dt>
+                <dd class="sp-admin-text-muted" data-testid="practice-weakest-skill">{{ ps.weakestSkill ?? 'None identified' }}</dd>
+              </dl>
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Top suggestion</div>
+              @if (ps.topSuggestion) {
+                <dl class="sp-admin-detail-list sp-admin-mt-3">
+                  <dt>Title</dt>
+                  <dd class="sp-admin-text-muted" data-testid="practice-suggestion-title">{{ ps.topSuggestion.title }}</dd>
+                  <dt>Skill</dt>
+                  <dd class="sp-admin-text-muted">{{ ps.topSuggestion.primarySkill ?? 'General' }}</dd>
+                  <dt>Reason</dt>
+                  <dd class="sp-admin-text-muted" data-testid="practice-suggestion-reason">{{ ps.topSuggestion.explanation || ps.topSuggestion.routingReason }}</dd>
+                  <dt>CEFR</dt>
+                  <dd class="sp-admin-text-muted">{{ ps.topSuggestion.targetCefrLevel }}</dd>
+                </dl>
+              } @else {
+                <p class="sp-admin-text-muted sp-admin-mt-3">No suggestions ready.</p>
+              }
+              @if (ps.isReplenishmentRecommended) {
+                <sp-admin-alert variant="warning" class="sp-admin-mt-3">Pool is below target — replenishment recommended.</sp-admin-alert>
+              }
+            </div>
+          </div>
+        } @else {
+          <sp-admin-empty-state message="No practice data available." />
+        }
+      </sp-admin-card>
+
       <!-- Mastery evaluation summary — full width -->
       <sp-admin-card title="Mastery evaluation">
         @if (masteryPoolSummaryLoading()) {

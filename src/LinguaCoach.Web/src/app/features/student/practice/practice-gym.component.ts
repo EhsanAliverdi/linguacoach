@@ -146,7 +146,7 @@ export class PracticeGymComponent implements OnInit {
     this.loadSuggestions();
   }
 
-  private loadSuggestions(): void {
+  loadSuggestions(): void {
     this.suggestionsLoadState.set('loading');
     this.practiceGymSuggestionsService.getSuggestions().subscribe({
       next: resp => {

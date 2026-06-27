@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (14B)
+lastUpdated: 2026-06-28 (15D)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,23 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (14B)
+Last updated: 2026-06-28 (15D)
+
+---
+
+## Adaptive Practice Gym Experience (Phase 15D, 2026-06-28)
+
+Exposes the existing server-side adaptive suggestion engine in the Practice Gym UI.
+
+**What changed:**
+- Suggestion cards now show the recommendation reason (e.g. "Recommended because Listening is your weakest skill") via `data-testid="suggestion-reason"`. The `explanation` field was already populated server-side; only the template was missing.
+- Review queue section is always visible. Shows "You're all caught up. Nothing needs review right now." when empty (`data-testid="review-queue-empty"`). Previously hidden.
+- Error state has a retry button (`data-testid="suggestions-retry"`) that reloads suggestions.
+- New admin endpoint `GET /api/admin/students/{id}/practice-summary` exposes practice state (status, review queue count, reserved count, weakest skill, top suggestion, replenishment flag). Admin student detail page shows a Practice Gym summary card.
+
+**No new algorithms or exercise formats.** All adaptive intelligence was already implemented in `IPracticeGymSuggestionService`.
+
+**Test coverage added:** 6 Karma (practice-gym), 7 Karma (admin-student-detail), 4 backend integration, 2 E2E (Playwright pending CI run).
 
 ---
 
