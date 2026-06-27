@@ -43,3 +43,6 @@ Thumbs.db
 
 # Vendor template source (TailAdmin clone — tracked separately, not part of main repo)
 src/app/templates/
+
+# Playwright test output artifacts (subdirs only — keep .last-run.json)
+test-results/*/
