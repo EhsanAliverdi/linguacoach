@@ -25,12 +25,28 @@ internal sealed class PlacementAssessmentConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.SkillLevelsJson).HasColumnName("skill_levels_json");
         builder.Property(e => e.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();
 
+        // Phase 13A — Adaptive Placement Engine columns
+        builder.Property(e => e.AbandonedAtUtc).HasColumnName("abandoned_at_utc");
+        builder.Property(e => e.ExpiredAtUtc).HasColumnName("expired_at_utc");
+        builder.Property(e => e.OverallConfidence).HasColumnName("overall_confidence");
+        builder.Property(e => e.IsProvisional).HasColumnName("is_provisional").IsRequired();
+        builder.Property(e => e.ResultSummary).HasColumnName("result_summary").HasMaxLength(500);
+        builder.Property(e => e.Source).HasColumnName("source").HasMaxLength(50);
+        builder.Property(e => e.IsAdaptive).HasColumnName("is_adaptive").IsRequired();
+
         builder.HasMany(e => e.Answers)
             .WithOne()
             .HasForeignKey(a => a.PlacementAssessmentId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(e => e.Answers).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(e => e.Items)
+            .WithOne()
+            .HasForeignKey(i => i.PlacementAssessmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(e => e.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasOne<StudentProfile>()
             .WithMany()

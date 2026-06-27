@@ -65,6 +65,10 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<StudentLearningPlan> StudentLearningPlans => Set<StudentLearningPlan>();
     public DbSet<StudentLearningPlanObjective> StudentLearningPlanObjectives => Set<StudentLearningPlanObjective>();
 
+    // Phase 13A — Adaptive Placement Engine
+    public DbSet<PlacementAssessmentItem> PlacementAssessmentItems => Set<PlacementAssessmentItem>();
+    public DbSet<PlacementSkillResult> PlacementSkillResults => Set<PlacementSkillResult>();
+
     // Phase 10R — Usage governance, token tracking & quota enforcement
     public DbSet<FeatureDefinition> FeatureDefinitions => Set<FeatureDefinition>();
     public DbSet<UsagePolicy> UsagePolicies => Set<UsagePolicy>();

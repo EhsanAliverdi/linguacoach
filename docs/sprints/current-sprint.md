@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12G)
+lastUpdated: 2026-06-27 (13A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,28 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 13A — Adaptive Placement Engine Foundation** — complete (2026-06-27)
+
+Delivers the domain model, deterministic scoring algorithm, admin API, persistence migration (T62), and admin Angular read-only UI for the adaptive placement assessment system. No AI calls — fully deterministic 72-item seeded bank covers 6 skills × 4 CEFR levels.
+
+**Domain (Parts B):** `PlacementStatus` extended (`Abandoned=3`, `Expired=4`, `Failed=5`). `PlacementAssessment` gains 7 new fields, `CreateAdaptive()` factory, `Abandon()`, `Expire()`, and `CompleteAdaptive()`. Two new entities: `PlacementAssessmentItem` (stores individual test items with correct answer for deterministic scoring) and `PlacementSkillResult` (per-skill CEFR + confidence after evaluation).
+
+**Application (Parts C):** `PlacementAssessmentOptions` config class. Three DTO records: `PlacementSkillResultDto`, `PlacementAssessmentSummaryDto`, `PlacementHistoryItemDto`. `IPlacementAssessmentService` interface with 5 methods.
+
+**Infrastructure/Algorithm (Parts D+E+F):** `PlacementAssessmentService` implements deterministic adaptive scoring: 70% pass rate advances level, below 40% fails level. Confidence = min(evidenceCount/6, correctRatio). Overall CEFR = minimum of per-skill estimates (conservative). Updates `StudentProfile.CefrLevel` when confidence >= 0.6. Triggers `ILearningPlanService.RegeneratePlanAsync("placement_completed")` — failure is caught/logged, never blocks placement completion.
+
+**Persistence (Parts I+migration T62):** Two new EF configurations. Two new `DbSet<T>`. Hand-authored migration T62 adds 7 columns to `placement_assessments`, creates `placement_assessment_items` and `placement_skill_results` tables.
+
+**Admin API (Part G):** `AdminPlacementController` with 4 endpoints: GET latest, GET history, POST start, POST complete.
+
+**Angular UI (Part H):** `admin.models.ts` gains 3 new interfaces. `admin.api.service.ts` gains 2 new methods. Admin student detail page shows a read-only placement section.
+
+**Tests (Part J):** +28 tests (18 unit domain, 10 integration). All 2661 tests pass (3 arch + 1493 unit + 1165 integration).
+
+Review: `docs/reviews/2026-06-27-phase-13a-adaptive-placement-engine-foundation-review.md`.
+
+---
 
 **Phase 12G — Real-Time Learning Plan Progress Integration** — complete (2026-06-27)
 

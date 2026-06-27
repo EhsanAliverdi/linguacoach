@@ -27,6 +27,9 @@ import {
   AggregatePoolHealthSummary,
   ReviewScaffoldDryRunSummary,
   MasteryValidationSummary,
+  AdminPlacementLatestResponse,
+  AdminPlacementHistoryItem,
+  AdminPlacementAssessmentSummary,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -343,5 +346,27 @@ export class AdminApiService {
 
   getAiUsageCategoryBreakdown(period = '30d'): Observable<AdminAiUsageCategoryBreakdownResponse> {
     return this.http.get<AdminAiUsageCategoryBreakdownResponse>(`${this.api}/ai-usage/by-category?period=${period}`);
+  }
+
+  // ── Phase 13A — Adaptive Placement Engine ───────────────────────────────────
+
+  getLatestPlacement(studentProfileId: string): Observable<AdminPlacementLatestResponse> {
+    return this.http.get<AdminPlacementLatestResponse>(
+      `${this.api}/students/${studentProfileId}/placement/latest`);
+  }
+
+  getPlacementHistory(studentProfileId: string): Observable<AdminPlacementHistoryItem[]> {
+    return this.http.get<AdminPlacementHistoryItem[]>(
+      `${this.api}/students/${studentProfileId}/placement/history`);
+  }
+
+  startPlacement(studentProfileId: string): Observable<AdminPlacementAssessmentSummary> {
+    return this.http.post<AdminPlacementAssessmentSummary>(
+      `${this.api}/students/${studentProfileId}/placement/start`, {});
+  }
+
+  completePlacement(studentProfileId: string, assessmentId: string): Observable<AdminPlacementAssessmentSummary> {
+    return this.http.post<AdminPlacementAssessmentSummary>(
+      `${this.api}/students/${studentProfileId}/placement/${assessmentId}/complete`, {});
   }
 }

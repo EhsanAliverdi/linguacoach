@@ -29,9 +29,22 @@ public sealed class PlacementAssessment : BaseEntity
 
     public DateTime UpdatedAtUtc { get; private set; }
 
+    // Phase 13A — Adaptive Placement Engine
+    public DateTime? AbandonedAtUtc { get; private set; }
+    public DateTime? ExpiredAtUtc { get; private set; }
+    public double? OverallConfidence { get; private set; }
+    public bool IsProvisional { get; private set; }
+    public string? ResultSummary { get; private set; }
+    public string? Source { get; private set; }
+    public bool IsAdaptive { get; private set; }
+
     // Navigation — answers collected across all sections.
     private readonly List<PlacementAnswer> _answers = new();
     public IReadOnlyCollection<PlacementAnswer> Answers => _answers.AsReadOnly();
+
+    // Navigation — adaptive assessment items (Phase 13A).
+    private readonly List<PlacementAssessmentItem> _items = new();
+    public IReadOnlyCollection<PlacementAssessmentItem> Items => _items.AsReadOnly();
 
     private PlacementAssessment()
     {
@@ -49,6 +62,24 @@ public sealed class PlacementAssessment : BaseEntity
         Status = PlacementStatus.NotStarted;
         CurrentSectionKey = firstSectionKey;
         UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Factory for Phase 13A adaptive assessments.
+    /// </summary>
+    public static PlacementAssessment CreateAdaptive(Guid studentProfileId, string source)
+    {
+        if (studentProfileId == Guid.Empty)
+            throw new ArgumentException("StudentProfileId must not be empty.", nameof(studentProfileId));
+        return new PlacementAssessment
+        {
+            StudentProfileId = studentProfileId,
+            Status = PlacementStatus.NotStarted,
+            CurrentSectionKey = "adaptive",
+            UpdatedAtUtc = DateTime.UtcNow,
+            IsAdaptive = true,
+            Source = source
+        };
     }
 
     public void Start()
@@ -97,6 +128,41 @@ public sealed class PlacementAssessment : BaseEntity
         ResultJson = resultJson;
         OverallEstimatedLevel = overallEstimatedLevel;
         SkillLevelsJson = skillLevelsJson;
+        Touch();
+    }
+
+    // Phase 13A — Adaptive lifecycle methods
+
+    public void Abandon()
+    {
+        if (Status != PlacementStatus.InProgress)
+            throw new InvalidOperationException("Only in-progress assessments can be abandoned.");
+        Status = PlacementStatus.Abandoned;
+        AbandonedAtUtc = DateTime.UtcNow;
+        Touch();
+    }
+
+    public void Expire()
+    {
+        if (Status == PlacementStatus.Completed || Status == PlacementStatus.Abandoned)
+            throw new InvalidOperationException($"Cannot expire assessment in status {Status}.");
+        Status = PlacementStatus.Expired;
+        ExpiredAtUtc = DateTime.UtcNow;
+        Touch();
+    }
+
+    public void CompleteAdaptive(string? overallCefrLevel, double confidence, string? resultSummary, bool isProvisional)
+    {
+        if (Status == PlacementStatus.Completed)
+            throw new InvalidOperationException("Placement is already completed.");
+        if (Status == PlacementStatus.Abandoned)
+            throw new InvalidOperationException("Cannot complete an abandoned assessment.");
+        Status = PlacementStatus.Completed;
+        CompletedAtUtc = DateTime.UtcNow;
+        OverallEstimatedLevel = overallCefrLevel;
+        OverallConfidence = confidence;
+        ResultSummary = resultSummary;
+        IsProvisional = isProvisional;
         Touch();
     }
 

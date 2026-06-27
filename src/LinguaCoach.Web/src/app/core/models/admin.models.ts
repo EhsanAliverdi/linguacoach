@@ -843,3 +843,63 @@ export interface AdminGenerateLessonsResponse {
   queued: boolean;
   requestedCount: number;
 }
+
+// Phase 13A — Adaptive Placement Engine
+
+export interface AdminPlacementSkillResult {
+  skill: string;
+  estimatedCefrLevel: string;
+  confidence: number;
+  evidenceCount: number;
+  strengths: string | null;
+  weaknesses: string | null;
+  recommendedObjectiveKeys: string[];
+}
+
+export interface AdminPlacementAssessmentSummary {
+  assessmentId: string;
+  studentProfileId: string;
+  status: string;
+  startedAtUtc: string | null;
+  completedAtUtc: string | null;
+  expiredAtUtc: string | null;
+  overallCefrLevel: string | null;
+  overallConfidence: number | null;
+  isProvisional: boolean;
+  resultSummary: string | null;
+  source: string | null;
+  skillResults: AdminPlacementSkillResult[];
+  learningPlanRegenerated: boolean;
+  learningPlanRegenerationWarning: string | null;
+  itemCount: number;
+}
+
+export interface AdminPlacementHistoryItem {
+  assessmentId: string;
+  status: string;
+  startedAtUtc: string | null;
+  completedAtUtc: string | null;
+  overallCefrLevel: string | null;
+  overallConfidence: number | null;
+  isProvisional: boolean;
+  itemCount: number;
+}
+
+export interface AdminPlacementLatestResponse {
+  hasPlacement: boolean;
+  assessmentId?: string;
+  studentProfileId?: string;
+  status?: string;
+  startedAtUtc?: string | null;
+  completedAtUtc?: string | null;
+  expiredAtUtc?: string | null;
+  overallCefrLevel?: string | null;
+  overallConfidence?: number | null;
+  isProvisional?: boolean;
+  resultSummary?: string | null;
+  source?: string | null;
+  skillResults?: AdminPlacementSkillResult[];
+  learningPlanRegenerated?: boolean;
+  learningPlanRegenerationWarning?: string | null;
+  itemCount?: number;
+}

@@ -420,6 +420,15 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.LearningPlan.ILearningPlanService,
             LinguaCoach.Infrastructure.LearningPlan.LearningPlanService>();
 
+        // Phase 13A — Adaptive Placement Engine
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Application.Placement.PlacementAssessmentOptions>(
+                configuration.GetSection(LinguaCoach.Application.Placement.PlacementAssessmentOptions.Section));
+        else
+            services.Configure<LinguaCoach.Application.Placement.PlacementAssessmentOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.Placement.IPlacementAssessmentService,
+            LinguaCoach.Infrastructure.Placement.PlacementAssessmentService>();
+
         return services;
     }
 }

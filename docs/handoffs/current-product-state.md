@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12G)
+lastUpdated: 2026-06-27 (13A)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,34 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (12G)
+Last updated: 2026-06-27 (13A)
+
+---
+
+## Adaptive Placement Engine Foundation (Phase 13A, 2026-06-27)
+
+Delivers the complete foundation for adaptive placement assessment. Students can be
+assessed via a deterministic 72-item seeded bank across 6 skills (listening, reading,
+writing, vocabulary, grammar, speaking) at 4 CEFR levels (A1–B2). No AI calls in Phase 13A.
+
+**What it does:**
+- Admin can start a placement assessment for any student via `POST /api/admin/students/{id}/placement/start`
+- Assessment creates items from seeded bank at the student's current CEFR level (or A2 fallback)
+- Admin triggers completion via `POST /api/admin/students/{id}/placement/{assessmentId}/complete`
+- Per-skill CEFR levels computed deterministically; overall CEFR is the minimum across skills (conservative)
+- `StudentProfile.CefrLevel` updated automatically when confidence >= 0.6
+- Learning Plan regenerated after completion (`placement_completed` reason)
+- Admin student detail page shows placement status, CEFR, confidence, provisional warning, skill table
+
+**Domain model:** `PlacementStatus` now has `Abandoned`, `Expired`, `Failed` states. `PlacementAssessment` supports `Abandon()`, `Expire()`, and `CompleteAdaptive()`. Two new entities: `PlacementAssessmentItem` and `PlacementSkillResult`.
+
+**Migration T62** adds 7 new columns to `placement_assessments` and creates `placement_assessment_items` and `placement_skill_results` tables.
+
+**What's next (Phase 13B):** Student response submission endpoint, real adaptive item selection, AI-generated item bank, expiry background job, student-facing adaptive placement flow.
+
++28 tests. All 2661 pass (3 arch + 1493 unit + 1165 integration).
+
+Review: `docs/reviews/2026-06-27-phase-13a-adaptive-placement-engine-foundation-review.md`.
 
 ---
 
