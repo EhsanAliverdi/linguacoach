@@ -42,6 +42,7 @@ export interface SessionDetailResponse {
   sessionGoal: string;
   durationMinutes: number;
   focusSkill: string;
+  cefrLevel: string | null;
   status: SessionStatus;
   startedAtUtc: string | null;
   completedAtUtc: string | null;

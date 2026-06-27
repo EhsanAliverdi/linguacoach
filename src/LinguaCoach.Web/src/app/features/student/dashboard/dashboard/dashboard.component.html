@@ -109,10 +109,12 @@
               {{ todaysSession()!.durationMinutes }} min · {{ todaysSession()!.focusSkill }} focus · {{ todaysSession()!.exercises.length }} steps
             </p>
           } @else {
-            <h2 style="font-size:20px;font-weight:800;color:#fff;line-height:1.2;margin:0 0 4px">
-              Your first lesson is being prepared
-            </h2>
-            <p style="font-size:13px;color:rgba(255,255,255,.82);margin:0">Check back in a moment</p>
+            <div data-testid="session-preparing">
+              <h2 style="font-size:20px;font-weight:800;color:#fff;line-height:1.2;margin:0 0 4px">
+                Your lesson is being prepared
+              </h2>
+              <p style="font-size:13px;color:rgba(255,255,255,.82);margin:0">Check back in a moment</p>
+            </div>
           }
         </div>
         <div style="padding:14px 22px;background:var(--sp-surface);border-top:1px solid var(--sp-border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">

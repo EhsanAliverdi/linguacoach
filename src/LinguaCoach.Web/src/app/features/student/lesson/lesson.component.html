@@ -27,6 +27,9 @@
         </h1>
         <p style="font-size:13px;color:var(--sp-muted);margin:0">
           {{ session()!.durationMinutes }} min &nbsp;·&nbsp; {{ session()!.focusSkill }} focus &nbsp;·&nbsp; {{ session()!.topic }}
+          @if (session()!.cefrLevel) {
+            &nbsp;·&nbsp; <span data-testid="lesson-cefr-level" style="font-weight:700;color:var(--sp-writing)">{{ session()!.cefrLevel }}</span>
+          }
         </p>
       </div>
 

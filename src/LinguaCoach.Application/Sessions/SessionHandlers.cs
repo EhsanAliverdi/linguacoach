@@ -22,6 +22,7 @@ public sealed record SessionDetailResult(
     string SessionGoal,
     int DurationMinutes,
     string FocusSkill,
+    string? CefrLevel,
     SessionStatus Status,
     DateTime? StartedAtUtc,
     DateTime? CompletedAtUtc,

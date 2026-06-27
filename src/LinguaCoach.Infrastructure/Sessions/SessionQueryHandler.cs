@@ -55,6 +55,7 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
             SessionGoal: session.SessionGoal,
             DurationMinutes: session.DurationMinutes,
             FocusSkill: session.FocusSkill,
+            CefrLevel: profile.CefrLevel,
             Status: session.Status,
             StartedAtUtc: session.StartedAtUtc,
             CompletedAtUtc: session.CompletedAtUtc,

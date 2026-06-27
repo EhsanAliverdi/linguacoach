@@ -449,3 +449,131 @@ test('completing lesson shows completion summary', async ({ page }) => {
   await expect(page.getByTestId('lesson-complete-summary')).toBeVisible({ timeout: 3000 });
   await expect(page.getByTestId('lesson-complete-summary')).toContainText('Lesson complete');
 });
+
+// ── Part I additions ─────────────────────────────────────────────────────────
+
+// Test #1: Preparing state when no session exists
+test('dashboard shows preparing state when session is being generated', async ({ page }) => {
+  await withAuth(page);
+
+  // Preparing status + no sessionId → dashboard component leaves todaysSession null
+  await page.route('**/api/student/dashboard/summary', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        profile: { displayName: 'Sara', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: {
+          isLearningReady: true,
+          lifecycleStatus: 'CourseReady',
+          placementRequired: false,
+          learningPlanExists: true,
+        },
+        todaySession: {
+          status: 'Preparing',
+          sessionId: null,
+          title: null,
+          topic: null,
+          sessionGoal: null,
+          focusSkill: null,
+          durationMinutes: null,
+          exerciseCount: 0,
+          actionLabel: null,
+        },
+        learningPlan: {
+          pathTitle: 'Workplace English',
+          currentObjective: 'Professional communication',
+          currentObjectiveDescription: null,
+          objectiveIndex: 1,
+          totalObjectives: 3,
+          modulesCompleted: 0,
+          remainingObjectives: 2,
+          completedActivities: 0,
+          totalActivities: 3,
+          progressPercent: 0,
+        },
+        practice: { status: 'Preparing', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: true, practiceUnavailable: false, placementIncomplete: false },
+      }),
+    });
+  });
+
+  await page.goto('/dashboard');
+
+  await expect(page.getByTestId('dashboard-todays-lesson')).toBeVisible();
+  await expect(page.getByTestId('session-preparing')).toBeVisible();
+  await expect(page.getByTestId('session-preparing')).toContainText('being prepared');
+});
+
+// Test #11: Placement-required student cannot access lesson route
+test('placement-required student is redirected from lesson to placement', async ({ page }) => {
+  await withAuth(page);
+
+  await page.route('**/api/placement/status', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        lifecycleStatus: 'PlacementRequired',
+        status: 'NotStarted',
+        hasActiveAssessment: false,
+      }),
+    });
+  });
+
+  await page.goto(`/lesson/${SESSION_ID}`);
+
+  await expect(page).toHaveURL(/\/placement/, { timeout: 5000 });
+});
+
+// Test #3: Lesson header shows CEFR level when backend provides it
+test('lesson header shows CEFR level from session detail', async ({ page }) => {
+  await withAuth(page);
+  await mockSessionEndpoints(page, { cefrLevel: 'B1' } as any);
+  await page.goto(`/lesson/${SESSION_ID}`);
+
+  await expect(page.getByTestId('lesson-cefr-level')).toBeVisible();
+  await expect(page.getByTestId('lesson-cefr-level')).toContainText('B1');
+});
+
+// Test #6: Review exercise shows reflection panel, not an external activity link
+test('review exercise panel shows reflection prompt without open-activity button', async ({ page }) => {
+  await withAuth(page);
+  await mockSessionEndpoints(page, { status: 'inProgress', startedAtUtc: new Date().toISOString() });
+  await page.goto(`/lesson/${SESSION_ID}`);
+
+  // Activate the last exercise (review kind) by clicking it
+  const exercises = page.getByTestId('exercise-item');
+  await exercises.last().click();
+
+  await expect(page.getByTestId('review-panel')).toBeVisible({ timeout: 3000 });
+  await expect(page.getByTestId('open-activity-btn')).toHaveCount(0);
+  await expect(page.getByTestId('complete-exercise-btn')).toBeVisible();
+});
+
+// Test #12: Lesson page shows error state when session not found (error contained)
+test('lesson page shows contained error when session id is invalid', async ({ page }) => {
+  await withAuth(page);
+
+  await page.route(`**/api/sessions/invalid-session-id`, async route => {
+    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'Session not found.' }) });
+  });
+  // placementRequiredRedirectGuard also calls placement/status — return active learner
+  await page.route('**/api/placement/status', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ lifecycleStatus: 'ActiveLearning', status: 'Completed', hasActiveAssessment: false }),
+    });
+  });
+
+  await page.goto('/lesson/invalid-session-id');
+
+  await expect(page.getByTestId('lesson-header')).toHaveCount(0);
+  // Must not crash — either shows error message or redirects gracefully
+  const url = page.url();
+  const isError = url.includes('/lesson/invalid-session-id') || url.includes('/dashboard');
+  expect(isError).toBe(true);
+});

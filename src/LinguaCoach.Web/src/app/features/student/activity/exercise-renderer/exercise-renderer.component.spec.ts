@@ -304,5 +304,12 @@ describe('ExerciseRendererComponent â€” Phase 9 speaking/listening dispatch
     expect(emitted[0].kind).toBe('summarizeGroupDiscussion');
     expect(emitted[0].items[0].itemId).toBe('disc1');
   });
+
+  it('unknown interactionMode shows unsupported activity message instead of crashing', async () => {
+    await setup('unknownInteractionModeForTesting' as any, {});
+    const el = fixture.nativeElement.querySelector('[data-testid="unsupported-activity-type"]');
+    expect(el).toBeTruthy();
+    expect(el.textContent).toContain('not available in the lesson player yet');
+  });
 });
 

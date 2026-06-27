@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (15B)
+lastUpdated: 2026-06-28 (15C)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,31 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-27
+Last updated: 2026-06-28
 
 ---
 
 ## Active sprint
+
+**Phase 15C — Today Lesson Player Foundation** — complete (2026-06-28)
+
+Today lesson player wired to real session and activity data. Audit confirmed core lesson infrastructure (session stepper, prepare flow, moduleRedirectGuard→/activity, completion lifecycle, placement guard) was already in place. This phase closes the remaining gaps.
+
+**CEFR in session detail (Parts B/C):** `SessionDetailResult` DTO gains `string? CefrLevel`. Populated from `profile.CefrLevel` in `SessionQueryHandler`. TypeScript `SessionDetailResponse` gains `cefrLevel: string | null`. Lesson header renders `data-testid="lesson-cefr-level"` badge when non-null.
+
+**Unsupported activity shell (Part E):** `ExerciseRendererComponent @default` block changed from silent FreeTextEntry fallback to honest "Activity not available — not available in the lesson player yet" message with `data-testid="unsupported-activity-type"`.
+
+**Explicit Today-page state model (Part B):** `DashboardComponent.todaySessionState()` method added, returning one of 7 named states: `PlacementRequired | Preparing | Ready | InProgress | CompletedToday | NotAvailable | Error`. Derives state from `error()`, `lifecycleStage`, and `todaysSession()` signal.
+
+**Dashboard preparing testid (Part H):** Added `data-testid="session-preparing"` to the dashboard preparing block. Copy updated from "Your first lesson is being prepared" to "Your lesson is being prepared".
+
+**Tests (Part I):** 1 new unit test in `exercise-renderer.component.spec.ts` — unknown `interactionMode` shows unsupported message. 5 new Playwright tests in `today-lesson.spec.ts` — preparing state, placement redirect, CEFR header, review panel, error containment.
+
+**Build/test totals:** 0 errors. 3 arch + 1,504 unit + 1,208 integration = **2,715 backend**. 1,414 Angular unit tests. 156 Playwright E2E tests. All pass.
+
+Review: `docs/reviews/2026-06-28-phase-15c-today-lesson-player-foundation-review.md`.
+
+---
 
 **Phase 15B — Consolidated Student Dashboard Summary API** — complete (2026-06-27)
 

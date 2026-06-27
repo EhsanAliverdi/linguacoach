@@ -169,11 +169,9 @@
     />
   }
   @default {
-    <app-free-text-entry
-      [content]="freeTextContent"
-      [disabled]="disabled"
-      [attemptCount]="attemptCount"
-      (submitted)="onFreeTextSubmitted($event)"
-    />
+    <div data-testid="unsupported-activity-type" style="padding:20px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2)">
+      <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0 0 6px">Activity not available</p>
+      <p style="font-size:13px;color:var(--sp-muted);margin:0;line-height:1.5">This activity type is not available in the lesson player yet.</p>
+    </div>
   }
 }

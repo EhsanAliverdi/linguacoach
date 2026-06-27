@@ -202,6 +202,28 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  /**
+   * Explicit Today-page state for the lesson card.
+   * PlacementRequired — student must complete placement first.
+   * Preparing         — session is being generated, no sessionId yet.
+   * Ready             — session exists and has not started.
+   * InProgress        — session is actively in progress.
+   * CompletedToday    — session was completed today.
+   * NotAvailable      — lifecycle stage does not support lessons.
+   * Error             — summary load failed.
+   */
+  todaySessionState(): 'PlacementRequired' | 'Preparing' | 'Ready' | 'InProgress' | 'CompletedToday' | 'NotAvailable' | 'Error' {
+    if (this.error()) return 'Error';
+    const stage = this.data()?.lifecycleStage ?? '';
+    if (stage === 'PlacementRequired' || stage === 'PlacementInProgress') return 'PlacementRequired';
+    if (!this.hasLessonAccess(stage) && stage !== '') return 'NotAvailable';
+    const s = this.todaysSession();
+    if (!s) return 'Preparing';
+    if (s.status === 'completed') return 'CompletedToday';
+    if (s.status === 'inProgress') return 'InProgress';
+    return 'Ready';
+  }
+
   lessonButtonLabel(): string {
     const s = this.todaysSession();
     if (!s) return 'Start today\'s lesson';
@@ -235,7 +257,7 @@ export class DashboardComponent implements OnInit {
     return this.hasLessonAccess(this.data()?.lifecycleStage ?? '');
   }
 
-  private hasLessonAccess(stage: string): boolean {
+  hasLessonAccess(stage: string): boolean {
     return stage === 'CourseReady' || stage === 'InLesson' || stage === 'ActiveLearning';
   }
 
