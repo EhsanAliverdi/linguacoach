@@ -314,9 +314,10 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
 
     public Task<AdminNotificationConfigStatus> GetConfigStatusAsync(CancellationToken ct = default)
     {
+        var appProv = string.IsNullOrWhiteSpace(_emailOptions.Provider) ? "Smtp" : _emailOptions.Provider;
         var emailConfigured = _emailOptions.Enabled
-            && !string.IsNullOrWhiteSpace(_emailOptions.Host)
-            && !string.IsNullOrWhiteSpace(_emailOptions.FromAddress);
+            && !string.IsNullOrWhiteSpace(_emailOptions.FromAddress)
+            && (appProv != "Smtp" || !string.IsNullOrWhiteSpace(_emailOptions.Host));
 
         var emailLabel = !_emailOptions.Enabled
             ? "Disabled"
@@ -330,6 +331,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
                 Enabled: _emailOptions.Enabled,
                 Configured: emailConfigured,
                 StatusLabel: emailLabel,
+                Provider: appProv,
                 Host: string.IsNullOrWhiteSpace(_emailOptions.Host) ? null : _emailOptions.Host,
                 Port: _emailOptions.Port,
                 FromAddress: string.IsNullOrWhiteSpace(_emailOptions.FromAddress) ? null : _emailOptions.FromAddress,
@@ -407,6 +409,9 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
 
         // Email
         bool emailEnabled  = hasDbEmail ? dbEmail!.IsEnabled  : _emailOptions.Enabled;
+        string emailProv   = hasDbEmail
+            ? (string.IsNullOrWhiteSpace(dbEmail!.Provider) ? "Smtp" : dbEmail!.Provider)
+            : (string.IsNullOrWhiteSpace(_emailOptions.Provider) ? "Smtp" : _emailOptions.Provider);
         string? emailHost  = hasDbEmail ? dbEmail!.Host        : (_emailOptions.Host.Length > 0 ? _emailOptions.Host : null);
         string? emailFrom  = hasDbEmail ? dbEmail!.FromAddress : (_emailOptions.FromAddress.Length > 0 ? _emailOptions.FromAddress : null);
         string? emailDisp  = hasDbEmail ? dbEmail!.FromDisplayName : _emailOptions.FromDisplayName;
@@ -418,7 +423,9 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         bool emailHasPass  = hasDbEmail
             ? dbEmail!.HasSecret
             : !string.IsNullOrWhiteSpace(_emailOptions.Password);
-        bool emailConfigured = emailEnabled && !string.IsNullOrWhiteSpace(emailHost) && !string.IsNullOrWhiteSpace(emailFrom);
+        bool emailConfigured = emailEnabled
+            && !string.IsNullOrWhiteSpace(emailFrom)
+            && (emailProv != "Smtp" || !string.IsNullOrWhiteSpace(emailHost));
         string emailLabel  = !emailEnabled ? "Disabled" : emailConfigured ? "Configured" : "Misconfigured";
 
         // SMS
@@ -443,7 +450,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
             InApp: new AdminChannelStatus("InApp", inAppEnabled, inAppEnabled ? "Enabled" : "Disabled"),
             Email: new AdminEmailConfigStatus(
                 emailEnabled, emailConfigured, emailLabel,
-                emailHost, emailPort, emailFrom, emailDisp,
+                emailProv, emailHost, emailPort, emailFrom, emailDisp,
                 emailSsl, emailHasUser, emailHasPass),
             Sms: new AdminSmsConfigStatus(
                 smsEnabled, smsConfigured, smsLabel,

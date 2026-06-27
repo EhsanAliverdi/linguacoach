@@ -27,6 +27,7 @@ import {
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminToggleComponent,
 } from '../../../design-system/admin';
@@ -50,6 +51,7 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminToggleComponent,
     SpAdminVisualPlaceholderComponent,
@@ -78,6 +80,7 @@ export class AdminIntegrationsComponent implements OnInit {
   emailSaveSuccess = signal('');
   emailForm = {
     isEnabled: false,
+    provider: 'Smtp',
     host: '',
     port: 587,
     useSsl: true,
@@ -87,6 +90,12 @@ export class AdminIntegrationsComponent implements OnInit {
     newSecret: '',
     clearSecret: false,
   };
+
+  readonly emailProviderOptions = [
+    { value: 'Smtp',     label: 'SMTP' },
+    { value: 'Resend',   label: 'Resend (resend.com)' },
+    { value: 'SendGrid', label: 'SendGrid' },
+  ];
 
   testEmailAddress = '';
   testEmailLoading = signal(false);
@@ -156,6 +165,7 @@ export class AdminIntegrationsComponent implements OnInit {
         this.notifConfig.set(cfg);
         this.emailConfigLoading.set(false);
         this.emailForm.isEnabled = cfg.email.enabled;
+        this.emailForm.provider = cfg.email.provider ?? 'Smtp';
         this.emailForm.host = cfg.email.host ?? '';
         this.emailForm.port = cfg.email.port;
         this.emailForm.useSsl = cfg.email.useSsl;
@@ -221,6 +231,7 @@ export class AdminIntegrationsComponent implements OnInit {
     this.emailSaveSuccess.set('');
     const req: AdminUpdateEmailConfigRequest = {
       isEnabled: this.emailForm.isEnabled,
+      provider: this.emailForm.provider || 'Smtp',
       host: this.emailForm.host || null,
       port: this.emailForm.port || null,
       useSsl: this.emailForm.useSsl,

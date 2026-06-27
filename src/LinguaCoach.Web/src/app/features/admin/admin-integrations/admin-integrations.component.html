@@ -35,9 +35,9 @@
         }
       </sp-admin-config-card>
 
-      <!-- SMTP / Email -->
+      <!-- Email -->
       <sp-admin-config-card
-        title="SMTP / Email"
+        title="Email"
         description="Transactional email delivery for notifications, password resets, and admin alerts."
         icon="mail"
         iconTone="indigo"
@@ -154,11 +154,11 @@
     <sp-admin-button-group slot="footer" [actions]="storageFooterActions()" (actionSelected)="storageOpen.set(false)" />
   </sp-admin-slide-over>
 
-  <!-- ── SMTP / Email slide-over ────────────────────────────────────────────── -->
+  <!-- ── Email slide-over ─────────────────────────────────────────────────── -->
   <sp-admin-slide-over
     [open]="emailOpen()"
-    title="SMTP / Email"
-    subtitle="Email delivery configuration for notifications, password resets, and admin alerts."
+    title="Email"
+    subtitle="Transactional email delivery for notifications, password resets, and admin alerts."
     (closed)="emailOpen.set(false)">
 
     <div class="sp-admin-form-stack">
@@ -170,14 +170,13 @@
         </div>
       </div>
 
-      <div class="sp-admin-form-row">
-        <sp-admin-form-field label="SMTP host">
-          <sp-admin-input size="sm" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" aria-label="SMTP host" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Port">
-          <sp-admin-number-input [(ngModel)]="emailForm.port" [min]="1" [max]="65535" placeholder="587" aria-label="Port" />
-        </sp-admin-form-field>
-      </div>
+      <sp-admin-form-field label="Provider">
+        <sp-admin-select
+          size="sm"
+          [options]="emailProviderOptions"
+          [(ngModel)]="emailForm.provider"
+          aria-label="Email provider" />
+      </sp-admin-form-field>
 
       <div class="sp-admin-form-row">
         <sp-admin-form-field label="From email">
@@ -188,30 +187,49 @@
         </sp-admin-form-field>
       </div>
 
-      <sp-admin-form-field label="Username">
-        <sp-admin-input size="sm" placeholder="smtp-username" [(ngModel)]="emailForm.username" aria-label="Username" />
-      </sp-admin-form-field>
+      @if (emailForm.provider === 'Smtp') {
+        <div class="sp-admin-form-row">
+          <sp-admin-form-field label="SMTP host">
+            <sp-admin-input size="sm" placeholder="smtp.example.com" [(ngModel)]="emailForm.host" aria-label="SMTP host" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Port">
+            <sp-admin-number-input [(ngModel)]="emailForm.port" [min]="1" [max]="65535" placeholder="587" aria-label="Port" />
+          </sp-admin-form-field>
+        </div>
 
-      <sp-admin-form-field label="Password (replace)" hint="Leave blank to keep existing password">
-        <sp-admin-input size="sm" type="password" placeholder="Leave blank to keep existing" [(ngModel)]="emailForm.newSecret" aria-label="Password" />
+        <sp-admin-form-field label="Username">
+          <sp-admin-input size="sm" placeholder="smtp-username" [(ngModel)]="emailForm.username" aria-label="Username" />
+        </sp-admin-form-field>
+
+        <div class="sp-admin-settings-list">
+          <div class="sp-admin-settings-row">
+            <span class="sp-admin-settings-row-label">Use SSL/TLS</span>
+            <sp-admin-toggle [(ngModel)]="emailForm.useSsl" label="" />
+          </div>
+        </div>
+      }
+
+      <sp-admin-form-field
+        [label]="emailForm.provider === 'Smtp' ? 'Password (replace)' : 'API key (replace)'"
+        [hint]="emailForm.provider === 'Smtp' ? 'Leave blank to keep existing password' : 'Leave blank to keep existing key'">
+        <sp-admin-input size="sm" type="password"
+          [placeholder]="emailForm.provider === 'Smtp' ? 'Leave blank to keep existing' : 'Leave blank to keep existing'"
+          [(ngModel)]="emailForm.newSecret"
+          [attr.aria-label]="emailForm.provider === 'Smtp' ? 'Password' : 'API key'" />
         @if (notifConfig()) {
           <div class="sp-admin-badge-row sp-admin-badge-row--spaced">
             <sp-admin-badge [tone]="notifConfig()!.email.hasPassword ? 'success' : 'neutral'">
-              {{ notifConfig()!.email.hasPassword ? 'Password configured' : 'No password stored' }}
+              {{ notifConfig()!.email.hasPassword
+                  ? (emailForm.provider === 'Smtp' ? 'Password configured' : 'API key configured')
+                  : (emailForm.provider === 'Smtp' ? 'No password stored' : 'No key stored') }}
             </sp-admin-badge>
             @if (notifConfig()!.email.hasPassword) {
-              <sp-admin-checkbox [(ngModel)]="emailForm.clearSecret" label="Clear stored password" />
+              <sp-admin-checkbox [(ngModel)]="emailForm.clearSecret"
+                [label]="emailForm.provider === 'Smtp' ? 'Clear stored password' : 'Clear stored key'" />
             }
           </div>
         }
       </sp-admin-form-field>
-
-      <div class="sp-admin-settings-list">
-        <div class="sp-admin-settings-row">
-          <span class="sp-admin-settings-row-label">Use SSL/TLS</span>
-          <sp-admin-toggle [(ngModel)]="emailForm.useSsl" label="" />
-        </div>
-      </div>
 
       @if (emailSaveSuccess()) {
         <sp-admin-alert variant="success">{{ emailSaveSuccess() }}</sp-admin-alert>

@@ -92,6 +92,7 @@ public sealed record AdminEmailConfigStatus(
     bool Enabled,
     bool Configured,
     string StatusLabel,
+    string? Provider,
     string? Host,
     int Port,
     string? FromAddress,

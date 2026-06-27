@@ -410,6 +410,7 @@ export interface AdminEmailConfigStatus {
   enabled: boolean;
   configured: boolean;
   statusLabel: string;
+  provider: string | null;
   host: string | null;
   port: number;
   fromAddress: string | null;
