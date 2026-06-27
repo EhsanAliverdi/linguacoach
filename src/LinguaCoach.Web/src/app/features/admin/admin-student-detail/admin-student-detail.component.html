@@ -488,6 +488,12 @@
               <sp-admin-button variant="secondary" size="sm" [loading]="completingPlacement()" (click)="completePlacement()">
                 Force complete
               </sp-admin-button>
+              <sp-admin-button variant="secondary" size="sm" [loading]="abandoningPlacement()" (click)="abandonPlacement()">
+                Abandon
+              </sp-admin-button>
+              <sp-admin-button variant="secondary" size="sm" [loading]="expiringPlacement()" (click)="expirePlacement()">
+                Expire
+              </sp-admin-button>
             }
             <sp-admin-button variant="secondary" size="sm" [loading]="startingPlacement()" (click)="startPlacement()">
               New assessment

@@ -160,6 +160,56 @@ public sealed class AdminPlacementController : ControllerBase
         }
     }
 
+    // Phase 14A — admin abandon and expire actions
+
+    [HttpPost("api/admin/students/{studentId:guid}/placement/{assessmentId:guid}/abandon")]
+    public async Task<IActionResult> AbandonPlacement(Guid studentId, Guid assessmentId, CancellationToken ct)
+    {
+        if (!await StudentExistsAsync(studentId, ct))
+            return NotFound(new { error = $"Student {studentId} not found." });
+
+        if (!await AssessmentBelongsAsync(studentId, assessmentId, ct))
+            return NotFound(new { error = $"Assessment {assessmentId} not found for student {studentId}." });
+
+        try
+        {
+            await _placement.AbandonAssessmentAsync(assessmentId, ct);
+            return Ok(new { abandoned = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Cannot abandon placement {AssessmentId}", assessmentId);
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("api/admin/students/{studentId:guid}/placement/{assessmentId:guid}/expire")]
+    public async Task<IActionResult> ExpirePlacement(Guid studentId, Guid assessmentId, CancellationToken ct)
+    {
+        if (!await StudentExistsAsync(studentId, ct))
+            return NotFound(new { error = $"Student {studentId} not found." });
+
+        if (!await AssessmentBelongsAsync(studentId, assessmentId, ct))
+            return NotFound(new { error = $"Assessment {assessmentId} not found for student {studentId}." });
+
+        var assessment = await _db.PlacementAssessments
+            .FirstOrDefaultAsync(a => a.Id == assessmentId, ct);
+        if (assessment is null)
+            return NotFound(new { error = $"Assessment {assessmentId} not found." });
+
+        try
+        {
+            assessment.Expire();
+            await _db.SaveChangesAsync(ct);
+            return Ok(new { expired = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Cannot expire placement {AssessmentId}", assessmentId);
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
     private Task<bool> StudentExistsAsync(Guid studentId, CancellationToken ct) =>
         _db.StudentProfiles.AnyAsync(p => p.Id == studentId, ct);
 

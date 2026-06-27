@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (13B)
+lastUpdated: 2026-06-27 (14A)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,41 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (13B)
+Last updated: 2026-06-27 (14A)
+
+---
+
+## Student Placement Journey — End-to-End (Phase 14A, 2026-06-27)
+
+Students now experience a complete adaptive placement journey from first login through to their personalised learning plan.
+
+**What it does:**
+- Student lands on `/placement` after completing onboarding (lifecycle: `PlacementRequired`)
+- Welcome screen explains the assessment (8–15 adaptive questions, ~5–10 minutes, no pass/fail)
+- `POST /api/student/placement/start` creates a new assessment and transitions lifecycle to `PlacementInProgress`
+- `GET /api/student/placement/next?assessmentId=` returns the next adaptive question (MCQ or gap-fill)
+- `POST /api/student/placement/respond` scores the answer deterministically and returns the next item or signals completion
+- `POST /api/student/placement/complete` finalises scoring, updates CEFR level, triggers learning plan regeneration, transitions lifecycle to `PlacementCompleted`
+- Student is redirected to `/dashboard` after completion; `placementAccessGuard` blocks re-entry to `/placement` for completed students
+- `POST /api/student/placement/resume` resumes an interrupted assessment or starts a new one if none exists
+- `GET /api/student/placement/config` exposes gate flags to the UI: `PlacementRequiredBeforeLearning`, `AllowSkipPlacement`, `AllowPlacementRetake`, `AutoStartPlacement`
+
+**Placement result screen:** Shows overall CEFR level (indigo badge), provisional warning when confidence is low, 2-column skill breakdown grid, and "Go to Today's lesson" button.
+
+**Admin lifecycle actions:** Admin student detail page now shows Abandon and Expire buttons on in-progress assessments (`POST /api/admin/students/{id}/placement/{assessmentId}/abandon|expire`).
+
+**Config flags (all in `appsettings.json` under `PlacementAssessment`):**
+- `PlacementRequiredBeforeLearning` — default `true`
+- `AllowSkipPlacement` — default `false`
+- `AllowPlacementRetake` — default `false`
+- `ResumeInterruptedPlacement` — default `true`
+- `AutoStartPlacement` — default `false`
+
+**No migration.** All lifecycle stages already existed in the enum and database column.
+
++17 backend integration tests. +19 Angular unit tests. All 2,690 backend tests pass.
+
+Review: `docs/reviews/2026-06-27-phase-14a-student-placement-journey-review.md`.
 
 ---
 

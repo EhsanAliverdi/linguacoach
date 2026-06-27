@@ -1,14 +1,27 @@
-﻿import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PlacementService } from '../../../core/services/placement.service';
 import {
-  PlacementSection, PlacementResult, PlacementAnswerInput,
+  AdaptivePlacementSummary,
+  AdaptivePlacementNextItem,
+  PlacementConfig,
 } from '../../../core/models/placement.models';
 
-type PageState = 'loading' | 'intro' | 'section' | 'evaluating' | 'result' | 'error';
-type RecordState = 'idle' | 'requesting' | 'denied' | 'unsupported' | 'recording' | 'recorded';
+export type PlacementPageState =
+  | 'loading'
+  | 'welcome'
+  | 'question'
+  | 'submitting'
+  | 'completing'
+  | 'done'
+  | 'error';
+
+interface ParsedChoice {
+  letter: string;
+  text: string;
+}
 
 @Component({
   selector: 'app-placement',
@@ -16,296 +29,204 @@ type RecordState = 'idle' | 'requesting' | 'denied' | 'unsupported' | 'recording
   imports: [CommonModule, FormsModule],
   templateUrl: './placement.component.html',
 })
-export class PlacementComponent implements OnInit, OnDestroy {
-  state = signal<PageState>('loading');
+export class PlacementComponent implements OnInit {
+  state = signal<PlacementPageState>('loading');
   error = signal('');
-  submitting = signal(false);
 
-  section = signal<PlacementSection | null>(null);
-  currentOrder = signal(1);
-  totalSections = signal(6);
-  result = signal<PlacementResult | null>(null);
+  assessment = signal<AdaptivePlacementSummary | null>(null);
+  currentItem = signal<AdaptivePlacementNextItem | null>(null);
+  config = signal<PlacementConfig | null>(null);
 
-  // Working answers for the current section, keyed by questionKey.
-  answers = signal<Record<string, string>>({});
+  selectedAnswer = signal('');
+  gapFillAnswer = signal('');
+  private itemStartTime = 0;
 
-  readonly ratingScale = [1, 2, 3, 4, 5];
-
-  // Server-side audio for the listening section
-  listeningAudioUrl = signal<string | null>(null);   // blob: URL, safe for <audio src>
-  listeningAudioAvailable = signal(false);
-  private listeningBlobUrl: string | null = null;    // kept for revocation
-
-  // Fallback SpeechSynthesis state (used only when server audio is unavailable)
-  isSpeaking = signal(false);
-
-  // Recording state (speaking section)
-  recordState = signal<RecordState>('idle');
-  recordingSeconds = signal(0);
-  liveTranscript = signal('');
-  private mediaRecorder: MediaRecorder | null = null;
-  private recordedChunks: Blob[] = [];
-  private recordingTimer: ReturnType<typeof setInterval> | null = null;
-  private recognition: any = null;
+  questionText = computed(() => this.parseQuestionText(this.currentItem()?.prompt ?? ''));
+  choices = computed(() => this.parseChoices(this.currentItem()?.prompt ?? ''));
 
   progressPercent = computed(() => {
-    const total = this.totalSections();
-    if (total === 0) return 0;
-    return Math.round(((this.currentOrder() - 1) / total) * 100);
+    const item = this.currentItem();
+    if (!item) return 0;
+    const answered = item.answeredCount;
+    const remaining = item.estimatedRemainingItems;
+    const total = answered + remaining + 1;
+    if (total <= 0) return 0;
+    return Math.round((answered / total) * 100);
   });
 
-  isLastSection = computed(() => this.currentOrder() >= this.totalSections());
+  questionNumber = computed(() => (this.currentItem()?.answeredCount ?? 0) + 1);
+
+  canSubmit = computed(() => {
+    const item = this.currentItem();
+    if (!item) return false;
+    if (item.itemType === 'multiple_choice') return !!this.selectedAnswer();
+    return !!this.gapFillAnswer().trim();
+  });
 
   constructor(private placement: PlacementService, private router: Router) {}
 
-  ngOnDestroy(): void {
-    this.cleanupRecording();
-    this.revokeBlobUrl();
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-  }
-
   ngOnInit(): void {
-    this.placement.getStatus().subscribe({
-      next: status => {
-        this.totalSections.set(status.totalSections);
-        this.currentOrder.set(status.currentSectionOrder);
-        if (status.isCompleted) {
-          this.loadResult();
-        } else if (status.status === 'NotStarted') {
-          this.state.set('intro');
+    // Load config and current assessment in parallel
+    this.placement.getPlacementConfig().subscribe({
+      next: cfg => this.config.set(cfg),
+      error: () => { /* non-fatal — config stays null, defaults apply */ },
+    });
+
+    this.placement.getAdaptiveCurrent().subscribe({
+      next: result => {
+        if (!result || !result.hasPlacement) {
+          // No assessment yet — show welcome
+          this.state.set('welcome');
+          return;
+        }
+        if (result.status === 'Completed') {
+          this.assessment.set(result);
+          this.state.set('done');
+        } else if (result.status === 'InProgress') {
+          this.assessment.set(result);
+          this.loadNextItem(result.assessmentId);
         } else {
-          this.loadCurrentSection();
+          // Abandoned / Expired / other — allow starting fresh
+          this.state.set('welcome');
         }
       },
-      error: () => { this.error.set('Could not load your placement.'); this.state.set('error'); },
+      error: () => this.state.set('welcome'),
     });
   }
 
   begin(): void {
-    this.submitting.set(true);
-    this.placement.start().subscribe({
-      next: status => {
-        this.currentOrder.set(status.currentSectionOrder);
-        this.totalSections.set(status.totalSections);
-        this.submitting.set(false);
-        this.loadCurrentSection();
-      },
-      error: () => { this.submitting.set(false); this.error.set('Could not start placement.'); this.state.set('error'); },
-    });
-  }
-
-  private loadCurrentSection(): void {
-    this.cleanupRecording();
-    this.isSpeaking.set(false);
     this.state.set('loading');
-    this.placement.getCurrent().subscribe({
-      next: cur => {
-        if (cur.isCompleted) { this.loadResult(); return; }
-        this.section.set(cur.section);
-        this.currentOrder.set(cur.currentSectionOrder);
-        this.totalSections.set(cur.totalSections);
-        this.answers.set({});
-        // Fetch listening audio as authenticated blob URL
-        this.revokeBlobUrl();
-        this.listeningAudioAvailable.set(false);
-        this.listeningAudioUrl.set(null);
-        if (cur.audioAvailable && cur.audioUrl) {
-          this.placement.getListeningAudioBlobUrl(cur.audioUrl).subscribe({
-            next: blobUrl => {
-              this.listeningBlobUrl = blobUrl;
-              this.listeningAudioUrl.set(blobUrl);
-              this.listeningAudioAvailable.set(true);
-            },
-            error: () => { /* leave audioAvailable false â€” fallback message shows */ },
-          });
-        }
-        this.state.set('section');
-      },
-      error: () => { this.error.set('Could not load the current section.'); this.state.set('error'); },
-    });
-  }
+    const cfg = this.config();
+    const start$ = cfg?.autoStartPlacement
+      ? this.placement.resumeAdaptive()
+      : this.placement.startAdaptive();
 
-  private revokeBlobUrl(): void {
-    if (this.listeningBlobUrl) {
-      URL.revokeObjectURL(this.listeningBlobUrl);
-      this.listeningBlobUrl = null;
-    }
-  }
-
-  // â”€â”€ Speaking section recording â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-  private cleanupRecording(): void {
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
-    this.mediaRecorder = null;
-    this.recordedChunks = [];
-    if (this.recordingTimer) { clearInterval(this.recordingTimer); this.recordingTimer = null; }
-    if (this.recognition) { try { this.recognition.stop(); } catch { /* ignore */ } this.recognition = null; }
-    this.recordState.set('idle');
-    this.recordingSeconds.set(0);
-    this.liveTranscript.set('');
-  }
-
-  startRecording(questionKey: string): void {
-    if (!navigator.mediaDevices || !window.MediaRecorder) {
-      this.recordState.set('unsupported');
-      return;
-    }
-    this.recordState.set('requesting');
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        this.recordedChunks = [];
-        const recorder = new MediaRecorder(stream);
-        recorder.ondataavailable = e => { if (e.data.size > 0) this.recordedChunks.push(e.data); };
-        recorder.onstop = () => {
-          stream.getTracks().forEach(t => t.stop());
-          // Finalise transcript into the answer field
-          const transcript = this.liveTranscript();
-          if (transcript.trim()) this.setAnswer(questionKey, transcript.trim());
-          this.recordState.set('recorded');
-          if (this.recordingTimer) { clearInterval(this.recordingTimer); this.recordingTimer = null; }
-        };
-        recorder.start();
-        this.mediaRecorder = recorder;
-        this.recordingSeconds.set(0);
-        this.recordState.set('recording');
-        this.recordingTimer = setInterval(() => this.recordingSeconds.update(s => s + 1), 1000);
-        this.startSpeechRecognition(questionKey);
-      })
-      .catch(() => this.recordState.set('denied'));
-  }
-
-  stopRecording(): void {
-    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-      this.mediaRecorder.stop();
-    }
-    if (this.recognition) { try { this.recognition.stop(); } catch { /* ignore */ } }
-  }
-
-  reRecord(questionKey: string): void {
-    this.liveTranscript.set('');
-    this.setAnswer(questionKey, '');
-    this.recordState.set('idle');
-  }
-
-  private startSpeechRecognition(questionKey: string): void {
-    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return; // transcript stays empty; user can type manually
-    const rec = new SpeechRecognition();
-    rec.lang = 'en-US';
-    rec.interimResults = true;
-    rec.continuous = true;
-    let finalText = '';
-    rec.onresult = (event: any) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) { finalText += t + ' '; } else { interim += t; }
-      }
-      const combined = (finalText + interim).trim();
-      this.liveTranscript.set(combined);
-      this.setAnswer(questionKey, combined);
-    };
-    rec.onerror = () => { /* ignore; recording continues, no transcript */ };
-    rec.start();
-    this.recognition = rec;
-  }
-
-  setAnswer(questionKey: string, value: string): void {
-    this.answers.update(a => ({ ...a, [questionKey]: value }));
-  }
-
-  answerValue(questionKey: string): string {
-    return this.answers()[questionKey] ?? '';
-  }
-
-  canContinue(): boolean {
-    const sec = this.section();
-    if (!sec) return false;
-    for (const q of sec.questions) {
-      const optional = sec.sectionType === 'self_check' && (q.type === 'text' || q.key === 'self_level');
-      if (optional) continue;
-      // Speaking section: allow continue once recording is done (transcript may be empty on some browsers)
-      if (sec.sectionType === 'speaking' && q.type === 'text') {
-        if (this.recordState() !== 'recorded' && !this.answerValue(q.key)) return false;
-        continue;
-      }
-      if (!this.answerValue(q.key)) return false;
-    }
-    return true;
-  }
-
-  saveAndContinue(): void {
-    const sec = this.section();
-    if (!sec || !this.canContinue()) return;
-
-    const payloadAnswers: PlacementAnswerInput[] = sec.questions.map(q => {
-      const value = this.answerValue(q.key);
-      if (q.type === 'choice' || q.type === 'rating') {
-        return { questionKey: q.key, selectedOption: value || null, responseText: null };
-      }
-      return { questionKey: q.key, responseText: value || null, selectedOption: null };
-    });
-
-    this.submitting.set(true);
-    this.placement.saveAnswers({ sectionKey: sec.key, answers: payloadAnswers }).subscribe({
-      next: status => {
-        this.submitting.set(false);
-        this.currentOrder.set(status.currentSectionOrder);
-        if (sec.order >= status.totalSections) {
-          this.evaluate();
+    start$.subscribe({
+      next: result => {
+        this.assessment.set(result);
+        if (result.status === 'Completed') {
+          this.state.set('done');
         } else {
-          this.loadCurrentSection();
+          this.loadNextItem(result.assessmentId);
         }
       },
       error: err => {
-        this.submitting.set(false);
-        this.error.set(err.error?.error ?? 'Could not save your answers.');
+        this.error.set(err?.error?.error ?? 'Could not start your placement. Please try again.');
+        this.state.set('error');
       },
     });
   }
 
-  private evaluate(): void {
-    this.state.set('evaluating');
-    this.placement.complete().subscribe({
-      next: res => { this.result.set(res); this.state.set('result'); },
-      error: () => { this.error.set('Could not evaluate your placement.'); this.state.set('error'); },
+  private loadNextItem(assessmentId: string): void {
+    this.placement.getAdaptiveNextItem(assessmentId).subscribe({
+      next: item => {
+        if (!item) {
+          // No more items — trigger completion
+          this.triggerCompletion(assessmentId);
+        } else {
+          this.currentItem.set(item);
+          this.selectedAnswer.set('');
+          this.gapFillAnswer.set('');
+          this.itemStartTime = Date.now();
+          this.state.set('question');
+        }
+      },
+      error: () => {
+        this.error.set('Could not load the next question.');
+        this.state.set('error');
+      },
     });
   }
 
-  private loadResult(): void {
-    this.placement.getResult().subscribe({
-      next: res => { this.result.set(res); this.state.set('result'); },
-      error: () => { this.error.set('Could not load your result.'); this.state.set('error'); },
+  submitAnswer(): void {
+    const item = this.currentItem();
+    const assessment = this.assessment();
+    if (!item || !assessment || !this.canSubmit() || this.state() === 'submitting') return;
+
+    const response = item.itemType === 'multiple_choice'
+      ? this.selectedAnswer()
+      : this.gapFillAnswer().trim();
+    const durationSeconds = Math.max(1, Math.round((Date.now() - this.itemStartTime) / 1000));
+
+    this.state.set('submitting');
+    this.placement.respondToItem({
+      assessmentId: assessment.assessmentId,
+      itemId: item.itemId,
+      response,
+      durationSeconds,
+    }).subscribe({
+      next: result => {
+        if (result.assessmentComplete) {
+          if (result.summary) {
+            this.assessment.set(result.summary);
+            this.state.set('done');
+          } else {
+            this.triggerCompletion(assessment.assessmentId);
+          }
+        } else if (result.nextItem) {
+          this.currentItem.set(result.nextItem);
+          this.selectedAnswer.set('');
+          this.gapFillAnswer.set('');
+          this.itemStartTime = Date.now();
+          this.state.set('question');
+        } else {
+          this.triggerCompletion(assessment.assessmentId);
+        }
+      },
+      error: err => {
+        this.error.set(err?.error?.error ?? 'Could not submit your answer. Please try again.');
+        // Stay on question state so student can retry
+        this.state.set('question');
+      },
     });
   }
 
-  continueToCourse(): void {
+  private triggerCompletion(assessmentId: string): void {
+    this.state.set('completing');
+    this.placement.completeAdaptive(assessmentId).subscribe({
+      next: result => {
+        this.assessment.set(result);
+        this.state.set('done');
+      },
+      error: () => {
+        this.error.set('Could not finalise your placement. Please try again.');
+        this.state.set('error');
+      },
+    });
+  }
+
+  selectChoice(letter: string): void {
+    this.selectedAnswer.set(letter);
+  }
+
+  continueToDashboard(): void {
     this.router.navigate(['/dashboard']);
-  }
-
-  speakAudio(script: string): void {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(script);
-    utt.lang = 'en-GB';
-    utt.rate = 0.95;
-    utt.onstart = () => this.isSpeaking.set(true);
-    utt.onend = () => this.isSpeaking.set(false);
-    utt.onerror = () => this.isSpeaking.set(false);
-    window.speechSynthesis.speak(utt);
-  }
-
-  stopAudio(): void {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    this.isSpeaking.set(false);
   }
 
   retry(): void {
     this.error.set('');
     this.ngOnInit();
   }
+
+  // ── Prompt parsing ──────────────────────────────────────────────────────────
+
+  parseQuestionText(prompt: string): string {
+    if (!prompt) return '';
+    // Remove the choices block — everything before the first (A)
+    const choiceIdx = prompt.search(/\(A\)/i);
+    if (choiceIdx > 0) return prompt.slice(0, choiceIdx).trim();
+    return prompt.trim();
+  }
+
+  parseChoices(prompt: string): ParsedChoice[] {
+    if (!prompt) return [];
+    const matches = [...prompt.matchAll(/\(([A-Z])\)\s*([^(]+?)(?=\s*\([A-Z]\)|$)/gi)];
+    return matches.map(m => ({ letter: m[1].toUpperCase(), text: m[2].trim() }));
+  }
+
+  // Skill label for display
+  skillLabel(skill: string | null | undefined): string {
+    if (!skill) return '';
+    return skill.charAt(0).toUpperCase() + skill.slice(1);
+  }
 }
-
-

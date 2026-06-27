@@ -430,6 +430,11 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         assessment.Start();
 
         _db.PlacementAssessments.Add(assessment);
+
+        // Phase 14A — transition lifecycle to PlacementInProgress
+        if (profile.LifecycleStage == StudentLifecycleStage.PlacementRequired)
+            profile.SetLifecycleStage(StudentLifecycleStage.PlacementInProgress);
+
         await _db.SaveChangesAsync(ct);
 
         var items = CreateInitialItems(assessment.Id, startingLevel);
@@ -665,11 +670,20 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
         assessment.CompleteAdaptive(overallCefr, overallConfidence, resultSummary, isProvisional);
 
-        if (overallConfidence >= 0.6 && !string.IsNullOrWhiteSpace(overallCefr))
+        var completionProfile = await _db.StudentProfiles
+            .FirstOrDefaultAsync(p => p.Id == assessment.StudentProfileId, ct);
+
+        if (completionProfile is not null)
         {
-            var profile = await _db.StudentProfiles
-                .FirstOrDefaultAsync(p => p.Id == assessment.StudentProfileId, ct);
-            profile?.AdminSetCefrLevel(overallCefr);
+            if (overallConfidence >= 0.6 && !string.IsNullOrWhiteSpace(overallCefr))
+                completionProfile.AdminSetCefrLevel(overallCefr);
+
+            // Phase 14A — transition lifecycle to PlacementCompleted
+            if (completionProfile.LifecycleStage == StudentLifecycleStage.PlacementInProgress ||
+                completionProfile.LifecycleStage == StudentLifecycleStage.PlacementRequired)
+            {
+                completionProfile.SetLifecycleStage(StudentLifecycleStage.PlacementCompleted);
+            }
         }
 
         await _db.SaveChangesAsync(ct);

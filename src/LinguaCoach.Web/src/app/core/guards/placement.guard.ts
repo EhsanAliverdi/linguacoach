@@ -27,8 +27,9 @@ export const placementRequiredRedirectGuard: CanActivateFn = () => {
 };
 
 /**
- * Guards the /placement route. If placement is already completed, send the student
- * to their dashboard instead of letting them retake it.
+ * Guards the /placement route.
+ * Blocks pre-onboarding stages and redirects completed students to their dashboard.
+ * Students who have passed placement cannot re-enter /placement (unless retake is enabled).
  */
 export const placementAccessGuard: CanActivateFn = () => {
   const placement = inject(PlacementService);
@@ -36,12 +37,24 @@ export const placementAccessGuard: CanActivateFn = () => {
 
   return placement.getStatus().pipe(
     map(status => {
-      // Redirect pre-onboarding stages to the onboarding resume page, not /dashboard.
-      // Sending them to /dashboard causes a redirect loop when placementRequiredRedirectGuard fires.
+      const stage = status.lifecycleStage;
+
+      // Block pre-onboarding — redirect to onboarding instead of /dashboard
+      // to avoid a redirect loop with placementRequiredRedirectGuard.
       const blockedStages = ['Created', 'PasswordChangeRequired', 'OnboardingRequired', 'OnboardingInProgress'];
-      if (blockedStages.includes(status.lifecycleStage)) {
+      if (blockedStages.includes(stage)) {
         return router.createUrlTree(['/onboarding/resume']);
       }
+
+      // Redirect students who have already completed placement back to dashboard.
+      // Phase 14A: PlacementConfig.AllowPlacementRetake would bypass this — enforced by the API.
+      const completedStages = [
+        'PlacementCompleted', 'CourseReady', 'InLesson', 'ActiveLearning', 'Paused', 'Archived',
+      ];
+      if (completedStages.includes(stage)) {
+        return router.createUrlTree(['/dashboard']);
+      }
+
       return true;
     }),
     catchError(() => of(true)),

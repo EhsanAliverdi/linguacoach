@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (13A)
+lastUpdated: 2026-06-27 (14A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,30 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 14A — Student Placement Journey (End-to-End)** — complete (2026-06-27)
+
+First complete student-facing vertical slice on top of the adaptive placement engine. Full flow: First Login → Placement Assessment → Adaptive Questions → Placement Complete → Learning Plan Generated → Today Lesson Unlocked.
+
+**Config (Part B):** `PlacementAssessmentOptions` gains 5 flags: `PlacementRequiredBeforeLearning`, `AllowSkipPlacement`, `AllowPlacementRetake`, `ResumeInterruptedPlacement`, `AutoStartPlacement`. Defaults wired in `appsettings.json`.
+
+**Lifecycle fix:** `PlacementAssessmentService` now transitions `PlacementRequired → PlacementInProgress` on `StartAssessmentAsync` and `PlacementInProgress → PlacementCompleted` on `FinalizeCompletionAsync`. Without this, guards trapped students at `/placement` forever after completion.
+
+**Student API (Part C):** New `StudentPlacementController` at `GET/POST api/student/placement/*` — config, current, next item, start (201), resume, respond, complete. Ownership enforced on every assessment lookup. Returns 409 when completed and retake disabled.
+
+**Admin actions (Part G):** `AdminPlacementController` gains `POST .../abandon` and `POST .../expire`. `admin.api.service.ts` and `admin-student-detail` component updated with Abandon/Expire buttons (visible on InProgress assessments only).
+
+**Angular placement flow (Parts D/E):** `placement.component.ts` rewritten as adaptive state machine (`loading → welcome → question → submitting → completing → done/error`). `placement.component.html` rewritten: progress bar, MCQ choice buttons with indigo ring, gap_fill input, CEFR result card, 2-col skill grid. `placement.service.ts` gains 7 new adaptive methods; all old methods kept (guards still call old `getStatus()`).
+
+**Guard fix (Part E):** `placementAccessGuard` now redirects `PlacementCompleted`/`CourseReady`/`InLesson`/`ActiveLearning`/`Paused`/`Archived` stages to `/dashboard` instead of allowing entry to `/placement`.
+
+**Tests (Parts I/J):** +17 backend integration tests (`StudentPlacementControllerTests`). +19 Karma/Jasmine unit tests (placement component spec rewritten for adaptive flow). All pass.
+
+**Build/test totals:** 0 errors. 3 arch + 1,493 unit + 1,194 integration = **2,690 backend**. No migration needed.
+
+Review: `docs/reviews/2026-06-27-phase-14a-student-placement-journey-review.md`.
+
+---
 
 **Phase 13A — Adaptive Placement Engine Foundation** — complete (2026-06-27)
 

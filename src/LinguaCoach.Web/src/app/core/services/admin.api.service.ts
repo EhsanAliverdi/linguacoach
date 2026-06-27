@@ -390,4 +390,16 @@ export class AdminApiService {
       `${this.api}/students/${studentProfileId}/placement/${assessmentId}/items/${itemId}/submit`,
       { response, durationSeconds: durationSeconds ?? null });
   }
+
+  // Phase 14A — Admin placement lifecycle actions
+
+  abandonPlacement(studentProfileId: string, assessmentId: string): Observable<{ abandoned: boolean }> {
+    return this.http.post<{ abandoned: boolean }>(
+      `${this.api}/students/${studentProfileId}/placement/${assessmentId}/abandon`, {});
+  }
+
+  expirePlacement(studentProfileId: string, assessmentId: string): Observable<{ expired: boolean }> {
+    return this.http.post<{ expired: boolean }>(
+      `${this.api}/students/${studentProfileId}/placement/${assessmentId}/expire`, {});
+  }
 }

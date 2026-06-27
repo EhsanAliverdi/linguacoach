@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   PlacementStatus, PlacementCurrentSection, SavePlacementAnswers, PlacementResult,
+  AdaptivePlacementSummary, AdaptivePlacementNextItem, AdaptivePlacementRespondRequest,
+  AdaptivePlacementSubmitResult, PlacementConfig,
 } from '../models/placement.models';
 import { map } from 'rxjs/operators';
 
@@ -45,5 +47,37 @@ export class PlacementService {
     return this.http.get(url, { responseType: 'blob' }).pipe(
       map(blob => URL.createObjectURL(blob))
     );
+  }
+
+  // ── Phase 14A — Adaptive placement ──────────────────────────────────────────
+
+  getPlacementConfig(): Observable<PlacementConfig> {
+    return this.http.get<PlacementConfig>(`${this.api}/student/placement/config`);
+  }
+
+  getAdaptiveCurrent(): Observable<AdaptivePlacementSummary | null> {
+    return this.http.get<AdaptivePlacementSummary | null>(`${this.api}/student/placement/current`);
+  }
+
+  getAdaptiveNextItem(assessmentId: string): Observable<AdaptivePlacementNextItem | null> {
+    return this.http.get<AdaptivePlacementNextItem | null>(
+      `${this.api}/student/placement/next`, { params: { assessmentId } });
+  }
+
+  startAdaptive(): Observable<AdaptivePlacementSummary> {
+    return this.http.post<AdaptivePlacementSummary>(`${this.api}/student/placement/start`, {});
+  }
+
+  resumeAdaptive(): Observable<AdaptivePlacementSummary> {
+    return this.http.post<AdaptivePlacementSummary>(`${this.api}/student/placement/resume`, {});
+  }
+
+  respondToItem(req: AdaptivePlacementRespondRequest): Observable<AdaptivePlacementSubmitResult> {
+    return this.http.post<AdaptivePlacementSubmitResult>(`${this.api}/student/placement/respond`, req);
+  }
+
+  completeAdaptive(assessmentId: string): Observable<AdaptivePlacementSummary> {
+    return this.http.post<AdaptivePlacementSummary>(
+      `${this.api}/student/placement/complete`, { assessmentId });
   }
 }

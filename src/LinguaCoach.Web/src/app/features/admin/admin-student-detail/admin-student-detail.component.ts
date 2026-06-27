@@ -168,6 +168,8 @@ export class AdminStudentDetailComponent implements OnInit {
   placementProgressError = signal('');
   startingPlacement = signal(false);
   completingPlacement = signal(false);
+  abandoningPlacement = signal(false);
+  expiringPlacement = signal(false);
   placementActionError = signal('');
 
   readonly lessonRingPct = computed(() => {
@@ -354,6 +356,36 @@ export class AdminStudentDetailComponent implements OnInit {
       error: (err: { error?: { error?: string } }) => {
         this.completingPlacement.set(false);
         this.placementActionError.set(err.error?.error ?? 'Could not complete placement.');
+      },
+    });
+  }
+
+  abandonPlacement(): void {
+    const id = this.student()?.studentProfileId;
+    const assessmentId = this.placementLatest()?.assessmentId;
+    if (!id || !assessmentId) return;
+    this.abandoningPlacement.set(true);
+    this.placementActionError.set('');
+    this.adminApi.abandonPlacement(id, assessmentId).subscribe({
+      next: () => { this.abandoningPlacement.set(false); this.loadPlacement(id); },
+      error: (err: { error?: { error?: string } }) => {
+        this.abandoningPlacement.set(false);
+        this.placementActionError.set(err.error?.error ?? 'Could not abandon placement.');
+      },
+    });
+  }
+
+  expirePlacement(): void {
+    const id = this.student()?.studentProfileId;
+    const assessmentId = this.placementLatest()?.assessmentId;
+    if (!id || !assessmentId) return;
+    this.expiringPlacement.set(true);
+    this.placementActionError.set('');
+    this.adminApi.expirePlacement(id, assessmentId).subscribe({
+      next: () => { this.expiringPlacement.set(false); this.loadPlacement(id); },
+      error: (err: { error?: { error?: string } }) => {
+        this.expiringPlacement.set(false);
+        this.placementActionError.set(err.error?.error ?? 'Could not expire placement.');
       },
     });
   }
