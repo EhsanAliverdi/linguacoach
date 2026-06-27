@@ -24,6 +24,7 @@ import {
   AdminSecuritySettings, AdminAuthEventItem, AdminAuthEventListQuery,
   AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse,
   AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse,
+  AggregatePoolHealthSummary,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -95,6 +96,9 @@ export class AdminApiService {
   }
   getStudentMasteryPoolSummary(studentProfileId: string): Observable<AdminMasteryPoolSummary> {
     return this.http.get<AdminMasteryPoolSummary>(`${this.api}/students/${studentProfileId}/readiness-pool`);
+  }
+  getAggregatePoolHealth(): Observable<AggregatePoolHealthSummary> {
+    return this.http.get<AggregatePoolHealthSummary>(`${this.api}/readiness-pool/health`);
   }
   generateLessonsForStudent(studentProfileId: string, count?: number): Observable<AdminGenerateLessonsResponse> {
     const qs = count !== undefined ? `?count=${count}` : '';

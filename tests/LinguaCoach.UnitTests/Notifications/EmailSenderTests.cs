@@ -15,6 +15,51 @@ public sealed class EmailSenderTests
             Task.FromResult(new ResolvedSmsConfig(false, null, null, null, "AppSettings"));
     }
 
+    // Tracks which concrete sender was resolved by RoutingEmailSender
+    private sealed class TrackingServiceProvider : IServiceProvider
+    {
+        public Type? LastResolved { get; private set; }
+
+        private readonly SmtpEmailSender _smtp;
+        private readonly ResendEmailSender _resend;
+        private readonly SendGridEmailSender _sendGrid;
+
+        public TrackingServiceProvider(
+            SmtpEmailSender smtp,
+            ResendEmailSender resend,
+            SendGridEmailSender sendGrid)
+        {
+            _smtp = smtp;
+            _resend = resend;
+            _sendGrid = sendGrid;
+        }
+
+        public object? GetService(Type serviceType)
+        {
+            LastResolved = serviceType;
+            if (serviceType == typeof(SmtpEmailSender)) return _smtp;
+            if (serviceType == typeof(ResendEmailSender)) return _resend;
+            if (serviceType == typeof(SendGridEmailSender)) return _sendGrid;
+            return null;
+        }
+    }
+
+    // HttpClientFactory stub — ResendEmailSender never makes real network calls in routing tests
+    // because the config is disabled, so the client is never used.
+    private sealed class FakeHttpClientFactory : System.Net.Http.IHttpClientFactory
+    {
+        public System.Net.Http.HttpClient CreateClient(string name) => new();
+    }
+
+    private static SmtpEmailSender MakeSmtp(INotificationChannelConfigResolver resolver) =>
+        new(resolver, NullLogger<SmtpEmailSender>.Instance);
+
+    private static ResendEmailSender MakeResend(INotificationChannelConfigResolver resolver) =>
+        new(resolver, new FakeHttpClientFactory(), NullLogger<ResendEmailSender>.Instance);
+
+    private static SendGridEmailSender MakeSendGrid(INotificationChannelConfigResolver resolver) =>
+        new(resolver, NullLogger<SendGridEmailSender>.Instance);
+
     private static EmailMessage SampleMessage() => new(
         ToAddress: "student@example.com",
         ToDisplayName: "Student",
@@ -156,5 +201,89 @@ public sealed class EmailSenderTests
         r.Succeeded.Should().BeFalse();
         r.WasSkipped.Should().BeFalse();
         r.Error.Should().Be("SMTP timeout");
+    }
+
+    // ── RoutingEmailSender — provider routing ────────────────────────────────
+
+    private RoutingEmailSender MakeRouter(string provider, TrackingServiceProvider sp)
+    {
+        var config = new ResolvedEmailConfig(
+            IsEnabled: false, Provider: provider, Host: null, Port: 587, UseSsl: false,
+            FromAddress: null, FromDisplayName: null,
+            Username: null, PlaintextSecret: null, Source: "AppSettings");
+        var resolver = new FakeResolver(config);
+        return new RoutingEmailSender(resolver, sp, NullLogger<RoutingEmailSender>.Instance);
+    }
+
+    private TrackingServiceProvider MakeTracker(INotificationChannelConfigResolver? resolver = null)
+    {
+        var r = resolver ?? new FakeResolver(DisabledConfig());
+        return new TrackingServiceProvider(MakeSmtp(r), MakeResend(r), MakeSendGrid(r));
+    }
+
+    [Fact]
+    public async Task Router_SmtpProvider_ResolvesSmtpSender()
+    {
+        var tracker = MakeTracker();
+        var router = MakeRouter("Smtp", tracker);
+
+        await router.SendAsync(SampleMessage());
+
+        tracker.LastResolved.Should().Be(typeof(SmtpEmailSender));
+    }
+
+    [Fact]
+    public async Task Router_ResendProvider_ResolvesResendSender()
+    {
+        var tracker = MakeTracker();
+        var router = MakeRouter("Resend", tracker);
+
+        await router.SendAsync(SampleMessage());
+
+        tracker.LastResolved.Should().Be(typeof(ResendEmailSender));
+    }
+
+    [Fact]
+    public async Task Router_SendGridProvider_ResolvesSendGridSender()
+    {
+        var tracker = MakeTracker();
+        var router = MakeRouter("SendGrid", tracker);
+
+        await router.SendAsync(SampleMessage());
+
+        tracker.LastResolved.Should().Be(typeof(SendGridEmailSender));
+    }
+
+    [Fact]
+    public async Task Router_ProviderCaseInsensitive_ResendLowercase_ResolvesResendSender()
+    {
+        var tracker = MakeTracker();
+        var router = MakeRouter("resend", tracker);
+
+        await router.SendAsync(SampleMessage());
+
+        tracker.LastResolved.Should().Be(typeof(ResendEmailSender));
+    }
+
+    [Fact]
+    public async Task Router_NullOrEmptyProvider_DefaultsToSmtp()
+    {
+        var tracker = MakeTracker();
+        var router = MakeRouter("", tracker);
+
+        await router.SendAsync(SampleMessage());
+
+        tracker.LastResolved.Should().Be(typeof(SmtpEmailSender));
+    }
+
+    [Fact]
+    public async Task Router_UnknownProvider_DefaultsToSmtp()
+    {
+        var tracker = MakeTracker();
+        var router = MakeRouter("Mailgun", tracker);
+
+        await router.SendAsync(SampleMessage());
+
+        tracker.LastResolved.Should().Be(typeof(SmtpEmailSender));
     }
 }

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-26 (11B)
+lastUpdated: 2026-06-27 (12A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,17 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-26
+Last updated: 2026-06-27
 
 ---
 
 ## Active sprint
+
+**Phase 12A — Production Gap Closure: Pool Health and Welcome Email** — complete (2026-06-27)
+
+Closed two production gaps found in Phase 11E live admin QA. F-04: Added `GET /api/admin/readiness-pool/health` endpoint returning `AggregatePoolHealthSummary` (all status counts + per-status student counts, computed in one DB round-trip). Admin Lessons page replaced placeholder card with real stat grid — loading/error states, 8 status metrics, failure alert, refresh button. F-03: Audited `CreateStudentHandler` — welcome email already wired via `QueueEmailAsync` using `account.student_created` template; no backend changes. Part 0 audit: `RoutingEmailSender`, `ResendEmailSender`, `SendGridEmailSender`, `NotificationChannelConfigResolver`, DI registrations, and Angular admin integrations UI — all clean, no raw passwords logged or emailed. Added 6 email routing unit tests (`TrackingServiceProvider` pattern), 5 aggregate pool health integration tests, 3 Angular pool health component tests. Fixed 3 pre-existing test gaps: missing `provider: 'Smtp'` in notifications spec, stale `'SMTP / Email'` assertion in integrations spec, missing `getAggregatePoolHealth` spy in lessons spec. 31 new tests total — 1362 unit + 1113 integration + 3 arch + 1384 Angular = 3862 all passing. No migration. No student UI. Review: `docs/reviews/2026-06-27-phase-12a-pool-health-and-welcome-email-review.md`.
+
+---
 
 **Phase 11B — Curriculum Objective Coverage and Mapping Hardening** — complete (2026-06-26)
 

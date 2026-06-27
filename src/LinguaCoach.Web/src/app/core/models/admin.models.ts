@@ -704,6 +704,26 @@ export interface StudentReadinessPoolHealth {
   practiceGym: ReadinessPoolSourceHealth;
 }
 
+export interface AggregatePoolHealthSummary {
+  totalStudentsWithItems: number;
+  totalQueued: number;
+  totalGenerating: number;
+  totalReady: number;
+  totalReserved: number;
+  totalConsumed: number;
+  totalExpired: number;
+  totalFailed: number;
+  totalStale: number;
+  totalReviewOnly: number;
+  totalSkipped: number;
+  studentsWithNoReadyItems: number;
+  studentsWithFailedItems: number;
+  studentsWithStaleItems: number;
+  oldestReadyItemCreatedAt: string | null;
+  newestItemCreatedAt: string | null;
+  generatedAt: string;
+}
+
 // ── Dashboard aggregate ────────────────────────────────────────────────────────
 
 export interface ActivityTrendBucket { date: string; activityCount: number; completedCount: number; failedCount: number; }

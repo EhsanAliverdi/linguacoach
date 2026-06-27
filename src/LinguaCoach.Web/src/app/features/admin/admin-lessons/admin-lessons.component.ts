@@ -20,7 +20,7 @@ import {
 } from '../../../design-system/admin';
 import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
@@ -85,6 +85,11 @@ export class AdminLessonsComponent implements OnInit {
     this.batches()?.readyBufferPerStudent.filter(e => e.readyCount > 0).length ?? null
   );
 
+  // ── Aggregate pool health ─────────────────────────────────────────────────
+  poolHealthLoading = signal(false);
+  poolHealthError = signal('');
+  poolHealth = signal<AggregatePoolHealthSummary | null>(null);
+
   // ── Generate for student ──────────────────────────────────────────────────
   studentProfileId = '';
   generatePending = signal(false);
@@ -94,6 +99,7 @@ export class AdminLessonsComponent implements OnInit {
   ngOnInit(): void {
     this.loadSettings();
     this.loadBatches();
+    this.loadPoolHealth();
   }
 
   private loadSettings(): void {
@@ -186,4 +192,18 @@ export class AdminLessonsComponent implements OnInit {
   }
 
   refreshBatches(): void { this.loadBatches(); }
+
+  private loadPoolHealth(): void {
+    this.poolHealthLoading.set(true);
+    this.poolHealthError.set('');
+    this.adminApi.getAggregatePoolHealth().subscribe({
+      next: h => { this.poolHealth.set(h); this.poolHealthLoading.set(false); },
+      error: err => {
+        this.poolHealthError.set(err?.error?.error ?? err?.message ?? 'Failed to load aggregate pool health.');
+        this.poolHealthLoading.set(false);
+      },
+    });
+  }
+
+  refreshPoolHealth(): void { this.loadPoolHealth(); }
 }

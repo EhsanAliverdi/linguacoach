@@ -60,7 +60,7 @@ describe('AdminNotificationsComponent', () => {
     const mockConfig: AdminNotificationConfigStatusV2 = {
       source: 'AppSettings',
       inApp: { channel: 'InApp', enabled: true, statusLabel: 'Enabled' },
-      email: { enabled: true, configured: true, statusLabel: 'Enabled', host: 'smtp.test.com', port: 587, fromAddress: 'no-reply@test.com', fromDisplayName: 'Test', useSsl: true, hasUsername: true, hasPassword: true },
+      email: { enabled: true, configured: true, statusLabel: 'Enabled', provider: 'Smtp', host: 'smtp.test.com', port: 587, fromAddress: 'no-reply@test.com', fromDisplayName: 'Test', useSsl: true, hasUsername: true, hasPassword: true },
       sms: { enabled: false, configured: false, statusLabel: 'Foundation only — provider not connected', provider: null, senderId: null, hasApiKey: false },
       dispatchJob: { enabled: true, intervalDescription: 'Every 5 min', batchSize: 50 },
     };
@@ -322,7 +322,7 @@ describe('AdminNotificationsComponent', () => {
     inApp: { channel: 'InApp', enabled: true, statusLabel: 'Enabled' },
     email: {
       enabled: false, configured: false, statusLabel: 'Disabled',
-      host: null, port: 587, fromAddress: null, fromDisplayName: null,
+      provider: 'Smtp', host: null, port: 587, fromAddress: null, fromDisplayName: null,
       useSsl: false, hasUsername: false, hasPassword: false,
     },
     sms: { enabled: false, configured: false, statusLabel: 'Deferred', provider: null, senderId: null, hasApiKey: false },

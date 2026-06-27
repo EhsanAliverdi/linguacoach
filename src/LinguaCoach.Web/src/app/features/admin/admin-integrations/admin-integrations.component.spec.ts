@@ -73,7 +73,7 @@ describe('AdminIntegrationsComponent', () => {
     await setup();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Object Storage');
-    expect(text).toContain('SMTP / Email');
+    expect(text).toContain('Email');
     expect(text).toContain('Webhook');
     expect(text).toContain('Analytics');
     expect(text).toContain('Admin API');

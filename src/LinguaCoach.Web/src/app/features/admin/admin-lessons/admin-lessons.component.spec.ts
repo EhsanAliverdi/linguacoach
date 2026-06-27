@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminLessonsComponent } from './admin-lessons.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary } from '../../../core/models/admin.models';
 
 const SETTINGS: AdminGenerationSettings = {
   readyLessonBufferSize: 5,
@@ -28,9 +28,30 @@ const BATCHES: AdminGenerationBatchesResponse = {
   batches: [],
 };
 
+const POOL_HEALTH: AggregatePoolHealthSummary = {
+  totalStudentsWithItems: 0,
+  totalQueued: 0,
+  totalGenerating: 0,
+  totalReady: 0,
+  totalReserved: 0,
+  totalConsumed: 0,
+  totalExpired: 0,
+  totalFailed: 0,
+  totalStale: 0,
+  totalReviewOnly: 0,
+  totalSkipped: 0,
+  studentsWithNoReadyItems: 0,
+  studentsWithFailedItems: 0,
+  studentsWithStaleItems: 0,
+  oldestReadyItemCreatedAt: null,
+  newestItemCreatedAt: null,
+  generatedAt: '2026-06-27T00:00:00Z',
+};
+
 function makeApi(
   settings: AdminGenerationSettings | 'error' = SETTINGS,
   batches: AdminGenerationBatchesResponse | 'error' = BATCHES,
+  poolHealth: AggregatePoolHealthSummary | 'error' = POOL_HEALTH,
 ) {
   return {
     getGenerationSettings: jasmine.createSpy('getGenerationSettings').and.returnValue(
@@ -38,6 +59,9 @@ function makeApi(
     ),
     getGenerationBatches: jasmine.createSpy('getGenerationBatches').and.returnValue(
       batches === 'error' ? throwError(() => new Error('fail')) : of(batches),
+    ),
+    getAggregatePoolHealth: jasmine.createSpy('getAggregatePoolHealth').and.returnValue(
+      poolHealth === 'error' ? throwError(() => new Error('fail')) : of(poolHealth),
     ),
     updateGenerationSettings: jasmine.createSpy('updateGenerationSettings').and.returnValue(of({ ...SETTINGS, updatedAtUtc: '2026-06-02T00:00:00Z' })),
     generateLessonsForStudent: jasmine.createSpy('generateLessonsForStudent').and.returnValue(of({ queued: true, requestedCount: 1 } as AdminGenerateLessonsResponse)),
@@ -52,8 +76,9 @@ describe('AdminLessonsComponent', () => {
   async function setup(
     settings: AdminGenerationSettings | 'error' = SETTINGS,
     batches: AdminGenerationBatchesResponse | 'error' = BATCHES,
+    poolHealth: AggregatePoolHealthSummary | 'error' = POOL_HEALTH,
   ) {
-    api = makeApi(settings, batches);
+    api = makeApi(settings, batches, poolHealth);
     await TestBed.configureTestingModule({
       imports: [AdminLessonsComponent],
       providers: [
@@ -73,10 +98,11 @@ describe('AdminLessonsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Lessons');
   });
 
-  it('calls getGenerationSettings and getGenerationBatches on init', async () => {
+  it('calls getGenerationSettings, getGenerationBatches, and getAggregatePoolHealth on init', async () => {
     await setup();
     expect(api.getGenerationSettings).toHaveBeenCalledTimes(1);
     expect(api.getGenerationBatches).toHaveBeenCalledTimes(1);
+    expect(api.getAggregatePoolHealth).toHaveBeenCalledTimes(1);
   });
 
   it('populates settings form fields on success', async () => {
@@ -139,5 +165,26 @@ describe('AdminLessonsComponent', () => {
     api.getGenerationBatches.calls.reset();
     component.refreshBatches();
     expect(api.getGenerationBatches).toHaveBeenCalledTimes(1);
+  });
+
+  it('populates poolHealth on success', async () => {
+    await setup();
+    expect(component.poolHealth()).not.toBeNull();
+    expect(component.poolHealthLoading()).toBeFalse();
+    expect(component.poolHealthError()).toBe('');
+  });
+
+  it('shows error when pool health API fails', async () => {
+    await setup(SETTINGS, BATCHES, 'error');
+    expect(component.poolHealthError()).toBeTruthy();
+    expect(component.poolHealthLoading()).toBeFalse();
+    expect(component.poolHealth()).toBeNull();
+  });
+
+  it('refreshPoolHealth reloads pool health', async () => {
+    await setup();
+    api.getAggregatePoolHealth.calls.reset();
+    component.refreshPoolHealth();
+    expect(api.getAggregatePoolHealth).toHaveBeenCalledTimes(1);
   });
 });

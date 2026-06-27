@@ -73,10 +73,55 @@
     <!-- Readiness pool aggregate health -->
     <sp-admin-card title="Readiness pool — aggregate health">
       <p class="sp-admin-section-sub">System-wide pool health across all student profiles.</p>
-      <sp-admin-not-implemented-state title="Aggregate pool endpoint not yet implemented">
-        No system-wide aggregate readiness endpoint exists — pool health is per-student only.
-        Use the individual student detail page to inspect pool health for a specific student.
-      </sp-admin-not-implemented-state>
+      @if (poolHealthLoading()) {
+        <sp-admin-loading-state message="Loading pool health" />
+      } @else if (poolHealthError()) {
+        <sp-admin-error-state title="Pool health unavailable" [message]="poolHealthError()" />
+      } @else if (poolHealth()) {
+        <div class="sp-adm-pool-health-grid">
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalStudentsWithItems }}</span>
+            <span class="sp-adm-pool-health-label">Students with items</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value sp-adm-pool-health-ready">{{ poolHealth()!.totalReady }}</span>
+            <span class="sp-adm-pool-health-label">Ready</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalQueued + poolHealth()!.totalGenerating }}</span>
+            <span class="sp-adm-pool-health-label">Queued / generating</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalReserved }}</span>
+            <span class="sp-adm-pool-health-label">Reserved</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalReviewOnly }}</span>
+            <span class="sp-adm-pool-health-label">Review only</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.totalFailed }}</span>
+            <span class="sp-adm-pool-health-label">Failed</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalStale + poolHealth()!.totalExpired }}</span>
+            <span class="sp-adm-pool-health-label">Stale / expired</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.studentsWithNoReadyItems }}</span>
+            <span class="sp-adm-pool-health-label">Students needing replenishment</span>
+          </div>
+        </div>
+        @if (poolHealth()!.totalFailed > 0) {
+          <sp-admin-alert variant="warning">
+            {{ poolHealth()!.studentsWithFailedItems }} student(s) have failed pool items. Check generation logs.
+          </sp-admin-alert>
+        }
+        <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+          Last refreshed: {{ poolHealth()!.generatedAt | date:'HH:mm:ss' }}
+          &nbsp;<button type="button" class="sp-adm-pool-health-refresh" (click)="refreshPoolHealth()">Refresh</button>
+        </p>
+      }
     </sp-admin-card>
 
   </div>
