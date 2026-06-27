@@ -411,6 +411,15 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Mastery.StudentMasteryEvaluationService>();
         services.AddScoped<Jobs.StudentMasteryEvaluationJob>();
 
+        // Phase 12D — Learning Plan Orchestrator
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Application.LearningPlan.LearningPlanOptions>(
+                configuration.GetSection(LinguaCoach.Application.LearningPlan.LearningPlanOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Application.LearningPlan.LearningPlanOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.LearningPlan.ILearningPlanService,
+            LinguaCoach.Infrastructure.LearningPlan.LearningPlanService>();
+
         return services;
     }
 }

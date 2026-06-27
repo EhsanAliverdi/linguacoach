@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Curriculum;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.ReadinessPool;
@@ -38,6 +39,7 @@ public sealed class LessonBatchGenerationJob : IJob
     private readonly ICurriculumRoutingService _routing;
     private readonly IStudentMasteryEvaluationService _mastery;
     private readonly IStudentActivityReadinessPoolService _readinessPool;
+    private readonly ILearningPlanService _learningPlan;
     private readonly ILogger<LessonBatchGenerationJob> _logger;
 
     public LessonBatchGenerationJob(
@@ -48,6 +50,7 @@ public sealed class LessonBatchGenerationJob : IJob
         ICurriculumRoutingService routing,
         IStudentMasteryEvaluationService mastery,
         IStudentActivityReadinessPoolService readinessPool,
+        ILearningPlanService learningPlan,
         ILogger<LessonBatchGenerationJob> logger)
     {
         _db = db;
@@ -57,6 +60,7 @@ public sealed class LessonBatchGenerationJob : IJob
         _routing = routing;
         _mastery = mastery;
         _readinessPool = readinessPool;
+        _learningPlan = learningPlan;
         _logger = logger;
     }
 
@@ -373,12 +377,26 @@ public sealed class LessonBatchGenerationJob : IJob
         var masteryReport = await _mastery.EvaluateStudentAsync(
             profile.Id, MasteryEvaluationReason.BeforeReplenishment, ct);
 
+        // Phase 12D — consult learning plan for the next planned objective key.
+        string? plannedObjectiveKey = null;
+        try
+        {
+            var plannedObjective = await _learningPlan.GetNextPlannedObjectiveAsync(profile.Id, ct: ct);
+            plannedObjectiveKey = plannedObjective?.ObjectiveKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "LessonBatchGenerationJob: could not read learning plan for {StudentProfileId} — falling back to free routing.", profile.Id);
+        }
+
         var routingRequest = CurriculumRoutingRequestFactory.Build(
             profile, resolvedGoalContext,
             source: "lesson_batch",
             allowReviewOrScaffold: false,
             masteredObjectiveKeys: masteryReport.MasteredObjectiveKeys,
-            mode: RoutingMode.NewLearning);
+            mode: RoutingMode.NewLearning,
+            preferredObjectiveKey: plannedObjectiveKey);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
         var summary = new

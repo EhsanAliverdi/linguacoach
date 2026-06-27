@@ -42,6 +42,7 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
         var routing = scope.ServiceProvider.GetRequiredService<ICurriculumRoutingService>();
         var mastery = scope.ServiceProvider.GetRequiredService<IStudentMasteryEvaluationService>();
         var readinessPool = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
+        var learningPlan = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.LearningPlan.ILearningPlanService>();
         var jobLogger = new CapturingLogger<LessonBatchGenerationJob>();
         var job = new LessonBatchGenerationJob(
             db,
@@ -51,6 +52,7 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
             routing,
             mastery,
             readinessPool,
+            learningPlan,
             jobLogger);
 
         await job.Execute(new FakeJobExecutionContext(scheduler, new JobDataMap

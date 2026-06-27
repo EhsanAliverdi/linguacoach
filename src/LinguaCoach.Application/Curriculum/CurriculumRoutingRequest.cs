@@ -19,6 +19,12 @@ public sealed class CurriculumRoutingRequest
     /// <summary>Specific exercise pattern key requested (e.g. "email_reply"). Null = any pattern.</summary>
     public string? RequestedPatternKey { get; init; }
 
+    /// <summary>
+    /// Curriculum objective key preferred by the learning plan orchestrator.
+    /// Routing uses this as a hint to bias objective selection. Phase 12D.
+    /// </summary>
+    public string? PreferredObjectiveKey { get; init; }
+
     /// <summary>Which part of the system is requesting routing.</summary>
     public required string Source { get; init; }
 

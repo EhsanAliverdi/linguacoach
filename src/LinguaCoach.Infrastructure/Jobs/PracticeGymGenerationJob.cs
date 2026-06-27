@@ -1,5 +1,6 @@
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Curriculum;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.ReadinessPool;
@@ -36,6 +37,7 @@ public sealed class PracticeGymGenerationJob : IJob
     private readonly ICurriculumRoutingService _routing;
     private readonly IStudentMasteryEvaluationService _mastery;
     private readonly IStudentActivityReadinessPoolService _readinessPool;
+    private readonly ILearningPlanService _learningPlan;
     private readonly ILogger<PracticeGymGenerationJob> _logger;
 
     public PracticeGymGenerationJob(
@@ -48,6 +50,7 @@ public sealed class PracticeGymGenerationJob : IJob
         ICurriculumRoutingService routing,
         IStudentMasteryEvaluationService mastery,
         IStudentActivityReadinessPoolService readinessPool,
+        ILearningPlanService learningPlan,
         ILogger<PracticeGymGenerationJob> logger)
     {
         _db = db;
@@ -59,6 +62,7 @@ public sealed class PracticeGymGenerationJob : IJob
         _routing = routing;
         _mastery = mastery;
         _readinessPool = readinessPool;
+        _learningPlan = learningPlan;
         _logger = logger;
     }
 
@@ -139,13 +143,27 @@ public sealed class PracticeGymGenerationJob : IJob
         var masteryReport = await _mastery.EvaluateStudentAsync(
             profile.Id, MasteryEvaluationReason.BeforeReplenishment, ct);
 
+        // Phase 12D — consult learning plan for practice gym objective alignment.
+        string? plannedObjectiveKey = null;
+        try
+        {
+            var gymObjectives = await _learningPlan.GetPracticeGymObjectivesAsync(profile.Id, maxCount: 1, ct: ct);
+            plannedObjectiveKey = gymObjectives.Count > 0 ? gymObjectives[0].ObjectiveKey : null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "PracticeGymGenerationJob: could not read learning plan for {StudentProfileId} — falling back to free routing.", profile.Id);
+        }
+
         var routingRequest = CurriculumRoutingRequestFactory.Build(
             profile, resolvedGoalContext,
             source: "PracticeGymGenerationJob",
             requestedPatternKey: pattern.Key,
             allowReviewOrScaffold: false,
             masteredObjectiveKeys: masteryReport.MasteredObjectiveKeys,
-            mode: RoutingMode.NewLearning);
+            mode: RoutingMode.NewLearning,
+            preferredObjectiveKey: plannedObjectiveKey);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
         // Record pool item with routing snapshot before generation.

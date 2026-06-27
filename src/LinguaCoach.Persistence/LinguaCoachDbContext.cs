@@ -61,6 +61,10 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 10M — Student activity readiness pool
     public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();
 
+    // Phase 12D — Learning Plan orchestrator
+    public DbSet<StudentLearningPlan> StudentLearningPlans => Set<StudentLearningPlan>();
+    public DbSet<StudentLearningPlanObjective> StudentLearningPlanObjectives => Set<StudentLearningPlanObjective>();
+
     // Phase 10R — Usage governance, token tracking & quota enforcement
     public DbSet<FeatureDefinition> FeatureDefinitions => Set<FeatureDefinition>();
     public DbSet<UsagePolicy> UsagePolicies => Set<UsagePolicy>();

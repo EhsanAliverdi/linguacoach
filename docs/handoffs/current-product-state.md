@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-26 (10Z)
+lastUpdated: 2026-06-27 (12D)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,50 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-26 (10Z)
+Last updated: 2026-06-27 (12D)
+
+---
+
+## Learning Plan Orchestrator Foundation (Phase 12D, 2026-06-27)
+
+Deterministic per-student learning plan layer that coordinates curriculum routing, mastery evaluation, and readiness pool into a coherent objective sequence. No AI calls. No student UI changes. No ReviewScaffold global enable.
+
+**New domain entities:** `StudentLearningPlan` and `StudentLearningPlanObjective` (tables `student_learning_plans`, `student_learning_plan_objectives`). Migration T61. A student has at most one Active or Regenerating plan at a time. Old plans are Superseded on regeneration.
+
+**Plan generation:** Builds a 10-objective sequence (configurable) from a balanced skill rotation (speaking × 2, writing × 2, listening × 2, reading × 2, vocabulary × 2). Inserts review objectives from weak/mastered mastery keys. Prevents duplicate objective keys within the plan.
+
+**Regeneration triggers:** Automatic plan regeneration fires after mastery sweep (when mastery changes), CEFR level admin change, and student preference update. All triggers are non-blocking (failure is logged as warning only).
+
+**Admin visibility:** `GET /api/admin/students/{id}/learning-plan` and `.../learning-plan/progress` endpoints for admin inspection. Read-only, no side effects.
+
+**Job integration:** `LessonBatchGenerationJob` and `PracticeGymGenerationJob` now consult the learning plan for a preferred objective key and pass it to curriculum routing as a hint. Free routing fallback when no plan exists.
+
+**Config (`LearningPlan` appsettings section):** `PlannedLessonCount` (default 10), `MaxUpcomingObjectives` (default 5), `MaxPracticeGymObjectives` (default 5), `MasteryCompletionThreshold` (default 70%).
+
+38 new tests. All 2587 tests pass. Review: `docs/reviews/2026-06-27-phase-12d-learning-plan-orchestrator-foundation-review.md`.
+
+---
+
+## Prepared Lesson Pipeline and Readiness Lifecycle (Phase 12C, 2026-06-27)
+
+Configurable buffer bounds and per-run observability for the readiness pool replenishment engine.
+
+**New config options (`ReadinessPool` appsettings section):**
+- `MinimumReadyThreshold` (default 3) — admin alert threshold; students with fewer Ready items than this are counted in `StudentsBelowMinimumThreshold`.
+- `MaxBufferCount` (default 20) — hard cap on active items (Queued + Generating + Ready + Reserved) per student per source. Prevents unbounded over-fill. Must be ≥ `TodayLessonPoolTargetCount`.
+
+**Replenishment summary fields added:**
+- `SkippedAtMaxBuffer` — items skipped because student was already at the buffer cap.
+- `ElapsedMs` — computed from `CompletedAt - StartedAt`.
+- `GenerationSuccessRate` — `ItemsQueued / (ItemsQueued + SkippedDuplicates + SkippedAtMaxBuffer)`.
+
+**Aggregate pool health fields added:**
+- `StudentsBelowMinimumThreshold` — students with Ready < `MinimumReadyThreshold` (including zero-ready students).
+- `AverageReadyPerStudent` — system-wide average, displayed in admin Lessons pool health stat grid.
+
+**No student UI changes. No ReviewScaffold global enable. No migration.**
+
+17 new tests. All 3933 tests pass. Review: `docs/reviews/2026-06-27-phase-12c-prepared-lesson-pipeline-readiness-lifecycle-review.md`.
 
 ---
 

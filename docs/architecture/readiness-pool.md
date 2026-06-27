@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-18 02:00
+lastUpdated: 2026-06-27 (12C)
 owner: architecture
 supersedes:
 supersededBy:
@@ -129,6 +129,8 @@ Bound from `appsettings.json` under `"ReadinessPool"`. Defaults:
 |---|---|---|
 | `TodayLessonPoolTargetCount` | 10 | Target ready items per student for Today lessons. |
 | `PracticeGymPoolTargetCount` | 10 | Target ready items per student for Practice Gym. |
+| `MinimumReadyThreshold` | 3 | Alert threshold: students with Ready < this value are flagged in `AggregatePoolHealthSummary.StudentsBelowMinimumThreshold`. |
+| `MaxBufferCount` | 20 | Hard cap on active items per student per source (Queued + Generating + Ready + Reserved). Prevents unbounded over-fill. Must be ≥ TodayLessonPoolTargetCount. |
 | `MaxGenerationAttempts` | 3 | Max attempts per pool item before abandoning. |
 | `ReadyItemExpiryDays` | 14 | Days before a ready item is expired. |
 | `ReservedItemExpiryHours` | 2 | Hours before a stuck reserved item is expired. |
@@ -141,9 +143,21 @@ Bound from `appsettings.json` under `"ReadinessPool"`. Defaults:
 
 `PoolHealthSummary` counts:
 - `ReadyCount` — items in `Ready` status. Counts toward target.
+- `ReservedCount` — items in `Reserved` status. Counted separately from Ready.
 - `QueuedOrGeneratingCount` — in-flight items. Count toward target to prevent over-generation.
 - `ShortfallCount = max(0, Target - Ready - QueuedOrGenerating)`.
 - `ReviewOnly`, `Stale`, `Expired`, `Failed` — do not reduce shortfall.
+
+`AggregatePoolHealthSummary` (system-wide, Phase 12A/12C) adds:
+- `StudentsBelowMinimumThreshold` — count of students with `ReadyCount < MinimumReadyThreshold` (including students with zero ready items). Used for admin alerting.
+- `AverageReadyPerStudent` — `totalReady / totalStudentsWithItems` (0.0 when no students). Rounded to 1 decimal in admin UI.
+
+`ReplenishmentRunSummary` (Phase 12C) adds:
+- `SkippedAtMaxBuffer` — items not queued because the student already had ≥ `MaxBufferCount` active items.
+- `ElapsedMs` — computed from `CompletedAt - StartedAt` in milliseconds.
+- `GenerationSuccessRate` — `ItemsQueued / (ItemsQueued + SkippedDuplicates + SkippedAtMaxBuffer)`. Returns 1.0 when nothing attempted.
+
+Replenishment completion log line includes `elapsedMs` and `successRate` fields for per-run observability.
 
 ### Replenishment cycle responsibilities
 
@@ -192,5 +206,6 @@ The existing `GET /api/activity/practice-gym/next` (by skill / by exercise type)
 
 - `GET /api/admin/students/{studentId}/readiness-pool` — Returns `ReadinessPoolSummary` with counts by status and item list.
 - `GET /api/admin/students/{studentId}/readiness-pool/health` — Returns `PoolHealthSummary` for `TodayLesson` and `PracticeGym` pools, including target, ready, in-flight, shortfall, and `needsReplenishment` flag.
+- `GET /api/admin/readiness-pool/health` — Returns `AggregatePoolHealthSummary`: system-wide counts for all statuses, per-status student counts, `StudentsBelowMinimumThreshold`, `AverageReadyPerStudent`, oldest/newest item timestamps. Admin Lessons page displays this as a real-data stat grid.
 
-Both endpoints require Admin role. No write endpoints.
+All endpoints require Admin role. No write endpoints.

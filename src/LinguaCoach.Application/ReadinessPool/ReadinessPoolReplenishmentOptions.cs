@@ -40,4 +40,25 @@ public sealed class ReadinessPoolReplenishmentOptions
     /// TODO: enable after mastery/weakness engine is proven (Phase 10O+).
     /// </summary>
     public bool EnableReviewScaffoldGeneration { get; set; } = false;
+
+    /// <summary>
+    /// When true, review scaffold generation logic runs but does not write to the database.
+    /// Useful for production dry-runs before fully enabling review generation.
+    /// Only meaningful when EnableReviewScaffoldGeneration is also true.
+    /// </summary>
+    public bool DryRunOnly { get; set; } = false;
+
+    /// <summary>
+    /// Minimum ready items below which a warning is surfaced in admin health metrics.
+    /// Does not block serving — used only for observability.
+    /// Must be less than or equal to TodayLessonPoolTargetCount / PracticeGymPoolTargetCount.
+    /// </summary>
+    public int MinimumReadyThreshold { get; set; } = 3;
+
+    /// <summary>
+    /// Maximum ready+queued+generating items per student per source.
+    /// Replenishment will not queue new items beyond this cap even if shortfall math says otherwise.
+    /// Prevents runaway over-fill when a student has many reserved-but-not-consumed items.
+    /// </summary>
+    public int MaxBufferCount { get; set; } = 20;
 }

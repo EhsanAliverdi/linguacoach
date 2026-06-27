@@ -7,5 +7,6 @@ public enum MasteryEvaluationReason
     AfterPracticeGym = 1,
     AfterTodayLesson = 2,
     ScheduledSweep = 3,
-    BeforeReplenishment = 4
+    BeforeReplenishment = 4,
+    PlanGeneration = 5
 }

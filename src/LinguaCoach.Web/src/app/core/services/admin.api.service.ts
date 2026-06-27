@@ -25,6 +25,8 @@ import {
   AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse,
   AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse,
   AggregatePoolHealthSummary,
+  ReviewScaffoldDryRunSummary,
+  MasteryValidationSummary,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -99,6 +101,12 @@ export class AdminApiService {
   }
   getAggregatePoolHealth(): Observable<AggregatePoolHealthSummary> {
     return this.http.get<AggregatePoolHealthSummary>(`${this.api}/readiness-pool/health`);
+  }
+  getReviewScaffoldDryRun(): Observable<ReviewScaffoldDryRunSummary> {
+    return this.http.get<ReviewScaffoldDryRunSummary>(`${this.api}/readiness-pool/review-scaffold/dry-run`);
+  }
+  getMasteryValidationSummary(): Observable<MasteryValidationSummary> {
+    return this.http.get<MasteryValidationSummary>(`${this.api}/mastery/validation-summary`);
   }
   generateLessonsForStudent(studentProfileId: string, count?: number): Observable<AdminGenerateLessonsResponse> {
     const qs = count !== undefined ? `?count=${count}` : '';

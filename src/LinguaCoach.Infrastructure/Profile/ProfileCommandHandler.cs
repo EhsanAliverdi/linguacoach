@@ -1,16 +1,25 @@
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Profile;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Profile;
 
 public sealed class ProfileCommandHandler : IUpdateLearningPreferencesCommandHandler
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly ILearningPlanService _learningPlan;
+    private readonly ILogger<ProfileCommandHandler> _logger;
 
-    public ProfileCommandHandler(LinguaCoachDbContext db)
+    public ProfileCommandHandler(
+        LinguaCoachDbContext db,
+        ILearningPlanService learningPlan,
+        ILogger<ProfileCommandHandler> logger)
     {
         _db = db;
+        _learningPlan = learningPlan;
+        _logger = logger;
     }
 
     public async Task HandleAsync(UpdateLearningPreferencesCommand command, CancellationToken ct = default)
@@ -32,5 +41,16 @@ public sealed class ProfileCommandHandler : IUpdateLearningPreferencesCommandHan
             preferredSessionDurationMinutes: command.PreferredSessionDurationMinutes);
 
         await _db.SaveChangesAsync(ct);
+
+        // Phase 12D — regenerate plan when learner preferences change
+        try
+        {
+            await _learningPlan.RegeneratePlanAsync(profile.Id, "preference_change", ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Plan regeneration failed after preference update for student {StudentProfileId}.", profile.Id);
+        }
     }
 }

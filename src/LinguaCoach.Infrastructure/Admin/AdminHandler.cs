@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Notifications;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Storage;
@@ -468,6 +469,21 @@ public sealed class AdminHandler :
             reason: command.Reason));
 
         await _db.SaveChangesAsync(ct);
+
+        // Phase 12D — regenerate plan when admin changes CEFR level
+        if (!string.Equals(oldValue, profile.CefrLevel, StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var planService = _services.GetRequiredService<ILearningPlanService>();
+                await planService.RegeneratePlanAsync(profile.Id, "cefr_change", ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Plan regeneration failed after CEFR change for student {StudentProfileId}.", profile.Id);
+            }
+        }
     }
 
     public async Task<int> CountRecentResetsAsync(Guid adminUserId, TimeSpan window, CancellationToken ct = default)

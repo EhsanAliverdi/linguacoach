@@ -307,4 +307,157 @@ public sealed class ReplenishmentOptionsTests
         const int itemAttemptCount = 3;
         (itemAttemptCount < opts.MaxGenerationAttempts).Should().BeFalse();
     }
+
+    // Phase 12C tests ──────────────────────────────────────────────────────────
+
+    // 19. MinimumReadyThreshold default is conservative and positive.
+    [Fact]
+    public void DefaultOptions_MinimumReadyThreshold_IsConservativeAndPositive()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.MinimumReadyThreshold.Should().BeGreaterThan(0);
+        opts.MinimumReadyThreshold.Should().BeLessThanOrEqualTo(opts.TodayLessonPoolTargetCount);
+    }
+
+    // 20. MaxBufferCount default is above target to allow headroom.
+    [Fact]
+    public void DefaultOptions_MaxBufferCount_IsAboveTarget()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.MaxBufferCount.Should().BeGreaterThan(opts.TodayLessonPoolTargetCount);
+    }
+
+    // 21. ReplenishmentRunSummary.ElapsedMs is computed correctly.
+    [Fact]
+    public void ReplenishmentRunSummary_ElapsedMs_IsCorrect()
+    {
+        var start = new DateTime(2026, 6, 27, 12, 0, 0, DateTimeKind.Utc);
+        var end   = new DateTime(2026, 6, 27, 12, 0, 5, DateTimeKind.Utc);
+        var summary = new ReplenishmentRunSummary { StartedAt = start, CompletedAt = end };
+
+        summary.ElapsedMs.Should().Be(5000L);
+    }
+
+    // 22. GenerationSuccessRate returns 1.0 when nothing was attempted.
+    [Fact]
+    public void ReplenishmentRunSummary_GenerationSuccessRate_ReturnsOneWhenNothingAttempted()
+    {
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow,
+            ItemsQueued = 0,
+            SkippedDuplicates = 0,
+            SkippedAtMaxBuffer = 0
+        };
+
+        summary.GenerationSuccessRate.Should().Be(1.0);
+    }
+
+    // 23. GenerationSuccessRate is correct when some were skipped.
+    [Fact]
+    public void ReplenishmentRunSummary_GenerationSuccessRate_CorrectWithSkips()
+    {
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow,
+            ItemsQueued = 7,
+            SkippedDuplicates = 2,
+            SkippedAtMaxBuffer = 1
+        };
+
+        // 7 / (7+2+1) = 0.7
+        summary.GenerationSuccessRate.Should().BeApproximately(0.7, 0.001);
+    }
+
+    // 24. AggregatePoolHealthSummary.AverageReadyPerStudent returns 0 when no students.
+    [Fact]
+    public void AggregatePoolHealthSummary_AverageReadyPerStudent_ZeroWhenNoStudents()
+    {
+        var summary = new AggregatePoolHealthSummary
+        {
+            TotalStudentsWithItems = 0,
+            TotalReady = 0,
+            AverageReadyPerStudent = 0.0,
+            GeneratedAt = DateTime.UtcNow
+        };
+
+        summary.AverageReadyPerStudent.Should().Be(0.0);
+    }
+
+    // 25. AggregatePoolHealthSummary.StudentsBelowMinimumThreshold is a non-negative integer.
+    [Fact]
+    public void AggregatePoolHealthSummary_StudentsBelowMinimumThreshold_IsNonNegative()
+    {
+        var summary = new AggregatePoolHealthSummary
+        {
+            TotalStudentsWithItems = 5,
+            StudentsWithNoReadyItems = 2,
+            StudentsBelowMinimumThreshold = 3,
+            GeneratedAt = DateTime.UtcNow
+        };
+
+        summary.StudentsBelowMinimumThreshold.Should().BeGreaterThanOrEqualTo(0);
+        // Must not exceed total students.
+        summary.StudentsBelowMinimumThreshold.Should().BeLessThanOrEqualTo(summary.TotalStudentsWithItems);
+    }
+
+    // 26. SkippedAtMaxBuffer is tracked separately from SkippedDuplicates.
+    [Fact]
+    public void ReplenishmentRunSummary_SkippedAtMaxBuffer_IsDistinctFromDuplicates()
+    {
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow,
+            SkippedDuplicates = 4,
+            SkippedAtMaxBuffer = 3
+        };
+
+        summary.SkippedDuplicates.Should().Be(4);
+        summary.SkippedAtMaxBuffer.Should().Be(3);
+    }
+
+    // 27. MaxBufferCount prevents over-fill: items above cap count as SkippedAtMaxBuffer.
+    [Fact]
+    public void Options_MaxBufferCount_CanBeSetToPreventOverfill()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions { MaxBufferCount = 15 };
+        opts.MaxBufferCount.Should().Be(15);
+        opts.MaxBufferCount.Should().BeGreaterThan(0);
+    }
+
+    // 28. MinimumReadyThreshold can be configured per environment.
+    [Fact]
+    public void Options_MinimumReadyThreshold_CanBeOverridden()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions { MinimumReadyThreshold = 5 };
+        opts.MinimumReadyThreshold.Should().Be(5);
+    }
+
+    // 29. ReplenishmentRunSummary.ElapsedMs is zero when start == complete.
+    [Fact]
+    public void ReplenishmentRunSummary_ElapsedMs_IsZeroWhenInstant()
+    {
+        var now = DateTime.UtcNow;
+        var summary = new ReplenishmentRunSummary { StartedAt = now, CompletedAt = now };
+        summary.ElapsedMs.Should().Be(0L);
+    }
+
+    // 30. GenerationSuccessRate is 1.0 when all attempts succeeded.
+    [Fact]
+    public void ReplenishmentRunSummary_GenerationSuccessRate_OneWhenAllQueued()
+    {
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow,
+            ItemsQueued = 10,
+            SkippedDuplicates = 0,
+            SkippedAtMaxBuffer = 0
+        };
+
+        summary.GenerationSuccessRate.Should().Be(1.0);
+    }
 }

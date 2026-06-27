@@ -69,6 +69,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         var totalRetryQueued = 0;
         var totalStale = 0;
         var totalSkipped = 0;
+        var totalSkippedAtMaxBuffer = 0;
         var hitLimit = false;
 
         _logger.LogInformation("ReadinessPool replenishment run starting.");
@@ -122,9 +123,10 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
                     break;
                 }
 
-                var (queued, skipped) = await FillShortfallAsync(profile, source, toCreate, ct);
+                var (queued, skipped, skippedBuffer) = await FillShortfallAsync(profile, source, toCreate, ct);
                 totalQueued += queued;
                 totalSkipped += skipped;
+                totalSkippedAtMaxBuffer += skippedBuffer;
                 generatedThisRun += queued;
 
                 if (generatedThisRun >= _opts.MaxItemsGeneratedPerRun)
@@ -137,10 +139,11 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             if (hitLimit) break;
         }
 
+        var completedAt = DateTime.UtcNow;
         var summary = new ReplenishmentRunSummary
         {
             StartedAt = started,
-            CompletedAt = DateTime.UtcNow,
+            CompletedAt = completedAt,
             StudentsProcessed = activeStudents.Count,
             ItemsQueued = totalQueued,
             ItemsExpired = totalExpired,
@@ -148,13 +151,16 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             ItemsRetryQueued = totalRetryQueued,
             ItemsMarkedStale = totalStale,
             SkippedDuplicates = totalSkipped,
+            SkippedAtMaxBuffer = totalSkippedAtMaxBuffer,
             HitMaxItemsLimit = hitLimit
         };
 
         _logger.LogInformation(
-            "ReadinessPool replenishment complete. queued={Queued} expired={Expired} recovered={Recovered} retried={Retried} skipped={Skipped} limitHit={Limit}",
+            "ReadinessPool replenishment complete. queued={Queued} expired={Expired} recovered={Recovered} retried={Retried} skippedDupes={Dupes} skippedMaxBuffer={MaxBuf} stale={Stale} limitHit={Limit} elapsedMs={Elapsed} successRate={Rate:P0}",
             summary.ItemsQueued, summary.ItemsExpired, summary.ItemsRecoveredFromGenerating,
-            summary.ItemsRetryQueued, summary.SkippedDuplicates, summary.HitMaxItemsLimit);
+            summary.ItemsRetryQueued, summary.SkippedDuplicates, summary.SkippedAtMaxBuffer,
+            summary.ItemsMarkedStale, summary.HitMaxItemsLimit,
+            summary.ElapsedMs, summary.GenerationSuccessRate);
 
         return summary;
     }
@@ -406,7 +412,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         return (retried, skipped);
     }
 
-    private async Task<(int queued, int skipped)> FillShortfallAsync(
+    private async Task<(int queued, int skipped, int skippedAtMaxBuffer)> FillShortfallAsync(
         StudentProfile profile,
         ReadinessPoolSource source,
         int toCreate,
@@ -414,6 +420,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
     {
         var queued = 0;
         var skipped = 0;
+        var skippedAtMaxBuffer = 0;
 
         // Determine if review/scaffold is safe based on weak ledger signals.
         var allowReviewOrScaffold = false;
@@ -430,6 +437,31 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
 
         var resolvedGoalContext = _goalResolver.Resolve(
             profile, new LearningGoalResolutionContext { Source = "ReadinessPoolReplenishment" });
+
+        // Enforce MaxBufferCount: count current active (non-terminal, non-stale) items.
+        var activeCount = await _db.StudentActivityReadinessItems
+            .CountAsync(i => i.StudentId == profile.Id
+                          && i.Source == source
+                          && (i.Status == ReadinessPoolStatus.Queued
+                           || i.Status == ReadinessPoolStatus.Generating
+                           || i.Status == ReadinessPoolStatus.Ready
+                           || i.Status == ReadinessPoolStatus.Reserved), ct);
+
+        if (activeCount >= _opts.MaxBufferCount)
+        {
+            _logger.LogDebug(
+                "ReadinessPool: student {StudentId} source={Source} already at MaxBufferCount ({Count}/{Max}), skipping fill.",
+                profile.Id, source, activeCount, _opts.MaxBufferCount);
+            return (0, 0, toCreate);
+        }
+
+        // Cap toCreate so we never exceed MaxBufferCount.
+        var canCreate = Math.Min(toCreate, _opts.MaxBufferCount - activeCount);
+        if (canCreate < toCreate)
+        {
+            skippedAtMaxBuffer += toCreate - canCreate;
+            toCreate = canCreate;
+        }
 
         // Build a set of existing active item keys to prevent duplicates.
         var existingKeys = await _db.StudentActivityReadinessItems
@@ -519,7 +551,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
                 profile.Id, source, routing.TargetCefrLevel, skill, routing.CurriculumObjectiveKey);
         }
 
-        return (queued, skipped);
+        return (queued, skipped, skippedAtMaxBuffer);
     }
 
     // Value type for duplicate detection (objective key + pattern key + cefr level).

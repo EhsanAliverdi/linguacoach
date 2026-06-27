@@ -20,7 +20,8 @@ public static class CurriculumRoutingRequestFactory
         IReadOnlyList<string>? recentWeakPatternKeys = null,
         IReadOnlyList<string>? masteredObjectiveKeys = null,
         bool allowReviewOfMastered = false,
-        RoutingMode mode = RoutingMode.NewLearning)
+        RoutingMode mode = RoutingMode.NewLearning,
+        string? preferredObjectiveKey = null)
     {
         return new CurriculumRoutingRequest
         {
@@ -28,6 +29,7 @@ public static class CurriculumRoutingRequestFactory
             CurrentCefrLevel = profile.CefrLevel,
             PrimarySkill = primarySkill,
             RequestedPatternKey = requestedPatternKey,
+            PreferredObjectiveKey = preferredObjectiveKey,
             Source = source,
             ResolvedLearningGoalContext = resolvedGoalContext,
             LearningGoals = profile.LearningGoals,

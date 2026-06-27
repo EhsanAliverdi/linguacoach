@@ -43,4 +43,23 @@ public sealed class ReplenishmentRunSummary
     public int ItemsMarkedStale { get; init; }
     public int SkippedDuplicates { get; init; }
     public bool HitMaxItemsLimit { get; init; }
+
+    /// <summary>Items skipped because the student's pool already reached MaxBufferCount.</summary>
+    public int SkippedAtMaxBuffer { get; init; }
+
+    /// <summary>Elapsed duration in milliseconds.</summary>
+    public long ElapsedMs => (long)(CompletedAt - StartedAt).TotalMilliseconds;
+
+    /// <summary>
+    /// Fraction of slots that resulted in a queued item vs skipped (duplicate or max-buffer).
+    /// Range 0.0–1.0. Returns 1.0 when nothing was attempted (avoid division by zero).
+    /// </summary>
+    public double GenerationSuccessRate
+    {
+        get
+        {
+            var total = ItemsQueued + SkippedDuplicates + SkippedAtMaxBuffer;
+            return total == 0 ? 1.0 : (double)ItemsQueued / total;
+        }
+    }
 }

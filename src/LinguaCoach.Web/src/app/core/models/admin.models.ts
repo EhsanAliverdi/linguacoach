@@ -719,8 +719,39 @@ export interface AggregatePoolHealthSummary {
   studentsWithNoReadyItems: number;
   studentsWithFailedItems: number;
   studentsWithStaleItems: number;
+  studentsBelowMinimumThreshold: number;
+  averageReadyPerStudent: number;
   oldestReadyItemCreatedAt: string | null;
   newestItemCreatedAt: string | null;
+  generatedAt: string;
+}
+
+// ── Review scaffold dry-run / mastery diagnostics ────────────────────────────
+
+export interface ReviewScaffoldDryRunSummary {
+  generationEnabled: boolean;
+  dryRunOnly: boolean;
+  status: 'Disabled' | 'DryRun' | 'Enabled';
+  studentsConsidered: number;
+  studentsEligibleForReview: number;
+  estimatedReviewOnlyConversions: number;
+  blockedDuplicates: number;
+  blockedInactiveObjectives: number;
+  estimatedNetNewReviewItems: number;
+  warnings: string[];
+  generatedAt: string;
+}
+
+export interface MasteryValidationSummary {
+  totalStudentsEvaluated: number;
+  totalObjectivesEvaluated: number;
+  countInsufficientEvidence: number;
+  countMastered: number;
+  countNeedsReview: number;
+  countNeedsPractice: number;
+  countAtRisk: number;
+  masteredExcludedFromNewLearning: number;
+  warnings: string[];
   generatedAt: string;
 }
 

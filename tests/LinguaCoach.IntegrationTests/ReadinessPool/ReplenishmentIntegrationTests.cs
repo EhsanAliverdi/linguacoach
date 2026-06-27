@@ -354,6 +354,88 @@ public sealed class ReplenishmentIntegrationTests : IClassFixture<ApiTestFactory
         Assert.Contains("skippedCount", body);
     }
 
+    // Phase 12C: AggregatePoolHealth endpoint returns new derived fields.
+    [Fact]
+    public async Task AggregatePoolHealth_IncludesNewDerivedFields()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/admin/readiness-pool/health");
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("studentsBelowMinimumThreshold", body);
+        Assert.Contains("averageReadyPerStudent", body);
+    }
+
+    // Phase 12C: GetHealth counts Reserved separately from Ready.
+    [Fact]
+    public async Task GetHealth_ReservedItems_CountedSeparately()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
+        var replenish = scope.ServiceProvider.GetRequiredService<IReadinessPoolReplenishmentService>();
+
+        var studentId = Guid.NewGuid();
+
+        var id1 = await poolSvc.CreateQueuedAsync(MakeRequest(studentId, ReadinessPoolSource.TodayLesson));
+        await poolSvc.MarkGeneratingAsync(id1);
+        await poolSvc.MarkReadyAsync(id1);
+
+        var id2 = await poolSvc.CreateQueuedAsync(MakeRequest(studentId, ReadinessPoolSource.TodayLesson));
+        await poolSvc.MarkGeneratingAsync(id2);
+        await poolSvc.MarkReadyAsync(id2);
+        await poolSvc.ReserveNextReadyAsync(studentId, ReadinessPoolSource.TodayLesson);
+
+        var health = await replenish.GetHealthAsync(studentId, ReadinessPoolSource.TodayLesson);
+
+        Assert.Equal(1, health.ReadyCount);
+        Assert.Equal(1, health.ReservedCount);
+    }
+
+    // Phase 12C: ReplenishmentRunSummary SkippedAtMaxBuffer defaults to zero.
+    [Fact]
+    public void ReplenishmentRunSummary_SkippedAtMaxBuffer_DefaultsToZero()
+    {
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow
+        };
+        Assert.Equal(0, summary.SkippedAtMaxBuffer);
+        Assert.Equal(1.0, summary.GenerationSuccessRate);
+    }
+
+    // Phase 12C: ElapsedMs is correct for a known duration.
+    [Fact]
+    public void ReplenishmentRunSummary_ElapsedMs_IsCorrect()
+    {
+        var start = new DateTime(2026, 6, 27, 12, 0, 0, DateTimeKind.Utc);
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = start,
+            CompletedAt = start.AddMilliseconds(250)
+        };
+        Assert.Equal(250L, summary.ElapsedMs);
+    }
+
+    // Phase 12C: MinimumReadyThreshold and MaxBufferCount have valid defaults from DI.
+    [Fact]
+    public void ReplenishmentOptions_Phase12C_NewDefaults_AreValid()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var opts = scope.ServiceProvider
+            .GetRequiredService<Microsoft.Extensions.Options.IOptions<ReadinessPoolReplenishmentOptions>>()
+            .Value;
+
+        Assert.True(opts.MinimumReadyThreshold > 0);
+        Assert.True(opts.MaxBufferCount > 0);
+        Assert.True(opts.MaxBufferCount >= opts.TodayLessonPoolTargetCount);
+    }
+
     private static CreateReadinessItemRequest MakeRequest(
         Guid studentId,
         ReadinessPoolSource source,

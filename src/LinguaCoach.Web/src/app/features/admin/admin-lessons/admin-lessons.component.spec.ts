@@ -43,6 +43,8 @@ const POOL_HEALTH: AggregatePoolHealthSummary = {
   studentsWithNoReadyItems: 0,
   studentsWithFailedItems: 0,
   studentsWithStaleItems: 0,
+  studentsBelowMinimumThreshold: 0,
+  averageReadyPerStudent: 0,
   oldestReadyItemCreatedAt: null,
   newestItemCreatedAt: null,
   generatedAt: '2026-06-27T00:00:00Z',
@@ -65,6 +67,19 @@ function makeApi(
     ),
     updateGenerationSettings: jasmine.createSpy('updateGenerationSettings').and.returnValue(of({ ...SETTINGS, updatedAtUtc: '2026-06-02T00:00:00Z' })),
     generateLessonsForStudent: jasmine.createSpy('generateLessonsForStudent').and.returnValue(of({ queued: true, requestedCount: 1 } as AdminGenerateLessonsResponse)),
+    getReviewScaffoldDryRun: jasmine.createSpy('getReviewScaffoldDryRun').and.returnValue(of({
+      generationEnabled: false,
+      dryRunOnly: false,
+      status: 'Disabled',
+      studentsConsidered: 0,
+      studentsEligibleForReview: 0,
+      estimatedReviewOnlyConversions: 0,
+      blockedDuplicates: 0,
+      blockedInactiveObjectives: 0,
+      estimatedNetNewReviewItems: 0,
+      warnings: ['EnableReviewScaffoldGeneration is currently false.'],
+      generatedAt: '2026-06-27T00:00:00Z',
+    })),
   };
 }
 

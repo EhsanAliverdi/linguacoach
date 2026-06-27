@@ -33,5 +33,17 @@ public sealed class AggregatePoolHealthSummary
     /// <summary>Students who have at least one Stale item.</summary>
     public int StudentsWithStaleItems { get; init; }
 
+    /// <summary>
+    /// Students whose Ready count is below the configured minimum threshold.
+    /// Populated by the controller using ReadinessPoolReplenishmentOptions.MinimumReadyThreshold.
+    /// </summary>
+    public int StudentsBelowMinimumThreshold { get; init; }
+
+    /// <summary>
+    /// Average Ready items per student with items in the pool.
+    /// Returns 0 when no students have items.
+    /// </summary>
+    public double AverageReadyPerStudent { get; init; }
+
     public DateTime GeneratedAt { get; init; }
 }

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12A)
+lastUpdated: 2026-06-27 (12D)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,36 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 12D — Learning Plan Orchestrator Foundation** — complete (2026-06-27)
+
+Introduces a deterministic Learning Plan Orchestrator that coordinates curriculum routing, mastery evaluation, and readiness pool replenishment into a coherent per-student objective sequence. No AI calls in the plan layer. No student UI changes. No ReviewScaffold global enable. Reuses and wraps existing routing/mastery/readiness infrastructure.
+
+**Domain (new):** `StudentLearningPlan` + `StudentLearningPlanObjective` entities with lifecycle methods (`MarkReady`, `Supersede`, `StartRegeneration`, `MarkCompleted`, `MarkMastered`, `Unblock`, etc.). Enums: `LearningPlanStatus` (Active/Regenerating/Superseded), `LearningPlanObjectiveStatus` (Active/Completed/Mastered/Blocked/Deferred/Review).
+
+**Application (new):** `ILearningPlanService` interface with `GetOrCreatePlanAsync`, `RegeneratePlanAsync`, `GetProgressAsync`, `GetNextPlannedObjectiveAsync`, `GetPracticeGymObjectivesAsync`. DTOs: `LearningPlanSummary`, `LearningPlanProgressSummary`, `PlannedObjectiveContext`. `LearningPlanOptions` config class (`PlannedLessonCount=10`, `MasteryCompletionThreshold=70`). Added `PlanGeneration=5` to `MasteryEvaluationReason` enum. Added `PreferredObjectiveKey` to `CurriculumRoutingRequest` + factory.
+
+**Infrastructure (new):** `LearningPlanService` — deterministic implementation. Builds 10-objective sequence from skill rotation, inserts review objectives for weak/mastered keys, prevents duplicates, persists plan + objectives.
+
+**Persistence:** EF Core configurations for both new entities (`student_learning_plans`, `student_learning_plan_objectives`). Migration T61 (`T61_LearningPlanOrchestrator`). Two new `DbSet<>` properties on `LinguaCoachDbContext`.
+
+**Regeneration triggers (F/G/H):** `StudentMasteryEvaluationJob` calls `RegeneratePlanAsync("mastery_sweep")` when mastery changed (demoted or newly mastered). `ProfileCommandHandler` calls `RegeneratePlanAsync("preference_change")` after student preference update. `AdminHandler.SetStudentCefrAsync` calls `RegeneratePlanAsync("cefr_change")` when CEFR level changes. All triggers are fire-and-forget with warning-only failure logging.
+
+**Admin visibility (I):** `GET /api/admin/students/{id}/learning-plan` and `GET /api/admin/students/{id}/learning-plan/progress` endpoints on `AdminReadinessPoolController`. Read-only, admin-only, no side effects.
+
+**Background job integration (J):** `LessonBatchGenerationJob` calls `GetNextPlannedObjectiveAsync` and passes `preferredObjectiveKey` to routing. `PracticeGymGenerationJob` calls `GetPracticeGymObjectivesAsync(maxCount:1)` and passes `preferredObjectiveKey`. Both fall back to free routing on plan failure.
+
+**Tests:** 30 unit tests (`LearningPlanDomainTests`) + 8 integration tests (`LearningPlanIntegrationTests`). All 2587 tests pass (3 arch + 1429 unit + 1155 integration). No Angular changes.
+
+Review: `docs/reviews/2026-06-27-phase-12d-learning-plan-orchestrator-foundation-review.md`.
+
+---
+
+**Phase 12C — Prepared Lesson Pipeline and Readiness Lifecycle** — complete (2026-06-27)
+
+Configurable buffer bounds and enhanced pool observability. Added `MinimumReadyThreshold` (default 3) and `MaxBufferCount` (default 20) to `ReadinessPoolReplenishmentOptions`. `MaxBufferCount` enforces a hard cap on active items (Queued + Generating + Ready + Reserved) per student per source — `FillShortfallAsync` returns `(0, 0, toCreate)` immediately when already at cap, and caps `toCreate = min(toCreate, MaxBufferCount - activeCount)` otherwise. `ReplenishmentRunSummary` extended with `SkippedAtMaxBuffer`, `ElapsedMs` (computed), and `GenerationSuccessRate` (computed). Replenishment completion log includes `elapsedMs` and `successRate` for per-run observability. `AggregatePoolHealthSummary` extended with `StudentsBelowMinimumThreshold` (students with Ready < `MinimumReadyThreshold`, including zero-ready) and `AverageReadyPerStudent`. Admin Lessons UI displays both new metrics in the aggregate pool health stat grid. 17 new tests (12 unit + 5 integration) — 1399 unit + 1147 integration + 3 arch + 1384 Angular = 3933 all passing. No migration. No student UI changes. No ReviewScaffold global enable. Review: `docs/reviews/2026-06-27-phase-12c-prepared-lesson-pipeline-readiness-lifecycle-review.md`.
+
+---
 
 **Phase 12A — Production Gap Closure: Pool Health and Welcome Email** — complete (2026-06-27)
 

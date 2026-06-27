@@ -111,6 +111,14 @@
             <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.studentsWithNoReadyItems }}</span>
             <span class="sp-adm-pool-health-label">Students needing replenishment</span>
           </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.studentsBelowMinimumThreshold }}</span>
+            <span class="sp-adm-pool-health-label">Below minimum threshold</span>
+          </div>
+          <div class="sp-adm-pool-health-stat">
+            <span class="sp-adm-pool-health-value">{{ poolHealth()!.averageReadyPerStudent | number:'1.1-1' }}</span>
+            <span class="sp-adm-pool-health-label">Avg ready per student</span>
+          </div>
         </div>
         @if (poolHealth()!.totalFailed > 0) {
           <sp-admin-alert variant="warning">
@@ -236,6 +244,60 @@
           {{ saveStatus() }}
         </sp-admin-alert>
       }
+    }
+  </sp-admin-card>
+
+  <!-- Review scaffold generation status -->
+  <sp-admin-card title="Review scaffold generation">
+    <p class="sp-admin-section-sub">
+      Shows whether review scaffold generation is enabled and what it would affect.
+      Enable <code>ReadinessPool:EnableReviewScaffoldGeneration</code> in config to activate.
+    </p>
+    @if (scaffoldDryRunLoading()) {
+      <sp-admin-loading-state message="Loading dry-run status" />
+    } @else if (scaffoldDryRunError()) {
+      <sp-admin-error-state title="Dry-run unavailable" [message]="scaffoldDryRunError()" />
+    } @else if (scaffoldDryRun()) {
+      <div class="sp-adm-pool-health-stats">
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">
+            <sp-admin-badge
+              [tone]="scaffoldDryRun()!.status === 'Enabled' ? 'success' : scaffoldDryRun()!.status === 'DryRun' ? 'info' : 'neutral'"
+              appearance="soft"
+              size="sm">
+              {{ scaffoldDryRun()!.status }}
+            </sp-admin-badge>
+          </span>
+          <span class="sp-adm-pool-health-label">Status</span>
+        </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.studentsConsidered }}</span>
+          <span class="sp-adm-pool-health-label">Students considered</span>
+        </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.studentsEligibleForReview }}</span>
+          <span class="sp-adm-pool-health-label">Eligible for review</span>
+        </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.estimatedNetNewReviewItems }}</span>
+          <span class="sp-adm-pool-health-label">Estimated net new review items</span>
+        </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.blockedDuplicates }}</span>
+          <span class="sp-adm-pool-health-label">Blocked (duplicate)</span>
+        </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.blockedInactiveObjectives }}</span>
+          <span class="sp-adm-pool-health-label">Blocked (inactive objective)</span>
+        </div>
+      </div>
+      @for (warning of scaffoldDryRun()!.warnings; track warning) {
+        <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
+      }
+      <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+        Last refreshed: {{ scaffoldDryRun()!.generatedAt | date:'HH:mm:ss' }}
+        &nbsp;<button type="button" class="sp-adm-pool-health-refresh" (click)="refreshScaffoldDryRun()">Refresh</button>
+      </p>
     }
   </sp-admin-card>
 

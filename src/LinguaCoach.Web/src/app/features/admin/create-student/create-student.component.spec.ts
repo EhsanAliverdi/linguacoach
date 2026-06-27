@@ -233,9 +233,9 @@ describe('CreateStudentComponent', () => {
       expect(text).toContain('once');
     });
 
-    it('renders welcome email not-available-yet note', async () => {
+    it('renders welcome email queued note', async () => {
       await setup();
-      expect(fixture.nativeElement.textContent).toContain('Welcome email');
+      expect(fixture.nativeElement.textContent).toContain('welcome email');
     });
 
     it('does not expose any API key or secret', async () => {

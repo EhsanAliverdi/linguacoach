@@ -1,3 +1,4 @@
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Mastery;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,15 +21,18 @@ public sealed class StudentMasteryEvaluationJob : IJob
     public const string JobName = "student-mastery-evaluation";
 
     private readonly IStudentMasteryEvaluationService _mastery;
+    private readonly ILearningPlanService _learningPlan;
     private readonly LinguaCoachDbContext _db;
     private readonly ILogger<StudentMasteryEvaluationJob> _logger;
 
     public StudentMasteryEvaluationJob(
         IStudentMasteryEvaluationService mastery,
+        ILearningPlanService learningPlan,
         LinguaCoachDbContext db,
         ILogger<StudentMasteryEvaluationJob> logger)
     {
         _mastery = mastery;
+        _learningPlan = learningPlan;
         _db = db;
         _logger = logger;
     }
@@ -71,6 +75,21 @@ public sealed class StudentMasteryEvaluationJob : IJob
                     report.WeakObjectiveKeys.Count,
                     report.AtRiskObjectiveKeys.Count,
                     report.DemotedCount);
+
+                // Phase 12D — regenerate learning plan when mastery changed
+                if (report.DemotedCount > 0 || report.MasteredObjectiveKeys.Count > 0)
+                {
+                    try
+                    {
+                        await _learningPlan.RegeneratePlanAsync(
+                            studentId, "mastery_sweep", ct);
+                    }
+                    catch (Exception planEx)
+                    {
+                        _logger.LogWarning(planEx,
+                            "StudentMasteryEvaluationJob: plan regeneration failed for student {StudentId}.", studentId);
+                    }
+                }
             }
             catch (Exception ex)
             {

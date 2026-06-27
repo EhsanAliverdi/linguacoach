@@ -20,7 +20,7 @@ import {
 } from '../../../design-system/admin';
 import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
@@ -90,6 +90,11 @@ export class AdminLessonsComponent implements OnInit {
   poolHealthError = signal('');
   poolHealth = signal<AggregatePoolHealthSummary | null>(null);
 
+  // ── Review scaffold dry-run ───────────────────────────────────────────────
+  scaffoldDryRunLoading = signal(false);
+  scaffoldDryRunError = signal('');
+  scaffoldDryRun = signal<ReviewScaffoldDryRunSummary | null>(null);
+
   // ── Generate for student ──────────────────────────────────────────────────
   studentProfileId = '';
   generatePending = signal(false);
@@ -100,6 +105,7 @@ export class AdminLessonsComponent implements OnInit {
     this.loadSettings();
     this.loadBatches();
     this.loadPoolHealth();
+    this.loadScaffoldDryRun();
   }
 
   private loadSettings(): void {
@@ -206,4 +212,18 @@ export class AdminLessonsComponent implements OnInit {
   }
 
   refreshPoolHealth(): void { this.loadPoolHealth(); }
+
+  private loadScaffoldDryRun(): void {
+    this.scaffoldDryRunLoading.set(true);
+    this.scaffoldDryRunError.set('');
+    this.adminApi.getReviewScaffoldDryRun().subscribe({
+      next: s => { this.scaffoldDryRun.set(s); this.scaffoldDryRunLoading.set(false); },
+      error: err => {
+        this.scaffoldDryRunError.set(err?.error?.error ?? err?.message ?? 'Failed to load review scaffold status.');
+        this.scaffoldDryRunLoading.set(false);
+      },
+    });
+  }
+
+  refreshScaffoldDryRun(): void { this.loadScaffoldDryRun(); }
 }
