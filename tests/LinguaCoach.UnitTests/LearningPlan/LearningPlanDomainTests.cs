@@ -324,7 +324,10 @@ public sealed class LearningPlanDomainTests
             CurrentLearningPhase: "active",
             LessonQueueLength: 4,
             LessonQueueTarget: 10,
-            LastCompletedAt: null);
+            LastCompletedAt: null,
+            CurrentObjectiveKey: "obj-1",
+            NextObjectiveKey: "obj-2",
+            ObjectivesCompletedToday: 1);
 
         progress.StudentProfileId.Should().Be(studentId);
         progress.TotalObjectives.Should().Be(10);
@@ -332,6 +335,9 @@ public sealed class LearningPlanDomainTests
         progress.CompletionPercentage.Should().Be(30.0);
         progress.MasteryPercentage.Should().Be(0.0);
         progress.LessonQueueTarget.Should().Be(10);
+        progress.CurrentObjectiveKey.Should().Be("obj-1");
+        progress.NextObjectiveKey.Should().Be("obj-2");
+        progress.ObjectivesCompletedToday.Should().Be(1);
     }
 
     // 24. PlannedObjectiveContext record initialises correctly.

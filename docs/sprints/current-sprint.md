@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12F)
+lastUpdated: 2026-06-27 (12G)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,26 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 12G — Real-Time Learning Plan Progress Integration** — complete (2026-06-27)
+
+Wires learning plan objective updates directly into the activity submission path. Plan progress now updates immediately after each pattern-keyed activity attempt; no wait for nightly mastery sweep. Background jobs become reconciliation-only.
+
+**Real-time pipeline (Parts B/C):** `ILearningPlanService` gains `TryUpdateObjectiveProgressAsync` — evaluates mastery for a single objective and transitions the plan if evidence is sufficient. Never throws; returns `LearningPlanObjectiveProgressUpdate` with `StatusChanged`, `PreviousStatus`, `NewStatus`, and `Reason`.
+
+**ActivitySubmitHandler wiring (Parts D/E):** `ILearningPlanService` added as a dependency. Two injection points added: after `_learningLedger.RecordAsync` in the pattern evaluation path and the legacy writing path. VocabularyPractice and ListeningComprehension excluded (no learning event recorded in those paths). Helper `TryUpdateLearningPlanProgressAsync` guards on null/empty key and logs when StatusChanged=true.
+
+**Progress summary (Part F):** `LearningPlanProgressSummary` gains three new fields: `CurrentObjectiveKey` (InProgress, or first Active), `NextObjectiveKey` (first Active when InProgress exists; second Active otherwise), and `ObjectivesCompletedToday` (Completed/Mastered since midnight UTC). `GetProgressAsync` populates all three.
+
+**Tests (Part J):** 15 new unit tests in `LearningPlanRealtimeProgressTests`. Updated `LearningPlanDomainTests` test 23 and `LearningPlanCompletionTests` test 8 for expanded record signature.
+
+**Build/test totals:** 0 errors, 0 failures. 1475 unit + 1155 integration + 3 architecture = 2633 total.
+
+Review: `docs/reviews/2026-06-27-phase-12g-realtime-learning-plan-progress-review.md`.
+
+---
+
+## Previous sprint
 
 **Phase 12F — Learning Plan Completion Lifecycle** — complete (2026-06-27)
 

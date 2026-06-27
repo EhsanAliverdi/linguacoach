@@ -165,7 +165,10 @@ public sealed class LearningPlanCompletionTests
             CurrentLearningPhase: "Intermediate — Building",
             LessonQueueLength: 3,
             LessonQueueTarget: 10,
-            LastCompletedAt: DateTime.UtcNow.AddHours(-1));
+            LastCompletedAt: DateTime.UtcNow.AddHours(-1),
+            CurrentObjectiveKey: null,
+            NextObjectiveKey: null,
+            ObjectivesCompletedToday: 0);
 
         progress.CompletionPercentage.Should().Be(30.0);
         progress.MasteryPercentage.Should().Be(10.0);

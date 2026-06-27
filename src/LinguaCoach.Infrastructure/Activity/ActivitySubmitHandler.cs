@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Learning;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.Sessions;
@@ -28,6 +29,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly PatternSkillUpdateService _patternSkillUpdate;
     private readonly IMultiSkillProgressService _multiSkillProgress;
     private readonly IStudentLearningLedger _learningLedger;
+    private readonly ILearningPlanService _learningPlan;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
     private readonly ILogger<ActivitySubmitHandler> _logger;
@@ -44,6 +46,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         PatternSkillUpdateService patternSkillUpdate,
         IMultiSkillProgressService multiSkillProgress,
         IStudentLearningLedger learningLedger,
+        ILearningPlanService learningPlan,
         ILearningGoalContextResolver goalContextResolver,
         IPracticeGymSuggestionService practiceGymSuggestions,
         ILogger<ActivitySubmitHandler> logger)
@@ -59,6 +62,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _patternSkillUpdate = patternSkillUpdate;
         _multiSkillProgress = multiSkillProgress;
         _learningLedger = learningLedger;
+        _learningPlan = learningPlan;
         _goalContextResolver = goalContextResolver;
         _practiceGymSuggestions = practiceGymSuggestions;
         _logger = logger;
@@ -262,6 +266,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             normalizedScore: score.HasValue ? Math.Round(score.Value / 100.0, 4) : null);
 
         await _learningLedger.RecordAsync(legacyEvent, ct);
+        await TryUpdateLearningPlanProgressAsync(profile.Id, activity.ExercisePatternKey, ct);
 
         // Multi-skill progress: derive affected skills from ActivityType fallback (no pattern metadata here).
         var legacyMultiSkillReq = _multiSkillProgress.BuildRequest(
@@ -430,6 +435,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             mistakeTagsJson: mistakeTags);
 
         await _learningLedger.RecordAsync(learningEvent, ct);
+        await TryUpdateLearningPlanProgressAsync(profile.Id, activity.ExercisePatternKey, ct);
 
         var memoryRequest = BuildPatternMemoryUpdateRequest(profile, activity, module, attempt, evalResult);
         await _memoryService.UpdateMemoryAsync(memoryRequest, ct);
@@ -741,6 +747,19 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         }
         catch { /* ignore */ }
         return null;
+    }
+
+    private async Task TryUpdateLearningPlanProgressAsync(
+        Guid studentProfileId, string? objectiveKey, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(objectiveKey))
+            return;
+
+        var result = await _learningPlan.TryUpdateObjectiveProgressAsync(studentProfileId, objectiveKey, ct);
+        if (result.StatusChanged)
+            _logger.LogInformation(
+                "ActivitySubmitHandler: real-time plan update — objective '{Key}' {Prev} → {New}",
+                objectiveKey, result.PreviousStatus, result.NewStatus);
     }
 
     private static ActivityFeedbackDto ParseFeedback(Guid attemptId, string feedbackJson, double? score)

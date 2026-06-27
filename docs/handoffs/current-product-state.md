@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12F)
+lastUpdated: 2026-06-27 (12G)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,33 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (12F)
+Last updated: 2026-06-27 (12G)
+
+---
+
+## Real-Time Learning Plan Progress Integration (Phase 12G, 2026-06-27)
+
+Activity submissions now update learning plan objective status immediately — no wait
+for the nightly mastery sweep. Background jobs are now reconciliation-only.
+
+**Real-time pipeline:** `ActivitySubmitHandler` calls `TryUpdateObjectiveProgressAsync`
+after recording a learning event on pattern-keyed activities. If mastery evidence is
+sufficient (`Mastered` or `NeedsReview` signal), the objective transitions in the same
+HTTP request. The call is best-effort — submission never fails because of plan update.
+
+**Paths covered:** Pattern evaluation path and legacy writing path (when pattern key
+is present). VocabularyPractice and ListeningComprehension excluded — those paths do
+not record a learning event.
+
+**Progress summary:** `LearningPlanProgressSummary` now includes `CurrentObjectiveKey`,
+`NextObjectiveKey`, and `ObjectivesCompletedToday`. Admin progress endpoint
+(`GET /api/admin/students/{id}/learning-plan/progress`) returns these automatically.
+
+**No student UI changes. No new migrations. No new API endpoints.**
+
+15 new real-time progress unit tests. All 2633 tests pass (3 arch + 1475 unit + 1155 integration).
+
+Review: `docs/reviews/2026-06-27-phase-12g-realtime-learning-plan-progress-review.md`.
 
 ---
 

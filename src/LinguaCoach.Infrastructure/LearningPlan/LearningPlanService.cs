@@ -188,7 +188,10 @@ public sealed class LearningPlanService : ILearningPlanService
                 CurrentLearningPhase: "No plan",
                 LessonQueueLength: 0,
                 LessonQueueTarget: _options.PlannedLessonCount,
-                LastCompletedAt: null);
+                LastCompletedAt: null,
+                CurrentObjectiveKey: null,
+                NextObjectiveKey: null,
+                ObjectivesCompletedToday: 0);
         }
 
         var objectives = plan.Objectives.ToList();
@@ -217,6 +220,37 @@ public sealed class LearningPlanService : ILearningPlanService
 
         var phase = DeterminePhase(cefrLevel, completionPct);
 
+        var todayUtc = DateTime.UtcNow.Date;
+        var objectivesCompletedToday = objectives.Count(o =>
+            o.Status is LearningPlanObjectiveStatus.Completed or LearningPlanObjectiveStatus.Mastered
+            && o.LastEvaluatedAt.HasValue
+            && o.LastEvaluatedAt.Value.Date >= todayUtc);
+
+        var inProgressObj = objectives
+            .Where(o => o.Status == LearningPlanObjectiveStatus.InProgress)
+            .OrderBy(o => o.PlannedOrder ?? int.MaxValue)
+            .FirstOrDefault();
+
+        var activeOrdered = objectives
+            .Where(o => o.Status == LearningPlanObjectiveStatus.Active && !o.IsBlocked)
+            .OrderBy(o => o.PlannedOrder ?? int.MaxValue)
+            .ThenBy(o => o.Priority)
+            .ToList();
+
+        string? currentObjectiveKey;
+        string? nextObjectiveKey;
+
+        if (inProgressObj is not null)
+        {
+            currentObjectiveKey = inProgressObj.ObjectiveKey;
+            nextObjectiveKey = activeOrdered.FirstOrDefault()?.ObjectiveKey;
+        }
+        else
+        {
+            currentObjectiveKey = activeOrdered.FirstOrDefault()?.ObjectiveKey;
+            nextObjectiveKey = activeOrdered.Skip(1).FirstOrDefault()?.ObjectiveKey;
+        }
+
         // Count ready lessons in the pool as queue length.
         var queueLength = await _db.StudentActivityReadinessItems
             .CountAsync(i => i.StudentId == studentProfileId
@@ -239,7 +273,10 @@ public sealed class LearningPlanService : ILearningPlanService
             CurrentLearningPhase: phase,
             LessonQueueLength: queueLength,
             LessonQueueTarget: plan.PlannedLessonCount,
-            LastCompletedAt: lastCompletedAtNullable);
+            LastCompletedAt: lastCompletedAtNullable,
+            CurrentObjectiveKey: currentObjectiveKey,
+            NextObjectiveKey: nextObjectiveKey,
+            ObjectivesCompletedToday: objectivesCompletedToday);
     }
 
     public async Task<PlannedObjectiveContext?> GetNextPlannedObjectiveAsync(
@@ -411,6 +448,71 @@ public sealed class LearningPlanService : ILearningPlanService
             _logger.LogWarning(ex,
                 "LearningPlanService: could not save {Label} status for objective '{ObjectiveKey}' student {StudentProfileId}",
                 label, objectiveKey, studentProfileId);
+        }
+    }
+
+    public async Task<LearningPlanObjectiveProgressUpdate> TryUpdateObjectiveProgressAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var plan = await LoadActivePlanAsync(studentProfileId, ct);
+            if (plan is null)
+                return new LearningPlanObjectiveProgressUpdate(objectiveKey, null, null, false, "no_active_plan");
+
+            var objective = plan.Objectives.FirstOrDefault(
+                o => string.Equals(o.ObjectiveKey, objectiveKey, StringComparison.OrdinalIgnoreCase));
+
+            if (objective is null)
+                return new LearningPlanObjectiveProgressUpdate(objectiveKey, null, null, false, "objective_not_in_plan");
+
+            var previousStatus = objective.Status;
+
+            // Only update Active or InProgress objectives — terminal states are no-ops.
+            if (previousStatus is not (LearningPlanObjectiveStatus.Active or LearningPlanObjectiveStatus.InProgress))
+                return new LearningPlanObjectiveProgressUpdate(objectiveKey, previousStatus, previousStatus, false, "already_terminal");
+
+            var signal = await _mastery.EvaluateObjectiveMasteryAsync(studentProfileId, objectiveKey, ct);
+
+            LearningPlanObjectiveStatus newStatus;
+            string reason;
+
+            switch (signal.MasteryStatus)
+            {
+                case MasteryStatus.Mastered:
+                    await MarkObjectiveMasteredAsync(studentProfileId, objectiveKey, ct);
+                    newStatus = LearningPlanObjectiveStatus.Mastered;
+                    reason = "mastered";
+                    break;
+
+                case MasteryStatus.NeedsReview:
+                    await MarkObjectiveCompletedAsync(studentProfileId, objectiveKey, ct);
+                    newStatus = LearningPlanObjectiveStatus.Completed;
+                    reason = "needs_review";
+                    break;
+
+                default:
+                    return new LearningPlanObjectiveProgressUpdate(
+                        objectiveKey, previousStatus, previousStatus, false,
+                        $"insufficient_evidence_{signal.MasteryStatus}");
+            }
+
+            var changed = newStatus != previousStatus;
+            if (changed)
+                _logger.LogInformation(
+                    "LearningPlanService: real-time progress — objective '{ObjectiveKey}' {Prev} → {New} for {StudentProfileId} (evidence={Count})",
+                    objectiveKey, previousStatus, newStatus, studentProfileId, signal.EvidenceCount);
+
+            return new LearningPlanObjectiveProgressUpdate(objectiveKey, previousStatus, newStatus, changed, reason);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "LearningPlanService: TryUpdateObjectiveProgressAsync failed for objective '{ObjectiveKey}' student {StudentProfileId}",
+                objectiveKey, studentProfileId);
+            return new LearningPlanObjectiveProgressUpdate(objectiveKey, null, null, false, "error");
         }
     }
 

@@ -81,6 +81,17 @@ public interface ILearningPlanService
         Guid studentProfileId,
         string objectiveKey,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Evaluates mastery for a single objective immediately after an activity attempt
+    /// and updates the Learning Plan if sufficient evidence exists.
+    /// Always returns a result — never throws. Best-effort; must not fail the enclosing submission.
+    /// Called from ActivitySubmitHandler after the learning event is recorded.
+    /// </summary>
+    Task<LearningPlanObjectiveProgressUpdate> TryUpdateObjectiveProgressAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default);
 }
 
 /// <summary>Summary of the student's active learning plan for API and admin views.</summary>
@@ -118,7 +129,21 @@ public sealed record LearningPlanProgressSummary(
     string CurrentLearningPhase,
     int LessonQueueLength,
     int LessonQueueTarget,
-    DateTime? LastCompletedAt);
+    DateTime? LastCompletedAt,
+    /// <summary>Key of the current InProgress objective, or first Active objective if none InProgress.</summary>
+    string? CurrentObjectiveKey,
+    /// <summary>Key of the next Active objective in planned order after the current one.</summary>
+    string? NextObjectiveKey,
+    /// <summary>Count of objectives completed or mastered since midnight UTC today.</summary>
+    int ObjectivesCompletedToday);
+
+/// <summary>Result of a real-time Learning Plan objective progress update.</summary>
+public sealed record LearningPlanObjectiveProgressUpdate(
+    string ObjectiveKey,
+    LearningPlanObjectiveStatus? PreviousStatus,
+    LearningPlanObjectiveStatus? NewStatus,
+    bool StatusChanged,
+    string Reason);
 
 /// <summary>A resolved curriculum objective with routing context for generation.</summary>
 public sealed record PlannedObjectiveContext(
