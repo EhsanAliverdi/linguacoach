@@ -61,6 +61,26 @@ public interface ILearningPlanService
         Guid studentProfileId,
         string objectiveKey,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Marks a planned objective Completed based on sufficient learning evidence (e.g. NeedsReview signal).
+    /// Idempotent — no-op when already Completed or Mastered.
+    /// After completing, activates the next planned objective if none are Active.
+    /// </summary>
+    Task MarkObjectiveCompletedAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Marks a planned objective Mastered based on the mastery engine signal.
+    /// Idempotent — no-op when already Mastered.
+    /// After mastering, activates the next planned objective if none are Active.
+    /// </summary>
+    Task MarkObjectiveMasteredAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default);
 }
 
 /// <summary>Summary of the student's active learning plan for API and admin views.</summary>
@@ -85,14 +105,20 @@ public sealed record LearningPlanSummary(
 public sealed record LearningPlanProgressSummary(
     Guid StudentProfileId,
     string CurrentCefrLevel,
+    int TotalObjectives,
     int ObjectivesCompleted,
+    int ObjectivesMastered,
+    int ObjectivesInProgress,
     int ObjectivesRemaining,
     int ReviewObjectives,
     int BlockedObjectives,
+    int DeferredObjectives,
+    double CompletionPercentage,
     double MasteryPercentage,
     string CurrentLearningPhase,
     int LessonQueueLength,
-    int LessonQueueTarget);
+    int LessonQueueTarget,
+    DateTime? LastCompletedAt);
 
 /// <summary>A resolved curriculum objective with routing context for generation.</summary>
 public sealed record PlannedObjectiveContext(

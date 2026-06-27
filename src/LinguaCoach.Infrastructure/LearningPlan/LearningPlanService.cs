@@ -175,27 +175,47 @@ public sealed class LearningPlanService : ILearningPlanService
             return new LearningPlanProgressSummary(
                 StudentProfileId: studentProfileId,
                 CurrentCefrLevel: cefrLevel,
+                TotalObjectives: 0,
                 ObjectivesCompleted: 0,
+                ObjectivesMastered: 0,
+                ObjectivesInProgress: 0,
                 ObjectivesRemaining: 0,
                 ReviewObjectives: 0,
                 BlockedObjectives: 0,
+                DeferredObjectives: 0,
+                CompletionPercentage: 0,
                 MasteryPercentage: 0,
                 CurrentLearningPhase: "No plan",
                 LessonQueueLength: 0,
-                LessonQueueTarget: _options.PlannedLessonCount);
+                LessonQueueTarget: _options.PlannedLessonCount,
+                LastCompletedAt: null);
         }
 
         var objectives = plan.Objectives.ToList();
-        var completed = objectives.Count(o =>
-            o.Status == LearningPlanObjectiveStatus.Completed ||
-            o.Status == LearningPlanObjectiveStatus.Mastered);
+        var total = objectives.Count;
+        var completed = objectives.Count(o => o.Status == LearningPlanObjectiveStatus.Completed);
+        var mastered = objectives.Count(o => o.Status == LearningPlanObjectiveStatus.Mastered);
+        var inProgress = objectives.Count(o => o.Status == LearningPlanObjectiveStatus.InProgress);
         var remaining = objectives.Count(o => o.Status == LearningPlanObjectiveStatus.Active);
         var review = objectives.Count(o => o.IsReview && o.Status == LearningPlanObjectiveStatus.Active);
         var blocked = objectives.Count(o => o.IsBlocked);
-        var total = objectives.Count;
-        var masteryPct = total > 0 ? Math.Round((double)completed / total * 100, 1) : 0;
+        var deferred = objectives.Count(o => o.Status == LearningPlanObjectiveStatus.Deferred);
 
-        var phase = DeterminePhase(cefrLevel, masteryPct);
+        var doneCount = completed + mastered;
+        var completionPct = total > 0 ? Math.Round((double)doneCount / total * 100, 1) : 0;
+        var masteryPct = total > 0 ? Math.Round((double)mastered / total * 100, 1) : 0;
+
+        var lastCompletedAt = objectives
+            .Where(o => o.Status is LearningPlanObjectiveStatus.Completed
+                or LearningPlanObjectiveStatus.Mastered)
+            .Select(o => o.LastEvaluatedAt)
+            .Where(d => d.HasValue)
+            .Select(d => d!.Value)
+            .DefaultIfEmpty(DateTime.MinValue)
+            .Max();
+        var lastCompletedAtNullable = lastCompletedAt == DateTime.MinValue ? (DateTime?)null : lastCompletedAt;
+
+        var phase = DeterminePhase(cefrLevel, completionPct);
 
         // Count ready lessons in the pool as queue length.
         var queueLength = await _db.StudentActivityReadinessItems
@@ -206,14 +226,20 @@ public sealed class LearningPlanService : ILearningPlanService
         return new LearningPlanProgressSummary(
             StudentProfileId: studentProfileId,
             CurrentCefrLevel: cefrLevel,
+            TotalObjectives: total,
             ObjectivesCompleted: completed,
+            ObjectivesMastered: mastered,
+            ObjectivesInProgress: inProgress,
             ObjectivesRemaining: remaining,
             ReviewObjectives: review,
             BlockedObjectives: blocked,
+            DeferredObjectives: deferred,
+            CompletionPercentage: completionPct,
             MasteryPercentage: masteryPct,
             CurrentLearningPhase: phase,
             LessonQueueLength: queueLength,
-            LessonQueueTarget: plan.PlannedLessonCount);
+            LessonQueueTarget: plan.PlannedLessonCount,
+            LastCompletedAt: lastCompletedAtNullable);
     }
 
     public async Task<PlannedObjectiveContext?> GetNextPlannedObjectiveAsync(
@@ -303,6 +329,102 @@ public sealed class LearningPlanService : ILearningPlanService
             _logger.LogWarning(ex,
                 "LearningPlanService: could not save InProgress status for objective '{ObjectiveKey}' student {StudentProfileId}",
                 objectiveKey, studentProfileId);
+        }
+    }
+
+    public async Task MarkObjectiveCompletedAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default)
+    {
+        await TransitionObjectiveAsync(
+            studentProfileId, objectiveKey,
+            targetStatus: LearningPlanObjectiveStatus.Completed,
+            apply: o => o.MarkCompleted(),
+            label: "Completed",
+            ct);
+    }
+
+    public async Task MarkObjectiveMasteredAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default)
+    {
+        await TransitionObjectiveAsync(
+            studentProfileId, objectiveKey,
+            targetStatus: LearningPlanObjectiveStatus.Mastered,
+            apply: o => o.MarkMastered(),
+            label: "Mastered",
+            ct);
+    }
+
+    private async Task TransitionObjectiveAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        LearningPlanObjectiveStatus targetStatus,
+        Action<StudentLearningPlanObjective> apply,
+        string label,
+        CancellationToken ct)
+    {
+        var plan = await _db.StudentLearningPlans
+            .Include(p => p.Objectives)
+            .Where(p => p.StudentProfileId == studentProfileId && p.Status == LearningPlanStatus.Active)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (plan is null)
+            return;
+
+        var objective = plan.Objectives.FirstOrDefault(
+            o => string.Equals(o.ObjectiveKey, objectiveKey, StringComparison.OrdinalIgnoreCase));
+
+        if (objective is null)
+            return;
+
+        // Idempotent — already in target state or a "higher" terminal state.
+        var alreadyDone = targetStatus == LearningPlanObjectiveStatus.Completed
+            ? objective.Status is LearningPlanObjectiveStatus.Completed
+                or LearningPlanObjectiveStatus.Mastered
+            : objective.Status == LearningPlanObjectiveStatus.Mastered;
+
+        if (alreadyDone)
+        {
+            _logger.LogDebug(
+                "LearningPlanService: objective '{ObjectiveKey}' already {Label} for {StudentProfileId} — no-op.",
+                objectiveKey, label, studentProfileId);
+            return;
+        }
+
+        apply(objective);
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation(
+                "LearningPlanService: objective '{ObjectiveKey}' marked {Label} for {StudentProfileId}",
+                objectiveKey, label, studentProfileId);
+
+            LogPlanExhaustionIfNeeded(plan, studentProfileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "LearningPlanService: could not save {Label} status for objective '{ObjectiveKey}' student {StudentProfileId}",
+                label, objectiveKey, studentProfileId);
+        }
+    }
+
+    private void LogPlanExhaustionIfNeeded(StudentLearningPlan plan, Guid studentProfileId)
+    {
+        var hasActiveObjectives = plan.Objectives.Any(
+            o => o.Status == LearningPlanObjectiveStatus.Active
+              || o.Status == LearningPlanObjectiveStatus.InProgress);
+
+        if (!hasActiveObjectives)
+        {
+            _logger.LogInformation(
+                "LearningPlanService: all objectives consumed for plan {PlanId} student {StudentProfileId} — plan exhausted, regeneration recommended.",
+                plan.Id, studentProfileId);
         }
     }
 

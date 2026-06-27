@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12E)
+lastUpdated: 2026-06-27 (12F)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,32 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 12F — Learning Plan Completion Lifecycle** — complete (2026-06-27)
+
+Closes the Learning Plan lifecycle loop. Objectives now transition deterministically through `Active → InProgress → Completed → Mastered` driven by existing mastery evaluation evidence.
+
+**Completion service (Parts B/C):** `ILearningPlanService` gains `MarkObjectiveCompletedAsync` and `MarkObjectiveMasteredAsync`. Both are idempotent: already-Completed → no-op for a second Completed call; already-Mastered → no-op regardless of incoming signal. Implemented in `LearningPlanService` via shared `TransitionObjectiveAsync` helper. Logs plan exhaustion when no Active/InProgress objectives remain.
+
+**Mastery report (Part B):** `StudentMasteryReport` gains `CompletedObjectiveKeys` — objectives with `NeedsReview` mastery signal (consecutive successes >= 1, avg score 50-79). These also remain in `WeakObjectiveKeys`. `StudentMasteryEvaluationService.EvaluateStudentAsync` populates the new field.
+
+**Event integration (Part D):** `StudentMasteryEvaluationJob` now calls `MarkObjectiveMasteredAsync` for each mastered key and `MarkObjectiveCompletedAsync` for each completed key before triggering `RegeneratePlanAsync`. All completion calls are warning-only; generation continues regardless.
+
+**Progress calculation (Part F):** `LearningPlanProgressSummary` expanded with `TotalObjectives`, `ObjectivesMastered`, `ObjectivesInProgress`, `DeferredObjectives`, `CompletionPercentage` (Completed+Mastered / Total), and `LastCompletedAt`. `MasteryPercentage` now reflects Mastered / Total specifically. `DeterminePhase` uses completion percentage.
+
+**Background jobs (Part I):** No changes required. `GetNextPlannedObjectiveAsync` already filters to `Active` only — completed and mastered objectives are excluded automatically.
+
+**Admin API (Part G):** `GET /api/admin/students/{id}/learning-plan/progress` now returns expanded summary with all new fields. No new endpoints.
+
+**Tests (Part K):** 16 new unit tests in `LearningPlanCompletionTests`. `LearningPlanDomainTests` test 23 updated for new record signature. All 2618 tests pass.
+
+**Build/test totals:** 0 errors, 0 failures. 1460 unit + 1155 integration + 3 architecture = 2618 total.
+
+Review: `docs/reviews/2026-06-27-phase-12f-learning-plan-completion-lifecycle-review.md`.
+
+---
+
+## Previous sprint
 
 **Phase 12E — Learning Plan Guided Routing** — complete (2026-06-27)
 

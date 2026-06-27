@@ -10,6 +10,13 @@ public sealed record StudentMasteryReport
     public required MasteryEvaluationReason Reason { get; init; }
 
     public required IReadOnlyList<string> MasteredObjectiveKeys { get; init; }
+
+    /// <summary>
+    /// Objectives with NeedsReview signal — sufficient evidence for Completed (not yet Mastered).
+    /// A subset of WeakObjectiveKeys.
+    /// </summary>
+    public required IReadOnlyList<string> CompletedObjectiveKeys { get; init; }
+
     public required IReadOnlyList<string> WeakObjectiveKeys { get; init; }
     public required IReadOnlyList<string> AtRiskObjectiveKeys { get; init; }
 

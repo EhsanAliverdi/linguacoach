@@ -311,18 +311,26 @@ public sealed class LearningPlanDomainTests
         var progress = new LearningPlanProgressSummary(
             StudentProfileId: studentId,
             CurrentCefrLevel: "B1",
+            TotalObjectives: 10,
             ObjectivesCompleted: 3,
+            ObjectivesMastered: 0,
+            ObjectivesInProgress: 1,
             ObjectivesRemaining: 7,
             ReviewObjectives: 1,
             BlockedObjectives: 0,
-            MasteryPercentage: 30.0,
+            DeferredObjectives: 0,
+            CompletionPercentage: 30.0,
+            MasteryPercentage: 0.0,
             CurrentLearningPhase: "active",
             LessonQueueLength: 4,
-            LessonQueueTarget: 10);
+            LessonQueueTarget: 10,
+            LastCompletedAt: null);
 
         progress.StudentProfileId.Should().Be(studentId);
+        progress.TotalObjectives.Should().Be(10);
         progress.ObjectivesCompleted.Should().Be(3);
-        progress.MasteryPercentage.Should().Be(30.0);
+        progress.CompletionPercentage.Should().Be(30.0);
+        progress.MasteryPercentage.Should().Be(0.0);
         progress.LessonQueueTarget.Should().Be(10);
     }
 

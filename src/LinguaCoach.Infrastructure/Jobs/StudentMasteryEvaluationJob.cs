@@ -76,13 +76,45 @@ public sealed class StudentMasteryEvaluationJob : IJob
                     report.AtRiskObjectiveKeys.Count,
                     report.DemotedCount);
 
-                // Phase 12D — regenerate learning plan when mastery changed
-                if (report.DemotedCount > 0 || report.MasteredObjectiveKeys.Count > 0)
+                // Phase 12F — mark objectives Mastered or Completed in the learning plan.
+                foreach (var masteredKey in report.MasteredObjectiveKeys)
                 {
                     try
                     {
-                        await _learningPlan.RegeneratePlanAsync(
-                            studentId, "mastery_sweep", ct);
+                        await _learningPlan.MarkObjectiveMasteredAsync(studentId, masteredKey, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "StudentMasteryEvaluationJob: MarkObjectiveMasteredAsync failed for objective '{Key}' student {StudentId}.",
+                            masteredKey, studentId);
+                    }
+                }
+
+                foreach (var completedKey in report.CompletedObjectiveKeys)
+                {
+                    try
+                    {
+                        await _learningPlan.MarkObjectiveCompletedAsync(studentId, completedKey, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "StudentMasteryEvaluationJob: MarkObjectiveCompletedAsync failed for objective '{Key}' student {StudentId}.",
+                            completedKey, studentId);
+                    }
+                }
+
+                // Regenerate plan when objectives changed or plan is exhausted.
+                var planNeedsRefresh = report.DemotedCount > 0
+                    || report.MasteredObjectiveKeys.Count > 0
+                    || report.CompletedObjectiveKeys.Count > 0;
+
+                if (planNeedsRefresh)
+                {
+                    try
+                    {
+                        await _learningPlan.RegeneratePlanAsync(studentId, "mastery_sweep", ct);
                     }
                     catch (Exception planEx)
                     {

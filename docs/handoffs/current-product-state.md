@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12E)
+lastUpdated: 2026-06-27 (12F)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,36 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (12E)
+Last updated: 2026-06-27 (12F)
+
+---
+
+## Learning Plan Completion Lifecycle (Phase 12F, 2026-06-27)
+
+Closes the lifecycle loop: Learning Plan objectives now transition deterministically
+through `Active → InProgress → Completed → Mastered` driven by existing mastery evidence.
+
+**Completion signals:** `StudentMasteryReport` gains `CompletedObjectiveKeys` — objectives
+where mastery signal is `NeedsReview` (some consecutive successes, avg score 50-79). Full
+mastery continues to populate `MasteredObjectiveKeys`.
+
+**Completion service:** `ILearningPlanService` gains `MarkObjectiveCompletedAsync` and
+`MarkObjectiveMasteredAsync`. Both are idempotent. Implemented in `LearningPlanService`
+with shared `TransitionObjectiveAsync` helper. Logs a warning when all objectives are exhausted.
+
+**Mastery job integration:** `StudentMasteryEvaluationJob` now calls both new methods for
+each mastered/completed key before triggering plan regeneration. All calls are warning-only;
+generation continues regardless of plan update failure.
+
+**Progress metrics:** `LearningPlanProgressSummary` expanded with `TotalObjectives`,
+`ObjectivesMastered`, `ObjectivesInProgress`, `DeferredObjectives`, `CompletionPercentage`,
+and `LastCompletedAt`. `MasteryPercentage` now reflects Mastered/Total only.
+
+**No student UI changes. No new migrations. No new API endpoints.**
+
+16 new completion lifecycle unit tests. All 2618 tests pass (3 arch + 1460 unit + 1155 integration).
+
+Review: `docs/reviews/2026-06-27-phase-12f-learning-plan-completion-lifecycle-review.md`.
 
 ---
 

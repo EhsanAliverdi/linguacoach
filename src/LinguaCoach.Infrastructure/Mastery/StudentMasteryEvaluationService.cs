@@ -74,6 +74,7 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
             .ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.OccurredAtUtc).ToList());
 
         var mastered = new List<string>();
+        var completed = new List<string>();  // NeedsReview signal = sufficient completion evidence
         var weak = new List<string>();
         var atRisk = new List<string>();
 
@@ -88,8 +89,12 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
                 case MasteryStatus.AtRisk:
                     atRisk.Add(key);
                     break;
-                case MasteryStatus.NeedsPractice:
                 case MasteryStatus.NeedsReview:
+                    // NeedsReview = mixed results but trending positive: treat as completed for plan.
+                    completed.Add(key);
+                    weak.Add(key);
+                    break;
+                case MasteryStatus.NeedsPractice:
                     weak.Add(key);
                     break;
             }
@@ -105,6 +110,7 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
             EvaluatedAtUtc = DateTime.UtcNow,
             Reason = reason,
             MasteredObjectiveKeys = mastered,
+            CompletedObjectiveKeys = completed,
             WeakObjectiveKeys = weak,
             AtRiskObjectiveKeys = atRisk,
             DemotedCount = demoted,
