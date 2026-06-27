@@ -1,16 +1,15 @@
-﻿import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardService } from '../../../../core/services/dashboard.service';
 import { AuthNoticeService } from '../../../../core/services/auth-notice.service';
-import { DashboardResponse } from '../../../../core/models/dashboard.models';
-import { LearningPathService } from '../../../../core/services/learning-path.service';
-import { StudentLearningMemory } from '../../../../core/models/learning-path.models';
+import { DashboardSummaryService } from '../../../../core/services/dashboard-summary.service';
 import { PlacementService } from '../../../../core/services/placement.service';
 import { PlacementResult } from '../../../../core/models/placement.models';
-import { SessionService } from '../../../../core/services/session.service';
+import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
+import { DashboardResponse } from '../../../../core/models/dashboard.models';
+import { StudentLearningMemory } from '../../../../core/models/learning-path.models';
 import { TodaysSessionResponse } from '../../../../core/models/session.models';
-import { PracticeGymSuggestionsService, PracticeGymSuggestionsResponse } from '../../../../core/services/practice-gym-suggestions.service';
+import { PracticeGymSuggestionsResponse } from '../../../../core/services/practice-gym-suggestions.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -54,11 +53,8 @@ export class DashboardComponent implements OnInit {
   });
 
   constructor(
-    private dashboardService: DashboardService,
-    private learningPathService: LearningPathService,
+    private summaryService: DashboardSummaryService,
     private placementService: PlacementService,
-    private sessionService: SessionService,
-    private practiceGymService: PracticeGymSuggestionsService,
     private authNotice: AuthNoticeService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');
@@ -69,19 +65,15 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.dashboardService.getDashboard().subscribe({
-      next: d => {
-        this.data.set(d);
+    this.summaryService.getSummary().subscribe({
+      next: summary => {
         this.loading.set(false);
-        if (this.hasPlacementResultState(d.lifecycleStage)) {
+        this.applyFromSummary(summary);
+        if (this.hasPlacementResultState(summary.courseReadiness.lifecycleStatus)) {
           this.placementService.getResult().subscribe({
             next: result => this.placementResult.set(result),
             error: () => this.placementResult.set(null),
           });
-        }
-        if (this.hasLessonAccess(d.lifecycleStage)) {
-          this.loadTodaysSession();
-          this.loadPracticeSuggestions();
         }
       },
       error: err => {
@@ -89,38 +81,125 @@ export class DashboardComponent implements OnInit {
         this.error.set(err.error?.error ?? 'Could not load your dashboard.');
       },
     });
-    this.learningPathService.getLearningMemory().subscribe({
-      next: memory => this.memory.set(memory),
-      error: () => this.memory.set(null),
-    });
   }
 
-  private loadTodaysSession(): void {
-    this.sessionLoading.set(true);
-    this.sessionService.getToday().subscribe({
-      next: session => {
-        this.todaysSession.set(session);
-        this.sessionLoading.set(false);
+  private applyFromSummary(s: StudentDashboardSummary): void {
+    // Synthesize DashboardResponse from summary for template compatibility.
+    this.data.set({
+      studentName: s.profile.displayName,
+      careerProfile: '',
+      cefrLevel: s.profile.cefrLevel,
+      message: '',
+      lifecycleStage: s.courseReadiness.lifecycleStatus,
+      learningPath: s.learningPlan.totalObjectives > 0 ? {
+        pathId: '',
+        title: s.learningPlan.pathTitle ?? '',
+        modulesCompleted: s.learningPlan.modulesCompleted,
+        totalModules: s.learningPlan.totalObjectives,
+        currentModule: s.learningPlan.currentObjective ? {
+          moduleId: '',
+          title: s.learningPlan.currentObjective,
+          description: s.learningPlan.currentObjectiveDescription ?? '',
+          order: s.learningPlan.objectiveIndex,
+          completedActivities: s.learningPlan.completedActivities,
+          totalActivities: s.learningPlan.totalActivities,
+          isCurrent: true,
+          isCompleted: false,
+          isReadyToComplete: false,
+          averageScore: null,
+          latestScore: null,
+        } : null,
+      } : null,
+      activityStats: {
+        activitiesCompleted: s.quickStats.activitiesCompleted,
+        latestScore: null,
+        averageScore: null,
       },
-      error: () => {
-        // 404 / not ready = expected business state, not a dashboard failure.
-        // Null todaysSession shows the "preparing" state in the template.
-        this.sessionLoading.set(false);
-      },
+      currentFocus: null,
+      nextRecommendedPractice: null,
+      latestImprovement: null,
+      streakDays: s.quickStats.streakDays,
     });
-  }
 
-  private loadPracticeSuggestions(): void {
-    this.practiceLoading.set(true);
-    this.practiceGymService.getSuggestions().subscribe({
-      next: result => {
-        this.practiceSuggestions.set(result);
-        this.practiceLoading.set(false);
-      },
-      error: () => {
-        this.practiceLoading.set(false);
-      },
-    });
+    // Synthesize StudentLearningMemory from progress section.
+    if (s.progress.skillProfile.length > 0 || s.progress.journeySummary) {
+      this.memory.set({
+        journeySummary: s.progress.journeySummary,
+        strongSkills: s.progress.strongSkills,
+        weakSkills: s.progress.weakSkills,
+        recurringMistakes: [],
+        nextRecommendedFocus: s.progress.nextRecommendedFocus,
+        coveredScenarioCount: 0,
+        skillProfile: s.progress.skillProfile.map(sk => ({
+          skillKey: sk.skillKey,
+          skillLabel: sk.skillLabel,
+          isWeak: sk.isWeak,
+          scorePercent: sk.scorePercent,
+        })),
+      });
+    }
+
+    // Synthesize TodaysSessionResponse from todaySession section.
+    const ts = s.todaySession;
+    if (ts.status !== 'Preparing' && ts.status !== 'NotAvailable' && ts.sessionId) {
+      const sessionStatus = ts.status === 'Completed' ? 'completed'
+        : ts.status === 'InProgress' ? 'inProgress'
+        : 'notStarted';
+      this.todaysSession.set({
+        sessionId: ts.sessionId,
+        title: ts.title ?? '',
+        topic: ts.topic ?? '',
+        sessionGoal: ts.sessionGoal ?? '',
+        durationMinutes: ts.durationMinutes ?? 0,
+        focusSkill: ts.focusSkill ?? '',
+        status: sessionStatus,
+        isResuming: ts.status === 'InProgress',
+        exercises: Array.from({ length: ts.exerciseCount ?? 0 }) as any,
+      });
+    }
+
+    // Synthesize PracticeGymSuggestionsResponse from practice section.
+    // NotAvailable leaves the signal null so the template shows the "preparing" state.
+    const p = s.practice;
+    if (p.status !== 'NotAvailable') {
+      const suggestedItems = p.suggestedItem ? [{
+        readinessItemId: p.suggestedItem.readinessItemId,
+        title: p.suggestedItem.title,
+        description: p.suggestedItem.description,
+        primarySkill: p.suggestedItem.primarySkill,
+        secondarySkills: [],
+        patternKey: null,
+        activityType: null,
+        targetCefrLevel: '',
+        studentCefrLevelSnapshot: null,
+        curriculumObjectiveKey: null,
+        curriculumObjectiveTitle: null,
+        contextTags: [],
+        focusTags: [],
+        routingReason: '',
+        isLowerLevelContent: false,
+        difficultyBand: 0,
+        estimatedDurationMinutes: null,
+        supportLanguageName: null,
+        status: 'ready',
+        callToAction: p.suggestedItem.callToAction,
+        explanation: '',
+        linkedLearningActivityId: null,
+        linkedLearningSessionId: null,
+        linkedSessionExerciseId: null,
+      }] : [];
+
+      this.practiceSuggestions.set({
+        suggestedItems,
+        continueItems: [],
+        reviewItems: Array.from({ length: p.reviewQueueCount }) as any,
+        readyCount: suggestedItems.length,
+        reviewOnlyCount: p.reviewQueueCount,
+        reservedCount: 0,
+        isReplenishmentRecommended: false,
+        generatedAtUtc: new Date().toISOString(),
+      });
+    }
   }
 
   lessonButtonLabel(): string {
@@ -129,10 +208,6 @@ export class DashboardComponent implements OnInit {
     if (s.status === 'completed') return 'Review today\'s lesson';
     if (s.status === 'inProgress') return 'Resume lesson';
     return 'Start today\'s lesson';
-  }
-
-  private hasLessonAccess(stage: string): boolean {
-    return stage === 'CourseReady' || stage === 'InLesson' || stage === 'ActiveLearning';
   }
 
   primaryMemoryFocus(): string | null {
@@ -160,8 +235,11 @@ export class DashboardComponent implements OnInit {
     return this.hasLessonAccess(this.data()?.lifecycleStage ?? '');
   }
 
+  private hasLessonAccess(stage: string): boolean {
+    return stage === 'CourseReady' || stage === 'InLesson' || stage === 'ActiveLearning';
+  }
+
   private hasPlacementResultState(stage: string): boolean {
     return stage === 'CourseReady' || stage === 'PlacementCompleted';
   }
 }
-

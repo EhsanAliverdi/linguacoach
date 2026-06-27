@@ -93,60 +93,74 @@ const SESSION_DETAIL = {
   completedAtUtc: null,
 };
 
+function makeDashboardSummary(opts: {
+  lifecycleStatus?: string;
+  sessionStatus?: string;
+  sessionId?: string;
+  actionLabel?: string;
+} = {}) {
+  const lifecycleStatus = opts.lifecycleStatus ?? 'ActiveLearning';
+  const sessionStatus = opts.sessionStatus ?? 'Ready';
+  const sessionId = opts.sessionId ?? SESSION_ID;
+  const actionLabel = opts.actionLabel ?? "Start today's lesson";
+  const isCourseActive = ['ActiveLearning', 'InLesson', 'CourseReady'].includes(lifecycleStatus);
+  return {
+    profile: { displayName: 'Sara', cefrLevel: 'B1', supportLanguage: null },
+    courseReadiness: {
+      isLearningReady: isCourseActive,
+      lifecycleStatus,
+      placementRequired: false,
+      learningPlanExists: true,
+    },
+    todaySession: {
+      status: sessionStatus,
+      sessionId,
+      title: 'Explaining a Document Delay',
+      topic: 'Professional delay communication',
+      sessionGoal: 'Learn to explain project delays clearly and professionally in writing.',
+      focusSkill: 'Writing',
+      durationMinutes: 15,
+      exerciseCount: 4,
+      actionLabel,
+    },
+    learningPlan: {
+      pathTitle: 'Workplace English',
+      currentObjective: 'Softening manager requests',
+      currentObjectiveDescription: 'Practice professional workplace communication.',
+      objectiveIndex: 1,
+      totalObjectives: 3,
+      modulesCompleted: 0,
+      remainingObjectives: 2,
+      completedActivities: 0,
+      totalActivities: 3,
+      progressPercent: 0,
+    },
+    practice: { status: 'Preparing', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+    progress: {
+      skillProfile: [],
+      strongSkills: [],
+      weakSkills: [],
+      nextRecommendedFocus: [],
+      journeySummary: null,
+      activitiesCompleted: 2,
+      streakDays: 0,
+    },
+    quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 2, reviewQueueCount: 0 },
+    warnings: {
+      missingLearningPlan: false,
+      missingTodaySession: false,
+      practiceUnavailable: false,
+      placementIncomplete: false,
+    },
+  };
+}
+
 async function mockActiveLearningDashboard(page: Page) {
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        studentName: 'Sara',
-        careerProfile: 'Document Controller',
-        cefrLevel: 'B1',
-        message: '',
-        lifecycleStage: 'ActiveLearning',
-        learningPath: {
-          pathId: 'path-1',
-          title: 'Workplace English',
-          modulesCompleted: 0,
-          totalModules: 3,
-          currentModule: {
-            moduleId: 'mod-1',
-            title: 'Softening manager requests',
-            description: 'Practice professional workplace communication.',
-            order: 1,
-            completedActivities: 0,
-            totalActivities: 3,
-          },
-        },
-        activityStats: { activitiesCompleted: 2, averageScore: 72, latestScore: 72 },
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
-      }),
-    });
-  });
-
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(TODAYS_SESSION),
-    });
-  });
-
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        journeySummary: null,
-        strongSkills: [],
-        weakSkills: [],
-        recurringMistakes: [],
-        nextRecommendedFocus: [],
-        coveredScenarioCount: 0,
-        skillProfile: [],
-      }),
+      body: JSON.stringify(makeDashboardSummary()),
     });
   });
 }
@@ -238,33 +252,16 @@ test('dashboard Today\'s Lesson card has correct button text for notStarted', as
 test('dashboard shows In progress badge and Resume button when session is inProgress', async ({ page }) => {
   await withAuth(page);
 
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        studentName: 'Sara',
-        careerProfile: 'Document Controller',
-        cefrLevel: 'B1',
-        message: '',
-        lifecycleStage: 'InLesson',
-        learningPath: null,
-        activityStats: null,
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
-      }),
+      body: JSON.stringify(makeDashboardSummary({
+        lifecycleStatus: 'InLesson',
+        sessionStatus: 'InProgress',
+        actionLabel: 'Resume lesson',
+      })),
     });
-  });
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ ...TODAYS_SESSION, status: 'inProgress', isResuming: true }),
-    });
-  });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ journeySummary: null, strongSkills: [], weakSkills: [], recurringMistakes: [], nextRecommendedFocus: [], coveredScenarioCount: 0, skillProfile: [] }) });
   });
 
   await page.goto('/dashboard');
@@ -275,27 +272,16 @@ test('dashboard shows In progress badge and Resume button when session is inProg
 test('dashboard shows Completed badge and Review button when session is completed', async ({ page }) => {
   await withAuth(page);
 
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        studentName: 'Sara', careerProfile: 'DC', cefrLevel: 'B1', message: '',
-        lifecycleStage: 'ActiveLearning',
-        learningPath: null, activityStats: null, currentFocus: null,
-        nextRecommendedPractice: null, latestImprovement: null,
-      }),
+      body: JSON.stringify(makeDashboardSummary({
+        lifecycleStatus: 'ActiveLearning',
+        sessionStatus: 'Completed',
+        actionLabel: "Review today's lesson",
+      })),
     });
-  });
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ ...TODAYS_SESSION, status: 'completed', isResuming: false }),
-    });
-  });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ journeySummary: null, strongSkills: [], weakSkills: [], recurringMistakes: [], nextRecommendedFocus: [], coveredScenarioCount: 0, skillProfile: [] }) });
   });
 
   await page.goto('/dashboard');

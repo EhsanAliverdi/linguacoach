@@ -250,6 +250,7 @@ public static class DependencyInjection
         // Dashboard
         services.AddScoped<StudentProgressService>();
         services.AddScoped<IDashboardQueryHandler, DashboardQueryHandler>();
+        services.AddScoped<IStudentDashboardSummaryHandler, StudentDashboardSummaryHandler>();
 
         // Student Profile (Phase 10G)
         services.AddScoped<IGetStudentProfileQueryHandler, ProfileQueryHandler>();

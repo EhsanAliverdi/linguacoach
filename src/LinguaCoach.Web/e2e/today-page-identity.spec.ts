@@ -27,68 +27,58 @@ async function withAuth(page: Page) {
 }
 
 async function mockActiveLearningDashboard(page: Page) {
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'Sara',
-        careerProfile: 'Document Controller',
-        cefrLevel: 'B1',
-        message: '',
-        lifecycleStage: 'ActiveLearning',
-        learningPath: {
-          pathId: 'path-1',
-          title: 'Workplace English',
-          modulesCompleted: 0,
-          totalModules: 3,
-          currentModule: {
-            moduleId: 'mod-1',
-            title: 'Professional workplace communication',
-            description: 'Practice concise project status updates.',
-            order: 1,
-            completedActivities: 1,
-            totalActivities: 3,
-          },
+        profile: { displayName: 'Sara', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: {
+          isLearningReady: true,
+          lifecycleStatus: 'ActiveLearning',
+          placementRequired: false,
+          learningPlanExists: true,
         },
-        activityStats: { activitiesCompleted: 5, averageScore: 81, latestScore: 85 },
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
-      }),
-    });
-  });
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        sessionId: 'session-abc',
-        title: 'Explaining a Document Delay',
-        topic: 'Professional delay communication',
-        sessionGoal: 'Practice professional workplace communication.',
-        durationMinutes: 15,
-        focusSkill: 'Writing',
-        status: 'notStarted',
-        isResuming: false,
-        exercises: [
-          { exerciseId: 'ex-1', order: 0, kind: 'vocabularyWarmup', exercisePatternKey: 'phrase_match', primarySkill: 'Vocabulary', instructions: 'Match each phrase.', estimatedMinutes: 3, status: 'notStarted', learningActivityId: null },
-        ],
-      }),
-    });
-  });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        journeySummary: 'You are building confidence with workplace communication.',
-        strongSkills: ['Clear context'],
-        weakSkills: ['Softening requests'],
-        recurringMistakes: [],
-        nextRecommendedFocus: ['Listening for deadlines'],
-        coveredScenarioCount: 3,
-        skillProfile: [],
+        todaySession: {
+          status: 'Ready',
+          sessionId: 'session-abc',
+          title: 'Explaining a Document Delay',
+          topic: 'Professional delay communication',
+          sessionGoal: 'Practice professional workplace communication.',
+          focusSkill: 'Writing',
+          durationMinutes: 15,
+          exerciseCount: 1,
+          actionLabel: "Start today's lesson",
+        },
+        learningPlan: {
+          pathTitle: 'Workplace English',
+          currentObjective: 'Professional workplace communication',
+          currentObjectiveDescription: 'Practice concise project status updates.',
+          objectiveIndex: 1,
+          totalObjectives: 3,
+          modulesCompleted: 0,
+          remainingObjectives: 2,
+          completedActivities: 1,
+          totalActivities: 3,
+          progressPercent: 0,
+        },
+        practice: { status: 'Preparing', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: {
+          skillProfile: [],
+          strongSkills: ['Clear context'],
+          weakSkills: ['Softening requests'],
+          nextRecommendedFocus: ['Listening for deadlines'],
+          journeySummary: 'You are building confidence with workplace communication.',
+          activitiesCompleted: 5,
+          streakDays: 0,
+        },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 5, reviewQueueCount: 0 },
+        warnings: {
+          missingLearningPlan: false,
+          missingTodaySession: false,
+          practiceUnavailable: false,
+          placementIncomplete: false,
+        },
       }),
     });
   });

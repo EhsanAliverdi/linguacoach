@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (14B)
+lastUpdated: 2026-06-27 (15B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,30 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 15B — Consolidated Student Dashboard Summary API** — complete (2026-06-27)
+
+Single consolidated endpoint replacing 4–5 separate HTTP calls on dashboard load. Backend orchestrator wraps core dashboard, today's session, practice suggestions, and learning memory. Each optional section degrades gracefully — failure maps to a named status state, never to 500.
+
+**New endpoint:** `GET /api/student/dashboard/summary` — authenticated student only. Returns 8 named sections: Profile, CourseReadiness, TodaySession, LearningPlan, Practice, Progress, QuickStats, Warnings.
+
+**Backend (Parts B–D):** `StudentDashboardSummaryQuery.cs` — 8 result records plus interface. `StudentDashboardSummaryHandler.cs` — orchestrates 4 existing handlers; each optional call wrapped in `try/catch`; session/practice/memory failures map to status strings `"Preparing"` / `"NotAvailable"`. `StudentDashboardController.cs` — new controller at `GET /api/student/dashboard/summary`.
+
+**Session status mapping:** `SessionStatus.Completed → "Completed"`, `InProgress → "InProgress"`, else `"Ready"`. Non-active lifecycle or failure → `"NotAvailable"`. Missing session → `"Preparing"`.
+
+**Practice status mapping:** service throws → `"NotAvailable"` (leaves signal null in component for template parity). Empty suggestions → `"Preparing"`. Active items → `"Ready"`.
+
+**Frontend (Parts A/E):** `dashboard-summary.models.ts` — 8 TypeScript interfaces. `dashboard-summary.service.ts` — single `getSummary()` call. `dashboard.component.ts` — replaced 4 injected services with `DashboardSummaryService` as sole data source. `applyFromSummary()` synthesizes all 4 existing signal types so the HTML template is **unchanged**. `practice.status === "NotAvailable"` leaves `practiceSuggestions` signal null to preserve template `practice-preparing` vs `practice-empty` distinction.
+
+**Tests (Part G):** 9 backend integration tests in `StudentDashboardSummaryTests` (2 test classes — `IClassFixture` pattern required for SQLite init). 13 Karma/Jasmine unit tests in `dashboard.component.spec.ts` (rewritten for new service). 24 Playwright tests updated — `today-lesson.spec.ts` and `today-page-identity.spec.ts` now mock `**/api/student/dashboard/summary` instead of the 3 old individual endpoints.
+
+**Build/test totals:** 0 errors. 3 arch + 1,504 unit + 1,208 integration = **2,715 backend**. 1,413 Angular unit tests. 24 Playwright E2E tests. All pass.
+
+Review: `docs/reviews/2026-06-27-phase-15b-dashboard-summary-api-review.md`.
+
+---
+
+**Phase 15A — Learning Plan Powered Student Dashboard** — complete (2026-06-27)
 
 **Phase 14B — CourseReady Transition and First Lesson Dashboard Smoke** — complete (2026-06-27)
 

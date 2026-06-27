@@ -1,52 +1,18 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
-import { signal } from '@angular/core';
 
 import { DashboardComponent } from './dashboard.component';
-import { DashboardService } from '../../../../core/services/dashboard.service';
-import { LearningPathService } from '../../../../core/services/learning-path.service';
+import { DashboardSummaryService } from '../../../../core/services/dashboard-summary.service';
 import { PlacementService } from '../../../../core/services/placement.service';
-import { SessionService } from '../../../../core/services/session.service';
-import { PracticeGymSuggestionsService } from '../../../../core/services/practice-gym-suggestions.service';
 import { AuthNoticeService } from '../../../../core/services/auth-notice.service';
-import { DashboardResponse } from '../../../../core/models/dashboard.models';
+import {
+  StudentDashboardSummary,
+  DashboardSummaryTodaySession,
+} from '../../../../core/models/dashboard-summary.models';
 import { TodaysSessionResponse } from '../../../../core/models/session.models';
 
-const BASE_DASHBOARD: DashboardResponse = {
-  studentName: 'Test User',
-  careerProfile: 'Business Professional',
-  cefrLevel: 'B1',
-  message: 'Welcome!',
-  lifecycleStage: 'CourseReady',
-  learningPath: {
-    pathId: 'path-1',
-    title: 'Business English',
-    modulesCompleted: 1,
-    totalModules: 5,
-    currentModule: {
-      moduleId: 'mod-1',
-      title: 'Meetings and Presentations',
-      description: 'Learn to lead effective meetings.',
-      order: 2,
-      completedActivities: 3,
-      totalActivities: 8,
-      isCurrent: true,
-      isCompleted: false,
-      isReadyToComplete: false,
-      averageScore: 72,
-      latestScore: 75,
-      focusSkill: 'speaking',
-      reason: null,
-      difficulty: 'intermediate',
-    },
-  },
-  activityStats: { activitiesCompleted: 12, latestScore: 75, averageScore: 72 },
-  currentFocus: null,
-  nextRecommendedPractice: null,
-  latestImprovement: null,
-  streakDays: 3,
-};
+// ── Test fixtures ──────────────────────────────────────────────────────────────
 
 const TODAY_SESSION: TodaysSessionResponse = {
   sessionId: 'sess-1',
@@ -71,33 +37,137 @@ const EMPTY_SUGGESTIONS = {
   generatedAtUtc: new Date().toISOString(),
 };
 
+const BASE_SUMMARY: StudentDashboardSummary = {
+  profile: { displayName: 'Test User', cefrLevel: 'B1', supportLanguage: null },
+  courseReadiness: {
+    isLearningReady: true,
+    lifecycleStatus: 'CourseReady',
+    placementRequired: false,
+    learningPlanExists: true,
+  },
+  todaySession: {
+    status: 'Preparing',
+    sessionId: null,
+    title: null,
+    topic: null,
+    sessionGoal: null,
+    focusSkill: null,
+    durationMinutes: null,
+    exerciseCount: null,
+    actionLabel: "Start today's lesson",
+  },
+  learningPlan: {
+    pathTitle: 'Business English',
+    currentObjective: 'Meetings and Presentations',
+    currentObjectiveDescription: 'Learn to lead effective meetings.',
+    objectiveIndex: 2,
+    totalObjectives: 5,
+    modulesCompleted: 1,
+    remainingObjectives: 3,
+    completedActivities: 3,
+    totalActivities: 8,
+    progressPercent: 20,
+  },
+  practice: {
+    status: 'Preparing',
+    suggestedItem: null,
+    reviewQueueCount: 0,
+    weakestSkill: null,
+  },
+  progress: {
+    skillProfile: [],
+    strongSkills: [],
+    weakSkills: [],
+    nextRecommendedFocus: [],
+    journeySummary: null,
+    activitiesCompleted: 12,
+    streakDays: 3,
+  },
+  quickStats: {
+    currentCefr: 'B1',
+    streakDays: 3,
+    activitiesCompleted: 12,
+    reviewQueueCount: 0,
+  },
+  warnings: {
+    missingLearningPlan: false,
+    missingTodaySession: false,
+    practiceUnavailable: false,
+    placementIncomplete: false,
+  },
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function sessionToSection(
+  session: TodaysSessionResponse | null | 'error'
+): DashboardSummaryTodaySession {
+  if (!session || session === 'error') {
+    return {
+      status: 'Preparing',
+      sessionId: null, title: null, topic: null,
+      sessionGoal: null, focusSkill: null,
+      durationMinutes: null, exerciseCount: null,
+      actionLabel: "Start today's lesson",
+    };
+  }
+  const status =
+    session.status === 'completed' ? 'Completed'
+    : session.status === 'inProgress' ? 'InProgress'
+    : 'Ready';
+  const label =
+    status === 'Completed' ? "Review today's lesson"
+    : status === 'InProgress' ? 'Resume lesson'
+    : "Start today's lesson";
+  return {
+    status,
+    sessionId: session.sessionId,
+    title: session.title,
+    topic: session.topic,
+    sessionGoal: session.sessionGoal,
+    focusSkill: session.focusSkill,
+    durationMinutes: session.durationMinutes,
+    exerciseCount: session.exercises.length,
+    actionLabel: label,
+  };
+}
+
 function makeServices(overrides: {
-  dashboard?: Partial<DashboardResponse> | null;
+  dashboard?: unknown | null;
   session?: TodaysSessionResponse | null | 'error';
   suggestions?: object | 'error';
-}) {
-  const dashData = overrides.dashboard === null ? null : { ...BASE_DASHBOARD, ...overrides.dashboard };
-  const dashboardService = { getDashboard: () => dashData ? of(dashData) : throwError(() => ({ error: { error: 'fail' } })) };
+} = {}) {
+  const todaySession = sessionToSection(overrides.session ?? null);
 
-  const sessionData = overrides.session;
-  const sessionService = {
-    getToday: () =>
-      sessionData === 'error' ? throwError(() => ({ status: 404 }))
-      : sessionData === null ? throwError(() => ({ status: 404 }))
-      : of(sessionData),
+  let practiceStatus: 'Ready' | 'Preparing' | 'NotAvailable' = 'Preparing';
+  let reviewQueueCount = 0;
+
+  if (overrides.suggestions === 'error') {
+    practiceStatus = 'NotAvailable';
+  } else if (overrides.suggestions && typeof overrides.suggestions === 'object') {
+    const s = overrides.suggestions as any;
+    reviewQueueCount = s.reviewItems?.length ?? 0;
+    const readyCount = (s.suggestedItems?.length ?? 0) + (s.continueItems?.length ?? 0);
+    practiceStatus = readyCount > 0 ? 'Ready' : 'Preparing';
+  }
+
+  const summary: StudentDashboardSummary = {
+    ...BASE_SUMMARY,
+    todaySession,
+    practice: { status: practiceStatus, suggestedItem: null, reviewQueueCount, weakestSkill: null },
+    quickStats: { ...BASE_SUMMARY.quickStats, reviewQueueCount },
+    warnings: { ...BASE_SUMMARY.warnings, practiceUnavailable: practiceStatus === 'NotAvailable' },
   };
 
-  const suggestionsData = overrides.suggestions ?? EMPTY_SUGGESTIONS;
-  const practiceGymService = {
-    getSuggestions: () =>
-      suggestionsData === 'error' ? throwError(() => ({})) : of(suggestionsData),
+  const summaryService = {
+    getSummary: () =>
+      overrides.dashboard === null
+        ? throwError(() => ({ error: { error: 'fail' } }))
+        : of(summary),
   };
 
   return {
-    dashboardService,
-    sessionService,
-    practiceGymService,
-    learningPathService: { getLearningMemory: () => of({ journeySummary: null, strongSkills: [], weakSkills: [], recurringMistakes: [], nextRecommendedFocus: [], coveredScenarioCount: 0, skillProfile: [] }) },
+    summaryService,
     placementService: { getResult: () => throwError(() => ({})) },
     authNotice: { consume: () => null },
   };
@@ -108,10 +178,7 @@ async function setup(overrides: Parameters<typeof makeServices>[0] = {}) {
   await TestBed.configureTestingModule({
     imports: [DashboardComponent, RouterTestingModule],
     providers: [
-      { provide: DashboardService, useValue: svc.dashboardService },
-      { provide: SessionService, useValue: svc.sessionService },
-      { provide: PracticeGymSuggestionsService, useValue: svc.practiceGymService },
-      { provide: LearningPathService, useValue: svc.learningPathService },
+      { provide: DashboardSummaryService, useValue: svc.summaryService },
       { provide: PlacementService, useValue: svc.placementService },
       { provide: AuthNoticeService, useValue: svc.authNotice },
     ],
@@ -123,6 +190,8 @@ async function setup(overrides: Parameters<typeof makeServices>[0] = {}) {
   fixture.detectChanges();
   return fixture;
 }
+
+// ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('DashboardComponent', () => {
 
