@@ -10,6 +10,7 @@ import { PlacementService } from '../../../../core/services/placement.service';
 import { PlacementResult } from '../../../../core/models/placement.models';
 import { SessionService } from '../../../../core/services/session.service';
 import { TodaysSessionResponse } from '../../../../core/models/session.models';
+import { PracticeGymSuggestionsService, PracticeGymSuggestionsResponse } from '../../../../core/services/practice-gym-suggestions.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,6 +27,8 @@ export class DashboardComponent implements OnInit {
   placementResult = signal<PlacementResult | null>(null);
   todaysSession = signal<TodaysSessionResponse | null>(null);
   sessionLoading = signal(false);
+  practiceSuggestions = signal<PracticeGymSuggestionsResponse | null>(null);
+  practiceLoading = signal(false);
 
   readonly howItWorks = [
     { n: 1, text: 'AI generates a realistic scenario for your goals and level.' },
@@ -45,11 +48,17 @@ export class DashboardComponent implements OnInit {
     return Math.round((mod.completedActivities / mod.totalActivities) * 100);
   });
 
+  reviewCount = computed(() => {
+    const s = this.practiceSuggestions();
+    return s ? s.reviewItems.length : null;
+  });
+
   constructor(
     private dashboardService: DashboardService,
     private learningPathService: LearningPathService,
     private placementService: PlacementService,
     private sessionService: SessionService,
+    private practiceGymService: PracticeGymSuggestionsService,
     private authNotice: AuthNoticeService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');
@@ -72,6 +81,7 @@ export class DashboardComponent implements OnInit {
         }
         if (this.hasLessonAccess(d.lifecycleStage)) {
           this.loadTodaysSession();
+          this.loadPracticeSuggestions();
         }
       },
       error: err => {
@@ -92,9 +102,23 @@ export class DashboardComponent implements OnInit {
         this.todaysSession.set(session);
         this.sessionLoading.set(false);
       },
-      error: err => {
+      error: () => {
+        // 404 / not ready = expected business state, not a dashboard failure.
+        // Null todaysSession shows the "preparing" state in the template.
         this.sessionLoading.set(false);
-        this.error.set(err.error?.error ?? 'Could not load today\'s lesson.');
+      },
+    });
+  }
+
+  private loadPracticeSuggestions(): void {
+    this.practiceLoading.set(true);
+    this.practiceGymService.getSuggestions().subscribe({
+      next: result => {
+        this.practiceSuggestions.set(result);
+        this.practiceLoading.set(false);
+      },
+      error: () => {
+        this.practiceLoading.set(false);
       },
     });
   }

@@ -216,8 +216,19 @@ async function mockDashboardApis(page: Page, lifecycleStage: 'CourseReady' | 'Pl
       body: JSON.stringify({ count: 0, notifications: [], items: [] }) });
   });
 
-  // Return a minimal not-started session so loadTodaysSession() does not set the main error().
-  // A 404 would propagate err.error?.error into the main error() signal, hiding today-page.
+  await page.route('**/api/practice-gym/suggestions', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        suggestedItems: [], continueItems: [], reviewItems: [],
+        readyCount: 0, reviewOnlyCount: 0, reservedCount: 0,
+        isReplenishmentRecommended: false, generatedAtUtc: new Date().toISOString(),
+      }),
+    });
+  });
+
+  // Session 404 is a valid business state — dashboard shows "preparing" state.
+  // Returning 200 here to test the lesson card with real data.
   await page.route('**/api/sessions/today', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
@@ -297,6 +308,89 @@ test('placement smoke: PlacementCompleted lifecycle shows course-ready preparing
   await expect(page.getByTestId('dashboard-placement-required')).toHaveCount(0);
   // Course-ready card must appear
   await expect(page.getByTestId('dashboard-course-ready')).toBeVisible({ timeout: 4000 });
+});
+
+// ── Test 3B: Dashboard smoke (Phase 15A) — session 404 → preparing state ────────
+
+test('dashboard 15A: session 404 shows preparing state, not global error', async ({ page }) => {
+  await withAuth(page);
+
+  await page.route('**/api/dashboard', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        studentName: 'student@test.com',
+        careerProfile: 'Software engineer',
+        cefrLevel: 'B1',
+        message: 'Ready.',
+        lifecycleStage: 'CourseReady',
+        activityStats: { activitiesCompleted: 5, latestScore: 70, averageScore: 68 },
+        currentFocus: null,
+        nextRecommendedPractice: null,
+        latestImprovement: null,
+        learningPath: {
+          pathId: 'p1', title: 'Business English',
+          modulesCompleted: 1, totalModules: 4,
+          currentModule: {
+            moduleId: 'm1', title: 'Meetings', description: 'Lead meetings.',
+            order: 2, completedActivities: 2, totalActivities: 6,
+            isReadyToComplete: false, averageScore: null,
+          },
+        },
+        streakDays: 2,
+      }),
+    });
+  });
+
+  await page.route('**/api/placement/result', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ estimatedOverallLevel: 'B1', skillLevels: [], strengths: [], weaknesses: [], isCompleted: true }),
+    });
+  });
+
+  await page.route('**/api/learning-path/memory', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ journeySummary: null, strongSkills: [], weakSkills: [], recurringMistakes: [], nextRecommendedFocus: [], coveredScenarioCount: 0, skillProfile: [] }) });
+  });
+
+  await page.route('**/api/notifications/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ count: 0, notifications: [], items: [] }) });
+  });
+
+  await page.route('**/api/practice-gym/suggestions', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ suggestedItems: [], continueItems: [], reviewItems: [], readyCount: 0, reviewOnlyCount: 0, reservedCount: 0, isReplenishmentRecommended: false, generatedAtUtc: new Date().toISOString() }),
+    });
+  });
+
+  // 404 for today's session — this is the bug scenario being fixed
+  await page.route('**/api/sessions/today', async route => {
+    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'No session' }) });
+  });
+
+  await page.goto('/dashboard');
+
+  // Dashboard must load, not show a global error
+  await expect(page.getByTestId('today-page')).toBeVisible({ timeout: 8000 });
+
+  // Lesson card shows "preparing" state, not an error
+  const lessonCard = page.getByTestId('dashboard-todays-lesson');
+  await expect(lessonCard).toBeVisible({ timeout: 4000 });
+  await expect(lessonCard).toContainText('being prepared');
+
+  // Stats render with real backend data
+  await expect(page.getByTestId('stat-cefr')).toContainText('B1');
+  await expect(page.getByTestId('stat-streak')).toContainText('2');
+
+  // Learning plan card renders
+  await expect(page.getByTestId('today-learning-path')).toBeVisible();
+  await expect(page.getByTestId('today-learning-path')).toContainText('Meetings');
+
+  // Practice card renders with "preparing" state
+  await expect(page.getByTestId('dashboard-practice-card')).toBeVisible();
 });
 
 // ── Test 3: Placement guard blocks /journey for PlacementRequired students ─────
