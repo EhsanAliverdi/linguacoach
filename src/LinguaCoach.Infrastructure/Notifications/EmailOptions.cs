@@ -9,6 +9,8 @@ public sealed class EmailOptions
     public const string SectionName = "Email";
 
     public bool Enabled { get; set; } = false;
+    /// <summary>Provider: "Smtp" (default), "Resend", or "SendGrid".</summary>
+    public string Provider { get; set; } = "Smtp";
     public string Host { get; set; } = string.Empty;
     public int Port { get; set; } = 587;
     public string Username { get; set; } = string.Empty;

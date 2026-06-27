@@ -183,10 +183,14 @@ public static class DependencyInjection
             services.Configure<EmailOptions>(_ => { });
 
         services.AddScoped<SmtpEmailSender>();
+        services.AddScoped<ResendEmailSender>();
+        services.AddScoped<SendGridEmailSender>();
         services.AddScoped<DisabledEmailSender>();
-        // SmtpEmailSender now resolves config at send time via INotificationChannelConfigResolver.
-        // We always register SmtpEmailSender as IEmailSender — it skips safely when disabled/unconfigured.
-        services.AddScoped<IEmailSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
+        // RoutingEmailSender reads provider from resolved config at send time and delegates to the
+        // correct concrete sender (Smtp / Resend / SendGrid). All three are registered above.
+        services.AddScoped<IEmailSender, RoutingEmailSender>();
+        // Named HttpClient used by ResendEmailSender — base address not set; full URL used per call.
+        services.AddHttpClient("Resend");
 
         // SMS sender — DisabledSmsSender when Sms:Enabled is false/missing.
         // App never crashes at startup due to missing SMS config.

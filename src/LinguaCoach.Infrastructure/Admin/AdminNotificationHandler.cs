@@ -458,12 +458,18 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         AdminUpdateEmailConfigCommand command, Guid adminUserId, CancellationToken ct = default)
     {
         // Validate
+        var provider = string.IsNullOrWhiteSpace(command.Provider) ? "Smtp" : command.Provider.Trim();
         if (command.IsEnabled)
         {
-            if (string.IsNullOrWhiteSpace(command.Host))
-                throw new ArgumentException("Host is required when email is enabled.");
-            if (command.Port is null or <= 0 or > 65535)
-                throw new ArgumentException("Port must be between 1 and 65535.");
+            if (!new[] { "Smtp", "Resend", "SendGrid" }.Contains(provider, StringComparer.OrdinalIgnoreCase))
+                throw new ArgumentException($"Unknown email provider '{provider}'. Valid values: Smtp, Resend, SendGrid.");
+            if (provider.Equals("Smtp", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(command.Host))
+                    throw new ArgumentException("Host is required when provider is Smtp.");
+                if (command.Port is null or <= 0 or > 65535)
+                    throw new ArgumentException("Port must be between 1 and 65535.");
+            }
             if (string.IsNullOrWhiteSpace(command.FromAddress) || !command.FromAddress.Contains('@'))
                 throw new ArgumentException("A valid From address is required when email is enabled.");
         }
@@ -485,6 +491,7 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
 
         config.UpdateEmail(
             command.IsEnabled,
+            provider,
             command.Host?.Trim(),
             command.Port,
             command.UseSsl,

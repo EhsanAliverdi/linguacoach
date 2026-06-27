@@ -447,6 +447,7 @@ export interface AdminNotificationConfigStatusV2 extends AdminNotificationConfig
 
 export interface AdminUpdateEmailConfigRequest {
   isEnabled: boolean;
+  provider?: string | null;
   host?: string | null;
   port?: number | null;
   useSsl?: boolean | null;

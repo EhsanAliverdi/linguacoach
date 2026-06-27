@@ -5,13 +5,15 @@ namespace LinguaCoach.Application.Notifications;
 /// </summary>
 public sealed record ResolvedEmailConfig(
     bool IsEnabled,
+    /// <summary>Provider: "Smtp", "Resend", "SendGrid". Null defaults to Smtp.</summary>
+    string? Provider,
     string? Host,
     int Port,
     bool UseSsl,
     string? FromAddress,
     string? FromDisplayName,
     string? Username,
-    /// <summary>Decrypted secret. Null means no credential stored.</summary>
+    /// <summary>Decrypted secret / API key. Null means no credential stored.</summary>
     string? PlaintextSecret,
     /// <summary>Source: "AppSettings" or "Database".</summary>
     string Source);

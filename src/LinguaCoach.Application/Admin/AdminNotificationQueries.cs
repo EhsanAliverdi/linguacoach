@@ -140,13 +140,15 @@ public sealed record AdminNotificationConfigStatusV2(
 
 public sealed record AdminUpdateEmailConfigCommand(
     bool IsEnabled,
+    /// <summary>Provider: "Smtp", "Resend", or "SendGrid". Null defaults to Smtp.</summary>
+    string? Provider,
     string? Host,
     int? Port,
     bool? UseSsl,
     string? FromAddress,
     string? FromDisplayName,
     string? Username,
-    /// <summary>New plaintext secret. Null = leave unchanged.</summary>
+    /// <summary>New plaintext secret / API key. Null = leave unchanged.</summary>
     string? NewSecret,
     /// <summary>Explicitly clear the stored secret.</summary>
     bool ClearSecret);

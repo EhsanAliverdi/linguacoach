@@ -688,6 +688,7 @@ public sealed class AdminController : ControllerBase
             var result = await _notificationHandler.UpdateEmailConfigAsync(
                 new AdminUpdateEmailConfigCommand(
                     request.IsEnabled,
+                    request.Provider,
                     request.Host,
                     request.Port,
                     request.UseSsl,
@@ -958,6 +959,7 @@ public sealed record AdminTestEmailRequest(string ToAddress);
 
 public sealed record AdminUpdateEmailConfigRequest(
     bool IsEnabled,
+    string? Provider = null,
     string? Host = null,
     int? Port = null,
     bool? UseSsl = null,

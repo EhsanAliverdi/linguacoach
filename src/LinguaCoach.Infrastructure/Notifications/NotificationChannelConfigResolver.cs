@@ -56,6 +56,7 @@ public sealed class NotificationChannelConfigResolver : INotificationChannelConf
 
                 return new ResolvedEmailConfig(
                     IsEnabled: dbRow.IsEnabled,
+                    Provider: dbRow.Provider,
                     Host: dbRow.Host,
                     Port: dbRow.Port ?? _emailOptions.Port,
                     UseSsl: dbRow.UseSsl ?? _emailOptions.UseSsl,
@@ -74,6 +75,7 @@ public sealed class NotificationChannelConfigResolver : INotificationChannelConf
         // Appsettings fallback
         return new ResolvedEmailConfig(
             IsEnabled: _emailOptions.Enabled,
+            Provider: _emailOptions.Provider,
             Host: _emailOptions.Host,
             Port: _emailOptions.Port,
             UseSsl: _emailOptions.UseSsl,

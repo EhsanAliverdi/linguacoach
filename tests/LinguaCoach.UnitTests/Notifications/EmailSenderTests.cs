@@ -25,12 +25,12 @@ public sealed class EmailSenderTests
     private static INotificationChannelConfigResolver ResolverWith(ResolvedEmailConfig config) => new FakeResolver(config);
 
     private static ResolvedEmailConfig DisabledConfig() => new(
-        IsEnabled: false, Host: "", Port: 587, UseSsl: false,
+        IsEnabled: false, Provider: "Smtp", Host: "", Port: 587, UseSsl: false,
         FromAddress: null, FromDisplayName: null,
         Username: null, PlaintextSecret: null, Source: "AppSettings");
 
     private static ResolvedEmailConfig EnabledNoHostConfig() => new(
-        IsEnabled: true, Host: "", Port: 587, UseSsl: false,
+        IsEnabled: true, Provider: "Smtp", Host: "", Port: 587, UseSsl: false,
         FromAddress: "a@b.com", FromDisplayName: null,
         Username: null, PlaintextSecret: null, Source: "AppSettings");
 
@@ -118,7 +118,7 @@ public sealed class EmailSenderTests
     public async Task SmtpSender_WhenEnabledButNoFromAddress_ReturnsSkipped()
     {
         var config = new ResolvedEmailConfig(
-            IsEnabled: true, Host: "smtp.test.com", Port: 587, UseSsl: false,
+            IsEnabled: true, Provider: "Smtp", Host: "smtp.test.com", Port: 587, UseSsl: false,
             FromAddress: null, FromDisplayName: null,
             Username: null, PlaintextSecret: null, Source: "Database");
         var sender = new SmtpEmailSender(ResolverWith(config), NullLogger<SmtpEmailSender>.Instance);

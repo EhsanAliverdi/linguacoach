@@ -63,6 +63,7 @@ public sealed class NotificationChannelConfig
 
     public void UpdateEmail(
         bool isEnabled,
+        string? provider,
         string? host,
         int? port,
         bool? useSsl,
@@ -74,7 +75,7 @@ public sealed class NotificationChannelConfig
         Guid updatedByAdminUserId)
     {
         IsEnabled = isEnabled;
-        Provider = "Smtp";
+        Provider = string.IsNullOrWhiteSpace(provider) ? "Smtp" : provider;
         Host = host;
         Port = port;
         UseSsl = useSsl;
