@@ -364,7 +364,10 @@ public sealed class AdminNotificationHandler : IAdminNotificationHandler
         // Resolve effective config (DB override → appsettings fallback)
         var resolved = await _configResolver.ResolveEmailAsync(ct);
 
-        if (!resolved.IsEnabled || string.IsNullOrWhiteSpace(resolved.Host))
+        var resolvedProv = string.IsNullOrWhiteSpace(resolved.Provider) ? "Smtp" : resolved.Provider;
+        var smtpMissingHost = resolvedProv.Equals("Smtp", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(resolved.Host);
+        if (!resolved.IsEnabled || smtpMissingHost)
         {
             return new AdminTestEmailResult(
                 Succeeded: false,
