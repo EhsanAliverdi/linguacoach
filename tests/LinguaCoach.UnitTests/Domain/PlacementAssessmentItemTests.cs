@@ -72,4 +72,26 @@ public sealed class PlacementAssessmentItemTests
         Assert.False(item.IsCorrect);
         Assert.Equal(0.0, item.Score);
     }
+
+    [Fact]
+    public void RecordResponse_WithNotesAndDuration_SetsFields()
+    {
+        var item = PlacementAssessmentItem.Create(
+            Guid.NewGuid(), "grammar", "A2", "multiple_choice", "Q?", "B", 3);
+
+        item.RecordResponse("B", true, 1.0, "Correct. Expected: 'B'.", 12);
+
+        Assert.Equal("Correct. Expected: 'B'.", item.EvaluationNotes);
+        Assert.Equal(12, item.DurationSeconds);
+    }
+
+    [Fact]
+    public void RecordResponse_DuplicateCall_Throws()
+    {
+        var item = PlacementAssessmentItem.Create(
+            Guid.NewGuid(), "grammar", "A1", "multiple_choice", "Q?", "A", 0);
+        item.RecordResponse("A", true, 1.0);
+
+        Assert.Throws<InvalidOperationException>(() => item.RecordResponse("A", true, 1.0));
+    }
 }

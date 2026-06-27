@@ -903,3 +903,65 @@ export interface AdminPlacementLatestResponse {
   learningPlanRegenerationWarning?: string | null;
   itemCount?: number;
 }
+
+// Phase 13B — Response Submission and Real Scoring
+
+export interface AdminPlacementItemHistory {
+  itemId: string;
+  skill: string;
+  targetCefrLevel: string;
+  itemType: string;
+  prompt: string;
+  response: string | null;
+  isCorrect: boolean | null;
+  score: number | null;
+  evaluatedAtUtc: string | null;
+  evaluationNotes: string | null;
+  durationSeconds: number | null;
+  itemOrder: number;
+}
+
+export interface AdminPlacementSkillProgress {
+  skill: string;
+  currentEstimatedLevel: string;
+  confidence: number;
+  evidenceCount: number;
+  consecutiveSuccesses: number;
+  consecutiveFailures: number;
+}
+
+export interface AdminPlacementProgress {
+  assessmentId: string;
+  status: string;
+  answeredCount: number;
+  totalItemCount: number;
+  estimatedRemainingItems: number;
+  currentSkill: string | null;
+  currentCefrLevel: string | null;
+  overallConfidence: number;
+  skillProgress: AdminPlacementSkillProgress[];
+  itemHistory: AdminPlacementItemHistory[];
+  completionReason: string | null;
+}
+
+export interface AdminPlacementNextItem {
+  itemId: string;
+  skill: string;
+  targetCefrLevel: string;
+  itemType: string;
+  prompt: string;
+  itemOrder: number;
+  answeredCount: number;
+  estimatedRemainingItems: number;
+}
+
+export interface AdminPlacementSubmitResult {
+  itemId: string;
+  isCorrect: boolean;
+  score: number;
+  evaluationNotes: string;
+  assessmentComplete: boolean;
+  completionReason: string | null;
+  nextItem: AdminPlacementNextItem | null;
+  summary: AdminPlacementAssessmentSummary | null;
+}

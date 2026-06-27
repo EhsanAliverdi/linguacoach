@@ -10,30 +10,33 @@ using Microsoft.Extensions.Options;
 namespace LinguaCoach.Infrastructure.Placement;
 
 /// <summary>
-/// Deterministic adaptive placement assessment service (Phase 13A).
-/// No AI calls — uses a seeded item bank for the foundation phase.
-/// Real adaptive item generation from AI is deferred to Phase 13B+.
+/// Deterministic adaptive placement assessment service (Phase 13B).
+/// Real response submission, deterministic scoring, adaptive item selection,
+/// confidence-based completion. No AI calls, no simulation.
 /// </summary>
 public sealed class PlacementAssessmentService : IPlacementAssessmentService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly ILearningPlanService _learningPlan;
+    private readonly IPlacementScoringService _scoring;
     private readonly PlacementAssessmentOptions _opts;
     private readonly ILogger<PlacementAssessmentService> _logger;
 
     public PlacementAssessmentService(
         LinguaCoachDbContext db,
         ILearningPlanService learningPlan,
+        IPlacementScoringService scoring,
         IOptions<PlacementAssessmentOptions> opts,
         ILogger<PlacementAssessmentService> logger)
     {
         _db = db;
         _learningPlan = learningPlan;
+        _scoring = scoring;
         _opts = opts.Value;
         _logger = logger;
     }
 
-    // ── Item bank (deterministic seed, Phase 13A) ──────────────────────────────
+    // ── Item bank (deterministic seed, 72 items × 6 skills × 4 CEFR levels) ───
 
     private record PlacementItemTemplate(string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer);
 
@@ -144,64 +147,211 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
     private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2"];
 
-    // ── Scoring algorithm ───────────────────────────────────────────────────────
+    // ── Confidence model ────────────────────────────────────────────────────────
 
-    private static (string estimatedLevel, double confidence, int evidenceCount) ScoreSkill(
-        IEnumerable<PlacementAssessmentItem> items,
+    private record SkillConfidenceState(
+        string EstimatedLevel,
+        double Confidence,
+        int EvidenceCount,
+        int ConsecutiveSuccesses,
+        int ConsecutiveFailures);
+
+    private static SkillConfidenceState ComputeSkillConfidence(
+        IEnumerable<PlacementAssessmentItem> allItems,
+        string skill,
         string fallbackLevel)
     {
-        var skillItems = items.Where(i => i.IsCorrect.HasValue).ToList();
-        if (skillItems.Count == 0)
-            return (fallbackLevel, 0.0, 0);
+        var answered = allItems
+            .Where(i => i.Skill == skill && i.IsCorrect.HasValue)
+            .OrderBy(i => i.ItemOrder)
+            .ToList();
 
-        var levelStats = CefrLevels.ToDictionary(
-            level => level,
-            level =>
-            {
-                var levelItems = skillItems.Where(i => i.TargetCefrLevel == level).ToList();
-                var correct = levelItems.Count(i => i.IsCorrect == true);
-                return (Total: levelItems.Count, Correct: correct);
-            });
+        if (answered.Count == 0)
+            return new SkillConfidenceState(fallbackLevel, 0.0, 0, 0, 0);
 
-        // Find highest level where pass rate >= 70% (with at least 1 item)
+        // Find highest CEFR level where pass rate >= 70%
+        var byLevel = answered
+            .GroupBy(i => i.TargetCefrLevel)
+            .ToDictionary(g => g.Key, g => (Total: g.Count(), Correct: g.Count(x => x.IsCorrect == true)));
+
         string? highestPassed = null;
         foreach (var level in CefrLevels)
         {
-            var (total, correct) = levelStats[level];
-            if (total == 0) continue;
-            var rate = (double)correct / total;
+            if (!byLevel.TryGetValue(level, out var stats) || stats.Total == 0) continue;
+            var rate = (double)stats.Correct / stats.Total;
             if (rate >= 0.70)
                 highestPassed = level;
             else if (rate < 0.40)
-                break; // Failed — stop climbing
+                break;
         }
 
         var estimated = highestPassed ?? fallbackLevel;
-        var totalItems = skillItems.Count;
-        var totalCorrect = skillItems.Count(i => i.IsCorrect == true);
-        var confidence = totalItems > 0
-            ? Math.Min((double)totalItems / 6.0, (double)totalCorrect / totalItems)
-            : 0.0;
+        var avgScore = answered.Average(i => i.Score ?? 0.0);
 
-        return (estimated, Math.Round(confidence, 3), totalItems);
+        // Confidence = weighted blend of evidence depth and quality
+        var evidenceWeight = Math.Min(answered.Count / 6.0, 1.0);
+        var confidence = (evidenceWeight * 0.6) + (avgScore * 0.4);
+
+        // Count trailing consecutive successes and failures
+        var consecutiveSuccesses = 0;
+        for (var i = answered.Count - 1; i >= 0; i--)
+        {
+            if (answered[i].IsCorrect == true) consecutiveSuccesses++;
+            else break;
+        }
+        var consecutiveFailures = 0;
+        for (var i = answered.Count - 1; i >= 0; i--)
+        {
+            if (answered[i].IsCorrect == false) consecutiveFailures++;
+            else break;
+        }
+
+        if (consecutiveSuccesses >= 3) confidence = Math.Min(confidence + 0.10, 1.0);
+        if (consecutiveFailures >= 3) confidence = Math.Max(confidence - 0.15, 0.0);
+
+        return new SkillConfidenceState(estimated, Math.Round(confidence, 3), answered.Count, consecutiveSuccesses, consecutiveFailures);
     }
 
-    private static string ComputeOverallCefr(IReadOnlyList<string> perSkillLevels, string fallback)
-    {
-        if (perSkillLevels.Count == 0) return fallback;
+    // ── Adaptive next-item selection ────────────────────────────────────────────
 
-        var indices = perSkillLevels
-            .Select(l => Array.IndexOf(CefrLevels, l))
+    private PlacementItemTemplate? SelectNextTemplate(
+        IReadOnlyCollection<PlacementAssessmentItem> allItems,
+        string skill,
+        SkillConfidenceState state)
+    {
+        var usedPrompts = allItems.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
+
+        // Determine target level from last answered item for this skill
+        var lastForSkill = allItems
+            .Where(i => i.Skill == skill && i.IsCorrect.HasValue)
+            .OrderByDescending(i => i.ItemOrder)
+            .FirstOrDefault();
+
+        string targetLevel;
+        if (lastForSkill is null)
+        {
+            targetLevel = state.EstimatedLevel;
+        }
+        else
+        {
+            var lastIdx = Array.IndexOf(CefrLevels, lastForSkill.TargetCefrLevel);
+            var lastScore = lastForSkill.Score ?? 0.0;
+
+            if (lastScore >= 0.8 && lastIdx < CefrLevels.Length - 1)
+                targetLevel = CefrLevels[lastIdx + 1]; // harder
+            else if (lastScore < 0.4 && lastIdx > 0)
+                targetLevel = CefrLevels[lastIdx - 1]; // easier
+            else
+                targetLevel = lastForSkill.TargetCefrLevel; // same
+        }
+
+        // Try target level, then adjacent levels
+        var targetIdx = Array.IndexOf(CefrLevels, targetLevel);
+        if (targetIdx < 0) targetIdx = 1;
+
+        var levelsToTry = new List<string> { CefrLevels[targetIdx] };
+        if (targetIdx + 1 < CefrLevels.Length) levelsToTry.Add(CefrLevels[targetIdx + 1]);
+        if (targetIdx - 1 >= 0) levelsToTry.Add(CefrLevels[targetIdx - 1]);
+
+        foreach (var level in levelsToTry)
+        {
+            var candidate = ItemBank.FirstOrDefault(
+                t => t.Skill == skill && t.CefrLevel == level && !usedPrompts.Contains(t.Prompt));
+            if (candidate is not null) return candidate;
+        }
+
+        return null;
+    }
+
+    // ── Completion check ────────────────────────────────────────────────────────
+
+    private bool ShouldComplete(
+        IReadOnlyCollection<PlacementAssessmentItem> items,
+        Dictionary<string, SkillConfidenceState> states,
+        out string completionReason)
+    {
+        var answeredCount = items.Count(i => i.IsCorrect.HasValue);
+
+        if (answeredCount >= _opts.MaxItems)
+        {
+            completionReason = "max_items_reached";
+            return true;
+        }
+
+        var allConfident = _opts.SkillsToAssess.All(skill =>
+            states.TryGetValue(skill, out var s) && s.Confidence >= _opts.ConfidenceThreshold);
+
+        if (allConfident)
+        {
+            completionReason = "confidence_threshold_reached";
+            return true;
+        }
+
+        // Check whether all item bank slots are exhausted for pending skills
+        var usedPrompts = items.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
+        var allExhausted = _opts.SkillsToAssess
+            .Where(skill => !states.TryGetValue(skill, out var s) || s.Confidence < _opts.ConfidenceThreshold)
+            .All(skill => !ItemBank.Any(t => t.Skill == skill && !usedPrompts.Contains(t.Prompt)));
+
+        if (allExhausted)
+        {
+            completionReason = "items_exhausted";
+            return true;
+        }
+
+        completionReason = string.Empty;
+        return false;
+    }
+
+    // ── Skill selection (assess least-evidenced skill first) ────────────────────
+
+    private string? SelectNextSkill(
+        IReadOnlyCollection<PlacementAssessmentItem> items,
+        Dictionary<string, SkillConfidenceState> states)
+    {
+        var usedPrompts = items.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
+
+        return _opts.SkillsToAssess
+            .Where(skill =>
+            {
+                if (states.TryGetValue(skill, out var s) && s.Confidence >= _opts.ConfidenceThreshold)
+                    return false; // already confident enough
+                return ItemBank.Any(t => t.Skill == skill && !usedPrompts.Contains(t.Prompt));
+            })
+            .OrderBy(skill => states.TryGetValue(skill, out var s) ? s.EvidenceCount : 0)
+            .FirstOrDefault();
+    }
+
+    // ── Per-skill final results ─────────────────────────────────────────────────
+
+    private List<PlacementSkillResult> BuildSkillResults(Guid assessmentId, IReadOnlyCollection<PlacementAssessmentItem> items)
+    {
+        var results = new List<PlacementSkillResult>();
+        foreach (var skill in _opts.SkillsToAssess)
+        {
+            var state = ComputeSkillConfidence(items, skill, _opts.StartingLevelFallback);
+            results.Add(PlacementSkillResult.Create(
+                assessmentId,
+                skill,
+                state.EstimatedLevel,
+                state.Confidence,
+                state.EvidenceCount,
+                state.EvidenceCount >= 2 ? $"Demonstrated {state.EstimatedLevel} competency in {skill}." : null,
+                state.EvidenceCount < 2 ? $"Insufficient evidence for {skill}." : null));
+        }
+        return results;
+    }
+
+    private static string ComputeOverallCefr(IEnumerable<PlacementSkillResult> results, string fallback)
+    {
+        var indices = results
+            .Select(r => Array.IndexOf(CefrLevels, r.EstimatedCefrLevel))
             .Where(i => i >= 0)
             .ToList();
-
-        if (indices.Count == 0) return fallback;
-
-        // Conservative: use the lowest level
-        return CefrLevels[indices.Min()];
+        return indices.Count == 0 ? fallback : CefrLevels[indices.Min()];
     }
 
-    // ── DTO builders ────────────────────────────────────────────────────────────
+    // ── DTO builders ─────────────────────────────────────────────────────────────
 
     private static PlacementAssessmentSummaryDto ToSummaryDto(
         PlacementAssessment assessment,
@@ -245,12 +395,16 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         new(a.Id, a.Status.ToString(), a.StartedAtUtc, a.CompletedAtUtc,
             a.OverallEstimatedLevel, a.OverallConfidence, a.IsProvisional, a.Items.Count);
 
-    // ── IPlacementAssessmentService ─────────────────────────────────────────────
+    private static PlacementItemHistoryDto ToItemHistoryDto(PlacementAssessmentItem i) =>
+        new(i.Id, i.Skill, i.TargetCefrLevel, i.ItemType, i.Prompt,
+            i.Response, i.IsCorrect, i.Score, i.EvaluatedAtUtc,
+            i.EvaluationNotes, i.DurationSeconds, i.ItemOrder);
+
+    // ── IPlacementAssessmentService ──────────────────────────────────────────────
 
     public async Task<PlacementAssessmentSummaryDto> StartAssessmentAsync(
         Guid studentProfileId, string source, CancellationToken ct = default)
     {
-        // Idempotent: return existing InProgress assessment
         var existing = await _db.PlacementAssessments
             .Include(a => a.Items)
             .Where(a => a.StudentProfileId == studentProfileId && a.Status == PlacementStatus.InProgress)
@@ -264,7 +418,6 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             return ToSummaryDto(existing, existingResults);
         }
 
-        // Determine starting CEFR level from profile
         var profile = await _db.StudentProfiles
             .FirstOrDefaultAsync(p => p.Id == studentProfileId, ct)
             ?? throw new InvalidOperationException($"Student profile {studentProfileId} not found.");
@@ -273,19 +426,16 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             ? profile.CefrLevel
             : _opts.StartingLevelFallback;
 
-        // Create adaptive assessment via factory method
         var assessment = PlacementAssessment.CreateAdaptive(studentProfileId, source);
         assessment.Start();
 
         _db.PlacementAssessments.Add(assessment);
         await _db.SaveChangesAsync(ct);
 
-        // Seed initial items from bank
         var items = CreateInitialItems(assessment.Id, startingLevel);
         _db.PlacementAssessmentItems.AddRange(items);
         await _db.SaveChangesAsync(ct);
 
-        // Reload with items navigation populated
         var loaded = await _db.PlacementAssessments
             .Include(a => a.Items)
             .FirstAsync(a => a.Id == assessment.Id, ct);
@@ -299,11 +449,10 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var order = 0;
 
         var startIdx = Array.IndexOf(CefrLevels, startingLevel);
-        if (startIdx < 0) startIdx = 1; // Default to A2
+        if (startIdx < 0) startIdx = 1;
 
         foreach (var skill in _opts.SkillsToAssess)
         {
-            // 2 items at starting level
             var atLevel = ItemBank
                 .Where(t => t.Skill == skill && t.CefrLevel == CefrLevels[startIdx])
                 .Take(2);
@@ -315,7 +464,6 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                     template.ItemType, template.Prompt, template.CorrectAnswer, order++));
             }
 
-            // 1 item at level above if possible
             if (startIdx + 1 < CefrLevels.Length)
             {
                 var aboveLevel = ItemBank
@@ -364,67 +512,159 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         return assessments.Select(ToHistoryDto).ToList();
     }
 
-    public async Task<PlacementAssessmentSummaryDto> CompleteAssessmentAsync(
-        Guid assessmentId, CancellationToken ct = default)
+    // Phase 13B — Real response submission
+    public async Task<SubmitResponseResult> SubmitResponseAsync(
+        Guid assessmentId, Guid itemId, string response, int? durationSeconds, CancellationToken ct = default)
     {
         var assessment = await _db.PlacementAssessments
             .Include(a => a.Items)
             .FirstOrDefaultAsync(a => a.Id == assessmentId, ct)
             ?? throw new InvalidOperationException($"Assessment {assessmentId} not found.");
 
-        if (assessment.Status == PlacementStatus.Completed)
+        if (assessment.Status != PlacementStatus.InProgress)
+            throw new InvalidOperationException($"Assessment is {assessment.Status} — cannot accept responses.");
+
+        var item = assessment.Items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new InvalidOperationException($"Item {itemId} not found in assessment {assessmentId}.");
+
+        if (item.IsCorrect.HasValue)
         {
-            var existingResults = await _db.PlacementSkillResults
-                .Where(r => r.PlacementAssessmentId == assessmentId)
-                .ToListAsync(ct);
-            return ToSummaryDto(assessment, existingResults);
+            // Idempotent: return existing result without re-scoring
+            var existingStates = _opts.SkillsToAssess
+                .Distinct()
+                .ToDictionary(s => s, s => ComputeSkillConfidence(assessment.Items, s, _opts.StartingLevelFallback));
+            var isAlreadyComplete = ShouldComplete(assessment.Items, existingStates, out _);
+
+            PlacementNextItemDto? existingNext = null;
+            if (!isAlreadyComplete)
+                existingNext = BuildNextItemDto(assessment.Items, existingStates, assessment.Items.Count);
+
+            return new SubmitResponseResult(
+                item.Id, item.IsCorrect!.Value, item.Score!.Value,
+                item.EvaluationNotes ?? string.Empty,
+                assessment.Status == PlacementStatus.Completed,
+                null, existingNext, null);
         }
 
-        // Simulate responses for items without responses
-        // Deterministic: 7/10 correct by item order
-        foreach (var item in assessment.Items.Where(i => !i.IsCorrect.HasValue))
-        {
-            var isCorrect = item.ItemOrder % 10 < 7;
-            item.RecordResponse(
-                isCorrect ? item.CorrectAnswer ?? "A" : "wrong",
-                isCorrect,
-                isCorrect ? 1.0 : 0.0);
-        }
+        // Score the response deterministically
+        var scoreResult = _scoring.Score(response, item.CorrectAnswer, item.ItemType);
+        item.RecordResponse(response, scoreResult.IsCorrect, scoreResult.Score,
+            scoreResult.EvaluationNotes, durationSeconds);
 
         await _db.SaveChangesAsync(ct);
 
-        // Score per skill
-        var skillResults = new List<PlacementSkillResult>();
-        var perSkillLevels = new List<string>();
+        // Recompute confidence for all skills
+        var skillStates = _opts.SkillsToAssess
+            .Distinct()
+            .ToDictionary(s => s, s => ComputeSkillConfidence(assessment.Items, s, _opts.StartingLevelFallback));
 
-        foreach (var skill in _opts.SkillsToAssess)
+        if (ShouldComplete(assessment.Items, skillStates, out var completionReason))
         {
-            var skillItems = assessment.Items.Where(i => i.Skill == skill).ToList();
-            var (level, confidence, evidenceCount) = ScoreSkill(skillItems, _opts.StartingLevelFallback);
-
-            perSkillLevels.Add(level);
-            var result = PlacementSkillResult.Create(
-                assessmentId, skill, level, confidence, evidenceCount,
-                evidenceCount >= 2 ? $"Demonstrated {level} competency in {skill}" : null,
-                evidenceCount < 2 ? $"Insufficient evidence for {skill}" : null);
-
-            _db.PlacementSkillResults.Add(result);
-            skillResults.Add(result);
+            var summary = await FinalizeCompletionAsync(assessment, skillStates, completionReason, ct);
+            return new SubmitResponseResult(
+                item.Id, scoreResult.IsCorrect, scoreResult.Score,
+                scoreResult.EvaluationNotes, true, completionReason, null, summary);
         }
 
-        // Compute overall level and confidence
-        var overallCefr = ComputeOverallCefr(perSkillLevels, _opts.StartingLevelFallback);
+        // Not complete — add next adaptive item and return pointer
+        var nextItem = await AddNextAdaptiveItemAsync(assessment, skillStates, ct);
+        var nextDto = nextItem is not null
+            ? new PlacementNextItemDto(
+                nextItem.Id, nextItem.Skill, nextItem.TargetCefrLevel, nextItem.ItemType,
+                nextItem.Prompt, nextItem.ItemOrder,
+                assessment.Items.Count(i => i.IsCorrect.HasValue),
+                EstimateRemaining(assessment.Items, skillStates))
+            : null;
+
+        return new SubmitResponseResult(
+            item.Id, scoreResult.IsCorrect, scoreResult.Score,
+            scoreResult.EvaluationNotes, false, null, nextDto, null);
+    }
+
+    private async Task<PlacementAssessmentItem?> AddNextAdaptiveItemAsync(
+        PlacementAssessment assessment,
+        Dictionary<string, SkillConfidenceState> skillStates,
+        CancellationToken ct)
+    {
+        var nextSkill = SelectNextSkill(assessment.Items, skillStates);
+        if (nextSkill is null) return null;
+
+        var state = skillStates.TryGetValue(nextSkill, out var s) ? s
+            : new SkillConfidenceState(_opts.StartingLevelFallback, 0, 0, 0, 0);
+
+        var template = SelectNextTemplate(assessment.Items, nextSkill, state);
+        if (template is null) return null;
+
+        var newOrder = assessment.Items.Count;
+        var newItem = PlacementAssessmentItem.Create(
+            assessment.Id, template.Skill, template.CefrLevel,
+            template.ItemType, template.Prompt, template.CorrectAnswer, newOrder);
+
+        _db.PlacementAssessmentItems.Add(newItem);
+        await _db.SaveChangesAsync(ct);
+
+        return newItem;
+    }
+
+    private PlacementNextItemDto? BuildNextItemDto(
+        IReadOnlyCollection<PlacementAssessmentItem> items,
+        Dictionary<string, SkillConfidenceState> states,
+        int totalItemCount)
+    {
+        var nextUnanswered = items
+            .Where(i => !i.IsCorrect.HasValue)
+            .OrderBy(i => i.ItemOrder)
+            .FirstOrDefault();
+
+        if (nextUnanswered is null) return null;
+
+        return new PlacementNextItemDto(
+            nextUnanswered.Id, nextUnanswered.Skill, nextUnanswered.TargetCefrLevel,
+            nextUnanswered.ItemType, nextUnanswered.Prompt, nextUnanswered.ItemOrder,
+            items.Count(i => i.IsCorrect.HasValue),
+            EstimateRemaining(items, states));
+    }
+
+    private int EstimateRemaining(
+        IReadOnlyCollection<PlacementAssessmentItem> items,
+        Dictionary<string, SkillConfidenceState> states)
+    {
+        var answeredCount = items.Count(i => i.IsCorrect.HasValue);
+        var pendingSkillCount = _opts.SkillsToAssess.Count(skill =>
+            !states.TryGetValue(skill, out var s) || s.Confidence < _opts.ConfidenceThreshold);
+        var estimatedTotal = Math.Min(answeredCount + pendingSkillCount * 2, _opts.MaxItems);
+        return Math.Max(estimatedTotal - answeredCount, 0);
+    }
+
+    private async Task<PlacementAssessmentSummaryDto> FinalizeCompletionAsync(
+        PlacementAssessment assessment,
+        Dictionary<string, SkillConfidenceState> skillStates,
+        string completionReason,
+        CancellationToken ct)
+    {
+        var existingResults = await _db.PlacementSkillResults
+            .Where(r => r.PlacementAssessmentId == assessment.Id)
+            .ToListAsync(ct);
+
+        if (existingResults.Count > 0)
+            return ToSummaryDto(assessment, existingResults);
+
+        var skillResults = BuildSkillResults(assessment.Id, assessment.Items);
+        foreach (var r in skillResults)
+            _db.PlacementSkillResults.Add(r);
+
+        var overallCefr = ComputeOverallCefr(skillResults, _opts.StartingLevelFallback);
         var overallConfidence = skillResults.Count > 0
             ? Math.Round(skillResults.Average(r => r.Confidence), 3)
             : 0.0;
 
         var isProvisional = overallConfidence < _opts.ConfidenceThreshold;
         var resultSummary = $"Estimated level: {overallCefr}. Confidence: {overallConfidence:P0}. " +
+                            $"Completion: {completionReason}. " +
                             (isProvisional ? "Provisional — more evidence needed." : "Sufficient evidence.");
 
         assessment.CompleteAdaptive(overallCefr, overallConfidence, resultSummary, isProvisional);
 
-        // Update StudentProfile.CefrLevel if confidence is sufficient
         if (overallConfidence >= 0.6 && !string.IsNullOrWhiteSpace(overallCefr))
         {
             var profile = await _db.StudentProfiles
@@ -434,7 +674,6 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
         await _db.SaveChangesAsync(ct);
 
-        // Attempt learning plan regeneration
         var learningPlanRegenerated = false;
         string? learningPlanWarning = null;
         try
@@ -451,6 +690,101 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         }
 
         return ToSummaryDto(assessment, skillResults, learningPlanRegenerated, learningPlanWarning);
+    }
+
+    // Phase 13B — Get next unanswered item
+    public async Task<PlacementNextItemDto?> GetNextItemAsync(Guid assessmentId, CancellationToken ct = default)
+    {
+        var assessment = await _db.PlacementAssessments
+            .Include(a => a.Items)
+            .FirstOrDefaultAsync(a => a.Id == assessmentId, ct)
+            ?? throw new InvalidOperationException($"Assessment {assessmentId} not found.");
+
+        if (assessment.Status != PlacementStatus.InProgress) return null;
+
+        var skillStates = _opts.SkillsToAssess
+            .Distinct()
+            .ToDictionary(s => s, s => ComputeSkillConfidence(assessment.Items, s, _opts.StartingLevelFallback));
+
+        return BuildNextItemDto(assessment.Items, skillStates, assessment.Items.Count);
+    }
+
+    // Phase 13B — Detailed admin progress view
+    public async Task<PlacementAssessmentProgressDto> GetProgressAsync(Guid assessmentId, CancellationToken ct = default)
+    {
+        var assessment = await _db.PlacementAssessments
+            .Include(a => a.Items)
+            .FirstOrDefaultAsync(a => a.Id == assessmentId, ct)
+            ?? throw new InvalidOperationException($"Assessment {assessmentId} not found.");
+
+        var skillStates = _opts.SkillsToAssess
+            .Distinct()
+            .ToDictionary(s => s, s => ComputeSkillConfidence(assessment.Items, s, _opts.StartingLevelFallback));
+
+        var answeredCount = assessment.Items.Count(i => i.IsCorrect.HasValue);
+        var overallConfidence = skillStates.Count > 0
+            ? Math.Round(skillStates.Values.Average(s => s.Confidence), 3)
+            : 0.0;
+
+        ShouldComplete(assessment.Items, skillStates, out var completionReason);
+
+        var nextUnanswered = assessment.Items
+            .Where(i => !i.IsCorrect.HasValue)
+            .OrderBy(i => i.ItemOrder)
+            .FirstOrDefault();
+
+        var skillProgress = skillStates.Select(kv => new PlacementSkillProgressDto(
+            kv.Key,
+            kv.Value.EstimatedLevel,
+            kv.Value.Confidence,
+            kv.Value.EvidenceCount,
+            kv.Value.ConsecutiveSuccesses,
+            kv.Value.ConsecutiveFailures)).ToList();
+
+        var itemHistory = assessment.Items
+            .OrderBy(i => i.ItemOrder)
+            .Select(ToItemHistoryDto)
+            .ToList();
+
+        return new PlacementAssessmentProgressDto(
+            assessment.Id,
+            assessment.Status.ToString(),
+            answeredCount,
+            assessment.Items.Count,
+            EstimateRemaining(assessment.Items, skillStates),
+            nextUnanswered?.Skill,
+            nextUnanswered?.TargetCefrLevel,
+            overallConfidence,
+            skillProgress,
+            itemHistory,
+            string.IsNullOrEmpty(completionReason) ? null : completionReason);
+    }
+
+    // Phase 13B — Complete with real responses only (no simulation)
+    public async Task<PlacementAssessmentSummaryDto> CompleteAssessmentAsync(
+        Guid assessmentId, CancellationToken ct = default)
+    {
+        var assessment = await _db.PlacementAssessments
+            .Include(a => a.Items)
+            .FirstOrDefaultAsync(a => a.Id == assessmentId, ct)
+            ?? throw new InvalidOperationException($"Assessment {assessmentId} not found.");
+
+        if (assessment.Status == PlacementStatus.Completed)
+        {
+            var existingResults = await _db.PlacementSkillResults
+                .Where(r => r.PlacementAssessmentId == assessmentId)
+                .ToListAsync(ct);
+            return ToSummaryDto(assessment, existingResults);
+        }
+
+        if (assessment.Status != PlacementStatus.InProgress)
+            throw new InvalidOperationException($"Assessment is {assessment.Status} — cannot complete.");
+
+        var skillStates = _opts.SkillsToAssess
+            .Distinct()
+            .ToDictionary(s => s, s => ComputeSkillConfidence(assessment.Items, s, _opts.StartingLevelFallback));
+
+        return await FinalizeCompletionAsync(assessment, skillStates, "admin_forced", ct);
     }
 
     public async Task AbandonAssessmentAsync(Guid assessmentId, CancellationToken ct = default)

@@ -30,6 +30,8 @@ import {
   AdminPlacementLatestResponse,
   AdminPlacementHistoryItem,
   AdminPlacementAssessmentSummary,
+  AdminPlacementProgress,
+  AdminPlacementSubmitResult,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -368,5 +370,24 @@ export class AdminApiService {
   completePlacement(studentProfileId: string, assessmentId: string): Observable<AdminPlacementAssessmentSummary> {
     return this.http.post<AdminPlacementAssessmentSummary>(
       `${this.api}/students/${studentProfileId}/placement/${assessmentId}/complete`, {});
+  }
+
+  // Phase 13B — Real scoring and adaptive progression
+
+  getPlacementProgress(studentProfileId: string, assessmentId: string): Observable<AdminPlacementProgress> {
+    return this.http.get<AdminPlacementProgress>(
+      `${this.api}/students/${studentProfileId}/placement/${assessmentId}/progress`);
+  }
+
+  submitPlacementResponse(
+    studentProfileId: string,
+    assessmentId: string,
+    itemId: string,
+    response: string,
+    durationSeconds?: number
+  ): Observable<AdminPlacementSubmitResult> {
+    return this.http.post<AdminPlacementSubmitResult>(
+      `${this.api}/students/${studentProfileId}/placement/${assessmentId}/items/${itemId}/submit`,
+      { response, durationSeconds: durationSeconds ?? null });
   }
 }

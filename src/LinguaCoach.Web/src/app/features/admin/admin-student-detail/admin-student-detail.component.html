@@ -319,6 +319,186 @@
         }
       </sp-admin-card>
 
+      <!-- Adaptive Placement Assessment — Phase 13A+13B -->
+      <sp-admin-card title="Adaptive placement assessment">
+        @if (placementLoading()) {
+          <sp-admin-loading-state message="Loading placement" />
+        } @else if (placementError()) {
+          <sp-admin-error-state title="Placement unavailable" [message]="placementError()" />
+        } @else if (!placementLatest()?.hasPlacement) {
+          <sp-admin-empty-state message="No placement assessment on record." />
+          <div class="sp-admin-mt-4">
+            <sp-admin-button variant="primary" size="sm" [loading]="startingPlacement()" (click)="startPlacement()">
+              Start placement
+            </sp-admin-button>
+            @if (placementActionError()) {
+              <sp-admin-alert variant="error" class="sp-admin-mt-3">{{ placementActionError() }}</sp-admin-alert>
+            }
+          </div>
+        } @else {
+          @let pl = placementLatest()!;
+          <div class="sp-admin-card-grid-2">
+            <div>
+              <div class="sp-admin-section-title">Assessment status</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Status</dt>
+                <dd>
+                  <sp-admin-badge [tone]="pl.status === 'Completed' ? 'success' : pl.status === 'InProgress' ? 'primary' : 'neutral'">
+                    {{ pl.status }}
+                  </sp-admin-badge>
+                </dd>
+                <dt>Overall CEFR</dt>
+                <dd>
+                  @if (pl.overallCefrLevel) {
+                    <sp-admin-badge tone="success">{{ pl.overallCefrLevel }}</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-text-muted">Pending</span>
+                  }
+                </dd>
+                <dt>Confidence</dt>
+                <dd class="sp-admin-text-muted">
+                  {{ pl.overallConfidence !== null && pl.overallConfidence !== undefined ? (pl.overallConfidence * 100 | number:'1.0-0') + '%' : '—' }}
+                </dd>
+                <dt>Items answered</dt>
+                <dd class="sp-admin-text-muted">{{ pl.itemCount ?? 0 }}</dd>
+                <dt>Provisional</dt>
+                <dd>
+                  <sp-admin-badge [tone]="pl.isProvisional ? 'warning' : 'success'">
+                    {{ pl.isProvisional ? 'Yes' : 'No' }}
+                  </sp-admin-badge>
+                </dd>
+              </dl>
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Dates</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Started</dt>
+                <dd class="sp-admin-text-muted">{{ pl.startedAtUtc ? (pl.startedAtUtc | date:'medium') : '—' }}</dd>
+                <dt>Completed</dt>
+                <dd class="sp-admin-text-muted">{{ pl.completedAtUtc ? (pl.completedAtUtc | date:'medium') : '—' }}</dd>
+              </dl>
+              @if (pl.resultSummary) {
+                <div class="sp-admin-section-title sp-admin-mt-4">Result summary</div>
+                <p class="sp-admin-text-muted sp-admin-mt-2" style="font-size:0.85rem">{{ pl.resultSummary }}</p>
+              }
+            </div>
+          </div>
+
+          <!-- Adaptive progress (InProgress only) -->
+          @if (pl.status === 'InProgress') {
+            @if (placementProgressLoading()) {
+              <sp-admin-loading-state message="Loading progress" />
+            } @else if (placementProgressError()) {
+              <sp-admin-alert variant="warning">{{ placementProgressError() }}</sp-admin-alert>
+            } @else if (placementProgress()) {
+              @let pp = placementProgress()!;
+              <div class="sp-admin-section-title sp-admin-mt-4">Live progress</div>
+              <div class="sp-admin-card-grid-2 sp-admin-mt-3">
+                <dl class="sp-admin-detail-list">
+                  <dt>Answered</dt><dd class="sp-admin-text-muted">{{ pp.answeredCount }} / {{ pp.totalItemCount }}</dd>
+                  <dt>Est. remaining</dt><dd class="sp-admin-text-muted">{{ pp.estimatedRemainingItems }}</dd>
+                  <dt>Current skill</dt><dd class="sp-admin-text-muted">{{ pp.currentSkill ?? '—' }}</dd>
+                  <dt>Current level</dt><dd class="sp-admin-text-muted">{{ pp.currentCefrLevel ?? '—' }}</dd>
+                  <dt>Overall confidence</dt><dd class="sp-admin-text-muted">{{ (pp.overallConfidence * 100 | number:'1.0-0') + '%' }}</dd>
+                  @if (pp.completionReason) {
+                    <dt>Completion trigger</dt><dd class="sp-admin-text-muted">{{ pp.completionReason }}</dd>
+                  }
+                </dl>
+                <div>
+                  <div class="sp-admin-section-title">Skill confidence</div>
+                  @for (sp of pp.skillProgress; track sp.skill) {
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:0.82rem">
+                      <span style="width:80px;color:var(--sp-admin-text-muted)">{{ sp.skill }}</span>
+                      <sp-admin-badge tone="neutral">{{ sp.currentEstimatedLevel }}</sp-admin-badge>
+                      <span style="color:var(--sp-admin-text-muted)">{{ (sp.confidence * 100 | number:'1.0-0') + '%' }}</span>
+                      <span style="color:var(--sp-admin-text-muted)">({{ sp.evidenceCount }} items)</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Per-item history table -->
+              @if (pp.itemHistory.length > 0) {
+                <div class="sp-admin-section-title sp-admin-mt-4">Item history</div>
+                <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Skill</th>
+                        <th>CEFR</th>
+                        <th>Type</th>
+                        <th>Result</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of pp.itemHistory; track item.itemId) {
+                        <tr>
+                          <td>{{ item.itemOrder + 1 }}</td>
+                          <td>{{ item.skill }}</td>
+                          <td><sp-admin-badge tone="neutral">{{ item.targetCefrLevel }}</sp-admin-badge></td>
+                          <td class="sp-admin-text-muted">{{ item.itemType }}</td>
+                          <td>
+                            @if (item.isCorrect === null || item.isCorrect === undefined) {
+                              <sp-admin-badge tone="neutral">Pending</sp-admin-badge>
+                            } @else if (item.isCorrect) {
+                              <sp-admin-badge tone="success">Correct</sp-admin-badge>
+                            } @else {
+                              <sp-admin-badge tone="danger">Incorrect</sp-admin-badge>
+                            }
+                          </td>
+                          <td class="sp-admin-text-muted">
+                            {{ item.score !== null && item.score !== undefined ? (item.score * 100 | number:'1.0-0') + '%' : '—' }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </sp-admin-table>
+              }
+            }
+          }
+
+          <!-- Skill results (Completed) -->
+          @if (pl.status === 'Completed' && pl.skillResults && pl.skillResults.length > 0) {
+            <div class="sp-admin-section-title sp-admin-mt-4">Per-skill results</div>
+            <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
+              <table>
+                <thead>
+                  <tr><th>Skill</th><th>CEFR</th><th>Confidence</th><th>Evidence</th></tr>
+                </thead>
+                <tbody>
+                  @for (sr of pl.skillResults; track sr.skill) {
+                    <tr>
+                      <td>{{ sr.skill }}</td>
+                      <td><sp-admin-badge tone="success">{{ sr.estimatedCefrLevel }}</sp-admin-badge></td>
+                      <td class="sp-admin-text-muted">{{ (sr.confidence * 100 | number:'1.0-0') + '%' }}</td>
+                      <td class="sp-admin-text-muted">{{ sr.evidenceCount }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </sp-admin-table>
+          }
+
+          <!-- Actions -->
+          <div class="sp-admin-mt-4" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            @if (pl.status === 'InProgress') {
+              <sp-admin-button variant="secondary" size="sm" [loading]="completingPlacement()" (click)="completePlacement()">
+                Force complete
+              </sp-admin-button>
+            }
+            <sp-admin-button variant="secondary" size="sm" [loading]="startingPlacement()" (click)="startPlacement()">
+              New assessment
+            </sp-admin-button>
+          </div>
+          @if (placementActionError()) {
+            <sp-admin-alert variant="error" class="sp-admin-mt-3">{{ placementActionError() }}</sp-admin-alert>
+          }
+        }
+      </sp-admin-card>
+
     </div>
   }
 

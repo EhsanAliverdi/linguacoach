@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (13A)
+lastUpdated: 2026-06-27 (13B)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,33 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (13A)
+Last updated: 2026-06-27 (13B)
+
+---
+
+## Adaptive Placement Response Submission and Real Scoring (Phase 13B, 2026-06-27)
+
+Replaces the simulated 70% outcome with a fully deterministic adaptive placement engine.
+Admin can now observe real per-item scoring, per-skill confidence, and adaptive item selection in real time.
+
+**What it does:**
+- `POST /api/admin/students/{id}/placement/{assessmentId}/items/{itemId}/submit` — scores a student's response deterministically (case-insensitive trim comparison, no AI).
+- `GET /api/admin/students/{id}/placement/{assessmentId}/progress` — returns full progress: answered count, total items, per-skill confidence state, per-item history.
+- `GET /api/admin/students/{id}/placement/{assessmentId}/items` — returns item history array.
+- Adaptive next-item selection: last score ≥ 0.8 → harder; < 0.4 → easier; else same level. Targets least-evidenced skill first.
+- Completion triggers: max items reached, all-skill confidence threshold met, or items exhausted.
+- Duplicate submission is idempotent (re-returns existing result, no re-score).
+- Admin student detail page shows live adaptive progress section and per-item history table while assessment is in progress.
+
+**Confidence formula:** `(Min(count/6, 1.0) × 0.6) + (avgScore × 0.4)`. Bonus +0.10 for 3+ consecutive successes; penalty −0.15 for 3+ consecutive failures. Conservative CEFR = minimum across skills.
+
+**New columns (migration T63):** `evaluation_notes varchar(1000)`, `duration_seconds integer` on `placement_assessment_items`.
+
+**New service:** `IPlacementScoringService` / `PlacementScoringService` — deterministic, no LLM.
+
++23 tests. All 2684 pass (3 arch + 1504 unit + 1177 integration). 1384 Angular tests pass.
+
+Review: `docs/reviews/2026-06-27-phase-13b-adaptive-placement-response-submission-real-scoring.md`.
 
 ---
 

@@ -7,6 +7,7 @@ import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
+  AdminPlacementLatestResponse, AdminPlacementProgress,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -158,6 +159,17 @@ export class AdminStudentDetailComponent implements OnInit {
   masteryPoolSummaryLoading = signal(true);
   masteryPoolSummaryError = signal('');
 
+  // Phase 13A+13B — Adaptive Placement
+  placementLatest = signal<AdminPlacementLatestResponse | null>(null);
+  placementLoading = signal(true);
+  placementError = signal('');
+  placementProgress = signal<AdminPlacementProgress | null>(null);
+  placementProgressLoading = signal(false);
+  placementProgressError = signal('');
+  startingPlacement = signal(false);
+  completingPlacement = signal(false);
+  placementActionError = signal('');
+
   readonly lessonRingPct = computed(() => {
     const ph = this.poolHealth();
     if (!ph) return 0;
@@ -269,6 +281,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadPolicy(id);
     this.loadPoolHealth(id);
     this.loadMasteryPoolSummary(id);
+    this.loadPlacement(id);
   }
 
   private loadStudent(id: string): void {
@@ -289,6 +302,59 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getStudentReadinessPoolHealth(id).subscribe({
       next: ph => { this.poolHealth.set(ph); this.poolHealthLoading.set(false); },
       error: () => { this.poolHealthError.set('Could not load pool health.'); this.poolHealthLoading.set(false); },
+    });
+  }
+
+  private loadPlacement(id: string): void {
+    this.placementLoading.set(true);
+    this.placementError.set('');
+    this.adminApi.getLatestPlacement(id).subscribe({
+      next: r => {
+        this.placementLatest.set(r);
+        this.placementLoading.set(false);
+        if (r.hasPlacement && r.assessmentId && r.status === 'InProgress') {
+          this.loadPlacementProgress(id, r.assessmentId);
+        }
+      },
+      error: () => { this.placementError.set('Could not load placement.'); this.placementLoading.set(false); },
+    });
+  }
+
+  private loadPlacementProgress(studentId: string, assessmentId: string): void {
+    this.placementProgressLoading.set(true);
+    this.placementProgressError.set('');
+    this.adminApi.getPlacementProgress(studentId, assessmentId).subscribe({
+      next: p => { this.placementProgress.set(p); this.placementProgressLoading.set(false); },
+      error: () => { this.placementProgressError.set('Could not load placement progress.'); this.placementProgressLoading.set(false); },
+    });
+  }
+
+  startPlacement(): void {
+    const id = this.student()?.studentProfileId;
+    if (!id) return;
+    this.startingPlacement.set(true);
+    this.placementActionError.set('');
+    this.adminApi.startPlacement(id).subscribe({
+      next: () => { this.startingPlacement.set(false); this.loadPlacement(id); },
+      error: (err: { error?: { error?: string } }) => {
+        this.startingPlacement.set(false);
+        this.placementActionError.set(err.error?.error ?? 'Could not start placement.');
+      },
+    });
+  }
+
+  completePlacement(): void {
+    const id = this.student()?.studentProfileId;
+    const assessmentId = this.placementLatest()?.assessmentId;
+    if (!id || !assessmentId) return;
+    this.completingPlacement.set(true);
+    this.placementActionError.set('');
+    this.adminApi.completePlacement(id, assessmentId).subscribe({
+      next: () => { this.completingPlacement.set(false); this.loadPlacement(id); },
+      error: (err: { error?: { error?: string } }) => {
+        this.completingPlacement.set(false);
+        this.placementActionError.set(err.error?.error ?? 'Could not complete placement.');
+      },
     });
   }
 

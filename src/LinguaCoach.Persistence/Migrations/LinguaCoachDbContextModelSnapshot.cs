@@ -2515,12 +2515,186 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
 
+                    // T62 — Adaptive Placement Engine
+                    b.Property<DateTime?>("AbandonedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("abandoned_at_utc");
+
+                    b.Property<DateTime?>("ExpiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expired_at_utc");
+
+                    b.Property<double?>("OverallConfidence")
+                        .HasColumnType("double precision")
+                        .HasColumnName("overall_confidence");
+
+                    b.Property<bool>("IsProvisional")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_provisional");
+
+                    b.Property<string>("ResultSummary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("result_summary");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("source");
+
+                    b.Property<bool>("IsAdaptive")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_adaptive");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StudentProfileId")
                         .HasDatabaseName("ix_placement_assessments_student_profile_id");
 
                     b.ToTable("placement_assessments", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementAssessmentItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("PlacementAssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("placement_assessment_id");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("skill");
+
+                    b.Property<string>("TargetCefrLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("target_cefr_level");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("item_type");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("prompt");
+
+                    b.Property<string>("Response")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("response");
+
+                    b.Property<double?>("Score")
+                        .HasColumnType("double precision")
+                        .HasColumnName("score");
+
+                    b.Property<bool?>("IsCorrect")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_correct");
+
+                    b.Property<DateTime?>("EvaluatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("evaluated_at_utc");
+
+                    b.Property<int>("ItemOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("item_order");
+
+                    b.Property<string>("CorrectAnswer")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("correct_answer");
+
+                    // T63 — Response Submission
+                    b.Property<string>("EvaluationNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("evaluation_notes");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_seconds");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlacementAssessmentId")
+                        .HasDatabaseName("ix_placement_assessment_items_assessment_id");
+
+                    b.ToTable("placement_assessment_items", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementSkillResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("PlacementAssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("placement_assessment_id");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("skill");
+
+                    b.Property<string>("EstimatedCefrLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("estimated_cefr_level");
+
+                    b.Property<double>("Confidence")
+                        .HasColumnType("double precision")
+                        .HasColumnName("confidence");
+
+                    b.Property<int>("EvidenceCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("evidence_count");
+
+                    b.Property<string>("Strengths")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("strengths");
+
+                    b.Property<string>("Weaknesses")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("weaknesses");
+
+                    b.Property<string>("RecommendedStartingObjectiveKeys")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("recommended_starting_objective_keys");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlacementAssessmentId")
+                        .HasDatabaseName("ix_placement_skill_results_assessment_id");
+
+                    b.ToTable("placement_skill_results", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.PracticeActivityCache", b =>
@@ -4909,6 +5083,24 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementAssessmentItem", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.PlacementAssessment", null)
+                        .WithMany("Items")
+                        .HasForeignKey("PlacementAssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementSkillResult", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.PlacementAssessment", null)
+                        .WithMany()
+                        .HasForeignKey("PlacementAssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.SessionExercise", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.LearningActivity", null)
@@ -5236,6 +5428,7 @@ namespace LinguaCoach.Persistence.Migrations
             modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementAssessment", b =>
                 {
                     b.Navigation("Answers");
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentLearningPlan", b =>

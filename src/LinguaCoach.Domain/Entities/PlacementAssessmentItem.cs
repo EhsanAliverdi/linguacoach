@@ -21,6 +21,12 @@ public sealed class PlacementAssessmentItem : BaseEntity
     /// <summary>Correct answer stored for deterministic evaluation.</summary>
     public string? CorrectAnswer { get; private set; }
 
+    /// <summary>Human-readable scoring note (e.g. "Expected: 'A'. Received: 'B'.").</summary>
+    public string? EvaluationNotes { get; private set; }
+
+    /// <summary>Seconds the candidate spent on this item, if captured by the client.</summary>
+    public int? DurationSeconds { get; private set; }
+
     private PlacementAssessmentItem() { }
 
     public static PlacementAssessmentItem Create(
@@ -51,11 +57,16 @@ public sealed class PlacementAssessmentItem : BaseEntity
         };
     }
 
-    public void RecordResponse(string response, bool isCorrect, double score)
+    public void RecordResponse(string response, bool isCorrect, double score,
+        string? evaluationNotes = null, int? durationSeconds = null)
     {
+        if (IsCorrect.HasValue)
+            throw new InvalidOperationException("Response already recorded for this item.");
         Response = response;
         IsCorrect = isCorrect;
         Score = score;
+        EvaluationNotes = evaluationNotes;
+        DurationSeconds = durationSeconds;
         EvaluatedAtUtc = DateTime.UtcNow;
     }
 }

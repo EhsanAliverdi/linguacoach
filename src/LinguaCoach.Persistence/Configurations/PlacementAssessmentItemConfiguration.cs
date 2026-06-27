@@ -25,6 +25,8 @@ internal sealed class PlacementAssessmentItemConfiguration : IEntityTypeConfigur
         builder.Property(e => e.EvaluatedAtUtc).HasColumnName("evaluated_at_utc");
         builder.Property(e => e.ItemOrder).HasColumnName("item_order").IsRequired();
         builder.Property(e => e.CorrectAnswer).HasColumnName("correct_answer").HasMaxLength(500);
+        builder.Property(e => e.EvaluationNotes).HasColumnName("evaluation_notes").HasMaxLength(1000);
+        builder.Property(e => e.DurationSeconds).HasColumnName("duration_seconds");
 
         builder.HasOne<PlacementAssessment>()
             .WithMany(a => a.Items)
