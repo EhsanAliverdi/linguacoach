@@ -125,6 +125,9 @@ function makeStudentDetail(overrides: Partial<AdminStudentDetail> = {}): AdminSt
     customLearningGoal: null,
     learningPreferencesUpdatedAt: null,
     onboardingProgress: null,
+    isLearningReady: true,
+    lastPlacementCompletedAt: null,
+    learningPlanExists: true,
     ...overrides,
   };
 }

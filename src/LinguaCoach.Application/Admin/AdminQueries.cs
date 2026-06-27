@@ -147,7 +147,11 @@ public sealed record AdminStudentDetailDto(
     string? CustomLearningGoal,
     DateTimeOffset? LearningPreferencesUpdatedAt,
     // Onboarding progress (null if no progress row exists)
-    StudentOnboardingProgressInfo? OnboardingProgress);
+    StudentOnboardingProgressInfo? OnboardingProgress,
+    // Phase 14B — learning readiness
+    bool IsLearningReady,
+    DateTime? LastPlacementCompletedAt,
+    bool LearningPlanExists);
 
 public interface IAdminStudentQuery
 {

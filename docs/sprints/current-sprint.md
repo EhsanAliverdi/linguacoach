@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (14A)
+lastUpdated: 2026-06-27 (14B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,30 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 14B — CourseReady Transition and First Lesson Dashboard Smoke** — complete (2026-06-27)
+
+Closure phase that closes the post-placement lifecycle gap. After successful placement, students now transition to `CourseReady` (instead of staying at `PlacementCompleted`). The dashboard shows a preparing card while the learning plan is generated. Admin detail page surfaces learning readiness fields. Full Playwright smoke test covers placement → dashboard.
+
+**Lifecycle fix (Part B):** `FinalizeCompletionAsync` now transitions `PlacementCompleted → CourseReady` when learning plan regeneration succeeds. Idempotent and guarded — stays at `PlacementCompleted` when plan fails.
+
+**Dashboard preparing message (Part B):** `DashboardQueryHandler` now has a `PlacementCompleted` case with an honest "being prepared" message.
+
+**Admin parity (Part F):** `AdminStudentDetailDto` gains `IsLearningReady`, `LastPlacementCompletedAt`, `LearningPlanExists`. Admin detail component surfaces these with status badges.
+
+**Dashboard null-session fallback (Part D):** Changed misleading "Your lesson is ready" to "Your first lesson is being prepared / Check back in a moment".
+
+**Tests (Part H):** +5 new backend integration tests in `StudentPlacementCourseReadyTests`. `FailingLearningPlanFactory` verifies `PlacementCompleted` is preserved on plan failure.
+
+**Playwright (Part G):** 3 smoke tests in `e2e/student-placement-dashboard.spec.ts` — full placement flow → CourseReady dashboard, PlacementCompleted preparing card, journey guard redirect.
+
+**Build/test totals:** 0 errors. 3 arch + 1,504 unit + 1,199 integration = **2,706 backend**. 1,399 Angular unit tests. 3 Playwright E2E smoke tests. All pass.
+
+Review: `docs/reviews/2026-06-27-phase-14b-courseready-transition-review.md`.
+
+---
+
+## Previous sprint
 
 **Phase 14A — Student Placement Journey (End-to-End)** — complete (2026-06-27)
 

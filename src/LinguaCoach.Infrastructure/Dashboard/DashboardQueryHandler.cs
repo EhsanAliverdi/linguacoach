@@ -59,6 +59,9 @@ public sealed class DashboardQueryHandler : IDashboardQueryHandler
                 "Complete your placement assessment to unlock your personalised course.",
             StudentLifecycleStage.PlacementInProgress =>
                 "Continue your placement assessment to unlock your personalised course.",
+            // Phase 14B — honest preparing state when plan regen failed or is pending.
+            StudentLifecycleStage.PlacementCompleted =>
+                "Your personalised course is being prepared. Practice Gym is available while you wait.",
             _ when pathSummary is null =>
                 "Your personalised learning path is being prepared.",
             _ =>

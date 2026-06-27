@@ -71,6 +71,11 @@
             <div><dt>Email</dt><dd>{{ s.email }}</dd></div>
             <div><dt>Joined</dt><dd>{{ s.createdAt | date:'mediumDate' }}</dd></div>
             <div><dt>Lifecycle</dt><dd><sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge></dd></div>
+            <div><dt>Learning ready</dt><dd><sp-admin-badge [tone]="s.isLearningReady ? 'success' : 'neutral'">{{ s.isLearningReady ? 'Yes' : 'No' }}</sp-admin-badge></dd></div>
+            <div><dt>Learning plan</dt><dd><sp-admin-badge [tone]="s.learningPlanExists ? 'success' : 'neutral'">{{ s.learningPlanExists ? 'Exists' : 'Not generated' }}</sp-admin-badge></dd></div>
+            @if (s.lastPlacementCompletedAt) {
+              <div><dt>Placement completed</dt><dd>{{ s.lastPlacementCompletedAt | date:'mediumDate' }}</dd></div>
+            }
             <div><dt>Onboarding</dt><dd><sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge></dd></div>
             <div><dt>Career context</dt><dd>{{ s.careerContext || 'Not set' }}</dd></div>
             <div><dt>Learning goal</dt><dd>{{ s.learningGoal || 'Not set' }}</dd></div>

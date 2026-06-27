@@ -703,6 +703,20 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             learningPlanWarning = ex.Message;
         }
 
+        // Phase 14B — transition to CourseReady only when plan generation succeeded.
+        // If plan regen failed, stay at PlacementCompleted (honest "preparing" state).
+        // Idempotent: skip if already CourseReady or further along.
+        if (learningPlanRegenerated
+            && completionProfile is not null
+            && completionProfile.LifecycleStage == StudentLifecycleStage.PlacementCompleted)
+        {
+            completionProfile.SetLifecycleStage(StudentLifecycleStage.CourseReady);
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation(
+                "Student {StudentId} transitioned to CourseReady after placement completion",
+                assessment.StudentProfileId);
+        }
+
         return ToSummaryDto(assessment, skillResults, learningPlanRegenerated, learningPlanWarning);
     }
 

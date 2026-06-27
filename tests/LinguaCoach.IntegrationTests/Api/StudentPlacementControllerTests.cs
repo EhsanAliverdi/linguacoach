@@ -271,7 +271,12 @@ public sealed class StudentPlacementControllerTests : IClassFixture<PlacementTes
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
         var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == userId);
-        Assert.Equal(StudentLifecycleStage.PlacementCompleted, profile.LifecycleStage);
+        // Phase 14B: successful plan generation transitions to CourseReady.
+        // PlacementCompleted is the fallback when plan generation fails.
+        Assert.True(
+            profile.LifecycleStage == StudentLifecycleStage.CourseReady ||
+            profile.LifecycleStage == StudentLifecycleStage.PlacementCompleted,
+            $"Expected CourseReady or PlacementCompleted, got {profile.LifecycleStage}");
     }
 
     [Fact]

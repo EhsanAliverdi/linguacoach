@@ -188,6 +188,29 @@ public sealed class AdminHandler :
             progress.IsComplete,
             progress.PreliminaryCefrLevel);
 
+        // Phase 14B — learning readiness fields
+        var learningReadyStages = new[]
+        {
+            StudentLifecycleStage.CourseReady,
+            StudentLifecycleStage.InLesson,
+            StudentLifecycleStage.ActiveLearning,
+            StudentLifecycleStage.Paused,
+        };
+        var isLearningReady = learningReadyStages.Contains(profile.LifecycleStage);
+
+        var lastPlacementCompletedAt = await _db.PlacementAssessments
+            .AsNoTracking()
+            .Where(a => a.StudentProfileId == profile.Id && a.Status == PlacementStatus.Completed)
+            .OrderByDescending(a => a.CompletedAtUtc)
+            .Select(a => a.CompletedAtUtc)
+            .FirstOrDefaultAsync(ct);
+
+        var learningPlanExists = await _db.StudentLearningPlans
+            .AsNoTracking()
+            .AnyAsync(p => p.StudentProfileId == profile.Id
+                && (p.Status == LearningPlanStatus.Active
+                    || p.Status == LearningPlanStatus.Regenerating), ct);
+
         return new AdminStudentDetailDto(
             profile.Id,
             profile.UserId,
@@ -218,7 +241,10 @@ public sealed class AdminHandler :
             profile.LearningGoals ?? [],
             profile.CustomLearningGoal,
             profile.LearningPreferencesUpdatedAt,
-            progressInfo);
+            progressInfo,
+            isLearningReady,
+            lastPlacementCompletedAt,
+            learningPlanExists);
     }
 
     public async Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default)

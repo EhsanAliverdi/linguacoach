@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (14A)
+lastUpdated: 2026-06-27 (14B)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,23 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (14A)
+Last updated: 2026-06-27 (14B)
+
+---
+
+## CourseReady Transition and First Lesson Dashboard (Phase 14B, 2026-06-27)
+
+Closes the post-placement gap. After completing placement, students now transition from `PlacementCompleted` to `CourseReady` when their learning plan generates successfully.
+
+**What changed:**
+- `POST /api/student/placement/complete` now transitions lifecycle to `CourseReady` (was stuck at `PlacementCompleted`). Falls back to `PlacementCompleted` if plan generation fails.
+- Dashboard for `PlacementCompleted` students now shows: "Your personalised course is being prepared. Practice Gym is available while you wait."
+- Dashboard for `CourseReady` students (null session state) now shows: "Your first lesson is being prepared / Check back in a moment."
+- Admin student detail page now shows **Learning Ready** badge, **Learning Plan** badge, and **Placement Completed** date under the profile card.
+
+**Known limitation:** If no lesson session exists for a `CourseReady` student, `/api/sessions/today` returns an error that propagates to the main dashboard error state. A future phase should handle session unavailability gracefully (return null / 204 rather than an error).
+
+Review: `docs/reviews/2026-06-27-phase-14b-courseready-transition-review.md`.
 
 ---
 

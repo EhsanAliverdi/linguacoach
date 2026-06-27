@@ -338,6 +338,10 @@ export interface AdminStudentDetail {
   customLearningGoal: string | null;
   learningPreferencesUpdatedAt: string | null;
   onboardingProgress: StudentOnboardingProgressInfo | null;
+  // Phase 14B — learning readiness
+  isLearningReady: boolean;
+  lastPlacementCompletedAt: string | null;
+  learningPlanExists: boolean;
 }
 
 // ── Admin notification center ──────────────────────────────────────────────
