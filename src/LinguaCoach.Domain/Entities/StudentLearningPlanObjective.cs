@@ -76,6 +76,13 @@ public sealed class StudentLearningPlanObjective : BaseEntity
         Status = isBlocked ? LearningPlanObjectiveStatus.Blocked : LearningPlanObjectiveStatus.Active;
     }
 
+    public void MarkInProgress()
+    {
+        if (Status == LearningPlanObjectiveStatus.Active)
+            Status = LearningPlanObjectiveStatus.InProgress;
+        LastEvaluatedAt = DateTime.UtcNow;
+    }
+
     public void MarkCompleted()
     {
         Status = LearningPlanObjectiveStatus.Completed;

@@ -90,6 +90,22 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
         // Step 2b: exclude mastered objectives from new-learning route.
         candidates = FilterByMastered(candidates, request);
 
+        // Step 2c: if caller supplied a preferred objective key from the learning plan,
+        //          attempt to use it before falling through to score-based selection.
+        if (!string.IsNullOrWhiteSpace(request.PreferredObjectiveKey))
+        {
+            var preferred = await TrySelectPreferredObjectiveAsync(
+                request, normalizedLevel, contextTags, focusAreas, candidates, ct);
+            if (preferred is not null)
+            {
+                _logger.LogInformation(
+                    "CurriculumRoutingService: learning-plan routing ObjectiveKey={Key} Source={Source}",
+                    preferred.Key, request.Source);
+                return BuildRecommendation(request, normalizedLevel, preferred, preferredBand,
+                    contextTags, RoutingReason.LearningPlan, isLower: false);
+            }
+        }
+
         // Step 3: pick best exact-level candidate.
         if (candidates.Count > 0)
         {
@@ -142,6 +158,104 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
             normalizedLevel, request.Source, string.Join(",", contextTags));
 
         return BuildFallback(request, normalizedLevel, contextTags, preferredBand);
+    }
+
+    /// <summary>
+    /// Validates and returns the preferred objective when it passes all safety checks.
+    /// Returns null — with a logged rejection reason — when the objective is not safe to use.
+    ///
+    /// Acceptance rules (all must pass):
+    ///   1. Objective exists in the syllabus (fetched by key).
+    ///   2. CEFR matches the student's normalized level, OR is one level lower with AllowReviewOrScaffold.
+    ///      A lower-level preferred key is never silently accepted without AllowReviewOrScaffold.
+    ///   3. If PrimarySkill is set on the request, the objective's skill must match.
+    ///   4. Objective must be runnable (ActivityCompatibilityConstants.IsRunnable).
+    ///   5. Mastery exclusion: if mastered and Mode=NewLearning and !AllowReviewOfMastered → reject.
+    /// </summary>
+    private async Task<CurriculumObjective?> TrySelectPreferredObjectiveAsync(
+        CurriculumRoutingRequest request,
+        string normalizedLevel,
+        IReadOnlyList<string> contextTags,
+        IReadOnlyList<string> focusAreas,
+        IReadOnlyList<CurriculumObjective> currentCandidates,
+        CancellationToken ct)
+    {
+        var key = request.PreferredObjectiveKey!;
+
+        var objective = await _syllabusQuery.GetByKeyAsync(key, ct);
+        if (objective is null)
+        {
+            _logger.LogDebug(
+                "CurriculumRouting: preferred key '{Key}' not found in syllabus — falling back. Source={Source}",
+                key, request.Source);
+            return null;
+        }
+
+        // Rule 2: CEFR check — exact match or lower-level with review scaffold allowed.
+        var objectiveLevel = objective.CefrLevel;
+        if (!string.Equals(objectiveLevel, normalizedLevel, StringComparison.OrdinalIgnoreCase))
+        {
+            // Only accept lower-level when review/scaffold is explicitly enabled.
+            if (!request.AllowReviewOrScaffold)
+            {
+                _logger.LogDebug(
+                    "CurriculumRouting: preferred key '{Key}' CEFR={ObjectiveLevel} != student {StudentLevel} and AllowReviewOrScaffold=false — rejecting. Source={Source}",
+                    key, objectiveLevel, normalizedLevel, request.Source);
+                return null;
+            }
+
+            // Confirm it's exactly one level lower (not two or more levels down).
+            var lowerLevel = GetOneLevelDown(normalizedLevel);
+            if (!string.Equals(objectiveLevel, lowerLevel, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug(
+                    "CurriculumRouting: preferred key '{Key}' CEFR={ObjectiveLevel} is more than one level below student {StudentLevel} — rejecting. Source={Source}",
+                    key, objectiveLevel, normalizedLevel, request.Source);
+                return null;
+            }
+        }
+
+        // Rule 3: Skill compatibility — only enforce when caller explicitly requested a skill.
+        if (!string.IsNullOrWhiteSpace(request.PrimarySkill)
+            && !string.Equals(objective.PrimarySkill, request.PrimarySkill, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogDebug(
+                "CurriculumRouting: preferred key '{Key}' skill={ObjectiveSkill} != requested skill {RequestedSkill} — rejecting. Source={Source}",
+                key, objective.PrimarySkill, request.PrimarySkill, request.Source);
+            return null;
+        }
+
+        // Rule 4: Runnable check.
+        if (!ActivityCompatibilityConstants.IsRunnable(objective.PrimarySkill))
+        {
+            _logger.LogDebug(
+                "CurriculumRouting: preferred key '{Key}' skill={ObjectiveSkill} is not runnable — rejecting. Source={Source}",
+                key, objective.PrimarySkill, request.Source);
+            return null;
+        }
+
+        // Rule 5: Mastery exclusion (mirrors FilterByMastered logic).
+        var isMastered = request.MasteredObjectiveKeys.Contains(key, StringComparer.OrdinalIgnoreCase);
+        if (isMastered)
+        {
+            if (request.Mode == RoutingMode.NewLearning && !request.AllowReviewOfMastered)
+            {
+                _logger.LogDebug(
+                    "CurriculumRouting: preferred key '{Key}' is mastered and Mode=NewLearning — rejecting. Source={Source}",
+                    key, request.Source);
+                return null;
+            }
+
+            if (!objective.IsReviewable)
+            {
+                _logger.LogDebug(
+                    "CurriculumRouting: preferred key '{Key}' is mastered and not reviewable — rejecting. Source={Source}",
+                    key, request.Source);
+                return null;
+            }
+        }
+
+        return objective;
     }
 
     private IReadOnlyList<CurriculumObjective> FilterNonRunnable(

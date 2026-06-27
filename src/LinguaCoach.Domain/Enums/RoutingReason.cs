@@ -12,5 +12,8 @@ public enum RoutingReason
     Review = 1,
     Scaffold = 2,
     Remediation = 3,
-    Fallback = 4
+    Fallback = 4,
+
+    /// <summary>Selected because it matches the student's active learning plan objective.</summary>
+    LearningPlan = 5
 }

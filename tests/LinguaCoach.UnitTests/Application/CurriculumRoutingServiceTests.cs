@@ -685,3 +685,442 @@ public sealed class CurriculumRoutingServiceTests
             => Task.FromResult(_objectives.FirstOrDefault(o => o.Key == key));
     }
 }
+
+// ── Phase 12E — PreferredObjectiveKey routing tests ──────────────────────────
+
+public sealed class CurriculumRoutingServicePreferredObjectiveTests
+{
+    // ── Test 1: preferred key is selected when valid ─────────────────────────
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_Valid_ReturnsLearningPlanReason()
+    {
+        var preferred = MakeObjective("b2_writing_workplace", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.Workplace]);
+        var other = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred, other]);
+        var req = MakeRequest(CefrLevelConstants.B2, preferredObjectiveKey: "b2_writing_workplace");
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal("b2_writing_workplace", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 2: preferred key rejected when not found in syllabus (inactive/missing) ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_NotInSyllabus_FallsBack()
+    {
+        var other = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([other]);
+        var req = MakeRequest(CefrLevelConstants.B2, preferredObjectiveKey: "b2_unknown_key");
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.NotEqual("b2_unknown_key", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 3: preferred key rejected on CEFR mismatch without AllowReviewOrScaffold ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_CefrMismatch_NoScaffold_FallsBack()
+    {
+        // Preferred key is B1 but student is B2; scaffold not allowed.
+        var preferred = MakeObjective("b1_writing_general", CefrLevelConstants.B1,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+        var other = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred, other]);
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b1_writing_general",
+            allowReviewOrScaffold: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.NotEqual("b1_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 4: preferred key accepted as review/scaffold when AllowReviewOrScaffold=true ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_OneLevelLower_WithScaffold_Accepted()
+    {
+        // Student B2, preferred key is B1 (exactly one level down).
+        var preferred = MakeObjective("b1_writing_general", CefrLevelConstants.B1,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred]);
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b1_writing_general",
+            allowReviewOrScaffold: true);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal("b1_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 5: preferred key rejected when skill doesn't match requested skill ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_SkillMismatch_FallsBack()
+    {
+        var preferred = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+        var other = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred, other]);
+        // Prefer a writing objective but caller requests speaking.
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b2_writing_general",
+            primarySkill: CurriculumSkillConstants.Speaking);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.NotEqual("b2_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 6: preferred key rejected when skill is not runnable ───────────
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_NonRunnableSkill_FallsBack()
+    {
+        // Grammar is in PlannedSkills, not RunnableSkills.
+        var preferred = MakeObjective("b2_grammar_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish]);
+        var other = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred, other]);
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b2_grammar_general");
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.NotEqual("b2_grammar_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 7: rejection falls back to existing routing ────────────────────
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_Rejected_ExistingRoutingContinues()
+    {
+        // Preferred key points to non-runnable grammar objective.
+        // Fallback candidate exists at B2.
+        var preferred = MakeObjective("b2_grammar_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Grammar, [CurriculumContextTagConstants.GeneralEnglish]);
+        var fallback = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred, fallback]);
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b2_grammar_general");
+
+        var rec = await svc.RecommendAsync(req);
+
+        // Normal routing should have picked the speaking objective.
+        Assert.Equal(RoutingReason.Normal, rec.RoutingReason);
+        Assert.Equal("b2_speaking_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 8: mastered objective excluded when Mode=NewLearning ────────────
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_Mastered_NewLearning_Rejected()
+    {
+        var preferred = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish],
+            isReviewable: false);
+        var other = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred, other]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            PreferredObjectiveKey = "b2_writing_general",
+            ResolvedLearningGoalContext = MakeGoalContext(workplaceSpecific: false),
+            MasteredObjectiveKeys = ["b2_writing_general"],
+            Mode = RoutingMode.NewLearning,
+            AllowReviewOfMastered = false
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.NotEqual("b2_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 9: mastered reviewable accepted when AllowReviewOfMastered=true ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_MasteredReviewable_AllowReview_Accepted()
+    {
+        var preferred = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish],
+            isReviewable: true);
+
+        var svc = BuildService([preferred]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            PreferredObjectiveKey = "b2_writing_general",
+            ResolvedLearningGoalContext = MakeGoalContext(workplaceSpecific: false),
+            MasteredObjectiveKeys = ["b2_writing_general"],
+            Mode = RoutingMode.Review,
+            AllowReviewOfMastered = true
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 10: no preferred key — existing non-workplace default unchanged ─
+
+    [Fact]
+    public async Task Recommend_NoPreferredKey_NonWorkplace_DefaultBehaviorUnchanged()
+    {
+        var obj = MakeObjective("b2_speaking_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([obj]);
+        var req = MakeRequest(CefrLevelConstants.B2, preferredObjectiveKey: null);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.Normal, rec.RoutingReason);
+        Assert.Equal("b2_speaking_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 11: no silent CEFR downgrade — preferred lower key rejected without scaffold ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_LowerLevel_NoSilentDowngrade()
+    {
+        // Student B2, preferred key is A2 (two levels down) — must always reject.
+        var lower = MakeObjective("a2_writing_general", CefrLevelConstants.A2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+        var candidate = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([lower, candidate]);
+        // AllowReviewOrScaffold = true but A2 is two levels below B2 — still rejected.
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "a2_writing_general",
+            allowReviewOrScaffold: true);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual("a2_writing_general", rec.CurriculumObjectiveKey);
+        // Must not silently use A2; should fall back to B2 candidate.
+        Assert.Equal(CefrLevelConstants.B2, rec.TargetCefrLevel);
+    }
+
+    // ── Test 12: mastery exclusion wins over preferred key (non-reviewable) ──
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_Mastered_NotReviewable_Rejected()
+    {
+        var preferred = MakeObjective("b2_vocab_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Vocabulary, [CurriculumContextTagConstants.GeneralEnglish],
+            isReviewable: false);
+
+        var svc = BuildService([preferred]);
+        var req = new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = CefrLevelConstants.B2,
+            Source = "test",
+            PreferredObjectiveKey = "b2_vocab_general",
+            ResolvedLearningGoalContext = MakeGoalContext(workplaceSpecific: false),
+            MasteredObjectiveKeys = ["b2_vocab_general"],
+            Mode = RoutingMode.NewLearning,
+            AllowReviewOfMastered = true  // even with AllowReviewOfMastered, not reviewable → rejected
+        };
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+    }
+
+    // ── Test 13: preferred key with no PrimarySkill filter — any skill accepted ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_NoSkillFilter_AnySkillAccepted()
+    {
+        var preferred = MakeObjective("b2_listening_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Listening, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([preferred]);
+        // No PrimarySkill requested — preferred should be accepted regardless of skill.
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b2_listening_general",
+            primarySkill: null);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal("b2_listening_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 14: preferred key two levels below — rejected even with AllowReviewOrScaffold ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_TwoLevelsBelow_AlwaysRejected()
+    {
+        // C1 student, A2 preferred key = 3 levels below → must never accept.
+        var lower = MakeObjective("a2_speaking_general", CefrLevelConstants.A2,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+        var candidate = MakeObjective("c1_speaking_general", CefrLevelConstants.C1,
+            CurriculumSkillConstants.Speaking, [CurriculumContextTagConstants.GeneralEnglish]);
+
+        var svc = BuildService([lower, candidate]);
+        var req = MakeRequest(CefrLevelConstants.C1,
+            preferredObjectiveKey: "a2_speaking_general",
+            allowReviewOrScaffold: true);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.NotEqual("a2_speaking_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Test 15: preferred key accepted overrides normal candidate selection ─
+
+    [Fact]
+    public async Task Recommend_PreferredObjectiveKey_OverridesScoreBased_Selection()
+    {
+        // Two B2 general objectives. Normal routing would pick "b2_vocab_general"
+        // (lower band = closer to preferred band 2). Preferred key forces "b2_reading_general".
+        var preferred = MakeObjective("b2_reading_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Reading, [CurriculumContextTagConstants.GeneralEnglish],
+            difficultyBand: 5);  // high band — score-based routing would deprioritise it
+        var normal = MakeObjective("b2_vocab_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Vocabulary, [CurriculumContextTagConstants.GeneralEnglish],
+            difficultyBand: 2);
+
+        var svc = BuildService([preferred, normal]);
+        var req = MakeRequest(CefrLevelConstants.B2,
+            preferredObjectiveKey: "b2_reading_general");
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal("b2_reading_general", rec.CurriculumObjectiveKey);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static CurriculumRoutingService BuildService(IReadOnlyList<CurriculumObjective> objectives)
+        => new(new StubCurriculumSyllabusQuery(objectives), NullLogger<CurriculumRoutingService>.Instance);
+
+    private static CurriculumRoutingRequest MakeRequest(
+        string? cefrLevel,
+        string? preferredObjectiveKey = null,
+        bool allowReviewOrScaffold = false,
+        string? primarySkill = null)
+    {
+        return new CurriculumRoutingRequest
+        {
+            StudentId = Guid.NewGuid(),
+            CurrentCefrLevel = cefrLevel,
+            PrimarySkill = primarySkill,
+            Source = "test",
+            PreferredObjectiveKey = preferredObjectiveKey,
+            ResolvedLearningGoalContext = MakeGoalContext(workplaceSpecific: false),
+            AllowReviewOrScaffold = allowReviewOrScaffold
+        };
+    }
+
+    private static ResolvedLearningGoalContext MakeGoalContext(bool workplaceSpecific) =>
+        new()
+        {
+            WorkplaceSpecific = workplaceSpecific,
+            ContextSummary = "test context",
+            Source = "Structured"
+        };
+
+    private static CurriculumObjective MakeObjective(
+        string key,
+        string cefrLevel,
+        string skill,
+        IReadOnlyList<string> contextTags,
+        int difficultyBand = 2,
+        bool isReviewable = false)
+    {
+        var contextTagsJson = System.Text.Json.JsonSerializer.Serialize(contextTags);
+        return new CurriculumObjective(
+            key: key,
+            title: $"Test: {key}",
+            description: "Test.",
+            cefrLevel: cefrLevel,
+            primarySkill: skill,
+            contextTagsJson: contextTagsJson,
+            difficultyBand: difficultyBand,
+            recommendedOrder: 0,
+            isActive: true,
+            isReviewable: isReviewable);
+    }
+
+    private sealed class StubCurriculumSyllabusQuery : ICurriculumSyllabusQuery
+    {
+        private readonly IReadOnlyList<CurriculumObjective> _objectives;
+
+        public StubCurriculumSyllabusQuery(IReadOnlyList<CurriculumObjective> objectives)
+            => _objectives = objectives;
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetActiveObjectivesAsync(CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<CurriculumObjective>>(
+                _objectives.Where(o => o.IsActive).ToList());
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetByCefrAsync(string cefrLevel, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<CurriculumObjective>>(
+                _objectives.Where(o => o.IsActive && o.CefrLevel == cefrLevel.ToUpperInvariant()).ToList());
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetByCefrAndSkillAsync(string cefrLevel, string primarySkill, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<CurriculumObjective>>([]);
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetByCefrAndContextAsync(string cefrLevel, string contextTag, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<CurriculumObjective>>([]);
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetByCefrAndFocusAreaAsync(string cefrLevel, string focusArea, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<CurriculumObjective>>([]);
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetPrerequisitesAsync(string objectiveKey, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<CurriculumObjective>>([]);
+
+        public Task<IReadOnlyList<CurriculumObjective>> GetCandidatesForStudentAsync(
+            string? cefrLevel,
+            IReadOnlyList<string> contextTags,
+            IReadOnlyList<string> focusAreas,
+            CancellationToken ct = default)
+        {
+            var results = _objectives
+                .Where(o => o.IsActive
+                    && (cefrLevel is null || o.CefrLevel == cefrLevel.ToUpperInvariant())
+                    && contextTags.Any(tag => o.ContextTagsJson.Contains($"\"{tag}\"")))
+                .OrderBy(o => o.RecommendedOrder)
+                .ToList();
+            return Task.FromResult<IReadOnlyList<CurriculumObjective>>(results);
+        }
+
+        public Task<CurriculumObjective?> GetByKeyAsync(string key, CancellationToken ct = default)
+            => Task.FromResult(_objectives.FirstOrDefault(o => o.Key == key));
+    }
+}

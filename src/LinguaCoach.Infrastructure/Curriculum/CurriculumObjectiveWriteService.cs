@@ -176,12 +176,24 @@ public sealed class CurriculumObjectiveWriteService : ICurriculumObjectiveWriteS
             FocusAreas = request.FocusAreas ?? [],
             DifficultyPreference = request.DifficultyPreference,
             AllowReviewOrScaffold = request.AllowReviewOrScaffold,
-            Mode = request.Mode
+            Mode = request.Mode,
+            PreferredObjectiveKey = request.PreferredObjectiveKey
             // MasteredObjectiveKeys intentionally not set: admin preview does not apply
             // student-specific mastery filtering. See warning added below.
         };
 
         var recommendation = await _routingService.RecommendAsync(routingRequest, ct);
+
+        // Determine the disposition of the PreferredObjectiveKey hint for the admin caller.
+        string? preferredDisposition = null;
+        if (!string.IsNullOrWhiteSpace(request.PreferredObjectiveKey))
+        {
+            preferredDisposition = recommendation.RoutingReason == Domain.Enums.RoutingReason.LearningPlan
+                ? "accepted"
+                : recommendation.RoutingReason == Domain.Enums.RoutingReason.Fallback
+                    ? "fallback_used"
+                    : "rejected";
+        }
 
         var warnings = new List<string>
         {
@@ -194,6 +206,8 @@ public sealed class CurriculumObjectiveWriteService : ICurriculumObjectiveWriteS
         if (recommendation.ContextTags.Contains("workplace", StringComparer.OrdinalIgnoreCase) &&
             !(request.LearningGoals?.Any(g => g.Contains("workplace", StringComparison.OrdinalIgnoreCase)) ?? false))
             warnings.Add("Workplace context was resolved from student profile goals.");
+        if (preferredDisposition == "rejected")
+            warnings.Add($"PreferredObjectiveKey '{request.PreferredObjectiveKey}' was rejected — check CEFR, skill, runnable, mastery rules.");
 
         return new AdminRoutingPreviewResult(
             TargetCefrLevel: recommendation.TargetCefrLevel,
@@ -207,7 +221,8 @@ public sealed class CurriculumObjectiveWriteService : ICurriculumObjectiveWriteS
             Explanation: recommendation.Explanation,
             FallbackUsed: recommendation.RoutingReason == Domain.Enums.RoutingReason.Fallback,
             NoExactObjectiveFound: recommendation.CurriculumObjectiveKey is null,
-            Warnings: warnings);
+            Warnings: warnings,
+            PreferredObjectiveDisposition: preferredDisposition);
     }
 
     private async Task<string?> ValidateRequestAsync(

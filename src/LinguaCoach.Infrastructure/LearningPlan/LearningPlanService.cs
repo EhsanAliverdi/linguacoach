@@ -269,6 +269,43 @@ public sealed class LearningPlanService : ILearningPlanService
         return ordered;
     }
 
+    public async Task MarkObjectiveInProgressAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default)
+    {
+        var plan = await _db.StudentLearningPlans
+            .Include(p => p.Objectives)
+            .Where(p => p.StudentProfileId == studentProfileId && p.Status == LearningPlanStatus.Active)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (plan is null)
+            return;
+
+        var objective = plan.Objectives.FirstOrDefault(
+            o => string.Equals(o.ObjectiveKey, objectiveKey, StringComparison.OrdinalIgnoreCase));
+
+        if (objective is null)
+            return;
+
+        objective.MarkInProgress();
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation(
+                "LearningPlanService: objective '{ObjectiveKey}' marked InProgress for {StudentProfileId}",
+                objectiveKey, studentProfileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "LearningPlanService: could not save InProgress status for objective '{ObjectiveKey}' student {StudentProfileId}",
+                objectiveKey, studentProfileId);
+        }
+    }
+
     // ── Private helpers ────────────────────────────────────────────────────
 
     private async Task<StudentLearningPlan?> LoadActivePlanAsync(

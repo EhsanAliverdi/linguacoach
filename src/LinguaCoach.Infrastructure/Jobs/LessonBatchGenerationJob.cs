@@ -399,6 +399,23 @@ public sealed class LessonBatchGenerationJob : IJob
             preferredObjectiveKey: plannedObjectiveKey);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
+        // Phase 12E — if routing consumed a planned objective, advance its status.
+        if (routing.RoutingReason == RoutingReason.LearningPlan
+            && routing.CurriculumObjectiveKey is not null)
+        {
+            try
+            {
+                await _learningPlan.MarkObjectiveInProgressAsync(
+                    profile.Id, routing.CurriculumObjectiveKey, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "LessonBatchGenerationJob: could not mark objective '{Key}' InProgress for {StudentProfileId} — continuing.",
+                    routing.CurriculumObjectiveKey, profile.Id);
+            }
+        }
+
         var summary = new
         {
             studentLevel = profile.CefrLevel ?? "B1",

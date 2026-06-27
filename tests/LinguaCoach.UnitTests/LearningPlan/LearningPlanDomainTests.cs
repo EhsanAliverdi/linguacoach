@@ -225,7 +225,8 @@ public sealed class LearningPlanDomainTests
         values.Should().Contain(LearningPlanObjectiveStatus.Blocked);
         values.Should().Contain(LearningPlanObjectiveStatus.Deferred);
         values.Should().Contain(LearningPlanObjectiveStatus.Review);
-        values.Should().HaveCount(6);
+        values.Should().Contain(LearningPlanObjectiveStatus.InProgress);
+        values.Should().HaveCount(7);
     }
 
     // ── LearningPlanOptions ───────────────────────────────────────────────────

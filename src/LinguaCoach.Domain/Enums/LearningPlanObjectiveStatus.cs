@@ -18,5 +18,8 @@ public enum LearningPlanObjectiveStatus
     Deferred = 4,
 
     /// <summary>Scheduled specifically as a review for a previously completed objective.</summary>
-    Review = 5
+    Review = 5,
+
+    /// <summary>Routing has consumed this objective; lesson or activity generation is underway.</summary>
+    InProgress = 6
 }

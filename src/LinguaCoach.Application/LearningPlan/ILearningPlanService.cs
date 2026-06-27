@@ -51,6 +51,16 @@ public interface ILearningPlanService
         Guid studentProfileId,
         int maxCount = 5,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Marks a planned objective as InProgress when routing has successfully consumed it.
+    /// Only transitions from Active → InProgress; no-op for other statuses.
+    /// Called by generation jobs after CurriculumRoutingService returns RoutingReason.LearningPlan.
+    /// </summary>
+    Task MarkObjectiveInProgressAsync(
+        Guid studentProfileId,
+        string objectiveKey,
+        CancellationToken ct = default);
 }
 
 /// <summary>Summary of the student's active learning plan for API and admin views.</summary>

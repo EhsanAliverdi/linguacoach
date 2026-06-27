@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12D)
+lastUpdated: 2026-06-27 (12E)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,28 @@ Last updated: 2026-06-27
 ---
 
 ## Active sprint
+
+**Phase 12E — Learning Plan Guided Routing** — complete (2026-06-27)
+
+Closes the Phase 12D gap where `PreferredObjectiveKey` was passed to routing but never consumed. Curriculum routing now selects the planned objective first when all safety checks pass, and falls back silently to existing routing when they do not.
+
+**Routing (Part B):** `CurriculumRoutingService.RecommendAsync` gains a new pre-step (Step 2c) after `FilterByMastered`. When `PreferredObjectiveKey` is non-null, `TrySelectPreferredObjectiveAsync` validates it against five safety rules (exists in syllabus, CEFR match or one-level-lower with AllowReviewOrScaffold, skill compatibility, runnable, mastery exclusion). Accepted → `RoutingReason.LearningPlan`. Rejected → log only, fall through to existing pipeline unchanged. New enum value `RoutingReason.LearningPlan = 5`.
+
+**Status lifecycle (Part C):** `LearningPlanObjectiveStatus.InProgress = 6` added. `StudentLearningPlanObjective.MarkInProgress()` transitions `Active → InProgress`. `ILearningPlanService.MarkObjectiveInProgressAsync` added and implemented in `LearningPlanService`.
+
+**Background jobs (Part D):** `LessonBatchGenerationJob` and `PracticeGymGenerationJob` both call `MarkObjectiveInProgressAsync` after routing returns `LearningPlan` reason. Failures are warning-only; generation continues regardless.
+
+**Admin routing preview (Part E):** `AdminRoutingPreviewRequest` gains optional `PreferredObjectiveKey`. `PreviewRoutingAsync` passes it through and returns `PreferredObjectiveDisposition` ("accepted" / "rejected" / "fallback_used" / null) in `AdminRoutingPreviewResult`. Rejected hint adds a warning to the response.
+
+**Tests (Part F):** 15 new unit tests in `CurriculumRoutingServicePreferredObjectiveTests` covering all acceptance/rejection rules, fallback, CEFR safety, mastery exclusion, and override-of-score-based-selection. `LearningPlanDomainTests` updated for new enum count (6 → 7).
+
+**Build/test totals:** 0 errors, 0 failures. 1444 unit + 1155 integration + 3 architecture = 2602 total.
+
+Review: `docs/reviews/2026-06-27-phase-12e-learning-plan-guided-routing-review.md`.
+
+---
+
+## Previous sprint
 
 **Phase 12D — Learning Plan Orchestrator Foundation** — complete (2026-06-27)
 

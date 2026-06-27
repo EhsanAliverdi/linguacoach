@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12D)
+lastUpdated: 2026-06-27 (12E)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,23 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-27 (12D)
+Last updated: 2026-06-27 (12E)
+
+---
+
+## Learning Plan Guided Routing (Phase 12E, 2026-06-27)
+
+Closes the Phase 12D gap: `PreferredObjectiveKey` is now consumed by `CurriculumRoutingService`.
+
+**Routing change:** When a generation job passes a planned objective key, routing validates it against five safety rules (CEFR exact or one-level-lower-with-scaffold, skill match, runnable, mastery exclusion) and selects it first if all rules pass (`RoutingReason.LearningPlan`). Rejection always falls back to the existing routing pipeline — no generation failure, no silent CEFR downgrade.
+
+**Status lifecycle:** `LearningPlanObjectiveStatus.InProgress` added. When routing returns `LearningPlan`, both `LessonBatchGenerationJob` and `PracticeGymGenerationJob` call `MarkObjectiveInProgressAsync` to advance the plan objective status.
+
+**Admin diagnostics:** `POST /api/admin/curriculum/routing-preview` now accepts an optional `preferredObjectiveKey` field and returns `preferredObjectiveDisposition` ("accepted" / "rejected" / "fallback_used") so admins can test learning-plan routing without running a real generation job.
+
+**No student UI changes. No new migrations.**
+
+15 new routing tests. All 2602 tests pass.
 
 ---
 

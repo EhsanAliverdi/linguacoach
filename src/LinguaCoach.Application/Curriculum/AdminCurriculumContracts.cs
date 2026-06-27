@@ -80,7 +80,9 @@ public sealed record AdminRoutingPreviewRequest(
     string? Source,
     string? DifficultyPreference,
     bool AllowReviewOrScaffold,
-    RoutingMode Mode = RoutingMode.NewLearning);
+    RoutingMode Mode = RoutingMode.NewLearning,
+    /// <summary>Optional learning-plan objective key to test preferred routing.</summary>
+    string? PreferredObjectiveKey = null);
 
 /// <summary>Admin routing preview response.</summary>
 public sealed record AdminRoutingPreviewResult(
@@ -95,7 +97,12 @@ public sealed record AdminRoutingPreviewResult(
     string? Explanation,
     bool FallbackUsed,
     bool NoExactObjectiveFound,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    /// <summary>
+    /// Indicates the disposition of the PreferredObjectiveKey hint, when supplied.
+    /// null = no hint supplied. "accepted" | "rejected" | "fallback_used".
+    /// </summary>
+    string? PreferredObjectiveDisposition = null);
 
 // ── Write service interface ───────────────────────────────────────────────────
 
