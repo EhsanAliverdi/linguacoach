@@ -6,6 +6,8 @@
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   ProfileService,
@@ -17,6 +19,11 @@ import {
   NotificationPreferenceItem,
   UpdateNotificationPreferenceRequest,
 } from '../../../core/services/notification-preferences.service';
+import { PlacementService } from '../../../core/services/placement.service';
+import {
+  AdaptivePlacementSummary,
+  PlacementConfig,
+} from '../../../core/models/placement.models';
 
 const PREDEFINED_LEARNING_GOALS = [
   'Day-to-day English',
@@ -117,8 +124,71 @@ const SUPPORT_LANGUAGES = [
           </div>
         </div>
         <div style="font-size:11px;color:var(--sp-faint);margin-top:12px;padding-top:12px;border-top:1px solid var(--sp-border)">
-          Your level is updated from assessments and practice results
+          Your level is updated through placement, learning progress, and teacher/admin review.
         </div>
+      </div>
+
+      <!-- Section: Placement summary -->
+      <div class="sp-section-h"><h3>Placement</h3></div>
+      <div class="sp-card" style="padding:18px;margin-bottom:16px" data-testid="placement-summary-section">
+        @if (placementLoading()) {
+          <div style="font-size:13px;color:var(--sp-muted)">Loading placement...</div>
+        }
+        @if (!placementLoading()) {
+          @if (!placement()) {
+            <div style="font-size:13px;color:var(--sp-muted)" data-testid="no-placement-message">
+              You have not completed a placement assessment yet.
+            </div>
+          }
+          @if (placement() && placement()!.status === 'InProgress') {
+            <div style="font-size:13px;color:var(--sp-ink);margin-bottom:12px" data-testid="placement-in-progress">
+              Your placement assessment is in progress.
+            </div>
+            <button
+              type="button"
+              (click)="navigateToPlacement()"
+              data-testid="continue-placement-button"
+              style="padding:9px 18px;border-radius:var(--sp-r-md);background:var(--sp-grad-brand);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer"
+            >Continue placement</button>
+          }
+          @if (placement() && (placement()!.status === 'Completed' || !!placement()!.overallCefrLevel)) {
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div style="font-size:22px;font-weight:800;color:var(--sp-ink)">{{ placement()!.overallCefrLevel ?? 'Unknown' }}</div>
+              @if (placement()!.isProvisional) {
+                <span data-testid="provisional-badge" style="background:#FEF3C7;color:#92400E;border-radius:var(--sp-r-sm);padding:3px 8px;font-size:11px;font-weight:700">Provisional</span>
+              } @else {
+                <span data-testid="confirmed-badge" style="background:#D1FAE5;color:#065F46;border-radius:var(--sp-r-sm);padding:3px 8px;font-size:11px;font-weight:700">Confirmed</span>
+              }
+            </div>
+            @if (placement()!.completedAtUtc) {
+              <div style="font-size:12px;color:var(--sp-muted);margin-bottom:10px" data-testid="placement-date">
+                Assessed {{ placement()!.completedAtUtc | date:'mediumDate' }}
+              </div>
+            }
+            @if (placement()!.skillResults?.length) {
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px" data-testid="skill-breakdown">
+                @for (s of placement()!.skillResults; track s.skill) {
+                  <div style="background:var(--sp-canvas-raised,#F6F4FB);border-radius:var(--sp-r-sm);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                    <span style="color:var(--sp-ink);text-transform:capitalize">{{ s.skill }}</span>
+                    <span style="font-weight:700;color:var(--sp-brand)">{{ s.estimatedCefrLevel }}</span>
+                  </div>
+                }
+              </div>
+            }
+            @if (placementConfig()?.allowPlacementRetake) {
+              <button
+                type="button"
+                data-testid="retake-placement-button"
+                (click)="navigateToPlacement()"
+                style="padding:9px 18px;border-radius:var(--sp-r-md);background:var(--sp-canvas);border:1px solid var(--sp-border);color:var(--sp-ink);font-size:13px;font-weight:600;cursor:pointer"
+              >Request retake</button>
+            } @else {
+              <div style="font-size:11px;color:var(--sp-faint);margin-top:4px" data-testid="retake-not-available">
+                Retake placement is not available yet.
+              </div>
+            }
+          }
+        }
       </div>
 
       <!-- Section 3: Learning goals -->
@@ -339,6 +409,11 @@ export class ProfileComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
+  // Placement summary (Part F)
+  placement = signal<AdaptivePlacementSummary | null>(null);
+  placementConfig = signal<PlacementConfig | null>(null);
+  placementLoading = signal(true);
+
   // Notification preferences state
   allPrefs = signal<NotificationPreferenceItem[]>([]);
   prefsLoading = signal(true);
@@ -400,6 +475,8 @@ export class ProfileComponent implements OnInit {
     public auth: AuthService,
     private profileService: ProfileService,
     private notifPrefsService: NotificationPreferencesService,
+    private placementService: PlacementService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -434,6 +511,21 @@ export class ProfileComponent implements OnInit {
       },
       error: () => this.prefsLoading.set(false),
     });
+
+    this.placementService.getAdaptiveCurrent().pipe(
+      catchError(() => of(null))
+    ).subscribe(p => {
+      this.placement.set(p);
+      this.placementLoading.set(false);
+    });
+
+    this.placementService.getPlacementConfig().pipe(
+      catchError(() => of(null))
+    ).subscribe(cfg => this.placementConfig.set(cfg));
+  }
+
+  navigateToPlacement(): void {
+    this.router.navigate(['/placement']);
   }
 
   getPref(category: string, channel: string): boolean {

@@ -1,9 +1,12 @@
 ﻿import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { ProfileComponent } from './profile.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService, StudentProfileResponse } from '../../../core/services/profile.service';
 import { NotificationPreferencesService, NotificationPreferenceItem } from '../../../core/services/notification-preferences.service';
+import { PlacementService } from '../../../core/services/placement.service';
+import { AdaptivePlacementSummary, PlacementConfig } from '../../../core/models/placement.models';
 
 const MOCK_PREFS: NotificationPreferenceItem[] = [
   { category: 'Account', channel: 'InApp', isEnabled: true, isRequired: true },
@@ -35,10 +38,40 @@ const MOCK_PROFILE: StudentProfileResponse = {
   learningPreferencesUpdatedAt: null,
 };
 
+const MOCK_PLACEMENT: AdaptivePlacementSummary = {
+  assessmentId: 'assess-1',
+  studentProfileId: 'profile-123',
+  status: 'Completed',
+  startedAtUtc: '2026-06-01T10:00:00Z',
+  completedAtUtc: '2026-06-01T10:30:00Z',
+  expiredAtUtc: null,
+  overallCefrLevel: 'B1',
+  overallConfidence: 0.75,
+  isProvisional: false,
+  resultSummary: 'Good result',
+  source: 'adaptive',
+  skillResults: [
+    { skill: 'listening', estimatedCefrLevel: 'B1', confidence: 0.8, evidenceCount: 5, strengths: null, weaknesses: null, recommendedObjectiveKeys: [] },
+    { skill: 'speaking', estimatedCefrLevel: 'A2', confidence: 0.7, evidenceCount: 4, strengths: null, weaknesses: null, recommendedObjectiveKeys: [] },
+  ],
+  learningPlanRegenerated: true,
+  learningPlanRegenerationWarning: null,
+  itemCount: 12,
+  hasPlacement: true,
+};
+
+const MOCK_PLACEMENT_CONFIG: PlacementConfig = {
+  placementRequiredBeforeLearning: true,
+  allowSkipPlacement: false,
+  allowPlacementRetake: false,
+  autoStartPlacement: false,
+};
+
 describe('ProfileComponent', () => {
   let profileService: jasmine.SpyObj<ProfileService>;
   let authService: jasmine.SpyObj<AuthService>;
   let notifPrefsService: jasmine.SpyObj<NotificationPreferencesService>;
+  let placementService: jasmine.SpyObj<PlacementService>;
 
   beforeEach(() => {
     profileService = jasmine.createSpyObj('ProfileService', ['getProfile', 'updatePreferences']);
@@ -53,12 +86,18 @@ describe('ProfileComponent', () => {
     notifPrefsService.getPreferences.and.returnValue(of(MOCK_PREFS));
     notifPrefsService.updatePreferences.and.returnValue(of(undefined));
 
+    placementService = jasmine.createSpyObj('PlacementService', ['getAdaptiveCurrent', 'getPlacementConfig']);
+    placementService.getAdaptiveCurrent.and.returnValue(of(MOCK_PLACEMENT));
+    placementService.getPlacementConfig.and.returnValue(of(MOCK_PLACEMENT_CONFIG));
+
     TestBed.configureTestingModule({
       imports: [ProfileComponent],
       providers: [
         { provide: ProfileService, useValue: profileService },
         { provide: AuthService, useValue: authService },
         { provide: NotificationPreferencesService, useValue: notifPrefsService },
+        { provide: PlacementService, useValue: placementService },
+        provideRouter([]),
       ],
     });
   });
@@ -371,6 +410,78 @@ describe('ProfileComponent', () => {
     tick();
     fixture.detectChanges();
     expect(fixture.componentInstance.prefsLoading()).toBeFalse();
+  }));
+
+  // ── Learning goals: Workplace selectable not default (#6) ─────────────────
+
+  it('Workplace English chip is present in the goal list', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-Workplace English"]');
+    expect(chip).toBeTruthy();
+  }));
+
+  it('Workplace English is not pre-selected by default', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-Workplace English"]');
+    expect(chip.getAttribute('aria-pressed')).toBe('false');
+  }));
+
+  // ── Placement summary (#14, #15) ──────────────────────────────────────────
+
+  it('placement summary section is present after load', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const section = fixture.nativeElement.querySelector('[data-testid="placement-summary-section"]');
+    expect(section).toBeTruthy();
+  }));
+
+  it('placement summary shows confirmed badge for non-provisional placement', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('[data-testid="confirmed-badge"]');
+    expect(badge).toBeTruthy();
+  }));
+
+  it('retake button is hidden when allowPlacementRetake is false', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const retakeBtn = fixture.nativeElement.querySelector('[data-testid="retake-placement-button"]');
+    expect(retakeBtn).toBeNull();
+    const notAvailableEl = fixture.nativeElement.querySelector('[data-testid="retake-not-available"]');
+    expect(notAvailableEl).toBeTruthy();
+  }));
+
+  it('retake button is shown when allowPlacementRetake is true', fakeAsync(() => {
+    placementService.getPlacementConfig.and.returnValue(of({ ...MOCK_PLACEMENT_CONFIG, allowPlacementRetake: true }));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const retakeBtn = fixture.nativeElement.querySelector('[data-testid="retake-placement-button"]');
+    expect(retakeBtn).toBeTruthy();
+  }));
+
+  it('placement section shows no-placement message when no assessment exists', fakeAsync(() => {
+    placementService.getAdaptiveCurrent.and.returnValue(of(null));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const msg = fixture.nativeElement.querySelector('[data-testid="no-placement-message"]');
+    expect(msg).toBeTruthy();
+  }));
+
+  it('placement section shows skill breakdown when placement is completed', fakeAsync(() => {
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const breakdown = fixture.nativeElement.querySelector('[data-testid="skill-breakdown"]');
+    expect(breakdown).toBeTruthy();
   }));
 });
 

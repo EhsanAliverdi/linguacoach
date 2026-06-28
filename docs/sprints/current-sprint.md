@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15D)
+lastUpdated: 2026-06-28 (15G)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,28 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 15G — Student Profile and Preferences Functional Integration** — complete (2026-06-28)
+
+Connected the student Profile page to real backend data. Final main student page delivered, completing the full student navigation set (Dashboard, Today, Practice, Journey, Progress, Profile).
+
+**CEFR read-only (Part B):** CEFR level is read-only everywhere in the student UI. Backend `UpdateLearningPreferencesCommand` excludes `CefrLevel`. Template has no input/select in `level-section`. Explainer text: "Your level is updated through placement, learning progress, and teacher/admin review." Enforced at all three layers.
+
+**Learning preferences (Part C):** Students can update goals, focus areas, support language, translation preference, difficulty, and session length via PUT `/api/profile/preferences`. On save, `ProfileCommandHandler` triggers `RegeneratePlanAsync("preference_change")` fire-and-forget — regeneration failure is non-fatal.
+
+**Placement summary in profile (Part F):** Profile component calls `PlacementService.getAdaptiveCurrent()` and `PlacementService.getPlacementConfig()` in `ngOnInit`. Both wrapped with `catchError(() => of(null))` — placement load failure does not break the rest of the profile. Shows confirmed/provisional badge, skill breakdown table, and placement date. Retake button gated by `allowPlacementRetake` config (default false → shows "not available yet" text).
+
+**Admin parity (Part H):** Admin already has access to all preference values via existing `GET /api/admin/students/{id}/profile`. No new endpoint needed.
+
+**Pre-existing admin spec fix:** 110 Angular tests in `admin-student-detail.component.spec.ts` were failing from Phase 15F (missing `getStudentProgressSummary` mock). Fixed by updating all 15 Jasmine spy setups.
+
+**Tests (Parts K–L):** 13 new Angular unit tests in `profile.component.spec.ts` (38 total). New `e2e/profile.spec.ts` with 10 Playwright tests (CEFR read-only, placement summary, retake gating, notification prefs, save, no raw JSON).
+
+**Build/test totals:** 0 errors. 3 arch + 1,504 unit + 1,225 integration = **2,732 backend**. 1,464 Angular unit tests. 229 Playwright E2E (+ 3 skipped). All pass.
+
+Review: `docs/reviews/2026-06-28-phase-15g-student-profile-preferences-review.md`.
+
+---
 
 **Phase 15D — Adaptive Practice Gym Experience** — complete (2026-06-28)
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15F)
+lastUpdated: 2026-06-28 (15G)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,31 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (15F)
+Last updated: 2026-06-28 (15G)
+
+---
+
+## Student Profile and Preferences (Phase 15G, 2026-06-28)
+
+Completes the full student navigation set. Students can view and edit their learning preferences from a functional Profile page connected to real backend data.
+
+**What changed:**
+
+- Profile page (`/profile`) now loads from `GET /api/profile` and renders all preference fields from real data.
+- CEFR level is read-only throughout the student UI. Backend, template, and E2E test all enforce the contract. Students see: "Your level is updated through placement, learning progress, and teacher/admin review."
+- Students can update: learning goals, focus areas, support language, translation help preference, difficulty preference, and session length. Saved via `PUT /api/profile/preferences`. Triggers AI learning plan regeneration server-side (fire-and-forget).
+- Profile page now includes a **Placement Summary** section pulled from `/api/student/placement/current` and `/api/student/placement/config`. Shows: confirmed/provisional badge, completion date, per-skill CEFR breakdown, and a retake button (gated by `allowPlacementRetake` config).
+- Notification preferences section wired to `/api/notifications/preferences`.
+- All six main student pages are now functionally complete: Dashboard, Today, Practice, Journey, Progress, Profile.
+
+**What is NOT editable by students:**
+
+- CEFR level (read-only, updated only via placement/admin)
+- AI prompts (never exposed to students)
+
+**Test coverage:** 13 new Angular unit tests, 10 new Playwright E2E tests. All 2,732 backend tests and 1,464 Angular unit tests pass.
+
+Review: `docs/reviews/2026-06-28-phase-15g-student-profile-preferences-review.md`.
 
 ---
 
