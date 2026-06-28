@@ -3,10 +3,10 @@
 }
 
 @if (loading()) {
-  <div class="space-y-4">
-    <div class="sp-loading-pulse h-48"></div>
-    <div class="sp-loading-pulse h-32"></div>
-    <div class="sp-loading-pulse h-40"></div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="sp-skeleton" style="height:180px"></div>
+    <div class="sp-skeleton" style="height:120px"></div>
+    <div class="sp-skeleton" style="height:150px"></div>
   </div>
 
 } @else if (error()) {
@@ -245,7 +245,7 @@
         <a routerLink="/practice" style="font-size:12px;font-weight:700;color:var(--sp-writing);text-decoration:none">Practice Gym →</a>
       </div>
       @if (practiceLoading()) {
-        <div class="sp-loading-pulse" style="height:48px;border-radius:8px"></div>
+        <div class="sp-skeleton" style="height:48px"></div>
       } @else if (practiceSuggestions()) {
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           @if (practiceSuggestions()!.suggestedItems.length > 0) {

@@ -1,9 +1,9 @@
 <!-- Loading skeleton -->
 @if (loading()) {
   <div data-testid="journey-loading" style="display:flex;flex-direction:column;gap:16px">
-    <div class="sp-loading-pulse" style="height:80px"></div>
-    <div class="sp-loading-pulse" style="height:120px"></div>
-    <div class="sp-loading-pulse" style="height:200px"></div>
+    <div class="sp-skeleton" style="height:80px"></div>
+    <div class="sp-skeleton" style="height:120px"></div>
+    <div class="sp-skeleton" style="height:200px"></div>
   </div>
 } @else if (error()) {
   <!-- Error state -->
