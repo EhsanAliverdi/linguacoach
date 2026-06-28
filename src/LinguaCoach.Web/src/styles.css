@@ -842,7 +842,7 @@ button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-f
   font-size:16px;font-weight:800;color:var(--sp-ink);
   letter-spacing:-.01em;margin:26px 2px 12px;
 }
-.sp-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+.sp-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:11px;}
 .sp-skill-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;}
 @media(min-width:900px){.sp-skill-grid{grid-template-columns:repeat(5,1fr);}}
 .sp-grid-2col{display:grid;gap:18px;}
