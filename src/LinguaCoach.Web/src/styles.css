@@ -440,6 +440,9 @@ button,a,input,textarea{touch-action:manipulation;font-family:inherit;}
 .sp-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;background:var(--sp-surface);border:1.5px dashed var(--sp-border2);border-radius:var(--sp-r-lg);}
 .sp-loading-pulse{animation:sp-pulse 1.6s cubic-bezier(.4,0,.6,1) infinite;background:var(--sp-canvas2);border-radius:var(--sp-r-lg);}
 @keyframes sp-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.sp-skeleton{position:relative;overflow:hidden;background:var(--sp-canvas2);border-radius:var(--sp-r-md);}
+.sp-skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.55) 50%,transparent 100%);animation:sp-shimmer 1.5s ease-in-out infinite;}
+@keyframes sp-shimmer{to{transform:translateX(100%)}}
 
 /* == Alerts ================================================================ */
 .sp-alert-info{border-radius:var(--sp-r-sm);border:1px solid #C4BAFF;padding:12px 16px;font-size:14px;background:var(--sp-writing-soft);color:var(--sp-writing-ink);}
