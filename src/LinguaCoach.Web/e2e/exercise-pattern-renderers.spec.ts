@@ -691,3 +691,111 @@ test('Unsupported activity type shows fallback message with mode name and does n
   await expect(page.getByTestId('unsupported-activity-type')).toContainText('Activity not available');
   await expect(page.getByTestId('unsupported-activity-mode')).toContainText('sentenceBuilder');
 });
+
+// --- Audio state tests ---
+
+test('Audio-backed activity shows audio player section when audioUrl is provided', async ({ page }) => {
+  await withAuth(page);
+  await page.route('**/api/activity/*/audio', route => route.fulfill({
+    status: 200,
+    contentType: 'audio/mpeg',
+    body: Buffer.from(''),
+  }));
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Listen and fill in blanks',
+    interactionMode: 'listeningFillInBlanks',
+    exercisePatternKey: 'listening_fill_in_blanks',
+    audioUrl: '/api/activity/pattern-act-1/audio',
+    audioAvailable: true,
+    contentJson: JSON.stringify({
+      learningGoal: 'Complete the missing words.',
+      audioScript: 'The meeting is scheduled for Monday morning.',
+      passageWithBlanks: 'The {{gap1}} is scheduled for {{gap2}} morning.',
+      gaps: [
+        { id: 'gap1', options: ['meeting', 'call', 'event'] },
+        { id: 'gap2', options: ['Monday', 'Tuesday', 'Friday'] },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('listening-fill-in-blanks-renderer')).toBeVisible();
+  await expect(page.getByTestId('audio-player-section')).toBeVisible();
+});
+
+test('Audio-backed activity shows unavailable state and does not crash when no audioUrl', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Summarize the discussion',
+    interactionMode: 'summarizeSpokenText',
+    exercisePatternKey: 'summarize_spoken_text',
+    audioUrl: null,
+    audioUnavailableMessage: 'Audio is not available for this exercise.',
+    contentJson: JSON.stringify({
+      learningGoal: 'Write a concise summary.',
+      audioScript: 'The team discussed the project timeline.',
+      prompt: 'Summarize in 30-50 words.',
+      summaryRequirements: ['Include the main topic'],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('summarize-spoken-text-renderer')).toBeVisible();
+  await expect(page.getByTestId('audio-unavailable')).toBeVisible();
+  await expect(page.getByTestId('audio-player-section')).not.toBeVisible();
+  await page.getByTestId('summarize-spoken-text-input').fill('The team discussed the project timeline in detail.');
+  await page.getByTestId('summarize-spoken-text-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('Practice activity with audio remains submittable after audio loads', async ({ page }) => {
+  await withAuth(page);
+  await page.route('**/api/practice/next**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(activity({
+      activityType: 'listeningComprehension',
+      title: 'Write from dictation',
+      interactionMode: 'writeFromDictation',
+      exercisePatternKey: 'write_from_dictation',
+      audioUrl: null,
+      contentJson: JSON.stringify({
+        learningGoal: 'Listen and type the sentence.',
+        items: [
+          { id: 'item1', audioScript: 'Please send me the updated report by Friday.' },
+        ],
+      }),
+    })),
+  }));
+  await page.route('**/api/activity/*/attempt', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(feedback),
+  }));
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Write from dictation',
+    interactionMode: 'writeFromDictation',
+    exercisePatternKey: 'write_from_dictation',
+    audioUrl: null,
+    contentJson: JSON.stringify({
+      learningGoal: 'Listen and type the sentence.',
+      items: [
+        { id: 'item1', audioScript: 'Please send me the updated report by Friday.' },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('write-from-dictation-renderer')).toBeVisible();
+  await expect(page.getByTestId('audio-unavailable')).toBeVisible();
+  await page.getByTestId('wfd-input-item1').fill('Please send me the updated report by Friday.');
+  await expect(page.getByTestId('write-from-dictation-submit-btn')).toBeEnabled();
+  await page.getByTestId('write-from-dictation-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});

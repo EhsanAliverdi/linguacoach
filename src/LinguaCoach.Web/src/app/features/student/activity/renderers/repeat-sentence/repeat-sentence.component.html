@@ -19,17 +19,24 @@
         {{ item.displayTitle ?? ('Sentence ' + (i + 1)) }}
       </p>
 
-      <!-- Sentence prompt (audioScript fallback when audioUrl is not available) -->
+      <!-- Audio player when audioUrl is available -->
+      @if (item.audioUrl || item.audioScript) {
+        <div style="margin-bottom:12px" [attr.data-testid]="'rs-audio-' + item.id">
+          <app-audio-player
+            [audioUrl]="item.audioUrl"
+            [audioScript]="item.audioScript ?? item.sentence"
+            label="Audio"
+            helpText="Listen to the sentence, then type it below."
+          />
+        </div>
+      }
+
+      <!-- Sentence prompt always shown as text reference -->
       <div style="background:var(--sp-surface-alt,#f5f5f5);border-radius:8px;padding:14px 16px;margin-bottom:12px"
            [attr.data-testid]="'rs-sentence-' + item.id">
         <p style="font-size:15px;font-weight:600;color:var(--sp-text);line-height:1.7;margin:0">
           {{ sentenceOrFallback(item) }}
         </p>
-        @if (!item.audioUrl && (item.audioScript || item.sentence)) {
-          <p style="font-size:11px;color:var(--sp-text-secondary);margin:6px 0 0">
-            Audio not available — read the sentence above, then repeat it aloud.
-          </p>
-        }
       </div>
 
       @if (item.focusAreas && item.focusAreas.length > 0) {

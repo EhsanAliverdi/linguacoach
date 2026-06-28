@@ -49,15 +49,15 @@ describe('SummarizeGroupDiscussionComponent', () => {
     expect(el.textContent).toContain('Choosing a destination');
   });
 
-  it('renders audio script fallback when no audioUrl', () => {
-    const el = fixture.nativeElement.querySelector('[data-testid="sgd-audio-script-disc1"]');
-    expect(el).toBeTruthy();
-    expect(el.textContent).toContain('Ali');
+  it('shows unavailable state with audio script when audioUrl is null', () => {
+    const unavailable = fixture.nativeElement.querySelector('[data-testid="audio-unavailable"]');
+    expect(unavailable).toBeTruthy();
+    expect(unavailable.textContent).toContain('Ali');
   });
 
-  it('does not render audio player when audioUrl is null', () => {
-    const el = fixture.nativeElement.querySelector('[data-testid="sgd-audio-disc1"]');
-    expect(el).toBeFalsy();
+  it('does not show native audio player when audioUrl is null', () => {
+    const playerSection = fixture.nativeElement.querySelector('[data-testid="audio-player-section"]');
+    expect(playerSection).toBeFalsy();
   });
 
   it('renders speaker list when speakers are present', () => {
@@ -117,23 +117,23 @@ describe('SummarizeGroupDiscussionComponent', () => {
     expect(el.disabled).toBeTrue();
   });
 
-  it('renders audio player when audioUrl is provided', async () => {
+  it('renders audio player section when audioUrl is provided', async () => {
     component.content = {
       ...MOCK_CONTENT,
       items: [{ ...MOCK_CONTENT.items[0], audioUrl: 'https://example.com/audio.mp3' }],
     };
     fixture.detectChanges();
-    const audioEl = fixture.nativeElement.querySelector('[data-testid="sgd-audio-disc1"]');
-    expect(audioEl).toBeTruthy();
+    const playerSection = fixture.nativeElement.querySelector('[data-testid="audio-player-section"]');
+    expect(playerSection).toBeTruthy();
   });
 
-  it('does not render script fallback when audioUrl is provided', async () => {
+  it('does not show unavailable state when audioUrl is provided', async () => {
     component.content = {
       ...MOCK_CONTENT,
       items: [{ ...MOCK_CONTENT.items[0], audioUrl: 'https://example.com/audio.mp3' }],
     };
     fixture.detectChanges();
-    const scriptEl = fixture.nativeElement.querySelector('[data-testid="sgd-audio-script-disc1"]');
-    expect(scriptEl).toBeFalsy();
+    const unavailable = fixture.nativeElement.querySelector('[data-testid="audio-unavailable"]');
+    expect(unavailable).toBeFalsy();
   });
 });

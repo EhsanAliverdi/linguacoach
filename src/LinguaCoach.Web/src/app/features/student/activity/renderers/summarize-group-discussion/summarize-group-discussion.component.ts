@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
+import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 
 export interface SummarizeGroupDiscussionSpeaker {
   name: string;
@@ -34,7 +35,7 @@ export interface SummarizeGroupDiscussionAnswer {
 @Component({
   selector: 'app-summarize-group-discussion',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent],
+  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent, AudioPlayerComponent],
   templateUrl: './summarize-group-discussion.component.html',
 })
 export class SummarizeGroupDiscussionComponent {

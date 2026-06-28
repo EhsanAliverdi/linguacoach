@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16B)
+lastUpdated: 2026-06-28 (16C)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,32 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (16B)
+Last updated: 2026-06-28 (16C)
+
+---
+
+## Audio/TTS and Listening Activity Reliability (Phase 16C, 2026-06-28)
+
+Hardening-only pass. No new product features, no UI redesign, no AI changes.
+
+**What changed:**
+
+- **P0 fix:** Repeat Sentence activities with a real audio URL now show an audio player. Previously, the `audioUrl` field on the item model was never rendered. Students with Repeat Sentence exercises now receive a full audio playback affordance.
+- **P1 fix:** Three listening renderers (Listening Fill-in-Blanks, Highlight Correct Summary, Highlight Incorrect Words) hid the audio player when `audioUrl` was set but `audioScript` was null. Fixed; the player now shows whenever either field is present.
+- **P1 fix:** Retell Lecture and Summarize Group Discussion used raw `<audio>` elements, bypassing the shared AudioPlayerComponent. Both are now migrated to `app-audio-player`.
+- **P1 fix:** The shared `AudioPlayerComponent` now has a full loading/error/retry state machine. Students see a loading indicator while audio fetches, an error message with a retry button if it fails, and the audio transcript as a fallback when audio is unavailable or fails.
+
+**What is NOT changed:**
+
+- No new exercise formats.
+- No new TTS provider or AI evaluation paths.
+- No backend API changes. The audio endpoint gate (`ListeningComprehension` only) is a known limitation, not a bug from this phase.
+- No changes to session completion model, mastery, or learning plan logic.
+- No admin UI changes.
+
+**Test coverage:** 1,496 Angular unit tests pass (17 new). 2,732 backend tests pass. 262 Playwright E2E tests pass. Production build clean.
+
+Review: `docs/reviews/2026-06-28-phase-16c-audio-tts-listening-reliability-review.md`.
 
 ---
 

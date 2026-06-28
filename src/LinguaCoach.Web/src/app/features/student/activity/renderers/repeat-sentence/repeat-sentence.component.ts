@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExerciseLessonIntroComponent } from '../exercise-lesson-intro/exercise-lesson-intro.component';
+import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 
 export interface RepeatSentenceItem {
   id: string;
@@ -28,7 +29,7 @@ export interface RepeatSentenceAnswer {
 @Component({
   selector: 'app-repeat-sentence',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent],
+  imports: [CommonModule, FormsModule, ExerciseLessonIntroComponent, AudioPlayerComponent],
   templateUrl: './repeat-sentence.component.html',
 })
 export class RepeatSentenceComponent {

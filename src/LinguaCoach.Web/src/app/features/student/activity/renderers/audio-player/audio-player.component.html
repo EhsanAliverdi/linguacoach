@@ -1,7 +1,30 @@
 @if (showPlayer) {
   <div class="sp-card" style="padding:14px" data-testid="audio-player-section">
     <p style="font-size:12px;font-weight:800;color:var(--sp-listening);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">{{ label }}</p>
-    <audio controls [src]="audioUrl!" style="width:100%;display:block" data-testid="audio-player"></audio>
+
+    @if (audioState === 'failed') {
+      <div class="sp-alert-info" style="font-size:13px;margin-bottom:8px" data-testid="audio-failed">
+        Audio could not be loaded.
+        <button type="button" (click)="retry()" class="sp-link"
+                style="margin-left:8px;font-size:13px;background:none;border:none;cursor:pointer;padding:0;color:inherit;text-decoration:underline"
+                data-testid="audio-retry-btn">
+          Try again
+        </button>
+      </div>
+      @if (audioScript) {
+        <p style="font-size:13px;font-style:italic;color:var(--sp-muted);margin:0">{{ audioScript }}</p>
+      }
+    } @else {
+      @for (key of [retryKey]; track key) {
+        <audio controls [src]="audioUrl!" style="width:100%;display:block" data-testid="audio-player"
+               (loadstart)="onLoadStart()" (canplay)="onCanPlay()" (error)="onError()">
+        </audio>
+      }
+      @if (audioState === 'loading') {
+        <p style="font-size:12px;color:var(--sp-muted);margin-top:6px" data-testid="audio-loading">Loading audio…</p>
+      }
+    }
+
     @if (helpText) {
       <p style="font-size:12px;color:var(--sp-muted);margin-top:8px">{{ helpText }}</p>
     }
@@ -10,7 +33,7 @@
   <div class="sp-alert-info" style="font-size:13px" data-testid="audio-unavailable">
     @if (audioScript) {
       <p style="margin-bottom:8px">{{ statusMessage }}</p>
-      <p style="font-style:italic;color:var(--sp-muted)">{{ audioScript }}</p>
+      <p style="font-style:italic;color:var(--sp-muted);margin:0">{{ audioScript }}</p>
     } @else {
       {{ statusMessage }}
     }

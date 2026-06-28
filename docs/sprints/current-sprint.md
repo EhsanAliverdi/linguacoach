@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16B)
+lastUpdated: 2026-06-28 (16C)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,29 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 16C — Audio/TTS and Listening Activity Reliability** — complete (2026-06-28)
+
+Hardening-only pass targeting audio playback, TTS fallback, and listening activity state reliability across Today and Practice. No new exercise formats, AI scoring, lesson player redesign, or routing/mastery/placement/learning-plan changes.
+
+**P0 fix:** `repeat-sentence.component.html` — `audioUrl` was present on the item model but no audio UI was ever rendered. Added conditional `<app-audio-player>` block before the sentence text div.
+
+**P1 fix:** `listening-fill-in-blanks`, `highlight-correct-summary`, `highlight-incorrect-words` — all three conditioned `app-audio-player` display on `@if (content.audioScript)`. When `audioUrl` was set but `audioScript` was null, the player was hidden. Fixed to `@if (content.audioScript || content.audioUrl)`.
+
+**P1 fix:** `retell-lecture` and `summarize-group-discussion` — both used raw `<audio controls>` bypassing `AudioPlayerComponent`. Migrated to `<app-audio-player>` with proper import.
+
+**P1 fix:** `AudioPlayerComponent` — added `AudioLoadState` type (`'idle' | 'loading' | 'ready' | 'failed'`), loading indicator (`data-testid="audio-loading"`), failed state (`data-testid="audio-failed"`), retry button (`data-testid="audio-retry-btn"`), and `@for (key of [retryKey]; track key)` DOM re-creation pattern for retry.
+
+**Tests added:**
+- `audio-player.component.spec.ts` (NEW) — 17 unit tests covering all state transitions, fallback script, retry, unavailable, and label/helpText rendering.
+- `summarize-group-discussion.component.spec.ts` — 4 tests updated for stale testids after migration from raw `<audio>`.
+- `exercise-pattern-renderers.spec.ts` — 3 new Playwright tests: audio player section visible when url set, unavailable state when no url, activity submittable with no audio.
+
+**Build/test totals:** Angular unit: 1,496 pass (17 new). Backend: 2,732 pass (unchanged). Playwright E2E: 262 pass, 3 skipped. Production build: clean.
+
+Review: `docs/reviews/2026-06-28-phase-16c-audio-tts-listening-reliability-review.md`.
+
+---
 
 **Phase 16B — Activity Completion and Feedback Loop Hardening** — complete (2026-06-28)
 
