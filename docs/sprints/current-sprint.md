@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15G)
+lastUpdated: 2026-06-28 (15H)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,32 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 15H — Student Experience QA and Flow Hardening** — complete (2026-06-28)
+
+Hardening-only pass across all six student pages. No new features, no visual redesign.
+
+**Bug fix (P1):** `profile.component.ts` — `CEFR_EXPLANATIONS` constant (lines 57–64) and fallback dash (line 123) contained garbled UTF-8 mojibake (`â€"` instead of `—`). Both fixed. Regression guard added in student-smoke.spec.ts.
+
+**New E2E smoke suite (Part H):** `e2e/student-smoke.spec.ts` — 18 tests across 6 groups:
+- A (5 tests): Unauthenticated → `/dashboard`, `/journey`, `/practice`, `/progress`, `/profile` all redirect to `/login`.
+- B (2 tests): Student JWT blocked from `/admin` → `/dashboard`; CourseReady student blocked from `/placement` → `/dashboard`.
+- C (2 tests): `PlacementRequired` → `/practice`; `PlacementInProgress` → `/journey` — both redirect to `/placement`.
+- D (5 tests): Browser refresh (`page.reload()`) on all five main student routes — auth persists, page re-renders correctly.
+- E (3 tests): Mobile 390×844 — `/dashboard`, `/journey`, `/practice` have no horizontal overflow, bottom-nav visible.
+- F (1 test): Profile CEFR explanation does not contain garbled encoding (`â€"`).
+
+All 18 tests use mocked APIs. Zero live-backend dependency.
+
+**Route guard audit (Part B):** All guards confirmed correct. `/dashboard`, `/progress`, `/profile` have `authGuard` only (intentional). `/journey`, `/practice`, `/activity`, `/lesson/:id` have `authGuard` + `placementRequiredRedirectGuard`. `/placement` has `authGuard` + `placementAccessGuard`. `/admin/**` has `adminGuard`.
+
+**Admin parity fix (Part I):** `e2e/admin-student-detail.spec.ts` mock was missing handlers for `/practice-summary` (Phase 15D) and `/progress-summary` (Phase 15F). The `{}` fallback left cards in uncertain state, causing intermittent test failure. Added explicit minimal-DTO mocks for both endpoints. All 3 admin-student-detail tests now pass consistently.
+
+**Build/test totals:** 0 errors. Backend: 2,732 (unchanged). Angular unit: 1,464 (unchanged). Playwright E2E: 247 (18 new + 1 fixed, all pass).
+
+Review: `docs/reviews/2026-06-28-phase-15h-student-qa-flow-hardening-review.md`.
+
+---
 
 **Phase 15G — Student Profile and Preferences Functional Integration** — complete (2026-06-28)
 

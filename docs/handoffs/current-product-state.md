@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15G)
+lastUpdated: 2026-06-28 (15H)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,31 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (15G)
+Last updated: 2026-06-28 (15H)
+
+---
+
+## Student Experience QA Hardening (Phase 15H, 2026-06-28)
+
+Completes a hardening-only pass across all six student pages. No new product features, no visual redesign, no AI changes.
+
+**What changed:**
+
+- CEFR explanation text in the Profile page was corrupted (UTF-8 mojibake — `â€"` instead of `—`). Fixed in `profile.component.ts`. Regression test added.
+- Route guard coverage is now fully E2E-verified: all five unauthenticated redirect paths, role-based admin block, placement-required redirects for both `PlacementRequired` and `PlacementInProgress` states, and completed-student block on `/placement`.
+- Browser refresh persistence is E2E-verified for all five main student routes (`/dashboard`, `/journey`, `/practice`, `/progress`, `/profile`). Auth survives `page.reload()` because `addInitScript` is used throughout (not `page.evaluate`).
+- Mobile viewport (390×844) is now E2E-verified for `/dashboard`, `/journey`, and `/practice` — no horizontal overflow, bottom-nav visible. (Progress already had mobile coverage from Phase 15F.)
+- New file: `e2e/student-smoke.spec.ts` with 18 mocked-API tests. Zero live-backend dependency.
+
+**What is NOT changed:**
+
+- No visual redesign. Student UI visual overhaul is intentionally deferred until after this hardening phase.
+- No new AI logic or exercise formats.
+- No new API endpoints.
+
+**Test coverage:** 18 new Playwright E2E tests. All 2,732 backend tests and 1,464 Angular unit tests pass.
+
+Review: `docs/reviews/2026-06-28-phase-15h-student-qa-flow-hardening-review.md`.
 
 ---
 

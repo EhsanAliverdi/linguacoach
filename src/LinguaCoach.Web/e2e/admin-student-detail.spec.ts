@@ -56,6 +56,14 @@ async function mockAdmin(page: Page) {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MEMORY) });
       return;
     }
+    if (url.includes('/practice-summary')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'Ready', reviewQueueCount: 0, reservedCount: 0, weakestSkill: null, topSuggestion: null, isReplenishmentRecommended: false }) });
+      return;
+    }
+    if (url.includes('/progress-summary')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ currentCefrLevel: 'B1', placementCefrLevel: 'B1', placementCompletedAt: null, masteredObjectivesCount: 0, inProgressObjectivesCount: 1, reviewQueueCount: 0, totalObjectives: 5, completionPercentage: 20, strongestSkill: null, weakestSkill: null, weakSkillsCount: 0, lastLearningActivityAt: null, currentLearningPhase: 'Active' }) });
+      return;
+    }
     if (/\/students\/[^/]+$/.test(url)) {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(STUDENT) });
       return;

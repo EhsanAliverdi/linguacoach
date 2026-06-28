@@ -55,12 +55,12 @@ const PREDEFINED_FOCUS_AREAS = [
 ];
 
 const CEFR_EXPLANATIONS: Record<string, string> = {
-  A1: 'Beginner â€” can understand and use basic phrases',
-  A2: 'Elementary â€” can communicate in simple routine tasks',
-  B1: 'Intermediate â€” can handle most everyday situations',
-  B2: 'Upper-Intermediate â€” can understand complex texts and interact fluently',
-  C1: 'Advanced â€” can use language flexibly and effectively',
-  C2: 'Proficient â€” can understand virtually everything heard or read',
+  A1: 'Beginner — can understand and use basic phrases',
+  A2: 'Elementary — can communicate in simple routine tasks',
+  B1: 'Intermediate — can handle most everyday situations',
+  B2: 'Upper-Intermediate — can understand complex texts and interact fluently',
+  C1: 'Advanced — can use language flexibly and effectively',
+  C2: 'Proficient — can understand virtually everything heard or read',
 };
 
 const SUPPORT_LANGUAGES = [
@@ -120,7 +120,7 @@ const SUPPORT_LANGUAGES = [
             }
           </div>
           <div style="background:var(--sp-grad-brand-soft);border-radius:var(--sp-r-sm);padding:4px 10px;font-size:11px;font-weight:700;color:var(--sp-brand)">
-            {{ profile()?.cefrLevel ?? 'â€”' }}
+            {{ profile()?.cefrLevel ?? '—' }}
           </div>
         </div>
         <div style="font-size:11px;color:var(--sp-faint);margin-top:12px;padding-top:12px;border-top:1px solid var(--sp-border)">
