@@ -990,3 +990,29 @@ export interface AdminPlacementSubmitResult {
   nextItem: AdminPlacementNextItem | null;
   summary: AdminPlacementAssessmentSummary | null;
 }
+
+// Phase 15E — Learning Plan / Journey admin parity
+
+export interface AdminLearningPlanObjective {
+  objectiveKey: string;
+  title: string | null;
+  skill: string;
+  cefrLevel: string;
+  status: string;
+  sequenceNumber: number;
+  isReview: boolean;
+  isBlocked: boolean;
+}
+
+export interface AdminLearningPlanProgress {
+  planStatus: string;
+  currentCefrLevel: string;
+  currentLearningPhase: string;
+  totalObjectives: number;
+  completionPercentage: number;
+  lastCompletedAt: string | null;
+  currentObjective: AdminLearningPlanObjective | null;
+  upcomingObjectives: AdminLearningPlanObjective[];
+  completedObjectives: AdminLearningPlanObjective[];
+  reviewObjectives: AdminLearningPlanObjective[];
+}

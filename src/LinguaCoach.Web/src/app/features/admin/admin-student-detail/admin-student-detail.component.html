@@ -340,6 +340,67 @@
         }
       </sp-admin-card>
 
+      <!-- Learning Plan / Journey — Phase 15E -->
+      <sp-admin-card title="Learning Journey" data-testid="learning-plan-card">
+        @if (learningPlanProgressLoading()) {
+          <sp-admin-loading-state message="Loading learning plan" />
+        } @else if (learningPlanProgressError()) {
+          <sp-admin-error-state title="Learning plan unavailable" [message]="learningPlanProgressError()" />
+        } @else if (learningPlanProgress()) {
+          @let lp = learningPlanProgress()!;
+          <div class="sp-admin-card-grid-2">
+            <div>
+              <div class="sp-admin-section-title">Plan overview</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Status</dt>
+                <dd>
+                  <sp-admin-badge [tone]="lp.planStatus === 'Active' ? 'success' : 'neutral'"
+                    data-testid="lp-status-badge">{{ lp.planStatus }}</sp-admin-badge>
+                </dd>
+                <dt>CEFR level</dt>
+                <dd class="sp-admin-text-muted" data-testid="lp-cefr">{{ lp.currentCefrLevel }}</dd>
+                <dt>Phase</dt>
+                <dd class="sp-admin-text-muted" data-testid="lp-phase">{{ lp.currentLearningPhase }}</dd>
+                <dt>Objectives</dt>
+                <dd class="sp-admin-text-muted" data-testid="lp-objectives">
+                  {{ lp.completedObjectives.length }} / {{ lp.totalObjectives }} completed
+                </dd>
+                <dt>Progress</dt>
+                <dd class="sp-admin-text-muted" data-testid="lp-progress">{{ lp.completionPercentage | number:'1.0-0' }}%</dd>
+                <dt>Review queue</dt>
+                <dd>
+                  <sp-admin-badge [tone]="lp.reviewObjectives.length > 0 ? 'warning' : 'neutral'"
+                    data-testid="lp-review-count">{{ lp.reviewObjectives.length }}</sp-admin-badge>
+                </dd>
+              </dl>
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Current objective</div>
+              @if (lp.currentObjective) {
+                <dl class="sp-admin-detail-list sp-admin-mt-3">
+                  <dt>Title</dt>
+                  <dd class="sp-admin-text-muted" data-testid="lp-current-title">
+                    {{ lp.currentObjective.title ?? (lp.currentObjective.skill + ' — ' + lp.currentObjective.cefrLevel) }}
+                  </dd>
+                  <dt>Skill</dt>
+                  <dd class="sp-admin-text-muted" data-testid="lp-current-skill">{{ lp.currentObjective.skill }}</dd>
+                  <dt>Level</dt>
+                  <dd class="sp-admin-text-muted">{{ lp.currentObjective.cefrLevel }}</dd>
+                  <dt>Status</dt>
+                  <dd>
+                    <sp-admin-badge tone="info" data-testid="lp-current-status">{{ lp.currentObjective.status }}</sp-admin-badge>
+                  </dd>
+                </dl>
+              } @else {
+                <p class="sp-admin-text-muted sp-admin-mt-3" data-testid="lp-no-current">No active objective.</p>
+              }
+            </div>
+          </div>
+        } @else {
+          <sp-admin-empty-state message="No learning plan data available." />
+        }
+      </sp-admin-card>
+
       <!-- Mastery evaluation summary — full width -->
       <sp-admin-card title="Mastery evaluation">
         @if (masteryPoolSummaryLoading()) {

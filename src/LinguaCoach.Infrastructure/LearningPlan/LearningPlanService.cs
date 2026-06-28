@@ -516,6 +516,159 @@ public sealed class LearningPlanService : ILearningPlanService
         }
     }
 
+    public async Task<StudentJourneyResult> GetJourneyAsync(
+        Guid studentProfileId,
+        CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == studentProfileId, ct);
+
+        var cefrLevel = _routing.NormalizeCefrLevel(profile?.CefrLevel);
+
+        var plan = await LoadActivePlanAsync(studentProfileId, ct);
+        if (plan is null)
+            return EmptyJourney(cefrLevel);
+
+        var objectives = plan.Objectives
+            .OrderBy(o => o.PlannedOrder ?? 999)
+            .ThenBy(o => o.Priority)
+            .ToList();
+
+        bool hasInProgress = objectives.Any(o => o.Status == LearningPlanObjectiveStatus.InProgress);
+        bool readyAssigned = false;
+
+        var mapped = objectives
+            .Select((o, idx) => MapObjectiveToDto(o, idx + 1, hasInProgress, ref readyAssigned))
+            .ToList();
+
+        var current = mapped.FirstOrDefault(o => o.Status == "Current")
+            ?? mapped.FirstOrDefault(o => o.Status == "Ready");
+
+        var upcoming = mapped
+            .Where(o => o.Status is "Ready" or "Upcoming" or "Locked" or "Blocked")
+            .ToList();
+
+        var completed = mapped
+            .Where(o => o.Status is "Completed")
+            .OrderByDescending(o => o.LastEvaluatedAt)
+            .ToList();
+
+        var review = mapped
+            .Where(o => o.Status is "Review")
+            .ToList();
+
+        var total = mapped.Count;
+        var doneCount = completed.Count;
+        var completionPct = total > 0 ? Math.Round((double)doneCount / total * 100, 1) : 0;
+
+        var lastCompletedAt = completed
+            .Select(o => o.LastEvaluatedAt)
+            .Where(d => d.HasValue)
+            .Select(d => d!.Value)
+            .DefaultIfEmpty()
+            .Max() is DateTime max && max != default ? max : (DateTime?)null;
+
+        var masteryPct = total > 0
+            ? Math.Round((double)mapped.Count(o => o.IsMastered) / total * 100, 1)
+            : 0;
+        var phase = DeterminePhase(cefrLevel, masteryPct);
+        var milestones = BuildJourneyMilestones(doneCount, lastCompletedAt);
+
+        return new StudentJourneyResult(
+            CurrentCefrLevel: cefrLevel,
+            CurrentLearningPhase: phase,
+            TotalObjectives: total,
+            CompletionPercentage: completionPct,
+            LastCompletedAt: lastCompletedAt,
+            CurrentObjective: current,
+            UpcomingObjectives: upcoming,
+            CompletedObjectives: completed,
+            ReviewObjectives: review,
+            Milestones: milestones,
+            PlanStatus: plan.Status.ToString());
+    }
+
+    private static StudentJourneyObjectiveDto MapObjectiveToDto(
+        StudentLearningPlanObjective o,
+        int sequenceNumber,
+        bool hasInProgress,
+        ref bool readyAssigned)
+    {
+        bool isMastered = o.Status == LearningPlanObjectiveStatus.Mastered;
+
+        string status = o.Status switch
+        {
+            LearningPlanObjectiveStatus.InProgress => "Current",
+            LearningPlanObjectiveStatus.Completed  => "Completed",
+            LearningPlanObjectiveStatus.Mastered   => "Completed",
+            LearningPlanObjectiveStatus.Review     => "Review",
+            LearningPlanObjectiveStatus.Blocked    => "Blocked",
+            LearningPlanObjectiveStatus.Deferred   => "Locked",
+            LearningPlanObjectiveStatus.Active     => AssignActiveStatus(hasInProgress, ref readyAssigned),
+            _                                      => "Locked",
+        };
+
+        return new StudentJourneyObjectiveDto(
+            ObjectiveKey:    o.ObjectiveKey,
+            Title:           o.Title,
+            Skill:           o.Skill,
+            CefrLevel:       o.CefrLevel,
+            Status:          status,
+            SequenceNumber:  sequenceNumber,
+            IsReview:        o.IsReview,
+            IsBlocked:       o.IsBlocked,
+            BlockedByKey:    o.BlockedByObjectiveKey,
+            LastEvaluatedAt: o.LastEvaluatedAt,
+            IsMastered:      isMastered);
+    }
+
+    private static string AssignActiveStatus(bool hasInProgress, ref bool readyAssigned)
+    {
+        if (hasInProgress) return "Upcoming";
+        if (!readyAssigned) { readyAssigned = true; return "Ready"; }
+        return "Upcoming";
+    }
+
+    private static IReadOnlyList<StudentJourneyMilestone> BuildJourneyMilestones(
+        int completedCount,
+        DateTime? lastCompletedAt)
+    {
+        var milestones = new List<StudentJourneyMilestone>
+        {
+            new("placement_completed", "Placement complete", null),
+            new("learning_started",    "Learning plan created", null),
+        };
+
+        if (completedCount >= 1)
+            milestones.Add(new("first_objective_completed",
+                "First objective completed", lastCompletedAt));
+
+        if (completedCount >= 5)
+            milestones.Add(new("five_objectives_completed",
+                "5 objectives completed", null));
+
+        if (completedCount >= 10)
+            milestones.Add(new("ten_objectives_completed",
+                "10 objectives completed", null));
+
+        return milestones;
+    }
+
+    private static StudentJourneyResult EmptyJourney(string cefrLevel) =>
+        new(
+            CurrentCefrLevel:   cefrLevel,
+            CurrentLearningPhase: "Preparing",
+            TotalObjectives:    0,
+            CompletionPercentage: 0,
+            LastCompletedAt:    null,
+            CurrentObjective:   null,
+            UpcomingObjectives: [],
+            CompletedObjectives: [],
+            ReviewObjectives:   [],
+            Milestones:         [],
+            PlanStatus:         "None");
+
     private void LogPlanExhaustionIfNeeded(StudentLearningPlan plan, Guid studentProfileId)
     {
         var hasActiveObjectives = plan.Objectives.Any(

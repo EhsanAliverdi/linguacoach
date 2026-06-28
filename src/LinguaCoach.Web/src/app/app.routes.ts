@@ -172,12 +172,12 @@ export const routes: Routes = [
       {
         path: 'my-path',
         canActivate: [placementRequiredRedirectGuard],
-        loadComponent: () => import('./features/student/learning-path/learning-path.component').then(m => m.LearningPathComponent),
+        loadComponent: () => import('./features/student/journey/journey.component').then(m => m.JourneyComponent),
       },
       {
         path: 'journey',
         canActivate: [placementRequiredRedirectGuard],
-        loadComponent: () => import('./features/student/learning-path/learning-path.component').then(m => m.LearningPathComponent),
+        loadComponent: () => import('./features/student/journey/journey.component').then(m => m.JourneyComponent),
       },
       {
         path: 'practice',

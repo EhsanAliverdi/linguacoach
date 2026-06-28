@@ -10,6 +10,15 @@ namespace LinguaCoach.Application.LearningPlan;
 public interface ILearningPlanService
 {
     /// <summary>
+    /// Returns the full Learning Journey view for the student-facing Journey page.
+    /// Groups objectives by status (Current, Completed, Upcoming, Review).
+    /// Derives milestones from plan data only — no fabricated achievements.
+    /// Returns an empty result when no active plan exists (never throws for missing plan).
+    /// </summary>
+    Task<StudentJourneyResult> GetJourneyAsync(
+        Guid studentProfileId,
+        CancellationToken ct = default);
+    /// <summary>
     /// Returns the student's current active plan summary, generating one if none exists.
     /// </summary>
     Task<LearningPlanSummary> GetOrCreatePlanAsync(
@@ -155,3 +164,43 @@ public sealed record PlannedObjectiveContext(
     bool IsReview,
     int Priority,
     string Source);
+
+// ── Phase 15E: Learning Journey view model ──────────────────────────────────
+
+/// <summary>Full Learning Journey for the student-facing Journey page.</summary>
+public sealed record StudentJourneyResult(
+    string CurrentCefrLevel,
+    string CurrentLearningPhase,
+    int TotalObjectives,
+    double CompletionPercentage,
+    DateTime? LastCompletedAt,
+    StudentJourneyObjectiveDto? CurrentObjective,
+    IReadOnlyList<StudentJourneyObjectiveDto> UpcomingObjectives,
+    IReadOnlyList<StudentJourneyObjectiveDto> CompletedObjectives,
+    IReadOnlyList<StudentJourneyObjectiveDto> ReviewObjectives,
+    IReadOnlyList<StudentJourneyMilestone> Milestones,
+    string PlanStatus);
+
+/// <summary>
+/// A single objective in the Learning Journey view.
+/// Status values: Current | Ready | Upcoming | Locked | Completed | Review | Blocked
+/// </summary>
+public sealed record StudentJourneyObjectiveDto(
+    string ObjectiveKey,
+    string? Title,
+    string Skill,
+    string CefrLevel,
+    /// <summary>Current | Ready | Upcoming | Locked | Completed | Review | Blocked</summary>
+    string Status,
+    int SequenceNumber,
+    bool IsReview,
+    bool IsBlocked,
+    string? BlockedByKey,
+    DateTime? LastEvaluatedAt,
+    bool IsMastered);
+
+/// <summary>A meaningful learning milestone derived from real plan data.</summary>
+public sealed record StudentJourneyMilestone(
+    string Type,
+    string Label,
+    DateTime? OccurredAt);

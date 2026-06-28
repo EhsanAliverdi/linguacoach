@@ -253,6 +253,15 @@ public sealed class ThrowingLearningPlanService : ILearningPlanService
     public Task<LearningPlanObjectiveProgressUpdate> TryUpdateObjectiveProgressAsync(Guid studentProfileId, string objectiveKey, CancellationToken ct = default)
         => Task.FromResult(new LearningPlanObjectiveProgressUpdate(objectiveKey, null, null, false, "no-op"));
 
+    public Task<StudentJourneyResult> GetJourneyAsync(Guid studentProfileId, CancellationToken ct = default)
+        => Task.FromResult(new StudentJourneyResult(
+            "A2", "Preparing", 0, 0, null, null,
+            Array.Empty<StudentJourneyObjectiveDto>(),
+            Array.Empty<StudentJourneyObjectiveDto>(),
+            Array.Empty<StudentJourneyObjectiveDto>(),
+            Array.Empty<StudentJourneyMilestone>(),
+            "None"));
+
     private static LearningPlanSummary EmptySummary(Guid profileId) => new(
         Guid.NewGuid(), profileId, "A2", LearningPlanStatus.Active,
         "placement_completed", 0, 0, 0, 0, 0, 0, 0, 0, null,

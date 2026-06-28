@@ -1,0 +1,264 @@
+<!-- Loading skeleton -->
+@if (loading()) {
+  <div data-testid="journey-loading" style="display:flex;flex-direction:column;gap:16px">
+    <div class="sp-loading-pulse" style="height:80px"></div>
+    <div class="sp-loading-pulse" style="height:120px"></div>
+    <div class="sp-loading-pulse" style="height:200px"></div>
+  </div>
+} @else if (error()) {
+  <!-- Error state -->
+  <div data-testid="journey-error" class="sp-card" style="padding:24px;text-align:center">
+    <p style="font-size:14px;color:var(--sp-muted);margin-bottom:16px">{{ error() }}</p>
+    <button type="button" (click)="load()" class="sp-button-primary" data-testid="journey-retry">
+      Try again
+    </button>
+  </div>
+} @else if (!hasPlan()) {
+  <!-- Preparing / empty state -->
+  <div style="margin-bottom:20px">
+    <p class="sp-eyebrow" style="margin-bottom:4px">Learning Journey</p>
+    <h1 style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Your roadmap</h1>
+  </div>
+  <div class="sp-card sp-empty-state" data-testid="journey-preparing"
+    style="padding:32px;text-align:center">
+    <p style="font-size:15px;font-weight:700;color:var(--sp-ink);margin-bottom:6px">
+      Your learning plan is being prepared
+    </p>
+    <p style="font-size:13px;color:var(--sp-muted);margin-bottom:20px">
+      Complete your placement assessment to unlock your personalised journey.
+    </p>
+    <a routerLink="/dashboard" class="sp-button-primary">Go to Today</a>
+  </div>
+} @else {
+  <!-- Page heading -->
+  <div style="margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <p class="sp-eyebrow" style="margin-bottom:4px">Learning Journey</p>
+      <h1 style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Your roadmap</h1>
+    </div>
+    <a routerLink="/dashboard" class="sp-button-ghost" style="font-size:13px">Back to Today</a>
+  </div>
+
+  <!-- Current position card -->
+  <div class="sp-card" data-testid="current-position"
+    style="padding:18px;margin-bottom:16px;border-color:var(--sp-border2);display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+    <div style="flex:1;min-width:180px">
+      <p class="sp-eyebrow" style="margin-bottom:4px">Where you are now</p>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <span style="font-size:22px;font-weight:850;color:var(--sp-ink)"
+          data-testid="journey-cefr">{{ journey()!.currentCefrLevel }}</span>
+        <span style="font-size:13px;color:var(--sp-muted);font-weight:600"
+          data-testid="journey-phase">{{ journey()!.currentLearningPhase }}</span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:180px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700;color:var(--sp-muted)">Plan progress</span>
+        <span style="font-size:12px;font-weight:800;color:var(--sp-ink)"
+          data-testid="journey-progress-pct">{{ journey()!.completionPercentage | number:'1.0-0' }}%</span>
+      </div>
+      <div style="height:6px;background:var(--sp-border);border-radius:3px;overflow:hidden">
+        <div [style.width]="progressBarWidth()"
+          style="height:100%;background:var(--sp-primary);border-radius:3px;transition:width .4s ease"
+          data-testid="journey-progress-bar"></div>
+      </div>
+      <p style="font-size:11px;color:var(--sp-muted);margin-top:5px">
+        {{ journey()!.completedObjectives.length }} of {{ journey()!.totalObjectives }} objectives completed
+      </p>
+    </div>
+  </div>
+
+  <!-- Current objective (highlighted) -->
+  @if (hasCurrentObjective()) {
+    <div class="sp-card" data-testid="current-objective"
+      style="padding:18px;margin-bottom:16px;border-color:var(--sp-primary);border-width:2px;background:var(--sp-primary-soft,#f0f0ff)">
+      <p class="sp-eyebrow" style="margin-bottom:6px;color:var(--sp-primary)">Current objective</p>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <p style="font-size:15px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">
+            {{ objectiveDisplayTitle(journey()!.currentObjective!) }}
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <span class="sp-pill" style="background:var(--sp-primary-soft,#e8e8ff);color:var(--sp-primary);font-size:11px;padding:2px 8px">
+              {{ skillLabel(journey()!.currentObjective!.skill) }}
+            </span>
+            <span class="sp-pill" style="background:var(--sp-canvas2);color:var(--sp-muted);font-size:11px;padding:2px 8px">
+              {{ journey()!.currentObjective!.cefrLevel }}
+            </span>
+            @if (journey()!.currentObjective!.isReview) {
+              <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:11px;padding:2px 8px">
+                Review
+              </span>
+            }
+          </div>
+        </div>
+        <a routerLink="/dashboard" class="sp-button-primary" style="flex-shrink:0"
+          data-testid="continue-lesson-btn">Continue Lesson</a>
+      </div>
+    </div>
+  }
+
+  <!-- Review objectives -->
+  @if (hasReviewObjectives()) {
+    <div class="sp-card" data-testid="review-objectives"
+      style="padding:18px;margin-bottom:16px;border-color:var(--sp-warn)">
+      <p class="sp-eyebrow" style="margin-bottom:10px;color:var(--sp-warn)">Review queue</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        @for (obj of journey()!.reviewObjectives; track obj.objectiveKey) {
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--sp-warn-soft);border-radius:var(--sp-r-sm)">
+            <span class="sp-pill" style="background:var(--sp-warn);color:#fff;font-size:10px;padding:2px 6px;flex-shrink:0">Review</span>
+            <span style="font-size:13px;font-weight:700;color:var(--sp-ink);flex:1;min-width:0">
+              {{ objectiveDisplayTitle(obj) }}
+            </span>
+            <span style="font-size:11px;color:var(--sp-muted)">{{ skillLabel(obj.skill) }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="sp-card" data-testid="review-queue-empty"
+      style="padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <svg width="16" height="16" fill="none" stroke="var(--sp-success)" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <span style="font-size:13px;color:var(--sp-muted);font-weight:600">
+        You're up to date. Nothing needs review right now.
+      </span>
+    </div>
+  }
+
+  <!-- Learning timeline (all upcoming objectives) -->
+  <div style="margin-bottom:20px">
+    <p class="sp-eyebrow" style="margin-bottom:12px">Learning timeline</p>
+    @if (journey()!.upcomingObjectives.length === 0) {
+      <div class="sp-empty-state" data-testid="timeline-empty">
+        <p style="font-size:14px;color:var(--sp-muted)">No upcoming objectives scheduled.</p>
+      </div>
+    } @else {
+      <div style="display:flex;flex-direction:column;gap:0" data-testid="timeline-list">
+        @for (obj of journey()!.upcomingObjectives; track obj.objectiveKey; let last = $last) {
+          <div style="display:flex;gap:12px;align-items:flex-start"
+            [attr.data-testid]="'timeline-item-' + obj.status.toLowerCase()">
+            <!-- Status indicator column -->
+            <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0">
+              <!-- Dot -->
+              <div style="width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:10px"
+                [style.background]="obj.status === 'Ready' ? 'var(--sp-success)' :
+                                    obj.status === 'Upcoming' ? 'var(--sp-primary)' :
+                                    obj.status === 'Blocked' ? 'var(--sp-danger,#ef4444)' :
+                                    'var(--sp-faint)'">
+              </div>
+              <!-- Connector line -->
+              @if (!last) {
+                <div style="width:2px;flex:1;min-height:16px;background:var(--sp-border);margin-top:2px"></div>
+              }
+            </div>
+
+            <!-- Objective card -->
+            <div style="flex:1;min-width:0;padding:8px 0 16px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+                    <span style="font-size:13px;font-weight:800;color:var(--sp-ink)">
+                      {{ objectiveDisplayTitle(obj) }}
+                    </span>
+                    @if (obj.isReview) {
+                      <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:10px;padding:1px 6px">Review</span>
+                    }
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <span style="font-size:11px;color:var(--sp-muted)">{{ skillLabel(obj.skill) }}</span>
+                    <span style="font-size:11px;color:var(--sp-muted)">·</span>
+                    <span style="font-size:11px;color:var(--sp-muted)">{{ obj.cefrLevel }}</span>
+                    @if (obj.isBlocked && obj.blockedByKey) {
+                      <span style="font-size:11px;color:var(--sp-danger,#ef4444)">
+                        · Blocked by {{ obj.blockedByKey }}
+                      </span>
+                    }
+                  </div>
+                </div>
+                <!-- Status badge -->
+                <span class="sp-pill" style="font-size:11px;padding:2px 8px;flex-shrink:0"
+                  [style.background]="obj.status === 'Ready'    ? 'var(--sp-success-soft)' :
+                                      obj.status === 'Upcoming' ? 'var(--sp-primary-soft,#e8e8ff)' :
+                                      obj.status === 'Blocked'  ? 'var(--sp-danger-soft,#fee2e2)' :
+                                      'var(--sp-canvas2)'"
+                  [style.color]="obj.status === 'Ready'    ? 'var(--sp-success)' :
+                                 obj.status === 'Upcoming' ? 'var(--sp-primary)' :
+                                 obj.status === 'Blocked'  ? 'var(--sp-danger,#ef4444)' :
+                                 'var(--sp-muted)'">
+                  {{ statusLabel(obj.status) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Completed objectives -->
+  @if (hasCompletedObjectives()) {
+    <div style="margin-bottom:20px">
+      <p class="sp-eyebrow" style="margin-bottom:12px">Completed</p>
+      <div style="display:flex;flex-direction:column;gap:8px" data-testid="completed-objectives">
+        @for (obj of journey()!.completedObjectives; track obj.objectiveKey) {
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--sp-r-sm);background:var(--sp-success-soft);border:1px solid var(--sp-border)"
+            [attr.data-testid]="'completed-obj-' + obj.objectiveKey">
+            <!-- Check icon -->
+            <svg width="14" height="14" fill="none" stroke="var(--sp-success)" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <div style="flex:1;min-width:0">
+              <span style="font-size:13px;font-weight:700;color:var(--sp-ink)">
+                {{ objectiveDisplayTitle(obj) }}
+              </span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:1px">
+                <span style="font-size:11px;color:var(--sp-muted)">{{ skillLabel(obj.skill) }}</span>
+                <span style="font-size:11px;color:var(--sp-muted)">·</span>
+                <span style="font-size:11px;color:var(--sp-muted)">{{ obj.cefrLevel }}</span>
+                @if (obj.lastEvaluatedAt) {
+                  <span style="font-size:11px;color:var(--sp-muted)">
+                    · {{ completedDateLabel(obj.lastEvaluatedAt) }}
+                  </span>
+                }
+              </div>
+            </div>
+            @if (obj.isMastered) {
+              <span class="sp-pill" style="background:var(--sp-success);color:#fff;font-size:10px;padding:2px 7px;flex-shrink:0">Mastered</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Milestones -->
+  @if (journey()!.milestones.length > 0) {
+    <div style="margin-bottom:20px">
+      <p class="sp-eyebrow" style="margin-bottom:12px">Milestones</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px" data-testid="milestones">
+        @for (m of journey()!.milestones; track m.type) {
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:var(--sp-r-sm);background:var(--sp-canvas2);border:1px solid var(--sp-border)">
+            <svg width="13" height="13" fill="none" stroke="var(--sp-primary)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span style="font-size:12px;font-weight:700;color:var(--sp-ink)">{{ m.label }}</span>
+            @if (m.occurredAt) {
+              <span style="font-size:11px;color:var(--sp-muted)">{{ completedDateLabel(m.occurredAt) }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Navigation footer -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <a routerLink="/dashboard" class="sp-button-ghost">Today</a>
+    <a routerLink="/practice" class="sp-button-ghost">Practice</a>
+  </div>
+}
