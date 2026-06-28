@@ -25,43 +25,19 @@ async function withAuth(page: Page, role: 'Student' | 'Admin' = 'Student') {
 }
 
 async function mockDashboard(page: Page) {
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        learningPath: {
-          pathId: 'path-1',
-          title: 'Workplace English for Document Controller - B1',
-          modulesCompleted: 0,
-          totalModules: 1,
-          currentModule: {
-            moduleId: 'module-1',
-            title: 'Professional workplace communication',
-            description: 'Practice clear workplace communication.',
-            order: 1,
-            completedActivities: 1,
-            totalActivities: 3,
-          },
-        },
-        lifecycleStage: 'CourseReady',
-        activityStats: { activitiesCompleted: 3, averageScore: 82, latestScore: 88 },
-        nextRecommendedPractice: 'Practise a workplace update next.',
-      }),
-    });
-  });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        journeySummary: 'You are building confidence with workplace messages.',
-        strongSkills: ['Clear context'],
-        weakSkills: ['Softening requests'],
-        recurringMistakes: [],
-        nextRecommendedFocus: ['Listening for deadlines'],
-        coveredScenarioCount: 2,
-        skillProfile: [],
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'CourseReady', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: 'Workplace', sessionGoal: null, focusSkill: 'writing', durationMinutes: 30, exerciseCount: 3, actionLabel: "Start today's lesson" },
+        learningPlan: { pathTitle: 'Workplace English for Document Controller - B1', currentObjective: 'Professional workplace communication', currentObjectiveDescription: null, objectiveIndex: 1, totalObjectives: 1, modulesCompleted: 0, remainingObjectives: 1, completedActivities: 1, totalActivities: 3, progressPercent: 33 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: ['Clear context'], weakSkills: ['Softening requests'], nextRecommendedFocus: [], journeySummary: 'You are building confidence with workplace messages.', activitiesCompleted: 3, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 3, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
@@ -138,7 +114,7 @@ test('dashboard vocabulary card shows prerequisite message when vocab items insu
 
 test('admin ai usage page loads usage data', async ({ page }) => {
   await withAuth(page, 'Admin');
-  await page.route('**/api/admin/ai-usage/summary', async route => {
+  await page.route('**/api/admin/ai-usage/summary*', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -183,7 +159,7 @@ test('admin ai usage page loads usage data', async ({ page }) => {
   await page.goto('/admin/usage');
 
   await expect(page.getByRole('heading', { name: 'AI Usage' })).toBeVisible();
-  await expect(page.getByText('Total calls')).toBeVisible();
+  await expect(page.getByText('Total requests')).toBeVisible();
   await expect(page.getByText('7').first()).toBeVisible();
   await expect(page.getByText('Activity Evaluate Writing').first()).toBeVisible();
   await expect(page.getByText('corr-123')).toBeVisible();

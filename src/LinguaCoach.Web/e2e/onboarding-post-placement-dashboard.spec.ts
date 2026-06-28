@@ -27,34 +27,27 @@ async function withAuth(page: Page) {
 }
 
 async function mockCourseReadyDashboard(page: Page) {
+  // Catch-all registered FIRST = lowest priority (Playwright uses LIFO).
+  await page.route('**/api/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  // StudentAppLayout calls getDashboard() → old /api/dashboard for streak display.
   await page.route('**/api/dashboard', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ streakDays: 0 }) });
+  });
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com',
-        careerProfile: 'Junior Software Engineer',
-        cefrLevel: 'B1',
-        message: 'You are on module 1 of 2.',
-        lifecycleStage: 'CourseReady',
-        learningPath: {
-          pathId: 'path-1',
-          title: 'Workplace English for Junior Software Engineer - B1',
-          modulesCompleted: 0,
-          totalModules: 2,
-          currentModule: {
-            moduleId: 'module-1',
-            title: 'Clear engineering updates',
-            description: 'Practice concise project status updates.',
-            order: 1,
-            completedActivities: 0,
-            totalActivities: 3,
-          },
-        },
-        activityStats: { activitiesCompleted: 0, averageScore: null, latestScore: null },
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'PlacementCompleted', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Preparing', sessionId: null, title: null, topic: null, sessionGoal: null, focusSkill: null, durationMinutes: null, exerciseCount: null, actionLabel: '' },
+        learningPlan: { pathTitle: 'Workplace English B1', currentObjective: null, currentObjectiveDescription: null, objectiveIndex: 0, totalObjectives: 0, modulesCompleted: 0, remainingObjectives: 0, completedActivities: 0, totalActivities: 0, progressPercent: 0 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
@@ -75,22 +68,6 @@ async function mockCourseReadyDashboard(page: Page) {
         recommendedSessionDuration: 15,
         placementNotes: 'Start with clear updates and meeting comprehension.',
         isCompleted: true,
-      }),
-    });
-  });
-
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        journeySummary: null,
-        strongSkills: [],
-        weakSkills: [],
-        recurringMistakes: [],
-        nextRecommendedFocus: [],
-        coveredScenarioCount: 0,
-        skillProfile: [],
       }),
     });
   });

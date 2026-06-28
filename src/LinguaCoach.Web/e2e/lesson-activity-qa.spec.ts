@@ -75,19 +75,18 @@ const MIXED_SKILL_SESSION = {
 };
 
 async function mockMixedSession(page: Page) {
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'Sara', careerProfile: 'Document Controller', cefrLevel: 'B1',
-        message: '', lifecycleStage: 'ActiveLearning',
-        learningPath: {
-          pathId: 'p1', title: 'WE', modulesCompleted: 0, totalModules: 2,
-          currentModule: { moduleId: 'm1', title: 'Communication', description: '', order: 1,
-            completedActivities: 0, totalActivities: 3 },
-        },
-        activityStats: { activitiesCompleted: 0, averageScore: 0, latestScore: 0 },
-        currentFocus: null, nextRecommendedPractice: null, latestImprovement: null,
+        profile: { displayName: 'Sara', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'ActiveLearning', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: 'Communication', sessionGoal: null, focusSkill: 'writing', durationMinutes: 30, exerciseCount: 3, actionLabel: "Start today's lesson" },
+        learningPlan: { pathTitle: 'WE', currentObjective: 'Communication', currentObjectiveDescription: null, objectiveIndex: 1, totalObjectives: 2, modulesCompleted: 0, remainingObjectives: 2, completedActivities: 0, totalActivities: 3, progressPercent: 0 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });

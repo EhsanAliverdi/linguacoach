@@ -76,11 +76,18 @@ test('placement intro shows when not started', async ({ page }) => {
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) });
   });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
+  });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasPlacement: false }) });
+  });
 
   await page.goto('/placement');
 
-  await expect(page.getByTestId('placement-intro')).toBeVisible();
-  await expect(page.getByText("Let's understand your English level")).toBeVisible();
+  await expect(page.getByTestId('placement-welcome')).toBeVisible();
+  await expect(page.getByText('Find your English level')).toBeVisible();
   await expect(page.getByTestId('placement-begin')).toBeVisible();
 });
 
@@ -89,69 +96,84 @@ test('placement section flow renders questions and continues', async ({ page }) 
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) });
   });
-  await page.route('**/api/placement/start', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status({ status: 'InProgress' })) });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
   });
-  await page.route('**/api/placement/current', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(selfCheckSection) });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasPlacement: false }) });
   });
-  await page.route('**/api/placement/answers', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status({ status: 'InProgress', currentSectionOrder: 2, currentSectionKey: 'vocab_grammar' })) });
+  await page.route('**/api/student/placement/start', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ assessmentId: 'assess-1', status: 'InProgress', hasPlacement: true, estimatedOverallLevel: null }) });
+  });
+  await page.route('**/api/student/placement/next**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        itemId: 'item-1', skill: 'grammar', targetCefrLevel: 'B1', itemType: 'multiple_choice',
+        prompt: 'She __ at the meeting yesterday. (A) is present (B) was present (C) are present (D) be present',
+        answeredCount: 0, estimatedRemainingItems: 5,
+      }) });
   });
 
   await page.goto('/placement');
   await page.getByTestId('placement-begin').click();
 
-  await expect(page.getByTestId('placement-section')).toBeVisible();
-  await expect(page.getByText('Quick self-check')).toBeVisible();
-  await expect(page.getByText('Section 1 of 6')).toBeVisible();
+  await expect(page.getByTestId('placement-question')).toBeVisible();
+  await expect(page.getByTestId('placement-question-label')).toContainText('Question 1');
 
-  // Answer the rating question, then continue is enabled.
-  await page.getByRole('button', { name: '3', exact: true }).click();
-  await expect(page.getByTestId('placement-continue')).toBeEnabled();
+  // Select an answer — submit becomes enabled.
+  await page.getByTestId('placement-choice-B').click();
+  await expect(page.getByTestId('placement-submit')).toBeEnabled();
 });
 
 test('placement result page shows level and skill breakdown', async ({ page }) => {
   await withAuth(page);
+  // Guard redirects CourseReady → /dashboard; use PlacementInProgress to stay on /placement.
   await page.route('**/api/placement/status', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status({ status: 'Completed', isCompleted: true, lifecycleStage: 'CourseReady' })) });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status({ status: 'InProgress', lifecycleStage: 'PlacementInProgress' })) });
   });
-  await page.route('**/api/placement/result', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
+  });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        assessmentId: 'assess-1', status: 'Completed', hasPlacement: true,
+        overallCefrLevel: 'B1', isProvisional: false,
+        skillResults: [
+          { skill: 'grammar', estimatedCefrLevel: 'B1', confidence: 0.80 },
+          { skill: 'vocabulary', estimatedCefrLevel: 'B1+', confidence: 0.76 },
+        ],
+        learningPlanRegenerated: true, learningPlanWarning: null,
+      }) });
   });
 
   await page.goto('/placement');
 
-  await expect(page.getByTestId('placement-result')).toBeVisible();
-  await expect(page.getByTestId('placement-overall-level')).toHaveText('B1');
-  await expect(page.getByText('Grammar accuracy')).toBeVisible();
-  await expect(page.getByText('formal tone in writing')).toBeVisible();
-  await expect(page.getByText('Workplace English B1')).toBeVisible();
-  await expect(page.getByTestId('placement-continue-course')).toBeVisible();
+  await expect(page.getByTestId('placement-done')).toBeVisible();
+  await expect(page.getByTestId('placement-result-level')).toContainText('B1');
+  await expect(page.getByText('Grammar')).toBeVisible();
+  await expect(page.getByTestId('placement-go-to-dashboard')).toBeVisible();
 });
 
 test('dashboard shows placement CTA when placement is required', async ({ page }) => {
   await withAuth(page);
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
+      status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com',
-        careerProfile: 'Junior Software Engineer',
-        cefrLevel: null,
-        message: 'Complete your placement assessment to unlock your personalised course.',
-        lifecycleStage: 'PlacementRequired',
-        learningPath: null,
-        activityStats: null,
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
+        profile: { displayName: 'student@test.com', cefrLevel: null, supportLanguage: null },
+        courseReadiness: { isLearningReady: false, lifecycleStatus: 'PlacementRequired', placementRequired: true, learningPlanExists: false },
+        todaySession: { status: 'NotAvailable', sessionId: null, title: null, topic: null, sessionGoal: null, focusSkill: null, durationMinutes: null, exerciseCount: null, actionLabel: '' },
+        learningPlan: { pathTitle: null, currentObjective: null, currentObjectiveDescription: null, objectiveIndex: 0, totalObjectives: 0, modulesCompleted: 0, remainingObjectives: 0, completedActivities: 0, totalActivities: 0, progressPercent: 0 },
+        practice: { status: 'NotAvailable', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: null, streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
-  });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
   });
 
   await page.goto('/dashboard');
@@ -170,22 +192,21 @@ test('placement shows intro, not error, for PlacementRequired NotStarted student
   await withAuth(page);
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        status: 'NotStarted',
-        currentSectionKey: 'self_check',
-        currentSectionOrder: 1,
-        totalSections: 6,
-        lifecycleStage: 'PlacementRequired',
-        isCompleted: false,
-      }),
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ status: 'NotStarted', lifecycleStage: 'PlacementRequired', isCompleted: false }),
     });
+  });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
+  });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasPlacement: false }) });
   });
 
   await page.goto('/placement');
 
-  await expect(page.getByTestId('placement-intro')).toBeVisible();
+  await expect(page.getByTestId('placement-welcome')).toBeVisible();
   await expect(page.getByText('Could not load your placement')).toHaveCount(0);
   await expect(page.getByTestId('placement-begin')).toBeVisible();
 });
@@ -196,55 +217,61 @@ test('Start placement button calls /api/placement/start and transitions to secti
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) });
   });
-  await page.route('**/api/placement/start', async route => {
-    startCalled = true;
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(status({ status: 'InProgress', lifecycleStage: 'PlacementInProgress' })),
-    });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
   });
-  await page.route('**/api/placement/current', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(selfCheckSection) });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasPlacement: false }) });
+  });
+  await page.route('**/api/student/placement/start', async route => {
+    startCalled = true;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ assessmentId: 'assess-1', status: 'InProgress', hasPlacement: true, estimatedOverallLevel: null }) });
+  });
+  await page.route('**/api/student/placement/next**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        itemId: 'item-1', skill: 'grammar', targetCefrLevel: 'B1', itemType: 'multiple_choice',
+        prompt: 'She __ at the meeting. (A) is present (B) was present (C) are present (D) be present',
+        answeredCount: 0, estimatedRemainingItems: 5,
+      }) });
   });
 
   await page.goto('/placement');
   await expect(page.getByTestId('placement-begin')).toBeVisible();
   await page.getByTestId('placement-begin').click();
 
-  await expect(page.getByTestId('placement-section')).toBeVisible();
+  await expect(page.getByTestId('placement-question')).toBeVisible();
   expect(startCalled).toBe(true);
 });
 
 test('PlacementRequired dashboard CTA routes to /placement and page loads intro', async ({ page }) => {
   await withAuth(page);
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
+      status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com',
-        careerProfile: 'Junior Software Engineer',
-        cefrLevel: null,
-        message: '',
-        lifecycleStage: 'PlacementRequired',
-        learningPath: null,
-        activityStats: null,
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
+        profile: { displayName: 'student@test.com', cefrLevel: null, supportLanguage: null },
+        courseReadiness: { isLearningReady: false, lifecycleStatus: 'PlacementRequired', placementRequired: true, learningPlanExists: false },
+        todaySession: { status: 'NotAvailable', sessionId: null, title: null, topic: null, sessionGoal: null, focusSkill: null, durationMinutes: null, exerciseCount: null, actionLabel: '' },
+        learningPlan: { pathTitle: null, currentObjective: null, currentObjectiveDescription: null, objectiveIndex: 0, totalObjectives: 0, modulesCompleted: 0, remainingObjectives: 0, completedActivities: 0, totalActivities: 0, progressPercent: 0 },
+        practice: { status: 'NotAvailable', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: null, streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-  });
   await page.route('**/api/placement/status', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(status()),
-    });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) });
+  });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
+  });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasPlacement: false }) });
   });
 
   await page.goto('/dashboard');
@@ -252,7 +279,7 @@ test('PlacementRequired dashboard CTA routes to /placement and page loads intro'
 
   await page.getByRole('link', { name: 'Start placement' }).click();
   await expect(page).toHaveURL(/\/placement/);
-  await expect(page.getByTestId('placement-intro')).toBeVisible();
+  await expect(page.getByTestId('placement-welcome')).toBeVisible();
   await expect(page.getByText('Could not load your placement')).toHaveCount(0);
 });
 
@@ -261,11 +288,24 @@ test('placement does not expose correct answers in the DOM', async ({ page }) =>
   await page.route('**/api/placement/status', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status({ status: 'InProgress' })) });
   });
-  await page.route('**/api/placement/current', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(selfCheckSection) });
+  await page.route('**/api/student/placement/config', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ placementRequiredBeforeLearning: true, allowSkipPlacement: false, allowPlacementRetake: false, autoStartPlacement: false }) });
+  });
+  await page.route('**/api/student/placement/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ assessmentId: 'assess-1', status: 'InProgress', hasPlacement: true, estimatedOverallLevel: null }) });
+  });
+  await page.route('**/api/student/placement/next**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        itemId: 'item-1', skill: 'vocabulary', targetCefrLevel: 'B1', itemType: 'multiple_choice',
+        prompt: 'What does "delegate" mean? (A) Assign a task (B) Complete alone (C) Cancel (D) Argue',
+        answeredCount: 0, estimatedRemainingItems: 5,
+      }) });
   });
 
   await page.goto('/placement');
-  await expect(page.getByTestId('placement-section')).toBeVisible();
+  await expect(page.getByTestId('placement-question')).toBeVisible();
   await expect(page.locator('body')).not.toContainText('correctOption');
 });

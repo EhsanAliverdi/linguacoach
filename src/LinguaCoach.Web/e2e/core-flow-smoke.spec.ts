@@ -149,45 +149,58 @@ async function mockApi(page: Page) {
     });
   });
 
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        studentName: createdStudentEmail || 'student@example.com',
-        careerProfile: 'Document Controller',
-        cefrLevel: null,
-        message: 'You are on module 1 of 5.',
-        lifecycleStage: 'CourseReady',
-        learningPath: {
-          pathId: 'pppppppp-pppp-pppp-pppp-pppppppppppp',
-          title: 'Workplace English for Document Controller — B1',
+        profile: { displayName: createdStudentEmail || 'student@example.com', cefrLevel: null, supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'CourseReady', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: 'Workplace', sessionGoal: null, focusSkill: 'writing', durationMinutes: 30, exerciseCount: 3, actionLabel: "Start today's lesson" },
+        learningPlan: {
+          pathTitle: 'Workplace English for Document Controller — B1',
+          currentObjective: generatedNextModules ? 'Concise progress updates' : 'Professional workplace communication',
+          currentObjectiveDescription: generatedNextModules ? 'Practice short status updates with clear next steps.' : 'Practice clear, polite workplace communication.',
+          objectiveIndex: generatedNextModules ? 2 : 1,
+          totalObjectives: generatedNextModules ? 2 : 1,
           modulesCompleted: moduleCompleted ? 1 : 0,
-          totalModules: generatedNextModules ? 2 : 1,
-          currentModule: {
-            moduleId: generatedNextModules ? 'nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn' : 'mmmmmmmm-mmmm-mmmm-mmmm-mmmmmmmmmmmm',
-            title: generatedNextModules ? 'Concise progress updates' : 'Professional workplace communication',
-            description: generatedNextModules ? 'Practice short status updates with clear next steps.' : 'Practice clear, polite workplace communication.',
-            order: generatedNextModules ? 2 : 1,
-            completedActivities: generatedNextModules ? 0 : Math.min(attemptCount, 3),
-            totalActivities: 3,
-          },
+          remainingObjectives: generatedNextModules ? 1 : 1,
+          completedActivities: generatedNextModules ? 0 : Math.min(attemptCount, 3),
+          totalActivities: 3,
+          progressPercent: moduleCompleted ? 100 : 0,
         },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: {
+          skillProfile: attemptCount > 0 ? [{ skillKey: 'softening_language', skillLabel: 'Softening language', isWeak: true }] : [],
+          strongSkills: attemptCount > 0 ? ['Clear workplace context'] : [],
+          weakSkills: attemptCount > 0 ? ['Too direct tone'] : [],
+          nextRecommendedFocus: attemptCount > 0 ? ['Softening requests'] : [],
+          journeySummary: attemptCount > 0 ? 'You are improving at workplace follow-up emails.' : null,
+          activitiesCompleted: attemptCount,
+          streakDays: 0,
+        },
+        quickStats: { currentCefr: null, streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
 
+  let placementStatusCallCount = 0;
   await page.route('**/api/placement/status', async route => {
+    placementStatusCallCount++;
+    // First call is from placementAccessGuard when student navigates to /placement after onboarding.
+    // Return PlacementRequired so the guard allows access. Subsequent calls return CourseReady.
+    const lifecycleStage = placementStatusCallCount <= 1 ? 'PlacementRequired' : 'CourseReady';
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        status: 'Completed',
+        status: placementStatusCallCount <= 1 ? 'NotStarted' : 'Completed',
         currentSectionKey: 'self_check',
         currentSectionOrder: 1,
         totalSections: 6,
-        lifecycleStage: 'CourseReady',
-        isCompleted: true,
+        lifecycleStage,
+        isCompleted: placementStatusCallCount > 1,
       }),
     });
   });
@@ -205,6 +218,50 @@ async function mockApi(page: Page) {
         recommendedSessionDuration: 15,
         placementNotes: 'Ready for guided workplace English.',
         isCompleted: true,
+      }),
+    });
+  });
+
+  await page.route('**/api/student/learning-plan/journey', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currentCefrLevel: 'B1',
+        currentLearningPhase: 'Active Learning',
+        totalObjectives: 2,
+        completionPercentage: 33,
+        lastCompletedAt: null,
+        planStatus: 'Active',
+        currentObjective: {
+          objectiveKey: 'softening-requests',
+          title: 'Softening workplace requests',
+          skill: 'writing',
+          cefrLevel: 'B1',
+          status: 'Current',
+          sequenceNumber: 2,
+          isReview: false,
+          isBlocked: false,
+          blockedByKey: null,
+          lastEvaluatedAt: null,
+          isMastered: false,
+        },
+        upcomingObjectives: [],
+        completedObjectives: [{
+          objectiveKey: 'prof-emails',
+          title: 'Professional email writing',
+          skill: 'writing',
+          cefrLevel: 'B1',
+          status: 'Completed',
+          sequenceNumber: 1,
+          isReview: false,
+          isBlocked: false,
+          blockedByKey: null,
+          lastEvaluatedAt: '2026-06-01T10:00:00Z',
+          isMastered: true,
+        }],
+        reviewObjectives: [],
+        milestones: [],
       }),
     });
   });
@@ -506,7 +563,7 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
 
   // ── Admin creates student ─────────────────────────────────────────────────────
   await page.getByRole('link', { name: 'Students', exact: true }).click();
-  await page.getByRole('main').getByRole('link', { name: /Create student/i }).click();
+  await page.getByRole('main').getByRole('button', { name: /Create student/i }).click();
   await page.getByLabel('Student email').fill('student@example.com');
   await page.getByLabel('Temporary password').fill('Student123');
   await page.getByRole('button', { name: 'Create student' }).click();
@@ -607,10 +664,10 @@ test('core first-user journey smoke test with mocked API', async ({ page }) => {
   await expect(page.getByText('+8 from attempt 1')).toBeVisible();
   await expect(page.getByRole('button', { name: /Show Persian explanation/i })).toBeVisible();
 
-  // Learning memory updates on My Path.
+  // Journey roadmap visible on My Path after attempts.
   await page.goto('/my-path');
-  await expect(page.getByText('You are improving at workplace follow-up emails')).toBeVisible();
-  await expect(page.getByText('Softening requests')).toBeVisible();
+  await expect(page.getByText('Your roadmap')).toBeVisible();
+  await expect(page.getByText('Softening workplace requests')).toBeVisible();
 
   // Dashboard focus summary reflects memory after attempts and no raw JSON leaks.
   await page.goto('/dashboard');

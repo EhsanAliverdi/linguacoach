@@ -516,7 +516,7 @@ test('placement-required student is redirected from lesson to placement', async 
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        lifecycleStatus: 'PlacementRequired',
+        lifecycleStage: 'PlacementRequired',
         status: 'NotStarted',
         hasActiveAssessment: false,
       }),

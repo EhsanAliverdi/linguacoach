@@ -160,23 +160,18 @@ async function mockPlacementApis(page: Page) {
 }
 
 async function mockDashboardApis(page: Page, lifecycleStage: 'CourseReady' | 'PlacementCompleted' = 'CourseReady') {
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com',
-        careerProfile: 'Software engineer',
-        cefrLevel: 'B1',
-        message: lifecycleStage === 'CourseReady'
-          ? 'Your first lesson is being prepared.'
-          : 'Your personalised course is being prepared. Practice Gym is available while you wait.',
-        lifecycleStage,
-        activityStats: null,
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
-        learningPath: null,
-        streakDays: 0,
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: lifecycleStage, placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'sess-00001', title: 'Your first lesson', topic: 'Workplace communication', sessionGoal: 'Write a clear project update email', focusSkill: 'writing', durationMinutes: 15, exerciseCount: 0, actionLabel: "Start today's lesson" },
+        learningPlan: { pathTitle: null, currentObjective: null, currentObjectiveDescription: null, objectiveIndex: 0, totalObjectives: 0, modulesCompleted: 0, remainingObjectives: 0, completedActivities: 0, totalActivities: 0, progressPercent: 0 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
@@ -196,52 +191,6 @@ async function mockDashboardApis(page: Page, lifecycleStage: 'CourseReady' | 'Pl
         recommendedSessionDuration: 15,
         placementNotes: 'Start at B1.',
         isCompleted: true,
-      }),
-    });
-  });
-
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({
-      status: 200, contentType: 'application/json',
-      body: JSON.stringify({
-        journeySummary: null, strongSkills: [], weakSkills: [],
-        recurringMistakes: [], nextRecommendedFocus: [],
-        coveredScenarioCount: 0, skillProfile: [],
-      }),
-    });
-  });
-
-  await page.route('**/api/notifications/**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ count: 0, notifications: [], items: [] }) });
-  });
-
-  await page.route('**/api/practice-gym/suggestions', async route => {
-    await route.fulfill({
-      status: 200, contentType: 'application/json',
-      body: JSON.stringify({
-        suggestedItems: [], continueItems: [], reviewItems: [],
-        readyCount: 0, reviewOnlyCount: 0, reservedCount: 0,
-        isReplenishmentRecommended: false, generatedAtUtc: new Date().toISOString(),
-      }),
-    });
-  });
-
-  // Session 404 is a valid business state — dashboard shows "preparing" state.
-  // Returning 200 here to test the lesson card with real data.
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({
-      status: 200, contentType: 'application/json',
-      body: JSON.stringify({
-        sessionId: 'sess-00001',
-        title: 'Your first lesson',
-        topic: 'Workplace communication',
-        sessionGoal: 'Write a clear project update email',
-        durationMinutes: 15,
-        focusSkill: 'writing',
-        status: 'notStarted',
-        isResuming: false,
-        exercises: [],
       }),
     });
   });
@@ -315,29 +264,18 @@ test('placement smoke: PlacementCompleted lifecycle shows course-ready preparing
 test('dashboard 15A: session 404 shows preparing state, not global error', async ({ page }) => {
   await withAuth(page);
 
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com',
-        careerProfile: 'Software engineer',
-        cefrLevel: 'B1',
-        message: 'Ready.',
-        lifecycleStage: 'CourseReady',
-        activityStats: { activitiesCompleted: 5, latestScore: 70, averageScore: 68 },
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
-        learningPath: {
-          pathId: 'p1', title: 'Business English',
-          modulesCompleted: 1, totalModules: 4,
-          currentModule: {
-            moduleId: 'm1', title: 'Meetings', description: 'Lead meetings.',
-            order: 2, completedActivities: 2, totalActivities: 6,
-            isReadyToComplete: false, averageScore: null,
-          },
-        },
-        streakDays: 2,
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'CourseReady', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Preparing', sessionId: null, title: null, topic: null, sessionGoal: null, focusSkill: null, durationMinutes: null, exerciseCount: null, actionLabel: '' },
+        learningPlan: { pathTitle: 'Business English', currentObjective: 'Meetings', currentObjectiveDescription: 'Lead meetings.', objectiveIndex: 2, totalObjectives: 4, modulesCompleted: 1, remainingObjectives: 3, completedActivities: 2, totalActivities: 6, progressPercent: 25 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 5, streakDays: 2 },
+        quickStats: { currentCefr: 'B1', streakDays: 2, activitiesCompleted: 5, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
@@ -347,28 +285,6 @@ test('dashboard 15A: session 404 shows preparing state, not global error', async
       status: 200, contentType: 'application/json',
       body: JSON.stringify({ estimatedOverallLevel: 'B1', skillLevels: [], strengths: [], weaknesses: [], isCompleted: true }),
     });
-  });
-
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ journeySummary: null, strongSkills: [], weakSkills: [], recurringMistakes: [], nextRecommendedFocus: [], coveredScenarioCount: 0, skillProfile: [] }) });
-  });
-
-  await page.route('**/api/notifications/**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ count: 0, notifications: [], items: [] }) });
-  });
-
-  await page.route('**/api/practice-gym/suggestions', async route => {
-    await route.fulfill({
-      status: 200, contentType: 'application/json',
-      body: JSON.stringify({ suggestedItems: [], continueItems: [], reviewItems: [], readyCount: 0, reviewOnlyCount: 0, reservedCount: 0, isReplenishmentRecommended: false, generatedAtUtc: new Date().toISOString() }),
-    });
-  });
-
-  // 404 for today's session — this is the bug scenario being fixed
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'No session' }) });
   });
 
   await page.goto('/dashboard');

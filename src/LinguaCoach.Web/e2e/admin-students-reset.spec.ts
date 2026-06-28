@@ -129,10 +129,10 @@ test('admin: reset data modal opens with restart-onboarding preset by default', 
 
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator('select[name="preset"]')).toHaveValue(/restartOnboarding/);
-  await expect(dialog.locator('input[name="clearOnboardingAnswers"]')).toBeChecked();
-  await expect(dialog.locator('input[name="clearPlacementResults"]')).not.toBeChecked();
-  await expect(dialog.locator('input[name="clearVocabulary"]')).not.toBeChecked();
+  await expect(dialog.locator('sp-admin-native-select[name="preset"] select')).toHaveValue(/restartOnboarding/);
+  await expect(dialog.locator('sp-admin-checkbox[name="clearOnboardingAnswers"] input')).toBeChecked();
+  await expect(dialog.locator('sp-admin-checkbox[name="clearPlacementResults"] input')).not.toBeChecked();
+  await expect(dialog.locator('sp-admin-checkbox[name="clearVocabulary"] input')).not.toBeChecked();
 });
 
 test('admin: reset data submit disabled until reason and confirm email are filled', async ({ page }) => {
@@ -143,7 +143,7 @@ test('admin: reset data submit disabled until reason and confirm email are fille
   await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
-  const submit = dialog.locator('button[type="submit"]');
+  const submit = dialog.getByRole('button', { name: /Reset data/i });
   await expect(submit).toBeDisabled();
 
   await resetReason(dialog).fill('QA needs to rerun onboarding');
@@ -164,14 +164,14 @@ test('admin: applying full-clean-reset preset checks all clear flags', async ({ 
   await clickRowAction(page, 'Reset data');
   const dialog = page.getByRole('dialog', { name: 'Reset student data' });
 
-  await dialog.locator('select[name="preset"]').selectOption({ label: 'Full clean reset' });
+  await dialog.locator('sp-admin-native-select[name="preset"] select').selectOption({ label: 'Full clean reset' });
 
   for (const flag of [
     'clearOnboardingAnswers', 'clearPlacementResults', 'clearCoursesAndSessions',
     'clearActivityAttempts', 'clearVocabulary', 'clearLearningMemory',
     'clearAudioFiles', 'clearProgressData',
   ]) {
-    await expect(dialog.locator(`input[name="${flag}"]`)).toBeChecked();
+    await expect(dialog.locator(`sp-admin-checkbox[name="${flag}"] input`)).toBeChecked();
   }
 });
 
@@ -185,7 +185,7 @@ test('admin: successful reset shows new stage, cleared items and reset log id', 
 
   await resetReason(dialog).fill('Stuck mid-onboarding after crash');
   await resetConfirmEmail(dialog).fill(STUDENT.email);
-  await dialog.locator('button[type="submit"]').click();
+  await dialog.getByRole('button', { name: /Reset data/i }).click();
 
   await expect(dialog.getByText(/New stage: OnboardingRequired/)).toBeVisible();
   await expect(dialog.getByText(/was CourseReady/)).toBeVisible();
@@ -207,7 +207,7 @@ test('admin: reset failure shows error message', async ({ page }) => {
 
   await resetReason(dialog).fill('Stuck mid-onboarding after crash');
   await resetConfirmEmail(dialog).fill(STUDENT.email);
-  await dialog.locator('button[type="submit"]').click();
+  await dialog.getByRole('button', { name: /Reset data/i }).click();
 
   await expect(dialog.getByText('Reason is required.')).toBeVisible();
 });

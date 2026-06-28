@@ -27,52 +27,19 @@ async function withAuth(page: Page) {
 }
 
 async function mockDashboard(page: Page) {
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com',
-        careerProfile: 'Document Controller',
-        cefrLevel: 'B1',
-        message: '',
-        lifecycleStage: 'ActiveLearning',
-        learningPath: {
-          pathId: 'path-1',
-          title: 'Workplace English',
-          modulesCompleted: 0,
-          totalModules: 2,
-          currentModule: {
-            moduleId: 'mod-1',
-            title: 'Professional workplace communication',
-            description: 'Practice concise project status updates.',
-            order: 1,
-            completedActivities: 0,
-            totalActivities: 3,
-          },
-        },
-        activityStats: { activitiesCompleted: 2, averageScore: 78, latestScore: 82 },
-        currentFocus: null,
-        nextRecommendedPractice: null,
-        latestImprovement: null,
-      }),
-    });
-  });
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-  });
-  await page.route('**/api/learning-path/memory', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        journeySummary: null,
-        strongSkills: [],
-        weakSkills: [],
-        recurringMistakes: [],
-        nextRecommendedFocus: [],
-        coveredScenarioCount: 0,
-        skillProfile: [],
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'ActiveLearning', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: 'Workplace', sessionGoal: null, focusSkill: 'writing', durationMinutes: 30, exerciseCount: 5, actionLabel: "Start today's lesson" },
+        learningPlan: { pathTitle: 'Workplace English', currentObjective: 'Professional workplace communication', currentObjectiveDescription: null, objectiveIndex: 1, totalObjectives: 2, modulesCompleted: 0, remainingObjectives: 2, completedActivities: 0, totalActivities: 3, progressPercent: 0 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 2, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 2, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });

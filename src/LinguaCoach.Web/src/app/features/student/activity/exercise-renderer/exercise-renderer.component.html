@@ -160,6 +160,14 @@
       (submitted)="onSummarizeGroupDiscussionSubmitted($event)"
     />
   }
+  @case ('freeTextEntry') {
+    <app-free-text-entry
+      [content]="freeTextContent"
+      [disabled]="disabled"
+      [attemptCount]="attemptCount"
+      (submitted)="onFreeTextSubmitted($event)"
+    />
+  }
   @case ('emailReply') {
     <app-email-reply
       [content]="emailReplyContent"

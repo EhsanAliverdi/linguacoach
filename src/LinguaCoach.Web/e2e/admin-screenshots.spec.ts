@@ -1,6 +1,6 @@
 ﻿import { expect, test, Page } from '@playwright/test';
 
-// â”€â”€ Shared JWT helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Shared JWT helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function fakeJwt(email: string, role: string): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
@@ -23,13 +23,25 @@ async function mockAdmin(page: Page) {
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ studentProfileId: 'x', userId: 'y' }) });
       return;
     }
+    const url = route.request().url();
+    if (url.match(/\/api\/admin\/students\/[^?/]+(\?|$)/)) {
+      // Detail endpoint
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ studentProfileId: 'sp1', userId: '1', email: 'alice@corp.com', firstName: 'Alice', lastName: 'Nguyen', displayName: null, onboardingStatus: 'Complete', lifecycleStage: 'CourseReady', cefrLevel: 'B1', careerContext: 'Project coordination', learningGoal: 'Clear meeting updates', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 30, professionalExperienceLevel: 3, roleFamiliarity: 2, createdAt: '2026-01-15T00:00:00Z' }),
+      });
+      return;
+    }
     await route.fulfill({
       status: 200, contentType: 'application/json',
-      body: JSON.stringify([
-        { studentProfileId: 'sp1', userId: '1', email: 'alice@corp.com', firstName: 'Alice', lastName: 'Nguyen', displayName: null, onboardingStatus: 'Complete', lifecycleStage: 'CourseReady', cefrLevel: 'B1', careerContext: 'Project coordination', learningGoal: 'Clear meeting updates', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 30, professionalExperienceLevel: 3, roleFamiliarity: 2, createdAt: '2026-01-15T00:00:00Z' },
-        { studentProfileId: 'sp2', userId: '2', email: 'bob@corp.com', firstName: 'Bob', lastName: null, displayName: null, onboardingStatus: 'Pending', lifecycleStage: 'OnboardingRequired', cefrLevel: null, careerContext: null, learningGoal: null, learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null, createdAt: '2026-05-20T00:00:00Z' },
-        { studentProfileId: 'sp3', userId: '3', email: 'carol@corp.com', firstName: 'Carol', lastName: 'Smith', displayName: 'Carol S.', onboardingStatus: 'Complete', lifecycleStage: 'PlacementRequired', cefrLevel: 'A2', careerContext: 'Healthcare admin', learningGoal: 'Handle patient calls', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 20, professionalExperienceLevel: 2, roleFamiliarity: 1, createdAt: '2026-04-10T00:00:00Z' },
-      ]),
+      body: JSON.stringify({
+        items: [
+          { studentProfileId: 'sp1', userId: '1', email: 'alice@corp.com', firstName: 'Alice', lastName: 'Nguyen', displayName: null, onboardingStatus: 'Complete', lifecycleStage: 'CourseReady', cefrLevel: 'B1', careerContext: 'Project coordination', learningGoal: 'Clear meeting updates', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 30, professionalExperienceLevel: 3, roleFamiliarity: 2, createdAt: '2026-01-15T00:00:00Z' },
+          { studentProfileId: 'sp2', userId: '2', email: 'bob@corp.com', firstName: 'Bob', lastName: null, displayName: null, onboardingStatus: 'Pending', lifecycleStage: 'OnboardingRequired', cefrLevel: null, careerContext: null, learningGoal: null, learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: null, professionalExperienceLevel: null, roleFamiliarity: null, createdAt: '2026-05-20T00:00:00Z' },
+          { studentProfileId: 'sp3', userId: '3', email: 'carol@corp.com', firstName: 'Carol', lastName: 'Smith', displayName: 'Carol S.', onboardingStatus: 'Complete', lifecycleStage: 'PlacementRequired', cefrLevel: 'A2', careerContext: 'Healthcare admin', learningGoal: 'Handle patient calls', learningGoalDescription: null, difficultSituationsText: null, preferredSessionDurationMinutes: 20, professionalExperienceLevel: 2, roleFamiliarity: 1, createdAt: '2026-04-10T00:00:00Z' },
+        ],
+        totalCount: 3, page: 1, pageSize: 20, totalPages: 1,
+      }),
     });
   });
   // AI Config routes
@@ -54,7 +66,7 @@ async function mockAdmin(page: Page) {
       ] }
     ) });
   });
-  await page.route('**/api/admin/ai/categories', async route => {
+  await page.route('**/api/admin/ai/categories*', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
       { id: '1', categoryKey: 'llm.default', displayName: 'Default LLM', providerName: 'openai', modelName: 'gpt-4o-mini', voiceName: null },
       { id: '2', categoryKey: 'llm.generation', displayName: 'Content Generation', providerName: null, modelName: null, voiceName: null },
@@ -95,6 +107,13 @@ async function mockAdmin(page: Page) {
 
 async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnavailable?: boolean } = {}) {
   let generatedNext = false;
+  // Catch-all registered FIRST = lowest priority (LIFO: last checked).
+  await page.route('**/api/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await page.route('**/api/dashboard', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ streakDays: 0 }) });
+  });
   await page.route('**/api/auth/login', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
@@ -110,17 +129,18 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
       body: JSON.stringify({ status: 'Completed', lifecycleStage: 'CourseReady', isCompleted: true, currentSectionKey: null }),
     });
   });
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        learningPath: {
-          pathId: 'p1', title: 'Workplace English for Document Controller â€” B1',
-          totalModules: 5, modulesCompleted: 1,
-          currentModule: { moduleId: 'm1', order: 2, title: 'Writing professional emails', description: 'Learn to write clear emails.', completedActivities: 1, totalActivities: 4 },
-          modules: [],
-        },
-        recentActivities: [],
+        profile: { displayName: 'student@example.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'ActiveLearning', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: 'Writing professional emails', sessionGoal: null, focusSkill: 'writing', durationMinutes: 30, exerciseCount: 4, actionLabel: "Start today's lesson" },
+        learningPlan: { pathTitle: 'Workplace English for Document Controller - B1', currentObjective: 'Writing professional emails', currentObjectiveDescription: 'Learn to write clear emails.', objectiveIndex: 2, totalObjectives: 5, modulesCompleted: 1, remainingObjectives: 4, completedActivities: 1, totalActivities: 4, progressPercent: 20 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [{ skillKey: 'formal_tone', skillLabel: 'Formal workplace tone', isWeak: true }], strongSkills: ['Clear message'], weakSkills: ['Too direct tone'], nextRecommendedFocus: ['Softening requests'], journeySummary: 'You are improving your workplace English and your next focus is professional communication.', activitiesCompleted: 5, streakDays: 2 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
   });
@@ -178,7 +198,7 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        pathId: 'p1', title: 'Workplace English for Document Controller â€” B1',
+        pathId: 'p1', title: 'Workplace English for Document Controller â€" B1',
         totalModules: 5, modulesCompleted: 1,
         currentModule: { moduleId: 'm1', order: 2, title: 'Writing professional emails', description: 'Learn emails.', completedActivities: 1, totalActivities: 4 },
         modules: generatedNext
@@ -206,6 +226,50 @@ async function mockStudent(page: Page, options: { emptyMemory?: boolean; aiUnava
       }),
     });
   });
+  if (!options.emptyMemory) {
+    await page.route('**/api/student/learning-plan/journey', async route => {
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({
+          currentCefrLevel: 'B1',
+          currentLearningPhase: 'Active Learning',
+          totalObjectives: 2,
+          completionPercentage: 33,
+          lastCompletedAt: null,
+          planStatus: 'Active',
+          currentObjective: {
+            objectiveKey: 'softening-requests',
+            title: 'Softening workplace requests',
+            skill: 'writing',
+            cefrLevel: 'B1',
+            status: 'Current',
+            sequenceNumber: 2,
+            isReview: false,
+            isBlocked: false,
+            blockedByKey: null,
+            lastEvaluatedAt: null,
+            isMastered: false,
+          },
+          upcomingObjectives: [],
+          completedObjectives: [{
+            objectiveKey: 'prof-emails',
+            title: 'Professional email writing',
+            skill: 'writing',
+            cefrLevel: 'B1',
+            status: 'Completed',
+            sequenceNumber: 1,
+            isReview: false,
+            isBlocked: false,
+            blockedByKey: null,
+            lastEvaluatedAt: '2026-06-01T10:00:00Z',
+            isMastered: true,
+          }],
+          reviewObjectives: [],
+          milestones: [],
+        }),
+      });
+    });
+  }
 }
 
 async function adminLogin(page: Page) {
@@ -226,7 +290,7 @@ async function studentLogin(page: Page) {
   await page.waitForTimeout(600);
 }
 
-// â”€â”€ Admin page tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Admin page tests â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 test('admin: dashboard', async ({ page }) => {
   await mockAdmin(page);
@@ -254,7 +318,7 @@ test('admin: create-student', async ({ page }) => {
   await mockAdmin(page);
   await adminLogin(page);
   await page.getByRole('link', { name: 'Students', exact: true }).click();
-  await page.getByRole('main').getByRole('link', { name: /Create student/i }).click();
+  await page.getByRole('main').getByRole('button', { name: /Create student/i }).click();
   await page.waitForURL(/create-student/, { timeout: 5000 });
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'e2e/screenshots/admin-03-create-student.png' });
@@ -264,7 +328,7 @@ test('admin: create student success returns to students with toast', async ({ pa
   await mockAdmin(page);
   await adminLogin(page);
   await page.goto('/admin/students');
-  await page.getByRole('main').getByRole('link', { name: /Create student/i }).click();
+  await page.getByRole('main').getByRole('button', { name: /Create student/i }).click();
   await page.getByLabel('Student email').fill('new-student@corp.com');
   await page.getByLabel('Temporary password').fill('Student123');
   await page.getByRole('button', { name: /^Create student$/ }).click();
@@ -277,18 +341,23 @@ test('admin: ai-config', async ({ page }) => {
   await adminLogin(page);
   await page.getByRole('link', { name: 'AI Config', exact: true }).click();
   await page.waitForURL(/ai-config/, { timeout: 5000 });
+  // LLM tab (default)
   await expect(page.getByText('Default LLM', { exact: true })).toBeVisible();
   await expect(page.getByText('Content Generation', { exact: true })).toBeVisible();
   await expect(page.getByText('Evaluation & Feedback', { exact: true })).toBeVisible();
-  await expect(page.getByText('Listening TTS', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Test$/ }).first()).toBeVisible();
+  // TTS tab
+  await page.getByRole('tab', { name: 'Text-to-Speech' }).click();
+  await expect(page.getByText('Listening TTS', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /Test audio/i }).first()).toBeVisible();
+  // Credentials tab
+  await page.getByRole('tab', { name: 'Provider Credentials' }).click();
   await expect(page.getByPlaceholder('provider model name').first()).toBeVisible();
   await page.waitForTimeout(600);
   await page.screenshot({ path: 'e2e/screenshots/admin-04-ai-config.png' });
 });
 
-// â”€â”€ Student page tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Student page tests â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 test('login page', async ({ page }) => {
   await page.goto('/login');
@@ -315,8 +384,8 @@ test('student: my-path', async ({ page }) => {
   await mockStudent(page);
   await studentLogin(page);
   await page.goto('/my-path');
-  await page.waitForSelector('text=Your learning focus', { timeout: 5000 });
-  await page.waitForSelector('text=Softening requests', { timeout: 5000 });
+  await page.waitForSelector('text=Your roadmap', { timeout: 5000 });
+  await page.waitForSelector('text=Softening workplace requests', { timeout: 5000 });
   await page.screenshot({ path: 'e2e/screenshots/student-03-my-path.png' });
 });
 
@@ -324,7 +393,7 @@ test('student: my-path handles empty learning memory', async ({ page }) => {
   await mockStudent(page, { emptyMemory: true });
   await studentLogin(page);
   await page.goto('/my-path');
-  await page.waitForSelector('text=Building your profile', { timeout: 5000 });
+  await page.waitForSelector('text=Your learning plan is being prepared', { timeout: 5000 });
   await expect(page.locator('body')).not.toContainText('{');
   await page.screenshot({ path: 'e2e/screenshots/student-03-my-path-empty-memory.png' });
 });
@@ -433,7 +502,7 @@ test('admin: diagnostics page loads with status section', async ({ page }) => {
         total: 2,
         items: [
           { timestampUtc: new Date().toISOString(), level: 'Information', category: 'Activity.ActivityGetHandler', message: 'Next activity requested', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
-          { timestampUtc: new Date().toISOString(), level: 'Warning', category: 'Activity.ActivityGetHandler', message: 'AI generation failed â€” using SystemFallback', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
+          { timestampUtc: new Date().toISOString(), level: 'Warning', category: 'Activity.ActivityGetHandler', message: 'AI generation failed â€" using SystemFallback', correlationId: 'abc123', userId: null, path: '/api/activity/next', statusCode: null, elapsedMs: null },
         ],
       }),
     });

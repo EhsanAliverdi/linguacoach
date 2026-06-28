@@ -320,19 +320,20 @@ test('Student nav Practice item opens /practice', async ({ page }) => {
   await mockPracticeRoute(page);
 
   // Also mock dashboard so Today page loads
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com', careerProfile: 'Engineer', cefrLevel: 'B1',
-        message: '', lifecycleStage: 'ActiveLearning',
-        learningPath: null, activityStats: { activitiesCompleted: 0, averageScore: null, latestScore: null },
-        currentFocus: null, nextRecommendedPractice: null, latestImprovement: null,
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'ActiveLearning', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: null, sessionGoal: null, focusSkill: null, durationMinutes: null, exerciseCount: null, actionLabel: "Start" },
+        learningPlan: { pathTitle: null, currentObjective: null, currentObjectiveDescription: null, objectiveIndex: 0, totalObjectives: 0, modulesCompleted: 0, remainingObjectives: 0, completedActivities: 0, totalActivities: 0, progressPercent: 0 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
-  });
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ detail: 'No session' }) });
   });
 
   await page.goto('/dashboard');
@@ -346,19 +347,20 @@ test('Vocabulary is not in the top-level student sidebar nav', async ({ page }) 
   await withAuth(page);
   await mockPracticeRoute(page);
 
-  await page.route('**/api/dashboard', async route => {
+  await page.route('**/api/student/dashboard/summary', async route => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
-        studentName: 'student@test.com', careerProfile: 'Engineer', cefrLevel: 'B1',
-        message: '', lifecycleStage: 'ActiveLearning',
-        learningPath: null, activityStats: { activitiesCompleted: 0, averageScore: null, latestScore: null },
-        currentFocus: null, nextRecommendedPractice: null, latestImprovement: null,
+        profile: { displayName: 'student@test.com', cefrLevel: 'B1', supportLanguage: null },
+        courseReadiness: { isLearningReady: true, lifecycleStatus: 'ActiveLearning', placementRequired: false, learningPlanExists: true },
+        todaySession: { status: 'Ready', sessionId: 'session-1', title: "Today's Lesson", topic: null, sessionGoal: null, focusSkill: null, durationMinutes: null, exerciseCount: null, actionLabel: "Start" },
+        learningPlan: { pathTitle: null, currentObjective: null, currentObjectiveDescription: null, objectiveIndex: 0, totalObjectives: 0, modulesCompleted: 0, remainingObjectives: 0, completedActivities: 0, totalActivities: 0, progressPercent: 0 },
+        practice: { status: 'Ready', suggestedItem: null, reviewQueueCount: 0, weakestSkill: null },
+        progress: { skillProfile: [], strongSkills: [], weakSkills: [], nextRecommendedFocus: [], journeySummary: null, activitiesCompleted: 0, streakDays: 0 },
+        quickStats: { currentCefr: 'B1', streakDays: 0, activitiesCompleted: 0, reviewQueueCount: 0 },
+        warnings: { missingLearningPlan: false, missingTodaySession: false, practiceUnavailable: false, placementIncomplete: false },
       }),
     });
-  });
-  await page.route('**/api/sessions/today', async route => {
-    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ detail: 'No session' }) });
   });
 
   await page.goto('/dashboard');
