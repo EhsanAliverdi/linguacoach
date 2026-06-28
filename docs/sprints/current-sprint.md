@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15H)
+lastUpdated: 2026-06-28 (15I)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,26 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 15I — Student UI Visual Rehaul and Design-System Finalization** — complete (2026-06-28)
+
+Visual-only polish pass across all main student routes. No backend changes. No new features. No routing or logic changes.
+
+**Findings fixed (8 atomic commits):**
+
+- **FINDING-001** (`style(design)`): Mobile greeting nowrap — `sp-greet-lg` gains `white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100px` at ≤899px. Prevents name wrapping in header.
+- **FINDING-002** (`style(design)`): Added `sp-skeleton` shimmer class to `styles.css`. Replaces static pulse where richer loading feedback is needed. Used by progress, profile, vocabulary, and (via FINDING-006/007) dashboard and journey.
+- **FINDING-003** (`style(design)`): `sp-stat-grid` changed from `repeat(3,1fr)` to `repeat(auto-fit,minmax(110px,1fr))` — handles 4-item stat grids on the progress page without wrapping.
+- **FINDING-004** (`style(design)`): Profile loading state was bare text ("Loading profile..."). Replaced with 5 `sp-skeleton` cards that mirror the section heights.
+- **FINDING-005** (`style(design)`): Mobile FAB Practice button had no label. Added `<span class="sp-practice-label">Practice</span>` with `margin-top:22px` to position it below the circle, matching other nav items.
+- **FINDING-006/007** (`style(design)`): Dashboard and journey loading states changed from `sp-loading-pulse` (pulse opacity) to `sp-skeleton` (shimmer). Removed Tailwind height utility classes (`h-48`, `h-32`, `h-40`) in favour of inline heights on `sp-skeleton`.
+- **Part M** (`refactor(design)`): Practice gym local `.sp-chip` class renamed to `.sp-skill-tag` — eliminates collision with global interactive `.sp-chip` definition in styles.css. Dead modifier classes `sp-chip--xs` and `sp-chip--muted` removed.
+
+**No tests broken.** Angular unit: 1,464 pass. .NET: 2,732 pass. Playwright E2E: 247 pass, 3 skipped.
+
+Review: `docs/reviews/2026-06-28-phase-15i-student-visual-rehaul-review.md`.
+
+---
 
 **Phase 15H — Student Experience QA and Flow Hardening** — complete (2026-06-28)
 
