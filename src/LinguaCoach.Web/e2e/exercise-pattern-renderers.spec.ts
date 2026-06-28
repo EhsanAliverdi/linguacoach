@@ -422,3 +422,272 @@ test('HighlightIncorrectWords shows audio fallback, selectable tokens, and submi
   await page.getByTestId('highlight-incorrect-words-submit-btn').click();
   await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
 });
+
+test('MultipleChoice renders passage, question, options and submits selection', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'readingTask',
+    title: 'Choose the correct option',
+    interactionMode: 'multipleChoice',
+    exercisePatternKey: 'reading_multiple_choice',
+    contentJson: JSON.stringify({
+      learningGoal: 'Identify the main point of a short text.',
+      passage: 'Flexible working arrangements allow employees to choose their hours within agreed limits.',
+      question: 'What is the main point of the passage?',
+      options: [
+        { id: 'A', text: 'Employees can choose their hours within agreed limits.' },
+        { id: 'B', text: 'Employees must work fixed hours.' },
+        { id: 'C', text: 'Managers set all working hours.' },
+      ],
+      correctOptionId: 'A',
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('reading-multiple-choice-renderer')).toBeVisible();
+  await expect(page.getByTestId('reading-passage')).toContainText('Flexible working arrangements');
+  await expect(page.getByTestId('reading-question')).toContainText('What is the main point');
+  await expect(page.getByTestId('reading-option-A')).toBeVisible();
+  await page.getByTestId('reading-option-A').click();
+  await page.getByTestId('reading-multiple-choice-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('MultipleChoiceMulti allows multiple selections and submits all selected ids', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'readingTask',
+    title: 'Select all correct options',
+    interactionMode: 'multipleChoiceMulti',
+    exercisePatternKey: 'reading_multiple_choice_multi',
+    contentJson: JSON.stringify({
+      learningGoal: 'Identify which statements are supported by the passage.',
+      passage: 'The report found that remote workers were more productive and reported higher job satisfaction.',
+      question: 'Which TWO statements are supported by the passage?',
+      options: [
+        { id: 'A', text: 'Remote workers were more productive.' },
+        { id: 'B', text: 'Remote workers had higher job satisfaction.' },
+        { id: 'C', text: 'Remote workers earned higher salaries.' },
+      ],
+      correctOptionIds: ['A', 'B'],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('reading-multiple-choice-multi-renderer')).toBeVisible();
+  await expect(page.getByTestId('reading-multiple-choice-multi-renderer')).toContainText('remote workers were more productive');
+  await page.getByTestId('reading-multi-option-A').click();
+  await page.getByTestId('reading-multi-option-B').click();
+  await page.getByTestId('reading-multiple-choice-multi-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('ReorderParagraphs renders items and submits reordered list', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'readingTask',
+    title: 'Put the email in order',
+    interactionMode: 'reorderParagraphs',
+    exercisePatternKey: 'reorder_paragraphs',
+    contentJson: JSON.stringify({
+      learningGoal: 'Arrange the paragraphs in a logical order.',
+      items: [
+        { id: 'p1', text: 'I am writing to follow up on our meeting last Tuesday.' },
+        { id: 'p2', text: 'As discussed, I will send the revised proposal by Friday.' },
+        { id: 'p3', text: 'Please let me know if you have any questions.' },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('reorder-item-p1')).toBeVisible();
+  await expect(page.getByTestId('reorder-item-p2')).toBeVisible();
+  await expect(page.getByTestId('reorder-item-p3')).toBeVisible();
+  // Move p2 up one position (it is at index 1, move-up swaps with index 0)
+  await page.getByTestId('reorder-item-p2').getByTestId('move-up').click();
+  await page.getByTestId('reorder-submit').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('ListeningFillInBlanks shows passage with gap dropdowns and submits selection', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Complete the gaps',
+    interactionMode: 'listeningFillInBlanks',
+    exercisePatternKey: 'listening_fill_in_blanks',
+    audioUrl: null,
+    contentJson: JSON.stringify({
+      learningGoal: 'Complete a passage using words heard in the audio.',
+      scenario: 'A manager gives a brief project update.',
+      audioScript: 'The project is on track and will be delivered on schedule.',
+      passageWithBlanks: 'The project is on {{gap1}} and will be delivered on {{gap2}}.',
+      gaps: [
+        { id: 'gap1', options: ['track', 'hold', 'pause'] },
+        { id: 'gap2', options: ['schedule', 'budget', 'demand'] },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('listening-fill-in-blanks-renderer')).toBeVisible();
+  await expect(page.getByTestId('passage-with-blanks')).toBeVisible();
+  await page.getByTestId('gap-select-gap1').selectOption('track');
+  await page.getByTestId('gap-select-gap2').selectOption('schedule');
+  await page.getByTestId('listening-fill-in-blanks-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('WriteFromDictation renders items with text inputs and submits', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Write what you hear',
+    interactionMode: 'writeFromDictation',
+    exercisePatternKey: 'write_from_dictation',
+    audioUrl: null,
+    contentJson: JSON.stringify({
+      learningGoal: 'Write the exact words you hear.',
+      scenario: 'Short sentences from a workplace briefing.',
+      items: [
+        { id: 'item1', audioScript: 'Please submit the report by Friday.' },
+        { id: 'item2', audioScript: 'The meeting has been moved to Monday.' },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('write-from-dictation-renderer')).toBeVisible();
+  await expect(page.getByTestId('wfd-item-item1')).toBeVisible();
+  await page.getByTestId('wfd-input-item1').fill('Please submit the report by Friday.');
+  await page.getByTestId('wfd-input-item2').fill('The meeting has been moved to Monday.');
+  await page.getByTestId('write-from-dictation-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('SummarizeSpokenText shows requirements, accepts summary and submits', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'listeningComprehension',
+    title: 'Summarise the talk',
+    interactionMode: 'summarizeSpokenText',
+    exercisePatternKey: 'summarize_spoken_text',
+    audioUrl: null,
+    contentJson: JSON.stringify({
+      learningGoal: 'Write a concise summary of the spoken passage.',
+      scenario: 'A manager discusses a new remote-work policy.',
+      audioScript: 'From next month, all teams will have the option to work remotely two days per week.',
+      prompt: 'Write a summary of 50 to 70 words.',
+      summaryRequirements: ['Include the key change', 'State when it begins', '50-70 words'],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('summarize-spoken-text-renderer')).toBeVisible();
+  await expect(page.getByTestId('summarize-spoken-text-requirements')).toContainText('Include the key change');
+  await page.getByTestId('summarize-spoken-text-input').fill(
+    'From next month, employees may work remotely two days per week. The manager confirmed this as an option for all teams, representing a significant shift in company policy effective from the following month.',
+  );
+  await page.getByTestId('summarize-spoken-text-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('FreeTextEntry pattern-backed activity renders via ExerciseRenderer and submits', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'writingScenario',
+    title: 'Write a professional update',
+    interactionMode: 'freeTextEntry',
+    exercisePatternKey: 'free_text_response',
+    contentJson: JSON.stringify({
+      situation: 'Your manager asked for a project status update.',
+      prompt: 'Write 2-3 sentences explaining the current status and next steps.',
+      targetPhrases: ['I wanted to update you'],
+      wordCountTarget: '40-60 words',
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('free-text-renderer')).toBeVisible();
+  await page.getByTestId('free-text-input').fill(
+    'I wanted to update you that the project is progressing well. We completed the design phase last week and development starts Monday. We remain on track to deliver by the agreed deadline.',
+  );
+  await page.getByTestId('free-text-submit-btn').click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('ReadingFillInBlanks renders passage with dropdown selects and submits', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'readingTask',
+    title: 'Complete the passage',
+    interactionMode: 'readingFillInBlanks',
+    exercisePatternKey: 'reading_fill_in_blanks',
+    contentJson: JSON.stringify({
+      learningGoal: 'Choose the correct word to complete the passage.',
+      passageWithBlanks: 'Employees are expected to {{gap1}} a professional tone in all written communications. This {{gap2}} to emails, reports, and instant messages.',
+      gaps: [
+        { id: 'gap1', options: ['maintain', 'ignore', 'avoid'] },
+        { id: 'gap2', options: ['applies', 'refers', 'limits'] },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByRole('combobox', { name: 'Select word for gap1' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Select word for gap1' }).selectOption('maintain');
+  await page.getByRole('combobox', { name: 'Select word for gap2' }).selectOption('applies');
+  await page.getByRole('button', { name: 'Check Answers' }).click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('ReadingWritingFillInBlanks renders passage with dropdown selects and submits', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'readingTask',
+    title: 'Complete the memo',
+    interactionMode: 'readingWritingFillInBlanks',
+    exercisePatternKey: 'reading_writing_fill_in_blanks',
+    contentJson: JSON.stringify({
+      learningGoal: 'Choose the correct word in a workplace memo.',
+      passageWithBlanks: 'Please {{gap1}} the attached report before the meeting. All comments should be {{gap2}} by Thursday.',
+      gaps: [
+        { id: 'gap1', options: ['review', 'ignore', 'delete'] },
+        { id: 'gap2', options: ['submitted', 'cancelled', 'extended'] },
+      ],
+    }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByRole('combobox', { name: 'Select word for gap1' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Select word for gap1' }).selectOption('review');
+  await page.getByRole('combobox', { name: 'Select word for gap2' }).selectOption('submitted');
+  await page.getByRole('button', { name: 'Check Answers' }).click();
+  await expect(page.getByText('Good work. Your answer is clear enough to continue.')).toBeVisible();
+});
+
+test('Unsupported activity type shows fallback message with mode name and does not crash', async ({ page }) => {
+  await withAuth(page);
+  await mockActivity(page, activity({
+    activityType: 'writingScenario',
+    title: 'Grammar exercise',
+    interactionMode: 'sentenceBuilder',
+    exercisePatternKey: 'sentence_builder',
+    contentJson: JSON.stringify({ items: [] }),
+  }));
+
+  await page.goto('/activity');
+  await page.getByTestId('teach-cta-btn').click();
+  await expect(page.getByTestId('unsupported-activity-type')).toBeVisible();
+  await expect(page.getByTestId('unsupported-activity-type')).toContainText('Activity not available');
+  await expect(page.getByTestId('unsupported-activity-mode')).toContainText('sentenceBuilder');
+});
