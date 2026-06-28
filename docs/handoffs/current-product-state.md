@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15H)
+lastUpdated: 2026-06-28 (16B)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,30 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (15H)
+Last updated: 2026-06-28 (16B)
+
+---
+
+## Activity Completion and Feedback Loop Hardening (Phase 16B, 2026-06-28)
+
+Hardening-only pass. No new product features, no UI redesign, no AI changes.
+
+**What changed:**
+
+- **P0 fix:** The `/module/session-{sessionId}-{exerciseId}` route guard (`moduleRedirectGuard`) was silently misrouting all students whose session and exercise IDs are standard UUIDs. The `lastIndexOf('-')` split incorrectly cut inside the exerciseId. Fixed with a UUID regex. Students navigating from the lesson page to activities via the module guard now land on the correct activity.
+- **P1 fix:** Score improvement message in the activity feedback page had garbled encoding (`â€"` instead of `—`) — same class of bug as the Phase 15H profile fix.
+- **P1 fix:** When AI evaluation returns empty feedback, the feedback page now shows an honest "Feedback pending" card instead of a blank layout. Students are informed their response was saved and feedback will arrive.
+
+**What is NOT changed:**
+
+- No new exercise formats.
+- No new AI evaluation paths.
+- No changes to session completion model, mastery, or learning plan update logic — all verified correct as-is.
+- No admin UI changes.
+
+**Test coverage:** 1,479 Angular unit tests pass (35 new). 2,732 backend tests pass. Production build clean.
+
+Review: `docs/reviews/2026-06-28-phase-16b-activity-completion-feedback-loop-hardening.md`.
 
 ---
 

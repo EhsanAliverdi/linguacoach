@@ -45,9 +45,9 @@ export class ActivityFeedbackPageComponent {
     const prev = this.previousScore;
     if (prev === null || current === null) return '';
     const diff = Math.round(current - prev);
-    if (diff > 0) return `+${diff} â€” great improvement!`;
-    if (diff < 0) return `${diff} â€” don't worry, keep practising.`;
-    return 'Same score â€” try the suggestions above.';
+    if (diff > 0) return `+${diff} — great improvement!`;
+    if (diff < 0) return `${diff} — don't worry, keep practising.`;
+    return 'Same score — try the suggestions above.';
   }
 
   categoryColour(category: string | null): string {
@@ -69,6 +69,18 @@ export class ActivityFeedbackPageComponent {
 
   trackChange(_index: number, change: FeedbackChangeDto): FeedbackChangeDto {
     return change;
+  }
+
+  get hasFeedbackContent(): boolean {
+    const fb = this.feedback;
+    return !!(
+      fb.patternEvaluation ||
+      fb.score !== null ||
+      fb.coachSummary ||
+      fb.changes.length ||
+      fb.whatYouDidWell.length ||
+      fb.questionFeedback?.length
+    );
   }
 }
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15I)
+lastUpdated: 2026-06-28 (16B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,34 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 16B — Activity Completion and Feedback Loop Hardening** — complete (2026-06-28)
+
+Hardening-only pass verifying the full real activity completion loop: Activity rendered → Student submits → Backend records attempt → Feedback returned → Session/mastery updated → Dashboard/Practice/Journey reflect the change. No new exercise formats, AI logic, UI redesign, or routing changes.
+
+**P0 fix:** `module-redirect.guard.ts` — UUID split bug. The guard used `lastIndexOf('-')` to split `session-{sessionId}-{exerciseId}`. With real UUID IDs (4 hyphens each) this finds the last hyphen inside the exerciseId, producing two wrong IDs. Fixed with UUID pair regex, fallback to `lastIndexOf` for short test IDs. Existing tests used short IDs (`sess1`/`ex1`) and never caught this.
+
+**P1 fix:** `activity-feedback-page.component.ts` — mojibake `â€"` → `—` in `scoreImprovementMessage()` (3 occurrences). Same encoding issue as Phase 15H profile fix.
+
+**P1 fix:** `activity-feedback-page.component.html` — honest empty-feedback state. When AI evaluation returns an empty DTO (all fields null), the feedback page now shows a `data-testid="feedback-pending"` card: "Your response was saved. Feedback will appear after this activity is evaluated." Driven by the new `hasFeedbackContent` getter.
+
+**Verified (no change needed):**
+- `disabled` wiring: `ActivityLessonComponent.state === 'submitting'` → `ActivityPracticePageComponent` → `ExerciseRendererComponent[disabled]` — correct.
+- Session reload on return: Angular destroys/recreates `LessonComponent` on route change — `loadSession()` in `ngOnInit()` always fires.
+- Practice gym suggestions reload: `PracticeGymComponent.ngOnInit()` always fires on return from activity.
+- Legacy activity types (VocabularyPractice, ListeningComprehension, WritingScenario) intentionally do not auto-complete exercises — by design.
+
+**Tests added:**
+- `module-redirect.guard.spec.ts` — 1 new test: UUID-format ID split.
+- `activity-lesson-submission.component.spec.ts` — 13 new unit tests: state transitions, all key payload shapes, error handling, navigation.
+- `today-lesson.spec.ts` — today completion smoke test: GapFill activity → feedback → "Next activity" → `/lesson/SESSION_ID`.
+- `practice-gym.spec.ts` — practice completion smoke test: ChatReply activity → feedback → "Next activity" → `/practice` → suggestions visible.
+
+**Build/test totals:** Angular unit: 1,479 pass (35 new). Backend: 2,732 pass (unchanged). Production build: clean.
+
+Review: `docs/reviews/2026-06-28-phase-16b-activity-completion-feedback-loop-hardening.md`.
+
+---
 
 **Phase 15I — Student UI Visual Rehaul and Design-System Finalization** — complete (2026-06-28)
 

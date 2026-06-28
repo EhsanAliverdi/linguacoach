@@ -1,4 +1,4 @@
-<div style="display:flex;flex-direction:column;gap:16px">
+<div data-testid="feedback-page" style="display:flex;flex-direction:column;gap:16px">
 
   <!-- Pattern-aware result renderer — shown when patternEvaluation is present -->
   @if (feedback.patternEvaluation) {
@@ -6,6 +6,14 @@
       data-testid="pattern-evaluation-result"
       [result]="feedback.patternEvaluation!">
     </app-pattern-evaluation-result>
+  }
+
+  <!-- Honest "no feedback" state — when AI evaluation returned empty result -->
+  @if (!hasFeedbackContent) {
+    <div data-testid="feedback-pending" style="padding:20px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+      <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0 0 6px">Feedback pending</p>
+      <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;margin:0">Your response was saved. Feedback will appear after this activity is evaluated.</p>
+    </div>
   }
 
   <!-- Score card (legacy path — hidden when pattern evaluation renders its own score) -->

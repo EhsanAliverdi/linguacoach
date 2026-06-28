@@ -391,3 +391,84 @@ test('review queue section is always visible with empty state when no items', as
   await expect(page.getByTestId('review-queue-empty')).toBeVisible();
   await expect(page.getByTestId('review-queue-empty')).toContainText('all caught up');
 });
+
+// ── Part J: Practice completion smoke test ────────────────────────────────────
+
+test('completing a practice activity navigates back to Practice Gym (practice completion smoke)', async ({ page }) => {
+  await withAuth(page);
+
+  const activityId = 'act-practice-smoke-1';
+  const chatActivity = {
+    activityId,
+    activityType: 'writingScenario',
+    source: 'pool',
+    title: 'Reply in Teams',
+    difficulty: 'B1',
+    interactionMode: 'chatReply',
+    exercisePatternKey: 'teams_chat_simulation',
+    audioAvailable: false,
+    audioUrl: null,
+    audioContentType: null,
+    audioDurationSeconds: null,
+    audioUnavailableMessage: null,
+    audioStatus: null,
+    contentJson: JSON.stringify({
+      scenario: 'Your manager asks for a quick update.',
+      learningGoal: 'Reply professionally.',
+      chatThread: [{ sender: 'Manager', message: 'Any update on the report?', timestamp: '09:00' }],
+      targetPhrases: ['I wanted to update you'],
+      wordLimit: 40,
+    }),
+    situation: null, learningGoal: null, targetPhrases: [], targetVocabulary: [],
+    exampleText: null, commonMistakeToAvoid: null, instructionInSourceLanguage: null,
+    instructions: null, practiceMode: null, vocabItems: null, scenario: null,
+    speakerRole: null, listenerRole: null, transcriptAvailableAfterSubmit: null,
+    listeningQuestions: null, responseTask: null, speakingScenario: null, studentRole: null,
+    speakingListenerRole: null, speakingGoal: null, speakingPrompt: null, expectedPoints: null,
+    suggestedPhrases: null, maxDurationSeconds: null, stageContent: null,
+  };
+
+  await page.route(`**/api/activity/${activityId}`, async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(chatActivity) });
+  });
+  await page.route(`**/api/activity/${activityId}/attempt`, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        attemptId: 'attempt-practice-smoke-1', score: 85, coachSummary: 'Professional and clear reply.',
+        focusFirst: false, changes: [], correctedText: null, whatYouDidWell: ['Good register.'],
+        mainMistakes: [], grammarIssues: [], vocabularyIssues: [], toneIssues: [], clarityIssues: [],
+        grammarExplanation: null, toneExplanation: null, vocabularyToRemember: [],
+        miniLesson: null, nextImprovementStep: null, rewriteChallenge: null,
+        nextPracticeSuggestion: null, feedbackInSourceLanguage: null, questionFeedback: null,
+        transcript: null, responseFeedback: null, speakingStrengths: null,
+        speakingImprovements: null, missingExpectedPoints: null, suggestedImprovedResponse: null,
+        patternEvaluation: null,
+      }),
+    });
+  });
+
+  // Mock routes needed when /practice loads after returning
+  await mockPracticeRoute(page);
+
+  await page.goto(`/activity?activityId=${activityId}&returnTo=/practice`);
+
+  // Teach phase
+  await expect(page.getByTestId('teach-cta-btn')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('teach-cta-btn').click();
+
+  // Practice phase: chat reply renderer
+  await expect(page.getByTestId('chat-reply-renderer')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('chat-reply-input').fill('I wanted to update you — the report is nearly done.');
+  await page.getByTestId('chat-reply-submit-btn').click();
+
+  // Feedback phase
+  await expect(page.getByText('Professional and clear reply.')).toBeVisible({ timeout: 5000 });
+
+  // Navigate back to Practice Gym
+  await page.getByRole('button', { name: 'Next activity' }).click();
+
+  await expect(page).toHaveURL('/practice', { timeout: 5000 });
+  await expect(page.getByTestId('suggestions-section')).toBeVisible({ timeout: 5000 });
+});

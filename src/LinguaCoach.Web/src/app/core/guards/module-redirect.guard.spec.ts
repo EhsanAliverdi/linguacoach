@@ -124,4 +124,22 @@ describe('moduleRedirectGuard', () => {
       done();
     });
   });
+
+  it('correctly splits session and exercise when both IDs are standard UUIDs', (done) => {
+    const sessionId = '550e8400-e29b-41d4-a716-446655440000';
+    const exerciseId = '110e8400-e29b-11d4-a716-446655440000';
+    sessionService.getById.and.returnValue(of({
+      sessionId,
+      exercises: [{ exerciseId, learningActivityId: 'act1', kind: 'writingTask' }],
+    } as any));
+
+    const result$ = activate(`session-${sessionId}-${exerciseId}`) as any;
+    result$.subscribe(() => {
+      expect(sessionService.getById).toHaveBeenCalledWith(sessionId);
+      expect(router.createUrlTree).toHaveBeenCalledWith(['/activity'], {
+        queryParams: { activityId: 'act1', returnTo: `/lesson/${sessionId}` },
+      });
+      done();
+    });
+  });
 });

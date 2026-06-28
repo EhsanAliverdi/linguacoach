@@ -577,3 +577,79 @@ test('lesson page shows contained error when session id is invalid', async ({ pa
   const isError = url.includes('/lesson/invalid-session-id') || url.includes('/dashboard');
   expect(isError).toBe(true);
 });
+
+// ── Part J: Today completion smoke test ────────────────────────────────────────
+
+test('completing an activity navigates back to the lesson page (today completion smoke)', async ({ page }) => {
+  await withAuth(page);
+
+  const activityId = 'act-lesson-smoke-1';
+  const gapFillActivity = {
+    activityId,
+    activityType: 'vocabularyPractice',
+    source: 'pool',
+    title: 'Fill the blank',
+    difficulty: 'B1',
+    interactionMode: 'gapFill',
+    exercisePatternKey: 'gap_fill_workplace_phrase',
+    audioAvailable: false,
+    audioUrl: null,
+    audioContentType: null,
+    audioDurationSeconds: null,
+    audioUnavailableMessage: null,
+    audioStatus: null,
+    contentJson: JSON.stringify({
+      instructions: 'Fill in the blank.',
+      items: [{ sentence: 'I _____ for the delay.', answer: 'apologise', distractors: ['confirm'] }],
+    }),
+    situation: null, learningGoal: null, targetPhrases: [], targetVocabulary: [],
+    exampleText: null, commonMistakeToAvoid: null, instructionInSourceLanguage: null,
+    instructions: null, practiceMode: null, vocabItems: null, scenario: null,
+    speakerRole: null, listenerRole: null, transcriptAvailableAfterSubmit: null,
+    listeningQuestions: null, responseTask: null, speakingScenario: null, studentRole: null,
+    speakingListenerRole: null, speakingGoal: null, speakingPrompt: null, expectedPoints: null,
+    suggestedPhrases: null, maxDurationSeconds: null, stageContent: null,
+  };
+
+  await page.route(`**/api/activity/${activityId}`, async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(gapFillActivity) });
+  });
+  await page.route(`**/api/activity/${activityId}/attempt`, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        attemptId: 'attempt-smoke-1', score: 90, coachSummary: 'Great work on the gap fill.',
+        focusFirst: false, changes: [], correctedText: null, whatYouDidWell: ['Correct answer.'],
+        mainMistakes: [], grammarIssues: [], vocabularyIssues: [], toneIssues: [], clarityIssues: [],
+        grammarExplanation: null, toneExplanation: null, vocabularyToRemember: [],
+        miniLesson: null, nextImprovementStep: null, rewriteChallenge: null,
+        nextPracticeSuggestion: null, feedbackInSourceLanguage: null, questionFeedback: null,
+        transcript: null, responseFeedback: null, speakingStrengths: null,
+        speakingImprovements: null, missingExpectedPoints: null, suggestedImprovedResponse: null,
+        patternEvaluation: null,
+      }),
+    });
+  });
+
+  await mockSessionEndpoints(page);
+
+  await page.goto(`/activity?activityId=${activityId}&returnTo=/lesson/${SESSION_ID}`);
+
+  // Teach phase: content visible, proceed to practice
+  await expect(page.getByTestId('teach-cta-btn')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('teach-cta-btn').click();
+
+  // Practice phase: gap fill visible, fill and submit
+  await expect(page.getByTestId('gap-fill-renderer')).toBeVisible({ timeout: 5000 });
+  await page.getByTestId('gap-input-gap_1').fill('apologise');
+  await page.getByTestId('gap-fill-submit-btn').click();
+
+  // Feedback phase: coach summary visible
+  await expect(page.getByText('Great work on the gap fill.')).toBeVisible({ timeout: 5000 });
+
+  // Navigate back to lesson
+  await page.getByRole('button', { name: 'Next activity' }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/lesson/${SESSION_ID}`), { timeout: 5000 });
+});

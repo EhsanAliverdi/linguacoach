@@ -47,9 +47,14 @@ export const moduleRedirectGuard: CanActivateFn = (route) => {
 
   if (moduleRunId.startsWith('session-')) {
     const rest = moduleRunId.slice('session-'.length);
-    const separatorIndex = rest.lastIndexOf('-');
-    const sessionId = rest.slice(0, separatorIndex);
-    const exerciseId = rest.slice(separatorIndex + 1);
+    // UUIDs are 36 chars (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). When both IDs
+    // are UUIDs the combined string is 73 chars with the separator at index 36.
+    // Using lastIndexOf('-') would incorrectly split inside the exerciseId UUID,
+    // so we detect the UUID-pair format and split at the known boundary instead.
+    const UUID_PAIR = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+    const uuidMatch = rest.match(UUID_PAIR);
+    const sessionId = uuidMatch ? uuidMatch[1] : rest.slice(0, rest.lastIndexOf('-'));
+    const exerciseId = uuidMatch ? uuidMatch[2] : rest.slice(rest.lastIndexOf('-') + 1);
     if (!sessionId || !exerciseId) return router.parseUrl('/dashboard');
 
     return sessionService.getById(sessionId).pipe(
