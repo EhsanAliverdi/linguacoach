@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (15D)
+lastUpdated: 2026-06-28 (15F)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,37 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (15D)
+Last updated: 2026-06-28 (15F)
+
+---
+
+## Student Progress Experience (Phase 15F, 2026-06-28)
+
+Gives students a full view of their improvement, skill gaps, mastery state, and recommended next actions — powered entirely by the adaptive learning engine, with no synthetic statistics.
+
+**What changed:**
+
+- New backend endpoint `GET /api/student/progress/summary` — aggregates CEFR level, learning plan progress, skill profiles, placement data, mastery/review counts, recent activity (placement completions, lesson sessions, practice gym events), and AI-generated focus recommendations. All data loaded in parallel via `Task.WhenAll`.
+- Progress page (`/progress`) fully rewritten. Shows: Learning Summary (4 CEFR/phase/objectives stat cards + plan progress bar), CEFR Progress arc (starting→current with improvement indicator), Skill Progress (per-skill bars with "needs work" chips), Mastery & Review (4 stat grid + weak skill labels), Focus Recommendations (journey summary, next steps, recurring mistakes), Recent Activity timeline.
+- New admin endpoint `GET /api/admin/students/{id}/progress-summary` — exposes CEFR levels, mastery/progress/review counts, skill summary, last activity date, and learning phase for admin oversight.
+- Admin student detail page has a new **Progress Summary** card (CEFR & level panel + mastery & skills panel) after the Learning Journey card.
+- Dashboard already linked to `/progress` — no dashboard changes needed.
+
+**What is NOT shown:** No fake statistics. All sections show real data or a "not available yet" message if the student hasn't completed placement or activities.
+
+**Files added:**
+- `src/LinguaCoach.Application/Progress/StudentProgressSummaryQueries.cs`
+- `src/LinguaCoach.Infrastructure/Progress/StudentProgressSummaryHandler.cs`
+- `src/LinguaCoach.Api/Controllers/StudentProgressController.cs`
+- `src/LinguaCoach.Application/Admin/AdminStudentProgressQueries.cs`
+- `src/LinguaCoach.Infrastructure/Admin/AdminStudentProgressHandler.cs`
+- `src/LinguaCoach.Api/Controllers/AdminStudentProgressController.cs`
+- `src/LinguaCoach.Web/src/app/core/models/student-progress-summary.models.ts`
+- `tests/LinguaCoach.IntegrationTests/Api/StudentProgressSummaryTests.cs`
+
+**Test coverage:** 9 backend integration tests, 23 Angular unit tests (full progress component spec rewrite), 15 Playwright E2E tests.
+
+Review: `docs/reviews/2026-06-28-phase-15f-student-progress-experience-review.md`.
 
 ---
 

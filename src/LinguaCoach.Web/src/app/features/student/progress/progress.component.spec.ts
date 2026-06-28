@@ -1,89 +1,86 @@
-﻿import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { RouterModule } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ProgressComponent } from './progress.component';
 import { ProgressService } from '../../../core/services/progress.service';
-import { ProgressSummary } from '../../../core/models/progress.models';
-import { VocabularyService } from '../../../core/services/vocabulary.service';
+import { StudentProgressSummary } from '../../../core/models/student-progress-summary.models';
 
-const emptyProgress: ProgressSummary = {
-  summary: {
-    activitiesCompleted: 0,
-    totalAttempts: 0,
-    retryAttempts: 0,
-    averageScore: null,
-    latestScore: null,
-    bestScore: null,
-    activitiesThisWeek: 0,
-    modulesCompleted: 0,
-    currentModuleProgress: null,
+const emptyData: StudentProgressSummary = {
+  learning: {
+    currentCefrLevel: null,
+    placementCompletedAt: null,
+    currentLearningPhase: 'Onboarding',
+    totalObjectives: 0,
+    objectivesCompleted: 0,
+    objectivesMastered: 0,
+    objectivesInProgress: 0,
+    objectivesRemaining: 0,
+    completionPercentage: 0,
+    currentObjectiveKey: null,
+    currentObjectiveSkill: null,
+    objectivesCompletedToday: 0,
   },
-  scoreTrend: [],
-  skillProgress: { skills: [], topStrengths: [], weakestSkills: [] },
-  learningFocus: null,
-  moduleProgress: [],
+  skills: [],
+  cefr: { startingCefrLevel: null, currentCefrLevel: null, cefrImproved: false, placementDate: null, note: null },
+  mastery: { masteredObjectivesCount: 0, inProgressObjectivesCount: 0, reviewQueueCount: 0, weakSkillsCount: 0, weakSkillLabels: [] },
+  recentActivity: [],
+  focus: { recommendations: [], recurringMistakes: [], journeySummary: null },
 };
 
-const dataProgress: ProgressSummary = {
-  summary: {
-    activitiesCompleted: 5,
-    totalAttempts: 8,
-    retryAttempts: 3,
-    averageScore: 76,
-    latestScore: 82,
-    bestScore: 91,
-    activitiesThisWeek: 2,
-    modulesCompleted: 1,
-    currentModuleProgress: {
-      moduleId: 'mod-1',
-      title: 'Workplace Emails',
-      completedActivities: 2,
-      totalRequired: 3,
-      averageScore: 76,
-      latestScore: 82,
-      isReadyToComplete: false,
-    },
+const richData: StudentProgressSummary = {
+  learning: {
+    currentCefrLevel: 'B1',
+    placementCompletedAt: '2026-05-01T00:00:00Z',
+    currentLearningPhase: 'Active learning',
+    totalObjectives: 20,
+    objectivesCompleted: 5,
+    objectivesMastered: 3,
+    objectivesInProgress: 4,
+    objectivesRemaining: 12,
+    completionPercentage: 40,
+    currentObjectiveKey: 'obj-1',
+    currentObjectiveSkill: 'Writing',
+    objectivesCompletedToday: 1,
   },
-  scoreTrend: [
-    { attemptDate: '2026-06-07T10:00:00Z', score: 82, activityTitle: 'Polite request message', moduleTitle: 'Workplace Emails', attemptNumber: 2 },
-    { attemptDate: '2026-06-06T09:00:00Z', score: 74, activityTitle: 'Delay explanation email', moduleTitle: 'Workplace Emails', attemptNumber: 1 },
+  skills: [
+    { skillKey: 'grammar', skillLabel: 'Grammar', isWeak: false, scorePercent: 75 },
+    { skillKey: 'vocabulary', skillLabel: 'Vocabulary', isWeak: true, scorePercent: 30 },
   ],
-  skillProgress: {
-    skills: [
-      { skillKey: 'grammar_accuracy', skillLabel: 'Grammar accuracy', isWeak: false, scorePercent: 65 },
-      { skillKey: 'formal_tone', skillLabel: 'Formal tone', isWeak: true, scorePercent: 35 },
-    ],
-    topStrengths: ['Grammar accuracy'],
-    weakestSkills: ['Formal tone'],
+  cefr: {
+    startingCefrLevel: 'A2',
+    currentCefrLevel: 'B1',
+    cefrImproved: true,
+    placementDate: '2026-05-01T00:00:00Z',
+    note: null,
   },
-  learningFocus: {
-    journeySummary: 'You are making solid progress.',
-    nextRecommendedFocus: ['Practise formal tone in requests'],
-    recurringMistakes: ['Overly casual greetings'],
-    weakSkills: ['Formal tone'],
-    strongSkills: ['Grammar accuracy'],
+  mastery: {
+    masteredObjectivesCount: 3,
+    inProgressObjectivesCount: 4,
+    reviewQueueCount: 2,
+    weakSkillsCount: 1,
+    weakSkillLabels: ['Vocabulary'],
   },
-  moduleProgress: [
-    { moduleId: 'mod-1', title: 'Workplace Emails', status: 'current', completedActivities: 2, totalRequired: 3, averageScore: 76, latestScore: 82, isReadyToComplete: false, completedAt: null },
-    { moduleId: 'mod-2', title: 'Meeting Communication', status: 'upcoming', completedActivities: 0, totalRequired: 3, averageScore: null, latestScore: null, isReadyToComplete: false, completedAt: null },
+  recentActivity: [
+    { eventType: 'LessonCompleted', description: 'Completed lesson 1', detail: 'Module A', occurredAt: '2026-06-20T10:00:00Z' },
+    { eventType: 'PracticeCompleted', description: 'Practice session', detail: null, occurredAt: '2026-06-19T09:00:00Z' },
   ],
+  focus: {
+    recommendations: ['Practice formal writing', 'Review vocabulary'],
+    recurringMistakes: ['Article usage'],
+    journeySummary: 'You are making solid progress toward B1.',
+  },
 };
 
 describe('ProgressComponent', () => {
   let progressService: jasmine.SpyObj<ProgressService>;
-  let vocabularyService: jasmine.SpyObj<VocabularyService>;
 
   beforeEach(() => {
-    progressService = jasmine.createSpyObj('ProgressService', ['getProgress']);
-    vocabularyService = jasmine.createSpyObj('VocabularyService', ['getVocabulary']);
-    vocabularyService.getVocabulary.and.returnValue(of([]));
+    progressService = jasmine.createSpyObj('ProgressService', ['getProgressSummary']);
 
     TestBed.configureTestingModule({
-      imports: [ProgressComponent],
+      imports: [ProgressComponent, RouterModule.forRoot([])],
       providers: [
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
         { provide: ProgressService, useValue: progressService },
-        { provide: VocabularyService, useValue: vocabularyService },
       ],
     });
   });
@@ -94,130 +91,254 @@ describe('ProgressComponent', () => {
     return fixture;
   }
 
-  it('shows loading state initially', () => {
-    progressService.getProgress.and.returnValue(of(emptyProgress));
+  it('shows loading state before data resolves', () => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
     const fixture = TestBed.createComponent(ProgressComponent);
-    // Before detectChanges: loading should be true
     expect(fixture.componentInstance.loading()).toBeTrue();
   });
 
-  it('shows empty state when no attempts', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(emptyProgress));
+  it('clears loading after data arrives', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
     const fixture = create();
     tick();
     fixture.detectChanges();
-
-    expect(fixture.componentInstance.isEmpty()).toBeTrue();
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('Your progress will appear here after you complete your first activity.');
-    expect(html).toContain('Start practising');
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[data-testid="progress-loading"]')).toBeNull();
   }));
 
-  it('shows summary cards with real data', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(dataProgress));
+  it('shows error state and retry button on API failure', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(
+      throwError(() => ({ error: { error: 'Server error.' } })));
     const fixture = create();
     tick();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.isEmpty()).toBeFalse();
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('5');   // activitiesCompleted
-    expect(html).toContain('76');  // averageScore
-    expect(html).toContain('82');  // latestScore
-    expect(html).toContain('2');   // activitiesThisWeek
-    expect(html).toContain('1');   // modulesCompleted
-    expect(html).toContain('3');   // retryAttempts
-  }));
-
-  it('shows score trend', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(dataProgress));
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('Polite request message');
-    expect(html).toContain('Delay explanation email');
-    expect(html).toContain('Attempt 2');
-  }));
-
-  it('shows skill strengths and areas to improve', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(dataProgress));
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('Grammar accuracy');
-    expect(html).toContain('Formal tone');
-    expect(html).toContain('Strengths');
-    expect(html).toContain('Areas to improve');
-  }));
-
-  it('shows module progress with status labels', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(dataProgress));
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('Workplace Emails');
-    expect(html).toContain('Meeting Communication');
-    expect(html).toContain('In progress');
-    expect(html).toContain('Upcoming');
-  }));
-
-  it('shows learning focus section', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(dataProgress));
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('You are making solid progress.');
-    expect(html).toContain('Practise formal tone in requests');
-    expect(html).toContain('Overly casual greetings');
-  }));
-
-  it('shows friendly error message on API failure', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(throwError(() => ({ error: { error: 'Server error.' } })));
-    const fixture = create();
-    tick();
-    fixture.detectChanges();
-
+    expect(fixture.nativeElement.querySelector('[data-testid="progress-error"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="progress-retry"]')).toBeTruthy();
     const html: string = fixture.nativeElement.textContent;
     expect(html).toContain('Server error.');
-    expect(html).toContain('Try again');
   }));
 
-  it('does not display raw JSON anywhere', fakeAsync(() => {
-    progressService.getProgress.and.returnValue(of(dataProgress));
+  it('shows fallback message when error has no body', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(throwError(() => ({})));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('Could not load your progress');
+  }));
+
+  it('renders learning summary heading and stat cards', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="learning-summary-heading"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="learning-summary"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="current-cefr"]').textContent.trim()).toBe('B1');
+  }));
+
+  it('shows learning plan progress bar when totalObjectives > 0', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="learning-plan-progress"]')).toBeTruthy();
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('40');  // completionPercentage
+    expect(html).toContain('3 mastered');
+  }));
+
+  it('hides progress bar when no objectives', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="learning-plan-progress"]')).toBeNull();
+  }));
+
+  it('shows CEFR progress with start and current level', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('A2');
+    expect(html).toContain('B1');
+    expect(html).toContain('improved');
+  }));
+
+  it('shows CEFR placement prompt when no placement', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('placement assessment');
+  }));
+
+  it('shows skill progress bars for known skills', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="skill-progress"]')).toBeTruthy();
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('Grammar');
+    expect(html).toContain('Vocabulary');
+    expect(html).toContain('needs work');
+  }));
+
+  it('shows skill-empty state when no skills', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="skill-progress-empty"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="skill-progress"]')).toBeNull();
+  }));
+
+  it('renders mastery summary stat grid', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="mastery-summary"]')).toBeTruthy();
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('mastered');
+    expect(html).toContain('in progress');
+    expect(html).toContain('need review');
+  }));
+
+  it('shows weak skill labels chip list', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="weak-skill-labels"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Vocabulary');
+  }));
+
+  it('hides weak skill labels when none present', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="weak-skill-labels"]')).toBeNull();
+  }));
+
+  it('shows focus recommendations section when data present', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="focus-recommendations"]')).toBeTruthy();
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('You are making solid progress toward B1.');
+    expect(html).toContain('Practice formal writing');
+    expect(html).toContain('Article usage');
+  }));
+
+  it('hides focus recommendations when none', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="focus-recommendations"]')).toBeNull();
+  }));
+
+  it('shows recent activity timeline', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="recent-activity"]')).toBeTruthy();
+    const html: string = fixture.nativeElement.textContent;
+    expect(html).toContain('Completed lesson 1');
+    expect(html).toContain('Practice session');
+    expect(html).toContain('Module A');
+  }));
+
+  it('shows empty activity state when no events', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="recent-activity-empty"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="recent-activity"]')).toBeNull();
+  }));
+
+  it('does not render raw JSON anywhere', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
     const fixture = create();
     tick();
     fixture.detectChanges();
 
     const html: string = fixture.nativeElement.textContent;
     expect(html).not.toContain('"skillKey"');
-    expect(html).not.toContain('"isWeak"');
     expect(html).not.toContain('{"');
-    expect(html).not.toContain('"journeySummary"');
+    expect(html).not.toContain('"isWeak"');
   }));
 
-  it('hides sections cleanly when data is absent', fakeAsync(() => {
-    const noFocusNoSkills: ProgressSummary = {
-      ...dataProgress,
-      skillProgress: { skills: [], topStrengths: [], weakestSkills: [] },
-      learningFocus: null,
-    };
-    progressService.getProgress.and.returnValue(of(noFocusNoSkills));
+  it('hasFocus computed returns true when recommendations present', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.hasFocus()).toBeTrue();
+  }));
+
+  it('hasFocus computed returns false when focus is empty', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.hasFocus()).toBeFalse();
+  }));
+
+  it('eventColour returns correct colours', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(of(emptyData));
+    const fixture = create();
+    tick();
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+    expect(comp.eventColour('PlacementCompleted')).toBe('var(--sp-writing)');
+    expect(comp.eventColour('LessonCompleted')).toBe('var(--sp-success)');
+    expect(comp.eventColour('PracticeCompleted')).toBe('var(--sp-listening)');
+    expect(comp.eventColour('ObjectiveMastered')).toBe('var(--sp-success)');
+    expect(comp.eventColour('Unknown')).toBe('var(--sp-muted)');
+  }));
+
+  it('retry button re-fetches data', fakeAsync(() => {
+    progressService.getProgressSummary.and.returnValue(
+      throwError(() => ({ error: { error: 'Fail.' } })));
     const fixture = create();
     tick();
     fixture.detectChanges();
 
-    const html: string = fixture.nativeElement.textContent;
-    expect(html).not.toContain('Your learning focus');
-    expect(html).not.toContain('Skill progress');
+    progressService.getProgressSummary.and.returnValue(of(richData));
+    const btn = fixture.nativeElement.querySelector('[data-testid="progress-retry"]');
+    btn.click();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="progress-error"]')).toBeNull();
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.data()).toBeTruthy();
   }));
 });
-
-

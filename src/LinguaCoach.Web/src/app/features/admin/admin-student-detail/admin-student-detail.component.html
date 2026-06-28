@@ -401,6 +401,72 @@
         }
       </sp-admin-card>
 
+      <sp-admin-card title="Progress Summary" data-testid="progress-summary-card">
+        @if (progressSummaryLoading()) {
+          <sp-admin-loading-state message="Loading progress summary" />
+        } @else if (progressSummaryError()) {
+          <sp-admin-error-state title="Progress summary unavailable" [message]="progressSummaryError()" />
+        } @else if (progressSummary()) {
+          @let prog = progressSummary()!;
+          <div class="sp-admin-card-grid-2">
+            <div>
+              <div class="sp-admin-section-title">CEFR &amp; level</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Current level</dt>
+                <dd>
+                  <sp-admin-badge [tone]="prog.currentCefrLevel ? 'info' : 'neutral'" data-testid="prog-current-cefr">
+                    {{ prog.currentCefrLevel ?? 'Not set' }}
+                  </sp-admin-badge>
+                </dd>
+                <dt>Placement level</dt>
+                <dd class="sp-admin-text-muted" data-testid="prog-placement-cefr">{{ prog.placementCefrLevel ?? '—' }}</dd>
+                <dt>Phase</dt>
+                <dd class="sp-admin-text-muted" data-testid="prog-phase">{{ prog.currentLearningPhase }}</dd>
+                <dt>Placement date</dt>
+                <dd class="sp-admin-text-muted" data-testid="prog-placement-date">
+                  {{ prog.placementCompletedAt ? (prog.placementCompletedAt | date:'d MMM yyyy') : '—' }}
+                </dd>
+                <dt>Last activity</dt>
+                <dd class="sp-admin-text-muted" data-testid="prog-last-activity">
+                  {{ prog.lastLearningActivityAt ? (prog.lastLearningActivityAt | date:'d MMM yyyy, HH:mm') : '—' }}
+                </dd>
+              </dl>
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Mastery &amp; skills</div>
+              <dl class="sp-admin-detail-list sp-admin-mt-3">
+                <dt>Plan progress</dt>
+                <dd class="sp-admin-text-muted" data-testid="prog-completion">
+                  {{ prog.completionPercentage | number:'1.0-0' }}% ({{ prog.masteredObjectivesCount }}/{{ prog.totalObjectives }} mastered)
+                </dd>
+                <dt>In progress</dt>
+                <dd>
+                  <sp-admin-badge tone="info" data-testid="prog-in-progress">{{ prog.inProgressObjectivesCount }}</sp-admin-badge>
+                </dd>
+                <dt>Review queue</dt>
+                <dd>
+                  <sp-admin-badge [tone]="prog.reviewQueueCount > 0 ? 'warning' : 'neutral'" data-testid="prog-review-queue">
+                    {{ prog.reviewQueueCount }}
+                  </sp-admin-badge>
+                </dd>
+                <dt>Strongest skill</dt>
+                <dd class="sp-admin-text-muted" data-testid="prog-strongest-skill">{{ prog.strongestSkill ?? '—' }}</dd>
+                <dt>Weakest skill</dt>
+                <dd>
+                  @if (prog.weakestSkill) {
+                    <sp-admin-badge tone="warning" data-testid="prog-weakest-skill">{{ prog.weakestSkill }}</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-text-muted" data-testid="prog-weakest-skill">—</span>
+                  }
+                </dd>
+              </dl>
+            </div>
+          </div>
+        } @else {
+          <sp-admin-empty-state message="No progress data available yet." />
+        }
+      </sp-admin-card>
+
       <!-- Mastery evaluation summary — full width -->
       <sp-admin-card title="Mastery evaluation">
         @if (masteryPoolSummaryLoading()) {

@@ -260,6 +260,10 @@ public static class DependencyInjection
 
         // Progress
         services.AddScoped<IGetProgressHandler, GetProgressHandler>();
+        services.AddScoped<IStudentProgressSummaryHandler, StudentProgressSummaryHandler>();
+
+        // Admin — student progress summary
+        services.AddScoped<IAdminStudentProgressQuery, AdminStudentProgressHandler>();
 
         // Vocabulary
         services.AddScoped<IVocabularyExtractionService, VocabularyExtractionService>();

@@ -8,7 +8,7 @@ import {
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
-  AdminLearningPlanProgress,
+  AdminLearningPlanProgress, AdminStudentProgressSummary,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -163,6 +163,10 @@ export class AdminStudentDetailComponent implements OnInit {
   practiceSummary = signal<AdminStudentPracticeSummary | null>(null);
   practiceSummaryLoading = signal(true);
   practiceSummaryError = signal('');
+
+  progressSummary = signal<AdminStudentProgressSummary | null>(null);
+  progressSummaryLoading = signal(true);
+  progressSummaryError = signal('');
 
   // Phase 15E — Learning Plan / Journey
   learningPlanProgress = signal<AdminLearningPlanProgress | null>(null);
@@ -324,6 +328,11 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getLearningPlanProgress(id).subscribe({
       next: lp => { this.learningPlanProgress.set(lp); this.learningPlanProgressLoading.set(false); },
       error: () => { this.learningPlanProgressError.set('Could not load learning plan.'); this.learningPlanProgressLoading.set(false); },
+    });
+
+    this.adminApi.getStudentProgressSummary(id).subscribe({
+      next: ps => { this.progressSummary.set(ps); this.progressSummaryLoading.set(false); },
+      error: () => { this.progressSummaryError.set('Could not load progress summary.'); this.progressSummaryLoading.set(false); },
     });
   }
 

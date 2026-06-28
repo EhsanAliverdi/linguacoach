@@ -751,6 +751,24 @@ export interface AdminStudentPracticeSummary {
   isReplenishmentRecommended: boolean;
 }
 
+// ── Admin student progress summary (Phase 15F) ───────────────────────────────
+
+export interface AdminStudentProgressSummary {
+  currentCefrLevel: string | null;
+  placementCefrLevel: string | null;
+  placementCompletedAt: string | null;
+  masteredObjectivesCount: number;
+  inProgressObjectivesCount: number;
+  reviewQueueCount: number;
+  totalObjectives: number;
+  completionPercentage: number;
+  strongestSkill: string | null;
+  weakestSkill: string | null;
+  weakSkillsCount: number;
+  lastLearningActivityAt: string | null;
+  currentLearningPhase: string;
+}
+
 // ── Review scaffold dry-run / mastery diagnostics ────────────────────────────
 
 export interface ReviewScaffoldDryRunSummary {
