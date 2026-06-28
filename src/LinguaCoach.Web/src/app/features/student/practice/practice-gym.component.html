@@ -84,12 +84,12 @@
     <div class="sp-card sp-suggestion-card" [attr.data-testid]="'suggestion-card-' + item.readinessItemId">
       <div class="sp-suggestion-card-top">
         @if (item.primarySkill) {
-          <span class="sp-chip sp-suggestion-skill-chip">{{ item.primarySkill | titlecase }}</span>
+          <span class="sp-skill-tag sp-suggestion-skill-chip">{{ item.primarySkill | titlecase }}</span>
         }
         @if (item.isLowerLevelContent) {
-          <span class="sp-chip sp-suggestion-level-chip sp-chip--muted" data-testid="lower-level-label">{{ routingLabel(item) }}</span>
+          <span class="sp-skill-tag sp-suggestion-level-chip" data-testid="lower-level-label">{{ routingLabel(item) }}</span>
         } @else {
-          <span class="sp-chip sp-suggestion-level-chip" data-testid="routing-label">{{ routingLabel(item) }}</span>
+          <span class="sp-skill-tag sp-suggestion-level-chip" data-testid="routing-label">{{ routingLabel(item) }}</span>
         }
       </div>
       <div class="sp-suggestion-card-title">{{ item.title }}</div>
@@ -108,7 +108,7 @@
         }
         @if (item.contextTags.length > 0) {
           @for (tag of item.contextTags.slice(0, 2); track tag) {
-            <span class="sp-chip sp-chip--xs">{{ tag }}</span>
+            <span class="sp-skill-tag">{{ tag }}</span>
           }
         }
       </div>
@@ -188,7 +188,7 @@
                 @if (card.secondarySkills.length > 0) {
                   <div class="sp-format-card-chips" [attr.data-testid]="'format-chips-' + card.key">
                     @for (s of card.secondarySkills; track s) {
-                      <span class="sp-chip">{{ s }}</span>
+                      <span class="sp-skill-tag">{{ s }}</span>
                     }
                   </div>
                 }
