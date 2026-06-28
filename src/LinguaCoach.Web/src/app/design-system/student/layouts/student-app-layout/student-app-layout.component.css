@@ -83,6 +83,14 @@
   overflow: visible;
 }
 
+.sp-practice-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  margin-top: 22px;
+  color: var(--sp-brand);
+}
+
 .sp-practice-fab {
   width: 72px;
   height: 72px;
