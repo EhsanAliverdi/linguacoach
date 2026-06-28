@@ -163,7 +163,13 @@
 }
 
 @media (max-width: 899px) {
-  .sp-greet-lg { font-size: 15px; }
+  .sp-greet-lg {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
 }
 
 /* ── Header right actions ────────────────────────────────────────────── */
