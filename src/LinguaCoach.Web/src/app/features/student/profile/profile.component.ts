@@ -83,7 +83,13 @@ const SUPPORT_LANGUAGES = [
   template: `
     <!-- Loading state -->
     @if (loading()) {
-      <div style="text-align:center;padding:40px;color:var(--sp-muted)">Loading profile...</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="sp-skeleton" style="height:90px"></div>
+        <div class="sp-skeleton" style="height:64px"></div>
+        <div class="sp-skeleton" style="height:64px"></div>
+        <div class="sp-skeleton" style="height:120px"></div>
+        <div class="sp-skeleton" style="height:80px"></div>
+      </div>
     }
 
     @if (!loading()) {
