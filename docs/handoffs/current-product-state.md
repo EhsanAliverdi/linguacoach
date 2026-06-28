@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16D)
+lastUpdated: 2026-06-28 (16E)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,33 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (16D)
+Last updated: 2026-06-28 (16E)
+
+---
+
+## Speaking Submission Review Visibility (Phase 16E, 2026-06-28)
+
+Admins can now see all audio recordings submitted by a student before any AI evaluation exists.
+
+**What changed:**
+
+- **New: Admin Speaking Submissions card.** The student detail page (`/admin/students/{id}`) now shows a "Speaking Submissions" card listing all audio-submission attempts. Each row shows: activity title, type, submission date/time, audio format (MIME), and status badge (`Submitted`, `PendingEvaluation`, or `Evaluated`).
+- **New: `GET /api/admin/students/{profileId}/speaking-attempts`.** Returns the full list of audio attempts for a student. Filters to attempts with a stored audio file (`AudioStorageKey != null`). Falls back gracefully if the linked activity has been deleted.
+- **New: `GET /api/admin/students/{profileId}/speaking-attempts/{attemptId}/audio`.** Streams the audio file bytes to the admin. Verifies ownership before streaming. Never returns raw storage paths or keys.
+- **Status model.** Three statuses derived without any schema change: `PendingEvaluation` (submitted, not yet scored), `Evaluated` (score present), `Submitted` (legacy/other attempts with audio).
+- **Storage security.** Raw blob paths are never returned to any client. MIME type is derived from the file extension only. An integration test asserts `"speaking-recordings/"` does not appear in any HTTP response body.
+
+**What is NOT changed:**
+
+- No AI speaking evaluation, pronunciation scoring, or speech-to-text.
+- No new activity formats or schema migrations.
+- No changes to session completion, mastery, or learning plan logic.
+- Admin audio playback is deferred: the endpoint exists and is secured, but the Angular admin UI shows "Audio submitted — playback not available in admin yet." (Requires auth-aware blob streaming to be wired in a future phase.)
+- Student-facing flows are unchanged.
+
+**Test coverage:** 1,525 Angular unit tests pass (+6 new). 1,242 backend integration tests pass (+8 new). Production build clean.
+
+Review: `docs/reviews/2026-06-28-phase-16e-speaking-submission-visibility-review.md`.
 
 ---
 

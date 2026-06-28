@@ -340,6 +340,53 @@
         }
       </sp-admin-card>
 
+      <!-- Speaking Submissions — Phase 16E -->
+      <sp-admin-card title="Speaking Submissions" data-testid="speaking-submissions-card">
+        @if (speakingAttemptsLoading()) {
+          <sp-admin-loading-state message="Loading speaking submissions" />
+        } @else if (speakingAttemptsError()) {
+          <sp-admin-error-state title="Speaking submissions unavailable" [message]="speakingAttemptsError()" />
+        } @else if (speakingAttempts()?.status === 'NotFound') {
+          <sp-admin-empty-state message="Student not found." data-testid="speaking-submissions-not-found" />
+        } @else if (!speakingAttempts() || speakingAttempts()!.status === 'Empty' || speakingAttempts()!.attempts.length === 0) {
+          <p class="sp-admin-text-muted" data-testid="speaking-submissions-empty">No speaking recordings submitted yet.</p>
+        } @else {
+          <table class="sp-adm-table" style="width:100%;border-collapse:collapse" data-testid="speaking-submissions-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Activity</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Submitted</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Status</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Playback</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (attempt of speakingAttempts()!.attempts; track attempt.attemptId) {
+                <tr data-testid="speaking-attempt-row" style="border-top:1px solid var(--sp-admin-border,#E2DEF0)">
+                  <td style="padding:8px 4px;font-size:0.875rem">
+                    <span>{{ attempt.activityTitle || 'Speaking activity' }}</span>
+                    @if (attempt.activityType) {
+                      <span class="sp-admin-text-muted" style="display:block;font-size:0.75rem">{{ attempt.activityType }}</span>
+                    }
+                  </td>
+                  <td style="padding:8px 4px;font-size:0.875rem;white-space:nowrap">
+                    {{ attempt.submittedAt | date:'medium' }}
+                  </td>
+                  <td style="padding:8px 4px">
+                    <sp-admin-badge [tone]="speakingStatusTone(attempt.status)" data-testid="speaking-attempt-status">
+                      {{ speakingStatusLabel(attempt.status) }}
+                    </sp-admin-badge>
+                  </td>
+                  <td style="padding:8px 4px;font-size:0.8rem;color:var(--sp-admin-muted,#8B85A0)">
+                    Audio submitted — playback not available in admin yet.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </sp-admin-card>
+
       <!-- Learning Plan / Journey — Phase 15E -->
       <sp-admin-card title="Learning Journey" data-testid="learning-plan-card">
         @if (learningPlanProgressLoading()) {

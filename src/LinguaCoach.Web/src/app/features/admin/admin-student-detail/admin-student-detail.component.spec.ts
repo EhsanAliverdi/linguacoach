@@ -5,7 +5,7 @@ import { AdminStudentDetailComponent } from './admin-student-detail.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary, AdminPlacementLatestResponse, AdminStudentPracticeSummary, AdminLearningPlanProgress, AdminStudentProgressSummary } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary, AdminPlacementLatestResponse, AdminStudentPracticeSummary, AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult } from '../../../core/models/admin.models';
 
 function makePoolHealth(overrides: Partial<StudentReadinessPoolHealth> = {}): StudentReadinessPoolHealth {
   return {
@@ -187,6 +187,14 @@ function makeStudentDetail(overrides: Partial<AdminStudentDetail> = {}): AdminSt
   };
 }
 
+function makeSpeakingAttempts(overrides: Partial<AdminStudentSpeakingAttemptsResult> = {}): AdminStudentSpeakingAttemptsResult {
+  return {
+    status: 'Empty',
+    attempts: [],
+    ...overrides,
+  };
+}
+
 function makeOnboardingProgress(overrides: Partial<StudentOnboardingProgressInfo> = {}): StudentOnboardingProgressInfo {
   return {
     currentStepKey: 'step-language',
@@ -223,6 +231,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -238,6 +247,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -389,6 +399,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -403,6 +414,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -577,6 +589,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -592,6 +605,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -629,6 +643,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -645,6 +660,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -671,6 +687,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -686,6 +703,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -712,6 +730,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -727,6 +746,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -812,6 +832,7 @@ describe('AdminStudentDetailComponent — admin CEFR management', () => {
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -827,6 +848,7 @@ describe('AdminStudentDetailComponent — admin CEFR management', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -967,6 +989,7 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -982,6 +1005,7 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -1162,6 +1186,7 @@ describe('AdminStudentDetailComponent — audit history section', () => {
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1176,6 +1201,7 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     if (auditError) {
       adminApi.getStudentAuditHistory.and.returnValue(throwError(() => new Error('network')));
@@ -1286,6 +1312,7 @@ describe('AdminStudentDetailComponent — 10X-L: Set CEFR slide-over', () => {
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1301,6 +1328,7 @@ describe('AdminStudentDetailComponent — 10X-L: Set CEFR slide-over', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
@@ -1427,6 +1455,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 hero section', () => {
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
       'sendStudentResetLink',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1442,6 +1471,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 hero section', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([]));
@@ -1595,6 +1625,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
       'sendStudentResetLink',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1610,6 +1641,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([]));
@@ -1719,6 +1751,7 @@ describe('AdminStudentDetailComponent — overview stats strip', () => {
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     const governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1734,6 +1767,7 @@ describe('AdminStudentDetailComponent — overview stats strip', () => {
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([]));
@@ -1797,6 +1831,7 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1814,6 +1849,7 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([]));
@@ -1915,6 +1951,7 @@ describe('AdminStudentDetailComponent — Practice Gym summary', () => {
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
       'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
     ]);
     governance = jasmine.createSpyObj('UsageGovernanceService', [
       'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
@@ -1932,6 +1969,7 @@ describe('AdminStudentDetailComponent — Practice Gym summary', () => {
     );
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
     adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
     governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
     governance.listUsagePolicies.and.returnValue(of([]));
@@ -1997,6 +2035,116 @@ describe('AdminStudentDetailComponent — Practice Gym summary', () => {
   });
 
   it('does not crash when practice summary load errors', () => {
+    setup('error');
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    expect(() => fixture.detectChanges()).not.toThrow();
+  });
+});
+
+// ── Speaking Submissions card ─────────────────────────────────────────────────
+describe('AdminStudentDetailComponent — Speaking Submissions', () => {
+  let adminApi: jasmine.SpyObj<AdminApiService>;
+  let governance: jasmine.SpyObj<UsageGovernanceService>;
+  let toast: jasmine.SpyObj<ToastService>;
+
+  function setup(speakingResult: AdminStudentSpeakingAttemptsResult | 'error' = makeSpeakingAttempts()) {
+    adminApi = jasmine.createSpyObj('AdminApiService', [
+      'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
+      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
+      'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
+      'getStudentSpeakingAttempts',
+    ]);
+    governance = jasmine.createSpyObj('UsageGovernanceService', [
+      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
+    ]);
+    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
+
+    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
+    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
+    adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
+    adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
+    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
+    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
+    adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
+    adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
+    adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
+    adminApi.getStudentSpeakingAttempts.and.returnValue(
+      speakingResult === 'error' ? throwError(() => new Error('fail')) : of(speakingResult)
+    );
+    adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
+    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
+    governance.listUsagePolicies.and.returnValue(of([makePolicy()]));
+
+    TestBed.configureTestingModule({
+      imports: [AdminStudentDetailComponent],
+      providers: [
+        { provide: AdminApiService, useValue: adminApi },
+        { provide: UsageGovernanceService, useValue: governance },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
+      ],
+    });
+  }
+
+  it('calls getStudentSpeakingAttempts on init', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    expect(adminApi.getStudentSpeakingAttempts).toHaveBeenCalledWith('student-1');
+  });
+
+  it('renders speaking submissions card', () => {
+    setup();
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector('[data-testid="speaking-submissions-card"]');
+    expect(card).toBeTruthy();
+  });
+
+  it('shows empty state when status is Empty', () => {
+    setup(makeSpeakingAttempts({ status: 'Empty', attempts: [] }));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const empty = fixture.nativeElement.querySelector('[data-testid="speaking-submissions-empty"]');
+    expect(empty).toBeTruthy();
+  });
+
+  it('shows attempt rows when status is Ready', () => {
+    setup(makeSpeakingAttempts({
+      status: 'Ready',
+      attempts: [{
+        attemptId: 'aa1', activityId: 'bb1',
+        activityTitle: 'Roleplay: Meeting', activityType: 'SpeakingRolePlay',
+        submittedAt: '2026-06-28T10:00:00Z',
+        mimeType: 'audio/webm',
+        status: 'PendingEvaluation',
+      }],
+    }));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const rows = fixture.nativeElement.querySelectorAll('[data-testid="speaking-attempt-row"]');
+    expect(rows.length).toBe(1);
+  });
+
+  it('shows Pending evaluation badge for PendingEvaluation status', () => {
+    setup(makeSpeakingAttempts({
+      status: 'Ready',
+      attempts: [{
+        attemptId: 'aa2', activityId: 'bb2',
+        activityTitle: null, activityType: null,
+        submittedAt: '2026-06-28T10:00:00Z',
+        mimeType: null,
+        status: 'PendingEvaluation',
+      }],
+    }));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('[data-testid="speaking-attempt-status"]');
+    expect(badge?.textContent).toContain('Pending evaluation');
+  });
+
+  it('does not crash when speaking attempts load errors', () => {
     setup('error');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     expect(() => fixture.detectChanges()).not.toThrow();

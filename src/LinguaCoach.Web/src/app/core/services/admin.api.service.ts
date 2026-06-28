@@ -35,6 +35,7 @@ import {
   AdminStudentPracticeSummary,
   AdminLearningPlanProgress,
   AdminStudentProgressSummary,
+  AdminStudentSpeakingAttemptsResult,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -103,6 +104,9 @@ export class AdminApiService {
   }
   getStudentPracticeSummary(studentId: string): Observable<AdminStudentPracticeSummary> {
     return this.http.get<AdminStudentPracticeSummary>(`${this.api}/students/${studentId}/practice-summary`);
+  }
+  getStudentSpeakingAttempts(studentId: string): Observable<AdminStudentSpeakingAttemptsResult> {
+    return this.http.get<AdminStudentSpeakingAttemptsResult>(`${this.api}/students/${studentId}/speaking-attempts`);
   }
   getStudentProgressSummary(studentId: string): Observable<AdminStudentProgressSummary> {
     return this.http.get<AdminStudentProgressSummary>(`${this.api}/students/${studentId}/progress-summary`);

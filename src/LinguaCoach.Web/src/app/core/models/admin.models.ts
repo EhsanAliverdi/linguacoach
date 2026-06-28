@@ -1034,3 +1034,22 @@ export interface AdminLearningPlanProgress {
   completedObjectives: AdminLearningPlanObjective[];
   reviewObjectives: AdminLearningPlanObjective[];
 }
+
+// Phase 16E — Speaking submission visibility
+
+export interface AdminStudentSpeakingAttempt {
+  attemptId: string;
+  activityId: string;
+  activityTitle: string | null;
+  activityType: string | null;
+  submittedAt: string;
+  mimeType: string | null;
+  /** Submitted | PendingEvaluation | Evaluated | Failed */
+  status: string;
+}
+
+export interface AdminStudentSpeakingAttemptsResult {
+  /** Ready | Empty | NotFound */
+  status: string;
+  attempts: AdminStudentSpeakingAttempt[];
+}

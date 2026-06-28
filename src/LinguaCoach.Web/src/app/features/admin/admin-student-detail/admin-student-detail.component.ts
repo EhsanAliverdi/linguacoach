@@ -8,7 +8,7 @@ import {
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
-  AdminLearningPlanProgress, AdminStudentProgressSummary,
+  AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -40,6 +40,7 @@ import {
 } from '../../../design-system/admin';
 import { BreakdownBarItem } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
+import { SpAdminBadgeTone } from '../../../design-system/admin/components/badge/sp-admin-badge.component';
 
 interface StudentEditForm {
   firstName: string;
@@ -163,6 +164,10 @@ export class AdminStudentDetailComponent implements OnInit {
   practiceSummary = signal<AdminStudentPracticeSummary | null>(null);
   practiceSummaryLoading = signal(true);
   practiceSummaryError = signal('');
+
+  speakingAttempts = signal<AdminStudentSpeakingAttemptsResult | null>(null);
+  speakingAttemptsLoading = signal(true);
+  speakingAttemptsError = signal('');
 
   progressSummary = signal<AdminStudentProgressSummary | null>(null);
   progressSummaryLoading = signal(true);
@@ -298,6 +303,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadPoolHealth(id);
     this.loadMasteryPoolSummary(id);
     this.loadPlacement(id);
+    this.loadSpeakingAttempts(id);
   }
 
   private loadStudent(id: string): void {
@@ -333,6 +339,15 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getStudentProgressSummary(id).subscribe({
       next: ps => { this.progressSummary.set(ps); this.progressSummaryLoading.set(false); },
       error: () => { this.progressSummaryError.set('Could not load progress summary.'); this.progressSummaryLoading.set(false); },
+    });
+  }
+
+  private loadSpeakingAttempts(id: string): void {
+    this.speakingAttemptsLoading.set(true);
+    this.speakingAttemptsError.set('');
+    this.adminApi.getStudentSpeakingAttempts(id).subscribe({
+      next: r => { this.speakingAttempts.set(r); this.speakingAttemptsLoading.set(false); },
+      error: () => { this.speakingAttemptsError.set('Could not load speaking submissions.'); this.speakingAttemptsLoading.set(false); },
     });
   }
 
@@ -493,6 +508,21 @@ export class AdminStudentDetailComponent implements OnInit {
 
   scoreValue(item: AdminActivityHistoryItem): number | null {
     return item.score ?? item.percentage ?? null;
+  }
+
+  speakingStatusTone(status: string): SpAdminBadgeTone {
+    if (status === 'Evaluated') return 'success';
+    if (status === 'PendingEvaluation' || status === 'Submitted') return 'warning';
+    if (status === 'Failed') return 'danger';
+    return 'neutral';
+  }
+
+  speakingStatusLabel(status: string): string {
+    if (status === 'PendingEvaluation') return 'Pending evaluation';
+    if (status === 'Submitted') return 'Submitted';
+    if (status === 'Evaluated') return 'Evaluated';
+    if (status === 'Failed') return 'Failed';
+    return status;
   }
 
   scoreToneClass(item: AdminActivityHistoryItem): string {

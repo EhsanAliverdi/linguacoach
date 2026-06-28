@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16D)
+lastUpdated: 2026-06-28 (16E)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,32 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 16E — Speaking Submission Review Visibility and Pending Feedback** — complete (2026-06-28)
+
+Makes submitted speaking recordings visible and reviewable before any AI evaluation is added. No AI scoring, no speech-to-text, no new speaking formats.
+
+**New endpoints:**
+- `GET /api/admin/students/{studentProfileId:guid}/speaking-attempts` — returns list of audio-submission attempts for a student, with status derived from `promptKey`/`score`. Storage keys never exposed.
+- `GET /api/admin/students/{studentProfileId:guid}/speaking-attempts/{attemptId:guid}/audio` — streams audio bytes to admin; verifies ownership (`attempt.StudentProfileId == studentProfileId`) before streaming.
+
+**Status model (no migration):** `promptKey == "audio_submission_pending"` → `PendingEvaluation`; `score.HasValue` → `Evaluated`; else → `Submitted`.
+
+**Admin UI:** Speaking Submissions card added to `admin-student-detail`. Shows loading, error, empty, and attempt-row states. Playback deferred (informational text shown; Bearer-token-aware streaming not yet wired).
+
+**Security:** `AudioStorageKey` never projected into any DTO. Integration test asserts `"speaking-recordings/"` does not appear in any response body. Ownership double-checked on audio stream endpoint. Unknown student returns `{ status: "NotFound" }`, never 500.
+
+**Tests added:**
+- `AdminStudentSpeakingTests.cs` (NEW) — 8 integration tests: 401/403 for both endpoints, empty for no recordings, not-500 for unknown student, no storage path in body, 404 for unknown audio attempt.
+- `admin-student-detail.component.spec.ts` (EDITED) — 6 new Angular unit tests: API called on init, card renders, empty state, attempt rows, PendingEvaluation badge, error resilience.
+
+**Bug fixed during validation:** `speakingStatusTone()` return type was `string`; changed to `SpAdminBadgeTone` to pass strict Angular template type check (`NG2` error).
+
+**Build/test totals:** Angular unit: 1,525 pass (+6). Backend integration: 1,242 pass (+8). Backend unit: 1,504 (unchanged). Arch tests: 3 (unchanged). Production build: clean (warnings pre-existing).
+
+Review: `docs/reviews/2026-06-28-phase-16e-speaking-submission-visibility-review.md`.
+
+---
 
 **Phase 16D — Voice Recording and Speaking Submission Foundation** — complete (2026-06-28)
 
