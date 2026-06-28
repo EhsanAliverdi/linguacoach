@@ -456,6 +456,14 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (payload.kind === 'audioResponse') {
+      this.activityService.submitAudioAttempt(a.activityId, payload.blob, payload.mimeType, payload.durationSeconds).subscribe({
+        next: handleFeedback,
+        error: handleError,
+      });
+      return;
+    }
+
     let submittedContent: string;
     if (payload.kind === 'freeText') {
       submittedContent = payload.text;

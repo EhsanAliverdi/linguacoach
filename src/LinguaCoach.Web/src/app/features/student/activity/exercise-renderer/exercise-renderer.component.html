@@ -160,6 +160,13 @@
       (submitted)="onSummarizeGroupDiscussionSubmitted($event)"
     />
   }
+  @case ('audioResponse') {
+    <app-audio-response
+      [content]="audioResponseContent"
+      [disabled]="disabled"
+      (submitted)="onAudioResponseSubmitted($event)"
+    />
+  }
   @case ('freeTextEntry') {
     <app-free-text-entry
       [content]="freeTextContent"

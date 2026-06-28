@@ -26,6 +26,7 @@ import { RespondToSituationComponent, RespondToSituationContent } from '../rende
 import { DescribeImageComponent, DescribeImageContent } from '../renderers/describe-image/describe-image.component';
 import { RetellLectureComponent, RetellLectureContent } from '../renderers/retell-lecture/retell-lecture.component';
 import { SummarizeGroupDiscussionComponent, SummarizeGroupDiscussionContent } from '../renderers/summarize-group-discussion/summarize-group-discussion.component';
+import { AudioResponseComponent, AudioResponseContent } from '../renderers/audio-response/audio-response.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -51,7 +52,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'respondToSituation'; items: { itemId: string; answerText: string }[] }
   | { kind: 'describeImage'; items: { itemId: string; answerText: string }[] }
   | { kind: 'retellLecture'; items: { itemId: string; answerText: string }[] }
-  | { kind: 'summarizeGroupDiscussion'; items: { itemId: string; answerText: string }[] };
+  | { kind: 'summarizeGroupDiscussion'; items: { itemId: string; answerText: string }[] }
+  | { kind: 'audioResponse'; blob: Blob; mimeType: string; durationSeconds: number };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -83,6 +85,7 @@ export type ExerciseAnswerPayload =
     DescribeImageComponent,
     RetellLectureComponent,
     SummarizeGroupDiscussionComponent,
+    AudioResponseComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -761,6 +764,24 @@ export class ExerciseRendererComponent {
 
   onSummarizeGroupDiscussionSubmitted(answer: { items: { itemId: string; answerText: string }[] }): void {
     this.answerSubmitted.emit({ kind: 'summarizeGroupDiscussion', items: answer.items });
+  }
+
+  get audioResponseContent(): AudioResponseContent {
+    const raw = this.raw;
+    const ed = this.stagedExerciseData;
+    return {
+      prompt: this.stringValue(ed['prompt'] ?? raw['prompt'])
+        ?? this.stringValue(raw['taskDescription'])
+        ?? this.activity.speakingPrompt
+        ?? this.activity.learningGoal,
+      situation: this.stringValue(ed['sourceText'] ?? ed['topic'] ?? raw['situation'])
+        ?? this.activity.situation
+        ?? this.activity.speakingScenario,
+    };
+  }
+
+  onAudioResponseSubmitted(answer: { blob: Blob; mimeType: string; durationSeconds: number }): void {
+    this.answerSubmitted.emit({ kind: 'audioResponse', ...answer });
   }
 
   get reorderParagraphsContent(): ReorderParagraphsContent {

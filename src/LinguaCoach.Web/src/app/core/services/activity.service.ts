@@ -128,6 +128,15 @@ export class ActivityService {
     return this.http.post<ActivityFeedbackDto>(`${this.base}/${activityId}/speaking-attempt`, form);
   }
 
+  submitAudioAttempt(activityId: string, audioBlob: Blob, mimeType: string, durationSeconds?: number): Observable<ActivityFeedbackDto> {
+    const form = new FormData();
+    form.append('audioFile', audioBlob, `recording${this.mimeTypeToExtension(mimeType)}`);
+    if (durationSeconds != null) {
+      form.append('durationSeconds', String(durationSeconds));
+    }
+    return this.http.post<ActivityFeedbackDto>(`${this.base}/${activityId}/audio-attempt`, form);
+  }
+
   private mimeTypeToExtension(mimeType: string): string {
     const base = mimeType.split(';')[0].trim();
     switch (base) {

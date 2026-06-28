@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16C)
+lastUpdated: 2026-06-28 (16D)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,35 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 16D — Voice Recording and Speaking Submission Foundation** — complete (2026-06-28)
+
+Safe browser voice recording and audio submission infrastructure for speaking activities. No AI evaluation, no pronunciation scoring, no new activity formats.
+
+**New endpoint:** `POST /api/activity/{id}/audio-attempt` — stores audio via `SpeakingAudioService` (same MIME/size/ownership validation as `speaking-attempt`), creates `ActivityAttempt` with `feedbackJson="{}"` and `promptKey="audio_submission_pending"`, returns empty `ActivityFeedbackDto` (all null/empty → `hasFeedbackContent=false` → Phase 16B pending card shown automatically).
+
+**Removed constraint:** `GET /api/activity/{id}/attempts/{attemptId}/audio` — removed `ActivityType.SpeakingRolePlay` guard so audio from `audio-attempt` submissions is also retrievable.
+
+**New component:** `VoiceRecorderComponent` (`app-voice-recorder`) — encapsulates `MediaRecorder` lifecycle, `RecorderState` type (`idle | requesting-permission | permission-denied | unsupported | recording | recorded`), stream cleanup on `stopRecording()` and `ngOnDestroy()`, preview URL via `URL.createObjectURL`, `reRecord()` revokes old object URL and resets to idle. Emits `(recorded)` with `{ blob, mimeType, durationSeconds, previewUrl }`.
+
+**New component:** `AudioResponseComponent` (`app-audio-response`) — thin shell: wraps `VoiceRecorderComponent`, holds recorded audio in a signal, shows Submit button only after recording completes. Emits `(submitted)` with `{ blob, mimeType, durationSeconds }`.
+
+**ExerciseRendererComponent** — added `AudioResponseComponent` import, `| { kind: 'audioResponse'; blob; mimeType; durationSeconds }` to `ExerciseAnswerPayload`, `audioResponseContent` getter (reads `prompt`/`situation` from staged/raw JSON or activity fields), `onAudioResponseSubmitted()` handler, and `@case ('audioResponse')` in the HTML switch.
+
+**ActivityService** — added `submitAudioAttempt(activityId, blob, mimeType, durationSeconds?)` → `POST /audio-attempt` multipart.
+
+**ActivityLessonComponent** — added `audioResponse` early-return branch in `onRendererSubmit` calling `submitAudioAttempt`. Works in both Today Lesson and Practice Gym paths (both share exercise-renderer).
+
+**Tests added:**
+- `audio-attempt-endpoint-tests.cs` (NEW) — 9 backend integration tests: auth, MIME validation, missing file, unknown activity, happy-path 200 with pending DTO, DB persistence with `speaking-recordings/` key, audio retrieval, wrong-owner 404, no storage key in response body.
+- `voice-recorder.component.spec.ts` (NEW) — 14 Angular unit tests: create, idle state, permission-denied, requesting-permission, stream cleanup, reRecord/URL revoke, recorded event, all state-driven DOM visibility, disabled guard, ngOnDestroy cleanup.
+- `audio-response.component.spec.ts` (NEW) — 9 Angular unit tests: create, no submit before recording, submit shown after recording, submitted event with correct payload, no emit without recording, disabled guard, submitting label.
+
+**Build/test totals:** Angular unit: 1,519 pass (23 new). Backend integration: 1,234 pass (9 new). Backend unit and arch tests unchanged. Playwright: unchanged. Production build: clean.
+
+Review: `docs/reviews/2026-06-28-phase-16d-audio-submission-foundation-review.md`.
+
+---
 
 **Phase 16C — Audio/TTS and Listening Activity Reliability** — complete (2026-06-28)
 

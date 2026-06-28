@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16C)
+lastUpdated: 2026-06-28 (16D)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,37 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (16C)
+Last updated: 2026-06-28 (16D)
+
+---
+
+## Voice Recording and Speaking Submission Foundation (Phase 16D, 2026-06-28)
+
+Voice recording infrastructure for speaking activities. No AI evaluation, no pronunciation scoring, no new activity formats introduced.
+
+**What changed:**
+
+- **New: `audioResponse` activity flow.** Speaking activities with `interactionMode: "audioResponse"` now render a full recording UI (microphone button, recording indicator, playback preview, re-record, submit). Previously this interactionMode fell through to the default "Activity not available" fallback.
+- **New: `VoiceRecorderComponent`.** Handles all `MediaRecorder` lifecycle: permission request, recording state, mic stream cleanup on stop and navigation, preview URL management. Covers all browser error states: unsupported, permission denied, active recording indicator.
+- **New: `AudioResponseComponent`.** Thin orchestration layer wrapping `VoiceRecorderComponent`. Holds recorded audio in a signal, shows the Submit button only after recording completes.
+- **New: `POST /api/activity/{id}/audio-attempt`.** Backend endpoint accepting audio uploads for any activity type. Applies the same file validation (MIME type, 10 MB limit, 50-file per-student cap, ownership check) as the existing `speaking-attempt` endpoint. Does not run STT or AI evaluation. Returns an empty `ActivityFeedbackDto` (all null) → existing Phase 16B "feedback pending" card shown automatically.
+- **Updated: Audio retrieval endpoint.** `GET /api/activity/{id}/attempts/{attemptId}/audio` no longer restricts to `SpeakingRolePlay` activity type, so audio from `audio-attempt` submissions is retrievable. Ownership is still enforced at the attempt level.
+- **Unchanged: existing speaking flows.** `SpeakingRolePlay` via `POST /speaking-attempt` (STT + AI evaluation) is fully unchanged. All other renderers (`readAloud`, `repeatSentence`, `respondToSituation`, etc.) remain text-only as before.
+
+**What is NOT changed:**
+
+- No AI speaking evaluation or pronunciation scoring.
+- No speech-to-text integration.
+- No new activity format definitions or schema changes.
+- No changes to session completion, mastery, or learning plan logic.
+- No admin UI changes.
+- `read_aloud`, `repeat_sentence`, `respondToSituation` renderers remain text-based. The audio submission path is only triggered for activities with `interactionMode: "audioResponse"`.
+
+**Pending state:** When a student submits via `audio-attempt`, the feedback page shows the existing "Your response was saved. Feedback will appear after this activity is evaluated." card. No manual feedback infrastructure is in scope for this phase.
+
+**Test coverage:** 1,519 Angular unit tests pass (23 new). 1,234 backend integration tests pass (9 new). Production build clean.
+
+Review: `docs/reviews/2026-06-28-phase-16d-audio-submission-foundation-review.md`.
 
 ---
 

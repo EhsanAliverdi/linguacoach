@@ -577,6 +577,104 @@ public sealed class ActivityController : ControllerBase
         }
     }
 
+    [HttpPost("{activityId:guid}/audio-attempt")]
+    [RequestSizeLimit(20 * 1024 * 1024)]
+    public async Task<IActionResult> SubmitAudioAttempt(
+        Guid activityId,
+        IFormFile audioFile,
+        [FromForm] double? durationSeconds = null,
+        CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest(new { error = "Audio file is required." });
+
+        var mimeType = audioFile.ContentType?.Split(';')[0].Trim() ?? string.Empty;
+        if (!_speakingAudio.IsAllowedMimeType(mimeType))
+            return BadRequest(new { error = $"Audio format '{mimeType}' is not supported. Use webm, wav, mp3, or mp4." });
+
+        if (audioFile.Length > _speakingAudio.GetMaxAudioBytes())
+            return BadRequest(new { error = "Recording is too large. Maximum size is 10 MB." });
+
+        var profile = await _db.StudentProfiles
+            .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var activity = await _db.LearningActivities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.IsActive, ct);
+        if (activity is null) return NotFound();
+
+        if (activity.LearningModuleId.HasValue)
+        {
+            var ownsActivity = await _db.LearningModules
+                .Where(m => m.Id == activity.LearningModuleId.Value)
+                .Join(_db.LearningPaths.Where(p => p.StudentProfileId == profile.Id),
+                    m => m.LearningPathId,
+                    p => p.Id,
+                    (m, p) => m.Id)
+                .AnyAsync(ct);
+            if (!ownsActivity)
+                return NotFound();
+        }
+
+        if (await _speakingAudio.ExceedsStorageLimitAsync(profile.Id, ct))
+            return BadRequest(new { error = "Speaking history is full (50 recordings). Contact your teacher to clear old recordings." });
+
+        string? tempKey = null;
+        try
+        {
+            await using var stream = audioFile.OpenReadStream();
+            tempKey = await _speakingAudio.StoreTemporaryAsync(stream, mimeType, ct);
+
+            var attempt = new ActivityAttempt(
+                studentProfileId: profile.Id,
+                learningActivityId: activityId,
+                submittedContent: "[voice recording]",
+                feedbackJson: "{}",
+                promptKey: "audio_submission_pending",
+                score: null,
+                audioStorageKey: tempKey);
+
+            _db.ActivityAttempts.Add(attempt);
+            await _db.SaveChangesAsync(ct);
+
+            var finalKey = await _speakingAudio.CommitAudioAsync(tempKey, attempt.Id, mimeType, ct);
+            tempKey = null;
+
+            attempt.SetAudioStorageKey(finalKey);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new ActivityFeedbackDto(
+                AttemptId: attempt.Id,
+                Score: null,
+                CoachSummary: null,
+                FocusFirst: false,
+                Changes: [],
+                CorrectedText: null,
+                WhatYouDidWell: [],
+                MainMistakes: [],
+                GrammarIssues: [],
+                VocabularyIssues: [],
+                ToneIssues: [],
+                ClarityIssues: [],
+                GrammarExplanation: null,
+                ToneExplanation: null,
+                VocabularyToRemember: [],
+                MiniLesson: null,
+                NextImprovementStep: null,
+                RewriteChallenge: null,
+                NextPracticeSuggestion: null,
+                FeedbackInSourceLanguage: null));
+        }
+        catch (Exception) when (tempKey is not null)
+        {
+            await _speakingAudio.DeleteTemporaryAsync(tempKey, ct);
+            return StatusCode(500, new { error = "Could not store your recording. Please try again." });
+        }
+    }
+
     [HttpGet("{activityId:guid}/attempts/{attemptId:guid}/audio")]
     public async Task<IActionResult> GetSpeakingAudio(
         Guid activityId, Guid attemptId, CancellationToken ct = default)
@@ -594,10 +692,9 @@ public sealed class ActivityController : ControllerBase
         if (attempt is null || string.IsNullOrWhiteSpace(attempt.AudioStorageKey))
             return NotFound();
 
-        // Verify activity is SpeakingRolePlay
         var activity = await _db.LearningActivities
             .FirstOrDefaultAsync(a => a.Id == activityId && a.IsActive, ct);
-        if (activity is null || activity.ActivityType != ActivityType.SpeakingRolePlay)
+        if (activity is null)
             return NotFound();
 
         var audio = await _speakingAudio.GetAudioAsync(attempt.AudioStorageKey, ct);

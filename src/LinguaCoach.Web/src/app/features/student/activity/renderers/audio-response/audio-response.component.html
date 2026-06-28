@@ -1,0 +1,21 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="audio-response-renderer">
+
+  <app-voice-recorder
+    [prompt]="content.prompt"
+    [situation]="content.situation"
+    [disabled]="disabled"
+    (recorded)="onRecorded($event)"
+  />
+
+  @if (recordedAudio()) {
+    <button
+      (click)="submit()"
+      [disabled]="disabled"
+      class="sp-button-primary"
+      style="width:100%"
+      data-testid="submit-audio-btn">
+      @if (disabled) { Submitting… } @else { Submit recording }
+    </button>
+  }
+
+</div>

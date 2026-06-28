@@ -1,0 +1,77 @@
+<div style="display:flex;flex-direction:column;gap:16px" data-testid="voice-recorder">
+
+  @if (recorderState() === 'unsupported') {
+    <div class="sp-alert-error" data-testid="mic-unsupported">
+      <strong>Microphone not supported</strong>
+      <p style="margin:4px 0 0;font-size:12.5px">Your browser does not support audio recording. Please use Chrome or Firefox.</p>
+    </div>
+  }
+
+  @if (recorderState() === 'permission-denied') {
+    <div class="sp-alert-error" data-testid="mic-denied">
+      <strong>Microphone access denied</strong>
+      <p style="margin:4px 0 0;font-size:12.5px">Allow microphone access in your browser settings and reload the page.</p>
+    </div>
+  }
+
+  @if (situation) {
+    <div class="sp-card" style="padding:14px 18px">
+      <p class="sp-eyebrow" style="margin-bottom:6px">Situation</p>
+      <p style="font-size:14px;font-weight:600;color:var(--sp-text);line-height:1.65">{{ situation }}</p>
+    </div>
+  }
+
+  @if (prompt) {
+    <div class="sp-card" style="padding:14px 18px;border-left:3px solid var(--sp-speaking)">
+      <p style="font-size:14px;color:var(--sp-ink);line-height:1.6;font-weight:600">{{ prompt }}</p>
+    </div>
+  }
+
+  @if (recorderState() === 'idle' || recorderState() === 'requesting-permission') {
+    <button
+      (click)="startRecording()"
+      [disabled]="disabled || recorderState() === 'requesting-permission'"
+      class="sp-button-primary"
+      style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px"
+      data-testid="start-recording-btn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      @if (recorderState() === 'requesting-permission') { Waiting for microphone… } @else { Start recording }
+    </button>
+  }
+
+  @if (recorderState() === 'recording') {
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--sp-canvas2);border-radius:var(--sp-r-sm);padding:10px 16px">
+        <span style="width:10px;height:10px;background:var(--sp-speaking);border-radius:50%;display:inline-block;animation:sp-pulse 1.2s infinite"></span>
+        <span style="font-size:13.5px;font-weight:700;color:var(--sp-text)">Recording in progress</span>
+      </div>
+      <button
+        (click)="stopRecording()"
+        class="sp-button-danger"
+        style="width:100%"
+        data-testid="stop-recording-btn">
+        Stop recording
+      </button>
+    </div>
+  }
+
+  @if (recorderState() === 'recorded' && previewUrl) {
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <audio [src]="previewUrl" controls style="width:100%;border-radius:var(--sp-r-sm)" data-testid="audio-preview"></audio>
+      <button
+        (click)="reRecord()"
+        [disabled]="disabled"
+        class="sp-button-ghost"
+        style="width:100%"
+        data-testid="re-record-btn">
+        Record again
+      </button>
+    </div>
+  }
+
+</div>
