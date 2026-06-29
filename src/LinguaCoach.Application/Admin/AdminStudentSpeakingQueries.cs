@@ -10,7 +10,16 @@ public sealed record AdminStudentSpeakingAttemptDto(
     DateTime SubmittedAt,
     string? MimeType,
     /// <summary>Submitted | PendingEvaluation | Evaluated | Failed</summary>
-    string Status);
+    string Status,
+    /// <summary>Pending | Evaluating | Completed | Failed | Skipped | NotSupported. Null if no evaluation record.</summary>
+    string? EvaluationStatus,
+    string? EvaluationProvider,
+    string? EvaluationModel,
+    DateTime? EvaluationCompletedAt,
+    string? EvaluationFeedbackText,
+    string? EvaluationSuggestedImprovement,
+    string? EvaluationFailureReason,
+    double? OverallScore);
 
 public sealed record AdminStudentSpeakingAttemptsResult(
     /// <summary>Ready | Empty | NotFound</summary>

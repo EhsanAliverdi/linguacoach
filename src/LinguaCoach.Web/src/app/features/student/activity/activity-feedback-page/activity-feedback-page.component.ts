@@ -1,7 +1,10 @@
-﻿import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivityFeedbackDto, FeedbackChangeDto } from '../../../../core/models/activity.models';
+import { ActivityFeedbackDto, FeedbackChangeDto, SpeakingEvaluationDto } from '../../../../core/models/activity.models';
 import { PatternEvaluationResultComponent } from '../pattern-evaluation-result/pattern-evaluation-result.component';
+import { ActivityService } from '../../../../core/services/activity.service';
+import { Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 
 /**
  * Page 3 of the Teach -> Practice -> Feedback flow.
@@ -14,10 +17,12 @@ import { PatternEvaluationResultComponent } from '../pattern-evaluation-result/p
   imports: [CommonModule, PatternEvaluationResultComponent],
   templateUrl: './activity-feedback-page.component.html',
 })
-export class ActivityFeedbackPageComponent {
+export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) feedback!: ActivityFeedbackDto;
   @Input() attemptCount = 0;
   @Input() previousScore: number | null = null;
+  @Input() activityId: string | null = null;
+  @Input() attemptId: string | null = null;
 
   @Output() improveAnswer = new EventEmitter<void>();
   @Output() tryAgain = new EventEmitter<void>();
@@ -25,6 +30,52 @@ export class ActivityFeedbackPageComponent {
   @Output() backToDashboard = new EventEmitter<void>();
 
   showNativeExplanation = signal(false);
+  evaluation = signal<SpeakingEvaluationDto | null>(null);
+  evaluationLoading = signal(false);
+
+  private _pollSub: Subscription | null = null;
+
+  constructor(private _activityService: ActivityService) {}
+
+  ngOnChanges(): void {
+    if (!this.hasFeedbackContent && this.activityId && this.attemptId) {
+      this._startEvaluationLoad();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this._pollSub?.unsubscribe();
+  }
+
+  private _startEvaluationLoad(): void {
+    this._pollSub?.unsubscribe();
+    this.evaluationLoading.set(true);
+
+    this._activityService.getAttemptEvaluation(this.activityId!, this.attemptId!).subscribe({
+      next: dto => {
+        this.evaluation.set(dto);
+        this.evaluationLoading.set(false);
+        if (dto.status === 'Pending' || dto.status === 'Evaluating') {
+          this._startPolling();
+        }
+      },
+      error: () => this.evaluationLoading.set(false),
+    });
+  }
+
+  private _startPolling(): void {
+    let polls = 0;
+    this._pollSub = interval(10_000).pipe(
+      switchMap(() => this._activityService.getAttemptEvaluation(this.activityId!, this.attemptId!)),
+      takeWhile(dto => {
+        polls++;
+        const stillPending = dto.status === 'Pending' || dto.status === 'Evaluating';
+        return stillPending && polls < 12;
+      }, true),
+    ).subscribe({
+      next: dto => this.evaluation.set(dto),
+    });
+  }
 
   scoreRingColour(score: number | null): string {
     if (score === null) return 'var(--sp-faint)';

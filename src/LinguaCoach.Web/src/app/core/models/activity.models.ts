@@ -304,3 +304,22 @@ export interface PatternEvaluationDto {
   skillImpacts: PatternSkillImpact[];
   memorySignals: PatternMemorySignal[];
 }
+
+// ── Speaking Evaluation (Phase 16F) ───────────────────────────────────────────
+
+export interface SpeakingEvaluationDto {
+  attemptId: string;
+  status: 'Pending' | 'Evaluating' | 'Completed' | 'Failed' | 'Skipped' | 'NotSupported';
+  feedbackText: string | null;
+  suggestedImprovement: string | null;
+  transcript: string | null;
+  overallScore: number | null;
+  fluencyScore: number | null;
+  pronunciationScore: number | null;
+  completenessScore: number | null;
+  relevanceScore: number | null;
+  completedAtUtc: string | null;
+  failureReason: string | null;
+  providerName: string | null;
+  modelName: string | null;
+}

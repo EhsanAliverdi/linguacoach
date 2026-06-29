@@ -2119,6 +2119,10 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
         submittedAt: '2026-06-28T10:00:00Z',
         mimeType: 'audio/webm',
         status: 'PendingEvaluation',
+        evaluationStatus: null, evaluationProvider: null, evaluationModel: null,
+        evaluationCompletedAt: null, evaluationFeedbackText: null,
+        evaluationSuggestedImprovement: null, evaluationFailureReason: null,
+        overallScore: null,
       }],
     }));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
@@ -2136,6 +2140,10 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
         submittedAt: '2026-06-28T10:00:00Z',
         mimeType: null,
         status: 'PendingEvaluation',
+        evaluationStatus: null, evaluationProvider: null, evaluationModel: null,
+        evaluationCompletedAt: null, evaluationFeedbackText: null,
+        evaluationSuggestedImprovement: null, evaluationFailureReason: null,
+        overallScore: null,
       }],
     }));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);

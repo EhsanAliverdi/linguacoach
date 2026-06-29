@@ -33,6 +33,7 @@ public sealed class ActivityController : ControllerBase
     private readonly IExerciseTypeRegistry _exerciseTypeRegistry;
     private readonly IPracticeGymPoolService _practiceGymPool;
     private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
+    private readonly ISpeakingEvaluationService _speakingEvaluation;
     private readonly ILogger<ActivityController> _logger;
 
     private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
@@ -51,6 +52,7 @@ public sealed class ActivityController : ControllerBase
         IExerciseTypeRegistry exerciseTypeRegistry,
         IPracticeGymPoolService practiceGymPool,
         LinguaCoach.Application.Storage.IFileStorageService storage,
+        ISpeakingEvaluationService speakingEvaluation,
         ILogger<ActivityController> logger)
     {
         _getNextActivity = getNextActivity;
@@ -66,6 +68,7 @@ public sealed class ActivityController : ControllerBase
         _exerciseTypeRegistry = exerciseTypeRegistry;
         _practiceGymPool = practiceGymPool;
         _storage = storage;
+        _speakingEvaluation = speakingEvaluation;
         _logger = logger;
     }
 
@@ -646,6 +649,9 @@ public sealed class ActivityController : ControllerBase
             attempt.SetAudioStorageKey(finalKey);
             await _db.SaveChangesAsync(ct);
 
+            // Non-fatal: request evaluation. Never blocks or fails the submission response.
+            await _speakingEvaluation.RequestEvaluationAsync(attempt.Id, profile.Id, activityId, ct);
+
             return Ok(new ActivityFeedbackDto(
                 AttemptId: attempt.Id,
                 Score: null,
@@ -842,6 +848,27 @@ public sealed class ActivityController : ControllerBase
         entry.LegacyActivityType?.ToString(),
         entry.ExercisePatternKey,
         entry.IsAvailableForGeneration);
+
+    /// <summary>
+    /// Returns the speaking evaluation status and result for a submitted audio attempt.
+    /// Returns 404 when no evaluation record exists (attempt may not have been audio-submitted).
+    /// Never exposes storage keys or raw provider payloads.
+    /// </summary>
+    [HttpGet("{activityId:guid}/attempts/{attemptId:guid}/evaluation")]
+    public async Task<IActionResult> GetAttemptEvaluation(
+        Guid activityId, Guid attemptId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var evaluation = await _speakingEvaluation.GetEvaluationAsync(attemptId, profile.Id, ct);
+        if (evaluation is null) return NotFound();
+
+        return Ok(evaluation);
+    }
 
     private Guid GetCurrentUserId()
         => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)

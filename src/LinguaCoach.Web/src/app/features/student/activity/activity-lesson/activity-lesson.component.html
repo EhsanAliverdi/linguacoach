@@ -152,6 +152,8 @@
     [feedback]="feedback()!"
     [attemptCount]="attemptCount()"
     [previousScore]="previousScore()"
+    [activityId]="activity()?.activityId ?? null"
+    [attemptId]="feedback()!.attemptId"
     (improveAnswer)="improveAnswer()"
     (tryAgain)="tryAgain()"
     (nextActivity)="nextActivity()"

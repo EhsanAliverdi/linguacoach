@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,83 +22,86 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
         if (!profileExists)
             return new AdminStudentSpeakingAttemptsResult("NotFound", []);
 
+        // Load attempts with audio, then left-join evaluation data
         var attempts = await _db.ActivityAttempts
             .Where(a => a.StudentProfileId == query.StudentProfileId
                      && a.AudioStorageKey != null)
             .OrderByDescending(a => a.CreatedAt)
             .Take(20)
-            .Join(_db.LearningActivities,
-                a => a.LearningActivityId,
-                act => act.Id,
-                (a, act) => new
+            .GroupJoin(
+                _db.SpeakingEvaluations,
+                a => a.Id,
+                e => e.ActivityAttemptId,
+                (a, evals) => new { Attempt = a, Evals = evals })
+            .SelectMany(
+                x => x.Evals.DefaultIfEmpty(),
+                (x, eval) => new
                 {
-                    a.Id,
-                    a.LearningActivityId,
-                    ActivityTitle = act.Title,
-                    ActivityType = act.ActivityType.ToString(),
-                    a.CreatedAt,
-                    a.AudioStorageKey,
-                    a.PromptKey,
-                    a.Score,
+                    x.Attempt.Id,
+                    x.Attempt.LearningActivityId,
+                    x.Attempt.CreatedAt,
+                    x.Attempt.AudioStorageKey,
+                    x.Attempt.PromptKey,
+                    x.Attempt.Score,
+                    EvalStatus = eval == null ? (SpeakingEvaluationStatus?)null : eval.Status,
+                    EvalProvider = eval == null ? null : eval.ProviderName,
+                    EvalModel = eval == null ? null : eval.ModelName,
+                    EvalCompletedAt = eval == null ? (DateTime?)null : eval.CompletedAtUtc,
+                    EvalFeedbackText = eval == null ? null : eval.FeedbackText,
+                    EvalSuggestedImprovement = eval == null ? null : eval.SuggestedImprovement,
+                    EvalFailureReason = eval == null ? null : eval.FailureReason,
+                    EvalOverallScore = eval == null ? (double?)null : eval.OverallScore,
                 })
             .ToListAsync(ct);
 
+        // Activity title lookup — best-effort, null when activity deleted
+        var activityIds = attempts.Select(a => a.LearningActivityId).Distinct().ToList();
+        var activityTitles = await _db.LearningActivities
+            .Where(a => activityIds.Contains(a.Id))
+            .ToDictionaryAsync(a => a.Id, a => new { a.Title, Type = a.ActivityType.ToString() }, ct);
+
         if (attempts.Count == 0)
-        {
-            // Check with left join — activity might be soft-deleted or missing
-            var rawAttempts = await _db.ActivityAttempts
-                .Where(a => a.StudentProfileId == query.StudentProfileId
-                         && a.AudioStorageKey != null)
-                .OrderByDescending(a => a.CreatedAt)
-                .Take(20)
-                .Select(a => new
-                {
-                    a.Id,
-                    a.LearningActivityId,
-                    ActivityTitle = (string?)null,
-                    ActivityType = (string?)null,
-                    a.CreatedAt,
-                    a.AudioStorageKey,
-                    a.PromptKey,
-                    a.Score,
-                })
-                .ToListAsync(ct);
+            return new AdminStudentSpeakingAttemptsResult("Empty", []);
 
-            if (rawAttempts.Count == 0)
-                return new AdminStudentSpeakingAttemptsResult("Empty", []);
-
-            var dtos = rawAttempts
-                .Select(a => new AdminStudentSpeakingAttemptDto(
+        var dtos = attempts
+            .Select(a =>
+            {
+                activityTitles.TryGetValue(a.LearningActivityId, out var act);
+                return new AdminStudentSpeakingAttemptDto(
                     AttemptId: a.Id,
                     ActivityId: a.LearningActivityId,
-                    ActivityTitle: null,
-                    ActivityType: null,
+                    ActivityTitle: act?.Title,
+                    ActivityType: act?.Type,
                     SubmittedAt: a.CreatedAt,
                     MimeType: MimeTypeFromKey(a.AudioStorageKey),
-                    Status: DetermineStatus(a.PromptKey, a.Score)))
-                .ToList();
-
-            return new AdminStudentSpeakingAttemptsResult("Ready", dtos);
-        }
-
-        var result = attempts
-            .Select(a => new AdminStudentSpeakingAttemptDto(
-                AttemptId: a.Id,
-                ActivityId: a.LearningActivityId,
-                ActivityTitle: a.ActivityTitle,
-                ActivityType: a.ActivityType,
-                SubmittedAt: a.CreatedAt,
-                MimeType: MimeTypeFromKey(a.AudioStorageKey),
-                Status: DetermineStatus(a.PromptKey, a.Score)))
+                    Status: DetermineStatus(a.PromptKey, a.Score, a.EvalStatus),
+                    EvaluationStatus: a.EvalStatus?.ToString(),
+                    EvaluationProvider: a.EvalProvider,
+                    EvaluationModel: a.EvalModel,
+                    EvaluationCompletedAt: a.EvalCompletedAt,
+                    EvaluationFeedbackText: a.EvalFeedbackText,
+                    EvaluationSuggestedImprovement: a.EvalSuggestedImprovement,
+                    EvaluationFailureReason: a.EvalStatus == SpeakingEvaluationStatus.Failed
+                        ? a.EvalFailureReason : null,
+                    OverallScore: a.EvalOverallScore);
+            })
             .ToList();
 
-        return new AdminStudentSpeakingAttemptsResult("Ready", result);
+        return new AdminStudentSpeakingAttemptsResult("Ready", dtos);
     }
 
-    private static string DetermineStatus(string? promptKey, double? score) =>
-        promptKey == "audio_submission_pending" ? "PendingEvaluation" :
-        score.HasValue ? "Evaluated" :
-        "Submitted";
+    private static string DetermineStatus(
+        string? promptKey, double? score, SpeakingEvaluationStatus? evalStatus) =>
+        evalStatus switch
+        {
+            SpeakingEvaluationStatus.Completed => "Evaluated",
+            SpeakingEvaluationStatus.Failed => "EvaluationFailed",
+            SpeakingEvaluationStatus.NotSupported => "EvaluationUnavailable",
+            SpeakingEvaluationStatus.Pending or SpeakingEvaluationStatus.Evaluating => "PendingEvaluation",
+            _ => promptKey == "audio_submission_pending" ? "PendingEvaluation" :
+                 score.HasValue ? "Evaluated" :
+                 "Submitted",
+        };
 
     private static string? MimeTypeFromKey(string? key) =>
         Path.GetExtension(key ?? string.Empty).ToLowerInvariant() switch

@@ -439,6 +439,18 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementAssessmentService,
             LinguaCoach.Infrastructure.Placement.PlacementAssessmentService>();
 
+        // Phase 16F — Speaking Evaluation Foundation
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Application.Speaking.SpeakingEvaluationOptions>(
+                configuration.GetSection(LinguaCoach.Application.Speaking.SpeakingEvaluationOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Application.Speaking.SpeakingEvaluationOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.Speaking.ISpeakingEvaluationProvider,
+            LinguaCoach.Infrastructure.Speaking.NoOpSpeakingEvaluationProvider>();
+        services.AddScoped<LinguaCoach.Application.Speaking.ISpeakingEvaluationService,
+            LinguaCoach.Infrastructure.Speaking.SpeakingEvaluationService>();
+        services.AddScoped<Jobs.SpeakingEvaluationJob>();
+
         return services;
     }
 }

@@ -1035,7 +1035,7 @@ export interface AdminLearningPlanProgress {
   reviewObjectives: AdminLearningPlanObjective[];
 }
 
-// Phase 16E — Speaking submission visibility
+// Phase 16E/16F — Speaking submission visibility + evaluation
 
 export interface AdminStudentSpeakingAttempt {
   attemptId: string;
@@ -1044,8 +1044,17 @@ export interface AdminStudentSpeakingAttempt {
   activityType: string | null;
   submittedAt: string;
   mimeType: string | null;
-  /** Submitted | PendingEvaluation | Evaluated | Failed */
+  /** Submitted | PendingEvaluation | Evaluated | EvaluationFailed | EvaluationUnavailable */
   status: string;
+  /** Pending | Evaluating | Completed | Failed | Skipped | NotSupported. Null if no evaluation record. */
+  evaluationStatus: string | null;
+  evaluationProvider: string | null;
+  evaluationModel: string | null;
+  evaluationCompletedAt: string | null;
+  evaluationFeedbackText: string | null;
+  evaluationSuggestedImprovement: string | null;
+  evaluationFailureReason: string | null;
+  overallScore: number | null;
 }
 
 export interface AdminStudentSpeakingAttemptsResult {

@@ -10,10 +10,61 @@
 
   <!-- Honest "no feedback" state — when AI evaluation returned empty result -->
   @if (!hasFeedbackContent) {
-    <div data-testid="feedback-pending" style="padding:20px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
-      <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0 0 6px">Feedback pending</p>
-      <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;margin:0">Your response was saved. Feedback will appear after this activity is evaluated.</p>
-    </div>
+
+    <!-- Evaluation: Completed -->
+    @if (evaluation()?.status === 'Completed') {
+      <div data-testid="evaluation-completed" style="display:flex;flex-direction:column;gap:12px">
+        @if (evaluation()!.feedbackText) {
+          <div style="padding:18px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2)">
+            <p style="font-size:12px;font-weight:800;color:var(--sp-speaking);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Speaking feedback</p>
+            <p style="font-size:13.5px;color:var(--sp-text);line-height:1.65;margin:0">{{ evaluation()!.feedbackText }}</p>
+          </div>
+        }
+        @if (evaluation()!.suggestedImprovement) {
+          <div style="padding:14px 16px;border-radius:var(--sp-r);background:var(--sp-canvas2);border-left:3px solid var(--sp-speaking)">
+            <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">Suggested improvement</p>
+            <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ evaluation()!.suggestedImprovement }}</p>
+          </div>
+        }
+        @if (evaluation()!.transcript) {
+          <details class="sp-collapsible">
+            <summary>
+              <svg width="14" height="14" fill="none" stroke="var(--sp-listening)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Transcript
+              <svg class="sp-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="sp-collapsible-body">
+              <p style="font-size:14px;line-height:1.75;color:var(--sp-text);white-space:pre-wrap">{{ evaluation()!.transcript }}</p>
+            </div>
+          </details>
+        }
+      </div>
+    }
+
+    <!-- Evaluation: Pending or Evaluating (polling) -->
+    @else if (evaluation()?.status === 'Pending' || evaluation()?.status === 'Evaluating') {
+      <div data-testid="evaluation-pending" style="padding:20px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0 0 6px">Evaluating your recording</p>
+        <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;margin:0">Your recording was saved. AI evaluation is in progress — this page will update automatically.</p>
+      </div>
+    }
+
+    <!-- Evaluation: Failed -->
+    @else if (evaluation()?.status === 'Failed') {
+      <div data-testid="evaluation-failed" style="padding:20px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0 0 6px">Evaluation could not be completed</p>
+        <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;margin:0">Your recording was saved. The system will retry automatically.</p>
+      </div>
+    }
+
+    <!-- Evaluation: NotSupported / Skipped / no evaluation record yet -->
+    @else {
+      <div data-testid="feedback-pending" style="padding:20px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+        <p style="font-size:14px;font-weight:700;color:var(--sp-ink);margin:0 0 6px">Recording saved</p>
+        <p style="font-size:13px;color:var(--sp-muted);line-height:1.5;margin:0">Your response was saved. AI speaking evaluation is not yet available for this activity.</p>
+      </div>
+    }
+
   }
 
   <!-- Score card (legacy path — hidden when pattern evaluation renders its own score) -->

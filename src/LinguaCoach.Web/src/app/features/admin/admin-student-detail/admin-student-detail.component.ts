@@ -513,7 +513,8 @@ export class AdminStudentDetailComponent implements OnInit {
   speakingStatusTone(status: string): SpAdminBadgeTone {
     if (status === 'Evaluated') return 'success';
     if (status === 'PendingEvaluation' || status === 'Submitted') return 'warning';
-    if (status === 'Failed') return 'danger';
+    if (status === 'EvaluationFailed') return 'danger';
+    if (status === 'EvaluationUnavailable') return 'neutral';
     return 'neutral';
   }
 
@@ -521,7 +522,8 @@ export class AdminStudentDetailComponent implements OnInit {
     if (status === 'PendingEvaluation') return 'Pending evaluation';
     if (status === 'Submitted') return 'Submitted';
     if (status === 'Evaluated') return 'Evaluated';
-    if (status === 'Failed') return 'Failed';
+    if (status === 'EvaluationFailed') return 'Evaluation failed';
+    if (status === 'EvaluationUnavailable') return 'Unavailable';
     return status;
   }
 

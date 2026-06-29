@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16E)
+lastUpdated: 2026-06-28 (16F)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,52 @@ Last updated: 2026-06-28
 ---
 
 ## Active sprint
+
+**Phase 16F — AI Speaking Evaluation Foundation** — complete (2026-06-28)
+
+Adds an asynchronous AI-based speaking evaluation pipeline. Conservative scope: no real-time voice, no advanced pronunciation scoring claims, no new speaking formats. Failures never block the student learning flow. No raw storage keys in any API response.
+
+**New domain:**
+- `SpeakingEvaluationStatus` enum (Pending/Evaluating/Completed/Failed/Skipped/NotSupported)
+- `SpeakingEvaluation` entity with factory `CreatePending` and lifecycle methods `MarkEvaluating`, `MarkCompleted`, `MarkFailed`, `MarkNotSupported`
+- Migration `20260628120000_T65_SpeakingEvaluationFoundation` — `speaking_evaluations` table, 3 indexes
+
+**New Application layer:**
+- `ISpeakingEvaluationProvider` — narrow interface (audio ≠ text prompt), separate from `IAiProvider`
+- `ISpeakingEvaluationService` with `RequestEvaluationAsync` (non-fatal), `GetEvaluationAsync`, `ProcessPendingAsync`
+- `SpeakingEvaluationDto`, `SpeakingEvaluationOptions` (default: Enabled=false, Provider=NoOp)
+
+**New Infrastructure:**
+- `NoOpSpeakingEvaluationProvider` — IsSupported=false, resolves immediately as NotSupported
+- `SpeakingEvaluationService` — processes Pending batch, respects MaxRetries, wraps RequestEvaluationAsync in try/catch
+- `SpeakingEvaluationJob` (Quartz, every 5 minutes, DisallowConcurrentExecution)
+
+**Modified API:**
+- `ActivityController` — fires `RequestEvaluationAsync` after audio upload (non-fatal, wrapped in try/catch)
+- New `GET /api/activity/{activityId}/attempts/{attemptId}/evaluation` — returns DTO or 404; student ownership enforced
+
+**Modified Admin:**
+- `AdminStudentSpeakingAttemptDto` — extended with evaluation fields (status, provider, model, feedback, score, etc.)
+- `AdminStudentSpeakingAttemptsHandler` — left-join SpeakingEvaluations; FailureReason only exposed on Failed status
+- Admin UI — speaking submissions table shows AI score, provider/model, feedback, improvement suggestion, failure reason
+
+**Modified Student UI:**
+- `ActivityFeedbackPageComponent` — loads and polls evaluation (every 10s, max 12 polls) when `!hasFeedbackContent` and attemptId known; shows Completed/Pending/Failed/NotSupported states
+- `activity.models.ts` — new `SpeakingEvaluationDto` interface
+- `activity.service.ts` — new `getAttemptEvaluation` method
+
+**Config:** `appsettings.json` `SpeakingEvaluation` section added (Enabled: false, Provider: NoOp, MaxBatchSize: 10, MaxRetries: 3)
+
+**Tests:**
+- `SpeakingEvaluationTests.cs` (NEW unit) — 7 tests: CreatePending, empty-ID validation, MarkEvaluating, MarkCompleted, MarkFailed retry count, MarkNotSupported, retry accumulation
+- `SpeakingEvaluationEndpointTests.cs` (NEW integration) — 6 tests: 401 unauthenticated, 404 no eval record, ownership enforcement, happy path shape, storage key not exposed, submission non-blocking
+- `admin-student-detail.component.spec.ts` — fixed 2 literal objects to include new evaluation fields
+
+**Build/test totals:** Backend unit: 1,513 pass (+9). Integration: 1,248 pass (+6). Arch: 3. Angular unit: 1,525 (unchanged). Production build: clean.
+
+Review: `docs/reviews/2026-06-28-phase-16f-speaking-evaluation-foundation-review.md`.
+
+---
 
 **Phase 16E — Speaking Submission Review Visibility and Pending Feedback** — complete (2026-06-28)
 
