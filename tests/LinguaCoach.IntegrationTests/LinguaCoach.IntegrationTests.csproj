@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="FluentAssertions" Version="6.12.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
@@ -21,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\LinguaCoach.Infrastructure\LinguaCoach.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\LinguaCoach.Persistence\LinguaCoach.Persistence.csproj" />
     <ProjectReference Include="..\..\src\LinguaCoach.Api\LinguaCoach.Api.csproj" />
   </ItemGroup>

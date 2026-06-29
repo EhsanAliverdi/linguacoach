@@ -11,6 +11,9 @@ public interface ISpeakingEvaluationProvider
     /// <summary>False when provider is disabled or not configured. Job uses NoOp fallback.</summary>
     bool IsSupported { get; }
 
+    /// <summary>Describes provider capabilities for admin status reporting and safe result parsing.</summary>
+    SpeakingEvaluationProviderCapabilities Capabilities { get; }
+
     Task<SpeakingEvaluationProviderResult> EvaluateAsync(
         SpeakingEvaluationRequest request,
         CancellationToken ct = default);

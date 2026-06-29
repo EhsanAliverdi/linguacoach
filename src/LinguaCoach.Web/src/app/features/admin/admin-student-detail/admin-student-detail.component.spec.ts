@@ -2123,6 +2123,7 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
         evaluationCompletedAt: null, evaluationFeedbackText: null,
         evaluationSuggestedImprovement: null, evaluationFailureReason: null,
         overallScore: null,
+        dryRunOutcome: null, dryRunConfidence: null, dryRunCandidateSkill: null, dryRunBlockedReason: null,
       }],
     }));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
@@ -2144,6 +2145,7 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
         evaluationCompletedAt: null, evaluationFeedbackText: null,
         evaluationSuggestedImprovement: null, evaluationFailureReason: null,
         overallScore: null,
+        dryRunOutcome: null, dryRunConfidence: null, dryRunCandidateSkill: null, dryRunBlockedReason: null,
       }],
     }));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);

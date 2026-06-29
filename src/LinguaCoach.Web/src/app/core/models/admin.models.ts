@@ -1055,10 +1055,49 @@ export interface AdminStudentSpeakingAttempt {
   evaluationSuggestedImprovement: string | null;
   evaluationFailureReason: string | null;
   overallScore: number | null;
+  // Phase 16H — dry-run signal preview. Never applied to mastery, CEFR, or Learning Plan.
+  dryRunOutcome: string | null;
+  dryRunConfidence: string | null;
+  dryRunCandidateSkill: string | null;
+  dryRunBlockedReason: string | null;
 }
 
 export interface AdminStudentSpeakingAttemptsResult {
   /** Ready | Empty | NotFound */
   status: string;
   attempts: AdminStudentSpeakingAttempt[];
+}
+
+// Phase 16H — Speaking evaluation quality summary
+
+export interface SpeakingEvaluationQualityMetrics {
+  total: number;
+  completed: number;
+  failed: number;
+  notSupported: number;
+  pending: number;
+  completionRate: number;
+  failureRate: number;
+  averageOverallScore: number | null;
+  averageFluencyScore: number | null;
+  averageCompletenessScore: number | null;
+  averageRelevanceScore: number | null;
+  nullOverallScoreRate: number;
+  nullFluencyScoreRate: number;
+  nullCompletenessScoreRate: number;
+  nullRelevanceScoreRate: number;
+  dryRunCandidatePositiveSignals: number;
+  dryRunCandidateReviewSignals: number;
+  dryRunCandidateNoSignals: number;
+  dryRunBlocked: number;
+  latestFailureReasons: string[];
+}
+
+export interface AdminSpeakingEvaluationQualitySummary {
+  configStatus: string;
+  providerName: string;
+  enabled: boolean;
+  supportsTranscript: boolean;
+  supportsPronunciationScore: boolean;
+  quality: SpeakingEvaluationQualityMetrics;
 }

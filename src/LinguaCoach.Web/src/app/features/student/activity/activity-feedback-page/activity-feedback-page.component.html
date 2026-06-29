@@ -26,6 +26,35 @@
             <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ evaluation()!.suggestedImprovement }}</p>
           </div>
         }
+        <!-- Scores — only shown when present; no empty score cards -->
+        @if (evaluation()!.overallScore !== null || evaluation()!.completenessScore !== null || evaluation()!.relevanceScore !== null || evaluation()!.fluencyScore !== null) {
+          <div data-testid="evaluation-scores" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">
+            @if (evaluation()!.overallScore !== null) {
+              <div style="padding:10px 12px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+                <p style="font-size:18px;font-weight:800;color:var(--sp-ink);margin:0">{{ evaluation()!.overallScore }}</p>
+                <p style="font-size:11px;font-weight:600;color:var(--sp-muted);margin:2px 0 0;text-transform:uppercase;letter-spacing:.04em">Overall</p>
+              </div>
+            }
+            @if (evaluation()!.completenessScore !== null) {
+              <div style="padding:10px 12px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+                <p style="font-size:18px;font-weight:800;color:var(--sp-ink);margin:0">{{ evaluation()!.completenessScore }}</p>
+                <p style="font-size:11px;font-weight:600;color:var(--sp-muted);margin:2px 0 0;text-transform:uppercase;letter-spacing:.04em">Complete</p>
+              </div>
+            }
+            @if (evaluation()!.relevanceScore !== null) {
+              <div style="padding:10px 12px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+                <p style="font-size:18px;font-weight:800;color:var(--sp-ink);margin:0">{{ evaluation()!.relevanceScore }}</p>
+                <p style="font-size:11px;font-weight:600;color:var(--sp-muted);margin:2px 0 0;text-transform:uppercase;letter-spacing:.04em">Relevance</p>
+              </div>
+            }
+            @if (evaluation()!.fluencyScore !== null) {
+              <div style="padding:10px 12px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+                <p style="font-size:18px;font-weight:800;color:var(--sp-ink);margin:0">{{ evaluation()!.fluencyScore }}</p>
+                <p style="font-size:11px;font-weight:600;color:var(--sp-muted);margin:2px 0 0;text-transform:uppercase;letter-spacing:.04em">Fluency</p>
+              </div>
+            }
+          </div>
+        }
         @if (evaluation()!.transcript) {
           <details class="sp-collapsible">
             <summary>
@@ -38,6 +67,7 @@
             </div>
           </details>
         }
+        <p data-testid="evaluation-ai-disclaimer" style="font-size:11px;color:var(--sp-muted);line-height:1.5;margin:0">This feedback is AI-assisted and may be approximate. It does not represent an official assessment.</p>
       </div>
     }
 

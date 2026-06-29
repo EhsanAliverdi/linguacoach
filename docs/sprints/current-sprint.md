@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16F)
+lastUpdated: 2026-06-30 (16H)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,51 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-28
+Last updated: 2026-06-30
 
 ---
 
 ## Active sprint
+
+**Phase 16H — Speaking Evaluation Quality Validation and Mastery Signal Dry-Run** — complete (2026-06-30)
+
+Adds quality metrics, a dry-run learning signal layer, and admin visibility over AI speaking evaluation output. No mastery, CEFR, or Learning Plan state is modified. Evaluation remains disabled by default.
+
+**New domain enums:**
+- `SpeakingDryRunSignalOutcome` — CandidatePositiveSignal, CandidateReviewSignal, CandidateNoSignal, and five Blocked* variants
+- `SpeakingDryRunConfidenceBand` — Low, Medium, High
+
+**New Application layer:**
+- `SpeakingEvaluationDryRunSignal` — computed-only record DTO (never persisted, never applied to mastery)
+- `SpeakingDryRunSignalMapper` — pure static mapper with `Map(SpeakingEvaluation)` and `MapFromFields(...)` overloads
+- `ISpeakingEvaluationQualityQuery` / `SpeakingEvaluationQualitySummaryDto` — quality metrics interface and DTO
+
+**New Infrastructure:**
+- `SpeakingEvaluationQualityHandler` — queries all evaluations, computes counts/rates/averages and dry-run signal totals
+
+**Modified API:**
+- `AdminSpeakingEvaluationController` — added `GET /api/admin/speaking-evaluation/quality-summary`; returns config status, provider, and full quality metrics
+
+**Modified Admin Application/Infrastructure:**
+- `AdminStudentSpeakingAttemptDto` — 4 new dry-run fields: `DryRunOutcome`, `DryRunConfidence`, `DryRunCandidateSkill`, `DryRunBlockedReason`
+- `AdminStudentSpeakingAttemptsHandler` — calls `SpeakingDryRunSignalMapper.MapFromFields` per attempt
+
+**Modified Angular:**
+- `admin.models.ts` — 4 dry-run fields on `AdminStudentSpeakingAttempt`; new `SpeakingEvaluationQualityMetrics` and `AdminSpeakingEvaluationQualitySummary` interfaces
+- `admin.api.service.ts` — `getSpeakingEvaluationQualitySummary()` method
+- `admin-student-detail.component.html` — "Dry-run signal" column with outcome, confidence, skill, and blocked reason
+
+**Tests added:**
+- `SpeakingDryRunSignalMapperTests.cs` (unit) — 15 tests: status gates, confidence bands, outcome thresholds, pronunciation does not block, IsDryRunOnly always true, entity/fields parity
+- `SpeakingEvaluationQualityIntegrationTests.cs` (integration) — 10 tests: auth, empty state, status counts, dry-run positive/blocked signal counts, per-attempt field presence, mastery/CEFR unchanged
+
+**Known gaps:** latency, audio duration, and cost/usage are not yet stored on `SpeakingEvaluation`. Documented in review.
+
+**Build/test totals:** Backend unit: 1,528 (+15). Integration: 1,260 (+10). Arch: 3. Angular unit: 1,525. Production build: clean.
+
+Review: `docs/reviews/2026-06-30-phase-16h-speaking-evaluation-quality-validation-review.md`.
+
+---
 
 **Phase 16F — AI Speaking Evaluation Foundation** — complete (2026-06-28)
 

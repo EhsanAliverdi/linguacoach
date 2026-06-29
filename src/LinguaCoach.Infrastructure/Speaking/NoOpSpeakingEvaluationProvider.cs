@@ -12,6 +12,7 @@ public sealed class NoOpSpeakingEvaluationProvider : ISpeakingEvaluationProvider
 {
     public string ProviderName => "NoOp";
     public bool IsSupported => false;
+    public SpeakingEvaluationProviderCapabilities Capabilities => SpeakingEvaluationProviderCapabilities.None;
 
     public Task<SpeakingEvaluationProviderResult> EvaluateAsync(
         SpeakingEvaluationRequest request,

@@ -68,8 +68,10 @@ public sealed class SpeakingEvaluationService : ISpeakingEvaluationService
 
     public async Task<int> ProcessPendingAsync(int maxBatch, CancellationToken ct = default)
     {
+        // Include Failed evaluations that have not yet hit MaxRetries so the job retries them.
         var pending = await _db.SpeakingEvaluations
-            .Where(e => e.Status == SpeakingEvaluationStatus.Pending)
+            .Where(e => e.Status == SpeakingEvaluationStatus.Pending
+                     || (e.Status == SpeakingEvaluationStatus.Failed && e.RetryCount < _options.MaxRetries))
             .OrderBy(e => e.CreatedAt)
             .Take(maxBatch)
             .ToListAsync(ct);
@@ -125,6 +127,11 @@ public sealed class SpeakingEvaluationService : ISpeakingEvaluationService
         var activity = await _db.LearningActivities
             .FirstOrDefaultAsync(a => a.Id == evaluation.LearningActivityId, ct);
 
+        var cefrLevel = await _db.StudentProfiles
+            .Where(p => p.Id == evaluation.StudentProfileId)
+            .Select(p => p.CefrLevel)
+            .FirstOrDefaultAsync(ct);
+
         evaluation.MarkEvaluating(_provider.ProviderName, null);
         await _db.SaveChangesAsync(ct);
 
@@ -135,7 +142,7 @@ public sealed class SpeakingEvaluationService : ISpeakingEvaluationService
             AudioStorageKey: attempt.AudioStorageKey,
             ActivityPrompt: activity?.AiGeneratedContentJson,
             ActivityTitle: activity?.Title,
-            CefrLevel: null,
+            CefrLevel: cefrLevel,
             CorrelationId: evaluation.Id.ToString("N"));
 
         SpeakingEvaluationProviderResult result;

@@ -19,7 +19,12 @@ public sealed record AdminStudentSpeakingAttemptDto(
     string? EvaluationFeedbackText,
     string? EvaluationSuggestedImprovement,
     string? EvaluationFailureReason,
-    double? OverallScore);
+    double? OverallScore,
+    // Dry-run learning signal preview — never applied to mastery, CEFR, or Learning Plan.
+    string? DryRunOutcome,
+    string? DryRunConfidence,
+    string? DryRunCandidateSkill,
+    string? DryRunBlockedReason);
 
 public sealed record AdminStudentSpeakingAttemptsResult(
     /// <summary>Ready | Empty | NotFound</summary>

@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Speaking;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,11 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
                     EvalSuggestedImprovement = eval == null ? null : eval.SuggestedImprovement,
                     EvalFailureReason = eval == null ? null : eval.FailureReason,
                     EvalOverallScore = eval == null ? (double?)null : eval.OverallScore,
+                    EvalFluencyScore = eval == null ? (double?)null : eval.FluencyScore,
+                    EvalCompletenessScore = eval == null ? (double?)null : eval.CompletenessScore,
+                    EvalRelevanceScore = eval == null ? (double?)null : eval.RelevanceScore,
+                    EvalId = eval == null ? (Guid?)null : eval.Id,
+                    EvalFailedAt = eval == null ? (DateTime?)null : eval.FailedAtUtc,
                 })
             .ToListAsync(ct);
 
@@ -67,6 +73,23 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
             .Select(a =>
             {
                 activityTitles.TryGetValue(a.LearningActivityId, out var act);
+
+                // Compute dry-run signal when an evaluation record exists.
+                // This never modifies mastery, CEFR, or Learning Plan state.
+                SpeakingEvaluationDryRunSignal? signal = null;
+                if (a.EvalId.HasValue && a.EvalStatus.HasValue)
+                {
+                    signal = SpeakingDryRunSignalMapper.MapFromFields(
+                        evalId: a.EvalId.Value,
+                        attemptId: a.Id,
+                        status: a.EvalStatus.Value,
+                        overallScore: a.EvalOverallScore,
+                        fluencyScore: a.EvalFluencyScore,
+                        completenessScore: a.EvalCompletenessScore,
+                        relevanceScore: a.EvalRelevanceScore,
+                        feedbackText: a.EvalFeedbackText);
+                }
+
                 return new AdminStudentSpeakingAttemptDto(
                     AttemptId: a.Id,
                     ActivityId: a.LearningActivityId,
@@ -83,7 +106,11 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
                     EvaluationSuggestedImprovement: a.EvalSuggestedImprovement,
                     EvaluationFailureReason: a.EvalStatus == SpeakingEvaluationStatus.Failed
                         ? a.EvalFailureReason : null,
-                    OverallScore: a.EvalOverallScore);
+                    OverallScore: a.EvalOverallScore,
+                    DryRunOutcome: signal?.Outcome.ToString(),
+                    DryRunConfidence: signal?.ConfidenceBand?.ToString(),
+                    DryRunCandidateSkill: signal?.CandidateSkill,
+                    DryRunBlockedReason: signal?.BlockedReason);
             })
             .ToList();
 
