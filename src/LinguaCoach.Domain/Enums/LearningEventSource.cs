@@ -5,5 +5,6 @@ public enum LearningEventSource
     TodayLesson,
     PracticeGym,
     Placement,
-    Manual
+    Manual,
+    SpeakingEvaluation
 }

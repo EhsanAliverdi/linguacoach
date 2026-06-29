@@ -3,6 +3,8 @@ using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Api.Controllers;
 
@@ -18,15 +20,18 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
     private readonly SpeakingEvaluationOptions _options;
     private readonly ISpeakingEvaluationProvider _provider;
     private readonly ISpeakingEvaluationQualityQuery _qualityQuery;
+    private readonly ISpeakingEvaluationSignalApplicationService _signalService;
 
     public AdminSpeakingEvaluationController(
         IOptions<SpeakingEvaluationOptions> options,
         ISpeakingEvaluationProvider provider,
-        ISpeakingEvaluationQualityQuery qualityQuery)
+        ISpeakingEvaluationQualityQuery qualityQuery,
+        ISpeakingEvaluationSignalApplicationService signalService)
     {
         _options = options.Value;
         _provider = provider;
         _qualityQuery = qualityQuery;
+        _signalService = signalService;
     }
 
     /// <summary>
@@ -78,6 +83,35 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
             Quality: quality));
     }
 
+    /// <summary>
+    /// Returns the mastery signal integration status and counts: applied, dry-run, blocked.
+    /// Shows ApplyMasterySignals config state and per-evaluation signal disposition.
+    /// </summary>
+    [HttpGet("applied-signals")]
+    public async Task<ActionResult<AdminSpeakingAppliedSignalSummaryDto>> GetAppliedSignalSummary(
+        CancellationToken ct = default)
+    {
+        var summary = await _signalService.GetSummaryAsync(ct);
+        return Ok(new AdminSpeakingAppliedSignalSummaryDto(
+            MasteryIntegrationEnabled: summary.MasteryIntegrationEnabled,
+            ReviewSignalsAllowed: summary.ReviewSignalsAllowed,
+            PositiveSignalsAllowed: summary.PositiveSignalsAllowed,
+            ObjectiveCompletionAllowed: summary.ObjectiveCompletionAllowed,
+            CefrUpdateAllowed: summary.CefrUpdateAllowed,
+            MinimumConfidenceRequired: summary.MinimumConfidenceRequired,
+            TotalCompletedEvaluations: summary.TotalCompletedEvaluations,
+            CandidateSignals: summary.CandidateSignals,
+            AppliedSignals: summary.AppliedSignals,
+            BlockedByConfig: summary.BlockedByConfig,
+            BlockedByConfidence: summary.BlockedByConfidence,
+            BlockedBySignalType: summary.BlockedBySignalType,
+            BlockedByFailedOrUnsupported: summary.BlockedByFailedOrUnsupported,
+            BlockedByMissingScore: summary.BlockedByMissingScore,
+            DuplicateSkipped: summary.DuplicateSkipped,
+            NoSignal: summary.NoSignal,
+            FailedApplication: summary.FailedApplication));
+    }
+
     private string ResolveConfigStatus()
     {
         var isNoOp = _options.Provider.Equals("NoOp", StringComparison.OrdinalIgnoreCase);
@@ -116,3 +150,22 @@ public sealed record AdminSpeakingEvaluationQualitySummaryDto(
     bool SupportsTranscript,
     bool SupportsPronunciationScore,
     SpeakingEvaluationQualitySummaryDto Quality);
+
+public sealed record AdminSpeakingAppliedSignalSummaryDto(
+    bool MasteryIntegrationEnabled,
+    bool ReviewSignalsAllowed,
+    bool PositiveSignalsAllowed,
+    bool ObjectiveCompletionAllowed,
+    bool CefrUpdateAllowed,
+    string MinimumConfidenceRequired,
+    int TotalCompletedEvaluations,
+    int CandidateSignals,
+    int AppliedSignals,
+    int BlockedByConfig,
+    int BlockedByConfidence,
+    int BlockedBySignalType,
+    int BlockedByFailedOrUnsupported,
+    int BlockedByMissingScore,
+    int DuplicateSkipped,
+    int NoSignal,
+    int FailedApplication);

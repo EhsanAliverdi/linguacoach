@@ -105,6 +105,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{SpeakingEvaluationJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
 
+            // Speaking signal application — every 10 minutes. Applies config-gated mastery signals.
+            var speakingSignalKey = new JobKey(SpeakingEvaluationSignalApplicationJob.JobName);
+            q.AddJob<SpeakingEvaluationSignalApplicationJob>(opts => opts.WithIdentity(speakingSignalKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(speakingSignalKey)
+                .WithIdentity($"{SpeakingEvaluationSignalApplicationJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(10).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());

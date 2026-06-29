@@ -1101,3 +1101,24 @@ export interface AdminSpeakingEvaluationQualitySummary {
   supportsPronunciationScore: boolean;
   quality: SpeakingEvaluationQualityMetrics;
 }
+
+// Phase 16I — Speaking evaluation mastery signal integration
+export interface AdminSpeakingAppliedSignalSummary {
+  masteryIntegrationEnabled: boolean;
+  reviewSignalsAllowed: boolean;
+  positiveSignalsAllowed: boolean;
+  objectiveCompletionAllowed: boolean;
+  cefrUpdateAllowed: boolean;
+  minimumConfidenceRequired: string;
+  totalCompletedEvaluations: number;
+  candidateSignals: number;
+  appliedSignals: number;
+  blockedByConfig: number;
+  blockedByConfidence: number;
+  blockedBySignalType: number;
+  blockedByFailedOrUnsupported: number;
+  blockedByMissingScore: number;
+  duplicateSkipped: number;
+  noSignal: number;
+  failedApplication: number;
+}

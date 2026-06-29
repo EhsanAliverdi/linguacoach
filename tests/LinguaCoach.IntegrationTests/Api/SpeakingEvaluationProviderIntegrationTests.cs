@@ -365,7 +365,7 @@ internal sealed class FakeSpeakingEvaluationProvider : ISpeakingEvaluationProvid
 
 // ── Test factory ──────────────────────────────────────────────────────────────
 
-public sealed class SpeakingEvaluationProviderTestFactory : ActivityTestFactory
+public class SpeakingEvaluationProviderTestFactory : ActivityTestFactory
 {
     public override async Task<(string Token, Guid UserId)> CreateOnboardedStudentAsync(
         string email = "speaking_eval_student@test.linguacoach.com")

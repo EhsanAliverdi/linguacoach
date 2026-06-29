@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-30 (16H)
+lastUpdated: 2026-06-30 (16I)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,46 @@ Last updated: 2026-06-30
 ---
 
 ## Active sprint
+
+**Phase 16I — Speaking Evaluation Mastery Signal Controlled Integration** — complete (2026-06-30)
+
+Introduces a configurable, conservative integration path from high-confidence speaking evaluation signals into real student learning state. Disabled by default. Strict invariants: CEFR never updated, objective completion never triggered, Learning Plan never regenerated, failed/NotSupported evaluations never affect mastery.
+
+**New domain:**
+- `SpeakingEvaluationAppliedSignal` — immutable audit entity; one record per applied evaluation (unique index on `evaluation_id`)
+- `LearningEventSource.SpeakingEvaluation` (value 4) added to enum
+
+**New Application layer:**
+- `ISpeakingEvaluationSignalApplicationService` — `ApplyPendingSignalsAsync(int maxBatch)` and `GetSummaryAsync()`
+- `SpeakingSignalApplicationBatchResult` / `SpeakingSignalApplicationSummaryDto` records
+- `SpeakingEvaluationOptions` — 4 new properties: `ApplyMasterySignals` (default false), `MinimumConfidenceForMasterySignal` (default "High"), `AllowReviewSignals` (default true), `AllowPositiveSignals` (default false); plus computed `AllowObjectiveCompletion = false` and `AllowCefrUpdate = false`
+
+**New Infrastructure:**
+- `SpeakingEvaluationSignalApplicationService` — applies signals with 5-gate pipeline (blocked, no-signal, config, confidence, signal-type); writes `StudentLearningEvent` + `StudentSkillProfile.MarkWeak` + `SpeakingEvaluationAppliedSignal`
+- `SpeakingEvaluationSignalApplicationJob` — `[DisallowConcurrentExecution]` Quartz job, runs every 10 minutes
+
+**New Persistence:**
+- `SpeakingEvaluationAppliedSignalConfiguration` — maps to `speaking_evaluation_applied_signals`; unique index on `evaluation_id`
+- Migration `20260630140000_T66_SpeakingEvaluationAppliedSignal`
+
+**Modified API:**
+- `AdminSpeakingEvaluationController` — added `GET /api/admin/speaking-evaluation/applied-signals`; returns `AdminSpeakingAppliedSignalSummaryDto` with all mastery integration status fields
+- `QuartzConfiguration` — signal application job registered (10 min trigger)
+- `appsettings.json` — 4 new `SpeakingEvaluation` config keys
+
+**Modified Angular:**
+- `admin.models.ts` — `AdminSpeakingAppliedSignalSummary` interface
+- `admin.api.service.ts` — `getSpeakingAppliedSignalSummary()` method
+
+**Tests added:**
+- `SpeakingEvaluationSignalApplicationTests.cs` (unit) — 21 tests: config gate, confidence bands, idempotency, review/positive gating, FK seeding, audit record correctness, CEFR/Learning Plan invariants
+- `SpeakingEvaluationSignalApplicationIntegrationTests.cs` (integration) — 9 tests: auth (401/403), config-disabled, config-enabled review signal, idempotency, failed eval, admin endpoint counts, CEFR invariant; assertions scoped by `activityId` → `EvaluationId`
+
+**Build/test totals:** Backend unit: 1,565 (+37). Integration: 1,281 (+21). Arch: 3. Production build: clean.
+
+Review: `docs/reviews/2026-06-30-phase-16i-speaking-evaluation-mastery-signal-controlled-integration-review.md`.
+
+---
 
 **Phase 16H — Speaking Evaluation Quality Validation and Mastery Signal Dry-Run** — complete (2026-06-30)
 

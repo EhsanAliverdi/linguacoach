@@ -30,4 +30,37 @@ public sealed class SpeakingEvaluationOptions
 
     /// <summary>Maximum audio duration in seconds accepted for evaluation. Informational limit; enforced by provider.</summary>
     public int MaxAudioDurationSeconds { get; init; } = 120;
+
+    // --- Mastery integration (Phase 16I) ---
+
+    /// <summary>
+    /// When true, completed evaluation signals meeting confidence and type gates are applied to
+    /// StudentLearningEvent and StudentSkillProfile. Default false — safe.
+    /// </summary>
+    public bool ApplyMasterySignals { get; init; } = false;
+
+    /// <summary>
+    /// Minimum confidence band required before any signal is applied.
+    /// "Low" | "Medium" | "High". Default "High" — conservative.
+    /// </summary>
+    public string MinimumConfidenceForMasterySignal { get; init; } = "High";
+
+    /// <summary>
+    /// When true and ApplyMasterySignals is true, CandidateReviewSignal evaluations produce
+    /// a weakness/review learning event and a StudentSkillProfile MarkWeak update.
+    /// Default true (takes effect only when ApplyMasterySignals is also true).
+    /// </summary>
+    public bool AllowReviewSignals { get; init; } = true;
+
+    /// <summary>
+    /// When true and ApplyMasterySignals is true, CandidatePositiveSignal evaluations produce
+    /// a positive learning event. Default false — more restrictive gate.
+    /// </summary>
+    public bool AllowPositiveSignals { get; init; } = false;
+
+    /// <summary>Phase 16I: objective completion from speaking AI is always disabled.</summary>
+    public bool AllowObjectiveCompletion => false;
+
+    /// <summary>Phase 16I: CEFR updates from speaking AI are always disabled.</summary>
+    public bool AllowCefrUpdate => false;
 }

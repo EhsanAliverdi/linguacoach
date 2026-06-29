@@ -37,6 +37,7 @@ import {
   AdminStudentProgressSummary,
   AdminStudentSpeakingAttemptsResult,
   AdminSpeakingEvaluationQualitySummary,
+  AdminSpeakingAppliedSignalSummary,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -111,6 +112,9 @@ export class AdminApiService {
   }
   getSpeakingEvaluationQualitySummary(): Observable<AdminSpeakingEvaluationQualitySummary> {
     return this.http.get<AdminSpeakingEvaluationQualitySummary>(`${this.api}/speaking-evaluation/quality-summary`);
+  }
+  getSpeakingAppliedSignalSummary(): Observable<AdminSpeakingAppliedSignalSummary> {
+    return this.http.get<AdminSpeakingAppliedSignalSummary>(`${this.api}/speaking-evaluation/applied-signals`);
   }
   getStudentProgressSummary(studentId: string): Observable<AdminStudentProgressSummary> {
     return this.http.get<AdminStudentProgressSummary>(`${this.api}/students/${studentId}/progress-summary`);

@@ -463,7 +463,10 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Speaking.SpeakingEvaluationService>();
         services.AddScoped<LinguaCoach.Application.Speaking.ISpeakingEvaluationQualityQuery,
             LinguaCoach.Infrastructure.Speaking.SpeakingEvaluationQualityHandler>();
+        services.AddScoped<LinguaCoach.Application.Speaking.ISpeakingEvaluationSignalApplicationService,
+            LinguaCoach.Infrastructure.Speaking.SpeakingEvaluationSignalApplicationService>();
         services.AddScoped<Jobs.SpeakingEvaluationJob>();
+        services.AddScoped<Jobs.SpeakingEvaluationSignalApplicationJob>();
 
         return services;
     }
