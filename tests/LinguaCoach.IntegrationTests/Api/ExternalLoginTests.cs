@@ -560,7 +560,7 @@ public sealed class ExternalLoginTests : IClassFixture<ApiTestFactory>
             Role = role,
             MustChangePassword = false,
         };
-        var result = await um.CreateAsync(user, $"ExtLogin@{Guid.NewGuid():N}"[..16]);
+        var result = await um.CreateAsync(user, $"ExtLogin1@{Guid.NewGuid():N}"[..16]);
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
 
