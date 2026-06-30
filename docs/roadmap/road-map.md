@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-06-30 (Phase 16I complete)**
+**Accurate as of: 2026-06-30 (Phase 16J complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,16 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 16I — Speaking Evaluation Mastery Signal Controlled Integration (2026-06-30)
+**Latest phase completed:** Phase 16J — Speaking Signal Quality Tuning and Production Dry-Run Review (2026-06-30)
 
 **Branch:** main
 
-**Test totals (as of 16I):**
-- Backend unit: 1,565
-- Backend integration: 1,281
+**Test totals (as of 16J):**
+- Backend unit: 1,581 (+16)
+- Backend integration: 1,281 (+4)
 - Architecture: 3
-- **Backend total: 2,849**
-- Angular unit: 1,525
-- **Backend + Angular total: 4,374**
+- **Backend total: 2,865**
+- Angular unit (Karma): 124 (+2 in admin-student-detail suite)
 - Playwright E2E: 262+ (growing, tracked separately)
 
 **Build:** Clean production build. No known open build errors.
@@ -39,7 +38,7 @@ SpeakPath is an AI-powered English language learning SaaS targeting adult learne
 
 The project has progressed through approximately 80+ named phases. Many phases in the completed phase timeline (Section 4) group multiple implementation sub-phases, bug-fix commits, and review passes into a single summarized row; the actual commit and review count is higher. Areas covered: platform foundation, security hardening, notification infrastructure, admin platform, curriculum and activity engine, adaptive placement, the full student learning journey, voice recording, and asynchronous AI speaking evaluation.
 
-As of Phase 16I, all six student pages are functionally complete, the speaking evaluation pipeline is operational behind a config gate, and mastery signals from AI evaluation are applied conservatively under strict invariants (no CEFR update, no objective completion, no Learning Plan regeneration from AI evaluation — config-gated review signals only).
+As of Phase 16J, all six student pages are functionally complete, the speaking evaluation pipeline is operational behind a config gate, and mastery signals from AI evaluation are applied conservatively under strict invariants. Signal thresholds are now configurable (positive requires overall/completeness/relevance ≥ 80; review requires overall ≤ 55); a middle band (56–79) produces no signal. A safety summary endpoint confirms all three invariants programmatically. Admin visibility now shows per-attempt applied signal state with invariant labels.
 
 **What remains:** AI writing evaluation, writing mastery signals, advanced feedback UX, enterprise org model, full production hardening, observability stack, and long-term product polish.
 
@@ -141,6 +140,7 @@ As of Phase 16I, all six student pages are functionally complete, the speaking e
 | 55 | Phase 16F: AI Speaking Evaluation | AI | 2026-06-28 | Async evaluation pipeline, Quartz job, student polling |
 | 56 | Phase 16H: Speaking Evaluation Quality | AI | 2026-06-30 | Dry-run signal mapper, quality summary endpoint |
 | 57 | Phase 16I: Speaking Mastery Signals | AI | 2026-06-30 | Config-gated signal job, audit entity, 5-gate pipeline |
+| 58 | Phase 16J: Speaking Signal Quality Tuning | AI | 2026-06-30 | Configurable thresholds, safety summary endpoint, middle band (56–79)=NoSignal, per-student applied signal visibility |
 
 ---
 
@@ -332,9 +332,9 @@ Phases recommended in order of priority. Dependencies are noted.
 
 | Priority | Phase | Area | Why Next | Dependencies |
 |---------:|-------|------|----------|-------------|
-| 1 | 16J | Speaking signal quality tuning | Validate current signals; tune thresholds; review false positives before any production rollout | Phase 16I complete |
-| 2 | 17A | AI writing evaluation foundation | Writing is the largest unscored skill area; rubric-based feedback; admin + student visibility | 16J complete |
-| 3 | 17B | Writing evaluation quality validation + dry-run signals | Same quality gate pattern as 16H before enabling mastery signals | Phase 17A complete |
+| ~~1~~ | ~~16J~~ | ~~Speaking signal quality tuning~~ | ~~Complete (2026-06-30)~~ | ~~Phase 16I complete~~ |
+| 1 | 17A | AI writing evaluation foundation | Writing is the largest unscored skill area; rubric-based feedback; admin + student visibility | 16J complete |
+| 2 | 17B | Writing evaluation quality validation + dry-run signals | Same quality gate pattern as 16H before enabling mastery signals | Phase 17A complete |
 
 ### Tier 2 — Near-term (phases 4–7)
 
@@ -357,16 +357,22 @@ Phases recommended in order of priority. Dependencies are noted.
 
 ## 13. Next 10 Phases (Detailed)
 
-### Phase 16J — Speaking Signal Quality Tuning and Production Dry-Run Review
+### Phase 16J — Speaking Signal Quality Tuning and Production Dry-Run Review ✓ Complete (2026-06-30)
 
 **Purpose:** Verify applied speaking signals remain safe in a production-like environment. Tune confidence thresholds. Inspect false positives and false negatives on accumulated evaluation data. Add admin tooling to review signal quality over time. CEFR update and objective completion remain disabled.
 
-**Scope:**
-- Review all `SpeakingEvaluationAppliedSignal` records accumulated since 16I
-- Admin UI card showing signal application stats (applied/skipped/blocked counts by gate)
-- Threshold tuning if false positive rate unacceptable
-- Document findings in a review doc
-- Decision gate: is the signal quality sufficient to proceed to writing evaluation?
+**Delivered:**
+- `SpeakingSignalThresholds` value type — 6 configurable thresholds, `Default` and `FromOptions()` factory
+- `SpeakingEvaluationOptions` — 6 new threshold config properties (positive ≥80 overall/completeness/relevance; review max ≤55)
+- `SpeakingDryRunSignalMapper` — thresholds now explicit; middle band (56–79) = NoSignal; review direction `score <= MaxReviewOverall`
+- `SpeakingEvaluationQualitySummaryDto` — 13 new metrics: applied/blocked breakdown, provider distribution, blocked reasons, avg pronunciation score
+- `GET /api/admin/speaking-evaluation/signal-safety-summary` — programmatic invariant confirmation (CEFR/objective/LP all disabled)
+- Per-student applied signal visibility in admin detail with invariant labels
+- Config status `"DryRunOnly"` when enabled but `ApplyMasterySignals = false`
+- `RuleVersion` → "16J-v1"
+- 22 new/updated unit tests, 4 new integration tests, 2 new Angular tests
+
+**Review:** `docs/reviews/2026-06-30-phase-16j-speaking-signal-quality-tuning-review.md`
 
 **Out of scope:** CEFR update, objective completion, real STT, new speaking formats.
 

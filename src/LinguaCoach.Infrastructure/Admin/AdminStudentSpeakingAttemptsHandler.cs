@@ -69,6 +69,14 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
         if (attempts.Count == 0)
             return new AdminStudentSpeakingAttemptsResult("Empty", []);
 
+        // Applied signal lookup by evaluation ID
+        var evalIds = attempts.Where(a => a.EvalId.HasValue).Select(a => a.EvalId!.Value).ToList();
+        var appliedSignals = evalIds.Count > 0
+            ? await _db.SpeakingEvaluationAppliedSignals
+                .Where(s => evalIds.Contains(s.EvaluationId))
+                .ToDictionaryAsync(s => s.EvaluationId, ct)
+            : new Dictionary<Guid, LinguaCoach.Domain.Entities.SpeakingEvaluationAppliedSignal>();
+
         var dtos = attempts
             .Select(a =>
             {
@@ -90,6 +98,11 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
                         feedbackText: a.EvalFeedbackText);
                 }
 
+                // Applied signal detail
+                LinguaCoach.Domain.Entities.SpeakingEvaluationAppliedSignal? applied = null;
+                if (a.EvalId.HasValue)
+                    appliedSignals.TryGetValue(a.EvalId.Value, out applied);
+
                 return new AdminStudentSpeakingAttemptDto(
                     AttemptId: a.Id,
                     ActivityId: a.LearningActivityId,
@@ -110,7 +123,14 @@ public sealed class AdminStudentSpeakingAttemptsHandler : IAdminStudentSpeakingA
                     DryRunOutcome: signal?.Outcome.ToString(),
                     DryRunConfidence: signal?.ConfidenceBand?.ToString(),
                     DryRunCandidateSkill: signal?.CandidateSkill,
-                    DryRunBlockedReason: signal?.BlockedReason);
+                    DryRunBlockedReason: signal?.BlockedReason,
+                    IsApplied: applied != null,
+                    AppliedSignalType: applied?.SignalType,
+                    AppliedSignalConfidence: applied?.Confidence,
+                    AppliedSignalBlockedReason: null,
+                    AppliedAt: applied?.AppliedAtUtc,
+                    SignalUpdatesCefr: false,
+                    SignalCompletesObjectives: false);
             })
             .ToList();
 

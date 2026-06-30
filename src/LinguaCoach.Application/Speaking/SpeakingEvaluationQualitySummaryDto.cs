@@ -12,6 +12,7 @@ public sealed record SpeakingEvaluationQualitySummaryDto(
     double? AverageFluencyScore,
     double? AverageCompletenessScore,
     double? AverageRelevanceScore,
+    double? AveragePronunciationScore,
     double NullOverallScoreRate,
     double NullFluencyScoreRate,
     double NullCompletenessScoreRate,
@@ -20,4 +21,22 @@ public sealed record SpeakingEvaluationQualitySummaryDto(
     int DryRunCandidateReviewSignals,
     int DryRunCandidateNoSignals,
     int DryRunBlocked,
-    IReadOnlyList<string> LatestFailureReasons);
+    // Phase 16J — applied / blocked breakdown
+    int DryRunCandidates,
+    int Applied,
+    int BlockedByConfig,
+    int BlockedByConfidence,
+    int BlockedByMissingScore,
+    int BlockedByUnsupportedStatus,
+    int BlockedByFailedEval,
+    int DuplicateSkipped,
+    int AppliedReview,
+    int AppliedPositive,
+    IReadOnlyList<SpeakingProviderModelCount> ProviderModelDistribution,
+    IReadOnlyList<string> LatestFailureReasons,
+    IReadOnlyList<string> LatestBlockedReasons);
+
+public sealed record SpeakingProviderModelCount(
+    string ProviderName,
+    string? ModelName,
+    int Count);

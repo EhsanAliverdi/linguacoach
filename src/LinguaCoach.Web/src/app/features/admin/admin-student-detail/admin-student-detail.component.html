@@ -398,7 +398,19 @@
                     }
                   </td>
                   <td style="padding:8px 4px;font-size:0.75rem" data-testid="speaking-dry-run-signal">
-                    @if (attempt.dryRunOutcome) {
+                    @if (attempt.isApplied) {
+                      <div style="display:flex;flex-direction:column;gap:2px">
+                        <sp-admin-badge tone="success" data-testid="applied-signal-badge">Applied — {{ attempt.appliedSignalType }}</sp-admin-badge>
+                        @if (attempt.appliedSignalConfidence) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0)">{{ attempt.appliedSignalConfidence }} confidence</span>
+                        }
+                        @if (attempt.appliedAt) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem">{{ attempt.appliedAt | date:'medium' }}</span>
+                        }
+                        <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem;font-style:italic" data-testid="signal-no-cefr">This signal does not update CEFR.</span>
+                        <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem;font-style:italic" data-testid="signal-no-objectives">This signal does not complete objectives.</span>
+                      </div>
+                    } @else if (attempt.dryRunOutcome) {
                       <div style="display:flex;flex-direction:column;gap:2px">
                         <span style="font-weight:600;color:var(--sp-admin-muted,#8B85A0)" data-testid="dry-run-label">Dry-run only</span>
                         <span data-testid="dry-run-outcome">{{ attempt.dryRunOutcome }}</span>
@@ -410,6 +422,9 @@
                         }
                         @if (attempt.dryRunBlockedReason) {
                           <span style="color:var(--sp-admin-muted,#8B85A0);font-style:italic" data-testid="dry-run-blocked-reason">{{ attempt.dryRunBlockedReason }}</span>
+                        }
+                        @if (attempt.appliedSignalBlockedReason) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem" data-testid="applied-signal-blocked-reason">Blocked: {{ attempt.appliedSignalBlockedReason }}</span>
                         }
                       </div>
                     } @else {

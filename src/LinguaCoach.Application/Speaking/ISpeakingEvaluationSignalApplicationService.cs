@@ -15,6 +15,12 @@ public interface ISpeakingEvaluationSignalApplicationService
 
     /// <summary>Returns counts of applied, dry-run-only, and blocked signals across all evaluations.</summary>
     Task<SpeakingSignalApplicationSummaryDto> GetSummaryAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns invariant safety verification.
+    /// Confirms CEFR updates, objective completions, and LP auto-regen are structurally disabled.
+    /// </summary>
+    Task<SpeakingSignalSafetySummaryDto> GetSignalSafetySummaryAsync(CancellationToken ct = default);
 }
 
 public sealed record SpeakingSignalApplicationBatchResult(
@@ -45,3 +51,15 @@ public sealed record SpeakingSignalApplicationSummaryDto(
     int DuplicateSkipped,
     int NoSignal,
     int FailedApplication);
+
+public sealed record SpeakingSignalSafetySummaryDto(
+    bool CefrUpdatesDisabled,
+    bool ObjectiveCompletionsDisabled,
+    bool LearningPlanAutoRegenDisabled,
+    bool SignalApplicationEnabled,
+    bool PositiveSignalsEnabled,
+    bool ReviewSignalsEnabled,
+    int TotalApplied,
+    int PositiveApplied,
+    int ReviewApplied,
+    bool InvariantViolationsDetected);

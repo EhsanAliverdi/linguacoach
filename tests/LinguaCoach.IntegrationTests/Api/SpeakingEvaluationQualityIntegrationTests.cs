@@ -130,8 +130,9 @@ public sealed class SpeakingEvaluationQualityIntegrationTests
         var activityId = await CreateActivityAsync(userId);
         await SubmitAudioAsync(token, activityId);
 
-        // Fake provider returns overallScore=78, completeness=80, relevance=75 by default
-        await _factory.RunEvaluationJobWithFakeProviderAsync(success: true);
+        // Phase 16J thresholds: positive requires overall≥80, completeness≥80, relevance≥80
+        await _factory.RunEvaluationJobWithFakeProviderAsync(
+            success: true, overallScore: 85, fluencyScore: 82, completenessScore: 82, relevanceScore: 81);
 
         var body = await GetQualityBodyAsync();
         var quality = body.GetProperty("quality");
@@ -233,6 +234,86 @@ public sealed class SpeakingEvaluationQualityIntegrationTests
         body.TryGetProperty("configStatus", out _).Should().BeTrue();
         body.TryGetProperty("providerName", out _).Should().BeTrue();
         body.TryGetProperty("enabled", out _).Should().BeTrue();
+    }
+
+    // ── Signal safety summary ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SignalSafetySummary_Unauthenticated_Returns401()
+    {
+        var resp = await _factory.CreateClient()
+            .GetAsync("/api/admin/speaking-evaluation/signal-safety-summary");
+        resp.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_ReportsCefrUpdatesDisabled()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var resp = await client.GetAsync("/api/admin/speaking-evaluation/signal-safety-summary");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        body.GetProperty("cefrUpdatesDisabled").GetBoolean().Should().BeTrue(
+            "speaking signals must never update CEFR level");
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_ReportsObjectiveCompletionDisabled()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var resp = await client.GetAsync("/api/admin/speaking-evaluation/signal-safety-summary");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        body.GetProperty("objectiveCompletionsDisabled").GetBoolean().Should().BeTrue(
+            "speaking signals must never complete learning objectives");
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_ReportsLearningPlanAutoRegenDisabled()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var resp = await client.GetAsync("/api/admin/speaking-evaluation/signal-safety-summary");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        body.GetProperty("learningPlanAutoRegenDisabled").GetBoolean().Should().BeTrue(
+            "speaking signals must never trigger Learning Plan auto-regeneration");
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_ReportsNoInvariantViolations()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync(
+            $"safetyinv_{Guid.NewGuid():N}@t.com");
+        var activityId = await CreateActivityAsync(userId);
+        await SubmitAudioAsync(token, activityId);
+        await _factory.RunEvaluationJobWithFakeProviderAsync(
+            success: true, overallScore: 85, fluencyScore: 82, completenessScore: 82, relevanceScore: 81);
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var resp = await client.GetAsync("/api/admin/speaking-evaluation/signal-safety-summary");
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        body.GetProperty("invariantViolationsDetected").GetBoolean().Should().BeFalse(
+            "no invariant violations should be reported after signal application");
     }
 
     // ── Student cannot see admin quality summary ──────────────────────────────

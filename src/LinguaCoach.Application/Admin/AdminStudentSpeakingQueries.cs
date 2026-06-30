@@ -24,7 +24,17 @@ public sealed record AdminStudentSpeakingAttemptDto(
     string? DryRunOutcome,
     string? DryRunConfidence,
     string? DryRunCandidateSkill,
-    string? DryRunBlockedReason);
+    string? DryRunBlockedReason,
+    // Phase 16J — applied signal detail
+    bool IsApplied,
+    string? AppliedSignalType,
+    string? AppliedSignalConfidence,
+    string? AppliedSignalBlockedReason,
+    DateTime? AppliedAt,
+    /// <summary>Always false — structural invariant. Displayed explicitly in admin UI.</summary>
+    bool SignalUpdatesCefr,
+    /// <summary>Always false — structural invariant. Displayed explicitly in admin UI.</summary>
+    bool SignalCompletesObjectives);
 
 public sealed record AdminStudentSpeakingAttemptsResult(
     /// <summary>Ready | Empty | NotFound</summary>

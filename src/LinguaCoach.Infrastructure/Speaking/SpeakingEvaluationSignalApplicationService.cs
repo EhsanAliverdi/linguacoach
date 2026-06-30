@@ -15,7 +15,7 @@ namespace LinguaCoach.Infrastructure.Speaking;
 /// </summary>
 public sealed class SpeakingEvaluationSignalApplicationService : ISpeakingEvaluationSignalApplicationService
 {
-    private const string RuleVersion = "16I-v1";
+    private const string RuleVersion = "16J-v1";
     private const string SkillKey = "speaking";
 
     private readonly LinguaCoachDbContext _db;
@@ -66,7 +66,8 @@ public sealed class SpeakingEvaluationSignalApplicationService : ISpeakingEvalua
         SpeakingSignalApplicationBatchResult running,
         CancellationToken ct)
     {
-        var dryRun = SpeakingDryRunSignalMapper.Map(evaluation);
+        var thresholds = SpeakingSignalThresholds.FromOptions(_options);
+        var dryRun = SpeakingDryRunSignalMapper.Map(evaluation, thresholds);
 
         // Blocked by upstream conditions (failed, not-supported, missing score, low-confidence).
         if (dryRun.IsBlocked)
@@ -195,22 +196,14 @@ public sealed class SpeakingEvaluationSignalApplicationService : ISpeakingEvalua
 
     public async Task<SpeakingSignalApplicationSummaryDto> GetSummaryAsync(CancellationToken ct = default)
     {
-        var totalCompleted = await _db.SpeakingEvaluations
-            .CountAsync(e => e.Status == SpeakingEvaluationStatus.Completed, ct);
+        var thresholds = SpeakingSignalThresholds.FromOptions(_options);
 
-        var appliedSignals = await _db.SpeakingEvaluationAppliedSignals
-            .GroupBy(s => s.SignalType)
-            .Select(g => new { Type = g.Key, Count = g.Count() })
-            .ToListAsync(ct);
-
-        var totalApplied = appliedSignals.Sum(g => g.Count);
-
-        // Compute dry-run candidate count from all completed evaluations.
-        var completedEvals = await _db.SpeakingEvaluations
-            .Where(e => e.Status == SpeakingEvaluationStatus.Completed)
+        // All evaluations for cross-status counts.
+        var allEvals = await _db.SpeakingEvaluations
             .Select(e => new
             {
                 e.Id,
+                e.Status,
                 e.OverallScore,
                 e.FluencyScore,
                 e.CompletenessScore,
@@ -219,26 +212,72 @@ public sealed class SpeakingEvaluationSignalApplicationService : ISpeakingEvalua
             })
             .ToListAsync(ct);
 
+        var totalCompleted          = allEvals.Count(e => e.Status == SpeakingEvaluationStatus.Completed);
+        var blockedByFailedOrUnsupported = allEvals.Count(e =>
+            e.Status == SpeakingEvaluationStatus.Failed ||
+            e.Status == SpeakingEvaluationStatus.NotSupported ||
+            e.Status == SpeakingEvaluationStatus.Skipped);
+
+        var appliedGroups = await _db.SpeakingEvaluationAppliedSignals
+            .GroupBy(s => s.SignalType)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var totalApplied = appliedGroups.Sum(g => g.Count);
+
         var appliedIds = await _db.SpeakingEvaluationAppliedSignals
             .Select(s => s.EvaluationId)
-            .ToListAsync(ct);
-        var appliedSet = appliedIds.ToHashSet();
+            .ToHashSetAsync(ct);
 
-        var candidateCount = 0;
+        var candidateCount        = 0;
         var blockedByMissingScore = 0;
-        var blockedByFailedOrUnsupported = 0;
-        var noSignal = 0;
+        var blockedByConfidence   = 0;
+        var blockedBySignalType   = 0;
+        var duplicateSkipped      = 0;
+        var noSignal              = 0;
 
-        foreach (var e in completedEvals)
+        foreach (var e in allEvals.Where(e => e.Status == SpeakingEvaluationStatus.Completed))
         {
             if (e.OverallScore is null) { blockedByMissingScore++; continue; }
+
             var signal = SpeakingDryRunSignalMapper.MapFromFields(
-                Guid.Empty, Guid.Empty,
+                e.Id, Guid.Empty,
                 SpeakingEvaluationStatus.Completed,
-                e.OverallScore, e.FluencyScore, e.CompletenessScore, e.RelevanceScore, e.FeedbackText);
-            if (signal.IsCandidate) candidateCount++;
-            else if (signal.Outcome == SpeakingDryRunSignalOutcome.CandidateNoSignal) noSignal++;
+                e.OverallScore, e.FluencyScore, e.CompletenessScore, e.RelevanceScore, e.FeedbackText,
+                thresholds);
+
+            if (signal.Outcome == SpeakingDryRunSignalOutcome.BlockedLowConfidence)
+            {
+                blockedByConfidence++;
+                continue;
+            }
+
+            if (signal.Outcome == SpeakingDryRunSignalOutcome.CandidateNoSignal)
+            {
+                noSignal++;
+                continue;
+            }
+
+            if (signal.IsCandidate)
+            {
+                candidateCount++;
+
+                if (appliedIds.Contains(e.Id))
+                {
+                    duplicateSkipped++;
+                    continue;
+                }
+
+                // Count signal-type blocks (for candidates not yet applied)
+                var isReview   = signal.Outcome == SpeakingDryRunSignalOutcome.CandidateReviewSignal;
+                var isPositive = signal.Outcome == SpeakingDryRunSignalOutcome.CandidatePositiveSignal;
+                if (isReview   && !_options.AllowReviewSignals)   blockedBySignalType++;
+                if (isPositive && !_options.AllowPositiveSignals) blockedBySignalType++;
+            }
         }
+
+        var blockedByConfig = _options.ApplyMasterySignals ? 0
+            : Math.Max(0, candidateCount - totalApplied - blockedBySignalType - duplicateSkipped);
 
         return new SpeakingSignalApplicationSummaryDto(
             MasteryIntegrationEnabled: _options.ApplyMasterySignals,
@@ -250,14 +289,42 @@ public sealed class SpeakingEvaluationSignalApplicationService : ISpeakingEvalua
             TotalCompletedEvaluations: totalCompleted,
             CandidateSignals: candidateCount,
             AppliedSignals: totalApplied,
-            BlockedByConfig: _options.ApplyMasterySignals ? 0 : candidateCount - totalApplied,
-            BlockedByConfidence: 0,
-            BlockedBySignalType: 0,
+            BlockedByConfig: blockedByConfig,
+            BlockedByConfidence: blockedByConfidence,
+            BlockedBySignalType: blockedBySignalType,
             BlockedByFailedOrUnsupported: blockedByFailedOrUnsupported,
             BlockedByMissingScore: blockedByMissingScore,
-            DuplicateSkipped: 0,
+            DuplicateSkipped: duplicateSkipped,
             NoSignal: noSignal,
             FailedApplication: 0);
+    }
+
+    public async Task<SpeakingSignalSafetySummaryDto> GetSignalSafetySummaryAsync(CancellationToken ct = default)
+    {
+        var appliedGroups = await _db.SpeakingEvaluationAppliedSignals
+            .GroupBy(s => s.SignalType)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var totalApplied    = appliedGroups.Sum(g => g.Count);
+        var reviewApplied   = appliedGroups.FirstOrDefault(g => g.Type == "Review")?.Count ?? 0;
+        var positiveApplied = appliedGroups.FirstOrDefault(g => g.Type == "Positive")?.Count ?? 0;
+
+        // Structural invariants: AllowCefrUpdate and AllowObjectiveCompletion are computed =>false.
+        // We detect a violation if they ever return true (should be impossible).
+        var invariantViolation = _options.AllowCefrUpdate || _options.AllowObjectiveCompletion;
+
+        return new SpeakingSignalSafetySummaryDto(
+            CefrUpdatesDisabled: !_options.AllowCefrUpdate,
+            ObjectiveCompletionsDisabled: !_options.AllowObjectiveCompletion,
+            LearningPlanAutoRegenDisabled: true,  // structural: no ILearningPlanService dependency
+            SignalApplicationEnabled: _options.ApplyMasterySignals,
+            PositiveSignalsEnabled: _options.AllowPositiveSignals,
+            ReviewSignalsEnabled: _options.AllowReviewSignals,
+            TotalApplied: totalApplied,
+            PositiveApplied: positiveApplied,
+            ReviewApplied: reviewApplied,
+            InvariantViolationsDetected: invariantViolation);
     }
 
     private static SpeakingDryRunConfidenceBand ParseConfidenceBand(string value) =>

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-30 (16I)
+lastUpdated: 2026-06-30 (16J)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,51 @@ Last updated: 2026-06-30
 ---
 
 ## Active sprint
+
+**Phase 16J — Speaking Signal Quality Tuning and Production Dry-Run Review** — complete (2026-06-30)
+
+Validation and tuning phase only. No new AI features, no CEFR updates, no objective completion, no Learning Plan regeneration from speaking AI. Strict invariants preserved throughout.
+
+**New Application layer:**
+- `SpeakingSignalThresholds` — value type carrying 6 configurable thresholds; `Default` and `FromOptions()` factory
+- `ISpeakingEvaluationSignalApplicationService` — added `GetSignalSafetySummaryAsync()`
+- `SpeakingSignalSafetySummaryDto` — invariant confirmation record
+- `SpeakingEvaluationQualitySummaryDto` — expanded with 13 new metrics: applied/blocked breakdown, provider distribution, latest blocked reasons, avg pronunciation score, dry-run candidate counts
+- `SpeakingEvaluationOptions` — 6 new threshold properties (positive ≥80 overall/relevance/completeness; review max ≤55 overall/relevance/completeness)
+- `AdminStudentSpeakingAttemptDto` — 7 new fields: `IsApplied`, `AppliedSignalType`, `AppliedSignalConfidence`, `AppliedSignalBlockedReason`, `AppliedAt`, `SignalUpdatesCefr` (always false), `SignalCompletesObjectives` (always false)
+
+**Modified Application:**
+- `SpeakingDryRunSignalMapper` — thresholds now explicit via `SpeakingSignalThresholds` param (default = `SpeakingSignalThresholds.Default`); removed 3 hardcoded consts; `ClassifyScore()` helper; review direction now `score <= MaxReviewOverall` (was `score >= 40`); creates middle band (56–79) = NoSignal
+
+**Modified Infrastructure:**
+- `SpeakingEvaluationQualityHandler` — takes `IOptions<SpeakingEvaluationOptions>`; passes thresholds to mapper; computes all new metric fields
+- `SpeakingEvaluationSignalApplicationService` — `RuleVersion` → "16J-v1"; passes thresholds from config; `GetSummaryAsync` accurately counts blocked breakdowns; implements `GetSignalSafetySummaryAsync`
+- `AdminStudentSpeakingAttemptsHandler` — populates 7 new per-attempt applied signal fields; always sets `SignalUpdatesCefr = false`, `SignalCompletesObjectives = false`
+
+**Modified API:**
+- `AdminSpeakingEvaluationController` — added `GET /api/admin/speaking-evaluation/signal-safety-summary`; expanded quality summary DTO with threshold config fields; `ResolveConfigStatus()` returns "DryRunOnly" vs "Enabled" correctly
+- `appsettings.json` — 6 new threshold config keys
+
+**Modified Angular:**
+- `admin.models.ts` — `SpeakingProviderModelCount` interface; expanded `SpeakingEvaluationQualityMetrics` (13 new fields); `AdminSignalSafetySummary` interface; `AdminStudentSpeakingAttemptAppliedSignal`; 7 new fields on `AdminStudentSpeakingAttempt`
+- `admin.api.service.ts` — `getSignalSafetySummary()` method
+- `admin-student-detail.component.html` — applied signal badge with invariant labels (data-testid="applied-signal-badge", "signal-no-cefr", "signal-no-objectives")
+
+**Domain:**
+- `SpeakingEvaluationAppliedSignal.AppliedRuleVersion` — "16I-v1" → "16J-v1"
+
+**Tests added/updated:**
+- `SpeakingDryRunSignalMapperTests.cs` — 8 tests updated for new thresholds; 7 new Phase 16J threshold-boundary tests; 1 custom-threshold test
+- `SpeakingEvaluationSignalApplicationTests.cs` — 2 tests updated; 16 new Phase 16J tests (safety summary, quality metrics, threshold behavior)
+- `SpeakingEvaluationProviderIntegrationTests.cs` — factory method gains `completenessScore`/`relevanceScore` params
+- `SpeakingEvaluationQualityIntegrationTests.cs` — existing positive-signal test updated for new thresholds; 4 new safety summary integration tests (401, CEFR disabled, objective completion disabled, LP regen disabled, no invariant violations)
+- `admin-student-detail.component.spec.ts` — 2 new Angular tests (applied badge visible/hidden)
+
+**Build/test totals:** Backend unit: 1,581 (+16). Integration: 1,281 (+4). Arch: 3. Angular: 124 (+2). Production build: clean.
+
+Review: `docs/reviews/2026-06-30-phase-16j-speaking-signal-quality-tuning-review.md`.
+
+---
 
 **Phase 16I — Speaking Evaluation Mastery Signal Controlled Integration** — complete (2026-06-30)
 

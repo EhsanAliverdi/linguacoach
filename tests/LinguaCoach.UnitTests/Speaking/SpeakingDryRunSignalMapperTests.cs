@@ -109,12 +109,13 @@ public sealed class SpeakingDryRunSignalMapperTests
     [Fact]
     public void StrongScores_HighConfidence_ProducesCandidatePositiveSignal()
     {
+        // Phase 16J thresholds: overall≥80, completeness≥80, relevance≥80
         var signal = MapFromFields(
             status: SpeakingEvaluationStatus.Completed,
-            overallScore: 78,
-            fluencyScore: 72,
-            completenessScore: 80,
-            relevanceScore: 75,
+            overallScore: 85,
+            fluencyScore: 82,
+            completenessScore: 82,
+            relevanceScore: 81,
             feedbackText: "Great speaking.");
 
         signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
@@ -126,7 +127,7 @@ public sealed class SpeakingDryRunSignalMapperTests
     [Fact]
     public void MidRangeScore_MediumConfidence_ProducesCandidateReviewSignal()
     {
-        // Score 55 ≥ ReviewThreshold(40), < PositiveThreshold(70)
+        // Phase 16J: score=55 ≤ MaxReviewOverall(55) → CandidateReviewSignal
         var signal = MapFromFields(
             status: SpeakingEvaluationStatus.Completed,
             overallScore: 55,
@@ -143,11 +144,11 @@ public sealed class SpeakingDryRunSignalMapperTests
     [Fact]
     public void LowScore_MediumConfidence_ProducesCandidateNoSignal()
     {
-        // Score 30 < ReviewThreshold(40)
+        // Phase 16J: NoSignal = score in middle band (56–79): above MaxReview(55), below MinPositive(80)
         var signal = MapFromFields(
             status: SpeakingEvaluationStatus.Completed,
-            overallScore: 30,
-            fluencyScore: 25,
+            overallScore: 65,
+            fluencyScore: 60,
             completenessScore: null,
             relevanceScore: null,
             feedbackText: null);
@@ -161,49 +162,57 @@ public sealed class SpeakingDryRunSignalMapperTests
     // ── Completeness/relevance dimension gates ────────────────────────────────
 
     [Fact]
-    public void StrongOverall_LowCompleteness_ProducesCandidateReviewSignal_NotPositive()
+    public void StrongOverall_LowCompleteness_BlocksPositiveSignal_ProducesNoSignal()
     {
-        // OverallScore 75 ≥ 70 but CompletenessScore 30 < 50 threshold → not positive
+        // Phase 16J: overall≥80 but completeness=30 < 80 → blocks positive.
+        // Score 85 > MaxReview(55) → NoSignal (middle band), not Review.
         var signal = MapFromFields(
             status: SpeakingEvaluationStatus.Completed,
-            overallScore: 75,
-            fluencyScore: 70,
+            overallScore: 85,
+            fluencyScore: 80,
             completenessScore: 30,
             relevanceScore: null,
             feedbackText: "Feedback.");
 
         signal.Outcome.Should().NotBe(SpeakingDryRunSignalOutcome.CandidatePositiveSignal,
             "low completeness score should prevent positive signal");
-        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateReviewSignal);
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateNoSignal,
+            "score above MaxReviewOverall(55) puts evaluation in middle band, not review");
     }
 
     [Fact]
-    public void StrongOverall_LowRelevance_ProducesCandidateReviewSignal_NotPositive()
+    public void StrongOverall_LowRelevance_BlocksPositiveSignal_ProducesNoSignal()
     {
+        // Phase 16J: overall≥80 but relevance=20 < 80 → blocks positive.
+        // Score 85 > MaxReview(55) → NoSignal.
         var signal = MapFromFields(
             status: SpeakingEvaluationStatus.Completed,
-            overallScore: 75,
-            fluencyScore: 70,
+            overallScore: 85,
+            fluencyScore: 80,
             completenessScore: null,
             relevanceScore: 20,
             feedbackText: "Feedback.");
 
-        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateReviewSignal);
+        signal.Outcome.Should().NotBe(SpeakingDryRunSignalOutcome.CandidatePositiveSignal,
+            "low relevance score should prevent positive signal");
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateNoSignal,
+            "score above MaxReviewOverall(55) puts evaluation in middle band, not review");
     }
 
     [Fact]
     public void MissingPronunciationScore_DoesNotBlockGeneralFeedbackSignal()
     {
-        // PronunciationScore is not tracked in the mapper — missing it should not block
+        // PronunciationScore is not tracked in the mapper — missing it should not block.
+        // Phase 16J thresholds: overall≥80, completeness≥80, relevance≥80.
         var signal = MapFromFields(
             status: SpeakingEvaluationStatus.Completed,
-            overallScore: 78,
-            fluencyScore: 72,
-            completenessScore: 80,
-            relevanceScore: 75,
+            overallScore: 85,
+            fluencyScore: 82,
+            completenessScore: 82,
+            relevanceScore: 81,
             feedbackText: "Good effort.");
 
-        // Should still be CandidatePositiveSignal even without pronunciation score
+        // CandidatePositiveSignal even without pronunciation score
         signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
     }
 
@@ -259,6 +268,118 @@ public sealed class SpeakingDryRunSignalMapperTests
         fromEntity.Outcome.Should().Be(fromFields.Outcome);
         fromEntity.ConfidenceBand.Should().Be(fromFields.ConfidenceBand);
         fromEntity.CandidateSkill.Should().Be(fromFields.CandidateSkill);
+    }
+
+    // ── Phase 16J — threshold-aware tests ────────────────────────────────────
+
+    [Fact]
+    public void ScoreAtPositiveThreshold_ProducesCandidatePositiveSignal()
+    {
+        // score=80 exactly at MinPositiveOverall(80), all dims pass
+        var signal = MapFromFields(
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 80,
+            fluencyScore: 80,
+            completenessScore: 80,
+            relevanceScore: 80,
+            feedbackText: "Good.");
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
+    }
+
+    [Fact]
+    public void ScoreJustBelowPositiveThreshold_DoesNotProducePositive()
+    {
+        // score=79.9 < 80 → not positive; 79.9 > 55 → NoSignal
+        var signal = MapFromFields(
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 79.9,
+            fluencyScore: 80,
+            completenessScore: 80,
+            relevanceScore: 80,
+            feedbackText: "Good.");
+        signal.Outcome.Should().NotBe(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateNoSignal);
+    }
+
+    [Fact]
+    public void ScoreAtReviewMaxThreshold_ProducesCandidateReviewSignal()
+    {
+        // score=55 exactly at MaxReviewOverall(55) → Review
+        var signal = MapFromFields(
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 55,
+            fluencyScore: 50,
+            completenessScore: null,
+            relevanceScore: null,
+            feedbackText: "Needs work.");
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateReviewSignal);
+    }
+
+    [Fact]
+    public void ScoreJustAboveReviewMax_ProducesCandidateNoSignal()
+    {
+        // score=56 > 55 (above MaxReview) and < 80 (below MinPositive) → NoSignal
+        var signal = MapFromFields(
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 56,
+            fluencyScore: 55,
+            completenessScore: null,
+            relevanceScore: null,
+            feedbackText: "Feedback.");
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateNoSignal);
+    }
+
+    [Fact]
+    public void LowCompleteness_BlocksPositiveSignal_WithNewThreshold()
+    {
+        // overall=85 ≥ 80 but completeness=79 < 80 → blocks positive → NoSignal
+        var signal = MapFromFields(
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 85,
+            fluencyScore: 82,
+            completenessScore: 79,
+            relevanceScore: 82,
+            feedbackText: "Good.");
+        signal.Outcome.Should().NotBe(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateNoSignal);
+    }
+
+    [Fact]
+    public void LowRelevance_BlocksPositiveSignal_WithNewThreshold()
+    {
+        // overall=85 ≥ 80 but relevance=79 < 80 → blocks positive → NoSignal
+        var signal = MapFromFields(
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 85,
+            fluencyScore: 82,
+            completenessScore: 82,
+            relevanceScore: 79,
+            feedbackText: "Good.");
+        signal.Outcome.Should().NotBe(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidateNoSignal);
+    }
+
+    [Fact]
+    public void CustomThresholds_AreRespected()
+    {
+        // Pass explicit legacy-like thresholds: positive ≥70, review ≤40
+        var legacyThresholds = new SpeakingSignalThresholds(
+            MinPositiveOverall: 70, MinPositiveRelevance: 50, MinPositiveCompleteness: 50,
+            MaxReviewOverall: 40, MaxReviewRelevance: 40, MaxReviewCompleteness: 40);
+
+        var signal = SpeakingDryRunSignalMapper.MapFromFields(
+            evalId: Guid.NewGuid(),
+            attemptId: Guid.NewGuid(),
+            status: SpeakingEvaluationStatus.Completed,
+            overallScore: 75,
+            fluencyScore: 70,
+            completenessScore: 70,
+            relevanceScore: 70,
+            feedbackText: "Good.",
+            thresholds: legacyThresholds);
+
+        // With legacy thresholds 75 ≥ 70 → Positive
+        signal.Outcome.Should().Be(SpeakingDryRunSignalOutcome.CandidatePositiveSignal);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

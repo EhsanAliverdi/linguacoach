@@ -411,13 +411,17 @@ public class SpeakingEvaluationProviderTestFactory : ActivityTestFactory
         string? failureReason = null,
         double? overallScore = 78,
         double? fluencyScore = 72,
+        double? completenessScore = 80,
+        double? relevanceScore = 75,
         string? transcript = "The learner spoke clearly.")
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
         var provider = new FakeSpeakingEvaluationProvider(
             success: success, failureReason: failureReason,
-            overallScore: overallScore, fluencyScore: fluencyScore, transcript: transcript);
+            overallScore: overallScore, fluencyScore: fluencyScore,
+            completenessScore: completenessScore, relevanceScore: relevanceScore,
+            transcript: transcript);
         await BuildSvc(db, provider).ProcessPendingAsync(20);
     }
 

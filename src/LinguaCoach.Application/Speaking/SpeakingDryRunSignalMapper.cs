@@ -6,15 +6,15 @@ namespace LinguaCoach.Application.Speaking;
 /// <summary>
 /// Maps a SpeakingEvaluation to a dry-run signal preview.
 /// Pure logic — no DB, no side effects. Never updates mastery, CEFR, or Learning Plan.
+/// Pass explicit thresholds to override defaults; null falls back to SpeakingSignalThresholds.Default.
 /// </summary>
 public static class SpeakingDryRunSignalMapper
 {
-    private const double PositiveScoreThreshold = 70.0;
-    private const double ReviewScoreThreshold = 40.0;
-    private const double DimensionMinThreshold = 50.0;
-
-    public static SpeakingEvaluationDryRunSignal Map(SpeakingEvaluation evaluation)
+    public static SpeakingEvaluationDryRunSignal Map(
+        SpeakingEvaluation evaluation,
+        SpeakingSignalThresholds? thresholds = null)
     {
+        var t = thresholds ?? SpeakingSignalThresholds.Default;
         var evalId = evaluation.Id;
         var attemptId = evaluation.ActivityAttemptId;
 
@@ -52,25 +52,10 @@ public static class SpeakingDryRunSignalMapper
             return Blocked(evalId, attemptId, SpeakingDryRunSignalOutcome.BlockedLowConfidence,
                 "Confidence too low for candidate signal.", confidence);
 
-        var score = evaluation.OverallScore.Value;
-        var completenessOk = evaluation.CompletenessScore is null
-            || evaluation.CompletenessScore >= DimensionMinThreshold;
-        var relevanceOk = evaluation.RelevanceScore is null
-            || evaluation.RelevanceScore >= DimensionMinThreshold;
-
-        if (score >= PositiveScoreThreshold && completenessOk && relevanceOk)
-            return new SpeakingEvaluationDryRunSignal(evalId, attemptId, confidence,
-                SpeakingDryRunSignalOutcome.CandidatePositiveSignal,
-                CandidateSkill: "Speaking", BlockedReason: null);
-
-        if (score >= ReviewScoreThreshold)
-            return new SpeakingEvaluationDryRunSignal(evalId, attemptId, confidence,
-                SpeakingDryRunSignalOutcome.CandidateReviewSignal,
-                CandidateSkill: "Speaking", BlockedReason: null);
-
-        return new SpeakingEvaluationDryRunSignal(evalId, attemptId, confidence,
-            SpeakingDryRunSignalOutcome.CandidateNoSignal,
-            CandidateSkill: null, BlockedReason: null);
+        return ClassifyScore(evalId, attemptId, confidence,
+            evaluation.OverallScore.Value,
+            evaluation.CompletenessScore,
+            evaluation.RelevanceScore, t);
     }
 
     /// <summary>
@@ -85,8 +70,11 @@ public static class SpeakingDryRunSignalMapper
         double? fluencyScore,
         double? completenessScore,
         double? relevanceScore,
-        string? feedbackText)
+        string? feedbackText,
+        SpeakingSignalThresholds? thresholds = null)
     {
+        var t = thresholds ?? SpeakingSignalThresholds.Default;
+
         switch (status)
         {
             case SpeakingEvaluationStatus.Failed:
@@ -121,16 +109,27 @@ public static class SpeakingDryRunSignalMapper
             return Blocked(evalId, attemptId, SpeakingDryRunSignalOutcome.BlockedLowConfidence,
                 "Confidence too low for candidate signal.", confidence);
 
-        var score = overallScore.Value;
-        var completenessOk = completenessScore is null || completenessScore >= DimensionMinThreshold;
-        var relevanceOk    = relevanceScore is null    || relevanceScore >= DimensionMinThreshold;
+        return ClassifyScore(evalId, attemptId, confidence,
+            overallScore.Value, completenessScore, relevanceScore, t);
+    }
 
-        if (score >= PositiveScoreThreshold && completenessOk && relevanceOk)
+    private static SpeakingEvaluationDryRunSignal ClassifyScore(
+        Guid evalId, Guid attemptId,
+        SpeakingDryRunConfidenceBand confidence,
+        double score,
+        double? completenessScore,
+        double? relevanceScore,
+        SpeakingSignalThresholds t)
+    {
+        var completenessOk = completenessScore is null || completenessScore >= t.MinPositiveCompleteness;
+        var relevanceOk    = relevanceScore is null    || relevanceScore >= t.MinPositiveRelevance;
+
+        if (score >= t.MinPositiveOverall && completenessOk && relevanceOk)
             return new SpeakingEvaluationDryRunSignal(evalId, attemptId, confidence,
                 SpeakingDryRunSignalOutcome.CandidatePositiveSignal,
                 CandidateSkill: "Speaking", BlockedReason: null);
 
-        if (score >= ReviewScoreThreshold)
+        if (score <= t.MaxReviewOverall)
             return new SpeakingEvaluationDryRunSignal(evalId, attemptId, confidence,
                 SpeakingDryRunSignalOutcome.CandidateReviewSignal,
                 CandidateSkill: "Speaking", BlockedReason: null);

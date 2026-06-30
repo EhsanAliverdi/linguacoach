@@ -68,7 +68,7 @@ public sealed class SpeakingEvaluationAppliedSignal : BaseEntity
             Confidence = confidence?.Trim() ?? string.Empty,
             ScoreUsed = scoreUsed,
             SkillAffected = skillAffected?.Trim() ?? "speaking",
-            AppliedRuleVersion = "16I-v1",
+            AppliedRuleVersion = "16J-v1",
             DryRunOutcome = dryRunOutcome?.Trim() ?? string.Empty,
             Reason = reason?.Trim() ?? string.Empty,
             LearningEventId = learningEventId,

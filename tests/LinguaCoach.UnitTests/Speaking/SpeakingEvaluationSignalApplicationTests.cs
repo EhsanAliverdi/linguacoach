@@ -426,7 +426,7 @@ public sealed class SpeakingEvaluationSignalApplicationTests : IDisposable
         Assert.Equal(eval.Id, record.EvaluationId);
         Assert.Equal("Review", record.SignalType);
         Assert.Equal("speaking", record.SkillAffected);
-        Assert.Equal("16I-v1", record.AppliedRuleVersion);
+        Assert.Equal("16J-v1", record.AppliedRuleVersion);
         Assert.Equal("CandidateReviewSignal", record.DryRunOutcome);
         Assert.NotNull(record.LearningEventId);
     }
@@ -436,10 +436,10 @@ public sealed class SpeakingEvaluationSignalApplicationTests : IDisposable
     [Fact]
     public async Task NoSignalOutcome_DoesNotWriteEventOrAppliedSignal()
     {
-        // Score < 40 = CandidateNoSignal
+        // Phase 16J: NoSignal = middle band (56–79), above MaxReview(55), below MinPositive(80)
         var e = SpeakingEvaluation.CreatePending(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         e.MarkEvaluating("P", null);
-        e.MarkCompleted(null, 30.0, 30.0, null, 30.0, 30.0, "Below threshold.", null);
+        e.MarkCompleted(null, 65.0, 65.0, null, 65.0, 65.0, "Middle band.", null);
         _db.SpeakingEvaluations.Add(e);
         await _db.SaveChangesAsync();
 
@@ -450,5 +450,223 @@ public sealed class SpeakingEvaluationSignalApplicationTests : IDisposable
         Assert.Equal(1, result.NoSignal);
         Assert.Empty(_db.SpeakingEvaluationAppliedSignals.ToList());
         Assert.Empty(_db.StudentLearningEvents.ToList());
+    }
+
+    // ══ Phase 16J — Safety summary, quality metrics, threshold tests ══════════
+
+    [Fact]
+    public async Task SignalSafetySummary_AlwaysShowsInvariantsDisabled()
+    {
+        var svc = BuildSvc(DefaultOpts());
+        var safety = await svc.GetSignalSafetySummaryAsync();
+
+        Assert.True(safety.CefrUpdatesDisabled, "CEFR update must always be disabled");
+        Assert.True(safety.ObjectiveCompletionsDisabled, "Objective completion must always be disabled");
+        Assert.True(safety.LearningPlanAutoRegenDisabled, "LP auto-regen must always be disabled");
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_InvariantViolationsDetected_IsFalse()
+    {
+        var svc = BuildSvc(DefaultOpts());
+        var safety = await svc.GetSignalSafetySummaryAsync();
+
+        Assert.False(safety.InvariantViolationsDetected,
+            "No invariant violations should ever be detected with correct config");
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_ReflectsCurrentConfig()
+    {
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: false, allowPositiveSignals: false, allowReviewSignals: true));
+        var safety = await svc.GetSignalSafetySummaryAsync();
+
+        Assert.False(safety.SignalApplicationEnabled);
+        Assert.False(safety.PositiveSignalsEnabled);
+        Assert.True(safety.ReviewSignalsEnabled);
+    }
+
+    [Fact]
+    public async Task QualityMetrics_Applied_CountCorrect()
+    {
+        MakeCompletedReviewEval();
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        var summary = await svc.GetSummaryAsync();
+        Assert.Equal(1, summary.AppliedSignals);
+    }
+
+    [Fact]
+    public async Task QualityMetrics_BlockedByConfig_CountCorrect()
+    {
+        MakeCompletedReviewEval();
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: false));
+
+        await svc.ApplyPendingSignalsAsync(20);
+        var summary = await svc.GetSummaryAsync();
+
+        Assert.Equal(0, summary.AppliedSignals);
+        Assert.True(summary.BlockedByConfig >= 1, "Config-blocked candidates should appear in summary");
+    }
+
+    [Fact]
+    public async Task QualityMetrics_BlockedByMissingScore_CountCorrect()
+    {
+        // Completed eval with no OverallScore
+        var student = new LinguaCoach.Domain.Entities.StudentProfile(Guid.NewGuid());
+        _db.StudentProfiles.Add(student);
+        var e = SpeakingEvaluation.CreatePending(Guid.NewGuid(), student.Id, Guid.NewGuid());
+        e.MarkEvaluating("P", null);
+        e.MarkCompleted(null, null, null, null, null, null, "Transcript only.", null);
+        _db.SpeakingEvaluations.Add(e);
+        await _db.SaveChangesAsync();
+
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        var summary = await svc.GetSummaryAsync();
+
+        Assert.True(summary.BlockedByMissingScore >= 1);
+        Assert.Equal(0, summary.AppliedSignals);
+    }
+
+    [Fact]
+    public async Task QualityMetrics_BlockedByFailedEval_CountCorrect()
+    {
+        var student = new LinguaCoach.Domain.Entities.StudentProfile(Guid.NewGuid());
+        _db.StudentProfiles.Add(student);
+        var e = SpeakingEvaluation.CreatePending(Guid.NewGuid(), student.Id, Guid.NewGuid());
+        e.MarkEvaluating("P", null);
+        e.MarkFailed("Provider error.");
+        _db.SpeakingEvaluations.Add(e);
+        await _db.SaveChangesAsync();
+
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        var summary = await svc.GetSummaryAsync();
+
+        Assert.True(summary.BlockedByFailedOrUnsupported >= 1);
+        Assert.Equal(0, summary.AppliedSignals);
+    }
+
+    [Fact]
+    public async Task SignalSafetySummary_AfterAppliedReviewSignal_ShowsCorrectCounts()
+    {
+        MakeCompletedReviewEval();
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        var safety = await svc.GetSignalSafetySummaryAsync();
+
+        Assert.Equal(1, safety.TotalApplied);
+        Assert.Equal(1, safety.ReviewApplied);
+        Assert.Equal(0, safety.PositiveApplied);
+    }
+
+    [Fact]
+    public async Task ObjectiveCompletion_IsNeverAllowed()
+    {
+        var opts = DefaultOpts(applyMasterySignals: true, allowPositiveSignals: true);
+        Assert.False(opts.AllowObjectiveCompletion,
+            "AllowObjectiveCompletion must be false — structural invariant");
+    }
+
+    [Fact]
+    public async Task CefrIsNotChanged_AfterReviewSignal()
+    {
+        var eval = MakeCompletedReviewEval();
+        var studentId = eval.StudentProfileId;
+        var before = _db.StudentProfiles.Single(s => s.Id == studentId).CefrLevel;
+
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        var after = _db.StudentProfiles.Single(s => s.Id == studentId).CefrLevel;
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public async Task LearningPlan_NotRegenerated_AfterSignalApplication()
+    {
+        var countBefore = await _db.StudentLearningPlans.CountAsync();
+        MakeCompletedReviewEval();
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        var countAfter = await _db.StudentLearningPlans.CountAsync();
+        Assert.Equal(countBefore, countAfter);
+    }
+
+    [Fact]
+    public async Task ReviewSignalThreshold_ScoreAtMaxReview_ProducesReviewCandidate()
+    {
+        // score=55 exactly at MaxReviewOverall → CandidateReviewSignal → applied as Review
+        MakeCompletedReviewEval(overallScore: 55.0);
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        var record = _db.SpeakingEvaluationAppliedSignals.SingleOrDefault();
+        Assert.NotNull(record);
+        Assert.Equal("Review", record!.SignalType);
+    }
+
+    [Fact]
+    public async Task PositiveSignal_RemainsBlocked_WhenAllowPositiveSignalsFalse()
+    {
+        MakeCompletedPositiveEval(overallScore: 85.0, completenessScore: 85.0, relevanceScore: 85.0);
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true, allowPositiveSignals: false));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        // Should be blocked by signal type — not applied
+        Assert.Empty(_db.SpeakingEvaluationAppliedSignals.ToList());
+    }
+
+    [Fact]
+    public async Task MissingOverallScore_BlocksPositiveSignal()
+    {
+        // Null OverallScore → BlockedMissingScore regardless of other scores
+        var student = new LinguaCoach.Domain.Entities.StudentProfile(Guid.NewGuid());
+        _db.StudentProfiles.Add(student);
+        var e = SpeakingEvaluation.CreatePending(Guid.NewGuid(), student.Id, Guid.NewGuid());
+        e.MarkEvaluating("P", null);
+        e.MarkCompleted(null, null, 85.0, null, 85.0, 85.0, "Transcript only.", null);
+        _db.SpeakingEvaluations.Add(e);
+        await _db.SaveChangesAsync();
+
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true, allowPositiveSignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        Assert.Empty(_db.SpeakingEvaluationAppliedSignals.ToList());
+    }
+
+    [Fact]
+    public async Task FailedEvaluation_BlocksAllSignalApplication()
+    {
+        var student = new LinguaCoach.Domain.Entities.StudentProfile(Guid.NewGuid());
+        _db.StudentProfiles.Add(student);
+        var e = SpeakingEvaluation.CreatePending(Guid.NewGuid(), student.Id, Guid.NewGuid());
+        e.MarkEvaluating("P", null);
+        e.MarkFailed("Provider error.");
+        _db.SpeakingEvaluations.Add(e);
+        await _db.SaveChangesAsync();
+
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true, allowPositiveSignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        Assert.Empty(_db.SpeakingEvaluationAppliedSignals.ToList());
+    }
+
+    [Fact]
+    public async Task NotSupportedEvaluation_BlocksAllSignalApplication()
+    {
+        var student = new LinguaCoach.Domain.Entities.StudentProfile(Guid.NewGuid());
+        _db.StudentProfiles.Add(student);
+        var e = SpeakingEvaluation.CreatePending(Guid.NewGuid(), student.Id, Guid.NewGuid());
+        e.MarkNotSupported();
+        _db.SpeakingEvaluations.Add(e);
+        await _db.SaveChangesAsync();
+
+        var svc = BuildSvc(DefaultOpts(applyMasterySignals: true, allowPositiveSignals: true));
+        await svc.ApplyPendingSignalsAsync(20);
+
+        Assert.Empty(_db.SpeakingEvaluationAppliedSignals.ToList());
     }
 }

@@ -58,6 +58,30 @@ public sealed class SpeakingEvaluationOptions
     /// </summary>
     public bool AllowPositiveSignals { get; init; } = false;
 
+    // --- Signal score thresholds (Phase 16J) ---
+
+    /// <summary>Minimum overall score (0–100) for CandidatePositiveSignal. Default 80 — conservative.</summary>
+    public double MinimumOverallScoreForPositiveSignal { get; init; } = 80.0;
+
+    /// <summary>Minimum relevance score for positive signal. Null relevance is treated as passing. Default 80.</summary>
+    public double MinimumRelevanceScoreForPositiveSignal { get; init; } = 80.0;
+
+    /// <summary>Minimum completeness score for positive signal. Null completeness is treated as passing. Default 80.</summary>
+    public double MinimumCompletenessScoreForPositiveSignal { get; init; } = 80.0;
+
+    /// <summary>
+    /// Maximum overall score at or below which a CandidateReviewSignal is produced.
+    /// Scores above this and below MinimumOverallScoreForPositiveSignal → CandidateNoSignal.
+    /// Default 55.
+    /// </summary>
+    public double MaximumOverallScoreForReviewSignal { get; init; } = 55.0;
+
+    /// <summary>Maximum relevance score for review candidate. Null passes. Default 55.</summary>
+    public double MaximumRelevanceScoreForReviewSignal { get; init; } = 55.0;
+
+    /// <summary>Maximum completeness score for review candidate. Null passes. Default 55.</summary>
+    public double MaximumCompletenessScoreForReviewSignal { get; init; } = 55.0;
+
     /// <summary>Phase 16I: objective completion from speaking AI is always disabled.</summary>
     public bool AllowObjectiveCompletion => false;
 

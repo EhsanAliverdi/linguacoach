@@ -36,7 +36,7 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
 
     /// <summary>
     /// Returns the current speaking evaluation configuration and provider status.
-    /// ConfigStatus values: Disabled | NoOp | ProviderConfigured | ProviderUnsupported | Enabled
+    /// ConfigStatus values: Disabled | NoOp | ProviderConfigured | ProviderUnsupported | DryRunOnly | Enabled
     /// </summary>
     [HttpGet("status")]
     public ActionResult<AdminSpeakingEvaluationStatusDto> GetStatus()
@@ -65,6 +65,7 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
     /// <summary>
     /// Returns quality metrics for all speaking evaluations and dry-run signal counts.
     /// Dry-run signals are never applied to mastery, CEFR, or Learning Plan progress.
+    /// Also exposes mastery signal config status and threshold values.
     /// </summary>
     [HttpGet("quality-summary")]
     public async Task<ActionResult<AdminSpeakingEvaluationQualitySummaryDto>> GetQualitySummary(
@@ -80,6 +81,12 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
             Enabled: _options.Enabled,
             SupportsTranscript: caps.SupportsTranscript,
             SupportsPronunciationScore: caps.SupportsPronunciationScore,
+            ApplyMasterySignals: _options.ApplyMasterySignals,
+            AllowReviewSignals: _options.AllowReviewSignals,
+            AllowPositiveSignals: _options.AllowPositiveSignals,
+            MinimumConfidenceRequired: _options.MinimumConfidenceForMasterySignal,
+            MinPositiveOverall: _options.MinimumOverallScoreForPositiveSignal,
+            MinReviewOverallMax: _options.MaximumOverallScoreForReviewSignal,
             Quality: quality));
     }
 
@@ -112,6 +119,29 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
             FailedApplication: summary.FailedApplication));
     }
 
+    /// <summary>
+    /// Returns invariant safety verification summary.
+    /// Confirms CEFR updates, objective completions, and LP auto-regen are structurally disabled.
+    /// Any invariant violation here indicates a configuration or code defect.
+    /// </summary>
+    [HttpGet("signal-safety-summary")]
+    public async Task<ActionResult<AdminSignalSafetySummaryDto>> GetSignalSafetySummary(
+        CancellationToken ct = default)
+    {
+        var summary = await _signalService.GetSignalSafetySummaryAsync(ct);
+        return Ok(new AdminSignalSafetySummaryDto(
+            CefrUpdatesDisabled: summary.CefrUpdatesDisabled,
+            ObjectiveCompletionsDisabled: summary.ObjectiveCompletionsDisabled,
+            LearningPlanAutoRegenDisabled: summary.LearningPlanAutoRegenDisabled,
+            SignalApplicationEnabled: summary.SignalApplicationEnabled,
+            PositiveSignalsEnabled: summary.PositiveSignalsEnabled,
+            ReviewSignalsEnabled: summary.ReviewSignalsEnabled,
+            TotalApplied: summary.TotalApplied,
+            PositiveApplied: summary.PositiveApplied,
+            ReviewApplied: summary.ReviewApplied,
+            InvariantViolationsDetected: summary.InvariantViolationsDetected));
+    }
+
     private string ResolveConfigStatus()
     {
         var isNoOp = _options.Provider.Equals("NoOp", StringComparison.OrdinalIgnoreCase);
@@ -120,6 +150,7 @@ public sealed class AdminSpeakingEvaluationController : ControllerBase
         if (!_options.Enabled && !isNoOp) return "ProviderConfigured";
         if (_options.Enabled && isNoOp) return "NoOp";
         if (_options.Enabled && !_provider.IsSupported) return "ProviderUnsupported";
+        if (_options.Enabled && !_options.ApplyMasterySignals) return "DryRunOnly";
         return "Enabled";
     }
 }
@@ -149,6 +180,13 @@ public sealed record AdminSpeakingEvaluationQualitySummaryDto(
     bool Enabled,
     bool SupportsTranscript,
     bool SupportsPronunciationScore,
+    // Phase 16J — mastery signal config and thresholds
+    bool ApplyMasterySignals,
+    bool AllowReviewSignals,
+    bool AllowPositiveSignals,
+    string MinimumConfidenceRequired,
+    double MinPositiveOverall,
+    double MinReviewOverallMax,
     SpeakingEvaluationQualitySummaryDto Quality);
 
 public sealed record AdminSpeakingAppliedSignalSummaryDto(
@@ -169,3 +207,15 @@ public sealed record AdminSpeakingAppliedSignalSummaryDto(
     int DuplicateSkipped,
     int NoSignal,
     int FailedApplication);
+
+public sealed record AdminSignalSafetySummaryDto(
+    bool CefrUpdatesDisabled,
+    bool ObjectiveCompletionsDisabled,
+    bool LearningPlanAutoRegenDisabled,
+    bool SignalApplicationEnabled,
+    bool PositiveSignalsEnabled,
+    bool ReviewSignalsEnabled,
+    int TotalApplied,
+    int PositiveApplied,
+    int ReviewApplied,
+    bool InvariantViolationsDetected);

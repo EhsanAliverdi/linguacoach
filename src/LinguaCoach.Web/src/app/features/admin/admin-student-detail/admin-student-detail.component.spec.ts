@@ -2124,6 +2124,9 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
         evaluationSuggestedImprovement: null, evaluationFailureReason: null,
         overallScore: null,
         dryRunOutcome: null, dryRunConfidence: null, dryRunCandidateSkill: null, dryRunBlockedReason: null,
+        isApplied: false, appliedSignalType: null, appliedSignalConfidence: null,
+        appliedSignalBlockedReason: null, appliedAt: null,
+        signalUpdatesCefr: false, signalCompletesObjectives: false,
       }],
     }));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
@@ -2146,12 +2149,74 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
         evaluationSuggestedImprovement: null, evaluationFailureReason: null,
         overallScore: null,
         dryRunOutcome: null, dryRunConfidence: null, dryRunCandidateSkill: null, dryRunBlockedReason: null,
+        isApplied: false, appliedSignalType: null, appliedSignalConfidence: null,
+        appliedSignalBlockedReason: null, appliedAt: null,
+        signalUpdatesCefr: false, signalCompletesObjectives: false,
       }],
     }));
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('[data-testid="speaking-attempt-status"]');
     expect(badge?.textContent).toContain('Pending evaluation');
+  });
+
+  it('shows applied signal badge with invariant labels when isApplied is true', () => {
+    setup(makeSpeakingAttempts({
+      status: 'Ready',
+      attempts: [{
+        attemptId: 'aa3', activityId: 'bb3',
+        activityTitle: 'Roleplay: Meeting', activityType: 'SpeakingRolePlay',
+        submittedAt: '2026-06-28T10:00:00Z',
+        mimeType: 'audio/webm',
+        status: 'Completed',
+        evaluationStatus: 'Completed', evaluationProvider: 'FakeProvider', evaluationModel: 'fake-v1',
+        evaluationCompletedAt: '2026-06-28T10:01:00Z', evaluationFeedbackText: 'Good work.',
+        evaluationSuggestedImprovement: null, evaluationFailureReason: null,
+        overallScore: 85,
+        dryRunOutcome: 'CandidatePositiveSignal', dryRunConfidence: 'High',
+        dryRunCandidateSkill: 'Speaking', dryRunBlockedReason: null,
+        isApplied: true, appliedSignalType: 'Positive', appliedSignalConfidence: 'High',
+        appliedSignalBlockedReason: null, appliedAt: '2026-06-28T10:02:00Z',
+        signalUpdatesCefr: false, signalCompletesObjectives: false,
+      }],
+    }));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('[data-testid="applied-signal-badge"]');
+    expect(badge).toBeTruthy();
+
+    const noCefr = fixture.nativeElement.querySelector('[data-testid="signal-no-cefr"]');
+    expect(noCefr).toBeTruthy();
+
+    const noObjectives = fixture.nativeElement.querySelector('[data-testid="signal-no-objectives"]');
+    expect(noObjectives).toBeTruthy();
+  });
+
+  it('does not show applied signal badge when isApplied is false', () => {
+    setup(makeSpeakingAttempts({
+      status: 'Ready',
+      attempts: [{
+        attemptId: 'aa4', activityId: 'bb4',
+        activityTitle: 'Roleplay: Meeting', activityType: 'SpeakingRolePlay',
+        submittedAt: '2026-06-28T10:00:00Z',
+        mimeType: 'audio/webm',
+        status: 'PendingEvaluation',
+        evaluationStatus: null, evaluationProvider: null, evaluationModel: null,
+        evaluationCompletedAt: null, evaluationFeedbackText: null,
+        evaluationSuggestedImprovement: null, evaluationFailureReason: null,
+        overallScore: null,
+        dryRunOutcome: null, dryRunConfidence: null, dryRunCandidateSkill: null, dryRunBlockedReason: null,
+        isApplied: false, appliedSignalType: null, appliedSignalConfidence: null,
+        appliedSignalBlockedReason: null, appliedAt: null,
+        signalUpdatesCefr: false, signalCompletesObjectives: false,
+      }],
+    }));
+    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('[data-testid="applied-signal-badge"]');
+    expect(badge).toBeFalsy();
   });
 
   it('does not crash when speaking attempts load errors', () => {

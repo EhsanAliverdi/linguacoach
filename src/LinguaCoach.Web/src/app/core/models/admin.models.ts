@@ -1060,6 +1060,16 @@ export interface AdminStudentSpeakingAttempt {
   dryRunConfidence: string | null;
   dryRunCandidateSkill: string | null;
   dryRunBlockedReason: string | null;
+  // Phase 16J — applied signal detail
+  isApplied: boolean;
+  appliedSignalType: string | null;
+  appliedSignalConfidence: string | null;
+  appliedSignalBlockedReason: string | null;
+  appliedAt: string | null;
+  /** Always false — structural invariant. For UI display only. */
+  signalUpdatesCefr: boolean;
+  /** Always false — structural invariant. For UI display only. */
+  signalCompletesObjectives: boolean;
 }
 
 export interface AdminStudentSpeakingAttemptsResult {
@@ -1069,6 +1079,12 @@ export interface AdminStudentSpeakingAttemptsResult {
 }
 
 // Phase 16H — Speaking evaluation quality summary
+
+export interface SpeakingProviderModelCount {
+  providerName: string;
+  modelName: string | null;
+  count: number;
+}
 
 export interface SpeakingEvaluationQualityMetrics {
   total: number;
@@ -1082,6 +1098,7 @@ export interface SpeakingEvaluationQualityMetrics {
   averageFluencyScore: number | null;
   averageCompletenessScore: number | null;
   averageRelevanceScore: number | null;
+  averagePronunciationScore: number | null;
   nullOverallScoreRate: number;
   nullFluencyScoreRate: number;
   nullCompletenessScoreRate: number;
@@ -1090,7 +1107,20 @@ export interface SpeakingEvaluationQualityMetrics {
   dryRunCandidateReviewSignals: number;
   dryRunCandidateNoSignals: number;
   dryRunBlocked: number;
+  // Phase 16J — applied / blocked breakdown
+  dryRunCandidates: number;
+  applied: number;
+  blockedByConfig: number;
+  blockedByConfidence: number;
+  blockedByMissingScore: number;
+  blockedByUnsupportedStatus: number;
+  blockedByFailedEval: number;
+  duplicateSkipped: number;
+  appliedReview: number;
+  appliedPositive: number;
+  providerModelDistribution: SpeakingProviderModelCount[];
   latestFailureReasons: string[];
+  latestBlockedReasons: string[];
 }
 
 export interface AdminSpeakingEvaluationQualitySummary {
@@ -1099,6 +1129,13 @@ export interface AdminSpeakingEvaluationQualitySummary {
   enabled: boolean;
   supportsTranscript: boolean;
   supportsPronunciationScore: boolean;
+  // Phase 16J — mastery signal config and thresholds
+  applyMasterySignals: boolean;
+  allowReviewSignals: boolean;
+  allowPositiveSignals: boolean;
+  minimumConfidenceRequired: string;
+  minPositiveOverall: number;
+  minReviewOverallMax: number;
   quality: SpeakingEvaluationQualityMetrics;
 }
 
@@ -1121,4 +1158,29 @@ export interface AdminSpeakingAppliedSignalSummary {
   duplicateSkipped: number;
   noSignal: number;
   failedApplication: number;
+}
+
+// Phase 16J — Signal safety verification
+export interface AdminSignalSafetySummary {
+  cefrUpdatesDisabled: boolean;
+  objectiveCompletionsDisabled: boolean;
+  learningPlanAutoRegenDisabled: boolean;
+  signalApplicationEnabled: boolean;
+  positiveSignalsEnabled: boolean;
+  reviewSignalsEnabled: boolean;
+  totalApplied: number;
+  positiveApplied: number;
+  reviewApplied: number;
+  invariantViolationsDetected: boolean;
+}
+
+// Phase 16J — Per-attempt applied signal detail
+export interface AdminStudentSpeakingAttemptAppliedSignal {
+  signalType: string | null;
+  confidence: string | null;
+  blockedReason: string | null;
+  appliedAt: string | null;
+  isApplied: boolean;
+  signalUpdatesCefr: boolean;
+  signalCompletesObjectives: boolean;
 }
