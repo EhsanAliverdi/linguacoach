@@ -196,6 +196,186 @@
     }
   </div>
 
+  <!-- ── Generation Quality ───────────────────────────────────────────────── -->
+  <sp-admin-card title="Generation quality — last 30 days" variant="section" padding="md">
+    <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadGenerationQuality()">
+      Refresh
+    </sp-admin-button>
+
+    @if (loadingQuality()) {
+      <sp-admin-loading-state message="Loading generation quality data" />
+    } @else if (qualityError()) {
+      <sp-admin-error-state title="Could not load generation quality" [message]="qualityError()" />
+    } @else if (generationQuality()) {
+
+      <!-- KPI strip -->
+      <div class="sp-admin-kpi-row" style="margin-bottom: 1.25rem;">
+        <sp-admin-kpi-card
+          label="Total failures (30d)"
+          [value]="qFailureSummary()!.totalFailures"
+          [variant]="qFailureSummary()!.totalFailures > 0 ? 'amber' : 'green'"
+          layout="tile" icon="alert" />
+        <sp-admin-kpi-card
+          label="Abandoned (retry failed)"
+          [value]="qFailureSummary()!.abandonedGenerations"
+          [variant]="qFailureSummary()!.abandonedGenerations > 0 ? 'amber' : 'green'"
+          layout="tile" icon="zap" />
+        <sp-admin-kpi-card
+          label="Failures last 24h"
+          [value]="qFailureSummary()!.failuresLast24Hours"
+          [variant]="qFailureSummary()!.failuresLast24Hours > 0 ? 'amber' : 'green'"
+          layout="tile" icon="cpu" />
+        <sp-admin-kpi-card
+          label="Active prompts"
+          [value]="qPromptSummary().length"
+          variant="indigo"
+          layout="tile" icon="database" />
+      </div>
+
+      <!-- Validation failures table -->
+      @if (qLatestFailures().length > 0) {
+        <div style="margin-bottom: 1.25rem;">
+          <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Latest validation failures (up to 20)</h3>
+          <sp-admin-table>
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Pattern</th>
+                  <th>Type</th>
+                  <th>CEFR</th>
+                  <th>Attempt</th>
+                  <th>Errors</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of qLatestFailures(); track f.timestampUtc) {
+                  <tr>
+                    <td class="sp-admin-nowrap">{{ formatDateTime(f.timestampUtc) }}</td>
+                    <td>
+                      @if (f.patternKey) {
+                        <sp-admin-code-pill [value]="f.patternKey" />
+                      } @else {
+                        <span class="sp-admin-text-muted">—</span>
+                      }
+                    </td>
+                    <td>{{ f.activityTypeName }}</td>
+                    <td>
+                      @if (f.cefrLevel) {
+                        <sp-admin-badge tone="info">{{ f.cefrLevel }}</sp-admin-badge>
+                      } @else {
+                        <span class="sp-admin-text-muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      <sp-admin-badge [tone]="f.attemptNumber === 2 ? 'danger' : 'warning'">{{ f.attemptNumber === 2 ? 'Retry' : 'First' }}</sp-admin-badge>
+                    </td>
+                    <td><sp-admin-truncated-text [value]="f.validationErrors" [maxLength]="80" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </sp-admin-table>
+        </div>
+      } @else {
+        <sp-admin-empty-state
+          icon="check"
+          title="No validation failures in the last 30 days"
+          message="All generated content passed validation." />
+      }
+
+      <!-- Pattern breakdown + CEFR breakdown grid -->
+      @if (qPatternBreakdown().length > 0 || qCefrBreakdown().length > 0) {
+        <div class="sp-admin-card-grid-2" style="margin-top: 1.25rem;">
+          @if (qPatternBreakdown().length > 0) {
+            <sp-admin-card title="Pattern failure breakdown" variant="section" padding="md">
+              <sp-admin-table>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pattern</th>
+                      <th>Failures</th>
+                      <th>Abandoned</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of qPatternBreakdown(); track p.patternKey) {
+                      <tr>
+                        <td><sp-admin-code-pill [value]="p.patternKey" /></td>
+                        <td>{{ p.totalFailures }}</td>
+                        <td>
+                          @if (p.abandonedCount > 0) {
+                            <sp-admin-badge tone="danger">{{ p.abandonedCount }}</sp-admin-badge>
+                          } @else {
+                            <span class="sp-admin-text-muted">0</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </sp-admin-table>
+            </sp-admin-card>
+          }
+          @if (qCefrBreakdown().length > 0) {
+            <sp-admin-card title="CEFR failure breakdown" variant="section" padding="md">
+              <sp-admin-table>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>CEFR</th>
+                      <th>Failures</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of qCefrBreakdown(); track c.cefrLevel) {
+                      <tr>
+                        <td><sp-admin-badge tone="info">{{ c.cefrLevel }}</sp-admin-badge></td>
+                        <td>{{ c.totalFailures }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </sp-admin-table>
+            </sp-admin-card>
+          }
+        </div>
+      }
+
+      <!-- Prompt version summary -->
+      @if (qPromptSummary().length > 0) {
+        <div style="margin-top: 1.25rem;">
+          <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Active prompt version summary</h3>
+          <sp-admin-table>
+            <table>
+              <thead>
+                <tr>
+                  <th>Prompt key</th>
+                  <th>Version</th>
+                  <th>Max input tokens</th>
+                  <th>Max output tokens</th>
+                  <th>Seeded at</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of qPromptSummary(); track p.id) {
+                  <tr>
+                    <td><sp-admin-code-pill [value]="p.key" /></td>
+                    <td>v{{ p.version }}</td>
+                    <td>{{ p.maxInputTokens ?? '—' }}</td>
+                    <td>{{ p.maxOutputTokens ?? '—' }}</td>
+                    <td class="sp-admin-nowrap">{{ formatDateTime(p.seededAtUtc) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </sp-admin-table>
+        </div>
+      }
+
+    }
+  </sp-admin-card>
+
   <!-- ── Background Jobs ───────────────────────────────────────────────────── -->
   <div class="sp-admin-table-section" aria-label="Background jobs">
     <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">

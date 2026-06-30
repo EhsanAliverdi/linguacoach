@@ -218,7 +218,8 @@ public sealed record PromptTemplateItem(
     int Version,
     bool IsActive,
     int? MaxInputTokens,
-    int? MaxOutputTokens);
+    int? MaxOutputTokens,
+    DateTime SeededAtUtc);
 
 public sealed record PromptTemplateDetail(
     Guid Id,
@@ -424,4 +425,39 @@ public interface IAdminDashboardAggregateHandler
     Task<AdminDashboardScoreDistributionResponse> GetScoreDistributionAsync(string period, CancellationToken ct = default);
     Task<AdminAiUsageTrendResponse> GetAiUsageTrendsAsync(string period, CancellationToken ct = default);
     Task<AdminAiUsageCategoryBreakdownResponse> GetAiUsageCategoryBreakdownAsync(string period, CancellationToken ct = default);
+}
+
+// ── Generation quality ────────────────────────────────────────────────────────
+
+public sealed record ValidationFailureItem(
+    DateTime TimestampUtc,
+    string? PatternKey,
+    string ActivityTypeName,
+    string? CefrLevel,
+    string? ObjectiveKey,
+    string ValidationErrors,
+    int AttemptNumber);
+
+public sealed record PatternFailureBreakdownItem(
+    string PatternKey,
+    int TotalFailures,
+    int AbandonedCount,
+    string? LatestError);
+
+public sealed record CefrFailureBreakdownItem(
+    string CefrLevel,
+    int TotalFailures);
+
+public sealed record GenerationQualitySummary(
+    int TotalValidationFailures,
+    int AbandonedGenerations,
+    int RecentFailureCount,
+    IReadOnlyList<ValidationFailureItem> LatestFailures,
+    IReadOnlyList<PatternFailureBreakdownItem> PatternBreakdown,
+    IReadOnlyList<CefrFailureBreakdownItem> CefrBreakdown,
+    IReadOnlyList<PromptTemplateItem> PromptSummary);
+
+public interface IAdminGenerationQualityHandler
+{
+    Task<GenerationQualitySummary> GetSummaryAsync(int recentDays = 30, CancellationToken ct = default);
 }

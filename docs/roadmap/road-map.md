@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-01 (Phase 18A complete)**
+**Accurate as of: 2026-07-01 (Phase 18A-F complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,16 +14,16 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 18A — Lesson Quality and Content Generation Upgrade (2026-07-01)
+**Latest phase completed:** Phase 18A-F — Generation Quality Admin Visibility (2026-07-01)
 
 **Branch:** main
 
-**Test totals (as of 18A):**
-- Backend unit: 1,633 (+6 from Phase 18A)
-- Backend integration: 1,311 (8 pre-existing AI-provider failures, no regressions)
+**Test totals (as of 18A-F):**
+- Backend unit: 1,640 (+7 from Phase 18A-F)
+- Backend integration: 1,310 (9 pre-existing AI-provider failures, no regressions)
 - Architecture: 3
-- **Backend total: 2,947**
-- Angular unit (Karma): unchanged
+- **Backend total: 2,953**
+- Angular unit (Karma): 1,414 success / 119 pre-existing failures (down 1 from baseline); 33/33 diagnostics spec
 - Playwright E2E: unchanged
 
 **Build:** Clean production build. No known open build errors.
@@ -144,6 +144,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 59 | Phase 17B: Writing Evaluation Quality Validation | AI | 2026-06-30 | Dry-run signal mapper, quality summary admin endpoint, per-attempt dry-run fields |
 | 60 | Phase 17C: Writing Mastery Signal Controlled Integration | AI | 2026-06-30 | Config-gated signal application job, audit entity, 5-gate pipeline, admin summary |
 | 61 | Phase 18A: Lesson Quality and Content Generation Upgrade | AI / Quality | 2026-07-01 | CEFR calibration tables in writing/listening/speaking prompts; support-language optional in 6 prompts; CEFR-aware pattern selection in batch planner; validator: empty-string check + option ID consistency |
+| 62 | Phase 18A-F: Generation Quality Admin Visibility | Admin / Quality | 2026-07-01 | GenerationValidationFailure entity + T69 migration; generation validation failures persisted from AiActivityGeneratorHandler; GET /api/admin/generation-quality/summary endpoint; Generation Quality card on Diagnostics page; prompt SeededAtUtc visibility; privacy/safety hardened |
 
 ---
 

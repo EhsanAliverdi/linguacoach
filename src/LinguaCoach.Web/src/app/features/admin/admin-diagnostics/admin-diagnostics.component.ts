@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
+import { GenerationQualityService, GenerationQualitySummary } from '../../../core/services/generation-quality.service';
 import { SpAdminEventFeedComponent, EventFeedItem } from '../../../design-system/admin/components/event-feed/sp-admin-event-feed.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import {
@@ -145,11 +146,23 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
     { value: '500', label: '500' },
   ];
 
-  constructor(private svc: DiagnosticsService) {}
+  // ── Generation quality ─────────────────────────────────────────────────────
+  generationQuality = signal<GenerationQualitySummary | null>(null);
+  loadingQuality = signal(false);
+  qualityError = signal('');
+
+  readonly qFailureSummary = computed(() => this.generationQuality()?.validationFailureSummary ?? null);
+  readonly qLatestFailures = computed(() => this.generationQuality()?.latestFailures ?? []);
+  readonly qPatternBreakdown = computed(() => this.generationQuality()?.patternFailureBreakdown ?? []);
+  readonly qCefrBreakdown = computed(() => this.generationQuality()?.cefrFailureBreakdown ?? []);
+  readonly qPromptSummary = computed(() => this.generationQuality()?.promptSummary ?? []);
+
+  constructor(private svc: DiagnosticsService, private qualitySvc: GenerationQualityService) {}
 
   ngOnInit(): void {
     this.loadStatus();
     this.loadEvents();
+    this.loadGenerationQuality();
   }
 
   ngOnDestroy(): void {
@@ -195,6 +208,15 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
     }
+  }
+
+  loadGenerationQuality(): void {
+    this.loadingQuality.set(true);
+    this.qualityError.set('');
+    this.qualitySvc.getSummary(30).subscribe({
+      next: q => { this.generationQuality.set(q); this.loadingQuality.set(false); },
+      error: err => { this.loadingQuality.set(false); this.qualityError.set(err.error?.error ?? 'Could not load generation quality data.'); },
+    });
   }
 
   readonly eventLevelLabel = eventLevelLabel;

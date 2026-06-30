@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-01 (18A)
+lastUpdated: 2026-07-01 (18A-F)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,46 @@ Last updated: 2026-07-01
 ---
 
 ## Active sprint
+
+**Phase 18A-F — Generation Quality Admin Visibility** — complete (2026-07-01)
+
+Adds lightweight admin visibility for prompt versions, generation validation failures, and content quality diagnostics. No new activity formats, no player changes, no CEFR updates from AI, no objective completion from AI, no LP regeneration from AI.
+
+**New Domain:**
+- `GenerationValidationFailure` — append-only entity for content validation failures, with patternKey, activityTypeName, cefrLevel, validationErrors, attemptNumber
+
+**New Persistence:**
+- `GenerationValidationFailureConfiguration` — EF config
+- `DbSet<GenerationValidationFailure>` added to DbContext
+- Migration T69_GenerationValidationFailures
+
+**Modified Infrastructure:**
+- `AiActivityGeneratorHandler` — persists validation failure records on first-attempt and retry failures (non-blocking; exceptions caught and logged)
+- `AdminGenerationQualityHandler` — new handler implementing `IAdminGenerationQualityHandler`
+- `AdminHandler.ListPromptsAsync` — now includes `SeededAtUtc` in PromptTemplateItem
+
+**New Application:**
+- `PromptTemplateItem` — extended with `SeededAtUtc`
+- `ValidationFailureItem`, `PatternFailureBreakdownItem`, `CefrFailureBreakdownItem`, `GenerationQualitySummary` DTOs
+- `IAdminGenerationQualityHandler` interface
+
+**New API:**
+- `GET /api/admin/generation-quality/summary` — admin-only; returns prompt version summary and validation failure diagnostics; no provider secrets or storage keys exposed
+
+**New Angular:**
+- `GenerationQualityService` — typed HTTP service
+- Diagnostics page — Generation Quality card with KPI strip, failures table, pattern/CEFR breakdown, prompt summary
+
+**Tests added:**
+- `GenerationQualityHandlerTests` (unit) — 7 tests: empty state, failure counts, pattern breakdown, CEFR breakdown, latest failures limit, safe fields, active-only prompts
+- `AdminGenerationQualityEndpointTests` (integration) — 8 tests: auth guard (401, 403), response shape, prompt summary, failure counts, pattern breakdown, no secrets exposed, invalid recentDays
+- `admin-diagnostics.component.spec.ts` — 6 new tests for generation quality section (+1 fixed pre-existing)
+
+**Build/test totals:** Backend unit: 1,640 (+7). Integration: 1,310 (9 pre-existing AI-provider failures; no new regressions). Arch: 3. Angular: 33/33 diagnostics spec (119 pre-existing failures across all Angular specs, down 1 from 120 baseline).
+
+Review: `docs/reviews/2026-07-01-phase-18a-f-generation-quality-admin-visibility-review.md`.
+
+---
 
 **Phase 18A — Lesson Quality and Content Generation Upgrade** — complete (2026-07-01)
 

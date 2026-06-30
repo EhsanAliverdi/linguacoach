@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
@@ -139,14 +140,18 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                 if (!check.IsValid)
                 {
+                    await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, ct);
                     var retryResponse = await _aiExecution.ExecuteAsync(
                         promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
                     cleaned = CleanJson(retryResponse);
                     ValidateIsJson(cleaned);
                     var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!retryCheck.IsValid)
+                    {
+                        await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, ct);
                         throw new AiResponseValidationException(
                             $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
+                    }
                 }
                 break;
             }
@@ -157,14 +162,18 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                     var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!check.IsValid)
                     {
+                        await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, ct);
                         var retryResponse = await _aiExecution.ExecuteAsync(
                             promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
                         cleaned = CleanJson(retryResponse);
                         ValidateIsJson(cleaned);
                         var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                         if (!retryCheck.IsValid)
+                        {
+                            await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, ct);
                             throw new AiResponseValidationException(
                                 $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
+                        }
                     }
                 }
                 break;
@@ -334,5 +343,30 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ? null
             : new PracticeCountSettings(counts.Value.MinItems, counts.Value.MaxItems, counts.Value.MinOpts, counts.Value.MaxOpts);
         return ModuleStageContentValidator.Validate(doc.RootElement, activityType, exercisePatternKey, countSettings);
+    }
+
+    private async Task LogValidationFailureAsync(
+        ActivityGenerationContext context,
+        IReadOnlyList<string> errors,
+        int attemptNumber,
+        CancellationToken ct)
+    {
+        try
+        {
+            var failure = new GenerationValidationFailure(
+                activityTypeName: context.ActivityType.ToString(),
+                validationErrors: string.Join("; ", errors),
+                attemptNumber: attemptNumber,
+                patternKey: context.ExercisePatternKey,
+                cefrLevel: context.CefrLevel,
+                objectiveKey: null);
+
+            _db.GenerationValidationFailures.Add(failure);
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to persist generation validation failure record (non-blocking).");
+        }
     }
 }

@@ -773,7 +773,7 @@ public sealed class AdminHandler :
             .ToListAsync(ct);
 
         return prompts.Select(p => new PromptTemplateItem(
-            p.Id, p.Key, p.Version, p.IsActive, p.MaxInputTokens, p.MaxOutputTokens))
+            p.Id, p.Key, p.Version, p.IsActive, p.MaxInputTokens, p.MaxOutputTokens, p.CreatedAt))
             .ToList();
     }
 

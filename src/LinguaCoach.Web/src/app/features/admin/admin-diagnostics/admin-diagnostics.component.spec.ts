@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AdminDiagnosticsComponent } from './admin-diagnostics.component';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
+import { GenerationQualityService, GenerationQualitySummary } from '../../../core/services/generation-quality.service';
 
 function makeStatus(overrides: Partial<DiagnosticsStatus> = {}): DiagnosticsStatus {
   return {
@@ -33,17 +34,36 @@ function makeEvent(overrides: Partial<DiagnosticEventItem> = {}): DiagnosticEven
   };
 }
 
+function makeQualitySummary(overrides: Partial<GenerationQualitySummary> = {}): GenerationQualitySummary {
+  return {
+    recentDays: 30,
+    validationFailureSummary: { totalFailures: 0, abandonedGenerations: 0, failuresLast24Hours: 0 },
+    latestFailures: [],
+    patternFailureBreakdown: [],
+    cefrFailureBreakdown: [],
+    promptSummary: [],
+    ...overrides,
+  };
+}
+
 describe('AdminDiagnosticsComponent', () => {
   let svc: jasmine.SpyObj<DiagnosticsService>;
+  let qualitySvc: jasmine.SpyObj<GenerationQualityService>;
 
   beforeEach(() => {
     svc = jasmine.createSpyObj('DiagnosticsService', ['getStatus', 'getEvents']);
     svc.getStatus.and.returnValue(of(makeStatus()));
     svc.getEvents.and.returnValue(of({ enabled: true, total: 1, items: [makeEvent()] }));
 
+    qualitySvc = jasmine.createSpyObj('GenerationQualityService', ['getSummary']);
+    qualitySvc.getSummary.and.returnValue(of(makeQualitySummary()));
+
     TestBed.configureTestingModule({
       imports: [AdminDiagnosticsComponent],
-      providers: [{ provide: DiagnosticsService, useValue: svc }],
+      providers: [
+        { provide: DiagnosticsService, useValue: svc },
+        { provide: GenerationQualityService, useValue: qualitySvc },
+      ],
     });
   });
 
@@ -264,5 +284,51 @@ describe('AdminDiagnosticsComponent', () => {
     const header = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-page-header');
     expect(header).toBeTruthy();
     expect(header!.getAttribute('subtitle') ?? header!.textContent).toBeTruthy();
+  });
+
+  // ── Generation quality section ────────────────────────────────────────────
+
+  it('renders generation quality card with empty state when no failures', () => {
+    qualitySvc.getSummary.and.returnValue(of(makeQualitySummary()));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('sp-admin-empty-state')).toBeTruthy();
+  });
+
+  it('loadingQuality signal is exposed and settable', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    // loadingQuality starts as a writable signal
+    fixture.componentInstance.loadingQuality.set(true);
+    expect(fixture.componentInstance.loadingQuality()).toBeTrue();
+    fixture.componentInstance.loadingQuality.set(false);
+    expect(fixture.componentInstance.loadingQuality()).toBeFalse();
+  });
+
+  it('renders generation quality error state', () => {
+    qualitySvc.getSummary.and.returnValue(throwError(() => ({ error: { error: 'Network error' } })));
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('sp-admin-error-state')).toBeTruthy();
+  });
+
+  it('loadGenerationQuality calls getSummary with 30 days', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.detectChanges();
+    expect(qualitySvc.getSummary).toHaveBeenCalledWith(30);
+  });
+
+  it('qLatestFailures computed returns empty array when quality is null', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    fixture.componentInstance.generationQuality.set(null);
+    expect(fixture.componentInstance.qLatestFailures()).toEqual([]);
+  });
+
+  it('qPromptSummary computed returns prompts when quality is loaded', () => {
+    const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
+    const prompt = { id: 'abc', key: 'test_key', version: 2, isActive: true, maxInputTokens: 1000, maxOutputTokens: 500, seededAtUtc: '2026-01-01T00:00:00Z' };
+    fixture.componentInstance.generationQuality.set(makeQualitySummary({ promptSummary: [prompt] }));
+    expect(fixture.componentInstance.qPromptSummary()).toEqual([prompt]);
   });
 });
