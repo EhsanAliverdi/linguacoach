@@ -119,6 +119,21 @@ AI:        Provider abstraction, prompt templates in PostgreSQL,
 - Do not put business logic in controllers.
 - Do not put EF Core attributes in Domain entities.
 
+## EF Core migration rule (mandatory)
+
+**Every time you add, remove, or change a Domain entity, DbSet, or EF configuration, you must generate a migration in the same change.**
+
+Steps:
+```bash
+dotnet ef migrations add <TNN_DescriptiveName> \
+  --project src/LinguaCoach.Persistence \
+  --startup-project src/LinguaCoach.Api
+```
+
+Name format: `T<number>_<PascalCaseName>` (e.g. `T68_WritingEvaluationAppliedSignals`).
+
+Never leave a model change without a matching migration. The API crashes on startup with `PendingModelChangesWarning` if a migration is missing. This has broken CI/CD repeatedly.
+
 ## Learning model
 
 ```
