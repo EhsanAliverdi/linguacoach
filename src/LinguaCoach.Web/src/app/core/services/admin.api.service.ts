@@ -39,6 +39,8 @@ import {
   AdminSpeakingEvaluationQualitySummary,
   AdminSpeakingAppliedSignalSummary,
   AdminSignalSafetySummary,
+  WritingEvaluationQualitySummaryDto,
+  WritingEvaluationWithDryRunDto,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -120,6 +122,15 @@ export class AdminApiService {
   getSignalSafetySummary(): Observable<AdminSignalSafetySummary> {
     return this.http.get<AdminSignalSafetySummary>(`${this.api}/speaking-evaluation/signal-safety-summary`);
   }
+
+  // Phase 17B — Writing evaluation quality summary and dry-run signal
+  getWritingEvaluationQualitySummary(): Observable<WritingEvaluationQualitySummaryDto> {
+    return this.http.get<WritingEvaluationQualitySummaryDto>(`${this.api}/writing-evaluation/quality-summary`);
+  }
+  getWritingEvaluationWithDryRun(id: string): Observable<WritingEvaluationWithDryRunDto> {
+    return this.http.get<WritingEvaluationWithDryRunDto>(`${this.api}/writing-evaluation/${id}/dry-run`);
+  }
+
   getStudentProgressSummary(studentId: string): Observable<AdminStudentProgressSummary> {
     return this.http.get<AdminStudentProgressSummary>(`${this.api}/students/${studentId}/progress-summary`);
   }

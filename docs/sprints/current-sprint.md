@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-30 (16J)
+lastUpdated: 2026-06-30 (17B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,42 @@ Last updated: 2026-06-30
 ---
 
 ## Active sprint
+
+**Phase 17B — Writing Evaluation Quality Validation and Mastery Signal Dry-Run** — complete (2026-06-30)
+
+Adds dry-run signal computation, pipeline quality summary endpoints, and Angular service hooks for the writing evaluation pipeline. Mirrors Phase 16H speaking dry-run pattern. No mastery, CEFR, objective, or Learning Plan state is modified by this phase.
+
+**New Domain enums:**
+- `WritingDryRunSignalOutcome` — CandidatePositiveSignal, CandidateReviewSignal, CandidateNoSignal, and five Blocked* variants
+- `WritingDryRunConfidenceBand` — Low, Medium, High
+
+**New Application layer:**
+- `WritingEvaluationDryRunSignal` — computed-only class (never persisted, never applied to mastery)
+- `WritingDryRunSignalMapper` — pure static mapper (no DB, no side effects)
+- `WritingEvaluationQualitySummaryDto` — pipeline-wide quality metrics DTO
+- `WritingEvaluationDryRunSignalDto` — serializable dry-run signal DTO
+- `WritingEvaluationWithDryRunDto` — evaluation + signal combo DTO
+- `IAdminWritingEvaluationQuery` — 2 methods added: `GetQualitySummaryAsync`, `GetWithDryRunAsync`
+
+**Modified Infrastructure:**
+- `AdminWritingEvaluationHandler` — implements new query methods; injects `WritingEvaluationOptions` for config state; uses mapper to compute dry-run signals
+
+**Modified API:**
+- `AdminWritingEvaluationController` — added `GET /api/admin/writing-evaluation/quality-summary` and `GET /api/admin/writing-evaluation/{id}/dry-run`
+
+**Modified Angular:**
+- `admin.models.ts` — `WritingEvaluationQualitySummaryDto`, `WritingEvaluationDryRunSignalDto`, `WritingEvaluationWithDryRunDto` interfaces
+- `admin.api.service.ts` — `getWritingEvaluationQualitySummary()` and `getWritingEvaluationWithDryRun(id)` methods
+
+**Tests added:**
+- `WritingDryRunSignalMapperTests.cs` (unit) — 15 tests: status gates, confidence bands, outcome classification, corrected text impact, no-mastery/no-CEFR/no-objective invariants
+- `WritingEvaluationQualitySummaryTests.cs` (integration) — 6 tests: auth (401/403), empty state, quality summary with seeded data, dry-run endpoint 404/200, anonymous 401
+
+**Build/test totals:** Backend unit: 1,613 (+15). Integration: 1,302 (+6). Arch: 3. Angular unit: 1,527. Production build: clean.
+
+Review: `docs/reviews/2026-06-30-phase-17b-writing-evaluation-quality-validation-review.md`.
+
+---
 
 **Phase 16J — Speaking Signal Quality Tuning and Production Dry-Run Review** — complete (2026-06-30)
 

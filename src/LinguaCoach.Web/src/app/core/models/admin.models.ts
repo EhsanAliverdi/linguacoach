@@ -1184,3 +1184,80 @@ export interface AdminStudentSpeakingAttemptAppliedSignal {
   signalUpdatesCefr: boolean;
   signalCompletesObjectives: boolean;
 }
+
+// Phase 17B — Writing evaluation quality summary and dry-run signal
+
+export interface WritingEvaluationQualitySummaryDto {
+  configEnabled: boolean;
+  providerName: string | null;
+  modelName: string | null;
+  totalEvaluations: number;
+  pendingCount: number;
+  evaluatingCount: number;
+  completedCount: number;
+  failedCount: number;
+  notSupportedCount: number;
+  completionRate: number;
+  failureRate: number;
+  nullOverallScoreRate: number;
+  nullGrammarScoreRate: number;
+  nullVocabularyScoreRate: number;
+  nullCoherenceScoreRate: number;
+  nullTaskCompletionScoreRate: number;
+  correctedTextAvailabilityRate: number;
+  averageOverallScore: number | null;
+  averageGrammarScore: number | null;
+  averageVocabularyScore: number | null;
+  averageCoherenceScore: number | null;
+  averageTaskCompletionScore: number | null;
+  dryRunCandidateCount: number;
+  dryRunBlockedCount: number;
+  dryRunOutcomeBreakdown: Record<string, number>;
+  latestFailureReasons: string[];
+  note: string;
+}
+
+export interface WritingEvaluationDryRunSignalDto {
+  evaluationId: string;
+  attemptId: string;
+  studentId: string;
+  activityId: string;
+  createdAt: string;
+  providerName: string | null;
+  modelName: string | null;
+  sourceStatus: string;
+  candidateSkill: string;
+  overallScore: number | null;
+  grammarScore: number | null;
+  vocabularyScore: number | null;
+  coherenceScore: number | null;
+  taskCompletionScore: number | null;
+  confidenceBand: string;
+  outcome: string;
+  suggestedMasteryDelta: number | null;
+  suggestedReviewNeed: boolean;
+  acceptedForFutureSignal: boolean;
+  blockedReason: string | null;
+  notes: string | null;
+}
+
+export interface WritingEvaluationWithDryRunDto {
+  evaluationId: string;
+  attemptId: string;
+  studentId: string;
+  activityId: string;
+  status: string;
+  providerName: string | null;
+  modelName: string | null;
+  completedAtUtc: string | null;
+  overallScore: number | null;
+  grammarScore: number | null;
+  vocabularyScore: number | null;
+  coherenceScore: number | null;
+  taskCompletionScore: number | null;
+  feedbackText: string | null;
+  suggestedImprovement: string | null;
+  correctedText: string | null;
+  failureReason: string | null;
+  dryRunSignal: WritingEvaluationDryRunSignalDto | null;
+}

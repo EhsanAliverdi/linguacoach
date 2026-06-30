@@ -334,7 +334,7 @@ Phases recommended in order of priority. Dependencies are noted.
 |---------:|-------|------|----------|-------------|
 | ~~1~~ | ~~16J~~ | ~~Speaking signal quality tuning~~ | ~~Complete (2026-06-30)~~ | ~~Phase 16I complete~~ |
 | 1 | 17A | AI writing evaluation foundation | Writing is the largest unscored skill area; rubric-based feedback; admin + student visibility | 16J complete |
-| 2 | 17B | Writing evaluation quality validation + dry-run signals | Same quality gate pattern as 16H before enabling mastery signals | Phase 17A complete |
+| 2 | 17B | Writing evaluation quality validation + dry-run signals | Same quality gate pattern as 16H before enabling mastery signals | **Complete 2026-06-30** |
 
 ### Tier 2 — Near-term (phases 4–7)
 
@@ -396,16 +396,20 @@ Phases recommended in order of priority. Dependencies are noted.
 
 ---
 
-### Phase 17B — Writing Evaluation Quality Validation and Dry-Run Signals
+### Phase 17B — Writing Evaluation Quality Validation and Dry-Run Signals — COMPLETE (2026-06-30)
 
-**Purpose:** Same quality gate as Phase 16H. Dry-run signal mapper for writing evaluations. Quality summary admin endpoint. Per-attempt dry-run outcome fields. No mastery state changes.
+**Purpose:** Same quality gate as Phase 16H. Dry-run signal mapper for writing evaluations. Quality summary admin endpoint. No mastery state changes.
 
-**Scope:**
-- `WritingDryRunSignalMapper` (pure static)
-- `WritingEvaluationQualityHandler`
-- Admin quality summary endpoint
-- Admin student detail dry-run fields
-- 10+ unit tests, 10+ integration tests
+**Delivered:**
+- `WritingDryRunSignalOutcome` and `WritingDryRunConfidenceBand` enums
+- `WritingDryRunSignalMapper` (pure static, no DB, no side effects)
+- `WritingEvaluationDryRunSignal`, `WritingEvaluationQualitySummaryDto`, `WritingEvaluationDryRunSignalDto`, `WritingEvaluationWithDryRunDto`
+- `GET /api/admin/writing-evaluation/quality-summary` — admin pipeline metrics
+- `GET /api/admin/writing-evaluation/{id}/dry-run` — per-evaluation dry-run signal
+- Angular: `WritingEvaluationQualitySummaryDto` and `WritingEvaluationWithDryRunDto` interfaces; `getWritingEvaluationQualitySummary()` and `getWritingEvaluationWithDryRun()` service methods
+- 15 unit tests + 6 integration tests added
+
+**Out of scope:** Mastery signals, CEFR update, objective completion, admin UI component (deferred to 17C).
 
 ---
 
