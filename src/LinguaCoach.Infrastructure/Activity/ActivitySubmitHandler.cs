@@ -7,6 +7,7 @@ using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Application.Vocabulary;
+using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
@@ -32,6 +33,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly ILearningPlanService _learningPlan;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
+    private readonly IWritingEvaluationService _writingEvaluation;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -49,6 +51,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         ILearningPlanService learningPlan,
         ILearningGoalContextResolver goalContextResolver,
         IPracticeGymSuggestionService practiceGymSuggestions,
+        IWritingEvaluationService writingEvaluation,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -65,6 +68,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _learningPlan = learningPlan;
         _goalContextResolver = goalContextResolver;
         _practiceGymSuggestions = practiceGymSuggestions;
+        _writingEvaluation = writingEvaluation;
         _logger = logger;
     }
 
@@ -233,6 +237,13 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         _logger.LogInformation("Attempt saved AttemptId={AttemptId} ActivityId={ActivityId} Score={Score}",
             attempt.Id, activity.Id, score);
+
+        // Phase 17A — Non-fatal writing evaluation trigger. Never blocks submission.
+        if (activity.ActivityType == ActivityType.WritingScenario &&
+            !string.IsNullOrWhiteSpace(command.SubmittedContent))
+        {
+            await _writingEvaluation.RequestEvaluationAsync(attempt.Id, profile.Id, activity.Id, ct);
+        }
 
         var legacyLinkedExercise = await _db.SessionExercises
             .Where(e => e.LearningActivityId == activity.Id)

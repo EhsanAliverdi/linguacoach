@@ -468,6 +468,31 @@ public static class DependencyInjection
         services.AddScoped<Jobs.SpeakingEvaluationJob>();
         services.AddScoped<Jobs.SpeakingEvaluationSignalApplicationJob>();
 
+        // Phase 17A — Writing Evaluation Foundation
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Application.Writing.WritingEvaluationOptions>(
+                configuration.GetSection(LinguaCoach.Application.Writing.WritingEvaluationOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Application.Writing.WritingEvaluationOptions>(_ => { });
+
+        services.AddScoped<LinguaCoach.Infrastructure.Writing.NoOpWritingEvaluationProvider>();
+        services.AddScoped<LinguaCoach.Infrastructure.Writing.OpenAiWritingEvaluationProvider>();
+        services.AddScoped<LinguaCoach.Application.Writing.IWritingEvaluationProvider>(sp =>
+        {
+            var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<
+                LinguaCoach.Application.Writing.WritingEvaluationOptions>>().Value;
+            return opts.Provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase)
+                ? (LinguaCoach.Application.Writing.IWritingEvaluationProvider)
+                  sp.GetRequiredService<LinguaCoach.Infrastructure.Writing.OpenAiWritingEvaluationProvider>()
+                : sp.GetRequiredService<LinguaCoach.Infrastructure.Writing.NoOpWritingEvaluationProvider>();
+        });
+
+        services.AddScoped<LinguaCoach.Application.Writing.IWritingEvaluationService,
+            LinguaCoach.Infrastructure.Writing.WritingEvaluationService>();
+        services.AddScoped<LinguaCoach.Application.Writing.IAdminWritingEvaluationQuery,
+            LinguaCoach.Infrastructure.Writing.AdminWritingEvaluationHandler>();
+        services.AddScoped<Jobs.WritingEvaluationJob>();
+
         return services;
     }
 }

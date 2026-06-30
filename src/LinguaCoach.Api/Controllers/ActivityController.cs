@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
+using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -34,6 +35,7 @@ public sealed class ActivityController : ControllerBase
     private readonly IPracticeGymPoolService _practiceGymPool;
     private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
     private readonly ISpeakingEvaluationService _speakingEvaluation;
+    private readonly IWritingEvaluationService _writingEvaluation;
     private readonly ILogger<ActivityController> _logger;
 
     private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
@@ -53,6 +55,7 @@ public sealed class ActivityController : ControllerBase
         IPracticeGymPoolService practiceGymPool,
         LinguaCoach.Application.Storage.IFileStorageService storage,
         ISpeakingEvaluationService speakingEvaluation,
+        IWritingEvaluationService writingEvaluation,
         ILogger<ActivityController> logger)
     {
         _getNextActivity = getNextActivity;
@@ -69,6 +72,7 @@ public sealed class ActivityController : ControllerBase
         _practiceGymPool = practiceGymPool;
         _storage = storage;
         _speakingEvaluation = speakingEvaluation;
+        _writingEvaluation = writingEvaluation;
         _logger = logger;
     }
 
@@ -865,6 +869,26 @@ public sealed class ActivityController : ControllerBase
         if (profile is null) return Unauthorized();
 
         var evaluation = await _speakingEvaluation.GetEvaluationAsync(attemptId, profile.Id, ct);
+        if (evaluation is null) return NotFound();
+
+        return Ok(evaluation);
+    }
+
+    /// <summary>
+    /// Returns the writing evaluation status and result for a submitted written attempt.
+    /// Returns 404 when no evaluation record exists. Never exposes raw provider payloads.
+    /// </summary>
+    [HttpGet("{activityId:guid}/attempts/{attemptId:guid}/writing-evaluation")]
+    public async Task<IActionResult> GetWritingEvaluation(
+        Guid activityId, Guid attemptId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var evaluation = await _writingEvaluation.GetEvaluationAsync(attemptId, profile.Id, ct);
         if (evaluation is null) return NotFound();
 
         return Ok(evaluation);

@@ -4767,6 +4767,120 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("vocabulary_entries", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.WritingEvaluation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActivityAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("activity_attempt_id");
+
+                    b.Property<double?>("CoherenceScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("coherence_score");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<string>("CorrectedText")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)")
+                        .HasColumnName("corrected_text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTime?>("FailedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("failed_at_utc");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<string>("FeedbackText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("feedback_text");
+
+                    b.Property<double?>("GrammarScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("grammar_score");
+
+                    b.Property<Guid>("LearningActivityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("learning_activity_id");
+
+                    b.Property<string>("ModelName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model_name");
+
+                    b.Property<double?>("OverallScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("overall_score");
+
+                    b.Property<string>("ProviderName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_name");
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("retry_count");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_profile_id");
+
+                    b.Property<string>("SuggestedImprovement")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("suggested_improvement");
+
+                    b.Property<double?>("TaskCompletionScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("task_completion_score");
+
+                    b.Property<double?>("VocabularyScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("vocabulary_score");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityAttemptId")
+                        .HasDatabaseName("ix_writing_evaluations_attempt");
+
+                    b.HasIndex("LearningActivityId")
+                        .HasDatabaseName("ix_writing_evaluations_activity");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_writing_evaluations_status");
+
+                    b.HasIndex("StudentProfileId")
+                        .HasDatabaseName("ix_writing_evaluations_student");
+
+                    b.ToTable("writing_evaluations", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.WritingScenario", b =>
                 {
                     b.Property<Guid>("Id")

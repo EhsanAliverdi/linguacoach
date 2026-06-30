@@ -113,6 +113,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{SpeakingEvaluationSignalApplicationJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(10).RepeatForever()));
 
+            // Writing evaluation — every 5 minutes. Resolves Pending evaluations.
+            var writingEvalKey = new JobKey(WritingEvaluationJob.JobName);
+            q.AddJob<WritingEvaluationJob>(opts => opts.WithIdentity(writingEvalKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(writingEvalKey)
+                .WithIdentity($"{WritingEvaluationJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());

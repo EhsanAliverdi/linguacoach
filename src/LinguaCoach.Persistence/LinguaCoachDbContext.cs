@@ -90,6 +90,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 16I — Speaking evaluation mastery signal integration
     public DbSet<SpeakingEvaluationAppliedSignal> SpeakingEvaluationAppliedSignals => Set<SpeakingEvaluationAppliedSignal>();
 
+    // Phase 17A — Writing evaluation foundation
+    public DbSet<WritingEvaluation> WritingEvaluations => Set<WritingEvaluation>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();
