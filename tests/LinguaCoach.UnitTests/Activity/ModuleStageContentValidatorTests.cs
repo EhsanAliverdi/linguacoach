@@ -3594,4 +3594,232 @@ public sealed class ModuleStageContentValidatorTests
         result.IsValid.Should().BeFalse("Phase 10D count enforcement must still fire");
         result.Errors.Should().Contain(e => e.Contains("outside allowed range"));
     }
+
+    // ── Phase 18A: empty-string validation tests ───────────────────────────────
+
+    [Fact]
+    public void Validate_Phase18A_EmptyPrompt_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Write a reply.",
+            "exerciseData": {
+              "incomingMessage": "Hi, please update me on the project.",
+              "recipient": "colleague",
+              "relationship": "colleague",
+              "tone": "semi-formal",
+              "prompt": "   "
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.WritingScenario, "email_reply");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("prompt") && e.Contains("empty"));
+    }
+
+    [Fact]
+    public void Validate_Phase18A_EmptyAudioScript_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Listen and answer.",
+            "exerciseData": {
+              "audioScript": "",
+              "questions": [{ "id": "q1", "question": "What was asked?", "expectedAnswer": "report", "type": "short_answer" }]
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.ListeningComprehension, "listen_and_answer");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("audioScript") && e.Contains("empty"));
+    }
+
+    [Fact]
+    public void Validate_Phase18A_ValidReadingMcSingle_Passes()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Read and choose.",
+            "exerciseData": {
+              "passage": "The project deadline was extended by one week.",
+              "question": "What happened to the deadline?",
+              "options": [
+                { "id": "A", "text": "It was moved earlier." },
+                { "id": "B", "text": "It was extended by one week." },
+                { "id": "C", "text": "It was cancelled." },
+                { "id": "D", "text": "It stayed the same." }
+              ],
+              "correctOptionId": "B"
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_Phase18A_DuplicateOptionId_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Read and choose.",
+            "exerciseData": {
+              "passage": "The project deadline was extended by one week.",
+              "question": "What happened to the deadline?",
+              "options": [
+                { "id": "A", "text": "It was moved earlier." },
+                { "id": "A", "text": "It was extended by one week." },
+                { "id": "C", "text": "It was cancelled." },
+                { "id": "D", "text": "It stayed the same." }
+              ],
+              "correctOptionId": "C"
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("duplicate") && e.Contains("A"));
+    }
+
+    [Fact]
+    public void Validate_Phase18A_CorrectOptionIdNotInOptions_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Read and choose.",
+            "exerciseData": {
+              "passage": "The project deadline was extended by one week.",
+              "question": "What happened to the deadline?",
+              "options": [
+                { "id": "A", "text": "It was moved earlier." },
+                { "id": "B", "text": "It was extended by one week." },
+                { "id": "C", "text": "It was cancelled." },
+                { "id": "D", "text": "It stayed the same." }
+              ],
+              "correctOptionId": "E"
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("correctOptionId") && e.Contains("E"));
+    }
+
+    [Fact]
+    public void Validate_Phase18A_CorrectOptionIdsContainsUnknownId_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Read and choose all correct.",
+            "exerciseData": {
+              "passage": "The project was delayed and the budget exceeded.",
+              "question": "What problems occurred?",
+              "options": [
+                { "id": "A", "text": "Delay" },
+                { "id": "B", "text": "Budget overrun" },
+                { "id": "C", "text": "Staff shortage" }
+              ],
+              "correctOptionIds": ["A", "B", "Z"]
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_multi");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("correctOptionIds") && e.Contains("Z"));
+    }
+
+    [Fact]
+    public void Validate_Phase18A_EmptyPassage_Fails()
+    {
+        const string json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "learnContent": {
+            "teachingTitle": "T", "explanation": "E", "keyPoints": [], "strategy": null,
+            "commonMistakes": [], "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Read and choose.",
+            "exerciseData": {
+              "passage": "",
+              "question": "What is the main idea?",
+              "options": [
+                { "id": "A", "text": "Option A" },
+                { "id": "B", "text": "Option B" },
+                { "id": "C", "text": "Option C" },
+                { "id": "D", "text": "Option D" }
+              ],
+              "correctOptionId": "A"
+            }
+          },
+          "feedbackPlan": { "evaluationCriteria": [], "rubric": [], "feedbackFocus": null, "successCriteria": [] }
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(Parse(json), ActivityType.ReadingTask, "reading_multiple_choice_single");
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("passage") && e.Contains("empty"));
+    }
 }

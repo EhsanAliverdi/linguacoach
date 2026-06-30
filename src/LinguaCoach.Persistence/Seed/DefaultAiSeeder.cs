@@ -150,6 +150,15 @@ Critical Learn-stage rules:
 - Keep all content appropriate for {{cefrLevel}} and {{careerContext}}.
 - Do not include real company names, secrets, phone numbers, or sensitive content.
 
+CEFR calibration for writing tasks:
+| Level | Prompt complexity       | Expected output length | Grammar scope                    |
+|-------|-------------------------|------------------------|----------------------------------|
+| A1    | Single familiar topic   | 2-3 short sentences    | Simple present/past, basic nouns |
+| A2    | Familiar workplace task | 4-6 sentences          | Simple past, common phrases      |
+| B1    | Routine professional    | 80-120 words           | Present perfect, connectors      |
+| B2    | Complex or nuanced      | 120-180 words          | Conditionals, passive, precision |
+Use this table to set prompt complexity, expectedLength, and rubric weight emphasis.
+
 Duration rules:
 - estimatedDurationMinutes, estimatedLearnMinutes, estimatedPracticeMinutes, estimatedFeedbackMinutes must all be positive integers.
 - estimatedLearnMinutes + estimatedPracticeMinutes + estimatedFeedbackMinutes must not exceed estimatedDurationMinutes.
@@ -248,7 +257,7 @@ Return ONLY valid JSON (no markdown) matching this exact structure:
     "examples": [{"phrase": "<useful general phrase>", "meaning": "<meaning>", "note": "<when to use it>"}],
     "strategy": "<one sentence: what to listen for in general - action, deadline, reason>",
     "commonMistakes": ["<1-3 common listening mistakes>"],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence listening tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "Read the situation first. Then listen and answer the questions. The transcript is hidden until after you submit.",
@@ -293,6 +302,15 @@ Critical rules:
 - Do not use real company names, real person names, secrets, phone numbers, or sensitive content.
 - expectedAnswer is for backend evaluation only.
 - Do not include text outside the JSON object. No markdown fences.
+
+CEFR calibration for listening tasks:
+| Level | Audio script length | Vocabulary complexity | Question type                  |
+|-------|---------------------|-----------------------|--------------------------------|
+| A1    | 25-40 words         | Everyday, simple      | Single-fact retrieval          |
+| A2    | 40-60 words         | Common workplace      | Fact + simple action           |
+| B1    | 60-90 words         | Routine professional  | Detail + implied action        |
+| B2    | 80-120 words        | Complex professional  | Detail, inference, implication |
+Match audioScript length, vocabulary density, and question depth to {{cefrLevel}}.
 
 Duration rules:
 - estimatedDurationMinutes, estimatedLearnMinutes, estimatedPracticeMinutes, estimatedFeedbackMinutes must all be positive integers.
@@ -350,7 +368,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON object):
       "<common speaking mistake for this situation>",
       "<common fluency or tone mistake>"
     ],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence pronunciation or speaking tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "<clear roleplay instruction telling the student what to do in Practice>",
@@ -418,8 +436,16 @@ Rules:
 - successChecklist items are what the evaluator checks.
 - requiredPhrases and targetVocabulary are optional coaching aids — keep them short.
 - Do not use real company names, real person names, phone numbers, or sensitive content.
-- B1 tasks should be simple and direct; B2 tasks may require more structure.
 - Do not include any text outside the JSON object.
+
+CEFR calibration for speaking tasks:
+| Level | Response complexity       | Response length | Language features expected                    |
+|-------|---------------------------|-----------------|-----------------------------------------------|
+| A1    | Single idea, direct       | 2-3 sentences   | Simple present, basic nouns, simple requests  |
+| A2    | Two linked ideas          | 3-5 sentences   | Simple past/future, common workplace phrases  |
+| B1    | Structured, purposeful    | 30-45 seconds   | Connectors, hedging, polite requests          |
+| B2    | Nuanced or multi-part     | 45-60 seconds   | Conditionals, persuasion, precise vocabulary  |
+Set prompt, expectedResponseLength, and successChecklist to match {{cefrLevel}}.
 
 Duration rules:
 - estimatedDurationMinutes, estimatedLearnMinutes, estimatedPracticeMinutes, estimatedFeedbackMinutes must all be positive integers.
@@ -656,7 +682,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON):
     ],
     "strategy": "<one sentence: how to recognise phrase meaning from workplace context>",
     "commonMistakes": ["<one common vocabulary mistake>"],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence vocabulary tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "Match each phrase to its correct meaning.",
@@ -715,7 +741,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON):
     ],
     "strategy": "<one sentence: how to use context to choose the missing word>",
     "commonMistakes": ["<one common mistake for this language point>"],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence grammar or vocabulary tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "Fill in each blank with the correct workplace word or phrase.",
@@ -776,7 +802,7 @@ Create a realistic spoken workplace message (voicemail, meeting snippet, or team
       "<common listening error 1>",
       "<common listening error 2>"
     ],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence listening tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "Listen to the message and answer the questions.",
@@ -851,7 +877,7 @@ Create a spoken workplace message with 4-5 key words/phrases for the student to 
       "<common gap-fill listening error 1>",
       "<common gap-fill listening error 2>"
     ],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence listening tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "Listen and fill in the missing words.",
@@ -1016,7 +1042,7 @@ Create a realistic chat exchange where the student must write a professional rep
       "<common chat writing mistake {{sourceLanguageName}} speakers make, e.g. writing too formally>",
       "<second common mistake, e.g. being too brief without enough information>"
     ],
-    "sourceLanguageSupport": null
+    "sourceLanguageSupport": "<optional 1-sentence chat tone tip in {{sourceLanguageName}} if it helps, otherwise null>"
   },
   "practiceContent": {
     "instructions": "Read the chat thread and write the next message.",
@@ -4390,6 +4416,15 @@ Rules:
 - Match difficulty to the learner's studentLevel and domainComplexity.
 - Address the recurringIssues and nextFocusRecommendation from the summary.
 - Do not include any text outside the JSON array.
+
+CEFR-aware pattern selection guidance:
+| Level | Prefer                                     | Avoid or limit                         |
+|-------|--------------------------------------------|----------------------------------------|
+| A1    | phrase_match, gap_fill_workplace_phrase    | Multi-step writing tasks               |
+| A2    | gap_fill_workplace_phrase, listen_and_answer | Long email tasks without scaffolding |
+| B1    | email_reply, listen_and_answer, spoken_response_from_prompt | All-vocabulary sessions |
+| B2    | teams_chat_simulation, spoken_response_from_prompt, email_reply | Over-scaffolded A2-style tasks |
+Use the learner's studentLevel from the summary to select patterns that are appropriately challenging.
 """;
 
     private const string WritingPromptContent = """

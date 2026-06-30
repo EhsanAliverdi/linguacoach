@@ -235,6 +235,8 @@ public static class ModuleStageContentValidator
                 {
                     if (!HasPropertyIgnoreCase(exerciseData, requiredKey))
                         errors.Add($"practiceContent.exerciseData is missing required field \"{requiredKey}\".");
+                    else
+                        ValidateStringFieldNotEmpty(exerciseData, requiredKey, errors);
                 }
 
                 if (exercisePatternKey is not null
@@ -246,6 +248,15 @@ public static class ModuleStageContentValidator
 
                 if (countSettings is not null && exercisePatternKey is not null)
                     EnforceWorkloadSanity(exerciseData, exercisePatternKey, countSettings, errors);
+            }
+
+            // Option ID consistency for multiple-choice formats (runs even without count settings).
+            if (exercisePatternKey is not null)
+            {
+                var exerciseDataForMc = practiceContent.TryGetProperty("exerciseData", out var edMc) && edMc.ValueKind == JsonValueKind.Object
+                    ? edMc
+                    : practiceContent;
+                ValidateOptionConsistency(exerciseDataForMc, exercisePatternKey, errors);
             }
         }
 
@@ -422,6 +433,106 @@ public static class ModuleStageContentValidator
                         $"estimatedPracticeMinutes is {practiceMinutes} but {itemField} has only {itemCount} item(s). " +
                         $"Increase item count or reduce estimated practice time.");
                 }
+            }
+        }
+    }
+
+    // String fields that must not be empty when present as required fields.
+    private static readonly HashSet<string> CriticalStringFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "prompt", "audioScript", "passage", "question", "instructions",
+        "incompleteText", "incomingMessage", "partnerTurn", "sourceText",
+        "chatHistory", "displayTranscript",
+    };
+
+    private static void ValidateStringFieldNotEmpty(JsonElement obj, string name, List<string> errors)
+    {
+        if (!CriticalStringFields.Contains(name)) return;
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (!string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
+            if (prop.Value.ValueKind == JsonValueKind.String
+                && string.IsNullOrWhiteSpace(prop.Value.GetString()))
+                errors.Add($"practiceContent.exerciseData.\"{name}\" must not be empty or whitespace.");
+            return;
+        }
+    }
+
+    private static readonly HashSet<string> SingleAnswerMcPatterns = new(StringComparer.Ordinal)
+    {
+        "reading_multiple_choice_single",
+        "listening_multiple_choice_single",
+        "select_missing_word",
+        "highlight_correct_summary",
+    };
+
+    private static readonly HashSet<string> MultiAnswerMcPatterns = new(StringComparer.Ordinal)
+    {
+        "reading_multiple_choice_multi",
+        "listening_multiple_choice_multi",
+    };
+
+    private static void ValidateOptionConsistency(JsonElement exerciseData, string patternKey, List<string> errors)
+    {
+        var isSingle = SingleAnswerMcPatterns.Contains(patternKey);
+        var isMulti = MultiAnswerMcPatterns.Contains(patternKey);
+        if (!isSingle && !isMulti) return;
+
+        var optionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var optionsFound = false;
+
+        foreach (var prop in exerciseData.EnumerateObject())
+        {
+            if (!string.Equals(prop.Name, "options", StringComparison.OrdinalIgnoreCase)
+                || prop.Value.ValueKind != JsonValueKind.Array)
+                continue;
+
+            optionsFound = true;
+            foreach (var option in prop.Value.EnumerateArray())
+            {
+                if (option.ValueKind != JsonValueKind.Object) continue;
+                if (!option.TryGetProperty("id", out var idProp)
+                    || idProp.ValueKind != JsonValueKind.String) continue;
+                var id = idProp.GetString() ?? string.Empty;
+                if (!seen.Add(id))
+                    errors.Add($"practiceContent.exerciseData.options contains duplicate id \"{id}\".");
+                else
+                    optionIds.Add(id);
+            }
+            break;
+        }
+
+        if (!optionsFound || optionIds.Count == 0) return;
+
+        if (isSingle)
+        {
+            foreach (var prop in exerciseData.EnumerateObject())
+            {
+                if (!string.Equals(prop.Name, "correctOptionId", StringComparison.OrdinalIgnoreCase)
+                    || prop.Value.ValueKind != JsonValueKind.String)
+                    continue;
+                var correctId = prop.Value.GetString() ?? string.Empty;
+                if (!optionIds.Contains(correctId))
+                    errors.Add($"practiceContent.exerciseData.correctOptionId \"{correctId}\" does not match any option id.");
+                break;
+            }
+        }
+        else
+        {
+            foreach (var prop in exerciseData.EnumerateObject())
+            {
+                if (!string.Equals(prop.Name, "correctOptionIds", StringComparison.OrdinalIgnoreCase)
+                    || prop.Value.ValueKind != JsonValueKind.Array)
+                    continue;
+                foreach (var idEl in prop.Value.EnumerateArray())
+                {
+                    if (idEl.ValueKind != JsonValueKind.String) continue;
+                    var id = idEl.GetString() ?? string.Empty;
+                    if (!optionIds.Contains(id))
+                        errors.Add($"practiceContent.exerciseData.correctOptionIds contains \"{id}\" which does not match any option id.");
+                }
+                break;
             }
         }
     }

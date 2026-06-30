@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-30 (17C)
+lastUpdated: 2026-07-01 (18A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,41 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-06-30
+Last updated: 2026-07-01
 
 ---
 
 ## Active sprint
+
+**Phase 18A — Lesson Quality and Content Generation Upgrade** — complete (2026-07-01)
+
+Improves generated lesson content quality across all activity types. No new activity formats, no player changes, no CEFR updates from AI, no objective completion from AI, no LP regeneration from AI, no live provider calls in tests.
+
+**Modified Application:**
+- `ModuleStageContentValidator` — added empty-string validation for 12 critical string fields (prompt, audioScript, passage, question, instructions, incompleteText, incomingMessage, partnerTurn, sourceText, chatHistory, displayTranscript); added option ID consistency validation for single-answer MC (correctOptionId present in options, no duplicate IDs) and multi-answer MC (all correctOptionIds present in options)
+
+**Modified Persistence / Seed:**
+- `DefaultAiSeeder.ActivityGenerateWritingContent` — added CEFR calibration table (A1–B2 prompt complexity, expected output length, grammar scope)
+- `DefaultAiSeeder.ActivityGenerateListeningContent` — added CEFR calibration table (audio script length, vocabulary complexity, question type per level); changed `"sourceLanguageSupport": null` to optional instruction
+- `DefaultAiSeeder.ActivityGenerateSpeakingRolePlayContent` — added CEFR calibration table (response complexity, length, language features per level); changed `"sourceLanguageSupport": null` to optional instruction
+- `DefaultAiSeeder.LessonBatchPlanContent` — added CEFR-aware pattern selection guidance table
+- `DefaultAiSeeder.ActivityGeneratePhraseMatchContent` — changed `"sourceLanguageSupport": null` to optional instruction
+- `DefaultAiSeeder.ActivityGenerateGapFillContent` — changed `"sourceLanguageSupport": null` to optional instruction
+- `DefaultAiSeeder.ActivityGenerateListenAndAnswerContent` — changed `"sourceLanguageSupport": null` to optional instruction
+- `DefaultAiSeeder.ActivityGenerateListenAndGapFillContent` — changed `"sourceLanguageSupport": null` to optional instruction
+- `DefaultAiSeeder.ActivityGenerateTeamsChatContent` — changed `"sourceLanguageSupport": null` to optional instruction
+All prompt changes use SHA256 hash-based upgrade mechanism — no migration required.
+
+**Tests added:**
+- `ModuleStageContentValidatorTests` (unit) — 7 new tests: empty prompt fails, empty audioScript fails, empty passage fails, valid MC single passes, duplicate option ID fails, correctOptionId not in options fails, correctOptionIds containing unknown ID fails
+
+**Backward compatibility:** All changes are additive. Existing persisted content with populated strings passes unchanged. Support language field previously null stays null until AI regenerates.
+
+**Build/test totals:** Backend unit: 1,633 (+6 net new, 1 pre-existing integration baseline). Integration: 1,311 (8 pre-existing AI-provider failures; no regressions introduced). Arch: 3. Angular: unchanged.
+
+Review: `docs/reviews/2026-07-01-phase-18a-lesson-quality-content-generation-upgrade-review.md`.
+
+---
 
 **Phase 17C — Writing Mastery Signal Controlled Integration** — complete (2026-06-30)
 

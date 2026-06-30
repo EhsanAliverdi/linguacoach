@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-06-30
+lastUpdated: 2026-07-01
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-06-30 (Phase 16J complete)**
+**Accurate as of: 2026-07-01 (Phase 18A complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 16J — Speaking Signal Quality Tuning and Production Dry-Run Review (2026-06-30)
+**Latest phase completed:** Phase 18A — Lesson Quality and Content Generation Upgrade (2026-07-01)
 
 **Branch:** main
 
-**Test totals (as of 16J):**
-- Backend unit: 1,581 (+16)
-- Backend integration: 1,281 (+4)
+**Test totals (as of 18A):**
+- Backend unit: 1,633 (+6 from Phase 18A)
+- Backend integration: 1,311 (8 pre-existing AI-provider failures, no regressions)
 - Architecture: 3
-- **Backend total: 2,865**
-- Angular unit (Karma): 124 (+2 in admin-student-detail suite)
-- Playwright E2E: 262+ (growing, tracked separately)
+- **Backend total: 2,947**
+- Angular unit (Karma): unchanged
+- Playwright E2E: unchanged
 
 **Build:** Clean production build. No known open build errors.
 
@@ -141,6 +141,9 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 56 | Phase 16H: Speaking Evaluation Quality | AI | 2026-06-30 | Dry-run signal mapper, quality summary endpoint |
 | 57 | Phase 16I: Speaking Mastery Signals | AI | 2026-06-30 | Config-gated signal job, audit entity, 5-gate pipeline |
 | 58 | Phase 16J: Speaking Signal Quality Tuning | AI | 2026-06-30 | Configurable thresholds, safety summary endpoint, middle band (56–79)=NoSignal, per-student applied signal visibility |
+| 59 | Phase 17B: Writing Evaluation Quality Validation | AI | 2026-06-30 | Dry-run signal mapper, quality summary admin endpoint, per-attempt dry-run fields |
+| 60 | Phase 17C: Writing Mastery Signal Controlled Integration | AI | 2026-06-30 | Config-gated signal application job, audit entity, 5-gate pipeline, admin summary |
+| 61 | Phase 18A: Lesson Quality and Content Generation Upgrade | AI / Quality | 2026-07-01 | CEFR calibration tables in writing/listening/speaking prompts; support-language optional in 6 prompts; CEFR-aware pattern selection in batch planner; validator: empty-string check + option ID consistency |
 
 ---
 
