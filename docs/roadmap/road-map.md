@@ -232,7 +232,7 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 | Speaking mastery signals | Config-gated | `SpeakingEvaluation__ApplyMasterySignals` (default false) | Review signals only; CEFR update = never; objective completion = never |
 | Review scaffold generation | Not enabled globally | Deferred | Dry-run infrastructure exists |
 | Provider-backed writing evaluation pipeline | Not implemented | N/A | Phase 17A target; writing feedback today is AI-generated but not via a dedicated evaluation pipeline with mastery integration |
-| Writing mastery signals | Not implemented | N/A | Phase 17C target; no writing signal application job exists yet |
+| Writing mastery signals | Implemented (controlled) | Phase 17C | Config-gated 5-gate pipeline; `ApplyMasterySignals` defaults false; review signals only by default; CEFR/objective/LP-regen permanently disabled |
 | STT (speech-to-text) pipeline | Not implemented as reusable service | N/A | `FakeSpeechToTextService` used for legacy SpeakingRolePlay; speaking evaluation provider may do transcription internally when a real provider is configured; no standalone `ISpeechToTextService` is wired to a real provider |
 | Real-time AI conversation | Deferred | N/A | Call Mode is P3; requires real STT + privacy review |
 
@@ -264,7 +264,7 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 - Admin audio playback is not yet wired in the admin Angular UI. The backend stream endpoint (`GET /api/admin/students/{id}/speaking-attempts/{attemptId}/audio`) exists and is secured, but the admin UI shows "Audio submitted — playback not available in admin yet." Bearer-token-aware blob streaming in the admin UI is deferred.
 
 ### Writing Evaluation
-- AI writing evaluation mastery signals not implemented. Writing feedback exists but does not feed mastery engine.
+- AI writing evaluation mastery signals implemented in Phase 17C (controlled, default off). Positive signals disabled by default. Enable via `ApplyMasterySignals = true` in config.
 
 ### Review Scaffold
 - Infrastructure exists but global enablement is not done. Dry-run validation required first.
@@ -340,7 +340,7 @@ Phases recommended in order of priority. Dependencies are noted.
 
 | Priority | Phase | Area | Why Next | Dependencies |
 |---------:|-------|------|----------|-------------|
-| 4 | 17C | Writing mastery signal controlled integration | Writing signals behind same 5-gate config-gated pipeline as speaking | Phase 17B complete |
+| ~~4~~ | ~~17C~~ | ~~Writing mastery signal controlled integration~~ | ~~**Complete 2026-06-30**~~ | ~~Phase 17B complete~~ |
 | 5 | 18A | Lesson quality and content generation upgrade | Improve lesson templates, hints, support-language explanations, feedback quality | 17C or parallel |
 | 6 | 18B | Advanced feedback UX | Retry/revise flow, feedback breakdowns, reflection prompts, examples | 18A |
 | 7 | 19A | Review scaffold controlled enablement | Enable after extended dry-run validation confirms quality | 17C complete |
@@ -413,16 +413,26 @@ Phases recommended in order of priority. Dependencies are noted.
 
 ---
 
-### Phase 17C — Writing Mastery Signal Controlled Integration
+### Phase 17C — Writing Mastery Signal Controlled Integration — COMPLETE (2026-06-30)
 
-**Purpose:** Config-gated writing mastery signal application. Same 5-gate pipeline as 16I. Review signals only. No CEFR update, no objective completion, no Learning Plan regeneration from writing AI.
+**Purpose:** Config-gated writing mastery signal application. Same 5-gate pipeline as 16I. Review signals only by default. No CEFR update, no objective completion, no Learning Plan regeneration from writing AI — all structurally enforced.
 
-**Scope:**
-- `WritingEvaluationAppliedSignal` entity
-- `IWritingEvaluationSignalApplicationService`
-- `WritingSignalApplicationJob` (Quartz, every 10 minutes)
-- Config: `ApplyMasterySignals` (default false), `MinimumConfidenceForMasterySignal`, `AllowReviewSignals`, `AllowPositiveSignals`
-- Admin applied signals summary endpoint
+**Delivered:**
+- `WritingEvaluationAppliedSignal` entity (audit record, unique per evaluation, rule version "17C-v1")
+- `IWritingEvaluationSignalApplicationService` + `WritingEvaluationSignalApplicationService` (5-gate pipeline)
+- `WritingEvaluationSignalApplicationJob` (Quartz, `[DisallowConcurrentExecution]`, every 10 minutes, batch 20)
+- Config: `ApplyMasterySignals` (default false), `MinimumConfidenceForMasterySignal` (default "High"), `AllowReviewSignals` (default true), `AllowPositiveSignals` (default false)
+- `GET /api/admin/writing-evaluation/applied-signals-summary` and `signal-safety-summary` admin endpoints
+- Angular Writing Evaluations card in admin-student-detail with invariant labels
+- Migration T68 — `writing_evaluation_applied_signals` table with unique index on `evaluation_id`
+- 13 unit tests + 8 integration tests; all green
+
+**Safety invariants permanently enforced:**
+- `AllowCefrUpdate = false` (computed, not configurable)
+- `AllowObjectiveCompletion = false` (computed, not configurable)
+- No `ILearningPlanService` dependency — Learning Plan cannot be regenerated
+
+**Tests:** Unit 1,626 / Integration 1,311 / Arch 3 — all pass. Angular production build clean.
 
 ---
 

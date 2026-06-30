@@ -39,8 +39,11 @@ import {
   AdminSpeakingEvaluationQualitySummary,
   AdminSpeakingAppliedSignalSummary,
   AdminSignalSafetySummary,
+  AdminWritingEvaluationItemDto,
   WritingEvaluationQualitySummaryDto,
   WritingEvaluationWithDryRunDto,
+  WritingSignalApplicationSummaryDto,
+  WritingSignalSafetySummaryDto,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -123,12 +126,25 @@ export class AdminApiService {
     return this.http.get<AdminSignalSafetySummary>(`${this.api}/speaking-evaluation/signal-safety-summary`);
   }
 
+  // Phase 17A — Per-student writing evaluations
+  getStudentWritingEvaluations(studentId: string): Observable<AdminWritingEvaluationItemDto[]> {
+    return this.http.get<AdminWritingEvaluationItemDto[]>(`${this.api}/students/${studentId}/writing-evaluations`);
+  }
+
   // Phase 17B — Writing evaluation quality summary and dry-run signal
   getWritingEvaluationQualitySummary(): Observable<WritingEvaluationQualitySummaryDto> {
     return this.http.get<WritingEvaluationQualitySummaryDto>(`${this.api}/writing-evaluation/quality-summary`);
   }
   getWritingEvaluationWithDryRun(id: string): Observable<WritingEvaluationWithDryRunDto> {
     return this.http.get<WritingEvaluationWithDryRunDto>(`${this.api}/writing-evaluation/${id}/dry-run`);
+  }
+
+  // Phase 17C — Writing evaluation signal application summary and safety
+  getWritingAppliedSignalsSummary(): Observable<WritingSignalApplicationSummaryDto> {
+    return this.http.get<WritingSignalApplicationSummaryDto>(`${this.api}/writing-evaluation/applied-signals-summary`);
+  }
+  getWritingSignalSafetySummary(): Observable<WritingSignalSafetySummaryDto> {
+    return this.http.get<WritingSignalSafetySummaryDto>(`${this.api}/writing-evaluation/signal-safety-summary`);
   }
 
   getStudentProgressSummary(studentId: string): Observable<AdminStudentProgressSummary> {

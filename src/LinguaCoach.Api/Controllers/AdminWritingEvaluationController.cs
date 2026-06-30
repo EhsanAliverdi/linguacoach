@@ -9,7 +9,8 @@ namespace LinguaCoach.Api.Controllers;
 /// Admin read-only visibility into writing evaluation results and quality metrics.
 /// Phase 17A — per-student listing.
 /// Phase 17B — pipeline quality summary and per-evaluation dry-run signal preview.
-/// No mutations. Dry-run signals never applied to mastery, CEFR, or Learning Plan.
+/// Phase 17C — applied signal summary and safety invariant verification.
+/// No mutations. Signals never update CEFR, complete objectives, or regenerate Learning Plan.
 /// </summary>
 [ApiController]
 [Authorize(Roles = nameof(UserRole.Admin))]
@@ -17,8 +18,15 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class AdminWritingEvaluationController : ControllerBase
 {
     private readonly IAdminWritingEvaluationQuery _query;
+    private readonly IWritingEvaluationSignalApplicationService _signalService;
 
-    public AdminWritingEvaluationController(IAdminWritingEvaluationQuery query) => _query = query;
+    public AdminWritingEvaluationController(
+        IAdminWritingEvaluationQuery query,
+        IWritingEvaluationSignalApplicationService signalService)
+    {
+        _query = query;
+        _signalService = signalService;
+    }
 
     /// <summary>
     /// Returns all writing evaluations for the given student profile, newest first.
@@ -54,5 +62,29 @@ public sealed class AdminWritingEvaluationController : ControllerBase
         var result = await _query.GetWithDryRunAsync(id, ct);
         if (result is null) return NotFound();
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns applied signal counts, config status, and blocked breakdowns.
+    /// CEFR updates, objective completions, and Learning Plan regeneration are permanently disabled.
+    /// </summary>
+    [HttpGet("/api/admin/writing-evaluation/applied-signals-summary")]
+    public async Task<ActionResult<WritingSignalApplicationSummaryDto>> GetAppliedSignalsSummary(
+        CancellationToken ct = default)
+    {
+        var summary = await _signalService.GetSummaryAsync(ct);
+        return Ok(summary);
+    }
+
+    /// <summary>
+    /// Returns invariant safety verification confirming structural safety rules are in effect.
+    /// Confirms CEFR updates, objective completions, and LP auto-regen are permanently off.
+    /// </summary>
+    [HttpGet("/api/admin/writing-evaluation/signal-safety-summary")]
+    public async Task<ActionResult<WritingSignalSafetySummaryDto>> GetSignalSafetySummary(
+        CancellationToken ct = default)
+    {
+        var summary = await _signalService.GetSignalSafetySummaryAsync(ct);
+        return Ok(summary);
     }
 }

@@ -92,6 +92,8 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
 
     // Phase 17A — Writing evaluation foundation
     public DbSet<WritingEvaluation> WritingEvaluations => Set<WritingEvaluation>();
+    // Phase 17C — Writing evaluation mastery signal integration
+    public DbSet<WritingEvaluationAppliedSignal> WritingEvaluationAppliedSignals => Set<WritingEvaluationAppliedSignal>();
 
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();

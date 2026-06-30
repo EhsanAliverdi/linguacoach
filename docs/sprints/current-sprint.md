@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-30 (17B)
+lastUpdated: 2026-06-30 (17C)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,52 @@ Last updated: 2026-06-30
 ---
 
 ## Active sprint
+
+**Phase 17C — Writing Mastery Signal Controlled Integration** — complete (2026-06-30)
+
+Adds the full controlled-integration pipeline for writing mastery signals. Mirrors Phase 16I speaking pattern. No CEFR updates, no objective completion, no Learning Plan regeneration — all structurally disabled.
+
+**New Domain:**
+- `WritingEvaluationAppliedSignal` — immutable audit record, one per evaluation, rule version "17C-v1"
+- `LearningEventSource.WritingEvaluation` — new enum value
+
+**New Application:**
+- `IWritingEvaluationSignalApplicationService` — 3-method interface
+- `WritingSignalApplicationBatchResult` — batch processing counters record
+- `WritingSignalApplicationSummaryDto` — admin dashboard metrics record
+- `WritingSignalSafetySummaryDto` — invariant confirmation record
+- `WritingEvaluationOptions` — 4 new config properties: `ApplyMasterySignals` (default false), `MinimumConfidenceForMasterySignal` (default "High"), `AllowReviewSignals` (default true), `AllowPositiveSignals` (default false)
+
+**New Infrastructure:**
+- `WritingEvaluationSignalApplicationService` — 5-gate pipeline: status, dry-run, config, confidence, signal-type + idempotency; creates `StudentLearningEvent` and `StudentSkillProfile` side-effects; writes `WritingEvaluationAppliedSignal` audit record
+
+**New Background Job:**
+- `WritingEvaluationSignalApplicationJob` — `[DisallowConcurrentExecution]`, runs every 10 minutes, batch size 20
+
+**New Persistence:**
+- `WritingEvaluationAppliedSignalConfiguration` — table `writing_evaluation_applied_signals`, unique index on `evaluation_id`
+- Migration `T68_WritingEvaluationAppliedSignal`
+
+**Modified API:**
+- `AdminWritingEvaluationController` — added `GET /api/admin/writing-evaluation/applied-signals-summary` and `GET /api/admin/writing-evaluation/signal-safety-summary`
+- `QuartzConfiguration` — writing signal application job trigger (every 10 minutes)
+- `appsettings.json` — 4 new `WritingEvaluation` config keys
+
+**Modified Angular:**
+- `admin.models.ts` — `AdminWritingEvaluationItemDto`, `WritingSignalApplicationSummaryDto`, `WritingSignalSafetySummaryDto` interfaces
+- `admin.api.service.ts` — `getStudentWritingEvaluations()`, `getWritingAppliedSignalsSummary()`, `getWritingSignalSafetySummary()` methods
+- `admin-student-detail.component.ts` — writing evaluations signals + `loadWritingEvaluations()` + `writingStatusTone()` helper
+- `admin-student-detail.component.html` — Writing Evaluations card with invariant labels (data-testid: writing-evaluations-card, writing-no-cefr, writing-no-objectives, writing-no-lp-regen, writing-evaluation-row)
+
+**Tests added:**
+- `WritingSignalApplicationServiceTests.cs` (unit) — 13 tests: all 5 gates, idempotency, config defaults, safety invariants, summary counts
+- `WritingSignalApplicationTests.cs` (integration) — 8 tests: auth (401/403 for both endpoints), admin 200 with correct shape, invariants confirmed, per-student writing evaluations auth
+
+**Build/test totals:** Backend unit: 1,626 (+13). Integration: 1,311 (+8). Arch: 3. Angular: production build clean.
+
+Review: `docs/reviews/2026-06-30-phase-17c-writing-mastery-signal-controlled-integration-review.md`.
+
+---
 
 **Phase 17B — Writing Evaluation Quality Validation and Mastery Signal Dry-Run** — complete (2026-06-30)
 

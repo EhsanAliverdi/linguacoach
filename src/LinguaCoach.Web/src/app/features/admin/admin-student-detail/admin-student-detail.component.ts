@@ -9,6 +9,7 @@ import {
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
+  AdminWritingEvaluationItemDto,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -169,6 +170,11 @@ export class AdminStudentDetailComponent implements OnInit {
   speakingAttemptsLoading = signal(true);
   speakingAttemptsError = signal('');
 
+  // Phase 17C — Writing evaluations
+  writingEvaluations = signal<AdminWritingEvaluationItemDto[]>([]);
+  writingEvaluationsLoading = signal(true);
+  writingEvaluationsError = signal('');
+
   progressSummary = signal<AdminStudentProgressSummary | null>(null);
   progressSummaryLoading = signal(true);
   progressSummaryError = signal('');
@@ -304,6 +310,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadMasteryPoolSummary(id);
     this.loadPlacement(id);
     this.loadSpeakingAttempts(id);
+    this.loadWritingEvaluations(id);
   }
 
   private loadStudent(id: string): void {
@@ -349,6 +356,22 @@ export class AdminStudentDetailComponent implements OnInit {
       next: r => { this.speakingAttempts.set(r); this.speakingAttemptsLoading.set(false); },
       error: () => { this.speakingAttemptsError.set('Could not load speaking submissions.'); this.speakingAttemptsLoading.set(false); },
     });
+  }
+
+  private loadWritingEvaluations(id: string): void {
+    this.writingEvaluationsLoading.set(true);
+    this.writingEvaluationsError.set('');
+    this.adminApi.getStudentWritingEvaluations(id).subscribe({
+      next: r => { this.writingEvaluations.set(r); this.writingEvaluationsLoading.set(false); },
+      error: () => { this.writingEvaluationsError.set('Could not load writing evaluations.'); this.writingEvaluationsLoading.set(false); },
+    });
+  }
+
+  writingStatusTone(status: string): SpAdminBadgeTone {
+    if (status === 'Completed') return 'success';
+    if (status === 'Failed') return 'danger';
+    if (status === 'Evaluating') return 'info';
+    return 'neutral';
   }
 
   private loadPlacement(id: string): void {

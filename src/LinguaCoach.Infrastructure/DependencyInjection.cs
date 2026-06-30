@@ -491,7 +491,10 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Writing.WritingEvaluationService>();
         services.AddScoped<LinguaCoach.Application.Writing.IAdminWritingEvaluationQuery,
             LinguaCoach.Infrastructure.Writing.AdminWritingEvaluationHandler>();
+        services.AddScoped<LinguaCoach.Application.Writing.IWritingEvaluationSignalApplicationService,
+            LinguaCoach.Infrastructure.Writing.WritingEvaluationSignalApplicationService>();
         services.AddScoped<Jobs.WritingEvaluationJob>();
+        services.AddScoped<Jobs.WritingEvaluationSignalApplicationJob>();
 
         return services;
     }

@@ -1185,6 +1185,30 @@ export interface AdminStudentSpeakingAttemptAppliedSignal {
   signalCompletesObjectives: boolean;
 }
 
+// Phase 17A/17C — Writing evaluation per-student item
+
+export interface AdminWritingEvaluationItemDto {
+  evaluationId: string;
+  attemptId: string;
+  activityId: string;
+  activityTitle: string | null;
+  activityType: string | null;
+  status: string;
+  providerName: string | null;
+  modelName: string | null;
+  submittedAtUtc: string | null;
+  completedAtUtc: string | null;
+  overallScore: number | null;
+  grammarScore: number | null;
+  vocabularyScore: number | null;
+  coherenceScore: number | null;
+  taskCompletionScore: number | null;
+  feedbackText: string | null;
+  suggestedImprovement: string | null;
+  correctedText: string | null;
+  failureReason: string | null;
+}
+
 // Phase 17B — Writing evaluation quality summary and dry-run signal
 
 export interface WritingEvaluationQualitySummaryDto {
@@ -1260,4 +1284,39 @@ export interface WritingEvaluationWithDryRunDto {
   correctedText: string | null;
   failureReason: string | null;
   dryRunSignal: WritingEvaluationDryRunSignalDto | null;
+}
+
+// Phase 17C — Writing evaluation signal application
+
+export interface WritingSignalApplicationSummaryDto {
+  masteryIntegrationEnabled: boolean;
+  reviewSignalsAllowed: boolean;
+  positiveSignalsAllowed: boolean;
+  objectiveCompletionAllowed: boolean;
+  cefrUpdateAllowed: boolean;
+  minimumConfidenceRequired: string;
+  totalCompletedEvaluations: number;
+  candidateSignals: number;
+  appliedSignals: number;
+  blockedByConfig: number;
+  blockedByConfidence: number;
+  blockedBySignalType: number;
+  blockedByFailedOrUnsupported: number;
+  blockedByMissingScore: number;
+  duplicateSkipped: number;
+  noSignal: number;
+  failedApplication: number;
+}
+
+export interface WritingSignalSafetySummaryDto {
+  cefrUpdatesDisabled: boolean;
+  objectiveCompletionsDisabled: boolean;
+  learningPlanAutoRegenDisabled: boolean;
+  signalApplicationEnabled: boolean;
+  positiveSignalsEnabled: boolean;
+  reviewSignalsEnabled: boolean;
+  totalApplied: number;
+  positiveApplied: number;
+  reviewApplied: number;
+  invariantViolationsDetected: boolean;
 }

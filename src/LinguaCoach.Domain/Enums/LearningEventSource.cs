@@ -6,5 +6,6 @@ public enum LearningEventSource
     PracticeGym,
     Placement,
     Manual,
-    SpeakingEvaluation
+    SpeakingEvaluation,
+    WritingEvaluation
 }

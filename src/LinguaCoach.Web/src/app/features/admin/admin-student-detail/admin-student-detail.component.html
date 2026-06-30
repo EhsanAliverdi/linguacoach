@@ -438,6 +438,71 @@
         }
       </sp-admin-card>
 
+      <!-- Writing Evaluations — Phase 17C -->
+      <sp-admin-card title="Writing Evaluations" data-testid="writing-evaluations-card">
+        @if (writingEvaluationsLoading()) {
+          <sp-admin-loading-state message="Loading writing evaluations" />
+        } @else if (writingEvaluationsError()) {
+          <sp-admin-error-state title="Writing evaluations unavailable" [message]="writingEvaluationsError()" />
+        } @else if (writingEvaluations().length === 0) {
+          <p class="sp-admin-text-muted" data-testid="writing-evaluations-empty">No writing evaluations yet.</p>
+        } @else {
+          <div style="margin-bottom:8px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)" data-testid="writing-signal-invariants">
+            <span data-testid="writing-no-cefr" style="margin-right:12px">CEFR update disabled</span>
+            <span data-testid="writing-no-objectives" style="margin-right:12px">Objective completion disabled</span>
+            <span data-testid="writing-no-lp-regen">Learning Plan regeneration disabled</span>
+          </div>
+          <table class="sp-adm-table" style="width:100%;border-collapse:collapse" data-testid="writing-evaluations-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Activity</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Status</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Score</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Grammar / Vocab / Coherence</th>
+                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Feedback</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ev of writingEvaluations(); track ev.evaluationId) {
+                <tr data-testid="writing-evaluation-row" style="border-top:1px solid var(--sp-admin-border,#E2DEF0)">
+                  <td style="padding:8px 4px;font-size:0.875rem">
+                    <span>{{ ev.activityTitle || 'Writing activity' }}</span>
+                    @if (ev.completedAtUtc) {
+                      <span style="display:block;font-size:0.7rem;color:var(--sp-admin-muted,#8B85A0)">{{ ev.completedAtUtc | date:'mediumDate' }}</span>
+                    }
+                  </td>
+                  <td style="padding:8px 4px">
+                    <sp-admin-badge [tone]="writingStatusTone(ev.status)" data-testid="writing-eval-status">{{ ev.status }}</sp-admin-badge>
+                    @if (ev.status === 'Failed' && ev.failureReason) {
+                      <span style="display:block;font-size:0.7rem;color:var(--sp-admin-muted,#8B85A0)" data-testid="writing-eval-failure-reason">{{ ev.failureReason }}</span>
+                    }
+                  </td>
+                  <td style="padding:8px 4px;font-size:0.875rem" data-testid="writing-eval-score">
+                    {{ ev.overallScore !== null ? (ev.overallScore | number:'1.0-0') : '—' }}
+                  </td>
+                  <td style="padding:8px 4px;font-size:0.75rem" data-testid="writing-eval-subscores">
+                    @if (ev.grammarScore !== null || ev.vocabularyScore !== null || ev.coherenceScore !== null) {
+                      <span>G:{{ ev.grammarScore !== null ? (ev.grammarScore | number:'1.0-0') : '—' }}</span>
+                      <span style="margin:0 4px">V:{{ ev.vocabularyScore !== null ? (ev.vocabularyScore | number:'1.0-0') : '—' }}</span>
+                      <span>C:{{ ev.coherenceScore !== null ? (ev.coherenceScore | number:'1.0-0') : '—' }}</span>
+                    } @else {
+                      <span class="sp-admin-text-muted">—</span>
+                    }
+                  </td>
+                  <td style="padding:8px 4px;font-size:0.75rem;max-width:200px" data-testid="writing-eval-feedback">
+                    @if (ev.feedbackText) {
+                      <span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ ev.feedbackText }}</span>
+                    } @else {
+                      <span class="sp-admin-text-muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </sp-admin-card>
+
       <!-- Learning Plan / Journey — Phase 15E -->
       <sp-admin-card title="Learning Journey" data-testid="learning-plan-card">
         @if (learningPlanProgressLoading()) {

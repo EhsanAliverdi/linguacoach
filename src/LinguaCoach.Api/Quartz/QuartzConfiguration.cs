@@ -121,6 +121,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{WritingEvaluationJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
 
+            // Writing signal application — every 10 minutes. Applies config-gated mastery signals.
+            var writingSignalKey = new JobKey(WritingEvaluationSignalApplicationJob.JobName);
+            q.AddJob<WritingEvaluationSignalApplicationJob>(opts => opts.WithIdentity(writingSignalKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(writingSignalKey)
+                .WithIdentity($"{WritingEvaluationSignalApplicationJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(10).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());
