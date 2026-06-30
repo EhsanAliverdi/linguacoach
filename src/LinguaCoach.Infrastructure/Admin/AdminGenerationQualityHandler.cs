@@ -1,17 +1,31 @@
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace LinguaCoach.Infrastructure.Admin;
 
 public sealed class AdminGenerationQualityHandler : IAdminGenerationQualityHandler
 {
-    private readonly LinguaCoachDbContext _db;
+    private const int DefaultRetentionDays = 90;
+    private const double DefaultWarningThreshold = 0.15;
+    private const int DefaultMinimumFailuresForWarning = 5;
 
-    public AdminGenerationQualityHandler(LinguaCoachDbContext db) => _db = db;
+    private readonly LinguaCoachDbContext _db;
+    private readonly IConfiguration _config;
+
+    public AdminGenerationQualityHandler(LinguaCoachDbContext db, IConfiguration config)
+    {
+        _db = db;
+        _config = config;
+    }
 
     public async Task<GenerationQualitySummary> GetSummaryAsync(int recentDays = 30, CancellationToken ct = default)
     {
+        var retentionDays = _config.GetValue<int?>("GenerationQuality:RetentionDays") ?? DefaultRetentionDays;
+        var warningThreshold = _config.GetValue<double?>("GenerationQuality:AbandonedFailureRateWarningThreshold") ?? DefaultWarningThreshold;
+        var minimumFailuresForWarning = _config.GetValue<int?>("GenerationQuality:MinimumFailuresForWarning") ?? DefaultMinimumFailuresForWarning;
+
         var since = DateTime.UtcNow.AddDays(-recentDays);
 
         var failures = await _db.GenerationValidationFailures
@@ -33,7 +47,11 @@ public sealed class AdminGenerationQualityHandler : IAdminGenerationQualityHandl
                 f.CefrLevel,
                 f.ObjectiveKey,
                 f.ValidationErrors,
-                f.AttemptNumber))
+                f.AttemptNumber,
+                ProviderName: f.ProviderName,
+                ModelName: f.ModelName,
+                GenerationSource: null,
+                CorrelationId: f.CorrelationId))
             .ToList();
 
         var patternBreakdown = failures
@@ -54,6 +72,31 @@ public sealed class AdminGenerationQualityHandler : IAdminGenerationQualityHandl
             .OrderByDescending(c => c.TotalFailures)
             .ToList();
 
+        var providerBreakdown = failures
+            .Where(f => f.ProviderName is not null)
+            .GroupBy(f => new { Provider = f.ProviderName!, Model = f.ModelName ?? "unknown" })
+            .Select(g => new ProviderModelBreakdownItem(
+                g.Key.Provider,
+                g.Key.Model,
+                g.Count(),
+                g.Count(f => f.AttemptNumber == 2)))
+            .OrderByDescending(p => p.TotalFailures)
+            .ToList();
+
+        var abandonedRate = totalFailures >= minimumFailuresForWarning && totalFailures > 0
+            ? (double)abandonedCount / totalFailures
+            : 0.0;
+        var warningActive = totalFailures >= minimumFailuresForWarning && abandonedRate >= warningThreshold;
+        var abandonedWarning = new AbandonedGenerationWarning(
+            IsActive: warningActive,
+            AbandonedRate: abandonedRate,
+            AbandonedCount: abandonedCount,
+            TotalFailures: totalFailures,
+            WarningThreshold: warningThreshold,
+            Message: warningActive
+                ? $"Abandoned generation rate {abandonedRate:P0} exceeds threshold {warningThreshold:P0}. Review pattern and CEFR breakdowns."
+                : null);
+
         var prompts = await _db.AiPrompts
             .AsNoTracking()
             .Where(p => p.IsActive)
@@ -62,7 +105,10 @@ public sealed class AdminGenerationQualityHandler : IAdminGenerationQualityHandl
 
         var promptSummary = prompts
             .Select(p => new PromptTemplateItem(
-                p.Id, p.Key, p.Version, p.IsActive, p.MaxInputTokens, p.MaxOutputTokens, p.CreatedAt))
+                p.Id, p.Key, p.Version, p.IsActive, p.MaxInputTokens, p.MaxOutputTokens, p.CreatedAt,
+                ContentHashShort: p.ContentHash is not null && p.ContentHash.Length >= 8
+                    ? p.ContentHash[..8]
+                    : p.ContentHash))
             .ToList();
 
         return new GenerationQualitySummary(
@@ -72,6 +118,9 @@ public sealed class AdminGenerationQualityHandler : IAdminGenerationQualityHandl
             latestFailures,
             patternBreakdown,
             cefrBreakdown,
-            promptSummary);
+            promptSummary,
+            providerBreakdown,
+            abandonedWarning,
+            retentionDays);
     }
 }

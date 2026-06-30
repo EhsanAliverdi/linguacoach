@@ -37,10 +37,13 @@ function makeEvent(overrides: Partial<DiagnosticEventItem> = {}): DiagnosticEven
 function makeQualitySummary(overrides: Partial<GenerationQualitySummary> = {}): GenerationQualitySummary {
   return {
     recentDays: 30,
+    retentionDays: 90,
     validationFailureSummary: { totalFailures: 0, abandonedGenerations: 0, failuresLast24Hours: 0 },
+    abandonedWarning: { isActive: false, abandonedRate: 0, abandonedCount: 0, totalFailures: 0, warningThreshold: 0.15, message: null },
     latestFailures: [],
     patternFailureBreakdown: [],
     cefrFailureBreakdown: [],
+    providerBreakdown: [],
     promptSummary: [],
     ...overrides,
   };
@@ -327,7 +330,7 @@ describe('AdminDiagnosticsComponent', () => {
 
   it('qPromptSummary computed returns prompts when quality is loaded', () => {
     const fixture = TestBed.createComponent(AdminDiagnosticsComponent);
-    const prompt = { id: 'abc', key: 'test_key', version: 2, isActive: true, maxInputTokens: 1000, maxOutputTokens: 500, seededAtUtc: '2026-01-01T00:00:00Z' };
+    const prompt = { id: 'abc', key: 'test_key', version: 2, isActive: true, maxInputTokens: 1000, maxOutputTokens: 500, seededAtUtc: '2026-01-01T00:00:00Z', contentHashShort: null };
     fixture.componentInstance.generationQuality.set(makeQualitySummary({ promptSummary: [prompt] }));
     expect(fixture.componentInstance.qPromptSummary()).toEqual([prompt]);
   });

@@ -2,6 +2,7 @@ using LinguaCoach.Application.Admin;
 using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace LinguaCoach.Api.Controllers;
 
@@ -11,9 +12,13 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class AdminGenerationQualityController : ControllerBase
 {
     private readonly IAdminGenerationQualityHandler _handler;
+    private readonly IConfiguration _config;
 
-    public AdminGenerationQualityController(IAdminGenerationQualityHandler handler)
-        => _handler = handler;
+    public AdminGenerationQualityController(IAdminGenerationQualityHandler handler, IConfiguration config)
+    {
+        _handler = handler;
+        _config = config;
+    }
 
     /// <summary>
     /// GET /api/admin/generation-quality/summary
@@ -26,19 +31,32 @@ public sealed class AdminGenerationQualityController : ControllerBase
         [FromQuery] int recentDays = 30,
         CancellationToken ct = default)
     {
-        if (recentDays < 1 || recentDays > 90)
-            return BadRequest(new { error = "recentDays must be between 1 and 90." });
+        var retentionDays = _config.GetValue<int?>("GenerationQuality:RetentionDays") ?? 90;
+        var maxRecentDays = Math.Min(retentionDays, 90);
+
+        if (recentDays < 1 || recentDays > maxRecentDays)
+            return BadRequest(new { error = $"recentDays must be between 1 and {maxRecentDays}." });
 
         var s = await _handler.GetSummaryAsync(recentDays, ct);
 
         return Ok(new
         {
             recentDays,
+            retentionDays = s.RetentionDays,
             validationFailureSummary = new
             {
                 totalFailures = s.TotalValidationFailures,
                 abandonedGenerations = s.AbandonedGenerations,
                 failuresLast24Hours = s.RecentFailureCount,
+            },
+            abandonedWarning = new
+            {
+                isActive = s.AbandonedWarning.IsActive,
+                abandonedRate = s.AbandonedWarning.AbandonedRate,
+                abandonedCount = s.AbandonedWarning.AbandonedCount,
+                totalFailures = s.AbandonedWarning.TotalFailures,
+                warningThreshold = s.AbandonedWarning.WarningThreshold,
+                message = s.AbandonedWarning.Message,
             },
             latestFailures = s.LatestFailures.Select(f => new
             {
@@ -49,6 +67,9 @@ public sealed class AdminGenerationQualityController : ControllerBase
                 objectiveKey = f.ObjectiveKey,
                 validationErrors = f.ValidationErrors,
                 attemptNumber = f.AttemptNumber,
+                providerName = f.ProviderName,
+                modelName = f.ModelName,
+                correlationId = f.CorrelationId,
             }),
             patternFailureBreakdown = s.PatternBreakdown.Select(p => new
             {
@@ -62,6 +83,13 @@ public sealed class AdminGenerationQualityController : ControllerBase
                 cefrLevel = c.CefrLevel,
                 totalFailures = c.TotalFailures,
             }),
+            providerBreakdown = s.ProviderBreakdown.Select(p => new
+            {
+                providerName = p.ProviderName,
+                modelName = p.ModelName,
+                totalFailures = p.TotalFailures,
+                abandonedCount = p.AbandonedCount,
+            }),
             promptSummary = s.PromptSummary.Select(p => new
             {
                 id = p.Id,
@@ -71,7 +99,8 @@ public sealed class AdminGenerationQualityController : ControllerBase
                 maxInputTokens = p.MaxInputTokens,
                 maxOutputTokens = p.MaxOutputTokens,
                 seededAtUtc = p.SeededAtUtc,
-                // Content is intentionally omitted — use GET /api/admin/prompts/{id} for full content
+                contentHashShort = p.ContentHashShort,
+                // Full prompt content is intentionally omitted — use GET /api/admin/prompts/{id}
             }),
         });
     }

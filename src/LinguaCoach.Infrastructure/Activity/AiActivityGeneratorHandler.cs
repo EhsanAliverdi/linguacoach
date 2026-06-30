@@ -125,10 +125,11 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
 
         var aiRequest = await _contextBuilder.BuildAsync(promptKey, variables, ct);
 
-        var response = await _aiExecution.ExecuteAsync(
-            promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
+        var correlationId = Guid.NewGuid().ToString("N")[..16];
+        var result = await _aiExecution.ExecuteWithMetaAsync(
+            promptKey, aiRequest, studentProfileId: context.StudentProfileId, correlationId: correlationId, ct);
 
-        var cleaned = CleanJson(response);
+        var cleaned = CleanJson(result.ResponseJson);
         switch (context.ActivityType)
         {
             case ActivityType.ListeningComprehension:
@@ -140,15 +141,15 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                 if (!check.IsValid)
                 {
-                    await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, ct);
-                    var retryResponse = await _aiExecution.ExecuteAsync(
-                        promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
-                    cleaned = CleanJson(retryResponse);
+                    await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, correlationId, result, ct);
+                    var retryResult = await _aiExecution.ExecuteWithMetaAsync(
+                        promptKey, aiRequest, studentProfileId: context.StudentProfileId, correlationId: correlationId, ct);
+                    cleaned = CleanJson(retryResult.ResponseJson);
                     ValidateIsJson(cleaned);
                     var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!retryCheck.IsValid)
                     {
-                        await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, ct);
+                        await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, correlationId, retryResult, ct);
                         throw new AiResponseValidationException(
                             $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
                     }
@@ -162,15 +163,15 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                     var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!check.IsValid)
                     {
-                        await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, ct);
-                        var retryResponse = await _aiExecution.ExecuteAsync(
-                            promptKey, aiRequest, studentProfileId: null, correlationId: null, ct);
-                        cleaned = CleanJson(retryResponse);
+                        await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, correlationId, result, ct);
+                        var retryResult = await _aiExecution.ExecuteWithMetaAsync(
+                            promptKey, aiRequest, studentProfileId: context.StudentProfileId, correlationId: correlationId, ct);
+                        cleaned = CleanJson(retryResult.ResponseJson);
                         ValidateIsJson(cleaned);
                         var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                         if (!retryCheck.IsValid)
                         {
-                            await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, ct);
+                            await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, correlationId, retryResult, ct);
                             throw new AiResponseValidationException(
                                 $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
                         }
@@ -349,6 +350,8 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
         ActivityGenerationContext context,
         IReadOnlyList<string> errors,
         int attemptNumber,
+        string? correlationId,
+        AiExecutionResult? executionResult,
         CancellationToken ct)
     {
         try
@@ -359,7 +362,11 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 attemptNumber: attemptNumber,
                 patternKey: context.ExercisePatternKey,
                 cefrLevel: context.CefrLevel,
-                objectiveKey: null);
+                objectiveKey: context.ObjectiveKey,
+                providerName: executionResult?.ProviderName,
+                modelName: executionResult?.ModelName,
+                correlationId: correlationId,
+                studentProfileId: context.StudentProfileId);
 
             _db.GenerationValidationFailures.Add(failure);
             await _db.SaveChangesAsync(ct);

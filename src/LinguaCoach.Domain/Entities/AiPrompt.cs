@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using LinguaCoach.Domain.Common;
 
 namespace LinguaCoach.Domain.Entities;
@@ -18,6 +20,9 @@ public sealed class AiPrompt : BaseEntity
     public int? MaxInputTokens { get; private set; }
     public int? MaxOutputTokens { get; private set; }
 
+    /// <summary>SHA-256 hex of prompt content (64 chars). Null for rows seeded before T70.</summary>
+    public string? ContentHash { get; private set; }
+
     private AiPrompt() { Key = string.Empty; Content = string.Empty; }
 
     public AiPrompt(string key, string content, int version = 1, int? maxInputTokens = null, int? maxOutputTokens = null)
@@ -34,6 +39,13 @@ public sealed class AiPrompt : BaseEntity
         IsActive = true;
         MaxInputTokens = maxInputTokens;
         MaxOutputTokens = maxOutputTokens;
+        ContentHash = ComputeContentHash(Content);
+    }
+
+    internal static string ComputeContentHash(string content)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     public void SetTokenBudget(int maxInputTokens, int maxOutputTokens)

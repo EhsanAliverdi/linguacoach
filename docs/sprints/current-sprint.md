@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-01 (18A-F)
+lastUpdated: 2026-07-01 (18A-G)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,51 @@ Last updated: 2026-07-01
 ---
 
 ## Active sprint
+
+**Phase 18A-G — Generation Diagnostics Hardening** — complete (2026-07-01)
+
+Hardens generation diagnostics with provider/model traceability, SHA-256 content hashing for prompt versioning, configurable retention (default 90 days) with a Quartz prune job, objective/student context threading, abandoned-generation rate warning, and enriched admin UI. No new activity formats, no player changes, no CEFR updates from AI, no objective completion from AI, no LP regeneration from AI, no live AI calls in tests.
+
+**Modified Domain:**
+- `AiPrompt.ContentHash` — SHA-256 hex (64 chars) computed on construction; nullable for pre-T70 rows
+
+**Modified Persistence:**
+- `AiPromptConfiguration` — maps `content_hash` column (varchar 64, nullable)
+- Migration T70_AiPromptContentHash — adds `content_hash` to `ai_prompts`
+
+**Modified Application:**
+- `ActivityGenerationContext` — added 3 optional fields: `ObjectiveKey`, `StudentProfileId`, `GenerationSource`
+- `ValidationFailureItem` — added `ProviderName`, `ModelName`, `GenerationSource`, `CorrelationId`
+- `PromptTemplateItem` — added `ContentHashShort` (first 8 chars of SHA-256)
+- New DTOs: `ProviderModelBreakdownItem`, `AbandonedGenerationWarning`
+- `GenerationQualitySummary` — added `ProviderBreakdown`, `AbandonedWarning`, `RetentionDays`
+
+**Modified Infrastructure:**
+- `AiExecutionService` — new `ExecuteWithMetaAsync` returning `AiExecutionResult` (provider, model, isFallback); existing `ExecuteAsync` unchanged
+- `AiActivityGeneratorHandler` — now calls `ExecuteWithMetaAsync`; threads `correlationId`, `providerName`, `modelName`, `objectiveKey`, `studentProfileId` into failure log
+- `AdminGenerationQualityHandler` — rewritten; reads `IConfiguration` for retention/threshold config; computes provider breakdown, abandoned warning, content hash short forms
+- New `GenerationValidationFailurePruneJob` — Quartz daily job; clamps retention [7,365]; non-blocking exception handling; uses `ToListAsync + RemoveRange + SaveChanges`
+
+**Modified API:**
+- `GET /api/admin/generation-quality/summary` — returns enriched response with provider breakdown, abandoned warning, retention days, content hash short, correlation IDs
+- `QuartzConfiguration` — registers prune job with daily trigger
+- `appsettings.json` — `GenerationQuality` section: `RetentionDays`, `RecentWindowDays`, `AbandonedFailureRateWarningThreshold`, `MinimumFailuresForWarning`
+
+**Modified Angular:**
+- `GenerationQualityService` — updated interfaces for all new fields
+- `AdminDiagnosticsComponent` — new computed signals for provider breakdown, abandoned warning, retention days
+- `admin-diagnostics.component.html` — abandoned warning banner, provider/model column in failures table, provider breakdown section, hash column in prompt summary, retention days in heading
+- `admin-diagnostics.component.spec.ts` — updated `makeQualitySummary` helper with new required fields, fixed `PromptMetaItem` test object
+
+**Tests added (unit):**
+- `GenerationQualityHandlerTests` — +15 tests: provider breakdown grouping, null provider exclusion, content hash determinism/length/variation, hash short form, retention config, abandoned warning active/inactive/threshold/minimum, objective key threading
+- `GenerationValidationFailurePruneJobTests` — 4 tests: backdating via `ExecuteSqlAsync` + `ChangeTracker.Clear()` pattern; prune logic, boundary condition, job execution
+
+**Build/test totals:** Backend unit: 1,660 (+20). Integration: 1,319 (8 pre-existing AI-provider failures, no regressions). Arch: 3. Angular build: clean. Angular unit: 1,414/1,533 (119 pre-existing failures, 0 new regressions).
+
+Review: `docs/reviews/2026-07-01-phase-18a-g-generation-diagnostics-hardening-review.md`.
+
+---
 
 **Phase 18A-F — Generation Quality Admin Visibility** — complete (2026-07-01)
 

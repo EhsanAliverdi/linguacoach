@@ -11,6 +11,9 @@ export interface ValidationFailureItem {
   objectiveKey: string | null;
   validationErrors: string;
   attemptNumber: number;
+  providerName: string | null;
+  modelName: string | null;
+  correlationId: string | null;
 }
 
 export interface PatternFailureBreakdownItem {
@@ -25,6 +28,22 @@ export interface CefrFailureBreakdownItem {
   totalFailures: number;
 }
 
+export interface ProviderModelBreakdownItem {
+  providerName: string;
+  modelName: string;
+  totalFailures: number;
+  abandonedCount: number;
+}
+
+export interface AbandonedGenerationWarning {
+  isActive: boolean;
+  abandonedRate: number;
+  abandonedCount: number;
+  totalFailures: number;
+  warningThreshold: number;
+  message: string | null;
+}
+
 export interface PromptMetaItem {
   id: string;
   key: string;
@@ -33,18 +52,22 @@ export interface PromptMetaItem {
   maxInputTokens: number | null;
   maxOutputTokens: number | null;
   seededAtUtc: string;
+  contentHashShort: string | null;
 }
 
 export interface GenerationQualitySummary {
   recentDays: number;
+  retentionDays: number;
   validationFailureSummary: {
     totalFailures: number;
     abandonedGenerations: number;
     failuresLast24Hours: number;
   };
+  abandonedWarning: AbandonedGenerationWarning;
   latestFailures: ValidationFailureItem[];
   patternFailureBreakdown: PatternFailureBreakdownItem[];
   cefrFailureBreakdown: CefrFailureBreakdownItem[];
+  providerBreakdown: ProviderModelBreakdownItem[];
   promptSummary: PromptMetaItem[];
 }
 

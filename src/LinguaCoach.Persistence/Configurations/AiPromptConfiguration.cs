@@ -28,6 +28,7 @@ internal sealed class AiPromptConfiguration : IEntityTypeConfiguration<AiPrompt>
         builder.Property(p => p.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(p => p.MaxInputTokens).HasColumnName("max_input_tokens");
         builder.Property(p => p.MaxOutputTokens).HasColumnName("max_output_tokens");
+        builder.Property(p => p.ContentHash).HasColumnName("content_hash").HasMaxLength(64);
 
         builder.HasIndex(p => new { p.Key, p.Version })
             .IsUnique()

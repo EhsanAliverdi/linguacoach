@@ -66,7 +66,19 @@ public sealed record ActivityGenerationContext(
     /// <summary>
     /// When true, AI prompt should treat this as review/scaffold/remediation content.
     /// </summary>
-    bool IsReviewOrScaffold = false);
+    bool IsReviewOrScaffold = false,
+    /// <summary>
+    /// Curriculum objective key if routing was objective-driven. Threaded into diagnostic failure records.
+    /// </summary>
+    string? ObjectiveKey = null,
+    /// <summary>
+    /// Student profile that triggered generation. Null for batch/pool generation.
+    /// </summary>
+    Guid? StudentProfileId = null,
+    /// <summary>
+    /// Source context label for diagnostics: Today, PracticeGym, ReadinessPool, LessonBatch, ManualAdmin.
+    /// </summary>
+    string? GenerationSource = null);
 
 public sealed record ActivityEvaluationContext(
     ActivityType ActivityType,

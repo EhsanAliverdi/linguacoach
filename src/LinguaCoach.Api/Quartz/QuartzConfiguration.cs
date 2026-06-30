@@ -129,6 +129,14 @@ public static class QuartzConfiguration
                 .WithIdentity($"{WritingEvaluationSignalApplicationJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(10).RepeatForever()));
 
+            // Generation validation failure retention prune — daily.
+            var pruneKey = new JobKey(GenerationValidationFailurePruneJob.JobName);
+            q.AddJob<GenerationValidationFailurePruneJob>(opts => opts.WithIdentity(pruneKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(pruneKey)
+                .WithIdentity($"{GenerationValidationFailurePruneJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()));
+
             // Durable jobs scheduled ad hoc by triggers.
             q.AddJob<LessonBatchGenerationJob>(opts =>
                 opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());

@@ -156,6 +156,9 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   readonly qPatternBreakdown = computed(() => this.generationQuality()?.patternFailureBreakdown ?? []);
   readonly qCefrBreakdown = computed(() => this.generationQuality()?.cefrFailureBreakdown ?? []);
   readonly qPromptSummary = computed(() => this.generationQuality()?.promptSummary ?? []);
+  readonly qProviderBreakdown = computed(() => this.generationQuality()?.providerBreakdown ?? []);
+  readonly qAbandonedWarning = computed(() => this.generationQuality()?.abandonedWarning ?? null);
+  readonly qRetentionDays = computed(() => this.generationQuality()?.retentionDays ?? 90);
 
   constructor(private svc: DiagnosticsService, private qualitySvc: GenerationQualityService) {}
 

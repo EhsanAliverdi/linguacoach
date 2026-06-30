@@ -219,7 +219,8 @@ public sealed record PromptTemplateItem(
     bool IsActive,
     int? MaxInputTokens,
     int? MaxOutputTokens,
-    DateTime SeededAtUtc);
+    DateTime SeededAtUtc,
+    string? ContentHashShort = null);
 
 public sealed record PromptTemplateDetail(
     Guid Id,
@@ -436,7 +437,11 @@ public sealed record ValidationFailureItem(
     string? CefrLevel,
     string? ObjectiveKey,
     string ValidationErrors,
-    int AttemptNumber);
+    int AttemptNumber,
+    string? ProviderName = null,
+    string? ModelName = null,
+    string? GenerationSource = null,
+    string? CorrelationId = null);
 
 public sealed record PatternFailureBreakdownItem(
     string PatternKey,
@@ -448,6 +453,20 @@ public sealed record CefrFailureBreakdownItem(
     string CefrLevel,
     int TotalFailures);
 
+public sealed record ProviderModelBreakdownItem(
+    string ProviderName,
+    string ModelName,
+    int TotalFailures,
+    int AbandonedCount);
+
+public sealed record AbandonedGenerationWarning(
+    bool IsActive,
+    double AbandonedRate,
+    int AbandonedCount,
+    int TotalFailures,
+    double WarningThreshold,
+    string? Message);
+
 public sealed record GenerationQualitySummary(
     int TotalValidationFailures,
     int AbandonedGenerations,
@@ -455,7 +474,10 @@ public sealed record GenerationQualitySummary(
     IReadOnlyList<ValidationFailureItem> LatestFailures,
     IReadOnlyList<PatternFailureBreakdownItem> PatternBreakdown,
     IReadOnlyList<CefrFailureBreakdownItem> CefrBreakdown,
-    IReadOnlyList<PromptTemplateItem> PromptSummary);
+    IReadOnlyList<PromptTemplateItem> PromptSummary,
+    IReadOnlyList<ProviderModelBreakdownItem> ProviderBreakdown,
+    AbandonedGenerationWarning AbandonedWarning,
+    int RetentionDays);
 
 public interface IAdminGenerationQualityHandler
 {

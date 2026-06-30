@@ -208,10 +208,18 @@
       <sp-admin-error-state title="Could not load generation quality" [message]="qualityError()" />
     } @else if (generationQuality()) {
 
+      <!-- Operational warning -->
+      @if (qAbandonedWarning()?.isActive) {
+        <div style="margin-bottom: 1.25rem; padding: 0.75rem 1rem; background: var(--sp-color-amber-50, #fffbeb); border: 1px solid var(--sp-color-amber-300, #fcd34d); border-radius: 0.5rem; display: flex; gap: 0.5rem; align-items: flex-start;">
+          <sp-admin-badge tone="warning">Warning</sp-admin-badge>
+          <span style="font-size: 0.875rem;">{{ qAbandonedWarning()!.message }}</span>
+        </div>
+      }
+
       <!-- KPI strip -->
       <div class="sp-admin-kpi-row" style="margin-bottom: 1.25rem;">
         <sp-admin-kpi-card
-          label="Total failures (30d)"
+          label="Total failures (window)"
           [value]="qFailureSummary()!.totalFailures"
           [variant]="qFailureSummary()!.totalFailures > 0 ? 'amber' : 'green'"
           layout="tile" icon="alert" />
@@ -245,6 +253,7 @@
                   <th>Type</th>
                   <th>CEFR</th>
                   <th>Attempt</th>
+                  <th>Provider / Model</th>
                   <th>Errors</th>
                 </tr>
               </thead>
@@ -270,6 +279,13 @@
                     <td>
                       <sp-admin-badge [tone]="f.attemptNumber === 2 ? 'danger' : 'warning'">{{ f.attemptNumber === 2 ? 'Retry' : 'First' }}</sp-admin-badge>
                     </td>
+                    <td class="sp-admin-nowrap">
+                      @if (f.providerName) {
+                        <span>{{ f.providerName }}<br><span class="sp-admin-text-muted" style="font-size:0.75rem;">{{ f.modelName ?? '—' }}</span></span>
+                      } @else {
+                        <span class="sp-admin-text-muted">—</span>
+                      }
+                    </td>
                     <td><sp-admin-truncated-text [value]="f.validationErrors" [maxLength]="80" /></td>
                   </tr>
                 }
@@ -282,6 +298,41 @@
           icon="check"
           title="No validation failures in the last 30 days"
           message="All generated content passed validation." />
+      }
+
+      <!-- Provider / Model breakdown -->
+      @if (qProviderBreakdown().length > 0) {
+        <div style="margin-bottom: 1.25rem;">
+          <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Provider / model failure breakdown</h3>
+          <sp-admin-table>
+            <table>
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Model</th>
+                  <th>Failures</th>
+                  <th>Abandoned</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of qProviderBreakdown(); track p.providerName + p.modelName) {
+                  <tr>
+                    <td>{{ p.providerName }}</td>
+                    <td><sp-admin-code-pill [value]="p.modelName" /></td>
+                    <td>{{ p.totalFailures }}</td>
+                    <td>
+                      @if (p.abandonedCount > 0) {
+                        <sp-admin-badge tone="danger">{{ p.abandonedCount }}</sp-admin-badge>
+                      } @else {
+                        <span class="sp-admin-text-muted">0</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </sp-admin-table>
+        </div>
       }
 
       <!-- Pattern breakdown + CEFR breakdown grid -->
@@ -345,13 +396,14 @@
       <!-- Prompt version summary -->
       @if (qPromptSummary().length > 0) {
         <div style="margin-top: 1.25rem;">
-          <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Active prompt version summary</h3>
+          <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Active prompt version summary (retention: {{ qRetentionDays() }}d)</h3>
           <sp-admin-table>
             <table>
               <thead>
                 <tr>
                   <th>Prompt key</th>
                   <th>Version</th>
+                  <th>Hash</th>
                   <th>Max input tokens</th>
                   <th>Max output tokens</th>
                   <th>Seeded at</th>
@@ -362,6 +414,13 @@
                   <tr>
                     <td><sp-admin-code-pill [value]="p.key" /></td>
                     <td>v{{ p.version }}</td>
+                    <td>
+                      @if (p.contentHashShort) {
+                        <sp-admin-code-pill [value]="p.contentHashShort" />
+                      } @else {
+                        <span class="sp-admin-text-muted">—</span>
+                      }
+                    </td>
                     <td>{{ p.maxInputTokens ?? '—' }}</td>
                     <td>{{ p.maxOutputTokens ?? '—' }}</td>
                     <td class="sp-admin-nowrap">{{ formatDateTime(p.seededAtUtc) }}</td>
