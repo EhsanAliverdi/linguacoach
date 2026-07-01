@@ -31,6 +31,7 @@ import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/
 import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
+import { SpAdminSlideOverComponent } from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-ai-usage',
@@ -61,6 +62,7 @@ import { SpAdminGraphCardComponent } from '../../../design-system/admin/componen
     SpAdminBreakdownBarsComponent,
     SpAdminGraphCardComponent,
     SpAdminFlyoutComponent,
+    SpAdminSlideOverComponent,
   ],
   templateUrl: './admin-ai-usage.component.html',
 })
@@ -117,6 +119,9 @@ export class AdminAiUsageComponent implements OnInit {
   trendBuckets = signal<AiUsageTrendBucket[]>([]);
   loadingTrends = signal(false);
   trendError = signal('');
+
+  // Feature breakdown slide-over
+  featureSlideOverOpen = signal(false);
 
   // Aggregate analytics signals
   aggTrends = signal<AdminAiUsageTrendResponse | null>(null);

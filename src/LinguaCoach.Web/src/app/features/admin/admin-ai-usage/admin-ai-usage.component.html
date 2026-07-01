@@ -284,9 +284,51 @@
       <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="No category data for this period" />
     } @else {
       <sp-admin-breakdown-bars [items]="aggCategoryItems()" [showPct]="true" />
+      <div class="sp-admin-graph-card-read-more">
+        <button type="button" class="sp-admin-link-btn" (click)="featureSlideOverOpen.set(true)">Read more</button>
+      </div>
     }
   </sp-admin-graph-card>
 </div>
+
+<!-- Feature breakdown slide-over -->
+<sp-admin-slide-over
+  [open]="featureSlideOverOpen()"
+  title="Calls by feature"
+  subtitle="All features in the selected period, ranked by call count."
+  size="md"
+  [closeOnBackdrop]="true"
+  (closed)="featureSlideOverOpen.set(false)">
+  @if (summary()?.byFeature?.length) {
+    <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="sp-admin-th-right">Calls</th>
+            <th class="sp-admin-th-right">OK</th>
+            <th class="sp-admin-th-right">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of summary()!.byFeature; track f.feature) {
+            <tr>
+              <td>
+                <sp-admin-truncated-text [value]="featureLabel(f.feature)" [maxLength]="36" />
+                <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="f.feature" tone="neutral" /></div>
+              </td>
+              <td class="sp-admin-num">{{ f.calls }}</td>
+              <td class="sp-admin-num"><sp-admin-badge tone="success">{{ f.successful }}</sp-admin-badge></td>
+              <td class="sp-admin-num sp-admin-text-mono">${{ f.costUsd.toFixed(4) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </sp-admin-table>
+  } @else {
+    <sp-admin-empty-state message="No feature data for this period." />
+  }
+</sp-admin-slide-over>
 
 <!-- Recent calls -->
 <div class="sp-admin-table-section" aria-label="Recent calls">

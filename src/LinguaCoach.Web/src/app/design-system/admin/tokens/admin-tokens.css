@@ -827,6 +827,14 @@
 .sp-admin-text-strong { font-weight: 700; color: var(--sp-admin-text, #211B36); }
 .sp-admin-text-warning { color: var(--sp-admin-warn-ink, #D97706); }
 .sp-admin-link { color: var(--sp-admin-primary, #5B4BE8); text-decoration: underline; }
+.sp-admin-link-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-size: 12px; font-weight: 700;
+  color: var(--sp-admin-primary, #5B4BE8);
+  text-decoration: none;
+}
+.sp-admin-link-btn:hover { color: var(--sp-admin-primary-hover, #3A2EA8); text-decoration: underline; }
+.sp-admin-graph-card-read-more { margin-top: 12px; text-align: right; }
 
 /* ── Table row / cell utilities ─────────────────────────────────────────── */
 .sp-admin-table-row-inactive { opacity: .4; }
