@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ActivityDto, ActivityFeedbackDto, ActivityType, ListeningAnswer, SpeakingEvaluationDto, VocabAnswer } from '../models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, ActivityType, ListeningAnswer, SpeakingEvaluationDto, VocabAnswer, WritingEvaluationDto } from '../models/activity.models';
 import { environment } from '../../../environments/environment';
 import { ExerciseTypeDefinition } from '../models/admin.models';
 
@@ -140,6 +140,11 @@ export class ActivityService {
   /** Returns the speaking evaluation status and result for a submitted audio attempt. */
   getAttemptEvaluation(activityId: string, attemptId: string): Observable<SpeakingEvaluationDto> {
     return this.http.get<SpeakingEvaluationDto>(`${this.base}/${activityId}/attempts/${attemptId}/evaluation`);
+  }
+
+  /** Returns the writing evaluation status and scores for a submitted written attempt. Returns 404 when no record exists. */
+  getWritingEvaluation(activityId: string, attemptId: string): Observable<WritingEvaluationDto> {
+    return this.http.get<WritingEvaluationDto>(`${this.base}/${activityId}/attempts/${attemptId}/writing-evaluation`);
   }
 
   private mimeTypeToExtension(mimeType: string): string {

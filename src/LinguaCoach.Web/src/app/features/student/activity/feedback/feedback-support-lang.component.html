@@ -1,0 +1,17 @@
+@if (text) {
+  <div class="feedback-support-lang" data-testid="feedback-support-lang">
+    <button
+      class="btn btn-ghost btn-sm"
+      data-testid="btn-support-lang-toggle"
+      (click)="toggle()"
+    >
+      {{ showContent() ? 'Hide' : 'Show' }} help in your language
+    </button>
+
+    @if (showContent()) {
+      <div class="support-lang-content" data-testid="support-lang-content">
+        {{ text }}
+      </div>
+    }
+  </div>
+}

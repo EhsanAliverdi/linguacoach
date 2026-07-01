@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-01 (18A-G)
+lastUpdated: 2026-07-01 (18B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,42 @@ Last updated: 2026-07-01
 ---
 
 ## Active sprint
+
+**Phase 18B — Advanced Feedback UX** — complete (2026-07-01)
+
+Improves student feedback experience across all activity types — UX and presentation upgrade only. No new AI scoring, no new activity formats, no CEFR/objective/LP changes, no live AI calls in tests.
+
+**New Angular components (src/app/features/student/activity/feedback/):**
+- `FeedbackAiDisclaimerComponent` — inline AI disclaimer, configurable text, generic across all AI-evaluated types
+- `FeedbackPendingStateComponent` — reusable pending/failed/not-supported state for both speaking and writing evaluation
+- `FeedbackWritingEvalComponent` — writing evaluation scores grid (overall, grammar, vocabulary, coherence, task completion), feedback text, corrected text, suggested improvement, AI disclaimer; handles all `EvaluationStatus` states
+- `FeedbackNextStepsComponent` — context-aware action buttons: Improve (writing only), Try Again (not speaking/pronunciation), Next Activity, Back to Dashboard; all 4 outputs wired
+- `FeedbackSkillContextComponent` — displays primarySkill, exerciseType, difficulty badges when stageContent is present
+- `FeedbackSupportLangComponent` — generic "help in your language" collapsible toggle, not hardcoded to Persian
+
+**Modified Angular:**
+- `ActivityFeedbackPageComponent` — 2 new inputs: `activityType`, `stageContent`; writing evaluation polling (8s interval, max 15 polls) via `getWritingEvaluation`; replaced hardcoded Persian toggle with `FeedbackSupportLangComponent`; replaced hardcoded action buttons with `FeedbackNextStepsComponent`; added `FeedbackSkillContextComponent` header; added AI disclaimer after coachSummary; renders `nextPracticeSuggestion` (previously unreachable); added `pronunciationScore` to speaking scores grid
+- `activity-lesson.component.html` — passes `activityType` and `stageContent` to `<app-activity-feedback-page>`
+- `PatternEvaluationResultComponent` — imports and renders `FeedbackAiDisclaimerComponent` at end of chat/email section and spoken response section
+- `ActivityService` — `getWritingEvaluation` method added
+- `activity.models.ts` — `WritingEvaluationDto`, `EvaluationStatus` added
+
+**Backward compatibility:** All old `ActivityFeedbackDto` fields still render. `SpeakingEvaluationDto` polling unchanged. `feedbackInSourceLanguage` still works; label is now generic.
+
+**Tests added (Angular unit — 69 new specs):**
+- `feedback-ai-disclaimer.component.spec.ts` — 2 tests
+- `feedback-pending-state.component.spec.ts` — 6 tests
+- `feedback-next-steps.component.spec.ts` — 12 tests
+- `feedback-skill-context.component.spec.ts` — 5 tests
+- `feedback-support-lang.component.spec.ts` — 7 tests
+- `feedback-writing-eval.component.spec.ts` — 15 tests
+- `activity-feedback-page.component.spec.ts` — 22 tests
+
+**Build/test totals:** Angular build: clean. Angular unit: 1,483/1,602 (119 pre-existing failures, 0 new regressions, 69 new tests added).
+
+Review: `docs/reviews/2026-07-01-phase-18b-advanced-feedback-ux-review.md`.
+
+---
 
 **Phase 18A-G — Generation Diagnostics Hardening** — complete (2026-07-01)
 

@@ -1,0 +1,13 @@
+@if (hasAnyContext) {
+  <div class="feedback-skill-context" data-testid="feedback-skill-context">
+    @if (primarySkill) {
+      <span class="skill-badge" data-testid="skill-primary">{{ primarySkill }}</span>
+    }
+    @if (exerciseType) {
+      <span class="skill-badge skill-badge--secondary" data-testid="skill-exercise-type">{{ exerciseType }}</span>
+    }
+    @if (difficulty) {
+      <span class="skill-badge skill-badge--difficulty" data-testid="skill-difficulty">{{ difficulty }}</span>
+    }
+  </div>
+}

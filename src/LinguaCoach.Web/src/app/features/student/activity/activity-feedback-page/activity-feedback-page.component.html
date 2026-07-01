@@ -1,5 +1,14 @@
 <div data-testid="feedback-page" style="display:flex;flex-direction:column;gap:16px">
 
+  <!-- Skill/objective context header -->
+  @if (stageContent) {
+    <app-feedback-skill-context
+      [primarySkill]="stageContent.primarySkill ?? null"
+      [exerciseType]="stageContent.exerciseType ?? null"
+      [difficulty]="null">
+    </app-feedback-skill-context>
+  }
+
   <!-- Pattern-aware result renderer — shown when patternEvaluation is present -->
   @if (feedback.patternEvaluation) {
     <app-pattern-evaluation-result
@@ -27,12 +36,18 @@
           </div>
         }
         <!-- Scores — only shown when present; no empty score cards -->
-        @if (evaluation()!.overallScore !== null || evaluation()!.completenessScore !== null || evaluation()!.relevanceScore !== null || evaluation()!.fluencyScore !== null) {
+        @if (evaluation()!.overallScore !== null || evaluation()!.completenessScore !== null || evaluation()!.relevanceScore !== null || evaluation()!.fluencyScore !== null || evaluation()!.pronunciationScore !== null) {
           <div data-testid="evaluation-scores" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">
             @if (evaluation()!.overallScore !== null) {
               <div style="padding:10px 12px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
                 <p style="font-size:18px;font-weight:800;color:var(--sp-ink);margin:0">{{ evaluation()!.overallScore }}</p>
                 <p style="font-size:11px;font-weight:600;color:var(--sp-muted);margin:2px 0 0;text-transform:uppercase;letter-spacing:.04em">Overall</p>
+              </div>
+            }
+            @if (evaluation()!.pronunciationScore !== null) {
+              <div style="padding:10px 12px;border-radius:var(--sp-r);background:var(--sp-canvas2);border:1.5px solid var(--sp-border2);text-align:center">
+                <p style="font-size:18px;font-weight:800;color:var(--sp-ink);margin:0">{{ evaluation()!.pronunciationScore }}</p>
+                <p style="font-size:11px;font-weight:600;color:var(--sp-muted);margin:2px 0 0;text-transform:uppercase;letter-spacing:.04em">Pronunciation</p>
               </div>
             }
             @if (evaluation()!.completenessScore !== null) {
@@ -67,7 +82,7 @@
             </div>
           </details>
         }
-        <p data-testid="evaluation-ai-disclaimer" style="font-size:11px;color:var(--sp-muted);line-height:1.5;margin:0">This feedback is AI-assisted and may be approximate. It does not represent an official assessment.</p>
+        <app-feedback-ai-disclaimer data-testid="evaluation-ai-disclaimer" />
       </div>
     }
 
@@ -135,10 +150,22 @@
       <div style="width:36px;height:36px;border-radius:50%;background:var(--sp-grad-brand);flex-shrink:0;display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
-      <div class="sp-coach-bubble" style="flex:1;font-size:13.5px;color:var(--sp-text);line-height:1.65">
-        {{ feedback.coachSummary }}
+      <div style="flex:1">
+        <div class="sp-coach-bubble" style="font-size:13.5px;color:var(--sp-text);line-height:1.65">
+          {{ feedback.coachSummary }}
+        </div>
+        <app-feedback-ai-disclaimer style="display:block;margin-top:8px" />
       </div>
     </div>
+  }
+
+  <!-- Writing evaluation scores (supplemental, for writingScenario) -->
+  @if (isWritingActivity) {
+    <app-feedback-writing-eval
+      data-testid="writing-eval"
+      [eval]="writingEvaluation()"
+      [loading]="writingEvaluationLoading()">
+    </app-feedback-writing-eval>
   }
 
   <!-- Legacy feedback sections — hidden when pattern evaluation renders its own result -->
@@ -260,21 +287,18 @@
       <div style="display:flex;flex-direction:column;gap:14px">
         @for (change of feedback.changes; track $index) {
           <div class="sp-diff-item">
-            <!-- Original phrase (removed style) -->
             @if (change.type !== 'add' && change.original) {
               <div class="sp-diff-remove" style="margin-bottom:6px">
                 <span style="font-size:11px;font-weight:700;color:var(--sp-warn);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">Before</span>
                 <span style="font-size:13.5px;font-weight:500;text-decoration:line-through">{{ change.original }}</span>
               </div>
             }
-            <!-- Suggested phrase (added style) -->
             @if (change.type !== 'remove' && change.suggested) {
               <div class="sp-diff-add" style="margin-bottom:8px">
                 <span style="font-size:11px;font-weight:700;color:var(--sp-success);margin-right:6px;text-transform:uppercase;letter-spacing:.04em">After</span>
                 <span style="font-size:13.5px;font-weight:600">{{ change.suggested }}</span>
               </div>
             }
-            <!-- Reason + category badge -->
             <div style="display:flex;align-items:flex-start;gap:8px">
               @if (change.category) {
                 <span class="sp-pill" style="font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px"
@@ -296,28 +320,8 @@
     </div>
   }
 
-  <!-- Native-language explanation (hidden by default, revealed on demand) -->
-  @if (feedback.feedbackInSourceLanguage) {
-    <div>
-      <button (click)="showNativeExplanation.set(!showNativeExplanation())"
-        style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 0;font-size:13px;font-weight:700;color:var(--sp-muted)">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-          @if (showNativeExplanation()) {
-            <polyline points="18 15 12 9 6 15"/>
-          } @else {
-            <polyline points="6 9 12 15 18 9"/>
-          }
-        </svg>
-        {{ showNativeExplanation() ? 'Hide Persian explanation' : 'Show Persian explanation' }}
-      </button>
-      @if (showNativeExplanation()) {
-        <div>
-          <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">توضیح به فارسی</p>
-          <div class="sp-source-lang-block">{{ feedback.feedbackInSourceLanguage }}</div>
-        </div>
-      }
-    </div>
-  }
+  <!-- Support language help (generic — not hardcoded to Persian) -->
+  <app-feedback-support-lang [text]="feedback.feedbackInSourceLanguage" />
 
   <!-- Mini lesson -->
   @if (feedback.miniLesson) {
@@ -335,7 +339,15 @@
     </div>
   }
 
-  <!-- Suggested improved version (collapsible — clearly labelled as suggestion) -->
+  <!-- Next practice suggestion (previously never rendered) -->
+  @if (feedback.nextPracticeSuggestion) {
+    <div data-testid="next-practice-suggestion" style="background:var(--sp-canvas2);border-radius:var(--sp-r);padding:14px 16px;border-left:3px solid var(--sp-vocabulary)">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-ink);margin-bottom:4px">What to practise next</p>
+      <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0">{{ feedback.nextPracticeSuggestion }}</p>
+    </div>
+  }
+
+  <!-- Suggested improved version (collapsible) -->
   @if (feedback.correctedText) {
     <details class="sp-collapsible">
       <summary>
@@ -360,19 +372,15 @@
 
   } <!-- end @if (!patternEvaluation) legacy sections -->
 
-  <!-- Action buttons -->
-  <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
-    <button (click)="improveAnswer.emit()" class="sp-button-primary" style="width:100%">
-      Improve my answer →
-    </button>
-    <button (click)="tryAgain.emit()" class="sp-button-ghost" style="width:100%">
-      Try again from scratch
-    </button>
-    <button (click)="nextActivity.emit()" class="sp-button-secondary" style="width:100%">
-      Next activity
-    </button>
-    <button (click)="backToDashboard.emit()" class="sp-button-secondary" style="width:100%;margin-top:2px">
-      Back to Today
-    </button>
-  </div>
+  <!-- Context-aware action buttons -->
+  <app-feedback-next-steps
+    data-testid="feedback-next-steps"
+    [activityType]="activityType"
+    [hasPatternResult]="!!feedback.patternEvaluation"
+    (improve)="improveAnswer.emit()"
+    (tryAgain)="tryAgain.emit()"
+    (nextActivity)="nextActivity.emit()"
+    (backToDashboard)="backToDashboard.emit()">
+  </app-feedback-next-steps>
+
 </div>

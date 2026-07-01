@@ -1,0 +1,16 @@
+<div class="feedback-pending" data-testid="feedback-pending-state">
+  @if (isEvaluating) {
+    <div class="pending-row">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Your {{ label }} is being evaluated — results will appear shortly.</span>
+    </div>
+  } @else if (isFailed) {
+    <div class="failed-row" data-testid="pending-failed">
+      <span>Evaluation could not be completed. Coach feedback is still available above.</span>
+    </div>
+  } @else {
+    <div class="not-supported-row" data-testid="pending-not-supported">
+      <span>AI evaluation is not available for this {{ label }} activity.</span>
+    </div>
+  }
+</div>

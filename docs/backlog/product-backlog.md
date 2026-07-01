@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 14:45
+lastUpdated: 2026-07-01
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,35 @@ supersededBy:
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Phase 18B — Advanced Feedback UX `Done`
+
+Sprint doc: [sprints/current-sprint.md](../sprints/current-sprint.md)
+Review: [reviews/2026-07-01-phase-18b-advanced-feedback-ux-review.md](../reviews/2026-07-01-phase-18b-advanced-feedback-ux-review.md)
+
+- [x] Writing evaluation scores loaded and displayed for writing activities. `Done`
+- [x] Support-language help collapsible — generic label, not hardcoded to Persian. `Done`
+- [x] Context-aware next-step action buttons (Improve for writing only; Try Again hidden for speaking). `Done`
+- [x] Skill/objective context header from stageContent. `Done`
+- [x] AI disclaimer in coach feedback, chat/email, and spoken response sections. `Done`
+- [x] `nextPracticeSuggestion` rendered (was previously unreachable). `Done`
+- [x] `pronunciationScore` added to speaking eval scores grid. `Done`
+- [x] 69 new Angular unit tests; 0 regressions. `Done`
+
+---
+
+## Phase 18A-G — Generation Diagnostics Hardening `Done`
+
+Sprint doc: [sprints/current-sprint.md](../sprints/current-sprint.md)
+Review: [reviews/2026-07-01-phase-18a-g-generation-diagnostics-hardening-review.md](../reviews/2026-07-01-phase-18a-g-generation-diagnostics-hardening-review.md)
+
+- [x] Provider/model traceability in admin diagnostics. `Done`
+- [x] SHA-256 content hashing for prompt versioning. `Done`
+- [x] Configurable data retention with Quartz prune job. `Done`
+- [x] Objective/student context threading into failure log. `Done`
+- [x] Abandoned-generation rate warning. `Done`
 
 ---
 

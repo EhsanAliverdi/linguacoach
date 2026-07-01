@@ -323,3 +323,24 @@ export interface SpeakingEvaluationDto {
   providerName: string | null;
   modelName: string | null;
 }
+
+// ── Writing Evaluation (Phase 18B) ────────────────────────────────────────────
+
+export type EvaluationStatus = 'Pending' | 'Evaluating' | 'Completed' | 'Failed' | 'Skipped' | 'NotSupported';
+
+export interface WritingEvaluationDto {
+  attemptId: string;
+  status: EvaluationStatus;
+  feedbackText: string | null;
+  suggestedImprovement: string | null;
+  correctedText: string | null;
+  overallScore: number | null;
+  grammarScore: number | null;
+  vocabularyScore: number | null;
+  coherenceScore: number | null;
+  taskCompletionScore: number | null;
+  completedAtUtc: string | null;
+  failureReason: string | null;
+  providerName: string | null;
+  modelName: string | null;
+}

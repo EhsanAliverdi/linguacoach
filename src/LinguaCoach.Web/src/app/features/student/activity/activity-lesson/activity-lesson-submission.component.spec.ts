@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { of, throwError, Subject } from 'rxjs';
+import { of, throwError, Subject, NEVER } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivityLessonComponent } from './activity-lesson.component';
@@ -110,8 +110,11 @@ describe('ActivityLessonComponent — submission and feedback loop', () => {
 
   beforeEach(() => {
     activityService = jasmine.createSpyObj('ActivityService', [
-      'getById', 'getNext', 'submitAttempt', 'submitVocabAttempt', 'submitListeningAttempt', 'getAudioBlobUrl',
+      'getById', 'getNext', 'submitAttempt', 'submitVocabAttempt', 'submitListeningAttempt',
+      'getAudioBlobUrl', 'getAttemptEvaluation', 'getWritingEvaluation',
     ]);
+    activityService.getAttemptEvaluation.and.returnValue(NEVER);
+    activityService.getWritingEvaluation.and.returnValue(NEVER);
     router = jasmine.createSpyObj('Router', ['navigate', 'navigateByUrl']);
   });
 

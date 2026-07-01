@@ -1,0 +1,21 @@
+<div class="feedback-next-steps" data-testid="feedback-next-steps">
+  @if (showImprove) {
+    <button class="btn btn-secondary" data-testid="btn-improve" (click)="improve.emit()">
+      Improve my answer
+    </button>
+  }
+
+  @if (showTryAgain) {
+    <button class="btn btn-outline" data-testid="btn-try-again" (click)="tryAgain.emit()">
+      Try again
+    </button>
+  }
+
+  <button class="btn btn-primary" data-testid="btn-next-activity" (click)="nextActivity.emit()">
+    Next activity
+  </button>
+
+  <button class="btn btn-ghost" data-testid="btn-back-dashboard" (click)="backToDashboard.emit()">
+    Back to dashboard
+  </button>
+</div>

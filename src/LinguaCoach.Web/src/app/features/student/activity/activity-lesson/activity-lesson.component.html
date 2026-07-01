@@ -154,6 +154,8 @@
     [previousScore]="previousScore()"
     [activityId]="activity()?.activityId ?? null"
     [attemptId]="feedback()!.attemptId"
+    [activityType]="activity()?.activityType ?? null"
+    [stageContent]="activity()?.stageContent ?? null"
     (improveAnswer)="improveAnswer()"
     (tryAgain)="tryAgain()"
     (nextActivity)="nextActivity()"

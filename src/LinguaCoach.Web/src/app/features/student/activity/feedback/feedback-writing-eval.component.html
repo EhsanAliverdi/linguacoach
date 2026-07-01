@@ -1,0 +1,65 @@
+@if (loading && !eval) {
+  <div class="writing-eval-loading" data-testid="writing-eval-loading">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Loading writing evaluation...</span>
+  </div>
+} @else if (!eval) {
+  <!-- no eval yet, nothing to show -->
+} @else if (isCompleted) {
+  <div class="writing-eval" data-testid="writing-eval">
+    <h4 class="writing-eval-heading">Writing Evaluation</h4>
+
+    <div class="writing-eval-scores" data-testid="writing-eval-scores">
+      <div class="score-item" data-testid="score-overall">
+        <span class="score-label">Overall</span>
+        <span class="score-value">{{ scorePercent(eval!.overallScore) }}</span>
+      </div>
+      @if (eval!.grammarScore != null) {
+        <div class="score-item" data-testid="score-grammar">
+          <span class="score-label">Grammar</span>
+          <span class="score-value">{{ scorePercent(eval!.grammarScore) }}</span>
+        </div>
+      }
+      @if (eval!.vocabularyScore != null) {
+        <div class="score-item" data-testid="score-vocabulary">
+          <span class="score-label">Vocabulary</span>
+          <span class="score-value">{{ scorePercent(eval!.vocabularyScore) }}</span>
+        </div>
+      }
+      @if (eval!.coherenceScore != null) {
+        <div class="score-item" data-testid="score-coherence">
+          <span class="score-label">Coherence</span>
+          <span class="score-value">{{ scorePercent(eval!.coherenceScore) }}</span>
+        </div>
+      }
+      @if (eval!.taskCompletionScore != null) {
+        <div class="score-item" data-testid="score-task-completion">
+          <span class="score-label">Task Completion</span>
+          <span class="score-value">{{ scorePercent(eval!.taskCompletionScore) }}</span>
+        </div>
+      }
+    </div>
+
+    @if (eval!.feedbackText) {
+      <p class="writing-eval-feedback" data-testid="writing-eval-feedback">{{ eval!.feedbackText }}</p>
+    }
+
+    @if (eval!.correctedText) {
+      <div class="writing-eval-corrected" data-testid="writing-eval-corrected">
+        <h5>Corrected version</h5>
+        <p>{{ eval!.correctedText }}</p>
+      </div>
+    }
+
+    @if (eval!.suggestedImprovement) {
+      <div class="writing-eval-suggestion" data-testid="writing-eval-suggestion">
+        <h5>Suggested improvement</h5>
+        <p>{{ eval!.suggestedImprovement }}</p>
+      </div>
+    }
+
+    <app-feedback-ai-disclaimer />
+  </div>
+} @else if (isFailed || isPending || isNotSupported) {
+  <app-feedback-pending-state [status]="eval!.status" label="writing" />
+}

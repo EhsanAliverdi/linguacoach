@@ -1,20 +1,28 @@
-﻿import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivityFeedbackDto, FeedbackChangeDto, SpeakingEvaluationDto } from '../../../../core/models/activity.models';
+import { ActivityFeedbackDto, ActivityType, FeedbackChangeDto, SpeakingEvaluationDto, StageContentDto, WritingEvaluationDto } from '../../../../core/models/activity.models';
 import { PatternEvaluationResultComponent } from '../pattern-evaluation-result/pattern-evaluation-result.component';
 import { ActivityService } from '../../../../core/services/activity.service';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
+import { FeedbackAiDisclaimerComponent } from '../feedback/feedback-ai-disclaimer.component';
+import { FeedbackWritingEvalComponent } from '../feedback/feedback-writing-eval.component';
+import { FeedbackNextStepsComponent } from '../feedback/feedback-next-steps.component';
+import { FeedbackSkillContextComponent } from '../feedback/feedback-skill-context.component';
+import { FeedbackSupportLangComponent } from '../feedback/feedback-support-lang.component';
 
-/**
- * Page 3 of the Teach -> Practice -> Feedback flow.
- * Renders the pattern-evaluation result when present, otherwise the legacy
- * per-activity-type feedback sections. Shared by Today's Lesson and Practice Gym.
- */
 @Component({
   selector: 'app-activity-feedback-page',
   standalone: true,
-  imports: [CommonModule, PatternEvaluationResultComponent],
+  imports: [
+    CommonModule,
+    PatternEvaluationResultComponent,
+    FeedbackAiDisclaimerComponent,
+    FeedbackWritingEvalComponent,
+    FeedbackNextStepsComponent,
+    FeedbackSkillContextComponent,
+    FeedbackSupportLangComponent,
+  ],
   templateUrl: './activity-feedback-page.component.html',
 })
 export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
@@ -23,6 +31,8 @@ export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
   @Input() previousScore: number | null = null;
   @Input() activityId: string | null = null;
   @Input() attemptId: string | null = null;
+  @Input() activityType: ActivityType | null = null;
+  @Input() stageContent: StageContentDto | null = null;
 
   @Output() improveAnswer = new EventEmitter<void>();
   @Output() tryAgain = new EventEmitter<void>();
@@ -32,8 +42,11 @@ export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
   showNativeExplanation = signal(false);
   evaluation = signal<SpeakingEvaluationDto | null>(null);
   evaluationLoading = signal(false);
+  writingEvaluation = signal<WritingEvaluationDto | null>(null);
+  writingEvaluationLoading = signal(false);
 
   private _pollSub: Subscription | null = null;
+  private _writingPollSub: Subscription | null = null;
 
   constructor(private _activityService: ActivityService) {}
 
@@ -41,10 +54,22 @@ export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
     if (!this.hasFeedbackContent && this.activityId && this.attemptId) {
       this._startEvaluationLoad();
     }
+    if (this.isWritingActivity && this.activityId && this.attemptId) {
+      this._loadWritingEvaluation();
+    }
   }
 
   ngOnDestroy(): void {
     this._pollSub?.unsubscribe();
+    this._writingPollSub?.unsubscribe();
+  }
+
+  get isWritingActivity(): boolean {
+    return this.activityType === 'writingScenario';
+  }
+
+  get isSpeakingActivity(): boolean {
+    return this.activityType === 'speakingRolePlay' || this.activityType === 'pronunciationPractice';
   }
 
   private _startEvaluationLoad(): void {
@@ -74,6 +99,36 @@ export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
       }, true),
     ).subscribe({
       next: dto => this.evaluation.set(dto),
+    });
+  }
+
+  private _loadWritingEvaluation(): void {
+    this._writingPollSub?.unsubscribe();
+    this.writingEvaluationLoading.set(true);
+
+    this._activityService.getWritingEvaluation(this.activityId!, this.attemptId!).subscribe({
+      next: dto => {
+        this.writingEvaluation.set(dto);
+        this.writingEvaluationLoading.set(false);
+        if (dto.status === 'Pending' || dto.status === 'Evaluating') {
+          this._startWritingPolling();
+        }
+      },
+      error: () => this.writingEvaluationLoading.set(false),
+    });
+  }
+
+  private _startWritingPolling(): void {
+    let polls = 0;
+    this._writingPollSub = interval(8_000).pipe(
+      switchMap(() => this._activityService.getWritingEvaluation(this.activityId!, this.attemptId!)),
+      takeWhile(dto => {
+        polls++;
+        const stillPending = dto.status === 'Pending' || dto.status === 'Evaluating';
+        return stillPending && polls < 15;
+      }, true),
+    ).subscribe({
+      next: dto => this.writingEvaluation.set(dto),
     });
   }
 
@@ -134,4 +189,3 @@ export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
     );
   }
 }
-

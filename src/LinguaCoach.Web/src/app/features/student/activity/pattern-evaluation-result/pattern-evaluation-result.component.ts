@@ -1,11 +1,12 @@
 ﻿import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatternEvaluationDto, PatternEvaluationItemResult } from '../../../../core/models/activity.models';
+import { FeedbackAiDisclaimerComponent } from '../feedback/feedback-ai-disclaimer.component';
 
 @Component({
   selector: 'app-pattern-evaluation-result',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FeedbackAiDisclaimerComponent],
   templateUrl: './pattern-evaluation-result.component.html',
 })
 export class PatternEvaluationResultComponent {
