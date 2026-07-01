@@ -59,6 +59,7 @@ export class SpAdminAreaChartComponent {
   @Input() color = '#5B4BE8';
   @Input() height = 200;
   @Input() prefix = '$';
+  @Input() decimals = 2;
   @Input() ariaLabel = '';
   @Input() emptyMessage = '';
 
@@ -111,7 +112,7 @@ export class SpAdminAreaChartComponent {
     return [0, m * 0.25, m * 0.5, m * 0.75, m].map(v => ({
       v,
       y: this.yS(v),
-      label: `${this.prefix}${v.toFixed(2)}`,
+      label: `${this.prefix}${v.toFixed(this.decimals)}`,
     }));
   }
 

@@ -26,11 +26,12 @@ import {
   SpAdminTruncatedTextComponent,
   SpAdminFlyoutComponent,
 } from '../../../design-system/admin';
-import { SpAdminMiniBarChartComponent, MiniBarItem } from '../../../design-system/admin/components/mini-bar-chart/sp-admin-mini-bar-chart.component';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
+import { SpAdminAreaChartComponent } from '../../../design-system/admin/components/area-chart/sp-admin-area-chart.component';
+import { SpAdminDonutChartComponent, DonutSegment } from '../../../design-system/admin/components/donut-chart/sp-admin-donut-chart.component';
 import { SpAdminSlideOverComponent } from '../../../design-system/admin';
 
 @Component({
@@ -56,11 +57,12 @@ import { SpAdminSlideOverComponent } from '../../../design-system/admin';
     SpAdminSelectComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
-    SpAdminMiniBarChartComponent,
     SpAdminVisualPlaceholderComponent,
     SpAdminRingMetricComponent,
     SpAdminBreakdownBarsComponent,
     SpAdminGraphCardComponent,
+    SpAdminAreaChartComponent,
+    SpAdminDonutChartComponent,
     SpAdminFlyoutComponent,
     SpAdminSlideOverComponent,
   ],
@@ -166,7 +168,8 @@ export class AdminAiUsageComponent implements OnInit {
   filteredRecentItems = computed(() => this.recentItems());
 
   // Client-side pagination for bounded summary tables (design reference paginates these)
-  readonly featurePageSize = 8;
+  // Kept smaller than byProvider's spacious rows so "By feature" reads shorter than "By provider".
+  readonly featurePageSize = 5;
   byFeaturePage = signal(1);
   readonly byFeatureTotalPages = computed(() =>
     Math.max(1, Math.ceil((this.summary()?.byFeature.length ?? 0) / this.featurePageSize)));
@@ -414,14 +417,11 @@ export class AdminAiUsageComponent implements OnInit {
     }));
   });
 
-  // MiniBarItem[] for sp-admin-mini-bar-chart
-  readonly trendItems = computed<MiniBarItem[]>(() =>
-    this.trendBuckets().map(b => ({
-      label: b.date.slice(5), // MM-DD
-      value: b.callCount,
-      date: b.date,
-    }))
-  );
+  // Line/area chart data for "Calls over time"
+  readonly trendChartValues = computed<number[]>(() =>
+    this.trendBuckets().map(b => b.callCount));
+  readonly trendChartLabels = computed<string[]>(() =>
+    this.trendBuckets().map(b => b.date.slice(5))); // MM-DD
 
   readonly successRingPct = computed<number>(() => {
     const s = this.summary();
@@ -464,18 +464,43 @@ export class AdminAiUsageComponent implements OnInit {
     }));
   });
 
-  readonly aggCategoryItems = computed<BreakdownBarItem[]>(() => {
+  readonly aggCategoryTotal = computed<number>(() =>
+    (this.aggCategoryBreakdown()?.categories ?? []).reduce((sum, c) => sum + c.requestCount, 0));
+
+  private readonly donutColors = ['#5B4BE8', '#D97706', '#13B07C', '#7C3AED', '#0D9488'];
+  private static readonly DONUT_OTHERS_COLOR = '#94A3B8';
+
+  // Top 5 categories + "Others" bucket, rendered as a pie/donut with legend.
+  readonly aggCategoryDonutSegments = computed<DonutSegment[]>(() => {
     const data = this.aggCategoryBreakdown();
-    if (!data) return [];
-    const max = Math.max(...data.categories.map(c => c.requestCount), 1);
-    const tones: BreakdownBarItem['tone'][] = ['indigo', 'violet', 'teal', 'amber', 'green', 'slate'];
-    return data.categories.map((c, i) => ({
-      label: c.category.replace(/_/g, ' '),
-      value: c.requestCount,
-      pct: Math.round((c.requestCount / max) * 100),
-      tone: tones[i % tones.length],
+    if (!data || data.categories.length === 0) return [];
+    const total = data.categories.reduce((sum, c) => sum + c.requestCount, 0);
+    if (total === 0) return [];
+
+    const sorted = [...data.categories].sort((a, b) => b.requestCount - a.requestCount);
+    const top = sorted.slice(0, 5);
+    const rest = sorted.slice(5);
+
+    const segments: DonutSegment[] = top.map((c, i) => ({
+      label: this.shortCategoryLabel(c.category),
+      pct: Math.round((c.requestCount / total) * 100),
+      color: this.donutColors[i % this.donutColors.length],
     }));
+
+    if (rest.length > 0) {
+      const restCount = rest.reduce((sum, c) => sum + c.requestCount, 0);
+      segments.push({
+        label: 'Others',
+        pct: Math.round((restCount / total) * 100),
+        color: AdminAiUsageComponent.DONUT_OTHERS_COLOR,
+      });
+    }
+    return segments;
   });
+
+  private shortCategoryLabel(key: string): string {
+    return key.replace(/^activity_generate_/, '').replace(/^activity_/, '').replace(/_/g, ' ');
+  }
 
   readonly periodPillOptions: { value: PeriodPreset; label: string }[] = [
     { value: 'today',  label: 'Today' },

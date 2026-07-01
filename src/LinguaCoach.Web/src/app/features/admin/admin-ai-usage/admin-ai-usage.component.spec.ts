@@ -1261,14 +1261,15 @@ describe('AdminAiUsageComponent', () => {
     expect(bars[1].height).toBeLessThan(48);
   });
 
-  it('mini bar chart renders when trend data available', () => {
+  it('calls over time area chart renders when trend data available', () => {
     const buckets: AiUsageTrendBucket[] = [
       { date: '2025-03-10', callCount: 5, successCount: 4, failureCount: 1, fallbackCount: 0, inputTokens: 100, outputTokens: 50, totalTokens: 150, costUsd: 0.01 },
+      { date: '2025-03-11', callCount: 7, successCount: 7, failureCount: 0, fallbackCount: 0, inputTokens: 120, outputTokens: 60, totalTokens: 180, costUsd: 0.012 },
     ];
     svc.getTrends.and.returnValue(of(buckets));
     const fixture = TestBed.createComponent(AdminAiUsageComponent);
     fixture.detectChanges();
-    const chart = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-mini-bar-chart');
+    const chart = (fixture.nativeElement as HTMLElement).querySelector('sp-admin-area-chart');
     expect(chart).toBeTruthy();
   });
 

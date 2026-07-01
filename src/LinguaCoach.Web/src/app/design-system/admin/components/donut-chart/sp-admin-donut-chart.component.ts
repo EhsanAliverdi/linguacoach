@@ -21,7 +21,9 @@ export interface ComputedSegment extends DonutSegment {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="sp-donut-title">{{ title }}</div>
+    @if (title) {
+      <div class="sp-donut-title">{{ title }}</div>
+    }
     <div class="sp-donut-body">
       <svg [attr.viewBox]="'0 0 100 100'" [attr.width]="size" [attr.height]="size" style="flex-shrink:0">
         @for (seg of computed; track seg.label) {

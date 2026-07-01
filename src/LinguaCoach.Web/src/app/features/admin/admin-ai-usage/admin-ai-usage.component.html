@@ -87,7 +87,7 @@
           <sp-admin-empty-state message="No calls yet." />
         </div>
       } @else {
-        <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid">
+        <sp-admin-table [flush]="true" variant="data" density="spacious" layout="first-column-fluid">
           <table>
             <thead>
               <tr>
@@ -215,7 +215,14 @@
     </div>
   } @else {
     <div class="sp-admin-card-body-md">
-      <sp-admin-mini-bar-chart [items]="trendItems()" tone="indigo" [height]="56" ariaLabel="Daily calls bar chart" />
+      <sp-admin-area-chart
+        [data]="trendChartValues()"
+        [labels]="trendChartLabels()"
+        color="#5B4BE8"
+        [height]="160"
+        prefix=""
+        [decimals]="0"
+        ariaLabel="Calls over time chart" />
     </div>
     <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="640px">
       <table>
@@ -276,16 +283,16 @@
     }
   </sp-admin-graph-card>
 
-  <sp-admin-graph-card title="Calls by feature (30d)"
-    [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryItems().length === 0 ? 'unavailable' : 'live'">
+  <sp-admin-graph-card [title]="'Calls by feature (' + (aggCategoryTotal() | number) + ')'"
+    [status]="loadingAggCategory() ? 'loading' : aggCategoryError() ? 'unavailable' : aggCategoryDonutSegments().length === 0 ? 'unavailable' : 'live'">
     @if (loadingAggCategory()) {
       <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="Loading..." />
-    } @else if (aggCategoryError() || aggCategoryItems().length === 0) {
+    } @else if (aggCategoryError() || aggCategoryDonutSegments().length === 0) {
       <sp-admin-visual-placeholder state="not-available" skeleton="grid" title="Calls by feature" message="No category data for this period" />
     } @else {
-      <sp-admin-breakdown-bars [items]="aggCategoryItems()" [showPct]="true" />
+      <sp-admin-donut-chart [segments]="aggCategoryDonutSegments()" [size]="120" />
       <div class="sp-admin-graph-card-read-more">
-        <button type="button" class="sp-admin-link-btn" (click)="featureSlideOverOpen.set(true)">Read more</button>
+        <button type="button" class="sp-admin-link-btn" (click)="featureSlideOverOpen.set(true)">Read more →</button>
       </div>
     }
   </sp-admin-graph-card>
