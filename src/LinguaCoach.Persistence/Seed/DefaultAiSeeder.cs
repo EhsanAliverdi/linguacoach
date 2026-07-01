@@ -4525,15 +4525,15 @@ Rules:
         // Activity generation prompt
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateWritingKey, ActivityGenerateWritingContent,
-            maxInputTokens: 1300, maxOutputTokens: 2000, ct);
+            maxInputTokens: 1600, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateListeningKey, ActivityGenerateListeningContent,
-            maxInputTokens: 1200, maxOutputTokens: 2000, ct);
+            maxInputTokens: 1600, maxOutputTokens: 2000, ct);
 
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRolePlayKey, ActivityGenerateSpeakingRolePlayContent,
-            maxInputTokens: 1600, maxOutputTokens: 2000, ct);
+            maxInputTokens: 1900, maxOutputTokens: 2000, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,
