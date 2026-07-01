@@ -189,6 +189,42 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         dbItem!.Status.Should().Be(ReadinessPoolStatus.Consumed);
     }
 
+    // 15. Ready item with RequiresAdminReview=true is excluded from Suggested.
+    [Fact]
+    public async Task GetSuggestions_RequiresAdminReview_ExcludedFromSuggested()
+    {
+        SeedItem(status: ReadinessPoolStatus.Ready, routingReason: RoutingReason.Normal, requiresAdminReview: true);
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+        result.SuggestedItems.Should().BeEmpty();
+    }
+
+    // 16. ReviewOnly item with RequiresAdminReview=true is excluded from Review section too.
+    [Fact]
+    public async Task GetSuggestions_RequiresAdminReview_ExcludedFromReviewSection()
+    {
+        SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true, requiresAdminReview: true);
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+        result.ReviewItems.Should().BeEmpty();
+    }
+
+    // 17. Reserved item with RequiresAdminReview=true is excluded from Continue.
+    [Fact]
+    public async Task GetSuggestions_RequiresAdminReview_ExcludedFromContinue()
+    {
+        SeedItem(status: ReadinessPoolStatus.Reserved, expiresAt: DateTime.UtcNow.AddHours(2), requiresAdminReview: true);
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+        result.ContinueItems.Should().BeEmpty();
+    }
+
+    // 18. Same item without RequiresAdminReview appears normally (control case for #15).
+    [Fact]
+    public async Task GetSuggestions_WithoutRequiresAdminReview_AppearsInSuggested()
+    {
+        SeedItem(status: ReadinessPoolStatus.Ready, routingReason: RoutingReason.Normal, requiresAdminReview: false);
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+        result.SuggestedItems.Should().HaveCount(1);
+    }
+
     // --- helpers ---
 
     private StudentActivityReadinessItem SeedItem(
@@ -196,7 +232,8 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         RoutingReason routingReason = RoutingReason.Normal,
         bool isLower = false,
         DateTime? expiresAt = null,
-        Guid? learningActivityId = null)
+        Guid? learningActivityId = null,
+        bool requiresAdminReview = false)
     {
         var item = new StudentActivityReadinessItem(
             studentId: StudentId,
@@ -204,7 +241,8 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
             targetCefrLevel: "B2",
             routingReason: routingReason,
             isLowerLevelContent: isLower,
-            expiresAt: expiresAt);
+            expiresAt: expiresAt,
+            requiresAdminReview: requiresAdminReview);
 
         ForceStatus(item, status);
         if (learningActivityId.HasValue) ForceLinkedActivity(item, learningActivityId.Value);

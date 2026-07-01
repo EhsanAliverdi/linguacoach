@@ -69,7 +69,7 @@ function makeApi(
     generateLessonsForStudent: jasmine.createSpy('generateLessonsForStudent').and.returnValue(of({ queued: true, requestedCount: 1 } as AdminGenerateLessonsResponse)),
     getReviewScaffoldDryRun: jasmine.createSpy('getReviewScaffoldDryRun').and.returnValue(of({
       generationEnabled: false,
-      dryRunOnly: false,
+      dryRunOnly: true,
       status: 'Disabled',
       studentsConsidered: 0,
       studentsEligibleForReview: 0,
@@ -77,9 +77,17 @@ function makeApi(
       blockedDuplicates: 0,
       blockedInactiveObjectives: 0,
       estimatedNetNewReviewItems: 0,
+      requireAdminReview: true,
+      maxScaffoldItemsPerStudentPerDay: 3,
+      scaffoldAllowedSources: ['PracticeGym'],
+      allowTodayLessonInsertion: false,
+      minimumConfidenceForReviewNeed: 'Medium',
+      adminReviewRequiredCount: 0,
+      generatedTodayCount: 0,
       warnings: ['EnableReviewScaffoldGeneration is currently false.'],
       generatedAt: '2026-06-27T00:00:00Z',
     })),
+    getReviewScaffoldPendingReview: jasmine.createSpy('getReviewScaffoldPendingReview').and.returnValue(of([])),
   };
 }
 
@@ -201,5 +209,60 @@ describe('AdminLessonsComponent', () => {
     api.getAggregatePoolHealth.calls.reset();
     component.refreshPoolHealth();
     expect(api.getAggregatePoolHealth).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls getReviewScaffoldDryRun and getReviewScaffoldPendingReview on init', async () => {
+    await setup();
+    expect(api.getReviewScaffoldDryRun).toHaveBeenCalledTimes(1);
+    expect(api.getReviewScaffoldPendingReview).toHaveBeenCalledTimes(1);
+  });
+
+  it('populates scaffold dry-run config fields', async () => {
+    await setup();
+    expect(component.scaffoldDryRun()?.requireAdminReview).toBeTrue();
+    expect(component.scaffoldDryRun()?.maxScaffoldItemsPerStudentPerDay).toBe(3);
+    expect(component.scaffoldDryRun()?.scaffoldAllowedSources).toEqual(['PracticeGym']);
+    expect(component.scaffoldDryRun()?.allowTodayLessonInsertion).toBeFalse();
+  });
+
+  it('shows empty state when no items are pending admin review', async () => {
+    await setup();
+    expect(component.scaffoldPending().length).toBe(0);
+    expect(fixture.nativeElement.textContent).toContain('Nothing pending review');
+  });
+
+  it('renders pending review rows when present', async () => {
+    api = makeApi();
+    api.getReviewScaffoldPendingReview.and.returnValue(of([{
+      id: 'item-1',
+      studentId: 'student-1',
+      source: 'PracticeGym',
+      status: 'Ready',
+      targetCefrLevel: 'A2',
+      primarySkill: 'writing',
+      curriculumObjectiveKey: 'obj-1',
+      curriculumObjectiveTitle: 'Email basics',
+      routingReason: 'Review',
+      createdAt: '2026-07-01T00:00:00Z',
+    }]));
+    await TestBed.configureTestingModule({
+      imports: [AdminLessonsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminLessonsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.scaffoldPending().length).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('Email basics');
+  });
+
+  it('refreshScaffoldPendingReview reloads the pending review list', async () => {
+    await setup();
+    api.getReviewScaffoldPendingReview.calls.reset();
+    component.refreshScaffoldPendingReview();
+    expect(api.getReviewScaffoldPendingReview).toHaveBeenCalledTimes(1);
   });
 });

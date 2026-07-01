@@ -88,11 +88,41 @@ public sealed class ReviewScaffoldDryRunTests : IClassFixture<ApiTestFactory>
             "studentsConsidered", "studentsEligibleForReview",
             "estimatedReviewOnlyConversions", "blockedDuplicates",
             "blockedInactiveObjectives", "estimatedNetNewReviewItems",
+            "requireAdminReview", "maxScaffoldItemsPerStudentPerDay",
+            "scaffoldAllowedSources", "allowTodayLessonInsertion",
+            "minimumConfidenceForReviewNeed", "adminReviewRequiredCount",
+            "generatedTodayCount",
             "warnings", "generatedAt"
         })
         {
             Assert.True(body.TryGetProperty(field, out _), $"Missing field: {field}");
         }
+    }
+
+    // ── Dry-run reports Phase 19A safe config defaults ────────────────────────
+
+    [Fact]
+    public async Task DryRun_ReportsSafeConfigDefaults()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(adminToken)
+            .GetAsync("/api/admin/readiness-pool/review-scaffold/dry-run");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.True(body.GetProperty("requireAdminReview").GetBoolean());
+        Assert.False(body.GetProperty("allowTodayLessonInsertion").GetBoolean());
+        Assert.Equal("Medium", body.GetProperty("minimumConfidenceForReviewNeed").GetString());
+        var sources = body.GetProperty("scaffoldAllowedSources").EnumerateArray()
+            .Select(e => e.GetString()).ToList();
+        // .NET config binding appends config-bound array items to the class default rather than
+        // replacing it (same known quirk already present for PlacementAssessmentOptions.SkillsToAssess),
+        // so assert containment/exclusion rather than exact count.
+        Assert.All(sources, s => Assert.Equal("PracticeGym", s));
+        Assert.DoesNotContain("TodayLesson", sources);
     }
 
     // ── Dry-run reports Disabled status when flag is off ─────────────────────
@@ -242,5 +272,59 @@ public sealed class ReviewScaffoldDryRunTests : IClassFixture<ApiTestFactory>
             var val = body.GetProperty(field).GetInt32();
             Assert.True(val >= 0, $"Field {field} was negative: {val}");
         }
+    }
+
+    // ── Pending-review list: auth guards ──────────────────────────────────────
+
+    [Fact]
+    public async Task PendingReview_Unauthenticated_Returns401()
+    {
+        var response = await _factory.CreateClient()
+            .GetAsync("/api/admin/readiness-pool/review-scaffold/pending-review");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PendingReview_AsStudent_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync(
+            $"pendingreview403_{Guid.NewGuid():N}@t.com");
+        var response = await ClientWithToken(token)
+            .GetAsync("/api/admin/readiness-pool/review-scaffold/pending-review");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PendingReview_AsAdmin_Returns200WithArrayShape()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var response = await ClientWithToken(adminToken)
+            .GetAsync("/api/admin/readiness-pool/review-scaffold/pending-review");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        Assert.Equal(JsonValueKind.Array, body.ValueKind);
+    }
+
+    [Fact]
+    public async Task PendingReview_DoesNotMutateDatabase()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+
+        using var scopeBefore = _factory.Services.CreateScope();
+        var dbBefore = scopeBefore.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var countBefore = await dbBefore.StudentActivityReadinessItems.CountAsync();
+
+        var response = await ClientWithToken(adminToken)
+            .GetAsync("/api/admin/readiness-pool/review-scaffold/pending-review");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scopeAfter = _factory.Services.CreateScope();
+        var dbAfter = scopeAfter.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var countAfter = await dbAfter.StudentActivityReadinessItems.CountAsync();
+
+        Assert.Equal(countBefore, countAfter);
     }
 }

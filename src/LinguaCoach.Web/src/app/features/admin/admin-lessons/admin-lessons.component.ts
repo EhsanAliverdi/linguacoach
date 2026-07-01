@@ -20,7 +20,7 @@ import {
 } from '../../../design-system/admin';
 import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldPendingItem } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
@@ -95,6 +95,11 @@ export class AdminLessonsComponent implements OnInit {
   scaffoldDryRunError = signal('');
   scaffoldDryRun = signal<ReviewScaffoldDryRunSummary | null>(null);
 
+  // ── Review scaffold pending admin review ──────────────────────────────────
+  scaffoldPendingLoading = signal(false);
+  scaffoldPendingError = signal('');
+  scaffoldPending = signal<ReviewScaffoldPendingItem[]>([]);
+
   // ── Generate for student ──────────────────────────────────────────────────
   studentProfileId = '';
   generatePending = signal(false);
@@ -106,6 +111,7 @@ export class AdminLessonsComponent implements OnInit {
     this.loadBatches();
     this.loadPoolHealth();
     this.loadScaffoldDryRun();
+    this.loadScaffoldPendingReview();
   }
 
   private loadSettings(): void {
@@ -226,4 +232,18 @@ export class AdminLessonsComponent implements OnInit {
   }
 
   refreshScaffoldDryRun(): void { this.loadScaffoldDryRun(); }
+
+  private loadScaffoldPendingReview(): void {
+    this.scaffoldPendingLoading.set(true);
+    this.scaffoldPendingError.set('');
+    this.adminApi.getReviewScaffoldPendingReview().subscribe({
+      next: items => { this.scaffoldPending.set(items); this.scaffoldPendingLoading.set(false); },
+      error: err => {
+        this.scaffoldPendingError.set(err?.error?.error ?? err?.message ?? 'Failed to load pending review items.');
+        this.scaffoldPendingLoading.set(false);
+      },
+    });
+  }
+
+  refreshScaffoldPendingReview(): void { this.loadScaffoldPendingReview(); }
 }

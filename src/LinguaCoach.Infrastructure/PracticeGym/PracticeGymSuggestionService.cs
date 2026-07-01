@@ -16,6 +16,7 @@ namespace LinguaCoach.Infrastructure.PracticeGym;
 ///
 /// Guardrails (defence-in-depth):
 ///   - Consumed / expired / failed / stale / queued / generating items excluded entirely.
+///   - Items with RequiresAdminReview=true are excluded entirely (Phase 19A admin-review hold).
 ///   - ReviewOnly status items go to ReviewItems only, never SuggestedItems.
 ///   - RoutingReason.Review / Scaffold / Remediation items with Ready status
 ///     go to ReviewItems if IsLowerLevelContent, otherwise may appear in Suggested.
@@ -61,7 +62,8 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
                      && i.Status != ReadinessPoolStatus.Stale
                      && i.Status != ReadinessPoolStatus.Skipped
                      && i.Status != ReadinessPoolStatus.Queued
-                     && i.Status != ReadinessPoolStatus.Generating)
+                     && i.Status != ReadinessPoolStatus.Generating
+                     && !i.RequiresAdminReview)
             .ToListAsync(ct);
 
         // ContinueItems: reserved, not expired.

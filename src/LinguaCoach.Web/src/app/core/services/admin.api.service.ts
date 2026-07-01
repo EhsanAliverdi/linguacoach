@@ -26,6 +26,7 @@ import {
   AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse,
   AggregatePoolHealthSummary,
   ReviewScaffoldDryRunSummary,
+  ReviewScaffoldPendingItem,
   MasteryValidationSummary,
   AdminPlacementLatestResponse,
   AdminPlacementHistoryItem,
@@ -165,6 +166,9 @@ export class AdminApiService {
   }
   getReviewScaffoldDryRun(): Observable<ReviewScaffoldDryRunSummary> {
     return this.http.get<ReviewScaffoldDryRunSummary>(`${this.api}/readiness-pool/review-scaffold/dry-run`);
+  }
+  getReviewScaffoldPendingReview(): Observable<ReviewScaffoldPendingItem[]> {
+    return this.http.get<ReviewScaffoldPendingItem[]>(`${this.api}/readiness-pool/review-scaffold/pending-review`);
   }
   getMasteryValidationSummary(): Observable<MasteryValidationSummary> {
     return this.http.get<MasteryValidationSummary>(`${this.api}/mastery/validation-summary`);

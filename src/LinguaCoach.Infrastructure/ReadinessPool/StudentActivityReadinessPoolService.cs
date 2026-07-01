@@ -51,7 +51,8 @@ public sealed class StudentActivityReadinessPoolService : IStudentActivityReadin
             translationHelpPreference: request.TranslationHelpPreference,
             generatedBy: request.GeneratedBy,
             priority: request.Priority,
-            expiresAt: request.ExpiresAt);
+            expiresAt: request.ExpiresAt,
+            requiresAdminReview: request.RequiresAdminReview);
 
         _db.StudentActivityReadinessItems.Add(item);
         await _db.SaveChangesAsync(ct);

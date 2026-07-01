@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-27 (12C)
+lastUpdated: 2026-07-01 (19A)
 owner: architecture
 supersedes:
 supersededBy:
@@ -137,7 +137,13 @@ Bound from `appsettings.json` under `"ReadinessPool"`. Defaults:
 | `GeneratingTimeoutMinutes` | 30 | Minutes before an orphaned generating item is failed. |
 | `FailedRetryDelayMinutes` | 60 | Minutes a failed item must wait before retry. |
 | `MaxItemsGeneratedPerRun` | 50 | Cap on new items queued per replenishment run. |
-| `EnableReviewScaffoldGeneration` | false | Allows lower-level review/scaffold items when ledger shows weakness. Conservative default. TODO: enable after mastery/weakness engine validated. |
+| `EnableReviewScaffoldGeneration` | false | Master switch. Allows lower-level review/scaffold items when ledger shows weakness. |
+| `DryRunOnly` | true (Phase 19A) | When `EnableReviewScaffoldGeneration=true`, gating logic runs but no item is written. A second explicit step (`DryRunOnly=false`) is required before generation goes live. |
+| `RequireAdminReview` | true | Generated scaffold items are stamped `RequiresAdminReview=true` and excluded from Practice Gym suggestions until an admin clears the flag globally. Not a per-item approval workflow (see Part below). |
+| `MaxScaffoldItemsPerStudentPerDay` | 3 | Per-student daily cap on scaffold-routed item generation (UTC calendar day). |
+| `ScaffoldAllowedSources` | `["PracticeGym"]` | Readiness pool sources eligible for scaffold generation. |
+| `AllowTodayLessonInsertion` | false | Extra explicit override required (in addition to `ScaffoldAllowedSources` containing `"TodayLesson"`) before Today lesson pool items may be scaffold-routed. |
+| `MinimumConfidenceForReviewNeed` | `"Medium"` | Minimum `ReviewNeedConfidence` band (Low/Medium/High) required before a weak-event signal triggers generation. See confidence banding below. |
 
 ### Pool Health
 
@@ -168,9 +174,25 @@ Replenishment completion log line includes `elapsedMs` and `successRate` fields 
 5. **Fill shortfalls** — for each active student × source below target, queue new items up to `MaxItemsGeneratedPerRun`.
 6. **Duplicate prevention** — skip if same `(StudentId, Source, CurriculumObjectiveKey, PatternKey, TargetCefrLevel)` already `Queued/Generating/Ready/Reserved`.
 
-### Review / scaffold rule
+### Review / scaffold rule (Phase 19A controlled enablement)
 
-`AllowReviewOrScaffold=true` is passed to routing only when `EnableReviewScaffoldGeneration=true` AND `IStudentLearningLedger.GetWeakEventsAsync` returns at least one event. Default is `false`. B2 students will never silently receive B1 content as Normal content. Lower-level content is only generated when `RoutingReason != Normal` and `IsLowerLevelContent = true`.
+`AllowReviewOrScaffold=true` is passed to routing only when all of the following hold in `FillShortfallAsync`:
+
+1. `EnableReviewScaffoldGeneration=true`.
+2. The pool `source` is in `ScaffoldAllowedSources`, and if `source == TodayLesson`, `AllowTodayLessonInsertion=true` as well.
+3. `IStudentLearningLedger.GetWeakEventsAsync` returns at least one event for the student.
+4. The event is corroborated by mastery classification at or above `MinimumConfidenceForReviewNeed`:
+   - `High` — objective appears in `StudentMasteryReport.AtRiskObjectiveKeys` (consistent failures).
+   - `Medium` — objective appears in `StudentMasteryReport.WeakObjectiveKeys` (`NeedsReview`).
+   - `Low` — only raw ledger weak events exist, no mastery corroboration.
+   No new AI/ML signal — deterministic, derived from the existing mastery engine.
+5. The student has not reached `MaxScaffoldItemsPerStudentPerDay` for the current UTC calendar day (counts items where `RoutingReason != Normal` and `GeneratedBy` starts with `"ReadinessPoolReplenishment"`, created today).
+
+When all gates pass, the created item is stamped `RequiresAdminReview = RequireAdminReview` (config snapshot at creation time). `PracticeGymSuggestionService` excludes any item with `RequiresAdminReview=true` from all three suggestion buckets (Suggested/Continue/Review) until an admin sets `ReadinessPool:RequireAdminReview=false`. There is no per-item approve/reject workflow in this phase — the flag is global, not per-item; see `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement-review.md` for the scope decision and next-phase recommendation.
+
+Failed replenishment slots (gate not met) fall back to `RoutingMode.NewLearning` for that batch — no item is left ungenerated, it's just not scaffold-routed. B2 students will never silently receive B1 content as Normal content. Lower-level content is only generated when `RoutingReason != Normal` and `IsLowerLevelContent = true`.
+
+`ReplenishmentRunSummary.SkippedDailyCapReached` counts scaffold slots that fell back to Normal routing because the per-student daily cap was reached.
 
 ### Active students
 

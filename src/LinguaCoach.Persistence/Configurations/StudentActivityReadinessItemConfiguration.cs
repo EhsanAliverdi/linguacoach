@@ -44,6 +44,8 @@ internal sealed class StudentActivityReadinessItemConfiguration
         builder.Property(e => e.PatternKey).HasColumnName("pattern_key").HasMaxLength(200);
         builder.Property(e => e.ActivityType).HasColumnName("activity_type").HasMaxLength(100);
         builder.Property(e => e.DifficultyBand).HasColumnName("difficulty_band").IsRequired().HasDefaultValue(1);
+        builder.Property(e => e.RequiresAdminReview).HasColumnName("requires_admin_review").IsRequired()
+            .HasDefaultValue(false);
 
         // Preference snapshot
         builder.Property(e => e.PreferredSessionDurationMinutes).HasColumnName("preferred_session_duration_minutes");

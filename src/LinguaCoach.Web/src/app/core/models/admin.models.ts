@@ -781,8 +781,28 @@ export interface ReviewScaffoldDryRunSummary {
   blockedDuplicates: number;
   blockedInactiveObjectives: number;
   estimatedNetNewReviewItems: number;
+  requireAdminReview: boolean;
+  maxScaffoldItemsPerStudentPerDay: number;
+  scaffoldAllowedSources: string[];
+  allowTodayLessonInsertion: boolean;
+  minimumConfidenceForReviewNeed: string;
+  adminReviewRequiredCount: number;
+  generatedTodayCount: number;
   warnings: string[];
   generatedAt: string;
+}
+
+export interface ReviewScaffoldPendingItem {
+  id: string;
+  studentId: string;
+  source: string;
+  status: string;
+  targetCefrLevel: string;
+  primarySkill: string | null;
+  curriculumObjectiveKey: string | null;
+  curriculumObjectiveTitle: string | null;
+  routingReason: string;
+  createdAt: string;
 }
 
 export interface MasteryValidationSummary {

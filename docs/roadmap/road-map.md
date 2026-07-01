@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-01
+lastUpdated: 2026-07-02
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-01 (Phase 18A-F complete)**
+**Accurate as of: 2026-07-02 (Phase 19A complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 18A-F — Generation Quality Admin Visibility (2026-07-01)
+**Latest phase completed:** Phase 19A — Review Scaffold Controlled Enablement (2026-07-02)
 
 **Branch:** main
 
-**Test totals (as of 18A-F):**
-- Backend unit: 1,640 (+7 from Phase 18A-F)
-- Backend integration: 1,310 (9 pre-existing AI-provider failures, no regressions)
+**Test totals (as of 19A):**
+- Backend unit: 1,675 (+15 from Phase 19A: options defaults, generation gating, entity flag, Practice Gym filter)
+- Backend integration: 1,324 (+5 from Phase 19A: dry-run shape/config defaults, pending-review endpoint auth/shape/read-only; pre-existing AI-provider failures unchanged, no regressions)
 - Architecture: 3
-- **Backend total: 2,953**
-- Angular unit (Karma): 1,414 success / 119 pre-existing failures (down 1 from baseline); 33/33 diagnostics spec
-- Playwright E2E: unchanged
+- **Backend total: 3,002**
+- Angular unit (Karma): 1,488/1,607 success (119 pre-existing failures, 0 new regressions, +5 new tests in `admin-lessons.component.spec.ts`)
+- Playwright E2E: unchanged (no new student-facing UI surface this phase)
 
 **Build:** Clean production build. No known open build errors.
 
@@ -145,6 +145,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 60 | Phase 17C: Writing Mastery Signal Controlled Integration | AI | 2026-06-30 | Config-gated signal application job, audit entity, 5-gate pipeline, admin summary |
 | 61 | Phase 18A: Lesson Quality and Content Generation Upgrade | AI / Quality | 2026-07-01 | CEFR calibration tables in writing/listening/speaking prompts; support-language optional in 6 prompts; CEFR-aware pattern selection in batch planner; validator: empty-string check + option ID consistency |
 | 62 | Phase 18A-F: Generation Quality Admin Visibility | Admin / Quality | 2026-07-01 | GenerationValidationFailure entity + T69 migration; generation validation failures persisted from AiActivityGeneratorHandler; GET /api/admin/generation-quality/summary endpoint; Generation Quality card on Diagnostics page; prompt SeededAtUtc visibility; privacy/safety hardened |
+| 63 | Phase 19A: Review Scaffold Controlled Enablement | Readiness Pool | 2026-07-02 | Source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold flag (T71 migration); ReadinessPool appsettings section added; admin dry-run summary + pending-review endpoint; EnableReviewScaffoldGeneration remains false by default |
 
 ---
 
@@ -271,7 +272,8 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 - AI writing evaluation mastery signals implemented in Phase 17C (controlled, default off). Positive signals disabled by default. Enable via `ApplyMasterySignals = true` in config.
 
 ### Review Scaffold
-- Infrastructure exists but global enablement is not done. Dry-run validation required first.
+- Phase 19A added controlled-enablement gating (source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold) but `EnableReviewScaffoldGeneration` still defaults `false` and `DryRunOnly` defaults `true`. Global enablement is an operator decision, not yet exercised in production.
+- `RequireAdminReview` is a global config flag, not a per-item approve/reject workflow. When held items need clearing, an admin currently must flip `ReadinessPool:RequireAdminReview=false` for all items at once after inspecting the admin pending-review list (`GET /api/admin/readiness-pool/review-scaffold/pending-review`). A per-item approval workflow is deferred to a future phase.
 
 ### Observability
 - No production-level APM, distributed tracing, or alerting stack.
@@ -345,9 +347,9 @@ Phases recommended in order of priority. Dependencies are noted.
 | Priority | Phase | Area | Why Next | Dependencies |
 |---------:|-------|------|----------|-------------|
 | ~~4~~ | ~~17C~~ | ~~Writing mastery signal controlled integration~~ | ~~**Complete 2026-06-30**~~ | ~~Phase 17B complete~~ |
-| 5 | 18A | Lesson quality and content generation upgrade | Improve lesson templates, hints, support-language explanations, feedback quality | 17C or parallel |
-| 6 | 18B | Advanced feedback UX | Retry/revise flow, feedback breakdowns, reflection prompts, examples | 18A |
-| 7 | 19A | Review scaffold controlled enablement | Enable after extended dry-run validation confirms quality | 17C complete |
+| ~~5~~ | ~~18A~~ | ~~Lesson quality and content generation upgrade~~ | ~~**Complete 2026-07-01**~~ | ~~17C complete~~ |
+| ~~6~~ | ~~18B~~ | ~~Advanced feedback UX~~ | ~~**Complete 2026-07-01**~~ | ~~18A complete~~ |
+| ~~7~~ | ~~19A~~ | ~~Review scaffold controlled enablement~~ | ~~**Complete 2026-07-02** — config gates added; EnableReviewScaffoldGeneration remains off by default~~ | ~~17C complete~~ |
 
 ### Tier 3 — Medium-term (phases 8–10)
 
@@ -466,15 +468,20 @@ Phases recommended in order of priority. Dependencies are noted.
 
 ---
 
-### Phase 19A — Review Scaffold Controlled Enablement
+### Phase 19A — Review Scaffold Controlled Enablement — complete (2026-07-02)
 
-**Purpose:** Enable the review scaffold generation system after production-like dry-run validation confirms quality. The infrastructure was built in earlier phases; this phase flips the config gate and monitors in production.
+**Purpose:** Add the missing safety gates around review scaffold generation (daily cap, source restriction, confidence banding, admin-review hold) and surface config in appsettings/admin UI. `EnableReviewScaffoldGeneration` remains `false` by default — this phase does not turn generation on.
 
-**Scope:**
-- Enable `ReviewScaffold` generation for weak objectives
-- Admin dry-run review of generated review scaffolds
-- Production monitoring of scaffold quality
-- Decision gate: Is scaffold quality sufficient for student exposure?
+**Delivered:**
+- New config: `RequireAdminReview` (default true), `MaxScaffoldItemsPerStudentPerDay` (default 3), `ScaffoldAllowedSources` (default `["PracticeGym"]`), `AllowTodayLessonInsertion` (default false), `MinimumConfidenceForReviewNeed` (default `"Medium"`); `DryRunOnly` default flipped `false → true`
+- `ReadinessPool` appsettings.json section added (previously missing — only class defaults applied)
+- Deterministic `ReviewNeedConfidence` banding (Low/Medium/High) derived from existing mastery classification — no new AI signal
+- Per-student daily scaffold cap enforced in `FillShortfallAsync`; new `SkippedDailyCapReached` counter
+- `StudentActivityReadinessItem.RequiresAdminReview` (migration T71) — global config-snapshot flag, not per-item approval; `PracticeGymSuggestionService` excludes held items from all suggestion buckets
+- Admin: extended dry-run summary with config/counts, new `GET .../review-scaffold/pending-review` read-only endpoint, admin-lessons UI card + table
+- Deferred: per-item approve/reject workflow (see Known Gaps)
+
+Review: `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement-review.md`.
 
 ---
 

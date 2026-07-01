@@ -63,6 +63,13 @@ public sealed class StudentActivityReadinessItem : BaseEntity
 
     public int DifficultyBand { get; private set; }
 
+    /// <summary>
+    /// True when this item was generated under RequireAdminReview=true. Excluded from
+    /// Practice Gym suggestion buckets until an admin flips the global config flag off.
+    /// A creation-time config snapshot, not a mutable per-item approval state.
+    /// </summary>
+    public bool RequiresAdminReview { get; private set; }
+
     // --- Preference snapshot ---
     public int? PreferredSessionDurationMinutes { get; private set; }
     public string? DifficultyPreference { get; private set; }
@@ -124,7 +131,8 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         string? translationHelpPreference = null,
         string? generatedBy = null,
         int priority = 0,
-        DateTime? expiresAt = null)
+        DateTime? expiresAt = null,
+        bool requiresAdminReview = false)
     {
         if (studentId == Guid.Empty)
             throw new ArgumentException("StudentId is required.", nameof(studentId));
@@ -161,6 +169,7 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         GeneratedBy = generatedBy?.Trim();
         AttemptCount = 0;
         ExpiresAt = expiresAt;
+        RequiresAdminReview = requiresAdminReview;
         UpdatedAt = DateTime.UtcNow;
     }
 

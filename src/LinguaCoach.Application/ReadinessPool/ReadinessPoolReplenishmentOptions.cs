@@ -45,8 +45,38 @@ public sealed class ReadinessPoolReplenishmentOptions
     /// When true, review scaffold generation logic runs but does not write to the database.
     /// Useful for production dry-runs before fully enabling review generation.
     /// Only meaningful when EnableReviewScaffoldGeneration is also true.
+    /// Defaults to true: flipping EnableReviewScaffoldGeneration on always requires an
+    /// explicit second step (setting this to false) before generation goes live.
     /// </summary>
-    public bool DryRunOnly { get; set; } = false;
+    public bool DryRunOnly { get; set; } = true;
+
+    /// <summary>
+    /// When true, review/scaffold items are stamped RequiresAdminReview=true at creation and
+    /// stay hidden from Practice Gym suggestions until an admin sets this to false after
+    /// inspecting the pending-review admin list. Global flag, not a per-item approval workflow.
+    /// </summary>
+    public bool RequireAdminReview { get; set; } = true;
+
+    /// <summary>Maximum review/scaffold items created for a single student in a calendar day (UTC).</summary>
+    public int MaxScaffoldItemsPerStudentPerDay { get; set; } = 3;
+
+    /// <summary>
+    /// Readiness pool sources (ReadinessPoolSource names) allowed to receive review/scaffold
+    /// generation. Conservative default excludes TodayLesson.
+    /// </summary>
+    public string[] ScaffoldAllowedSources { get; set; } = ["PracticeGym"];
+
+    /// <summary>
+    /// Explicit override required (in addition to ScaffoldAllowedSources containing
+    /// "TodayLesson") before review/scaffold items may be generated for the Today lesson pool.
+    /// </summary>
+    public bool AllowTodayLessonInsertion { get; set; } = false;
+
+    /// <summary>
+    /// Minimum ReviewNeedConfidence band required before a weak-event signal is allowed to
+    /// trigger review/scaffold generation. Stored as string for appsettings readability.
+    /// </summary>
+    public string MinimumConfidenceForReviewNeed { get; set; } = "Medium";
 
     /// <summary>
     /// Minimum ready items below which a warning is surfaced in admin health metrics.

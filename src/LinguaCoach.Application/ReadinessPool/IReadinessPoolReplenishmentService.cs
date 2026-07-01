@@ -47,6 +47,12 @@ public sealed class ReplenishmentRunSummary
     /// <summary>Items skipped because the student's pool already reached MaxBufferCount.</summary>
     public int SkippedAtMaxBuffer { get; init; }
 
+    /// <summary>
+    /// Review/scaffold slots where generation fell back to Normal routing because the
+    /// student already reached MaxScaffoldItemsPerStudentPerDay for today.
+    /// </summary>
+    public int SkippedDailyCapReached { get; init; }
+
     /// <summary>Elapsed duration in milliseconds.</summary>
     public long ElapsedMs => (long)(CompletedAt - StartedAt).TotalMilliseconds;
 

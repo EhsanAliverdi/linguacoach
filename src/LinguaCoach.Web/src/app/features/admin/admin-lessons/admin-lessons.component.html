@@ -290,7 +290,22 @@
           <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.blockedInactiveObjectives }}</span>
           <span class="sp-adm-pool-health-label">Blocked (inactive objective)</span>
         </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.adminReviewRequiredCount }}</span>
+          <span class="sp-adm-pool-health-label">Held for admin review</span>
+        </div>
+        <div class="sp-adm-pool-health-stat">
+          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.generatedTodayCount }}</span>
+          <span class="sp-adm-pool-health-label">Generated today</span>
+        </div>
       </div>
+      <p class="sp-admin-section-sub" style="margin-top:0.75rem">
+        Config: require admin review = <strong>{{ scaffoldDryRun()!.requireAdminReview ? 'yes' : 'no' }}</strong>,
+        max per student/day = <strong>{{ scaffoldDryRun()!.maxScaffoldItemsPerStudentPerDay }}</strong>,
+        allowed sources = <strong>{{ scaffoldDryRun()!.scaffoldAllowedSources.join(', ') }}</strong>,
+        Today lesson insertion = <strong>{{ scaffoldDryRun()!.allowTodayLessonInsertion ? 'allowed' : 'blocked' }}</strong>,
+        minimum confidence = <strong>{{ scaffoldDryRun()!.minimumConfidenceForReviewNeed }}</strong>.
+      </p>
       @for (warning of scaffoldDryRun()!.warnings; track warning) {
         <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
       }
@@ -299,6 +314,53 @@
         &nbsp;<button type="button" class="sp-adm-pool-health-refresh" (click)="refreshScaffoldDryRun()">Refresh</button>
       </p>
     }
+  </sp-admin-card>
+
+  <!-- Review scaffold pending admin review -->
+  <sp-admin-card title="Review scaffold — pending admin review">
+    <p class="sp-admin-section-sub">
+      Items generated while <code>ReadinessPool:RequireAdminReview</code> is true. Hidden from Practice Gym
+      until an admin sets that flag to false. No per-item approve/reject action in this phase.
+    </p>
+    @if (scaffoldPendingLoading()) {
+      <sp-admin-loading-state message="Loading pending review items" />
+    } @else if (scaffoldPendingError()) {
+      <sp-admin-error-state title="Pending review list unavailable" [message]="scaffoldPendingError()" />
+    } @else if (scaffoldPending().length > 0) {
+      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="600px">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Skill</th>
+              <th>Objective</th>
+              <th>CEFR</th>
+              <th>Reason</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of scaffoldPending(); track item.id) {
+              <tr>
+                <td class="sp-admin-mono-cell">{{ item.studentId }}</td>
+                <td>{{ item.primarySkill ?? '—' }}</td>
+                <td>{{ item.curriculumObjectiveTitle ?? item.curriculumObjectiveKey ?? '—' }}</td>
+                <td>{{ item.targetCefrLevel }}</td>
+                <td>{{ item.routingReason }}</td>
+                <td>{{ item.createdAt | date:'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    } @else {
+      <sp-admin-not-implemented-state title="Nothing pending review">
+        No review scaffold items are currently held back for admin review.
+      </sp-admin-not-implemented-state>
+    }
+    <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+      <button type="button" class="sp-adm-pool-health-refresh" (click)="refreshScaffoldPendingReview()">Refresh</button>
+    </p>
   </sp-admin-card>
 
 </sp-admin-page-body>

@@ -381,6 +381,16 @@ public sealed class AdminReadinessPoolController : ControllerBase
 
         var netNew = Math.Max(0, estimatedConversions - blockedDuplicates);
 
+        var adminReviewRequiredCount = await _db.StudentActivityReadinessItems
+            .CountAsync(i => i.RequiresAdminReview
+                          && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.ReviewOnly), ct);
+
+        var generatedTodayCount = await _db.StudentActivityReadinessItems
+            .CountAsync(i => i.CreatedAt >= DateTime.UtcNow.Date
+                          && i.RoutingReason != RoutingReason.Normal
+                          && i.GeneratedBy != null
+                          && i.GeneratedBy.StartsWith("ReadinessPoolReplenishment"), ct);
+
         var summary = new ReviewScaffoldDryRunSummary
         {
             GenerationEnabled = _replenishmentOpts.EnableReviewScaffoldGeneration,
@@ -391,11 +401,50 @@ public sealed class AdminReadinessPoolController : ControllerBase
             BlockedDuplicates = blockedDuplicates,
             BlockedInactiveObjectives = blockedInactive,
             EstimatedNetNewReviewItems = netNew,
+            RequireAdminReview = _replenishmentOpts.RequireAdminReview,
+            MaxScaffoldItemsPerStudentPerDay = _replenishmentOpts.MaxScaffoldItemsPerStudentPerDay,
+            ScaffoldAllowedSources = _replenishmentOpts.ScaffoldAllowedSources,
+            AllowTodayLessonInsertion = _replenishmentOpts.AllowTodayLessonInsertion,
+            MinimumConfidenceForReviewNeed = _replenishmentOpts.MinimumConfidenceForReviewNeed,
+            AdminReviewRequiredCount = adminReviewRequiredCount,
+            GeneratedTodayCount = generatedTodayCount,
             Warnings = warnings,
             GeneratedAt = DateTime.UtcNow
         };
 
         return Ok(summary);
+    }
+
+    /// <summary>
+    /// Returns up to 50 scaffold items currently held back from students because
+    /// RequiresAdminReview=true. Read-only. No approve/reject action in this phase —
+    /// admins clear the hold by setting ReadinessPool:RequireAdminReview=false in config.
+    /// </summary>
+    [HttpGet("api/admin/readiness-pool/review-scaffold/pending-review")]
+    public async Task<IActionResult> GetReviewScaffoldPendingReview(CancellationToken ct)
+    {
+        var items = await _db.StudentActivityReadinessItems
+            .AsNoTracking()
+            .Where(i => i.RequiresAdminReview
+                     && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.ReviewOnly))
+            .OrderByDescending(i => i.CreatedAt)
+            .Take(50)
+            .Select(i => new ReviewScaffoldPendingItemDto
+            {
+                Id = i.Id,
+                StudentId = i.StudentId,
+                Source = i.Source.ToString(),
+                Status = i.Status.ToString(),
+                TargetCefrLevel = i.TargetCefrLevel,
+                PrimarySkill = i.PrimarySkill,
+                CurriculumObjectiveKey = i.CurriculumObjectiveKey,
+                CurriculumObjectiveTitle = i.CurriculumObjectiveTitle,
+                RoutingReason = i.RoutingReason.ToString(),
+                CreatedAt = i.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        return Ok(items);
     }
 
     /// <summary>

@@ -33,6 +33,29 @@ public sealed record ReviewScaffoldDryRunSummary
     /// <summary>Estimated net new ReviewOnly items that would be created after deduplication.</summary>
     public int EstimatedNetNewReviewItems { get; init; }
 
+    // --- Phase 19A: controlled enablement config + counts ---
+
+    /// <summary>Whether generated scaffold items are held back from students until an admin clears the flag.</summary>
+    public bool RequireAdminReview { get; init; }
+
+    /// <summary>Maximum scaffold items generated per student per day.</summary>
+    public int MaxScaffoldItemsPerStudentPerDay { get; init; }
+
+    /// <summary>Readiness pool sources eligible for scaffold generation.</summary>
+    public IReadOnlyList<string> ScaffoldAllowedSources { get; init; } = [];
+
+    /// <summary>Whether Today lesson pool items may receive scaffold generation.</summary>
+    public bool AllowTodayLessonInsertion { get; init; }
+
+    /// <summary>Minimum confidence band required before a weak signal triggers generation.</summary>
+    public string MinimumConfidenceForReviewNeed { get; init; } = "Medium";
+
+    /// <summary>Current count of Ready/ReviewOnly items still held for admin review.</summary>
+    public int AdminReviewRequiredCount { get; init; }
+
+    /// <summary>Scaffold items generated across all students since the start of today (UTC).</summary>
+    public int GeneratedTodayCount { get; init; }
+
     public IReadOnlyList<string> Warnings { get; init; } = [];
 
     public DateTime GeneratedAt { get; init; }

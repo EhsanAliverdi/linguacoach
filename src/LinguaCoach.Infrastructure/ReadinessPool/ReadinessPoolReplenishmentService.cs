@@ -70,6 +70,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         var totalStale = 0;
         var totalSkipped = 0;
         var totalSkippedAtMaxBuffer = 0;
+        var totalSkippedDailyCap = 0;
         var hitLimit = false;
 
         _logger.LogInformation("ReadinessPool replenishment run starting.");
@@ -123,10 +124,11 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
                     break;
                 }
 
-                var (queued, skipped, skippedBuffer) = await FillShortfallAsync(profile, source, toCreate, ct);
+                var (queued, skipped, skippedBuffer, skippedDailyCap) = await FillShortfallAsync(profile, source, toCreate, ct);
                 totalQueued += queued;
                 totalSkipped += skipped;
                 totalSkippedAtMaxBuffer += skippedBuffer;
+                totalSkippedDailyCap += skippedDailyCap;
                 generatedThisRun += queued;
 
                 if (generatedThisRun >= _opts.MaxItemsGeneratedPerRun)
@@ -152,6 +154,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             ItemsMarkedStale = totalStale,
             SkippedDuplicates = totalSkipped,
             SkippedAtMaxBuffer = totalSkippedAtMaxBuffer,
+            SkippedDailyCapReached = totalSkippedDailyCap,
             HitMaxItemsLimit = hitLimit
         };
 
@@ -412,7 +415,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         return (retried, skipped);
     }
 
-    private async Task<(int queued, int skipped, int skippedAtMaxBuffer)> FillShortfallAsync(
+    private async Task<(int queued, int skipped, int skippedAtMaxBuffer, int skippedDailyCap)> FillShortfallAsync(
         StudentProfile profile,
         ReadinessPoolSource source,
         int toCreate,
@@ -421,19 +424,61 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         var queued = 0;
         var skipped = 0;
         var skippedAtMaxBuffer = 0;
-
-        // Determine if review/scaffold is safe based on weak ledger signals.
-        var allowReviewOrScaffold = false;
-        if (_opts.EnableReviewScaffoldGeneration)
-        {
-            var weakEvents = await _ledger.GetWeakEventsAsync(profile.Id, limit: 5, ct);
-            allowReviewOrScaffold = weakEvents.Count > 0;
-        }
+        var skippedDailyCap = 0;
 
         // Fetch mastered objective keys so routing can exclude them from new-learning slots.
+        // Also used below to derive the deterministic confidence band for review/scaffold gating.
         var masteryReport = await _mastery.EvaluateStudentAsync(
             profile.Id, MasteryEvaluationReason.BeforeReplenishment, ct);
         var masteredKeys = (IReadOnlyList<string>)masteryReport.MasteredObjectiveKeys;
+
+        // Determine if review/scaffold is safe for this source based on weak ledger signals,
+        // source allow-list, confidence banding, and the per-student daily cap.
+        var allowReviewOrScaffold = false;
+        var itemRequiresAdminReview = false;
+        if (_opts.EnableReviewScaffoldGeneration)
+        {
+            var sourceAllowed = _opts.ScaffoldAllowedSources.Contains(source.ToString(), StringComparer.OrdinalIgnoreCase)
+                && (source != ReadinessPoolSource.TodayLesson || _opts.AllowTodayLessonInsertion);
+
+            if (sourceAllowed)
+            {
+                var weakEvents = await _ledger.GetWeakEventsAsync(profile.Id, limit: 5, ct);
+                if (weakEvents.Count > 0)
+                {
+                    var confidence = masteryReport.AtRiskObjectiveKeys.Count > 0
+                        ? ReviewNeedConfidence.High
+                        : masteryReport.WeakObjectiveKeys.Count > 0
+                            ? ReviewNeedConfidence.Medium
+                            : ReviewNeedConfidence.Low;
+
+                    var minimumConfidence = Enum.TryParse<ReviewNeedConfidence>(
+                        _opts.MinimumConfidenceForReviewNeed, ignoreCase: true, out var parsed)
+                        ? parsed
+                        : ReviewNeedConfidence.Medium;
+
+                    if (confidence >= minimumConfidence)
+                    {
+                        var todayScaffoldCount = await _db.StudentActivityReadinessItems
+                            .CountAsync(i => i.StudentId == profile.Id
+                                          && i.CreatedAt >= DateTime.UtcNow.Date
+                                          && i.RoutingReason != RoutingReason.Normal
+                                          && i.GeneratedBy != null
+                                          && i.GeneratedBy.StartsWith("ReadinessPoolReplenishment"), ct);
+
+                        if (todayScaffoldCount >= _opts.MaxScaffoldItemsPerStudentPerDay)
+                        {
+                            skippedDailyCap++;
+                        }
+                        else
+                        {
+                            allowReviewOrScaffold = true;
+                            itemRequiresAdminReview = _opts.RequireAdminReview;
+                        }
+                    }
+                }
+            }
+        }
 
         var resolvedGoalContext = _goalResolver.Resolve(
             profile, new LearningGoalResolutionContext { Source = "ReadinessPoolReplenishment" });
@@ -452,7 +497,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             _logger.LogDebug(
                 "ReadinessPool: student {StudentId} source={Source} already at MaxBufferCount ({Count}/{Max}), skipping fill.",
                 profile.Id, source, activeCount, _opts.MaxBufferCount);
-            return (0, 0, toCreate);
+            return (0, 0, toCreate, 0);
         }
 
         // Cap toCreate so we never exceed MaxBufferCount.
@@ -541,7 +586,8 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
                 supportLanguageName: profile.LanguagePair?.SourceLanguage?.Name,
                 translationHelpPreference: profile.TranslationHelpPreference?.ToString(),
                 generatedBy: "ReadinessPoolReplenishment",
-                expiresAt: DateTime.UtcNow.AddDays(_opts.ReadyItemExpiryDays));
+                expiresAt: DateTime.UtcNow.AddDays(_opts.ReadyItemExpiryDays),
+                requiresAdminReview: itemRequiresAdminReview && routing.RoutingReason != RoutingReason.Normal);
 
             await _pool.CreateQueuedAsync(req, ct);
             queued++;
@@ -551,7 +597,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
                 profile.Id, source, routing.TargetCefrLevel, skill, routing.CurriculumObjectiveKey);
         }
 
-        return (queued, skipped, skippedAtMaxBuffer);
+        return (queued, skipped, skippedAtMaxBuffer, skippedDailyCap);
     }
 
     // Value type for duplicate detection (objective key + pattern key + cefr level).

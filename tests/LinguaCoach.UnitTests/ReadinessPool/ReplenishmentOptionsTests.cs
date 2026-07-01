@@ -460,4 +460,136 @@ public sealed class ReplenishmentOptionsTests
 
         summary.GenerationSuccessRate.Should().Be(1.0);
     }
+
+    // Phase 19A tests ──────────────────────────────────────────────────────────
+
+    // 31. DryRunOnly now defaults to true — flipping Enabled on always requires an explicit
+    //     second step (setting DryRunOnly=false) before generation goes live.
+    [Fact]
+    public void DefaultOptions_DryRunOnly_DefaultsTrue()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.DryRunOnly.Should().BeTrue();
+    }
+
+    // 32. RequireAdminReview defaults to true — scaffold items are hidden from students
+    //     until an admin explicitly clears the config flag.
+    [Fact]
+    public void DefaultOptions_RequireAdminReview_DefaultsTrue()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.RequireAdminReview.Should().BeTrue();
+    }
+
+    // 33. MaxScaffoldItemsPerStudentPerDay has a small, conservative default.
+    [Fact]
+    public void DefaultOptions_MaxScaffoldItemsPerStudentPerDay_IsConservative()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.MaxScaffoldItemsPerStudentPerDay.Should().Be(3);
+        opts.MaxScaffoldItemsPerStudentPerDay.Should().BeGreaterThan(0);
+    }
+
+    // 34. ScaffoldAllowedSources defaults to PracticeGym only — Today lesson excluded.
+    [Fact]
+    public void DefaultOptions_ScaffoldAllowedSources_DefaultsToPracticeGymOnly()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.ScaffoldAllowedSources.Should().ContainSingle().Which.Should().Be("PracticeGym");
+    }
+
+    // 35. AllowTodayLessonInsertion defaults to false.
+    [Fact]
+    public void DefaultOptions_AllowTodayLessonInsertion_DefaultsFalse()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.AllowTodayLessonInsertion.Should().BeFalse();
+    }
+
+    // 36. MinimumConfidenceForReviewNeed defaults to Medium.
+    [Fact]
+    public void DefaultOptions_MinimumConfidenceForReviewNeed_DefaultsMedium()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.MinimumConfidenceForReviewNeed.Should().Be("Medium");
+    }
+
+    // 37. ReviewNeedConfidence ordinal ordering supports >= threshold comparisons.
+    [Fact]
+    public void ReviewNeedConfidence_OrdinalOrder_LowLessThanMediumLessThanHigh()
+    {
+        (ReviewNeedConfidence.Low < ReviewNeedConfidence.Medium).Should().BeTrue();
+        (ReviewNeedConfidence.Medium < ReviewNeedConfidence.High).Should().BeTrue();
+    }
+
+    // 38. ReadinessItemRequestBuilder threads RequiresAdminReview through.
+    [Fact]
+    public void ReadinessItemRequestBuilder_ThreadsRequiresAdminReview()
+    {
+        var recommendation = new CurriculumRoutingRecommendation
+        {
+            Source = "test",
+            TargetCefrLevel = "B1",
+            RoutingReason = RoutingReason.Review,
+            IsLowerLevelContent = true,
+            SecondarySkills = [],
+            ContextTags = [],
+            FocusTags = []
+        };
+
+        var req = ReadinessItemRequestBuilder.FromRoutingRecommendation(
+            studentId: Guid.NewGuid(),
+            source: ReadinessPoolSource.PracticeGym,
+            recommendation: recommendation,
+            requiresAdminReview: true);
+
+        req.RequiresAdminReview.Should().BeTrue();
+    }
+
+    // 39. StudentActivityReadinessItem defaults RequiresAdminReview to false.
+    [Fact]
+    public void Domain_RequiresAdminReview_DefaultsFalse()
+    {
+        var item = new StudentActivityReadinessItem(
+            studentId: Guid.NewGuid(),
+            source: ReadinessPoolSource.PracticeGym,
+            targetCefrLevel: "B1",
+            routingReason: RoutingReason.Normal,
+            isLowerLevelContent: false);
+
+        item.RequiresAdminReview.Should().BeFalse();
+    }
+
+    // 40. StudentActivityReadinessItem sets RequiresAdminReview from constructor param.
+    [Fact]
+    public void Domain_RequiresAdminReview_SetFromConstructor()
+    {
+        var item = new StudentActivityReadinessItem(
+            studentId: Guid.NewGuid(),
+            source: ReadinessPoolSource.PracticeGym,
+            targetCefrLevel: "B1",
+            routingReason: RoutingReason.Review,
+            isLowerLevelContent: true,
+            requiresAdminReview: true);
+
+        item.RequiresAdminReview.Should().BeTrue();
+    }
+
+    // 41. SkippedDailyCapReached is tracked separately from other skip counters.
+    [Fact]
+    public void ReplenishmentRunSummary_SkippedDailyCapReached_IsDistinctCounter()
+    {
+        var summary = new ReplenishmentRunSummary
+        {
+            StartedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow,
+            SkippedDuplicates = 2,
+            SkippedAtMaxBuffer = 1,
+            SkippedDailyCapReached = 4
+        };
+
+        summary.SkippedDailyCapReached.Should().Be(4);
+        summary.SkippedDuplicates.Should().Be(2);
+        summary.SkippedAtMaxBuffer.Should().Be(1);
+    }
 }

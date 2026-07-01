@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-01 (18B)
+lastUpdated: 2026-07-02 (19A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,59 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-07-01
+Last updated: 2026-07-02
 
 ---
 
 ## Active sprint
+
+**Phase 19A — Review Scaffold Controlled Enablement** — complete (2026-07-02)
+
+Adds the missing safety gates around the existing (Phase 12B–12D) review scaffold generation infrastructure: source restriction, per-student daily cap, deterministic confidence banding, and a global admin-review hold. `EnableReviewScaffoldGeneration` remains `false` by default — this phase does not turn generation on in production. No CEFR/objective/LP changes, no new activity formats, no per-item admin approval workflow (deferred), no live AI calls in tests.
+
+**Audit finding:** Review scaffold generation, dry-run simulation, and Practice Gym review-item separation/labeling already existed from Phases 12B–12D. This phase is additive gating + config visibility, not new infrastructure.
+
+**Modified Application:**
+- `ReadinessPoolReplenishmentOptions` — added `RequireAdminReview` (default true), `MaxScaffoldItemsPerStudentPerDay` (default 3), `ScaffoldAllowedSources` (default `["PracticeGym"]`), `AllowTodayLessonInsertion` (default false), `MinimumConfidenceForReviewNeed` (default `"Medium"`); `DryRunOnly` default flipped `false → true`
+- New `ReviewNeedConfidence` enum (Low/Medium/High) — deterministic, derived from existing `StudentMasteryReport.AtRiskObjectiveKeys`/`WeakObjectiveKeys`, no new AI signal
+- `ReplenishmentRunSummary.SkippedDailyCapReached` — new counter
+- `CreateReadinessItemRequest` / `ReadinessItemRequestBuilder.FromRoutingRecommendation` — thread `RequiresAdminReview` through
+- `ReviewScaffoldDryRunSummary` — extended with config fields + `AdminReviewRequiredCount` + `GeneratedTodayCount`
+- New `ReviewScaffoldPendingItemDto`
+
+**Modified Domain:**
+- `StudentActivityReadinessItem.RequiresAdminReview` — creation-time config snapshot, not a mutable per-item approval state
+
+**Modified Persistence:**
+- `StudentActivityReadinessItemConfiguration` — maps `requires_admin_review` column
+- Migration `T71_ReviewScaffoldAdminReviewFlag`
+
+**Modified Infrastructure:**
+- `ReadinessPoolReplenishmentService.FillShortfallAsync` — source gate (allow-list + Today-lesson override), confidence-band gate, per-student daily cap gate, stamps `RequiresAdminReview` on created scaffold items
+- `PracticeGymSuggestionService` — excludes `RequiresAdminReview=true` items from Suggested/Continue/Review buckets entirely
+
+**Modified API:**
+- `AdminReadinessPoolController.GetReviewScaffoldDryRun` — returns new config fields + counts
+- New `GET /api/admin/readiness-pool/review-scaffold/pending-review` — read-only, up to 50 held-back items; no approve/reject action this phase
+- `appsettings.json` — new `ReadinessPool` section (previously missing; only class defaults applied before this phase)
+
+**Modified Angular:**
+- `admin.models.ts` — extended `ReviewScaffoldDryRunSummary`, new `ReviewScaffoldPendingItem`
+- `admin.api.service.ts` — `getReviewScaffoldPendingReview()`
+- `admin-lessons.component.ts` / `.html` — extended review-scaffold card with config/counts; new read-only "Pending admin review" table section
+
+**Scope decision — deferred per-item approval:** `RequireAdminReview` is a global config flag (all scaffold items held or none), not a per-item approve/reject workflow. Consistent with the existing "no enable button" precedent (Phase 12B) and the "do not overbuild" rule. Admin clears the hold by setting `ReadinessPool:RequireAdminReview=false` after inspecting the pending-review list.
+
+**Tests added:**
+- `ReplenishmentOptionsTests` — 11 new tests: config defaults, `ReviewNeedConfidence` ordering, `RequiresAdminReview` threading through request builder and domain constructor, `SkippedDailyCapReached` counter
+- `PracticeGymSuggestionServiceTests` — 4 new tests: `RequiresAdminReview` exclusion from all three buckets, control case
+- `ReviewScaffoldDryRunTests` (integration) — 5 new tests: extended dry-run field shape, safe config defaults, pending-review endpoint auth (401/403)/shape/read-only guarantee
+
+**Build/test totals:** Backend unit: 1,675 (+15). Integration: 1,324 (+5, 0 regressions). Arch: 3. Angular unit: 1,488/1,607 (119 pre-existing failures, 0 new regressions, +5 new tests). Production build: clean.
+
+Review: `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement-review.md`.
+
+---
 
 **Phase 18B — Advanced Feedback UX** — complete (2026-07-01)
 

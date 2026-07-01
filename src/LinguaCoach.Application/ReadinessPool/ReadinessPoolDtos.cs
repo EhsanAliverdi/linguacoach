@@ -32,6 +32,7 @@ public sealed class CreateReadinessItemRequest
     public string? GeneratedBy { get; init; }
     public int Priority { get; init; }
     public DateTime? ExpiresAt { get; init; }
+    public bool RequiresAdminReview { get; init; }
 }
 
 /// <summary>
@@ -86,6 +87,24 @@ public sealed class ReadinessItemDto
 }
 
 /// <summary>
+/// Read-only row for the Phase 19A admin "pending review" list — scaffold items held back
+/// from students because RequiresAdminReview=true.
+/// </summary>
+public sealed class ReviewScaffoldPendingItemDto
+{
+    public Guid Id { get; init; }
+    public Guid StudentId { get; init; }
+    public string Source { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public string TargetCefrLevel { get; init; } = string.Empty;
+    public string? PrimarySkill { get; init; }
+    public string? CurriculumObjectiveKey { get; init; }
+    public string? CurriculumObjectiveTitle { get; init; }
+    public string RoutingReason { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
+}
+
+/// <summary>
 /// Helper to build a CreateReadinessItemRequest from a CurriculumRoutingRecommendation + student context.
 /// </summary>
 public static class ReadinessItemRequestBuilder
@@ -104,10 +123,12 @@ public static class ReadinessItemRequestBuilder
         string? activityType = null,
         string? generatedBy = null,
         int priority = 0,
-        DateTime? expiresAt = null)
+        DateTime? expiresAt = null,
+        bool requiresAdminReview = false)
     {
         return new CreateReadinessItemRequest
         {
+            RequiresAdminReview = requiresAdminReview,
             StudentId = studentId,
             Source = source,
             TargetCefrLevel = recommendation.TargetCefrLevel,
