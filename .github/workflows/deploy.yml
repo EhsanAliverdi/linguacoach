@@ -105,7 +105,7 @@ jobs:
             DEPLOY=/opt/linguacoach
             docker pull ghcr.io/ehsanaliverdi/linguacoach-api:latest
             docker pull ghcr.io/ehsanaliverdi/linguacoach-web:latest
-            docker compose -f $DEPLOY/docker-compose.prod.yml --env-file $DEPLOY/.env up -d --remove-orphans
+            docker compose -f $DEPLOY/docker-compose.prod.yml --env-file $DEPLOY/.env up -d --remove-orphans --force-recreate
             docker image prune -f
           ENDSSH
 
