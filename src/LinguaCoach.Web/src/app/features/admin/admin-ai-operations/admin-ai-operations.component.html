@@ -1,0 +1,251 @@
+<sp-admin-page-header title="AI Operations" subtitle="Read-only operational visibility into AI provider usage, evaluation queues, generation quality, and safety gates.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="load()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading AI operations summary" data-testid="ai-ops-loading" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Could not load AI operations summary" [message]="error()" data-testid="ai-ops-error" />
+  } @else if (isEmpty()) {
+    <sp-admin-card variant="section" padding="md" data-testid="ai-ops-empty">
+      <p>No AI activity has been recorded yet. This page will populate once speaking/writing evaluations,
+        generation attempts, or AI provider calls occur.</p>
+    </sp-admin-card>
+  } @else if (summary()) {
+    @let s = summary()!;
+
+    <!-- ── Overall status ────────────────────────────────────────────────────── -->
+    <sp-admin-card title="Overall AI status" variant="section" padding="md" data-testid="ai-ops-overall-status">
+      <div class="sp-admin-kpi-row">
+        <sp-admin-badge [tone]="statusTone()" appearance="soft" size="sm" data-testid="ai-ops-status-badge">
+          {{ s.overallStatus }}
+        </sp-admin-badge>
+        <sp-admin-kpi-card label="Recent failures" layout="tile" [value]="s.recentFailures.length" [variant]="s.recentFailures.length > 0 ? 'amber' : 'green'" />
+        <sp-admin-kpi-card label="Provider calls" layout="tile" [value]="s.providerUsage.totalCalls" variant="indigo" />
+        <sp-admin-kpi-card label="Provider cost (USD)" layout="tile" [value]="s.providerUsage.totalCostUsd | number:'1.2-2'" variant="teal" />
+      </div>
+      @if (s.warnings.length > 0) {
+        <div style="margin-top: 0.75rem">
+          @for (warning of s.warnings; track warning) {
+            <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
+          }
+        </div>
+      }
+      <p class="sp-admin-section-sub" style="margin-top: 0.5rem">
+        Last generated: {{ s.generatedAtUtc | date:'medium' }}
+      </p>
+    </sp-admin-card>
+
+    <!-- ── Provider / model usage ──────────────────────────────────────────────── -->
+    <sp-admin-card title="Provider / model usage" variant="section" padding="md" data-testid="ai-ops-provider-usage">
+      <sp-admin-status-grid [columns]="4">
+        <sp-admin-status-card label="Total calls" [value]="s.providerUsage.totalCalls" tone="neutral" />
+        <sp-admin-status-card label="Successful" [value]="s.providerUsage.successfulCalls" tone="success" />
+        <sp-admin-status-card label="Failed" [value]="s.providerUsage.failedCalls" [tone]="s.providerUsage.failedCalls > 0 ? 'danger' : 'neutral'" />
+        <sp-admin-status-card label="Fallback" [value]="s.providerUsage.fallbackCalls" tone="info" />
+        <sp-admin-status-card label="Input tokens" [value]="s.providerUsage.totalInputTokens" tone="neutral" />
+        <sp-admin-status-card label="Output tokens" [value]="s.providerUsage.totalOutputTokens" tone="neutral" />
+        <sp-admin-status-card label="Cost (USD)" [value]="(s.providerUsage.totalCostUsd | number:'1.2-4') ?? '—'" tone="info" />
+        <sp-admin-status-card label="Zero-cost calls" [value]="s.providerUsage.zeroCostCallCount" tone="neutral" />
+      </sp-admin-status-grid>
+
+      @if (s.providerUsage.byProvider.length > 0) {
+        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="600px" style="margin-top: 1rem" data-testid="ai-ops-provider-table">
+          <table>
+            <thead>
+              <tr><th>Provider</th><th>Calls</th><th>Successful</th><th>Fallback</th><th>Cost (USD)</th></tr>
+            </thead>
+            <tbody>
+              @for (p of s.providerUsage.byProvider; track p.provider) {
+                <tr>
+                  <td>{{ p.provider }}</td>
+                  <td>{{ p.calls }}</td>
+                  <td>{{ p.successful }}</td>
+                  <td>{{ p.fallback }}</td>
+                  <td>{{ p.costUsd | number:'1.2-4' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+      } @else {
+        <sp-admin-not-implemented-state title="No provider usage yet">
+          No AI provider calls have been recorded yet.
+        </sp-admin-not-implemented-state>
+      }
+    </sp-admin-card>
+
+    <!-- ── Speaking / writing evaluation operations ────────────────────────────── -->
+    <div class="sp-admin-card-grid-2">
+      <sp-admin-card title="Speaking evaluation operations" variant="section" padding="md" data-testid="ai-ops-speaking">
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Pending" [value]="s.speakingEvaluationSummary.pendingCount" tone="neutral" />
+          <sp-admin-status-card label="Completed" [value]="s.speakingEvaluationSummary.completedCount" tone="success" />
+          <sp-admin-status-card label="Failed" [value]="s.speakingEvaluationSummary.failedCount" [tone]="s.speakingEvaluationSummary.failedCount > 0 ? 'danger' : 'neutral'" />
+          <sp-admin-status-card label="Not supported" [value]="s.speakingEvaluationSummary.notSupportedCount" tone="neutral" />
+        </sp-admin-status-grid>
+        <p class="sp-admin-section-sub" style="margin-top: 0.5rem">
+          Provider: <strong>{{ s.speakingEvaluationSummary.providerName }}</strong>,
+          oldest pending item age: <strong>{{ formatMinutes(s.speakingEvaluationSummary.oldestPendingAgeMinutes) }}</strong>
+        </p>
+        @if (s.speakingEvaluationSummary.latestFailureReasons.length > 0) {
+          <p class="sp-admin-section-sub" style="margin-top: 0.5rem">Recent failure reasons:</p>
+          <ul data-testid="ai-ops-speaking-failures">
+            @for (reason of s.speakingEvaluationSummary.latestFailureReasons; track reason) {
+              <li class="sp-admin-section-sub">{{ reason }}</li>
+            }
+          </ul>
+        }
+      </sp-admin-card>
+
+      <sp-admin-card title="Writing evaluation operations" variant="section" padding="md" data-testid="ai-ops-writing">
+        <sp-admin-status-grid [columns]="2">
+          <sp-admin-status-card label="Pending" [value]="s.writingEvaluationSummary.pendingCount" tone="neutral" />
+          <sp-admin-status-card label="Completed" [value]="s.writingEvaluationSummary.completedCount" tone="success" />
+          <sp-admin-status-card label="Failed" [value]="s.writingEvaluationSummary.failedCount" [tone]="s.writingEvaluationSummary.failedCount > 0 ? 'danger' : 'neutral'" />
+          <sp-admin-status-card label="Not supported" [value]="s.writingEvaluationSummary.notSupportedCount" tone="neutral" />
+        </sp-admin-status-grid>
+        <p class="sp-admin-section-sub" style="margin-top: 0.5rem">
+          Provider: <strong>{{ s.writingEvaluationSummary.providerName ?? '—' }}</strong>,
+          oldest pending item age: <strong>{{ formatMinutes(s.writingEvaluationSummary.oldestPendingAgeMinutes) }}</strong>
+        </p>
+        @if (s.writingEvaluationSummary.latestFailureReasons.length > 0) {
+          <p class="sp-admin-section-sub" style="margin-top: 0.5rem">Recent failure reasons:</p>
+          <ul data-testid="ai-ops-writing-failures">
+            @for (reason of s.writingEvaluationSummary.latestFailureReasons; track reason) {
+              <li class="sp-admin-section-sub">{{ reason }}</li>
+            }
+          </ul>
+        }
+      </sp-admin-card>
+    </div>
+
+    <!-- ── Generation quality ───────────────────────────────────────────────────── -->
+    <sp-admin-card title="Generation quality" variant="section" padding="md" data-testid="ai-ops-generation-quality">
+      <sp-admin-status-grid [columns]="3">
+        <sp-admin-status-card label="Total validation failures" [value]="s.generationQualitySummary.totalValidationFailures" [tone]="s.generationQualitySummary.totalValidationFailures > 0 ? 'warning' : 'neutral'" />
+        <sp-admin-status-card label="Abandoned generations" [value]="s.generationQualitySummary.abandonedGenerations" [tone]="s.generationQualitySummary.abandonedGenerations > 0 ? 'danger' : 'neutral'" />
+        <sp-admin-status-card label="Recent failures" [value]="s.generationQualitySummary.recentFailureCount" tone="neutral" />
+      </sp-admin-status-grid>
+      <p class="sp-admin-section-sub" style="margin-top: 0.5rem">Retention: {{ s.generationQualitySummary.retentionDays }} days.</p>
+
+      @if (s.generationQualitySummary.latestFailures.length > 0) {
+        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="800px" style="margin-top: 1rem" data-testid="ai-ops-generation-failures-table">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Pattern</th><th>CEFR</th><th>Provider / model</th><th>Attempt</th></tr>
+            </thead>
+            <tbody>
+              @for (f of s.generationQualitySummary.latestFailures; track f.correlationId) {
+                <tr>
+                  <td>{{ f.timestampUtc | date:'short' }}</td>
+                  <td>{{ f.patternKey ?? f.activityTypeName }}</td>
+                  <td>{{ f.cefrLevel ?? '—' }}</td>
+                  <td>{{ f.providerName ?? '—' }} / {{ f.modelName ?? '—' }}</td>
+                  <td>{{ f.attemptNumber }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+      } @else {
+        <sp-admin-not-implemented-state title="No recent generation failures">
+          No generation validation failures recorded in the retention window.
+        </sp-admin-not-implemented-state>
+      }
+    </sp-admin-card>
+
+    <!-- ── Readiness pool / review scaffold AI generation ──────────────────────── -->
+    <sp-admin-card title="Readiness pool / review scaffold AI generation" variant="section" padding="md" data-testid="ai-ops-readiness-pool">
+      <div class="sp-admin-kpi-row">
+        <sp-admin-badge [tone]="s.readinessPoolAiSummary.enableReviewScaffoldGeneration ? 'warning' : 'success'" appearance="soft" size="sm">
+          Generation {{ s.readinessPoolAiSummary.enableReviewScaffoldGeneration ? 'enabled' : 'disabled' }}
+        </sp-admin-badge>
+        <sp-admin-badge [tone]="s.readinessPoolAiSummary.dryRunOnly ? 'success' : 'warning'" appearance="soft" size="sm">
+          Dry-run {{ s.readinessPoolAiSummary.dryRunOnly ? 'only' : 'off' }}
+        </sp-admin-badge>
+        <sp-admin-badge [tone]="s.readinessPoolAiSummary.requireAdminReview ? 'success' : 'warning'" appearance="soft" size="sm">
+          Admin review {{ s.readinessPoolAiSummary.requireAdminReview ? 'required' : 'not required' }}
+        </sp-admin-badge>
+        <sp-admin-badge [tone]="s.readinessPoolAiSummary.practiceGymPilotEnabled ? 'warning' : 'success'" appearance="soft" size="sm">
+          Practice Gym pilot {{ s.readinessPoolAiSummary.practiceGymPilotEnabled ? 'enabled' : 'disabled' }}
+        </sp-admin-badge>
+        <sp-admin-badge [tone]="s.readinessPoolAiSummary.allowTodayLessonInsertion ? 'danger' : 'success'" appearance="soft" size="sm">
+          Today insertion {{ s.readinessPoolAiSummary.allowTodayLessonInsertion ? 'allowed' : 'disabled' }}
+        </sp-admin-badge>
+      </div>
+      <sp-admin-status-grid [columns]="2" style="margin-top: 0.75rem">
+        <sp-admin-status-card label="Pending review" [value]="s.readinessPoolAiSummary.pendingReviewCount" tone="neutral" />
+        <sp-admin-status-card label="Approved" [value]="s.readinessPoolAiSummary.approvedCount" tone="success" />
+      </sp-admin-status-grid>
+      <p class="sp-admin-section-sub" style="margin-top: 0.5rem">
+        See the Lessons page for full review scaffold approval and pilot monitoring detail — this card is a
+        high-level status summary only.
+      </p>
+    </sp-admin-card>
+
+    <!-- ── Signal safety gates ──────────────────────────────────────────────────── -->
+    <sp-admin-card title="Signal safety gates" variant="section" padding="md" data-testid="ai-ops-safety-gates">
+      @if (s.signalGateSummary.anyInvariantViolationsDetected) {
+        <sp-admin-alert variant="error" data-testid="ai-ops-invariant-violation">
+          Invariant violation detected — one or more safety gates report an unexpected state. Investigate immediately.
+        </sp-admin-alert>
+      }
+      <sp-admin-status-grid [columns]="2">
+        <sp-admin-status-card label="Speaking AI can update CEFR" [value]="s.signalGateSummary.speakingCefrUpdatesEnabled ? 'Enabled' : 'Disabled'" [tone]="gateTone(s.signalGateSummary.speakingCefrUpdatesEnabled)" />
+        <sp-admin-status-card label="Writing AI can update CEFR" [value]="s.signalGateSummary.writingCefrUpdatesEnabled ? 'Enabled' : 'Disabled'" [tone]="gateTone(s.signalGateSummary.writingCefrUpdatesEnabled)" />
+        <sp-admin-status-card label="Speaking AI can complete objectives" [value]="s.signalGateSummary.speakingObjectiveCompletionEnabled ? 'Enabled' : 'Disabled'" [tone]="gateTone(s.signalGateSummary.speakingObjectiveCompletionEnabled)" />
+        <sp-admin-status-card label="Writing AI can complete objectives" [value]="s.signalGateSummary.writingObjectiveCompletionEnabled ? 'Enabled' : 'Disabled'" [tone]="gateTone(s.signalGateSummary.writingObjectiveCompletionEnabled)" />
+        <sp-admin-status-card label="Speaking AI can regenerate Learning Plan" [value]="s.signalGateSummary.speakingLearningPlanAutoRegenEnabled ? 'Enabled' : 'Disabled'" [tone]="gateTone(s.signalGateSummary.speakingLearningPlanAutoRegenEnabled)" />
+        <sp-admin-status-card label="Writing AI can regenerate Learning Plan" [value]="s.signalGateSummary.writingLearningPlanAutoRegenEnabled ? 'Enabled' : 'Disabled'" [tone]="gateTone(s.signalGateSummary.writingLearningPlanAutoRegenEnabled)" />
+        <sp-admin-status-card label="Speaking positive signals" [value]="s.signalGateSummary.speakingPositiveSignalsEnabled ? 'Enabled' : 'Disabled'" [tone]="signalTone(s.signalGateSummary.speakingPositiveSignalsEnabled)" />
+        <sp-admin-status-card label="Writing positive signals" [value]="s.signalGateSummary.writingPositiveSignalsEnabled ? 'Enabled' : 'Disabled'" [tone]="signalTone(s.signalGateSummary.writingPositiveSignalsEnabled)" />
+        <sp-admin-status-card label="Speaking review signals" [value]="s.signalGateSummary.speakingReviewSignalsEnabled ? 'Enabled' : 'Disabled'" [tone]="signalTone(s.signalGateSummary.speakingReviewSignalsEnabled)" />
+        <sp-admin-status-card label="Writing review signals" [value]="s.signalGateSummary.writingReviewSignalsEnabled ? 'Enabled' : 'Disabled'" [tone]="signalTone(s.signalGateSummary.writingReviewSignalsEnabled)" />
+      </sp-admin-status-grid>
+    </sp-admin-card>
+
+    <!-- ── Recent failures (combined) ───────────────────────────────────────────── -->
+    <sp-admin-card title="Recent failures" variant="section" padding="md" data-testid="ai-ops-recent-failures">
+      @if (s.recentFailures.length > 0) {
+        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="900px">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Area</th><th>Provider / model</th><th>Reason</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              @for (f of s.recentFailures; track f.evaluationId ?? (f.timestampUtc + f.area)) {
+                <tr [attr.data-testid]="'ai-ops-failure-row-' + f.area">
+                  <td>{{ f.timestampUtc | date:'short' }}</td>
+                  <td><sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ f.area }}</sp-admin-badge></td>
+                  <td>{{ f.providerName ?? '—' }} / {{ f.modelName ?? '—' }}</td>
+                  <td class="sp-admin-section-sub">{{ f.reason }}</td>
+                  <td>{{ f.status }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+      } @else {
+        <sp-admin-not-implemented-state title="No recent failures" data-testid="ai-ops-no-recent-failures">
+          Nothing to show — no speaking, writing, or generation failures recently.
+        </sp-admin-not-implemented-state>
+      }
+    </sp-admin-card>
+
+    <!-- ── Unavailable metrics ──────────────────────────────────────────────────── -->
+    @if (s.unavailableSections.length > 0) {
+      <sp-admin-card title="Not implemented yet" variant="section" padding="md" data-testid="ai-ops-unavailable">
+        @for (u of s.unavailableSections; track u) {
+          <sp-admin-not-implemented-state title="Not implemented yet">{{ u }}</sp-admin-not-implemented-state>
+        }
+      </sp-admin-card>
+    }
+
+  }
+
+</sp-admin-page-body>

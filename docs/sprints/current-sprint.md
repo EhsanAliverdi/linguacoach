@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (19C)
+lastUpdated: 2026-07-02 (20A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,35 @@ Last updated: 2026-07-02
 ---
 
 ## Active sprint
+
+**Phase 20A — Admin AI Operations Dashboard** — complete (2026-07-02)
+
+Adds a read-only admin dashboard aggregating existing AI/evaluation/generation data (speaking evaluation, writing evaluation, generation quality, AI provider usage, readiness-pool/review-scaffold pilot config, signal safety gates) into one operational view at `/admin/ai-operations`. Purely additive: no new AI behaviour, scoring, CEFR update, objective completion, Learning Plan regeneration, review-scaffold behaviour, or student-facing flow. Every field is sourced from an existing, already-DI-registered query/service — no parallel query logic was written except two lightweight readiness-pool counts and a small combined recent-failures lookup.
+
+**New Application:**
+- `AdminAiOperationsDtos.cs` — `AdminAiOperationsSummaryDto` + 8 supporting record types (provider usage, speaking/writing summaries, generation quality, readiness-pool AI summary, signal gate summary, recent-failure item)
+
+**New API:**
+- `GET /api/admin/ai-operations/summary` (`AdminAiOperationsController`, admin-only) — aggregates `IAdminAiUsageHandler`, `ISpeakingEvaluationQualityQuery`/`ISpeakingEvaluationSignalApplicationService`, `IAdminWritingEvaluationQuery`/`IWritingEvaluationSignalApplicationService`, `IAdminGenerationQualityHandler`, and `ReadinessPoolReplenishmentOptions`; computes `OverallStatus` (Healthy/Degraded/AttentionNeeded) and a combined recent-failures table (speaking + writing + generation, capped at 15, newest first)
+
+**New Angular:**
+- `admin.models.ts` — `AdminAiOperationsSummary` + 9 supporting interfaces
+- `admin.api.service.ts` — `getAiOperationsSummary()`
+- `admin-ai-operations.component.ts`/`.html` (new page) — overall status, provider/model usage, speaking/writing operational counts, generation quality, readiness-pool/pilot state summary, signal safety gates (10 explicit per-pipeline booleans + invariant-violation flag), combined recent-failures table, "Not implemented yet" placeholders for genuinely unavailable metrics (job-queue depth, zero-cost provider cost estimation)
+- `app.routes.ts` — new `admin/ai-operations` route
+- `admin-app-layout.component.html` — new "AI Operations" nav item in the existing "AI System" sidebar section
+
+**Tests added:**
+- `AdminAiOperationsSummaryTests` (integration, new file) — 9 tests: auth guards, safe empty-database response, seeded speaking/writing failure counts, review-scaffold/pilot config state, signal gate defaults, no secret/prompt/provider-payload leakage
+- `admin-ai-operations.component.spec.ts` — 14 tests: load/loading/error/empty states, status badge, provider usage, speaking/writing counts, safety gate rendering, invariant-violation banner, recent-failures table, "Not implemented yet" rendering, no leaked sensitive text, refresh
+
+**Build/test totals:** Backend unit: 1,704 (unchanged — no new unit tests this phase). Integration: 1,351 (+9, 0 regressions). Architecture: 3 (unchanged). Angular unit: 1,520/1,640 (120 pre-existing failures in `AdminStudentDetailComponent`, unrelated to this phase — 0 new regressions; the new spec file: 14/14 passing). Production build: clean. Playwright: not run this phase — same rationale as Phase 19B/19C (no existing spec to extend cheaply).
+
+Deferred (explicitly out of scope per the phase brief): provider health-check/ping endpoint, retry tooling for failed evaluations, real-time job-queue depth (no dedicated queue table exists), cost estimation for zero-cost/NoOp provider calls.
+
+See `docs/reviews/2026-07-02-phase-20a-admin-ai-operations-dashboard-review.md` for the full design rationale.
+
+---
 
 **Phase 19C — Review Scaffold Practice Gym Pilot Rollout** — complete (2026-07-02)
 

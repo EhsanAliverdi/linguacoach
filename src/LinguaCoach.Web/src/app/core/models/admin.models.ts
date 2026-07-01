@@ -863,6 +863,162 @@ export interface ReviewScaffoldPilotSummary {
   generatedAt: string;
 }
 
+// ── Phase 20A — Admin AI Operations Dashboard ────────────────────────────────
+
+export interface AiOperationsProviderCount {
+  provider: string;
+  calls: number;
+  successful: number;
+  fallback: number;
+  costUsd: number;
+}
+
+export interface AiOperationsFeatureCount {
+  feature: string;
+  calls: number;
+  successful: number;
+  costUsd: number;
+}
+
+export interface AiOperationsProviderUsageSummary {
+  totalCalls: number;
+  successfulCalls: number;
+  failedCalls: number;
+  fallbackCalls: number;
+  totalCostUsd: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalTokens: number;
+  zeroCostCallCount: number;
+  byProvider: AiOperationsProviderCount[];
+  byFeature: AiOperationsFeatureCount[];
+}
+
+export interface AiOperationsProviderModelCount {
+  providerName: string;
+  modelName: string | null;
+  count: number;
+}
+
+export interface AiOperationsSpeakingSummary {
+  configEnabled: boolean;
+  providerName: string;
+  pendingCount: number;
+  completedCount: number;
+  failedCount: number;
+  notSupportedCount: number;
+  oldestPendingAgeMinutes: number | null;
+  providerModelDistribution: AiOperationsProviderModelCount[];
+  latestFailureReasons: string[];
+}
+
+export interface AiOperationsWritingSummary {
+  configEnabled: boolean;
+  providerName: string | null;
+  modelName: string | null;
+  pendingCount: number;
+  evaluatingCount: number;
+  completedCount: number;
+  failedCount: number;
+  notSupportedCount: number;
+  oldestPendingAgeMinutes: number | null;
+  latestFailureReasons: string[];
+}
+
+export interface AiOperationsPatternFailureBreakdown {
+  patternKey: string;
+  totalFailures: number;
+  abandonedCount: number;
+  latestError: string | null;
+}
+
+export interface AiOperationsCefrFailureBreakdown {
+  cefrLevel: string;
+  totalFailures: number;
+}
+
+export interface AiOperationsProviderFailureBreakdown {
+  providerName: string;
+  modelName: string;
+  totalFailures: number;
+  abandonedCount: number;
+}
+
+export interface AiOperationsValidationFailureItem {
+  timestampUtc: string;
+  patternKey: string | null;
+  activityTypeName: string;
+  cefrLevel: string | null;
+  objectiveKey: string | null;
+  validationErrors: string;
+  attemptNumber: number;
+  providerName: string | null;
+  modelName: string | null;
+  generationSource: string | null;
+  correlationId: string | null;
+}
+
+export interface AiOperationsGenerationQualitySummary {
+  totalValidationFailures: number;
+  abandonedGenerations: number;
+  recentFailureCount: number;
+  retentionDays: number;
+  patternBreakdown: AiOperationsPatternFailureBreakdown[];
+  cefrBreakdown: AiOperationsCefrFailureBreakdown[];
+  providerBreakdown: AiOperationsProviderFailureBreakdown[];
+  latestFailures: AiOperationsValidationFailureItem[];
+}
+
+export interface AiOperationsReadinessPoolSummary {
+  enableReviewScaffoldGeneration: boolean;
+  dryRunOnly: boolean;
+  requireAdminReview: boolean;
+  practiceGymPilotEnabled: boolean;
+  allowTodayLessonInsertion: boolean;
+  maxStudentVisibleScaffoldSuggestions: number;
+  pendingReviewCount: number;
+  approvedCount: number;
+}
+
+export interface AiOperationsSignalGateSummary {
+  speakingCefrUpdatesEnabled: boolean;
+  writingCefrUpdatesEnabled: boolean;
+  speakingObjectiveCompletionEnabled: boolean;
+  writingObjectiveCompletionEnabled: boolean;
+  speakingLearningPlanAutoRegenEnabled: boolean;
+  writingLearningPlanAutoRegenEnabled: boolean;
+  speakingPositiveSignalsEnabled: boolean;
+  writingPositiveSignalsEnabled: boolean;
+  speakingReviewSignalsEnabled: boolean;
+  writingReviewSignalsEnabled: boolean;
+  anyInvariantViolationsDetected: boolean;
+}
+
+export interface AiOperationsRecentFailureItem {
+  timestampUtc: string;
+  area: 'Speaking' | 'Writing' | 'Generation';
+  studentProfileId: string | null;
+  evaluationId: string | null;
+  providerName: string | null;
+  modelName: string | null;
+  reason: string;
+  status: string;
+}
+
+export interface AdminAiOperationsSummary {
+  generatedAtUtc: string;
+  overallStatus: 'Healthy' | 'Degraded' | 'AttentionNeeded';
+  warnings: string[];
+  unavailableSections: string[];
+  providerUsage: AiOperationsProviderUsageSummary;
+  speakingEvaluationSummary: AiOperationsSpeakingSummary;
+  writingEvaluationSummary: AiOperationsWritingSummary;
+  generationQualitySummary: AiOperationsGenerationQualitySummary;
+  readinessPoolAiSummary: AiOperationsReadinessPoolSummary;
+  signalGateSummary: AiOperationsSignalGateSummary;
+  recentFailures: AiOperationsRecentFailureItem[];
+}
+
 export interface MasteryValidationSummary {
   totalStudentsEvaluated: number;
   totalObjectivesEvaluated: number;

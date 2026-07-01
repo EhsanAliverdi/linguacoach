@@ -484,3 +484,31 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **What:** Design shows Background Jobs (4 KPI tiles + recent batches table). No background-jobs API exists.
 **Needs:** Backend endpoint for job batch summary. Out of scope for visual-only phase.
 **Phase:** 10UI-PARITY-REBUILD-2B / backend-agg
+
+---
+
+## Admin AI Operations (Phase 20A, 2026-07-02)
+
+### TODO-20A-1 — AI provider health check / ping endpoint
+**What:** Add `GET /api/admin/ai-operations/provider-health` (or similar) that pings each configured AI provider (OpenAI/Gemini/Anthropic) with a lightweight request and reports reachability/latency.
+**Why:** Phase 20A's dashboard shows historical usage and failure counts, but has no live "is the provider reachable right now" signal. The phase brief explicitly excluded this ("Do not implement: New retry execution tools" and no provider-ping requirement was in the "do implement" list).
+**Context:** `ISpeakingEvaluationProvider`/writing provider equivalents already expose `ProviderName`/`IsSupported`; a ping would need a new lightweight capability check method on each provider implementation.
+**Deferred from:** Phase 20A engineering review, 2026-07-02.
+
+### TODO-20A-2 — Retry tooling for failed speaking/writing evaluations
+**What:** Add an admin action to re-queue a failed `SpeakingEvaluation`/`WritingEvaluation` back to `Pending` for retry, with a re-run cap and audit log entry.
+**Why:** The AI Operations dashboard surfaces failed evaluations but admins currently have no way to act on them from the UI — they'd need direct DB access.
+**Context:** `SpeakingEvaluation`/`WritingEvaluation` domain entities have `RetryCount` already tracked but no public "retry" state transition exists on either entity.
+**Deferred from:** Phase 20A engineering review, 2026-07-02 (explicitly out of scope: "Do not implement: New retry execution tools").
+
+### TODO-20A-3 — Real-time job/queue depth
+**What:** Expose actual queue depth for speaking/writing evaluation and generation jobs, distinct from the current "count of rows with Status=Pending" approximation.
+**Why:** `AdminAiOperationsSummaryDto` lists `RealTimeJobQueueDepth` under `unavailableSections` because there is no dedicated job/queue table in this codebase — evaluations run inline or via Quartz batch jobs against entity status, not a persisted queue with depth/position semantics.
+**Context:** Would likely require either a dedicated queue table or Quartz job-store introspection (`IJobExecutionContext`/scheduler metadata) surfaced through a new admin endpoint.
+**Deferred from:** Phase 20A engineering review, 2026-07-02.
+
+### TODO-20A-4 — Cost estimation for zero-cost / NoOp provider calls
+**What:** Optionally estimate a "would-be cost" for AI calls made through zero-cost or `NoOp` providers, clearly labelled as an estimate.
+**Why:** `AdminAiOperationsSummaryDto` lists this under `unavailableSections` — the phase brief explicitly said "Do not invent cost values," so cost is only ever shown when already persisted on the AI usage log.
+**Context:** Would require a pricing table lookup even for providers that don't charge (e.g. to answer "what would this have cost on a real provider"), which is a product decision, not just an engineering one.
+**Deferred from:** Phase 20A engineering review, 2026-07-02.

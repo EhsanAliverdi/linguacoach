@@ -95,6 +95,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-diagnostics/admin-diagnostics.component').then(m => m.AdminDiagnosticsComponent),
       },
       {
+        path: 'ai-operations',
+        loadComponent: () => import('./features/admin/admin-ai-operations/admin-ai-operations.component').then(m => m.AdminAiOperationsComponent),
+      },
+      {
         path: 'integrations',
         loadComponent: () => import('./features/admin/admin-integrations/admin-integrations.component').then(m => m.AdminIntegrationsComponent),
       },

@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 19C complete)**
+**Accurate as of: 2026-07-02 (Phase 20A complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 19C — Review Scaffold Practice Gym Pilot Rollout (2026-07-02)
+**Latest phase completed:** Phase 20A — Admin AI Operations Dashboard (2026-07-02)
 
 **Branch:** main
 
-**Test totals (as of 19C):**
-- Backend unit: 1,715 (+11 from Phase 19C: pilot gate on/off, cap enforcement, label override, rollback, cross-student isolation, Today-lesson-exclusion proof, safe/friendly config defaults)
-- Backend integration: 1,342 (+4 from Phase 19C: pilot-summary endpoint auth guards + count reporting)
+**Test totals (as of 20A):**
+- Backend unit: 1,704 (unchanged — Phase 20A added no new unit tests, only integration + Angular)
+- Backend integration: 1,351 (+9 from Phase 20A: AI operations summary auth guards, seeded counts, safety-gate/config reporting, no-leak assertions)
 - Architecture: 3
-- **Backend total: 3,060**
-- Angular unit (Karma): 1,505/1,626 success (121 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase, 0 new regressions; the two files this phase touched — `admin-lessons.component.spec.ts` + `practice-gym.component.spec.ts` — 116/116 passing)
-- Playwright E2E: unchanged (existing suite has no admin-lessons/practice-gym review-queue spec to extend; backend integration + Angular unit tests are the coverage for this phase's UI)
+- **Backend total: 3,058**
+- Angular unit (Karma): 1,520/1,640 success (120 pre-existing failures in `AdminStudentDetailComponent`, unrelated to this phase, 0 new regressions; the new `admin-ai-operations.component.spec.ts`: 14/14)
+- Playwright E2E: unchanged (no existing spec to extend cheaply; backend integration + Angular unit tests are the coverage for this phase's UI)
 
 **Build:** Clean production build. No known open build errors.
 
@@ -148,6 +148,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 63 | Phase 19A: Review Scaffold Controlled Enablement | Readiness Pool | 2026-07-02 | Source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold flag (T71 migration); ReadinessPool appsettings section added; admin dry-run summary + pending-review endpoint; EnableReviewScaffoldGeneration remains false by default |
 | 64 | Phase 19B: Review Scaffold Per-Item Admin Approval | Readiness Pool / Admin | 2026-07-02 | `AdminReviewStatus` per-item state (T72 migration) with Approve/Reject/Reopen transitions + idempotency guards; admin API + audit log (`AdminAuditLog`); Practice Gym gate updated to require per-item Approved; admin UI approval table with Approve/Reject/Reopen actions; global safety gates (EnableReviewScaffoldGeneration/DryRunOnly/RequireAdminReview/AllowTodayLessonInsertion) unchanged |
 | 65 | Phase 19C: Review Scaffold Practice Gym Pilot Rollout | Readiness Pool / Admin | 2026-07-02 | `PracticeGymPilotEnabled` gate (default false) layered on top of 19A/19B; friendly non-negative student-facing pilot label/reason override; `MaxStudentVisibleScaffoldSuggestions` cap; admin pilot-summary endpoint + monitoring card; instantly-reversible rollback with no data deletion; Today lesson insertion still disabled by default |
+| 66 | Phase 20A: Admin AI Operations Dashboard | Admin / AI | 2026-07-02 | Read-only `GET /api/admin/ai-operations/summary` aggregating existing speaking/writing evaluation, generation quality, AI usage, and readiness-pool/pilot services; new `/admin/ai-operations` page (provider/model usage, evaluation queue counts, generation failures, 10-flag signal safety gate card, combined recent-failures table); no new AI behaviour, scoring, or mutation path |
 
 ---
 
@@ -282,6 +283,7 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 - No production-level APM, distributed tracing, or alerting stack.
 - AI cost/latency not tracked at per-call level in `SpeakingEvaluation`.
 - Memory staleness detection (TODO-4) not implemented.
+- Phase 20A added a read-only Admin AI Operations dashboard (`/admin/ai-operations`) aggregating speaking/writing evaluation, generation quality, AI usage, and readiness-pool/pilot state into one page — this narrows the gap but does not replace real APM/tracing. Provider health-check/ping and retry tooling remain deferred (see Phase 20A entry above).
 
 ### Audio Cleanup
 - No background job to delete old speaking audio (TODO-6). 50-file per-student cap is the interim guard.
@@ -355,14 +357,15 @@ Phases recommended in order of priority. Dependencies are noted.
 | ~~7~~ | ~~19A~~ | ~~Review scaffold controlled enablement~~ | ~~**Complete 2026-07-02** — config gates added; EnableReviewScaffoldGeneration remains off by default~~ | ~~17C complete~~ |
 | ~~7b~~ | ~~19B~~ | ~~Review scaffold per-item admin approval~~ | ~~**Complete 2026-07-02** — per-item AdminReviewStatus approve/reject/reopen workflow~~ | ~~19A complete~~ |
 | ~~7c~~ | ~~19C~~ | ~~Review scaffold Practice Gym pilot rollout~~ | ~~**Complete 2026-07-02** — PracticeGymPilotEnabled gate; pilot remains off by default~~ | ~~19B complete~~ |
+| ~~7d~~ | ~~20A~~ | ~~Admin AI operations dashboard~~ | ~~**Complete 2026-07-02** — read-only aggregation endpoint + page over existing AI/eval/generation data~~ | ~~19C complete~~ |
 
 ### Tier 3 — Medium-term (phases 8–10)
 
 | Priority | Phase | Area | Why Next | Dependencies |
 |---------:|-------|------|----------|-------------|
-| 8 | 20A | Admin AI operations dashboard | Provider health, queues, retry tools, failure dashboard, cost/latency visibility | Speaking/writing eval stable |
-| 9 | 21A | Enterprise SaaS organisation model | Organisations, teachers, groups, cohorts, org roles | 20A or parallel |
-| 10 | 22A | Production operations hardening | Monitoring, backup/restore runbooks, smoke tests, deployment verification | 20A |
+| 8 | 21A | Enterprise SaaS organisation model | Organisations, teachers, groups, cohorts, org roles | 20A complete |
+| 9 | 22A | Production operations hardening | Monitoring, backup/restore runbooks, smoke tests, deployment verification | 20A complete |
+| 10 | 20B (proposed) | AI provider health check + retry tooling | Provider ping endpoint, re-queue failed evaluations — deferred out of 20A's read-only scope | 20A complete |
 
 ---
 
@@ -523,17 +526,25 @@ Review: `docs/reviews/2026-07-02-phase-19c-review-scaffold-practice-gym-pilot-ro
 
 ---
 
-### Phase 20A — Admin AI Operations Dashboard
+### Phase 20A — Admin AI Operations Dashboard — complete (2026-07-02)
 
-**Purpose:** Give admins full visibility into the AI evaluation pipeline: provider health, queue depths, retry queues, failure analysis, cost/latency per feature.
+**Purpose:** Give admins one operational view across the AI evaluation/generation pipeline, read-only, aggregating existing data — no new AI behaviour.
 
-**Scope:**
-- Provider health check endpoint (ping each configured provider)
-- Speaking evaluation queue dashboard (Pending / Evaluating / Failed counts)
-- Writing evaluation queue dashboard
-- Per-feature cost and latency summary
-- Retry tools (re-queue failed evaluations)
-- Admin alert when failure rate exceeds threshold
+**Delivered:**
+- `GET /api/admin/ai-operations/summary` (`AdminAiOperationsController`, admin-only) — aggregates `IAdminAiUsageHandler`, `ISpeakingEvaluationQualityQuery`/`ISpeakingEvaluationSignalApplicationService`, `IAdminWritingEvaluationQuery`/`IWritingEvaluationSignalApplicationService`, `IAdminGenerationQualityHandler`, and `ReadinessPoolReplenishmentOptions` — every existing, already-DI-registered service, not new query logic
+- `OverallStatus` (Healthy/Degraded/AttentionNeeded) computed from invariant violations, abandoned-generation warnings, and elevated failure rates
+- Combined recent-failures table (speaking + writing + generation, capped at 15, newest first) — the one genuinely new small query this phase added
+- Signal safety gate summary: 10 explicit per-pipeline (speaking vs. writing) booleans for CEFR update / objective completion / Learning Plan auto-regen / positive signals / review signals, plus a combined invariant-violation flag — CEFR-update and objective-completion flags are always false because the underlying options (`SpeakingEvaluationOptions.AllowCefrUpdate` etc.) are hardcoded, not runtime-configurable
+- New Angular page `/admin/ai-operations`, added to the existing "AI System" sidebar section, built entirely from existing `sp-admin-*` design-system components
+- `unavailableSections` — explicitly flags two genuinely-unavailable metrics (real-time job-queue depth; cost estimation for zero-cost/NoOp providers) rather than approximating them
+
+**Deferred (explicitly out of scope for this phase):**
+- Provider health-check/ping endpoint
+- Retry tooling (re-queue failed evaluations)
+- Real-time job-queue depth (no dedicated queue table exists in this codebase)
+- Cost estimation for zero-cost/NoOp provider calls
+
+Review: `docs/reviews/2026-07-02-phase-20a-admin-ai-operations-dashboard-review.md`.
 
 ---
 
@@ -638,7 +649,7 @@ These items are post-Phase 21A (Organisation Model) dependencies.
 | Provider cost / latency spikes | Medium | AI budget consumed unexpectedly; slow student experience | Cost tracking per call; per-feature max retries; NoOp fallback; alert on zero-cost calls |
 | Overclaiming pronunciation accuracy | High | Promising phoneme-level accuracy without phoneme-level provider | Pronunciation scoring is conservative; no phoneme claims until real ASR wired |
 | Review scaffold activation risk | Medium | Review scaffold generates inappropriate content for student level | Extended dry-run validation before enablement; admin preview required |
-| Observability gap | Medium | Failures are silent; no production visibility | Phase 20A operations dashboard; OpenTelemetry integration |
+| Observability gap | Medium | Failures are silent outside the admin UI; no APM/tracing | Phase 20A operations dashboard shipped (2026-07-02); real APM/tracing (OpenTelemetry) and provider health-check/retry tooling still deferred |
 | Enterprise complexity | Medium | Multi-tenancy is a large architectural change | Phase 21A requires dedicated architecture review before implementation |
 | Production deployment / backup risk | High | No verified backup/restore procedure | Phase 22A: runbook, smoke tests, deployment verification |
 | UI polish / product-market fit risk | Medium | Student UI is functionally complete but not fully polished | Phase 18B advanced feedback UX; deferred full redesign |

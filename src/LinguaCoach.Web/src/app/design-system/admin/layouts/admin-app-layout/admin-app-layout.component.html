@@ -63,6 +63,9 @@
         <li><sp-admin-sidebar-nav-item label="AI Config" route="/admin/ai-config" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="cpu" />
         </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="AI Operations" route="/admin/ai-operations" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="activity" />
+        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Prompts" route="/admin/prompts" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="message-square" />
         </sp-admin-sidebar-nav-item></li>
@@ -180,6 +183,9 @@
         <ul class="flex flex-col gap-1">
           <li><sp-admin-sidebar-nav-item label="AI Config" route="/admin/ai-config" [collapsed]="collapsed()">
             <sp-admin-icon name="cpu" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="AI Operations" route="/admin/ai-operations" [collapsed]="collapsed()">
+            <sp-admin-icon name="activity" />
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Prompts" route="/admin/prompts" [collapsed]="collapsed()">
             <sp-admin-icon name="message-square" />

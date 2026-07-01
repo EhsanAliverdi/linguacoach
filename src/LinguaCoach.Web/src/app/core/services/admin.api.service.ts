@@ -48,6 +48,7 @@ import {
   WritingSignalApplicationSummaryDto,
   WritingSignalSafetySummaryDto,
   ReviewScaffoldPilotSummary,
+  AdminAiOperationsSummary,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -175,6 +176,9 @@ export class AdminApiService {
   }
   getReviewScaffoldPilotSummary(): Observable<ReviewScaffoldPilotSummary> {
     return this.http.get<ReviewScaffoldPilotSummary>(`${this.api}/readiness-pool/review-scaffold/pilot-summary`);
+  }
+  getAiOperationsSummary(): Observable<AdminAiOperationsSummary> {
+    return this.http.get<AdminAiOperationsSummary>(`${this.api}/ai-operations/summary`);
   }
   approveReviewScaffoldItem(itemId: string): Observable<ReviewScaffoldItemDetail> {
     return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/approve`, {});
