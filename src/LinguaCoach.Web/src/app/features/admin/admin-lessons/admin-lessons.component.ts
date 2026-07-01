@@ -19,8 +19,12 @@ import {
   SpAdminToggleComponent,
 } from '../../../design-system/admin';
 import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
+import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
+import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
+import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
+import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldItemDetail } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldItemDetail, MasteryValidationSummary } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
@@ -45,6 +49,10 @@ import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaff
     SpAdminPageHeaderComponent,
     SpAdminTableComponent,
     SpAdminToggleComponent,
+    SpAdminRingMetricComponent,
+    SpAdminBreakdownBarsComponent,
+    SpAdminGraphCardComponent,
+    SpAdminVisualPlaceholderComponent,
   ],
 })
 export class AdminLessonsComponent implements OnInit {
@@ -102,6 +110,11 @@ export class AdminLessonsComponent implements OnInit {
   scaffoldActionPendingId = signal<string | null>(null);
   scaffoldActionError = signal('');
 
+  // ── Mastery validation (system-wide diagnostic) ───────────────────────────
+  masteryLoading = signal(false);
+  masteryError = signal('');
+  masteryValidation = signal<MasteryValidationSummary | null>(null);
+
   // ── Generate for student ──────────────────────────────────────────────────
   studentProfileId = '';
   generatePending = signal(false);
@@ -114,7 +127,101 @@ export class AdminLessonsComponent implements OnInit {
     this.loadPoolHealth();
     this.loadScaffoldDryRun();
     this.loadScaffoldPendingReview();
+    this.loadMasteryValidation();
   }
+
+  // ── Pool health — chart data ───────────────────────────────────────────────
+
+  poolReadyRingPct = computed<number>(() => {
+    const h = this.poolHealth();
+    if (!h || h.totalStudentsWithItems === 0) return 0;
+    return Math.round(((h.totalStudentsWithItems - h.studentsWithNoReadyItems) / h.totalStudentsWithItems) * 100);
+  });
+
+  poolStatusItems = computed<BreakdownBarItem[]>(() => {
+    const h = this.poolHealth();
+    if (!h) return [];
+    const queuedOrGenerating = h.totalQueued + h.totalGenerating;
+    const staleOrExpired = h.totalStale + h.totalExpired;
+    const total = h.totalReady + h.totalReserved + queuedOrGenerating
+      + h.totalReviewOnly + staleOrExpired + h.totalFailed + h.totalSkipped;
+    if (total === 0) return [];
+    const mk = (label: string, value: number, tone: BreakdownBarItem['tone']): BreakdownBarItem =>
+      ({ label, value, pct: Math.round((value / total) * 100), tone });
+    return [
+      mk('Ready', h.totalReady, 'green'),
+      mk('Reserved', h.totalReserved, 'indigo'),
+      mk('Queued / generating', queuedOrGenerating, 'teal'),
+      mk('Review only', h.totalReviewOnly, 'violet'),
+      mk('Stale / expired', staleOrExpired, 'amber'),
+      mk('Failed', h.totalFailed, 'danger'),
+      mk('Skipped', h.totalSkipped, 'slate'),
+    ].filter(i => i.value > 0);
+  });
+
+  poolAttentionItems = computed<BreakdownBarItem[]>(() => {
+    const h = this.poolHealth();
+    if (!h || h.totalStudentsWithItems === 0) return [];
+    const total = h.totalStudentsWithItems;
+    const mk = (label: string, value: number, tone: BreakdownBarItem['tone']): BreakdownBarItem =>
+      ({ label, value, pct: Math.min(100, Math.round((value / total) * 100)), tone });
+    return [
+      mk('No ready items', h.studentsWithNoReadyItems, 'danger'),
+      mk('Below minimum threshold', h.studentsBelowMinimumThreshold, 'amber'),
+      mk('Has failed items', h.studentsWithFailedItems, 'amber'),
+      mk('Has stale items', h.studentsWithStaleItems, 'slate'),
+    ].filter(i => i.value > 0);
+  });
+
+  // ── Review scaffold — funnel chart data ────────────────────────────────────
+
+  scaffoldFunnelItems = computed<BreakdownBarItem[]>(() => {
+    const s = this.scaffoldDryRun();
+    if (!s) return [];
+    const values: [string, number, BreakdownBarItem['tone']][] = [
+      ['Eligible for review', s.studentsEligibleForReview, 'indigo'],
+      ['Net new review items (est.)', s.estimatedNetNewReviewItems, 'green'],
+      ['Blocked (duplicate)', s.blockedDuplicates, 'amber'],
+      ['Blocked (inactive objective)', s.blockedInactiveObjectives, 'slate'],
+      ['Held for admin review', s.adminReviewRequiredCount, 'violet'],
+      ['Generated today', s.generatedTodayCount, 'teal'],
+    ];
+    const max = Math.max(...values.map(v => v[1]), 1);
+    return values
+      .filter(([, value]) => value > 0)
+      .map(([label, value, tone]) => ({ label, value, pct: Math.round((value / max) * 100), tone }));
+  });
+
+  // ── Mastery validation — chart data ─────────────────────────────────────────
+
+  masteryBreakdownItems = computed<BreakdownBarItem[]>(() => {
+    const m = this.masteryValidation();
+    if (!m) return [];
+    const values: [string, number, BreakdownBarItem['tone']][] = [
+      ['Mastered', m.countMastered, 'green'],
+      ['Needs review', m.countNeedsReview, 'amber'],
+      ['At risk', m.countAtRisk, 'danger'],
+      ['Insufficient evidence', m.countInsufficientEvidence, 'slate'],
+    ];
+    const max = Math.max(...values.map(v => v[1]), 1);
+    return values
+      .filter(([, value]) => value > 0)
+      .map(([label, value, tone]) => ({ label, value, pct: Math.round((value / max) * 100), tone }));
+  });
+
+  private loadMasteryValidation(): void {
+    this.masteryLoading.set(true);
+    this.masteryError.set('');
+    this.adminApi.getMasteryValidationSummary().subscribe({
+      next: m => { this.masteryValidation.set(m); this.masteryLoading.set(false); },
+      error: err => {
+        this.masteryError.set(err?.error?.error ?? err?.message ?? 'Failed to load mastery validation summary.');
+        this.masteryLoading.set(false);
+      },
+    });
+  }
+
+  refreshMasteryValidation(): void { this.loadMasteryValidation(); }
 
   private loadSettings(): void {
     this.settingsLoading.set(true);

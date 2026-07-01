@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminLessonsComponent } from './admin-lessons.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary, ReviewScaffoldItemDetail } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary, ReviewScaffoldItemDetail, MasteryValidationSummary } from '../../../core/models/admin.models';
 
 const SETTINGS: AdminGenerationSettings = {
   readyLessonBufferSize: 5,
@@ -50,6 +50,19 @@ const POOL_HEALTH: AggregatePoolHealthSummary = {
   generatedAt: '2026-06-27T00:00:00Z',
 };
 
+const MASTERY_VALIDATION: MasteryValidationSummary = {
+  totalStudentsEvaluated: 0,
+  totalObjectivesEvaluated: 0,
+  countInsufficientEvidence: 0,
+  countMastered: 0,
+  countNeedsReview: 0,
+  countNeedsPractice: 0,
+  countAtRisk: 0,
+  masteredExcludedFromNewLearning: 0,
+  warnings: [],
+  generatedAt: '2026-06-27T00:00:00Z',
+};
+
 function makeApi(
   settings: AdminGenerationSettings | 'error' = SETTINGS,
   batches: AdminGenerationBatchesResponse | 'error' = BATCHES,
@@ -91,6 +104,7 @@ function makeApi(
     approveReviewScaffoldItem: jasmine.createSpy('approveReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
     rejectReviewScaffoldItem: jasmine.createSpy('rejectReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
     reopenReviewScaffoldItem: jasmine.createSpy('reopenReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
+    getMasteryValidationSummary: jasmine.createSpy('getMasteryValidationSummary').and.returnValue(of(MASTERY_VALIDATION)),
   };
 }
 
@@ -235,6 +249,87 @@ describe('AdminLessonsComponent', () => {
     api.getAggregatePoolHealth.calls.reset();
     component.refreshPoolHealth();
     expect(api.getAggregatePoolHealth).toHaveBeenCalledTimes(1);
+  });
+
+  it('poolStatusItems computes a status distribution from pool health', async () => {
+    await setup(SETTINGS, BATCHES, {
+      ...POOL_HEALTH,
+      totalStudentsWithItems: 5,
+      totalReady: 6,
+      totalReserved: 2,
+      totalQueued: 1,
+      totalGenerating: 1,
+      totalFailed: 1,
+    });
+    const items = component.poolStatusItems();
+    expect(items.find(i => i.label === 'Ready')?.value).toBe(6);
+    expect(items.find(i => i.label === 'Queued / generating')?.value).toBe(2);
+    expect(items.find(i => i.label === 'Failed')?.value).toBe(1);
+  });
+
+  it('poolReadyRingPct computes percent of students with a ready item', async () => {
+    await setup(SETTINGS, BATCHES, { ...POOL_HEALTH, totalStudentsWithItems: 4, studentsWithNoReadyItems: 1 });
+    expect(component.poolReadyRingPct()).toBe(75);
+  });
+
+  it('calls getMasteryValidationSummary on init', async () => {
+    await setup();
+    expect(api.getMasteryValidationSummary).toHaveBeenCalledTimes(1);
+  });
+
+  it('populates masteryValidation on success', async () => {
+    await setup();
+    expect(component.masteryValidation()).not.toBeNull();
+    expect(component.masteryLoading()).toBeFalse();
+    expect(component.masteryError()).toBe('');
+  });
+
+  it('shows error when mastery validation API fails', async () => {
+    api = makeApi();
+    api.getMasteryValidationSummary.and.returnValue(throwError(() => new Error('fail')));
+    await TestBed.configureTestingModule({
+      imports: [AdminLessonsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminLessonsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.masteryError()).toBeTruthy();
+    expect(component.masteryValidation()).toBeNull();
+  });
+
+  it('masteryBreakdownItems computes a distribution from mastery validation', async () => {
+    api = makeApi();
+    api.getMasteryValidationSummary.and.returnValue(of({
+      ...MASTERY_VALIDATION,
+      countMastered: 10,
+      countNeedsReview: 5,
+      countAtRisk: 2,
+    }));
+    await TestBed.configureTestingModule({
+      imports: [AdminLessonsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminLessonsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const items = component.masteryBreakdownItems();
+    expect(items.find(i => i.label === 'Mastered')?.value).toBe(10);
+    expect(items.find(i => i.label === 'Needs review')?.value).toBe(5);
+    expect(items.find(i => i.label === 'At risk')?.value).toBe(2);
+  });
+
+  it('refreshMasteryValidation reloads mastery validation', async () => {
+    await setup();
+    api.getMasteryValidationSummary.calls.reset();
+    component.refreshMasteryValidation();
+    expect(api.getMasteryValidationSummary).toHaveBeenCalledTimes(1);
   });
 
   it('calls getReviewScaffoldDryRun and getReviewScaffoldPendingReview on init', async () => {

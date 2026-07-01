@@ -42,96 +42,82 @@
     </sp-admin-kpi-card>
   </div>
 
-  <!-- Top two-column row -->
-  <div class="sp-admin-card-grid-2">
+  <!-- Generate lessons for student -->
+  <sp-admin-card title="Generate lessons for student">
+    <p class="sp-admin-section-sub">Trigger immediate lesson generation for a specific student profile. The job is queued and processed in the background.</p>
+    <sp-admin-form-field label="Student profile ID">
+      <sp-admin-input
+        placeholder="Enter student profile ID"
+        [(ngModel)]="studentProfileId" />
+    </sp-admin-form-field>
+    <div class="sp-admin-form-footer">
+      <sp-admin-button
+        variant="primary"
+        size="sm"
+        [disabled]="generatePending()"
+        (clicked)="generateLessons()">
+        {{ generatePending() ? 'Queuing…' : 'Generate now' }}
+      </sp-admin-button>
+    </div>
+    @if (generateStatus()) {
+      <sp-admin-alert variant="success">{{ generateStatus() }}</sp-admin-alert>
+    }
+    @if (generateError()) {
+      <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert>
+    }
+  </sp-admin-card>
 
-    <!-- Generate lessons for student -->
-    <sp-admin-card title="Generate lessons for student">
-      <p class="sp-admin-section-sub">Trigger immediate lesson generation for a specific student profile. The job is queued and processed in the background.</p>
-      <sp-admin-form-field label="Student profile ID">
-        <sp-admin-input
-          placeholder="Enter student profile ID"
-          [(ngModel)]="studentProfileId" />
-      </sp-admin-form-field>
-      <div class="sp-admin-form-footer">
-        <sp-admin-button
-          variant="primary"
-          size="sm"
-          [disabled]="generatePending()"
-          (clicked)="generateLessons()">
-          {{ generatePending() ? 'Queuing…' : 'Generate now' }}
-        </sp-admin-button>
-      </div>
-      @if (generateStatus()) {
-        <sp-admin-alert variant="success">{{ generateStatus() }}</sp-admin-alert>
-      }
-      @if (generateError()) {
-        <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert>
-      }
-    </sp-admin-card>
-
-    <!-- Readiness pool aggregate health -->
-    <sp-admin-card title="Readiness pool — aggregate health">
-      <p class="sp-admin-section-sub">System-wide pool health across all student profiles.</p>
-      @if (poolHealthLoading()) {
+  <!-- Readiness pool — aggregate health -->
+  <div class="sp-admin-table-section" aria-label="Readiness pool — aggregate health">
+    <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+      <h2 class="sp-admin-table-section-title">Readiness pool — aggregate health</h2>
+      <sp-admin-button size="xs" appearance="ghost" variant="neutral" [disabled]="poolHealthLoading()" (clicked)="refreshPoolHealth()">
+        Refresh
+      </sp-admin-button>
+    </div>
+    @if (poolHealthLoading()) {
+      <div class="sp-admin-card-body-md">
         <sp-admin-loading-state message="Loading pool health" />
-      } @else if (poolHealthError()) {
+      </div>
+    } @else if (poolHealthError()) {
+      <div class="sp-admin-card-body-md">
         <sp-admin-error-state title="Pool health unavailable" [message]="poolHealthError()" />
-      } @else if (poolHealth()) {
-        <div class="sp-adm-pool-health-grid">
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalStudentsWithItems }}</span>
-            <span class="sp-adm-pool-health-label">Students with items</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value sp-adm-pool-health-ready">{{ poolHealth()!.totalReady }}</span>
-            <span class="sp-adm-pool-health-label">Ready</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalQueued + poolHealth()!.totalGenerating }}</span>
-            <span class="sp-adm-pool-health-label">Queued / generating</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalReserved }}</span>
-            <span class="sp-adm-pool-health-label">Reserved</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalReviewOnly }}</span>
-            <span class="sp-adm-pool-health-label">Review only</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.totalFailed }}</span>
-            <span class="sp-adm-pool-health-label">Failed</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value">{{ poolHealth()!.totalStale + poolHealth()!.totalExpired }}</span>
-            <span class="sp-adm-pool-health-label">Stale / expired</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.studentsWithNoReadyItems }}</span>
-            <span class="sp-adm-pool-health-label">Students needing replenishment</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value sp-adm-pool-health-warn">{{ poolHealth()!.studentsBelowMinimumThreshold }}</span>
-            <span class="sp-adm-pool-health-label">Below minimum threshold</span>
-          </div>
-          <div class="sp-adm-pool-health-stat">
-            <span class="sp-adm-pool-health-value">{{ poolHealth()!.averageReadyPerStudent | number:'1.1-1' }}</span>
-            <span class="sp-adm-pool-health-label">Avg ready per student</span>
-          </div>
-        </div>
-        @if (poolHealth()!.totalFailed > 0) {
-          <sp-admin-alert variant="warning">
-            {{ poolHealth()!.studentsWithFailedItems }} student(s) have failed pool items. Check generation logs.
-          </sp-admin-alert>
-        }
-        <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-          Last refreshed: {{ poolHealth()!.generatedAt | date:'HH:mm:ss' }}
-          &nbsp;<button type="button" class="sp-adm-pool-health-refresh" (click)="refreshPoolHealth()">Refresh</button>
-        </p>
+      </div>
+    } @else if (poolHealth()) {
+      <div class="sp-admin-card-grid-3-equal">
+        <sp-admin-card title="Students ready">
+          <sp-admin-ring-metric
+            [pct]="poolReadyRingPct()"
+            [label]="poolReadyRingPct() + '%'"
+            sublabel="have ≥1 ready item"
+            [tone]="poolReadyRingPct() >= 90 ? 'green' : poolReadyRingPct() >= 60 ? 'amber' : 'danger'" />
+        </sp-admin-card>
+        <sp-admin-card title="Pool status distribution">
+          @if (poolStatusItems().length > 0) {
+            <sp-admin-breakdown-bars [items]="poolStatusItems()" [showPct]="true" />
+          } @else {
+            <sp-admin-visual-placeholder state="not-available" title="Pool status distribution" message="No readiness pool items yet" />
+          }
+        </sp-admin-card>
+        <sp-admin-card title="Needs attention">
+          @if (poolAttentionItems().length > 0) {
+            <sp-admin-breakdown-bars [items]="poolAttentionItems()" [showPct]="true" />
+          } @else {
+            <sp-admin-visual-placeholder state="not-available" title="Needs attention" message="No students currently need attention" />
+          }
+        </sp-admin-card>
+      </div>
+      @if (poolHealth()!.totalFailed > 0) {
+        <sp-admin-alert variant="warning">
+          {{ poolHealth()!.studentsWithFailedItems }} student(s) have failed pool items. Check generation logs.
+        </sp-admin-alert>
       }
-    </sp-admin-card>
-
+      <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+        {{ poolHealth()!.totalStudentsWithItems }} students with items,
+        {{ poolHealth()!.averageReadyPerStudent | number:'1.1-1' }} avg ready per student.
+        Last refreshed: {{ poolHealth()!.generatedAt | date:'HH:mm:ss' }}
+      </p>
+    }
   </div>
 
   <!-- Ready lesson buffer per student -->
@@ -247,74 +233,76 @@
     }
   </sp-admin-card>
 
-  <!-- Review scaffold generation status -->
-  <sp-admin-card title="Review scaffold generation">
-    <p class="sp-admin-section-sub">
-      Shows whether review scaffold generation is enabled and what it would affect.
-      Enable <code>ReadinessPool:EnableReviewScaffoldGeneration</code> in config to activate.
-    </p>
-    @if (scaffoldDryRunLoading()) {
-      <sp-admin-loading-state message="Loading dry-run status" />
-    } @else if (scaffoldDryRunError()) {
-      <sp-admin-error-state title="Dry-run unavailable" [message]="scaffoldDryRunError()" />
-    } @else if (scaffoldDryRun()) {
-      <div class="sp-adm-pool-health-stats">
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">
-            <sp-admin-badge
-              [tone]="scaffoldDryRun()!.status === 'Enabled' ? 'success' : scaffoldDryRun()!.status === 'DryRun' ? 'info' : 'neutral'"
-              appearance="soft"
-              size="sm">
-              {{ scaffoldDryRun()!.status }}
-            </sp-admin-badge>
-          </span>
-          <span class="sp-adm-pool-health-label">Status</span>
+  <!-- Review scaffold funnel + mastery validation -->
+  <div class="sp-admin-two-col-start">
+
+    <sp-admin-graph-card title="Review scaffold generation"
+      subtitle="Enable ReadinessPool:EnableReviewScaffoldGeneration in config to activate."
+      [status]="scaffoldDryRunLoading() ? 'loading' : scaffoldDryRunError() ? 'unavailable' : (scaffoldDryRun()?.status === 'Enabled' ? 'live' : scaffoldDryRun()?.status === 'DryRun' ? 'partial' : 'unavailable')">
+      @if (scaffoldDryRunLoading()) {
+        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Review scaffold generation" message="Loading..." />
+      } @else if (scaffoldDryRunError()) {
+        <sp-admin-error-state title="Dry-run unavailable" [message]="scaffoldDryRunError()" />
+      } @else if (scaffoldDryRun()) {
+        <div class="sp-admin-kpi-row">
+          <sp-admin-badge
+            [tone]="scaffoldDryRun()!.status === 'Enabled' ? 'success' : scaffoldDryRun()!.status === 'DryRun' ? 'info' : 'neutral'"
+            appearance="soft" size="sm">
+            {{ scaffoldDryRun()!.status }}
+          </sp-admin-badge>
+          <span class="sp-admin-section-sub">{{ scaffoldDryRun()!.studentsConsidered }} students considered</span>
         </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.studentsConsidered }}</span>
-          <span class="sp-adm-pool-health-label">Students considered</span>
-        </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.studentsEligibleForReview }}</span>
-          <span class="sp-adm-pool-health-label">Eligible for review</span>
-        </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.estimatedNetNewReviewItems }}</span>
-          <span class="sp-adm-pool-health-label">Estimated net new review items</span>
-        </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.blockedDuplicates }}</span>
-          <span class="sp-adm-pool-health-label">Blocked (duplicate)</span>
-        </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.blockedInactiveObjectives }}</span>
-          <span class="sp-adm-pool-health-label">Blocked (inactive objective)</span>
-        </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.adminReviewRequiredCount }}</span>
-          <span class="sp-adm-pool-health-label">Held for admin review</span>
-        </div>
-        <div class="sp-adm-pool-health-stat">
-          <span class="sp-adm-pool-health-value">{{ scaffoldDryRun()!.generatedTodayCount }}</span>
-          <span class="sp-adm-pool-health-label">Generated today</span>
-        </div>
-      </div>
-      <p class="sp-admin-section-sub" style="margin-top:0.75rem">
-        Config: require admin review = <strong>{{ scaffoldDryRun()!.requireAdminReview ? 'yes' : 'no' }}</strong>,
-        max per student/day = <strong>{{ scaffoldDryRun()!.maxScaffoldItemsPerStudentPerDay }}</strong>,
-        allowed sources = <strong>{{ scaffoldDryRun()!.scaffoldAllowedSources.join(', ') }}</strong>,
-        Today lesson insertion = <strong>{{ scaffoldDryRun()!.allowTodayLessonInsertion ? 'allowed' : 'blocked' }}</strong>,
-        minimum confidence = <strong>{{ scaffoldDryRun()!.minimumConfidenceForReviewNeed }}</strong>.
-      </p>
-      @for (warning of scaffoldDryRun()!.warnings; track warning) {
-        <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
+        @if (scaffoldFunnelItems().length > 0) {
+          <sp-admin-breakdown-bars [items]="scaffoldFunnelItems()" [showPct]="false" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="Review scaffold generation" message="No review scaffold activity in this run" />
+        }
+        <p class="sp-admin-section-sub" style="margin-top:0.75rem">
+          Config: require admin review = <strong>{{ scaffoldDryRun()!.requireAdminReview ? 'yes' : 'no' }}</strong>,
+          max per student/day = <strong>{{ scaffoldDryRun()!.maxScaffoldItemsPerStudentPerDay }}</strong>,
+          allowed sources = <strong>{{ scaffoldDryRun()!.scaffoldAllowedSources.join(', ') }}</strong>,
+          Today lesson insertion = <strong>{{ scaffoldDryRun()!.allowTodayLessonInsertion ? 'allowed' : 'blocked' }}</strong>,
+          minimum confidence = <strong>{{ scaffoldDryRun()!.minimumConfidenceForReviewNeed }}</strong>.
+        </p>
+        @for (warning of scaffoldDryRun()!.warnings; track warning) {
+          <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
+        }
+        <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+          Last refreshed: {{ scaffoldDryRun()!.generatedAt | date:'HH:mm:ss' }}
+          <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshScaffoldDryRun()">Refresh</sp-admin-button>
+        </p>
       }
-      <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-        Last refreshed: {{ scaffoldDryRun()!.generatedAt | date:'HH:mm:ss' }}
-        &nbsp;<button type="button" class="sp-adm-pool-health-refresh" (click)="refreshScaffoldDryRun()">Refresh</button>
-      </p>
-    }
-  </sp-admin-card>
+    </sp-admin-graph-card>
+
+    <sp-admin-graph-card title="Mastery validation"
+      subtitle="System-wide diagnostic across active students. No AI calls, read-only."
+      [status]="masteryLoading() ? 'loading' : masteryError() ? 'unavailable' : (masteryBreakdownItems().length === 0 ? 'unavailable' : 'live')">
+      @if (masteryLoading()) {
+        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Mastery validation" message="Loading..." />
+      } @else if (masteryError()) {
+        <sp-admin-error-state title="Mastery validation unavailable" [message]="masteryError()" />
+      } @else if (masteryValidation()) {
+        <p class="sp-admin-section-sub">
+          {{ masteryValidation()!.totalStudentsEvaluated }} students evaluated,
+          {{ masteryValidation()!.totalObjectivesEvaluated }} objectives evaluated.
+        </p>
+        @if (masteryBreakdownItems().length > 0) {
+          <sp-admin-breakdown-bars [items]="masteryBreakdownItems()" [showPct]="false" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="Mastery validation" message="No objective evidence to evaluate yet" />
+        }
+        @for (warning of masteryValidation()!.warnings; track warning) {
+          <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
+        }
+        <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+          {{ masteryValidation()!.masteredExcludedFromNewLearning }} mastered objectives excluded from new learning.
+          Last refreshed: {{ masteryValidation()!.generatedAt | date:'HH:mm:ss' }}
+          <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshMasteryValidation()">Refresh</sp-admin-button>
+        </p>
+      }
+    </sp-admin-graph-card>
+
+  </div>
 
   <!-- Review scaffold approval (Phase 19B) -->
   <sp-admin-card title="Review scaffold — approval">
@@ -415,7 +403,7 @@
       </sp-admin-not-implemented-state>
     }
     <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-      <button type="button" class="sp-adm-pool-health-refresh" (click)="refreshScaffoldPendingReview()">Refresh</button>
+      <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshScaffoldPendingReview()">Refresh</sp-admin-button>
     </p>
   </sp-admin-card>
 
