@@ -27,6 +27,8 @@ import {
   AggregatePoolHealthSummary,
   ReviewScaffoldDryRunSummary,
   ReviewScaffoldPendingItem,
+  ReviewScaffoldItemDetail,
+  ReviewScaffoldReviewActionRequest,
   MasteryValidationSummary,
   AdminPlacementLatestResponse,
   AdminPlacementHistoryItem,
@@ -167,8 +169,17 @@ export class AdminApiService {
   getReviewScaffoldDryRun(): Observable<ReviewScaffoldDryRunSummary> {
     return this.http.get<ReviewScaffoldDryRunSummary>(`${this.api}/readiness-pool/review-scaffold/dry-run`);
   }
-  getReviewScaffoldPendingReview(): Observable<ReviewScaffoldPendingItem[]> {
-    return this.http.get<ReviewScaffoldPendingItem[]>(`${this.api}/readiness-pool/review-scaffold/pending-review`);
+  getReviewScaffoldPendingReview(): Observable<ReviewScaffoldItemDetail[]> {
+    return this.http.get<ReviewScaffoldItemDetail[]>(`${this.api}/readiness-pool/review-scaffold/pending-review`);
+  }
+  approveReviewScaffoldItem(itemId: string): Observable<ReviewScaffoldItemDetail> {
+    return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/approve`, {});
+  }
+  rejectReviewScaffoldItem(itemId: string, request: ReviewScaffoldReviewActionRequest): Observable<ReviewScaffoldItemDetail> {
+    return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/reject`, request);
+  }
+  reopenReviewScaffoldItem(itemId: string, request?: ReviewScaffoldReviewActionRequest): Observable<ReviewScaffoldItemDetail> {
+    return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/reopen`, request ?? {});
   }
   getMasteryValidationSummary(): Observable<MasteryValidationSummary> {
     return this.http.get<MasteryValidationSummary>(`${this.api}/mastery/validation-summary`);

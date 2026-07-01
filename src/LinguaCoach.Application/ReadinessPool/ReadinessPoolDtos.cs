@@ -105,6 +105,45 @@ public sealed class ReviewScaffoldPendingItemDto
 }
 
 /// <summary>
+/// Full detail row for a review scaffold item, including per-item admin approval state
+/// (Phase 19B). Returned by the pending-review list and the approve/reject/reopen actions.
+/// Never includes raw storage keys, provider secrets, or raw AI provider payloads.
+/// </summary>
+public sealed class ReviewScaffoldItemDetailDto
+{
+    public Guid Id { get; init; }
+    public Guid StudentId { get; init; }
+    public Guid? ActivityId { get; init; }
+    public string Source { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public string TargetCefrLevel { get; init; } = string.Empty;
+    public string? PrimarySkill { get; init; }
+    public string? CurriculumObjectiveKey { get; init; }
+    public string? CurriculumObjectiveTitle { get; init; }
+    public string? PatternKey { get; init; }
+    public string? ActivityType { get; init; }
+    public string RoutingReason { get; init; } = string.Empty;
+
+    public string AdminReviewStatus { get; init; } = string.Empty;
+    public Guid? AdminReviewedByUserId { get; init; }
+    public DateTime? AdminReviewedAtUtc { get; init; }
+    public string? AdminReviewReason { get; init; }
+    public string? AdminReviewNotes { get; init; }
+
+    public bool IsStudentVisible { get; init; }
+    public bool IsPracticeGymEligible { get; init; }
+
+    public DateTime CreatedAt { get; init; }
+}
+
+/// <summary>Request body for reject/reopen review scaffold admin actions.</summary>
+public sealed class ReviewScaffoldReviewActionRequest
+{
+    public string? Reason { get; init; }
+    public string? Notes { get; init; }
+}
+
+/// <summary>
 /// Helper to build a CreateReadinessItemRequest from a CurriculumRoutingRecommendation + student context.
 /// </summary>
 public static class ReadinessItemRequestBuilder

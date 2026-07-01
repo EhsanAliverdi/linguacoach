@@ -188,7 +188,32 @@ Replenishment completion log line includes `elapsedMs` and `successRate` fields 
    No new AI/ML signal — deterministic, derived from the existing mastery engine.
 5. The student has not reached `MaxScaffoldItemsPerStudentPerDay` for the current UTC calendar day (counts items where `RoutingReason != Normal` and `GeneratedBy` starts with `"ReadinessPoolReplenishment"`, created today).
 
-When all gates pass, the created item is stamped `RequiresAdminReview = RequireAdminReview` (config snapshot at creation time). `PracticeGymSuggestionService` excludes any item with `RequiresAdminReview=true` from all three suggestion buckets (Suggested/Continue/Review) until an admin sets `ReadinessPool:RequireAdminReview=false`. There is no per-item approve/reject workflow in this phase — the flag is global, not per-item; see `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement-review.md` for the scope decision and next-phase recommendation.
+When all gates pass, the created item is stamped `RequiresAdminReview = RequireAdminReview` (config snapshot at creation time) and `AdminReviewStatus = PendingReview` (Phase 19B; `NotRequired` when `RequiresAdminReview=false`). `PracticeGymSuggestionService` excludes any item with `RequiresAdminReview=true` unless `AdminReviewStatus=Approved` from all three suggestion buckets (Suggested/Continue/Review).
+
+#### Per-item admin approval (Phase 19B)
+
+`AdminReviewStatus` on `StudentActivityReadinessItem`: `NotRequired`, `PendingReview`, `Approved`, `Rejected`. Valid transitions (enforced on the entity, not just the API):
+
+- `PendingReview → Approved` — only when lifecycle `Status` is `Ready`, `ReviewOnly`, or `Reserved` (not `Expired`/`Failed`/`Stale`/`Consumed`/`Skipped`/`Queued`/`Generating`). Idempotent if already `Approved`.
+- `PendingReview → Rejected` — requires a non-empty reason. Idempotent if already `Rejected`.
+- `Approved → Rejected` — only if the item has not been `Consumed`.
+- `Rejected → PendingReview` — explicit reopen only, and only if the item has not been `Consumed`.
+- Items with `AdminReviewStatus=NotRequired` cannot be rejected (they never entered the review flow).
+
+None of these transitions touch CEFR, curriculum objective completion, or the Learning Plan — they mutate `AdminReviewStatus` and its audit fields only (`AdminReviewedAtUtc`, `AdminReviewedByUserId`, `AdminReviewReason`, `AdminReviewNotes`).
+
+Admin endpoints (all `[Authorize(Roles = Admin)]`, in `AdminReadinessPoolController`):
+
+- `GET /api/admin/readiness-pool/review-scaffold/pending-review` — up to 50 review scaffold items (`RequiresAdminReview=true`), most recent first, across all admin review statuses (not just pending) so admins can see decision history and reopen rejected items.
+- `POST /api/admin/readiness-pool/review-scaffold/{itemId}/approve`
+- `POST /api/admin/readiness-pool/review-scaffold/{itemId}/reject` — body `{ reason, notes? }`, reason required.
+- `POST /api/admin/readiness-pool/review-scaffold/{itemId}/reopen` — body `{ notes? }` optional.
+
+Each response is a `ReviewScaffoldItemDetailDto` with `isStudentVisible` and `isPracticeGymEligible` computed flags so the admin UI doesn't need to re-derive lifecycle/approval logic. Unknown item IDs return a safe 404; invalid transitions return 409 Conflict; missing reject reason returns 400.
+
+Audit trail: every state-changing action writes an `AdminAuditLog` row (`Action` = `ApproveReviewScaffoldItem` / `RejectReviewScaffoldItem` / `ReopenReviewScaffoldItem`, `EntityType` = `StudentActivityReadinessItem`, old/new `AdminReviewStatus` in `OldValueJson`/`NewValueJson`, reason where applicable). No audit row is written for idempotent no-ops (state didn't change).
+
+The admin lessons page (`admin-lessons.component`) renders a "Review scaffold — approval" table with Approve/Reject/Reopen actions per row, badges for review status and student/Practice-Gym visibility, and a `window.confirm`/`window.prompt` flow for reject reasons (existing admin UI pattern — no new modal component). There is still no global "enable" toggle in the UI; `EnableReviewScaffoldGeneration`, `DryRunOnly`, and `RequireAdminReview` remain server-side config only. See `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement-review.md` for the Phase 19A scope decision this phase builds on.
 
 Failed replenishment slots (gate not met) fall back to `RoutingMode.NewLearning` for that batch — no item is left ungenerated, it's just not scaffold-routed. B2 students will never silently receive B1 content as Normal content. Lower-level content is only generated when `RoutingReason != Normal` and `IsLowerLevelContent = true`.
 

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.Memory;
@@ -13,8 +14,10 @@ using Microsoft.Extensions.Options;
 namespace LinguaCoach.Api.Controllers;
 
 /// <summary>
-/// Read-only admin endpoint for inspecting a student's activity readiness pool.
-/// No write endpoints — pool state is managed by the pool service and generation jobs.
+/// Admin endpoint for inspecting a student's activity readiness pool. Mostly read-only —
+/// pool state is managed by the pool service and generation jobs — except for the
+/// Phase 19B review scaffold approve/reject/reopen actions below, which mutate only
+/// AdminReviewStatus (never CEFR, objective completion, or the Learning Plan).
 /// </summary>
 [ApiController]
 [Authorize(Roles = nameof(UserRole.Admin))]
@@ -45,6 +48,11 @@ public sealed class AdminReadinessPoolController : ControllerBase
         _replenishmentOpts = replenishmentOpts.Value;
         _db = db;
     }
+
+    private Guid AdminUserId => Guid.Parse(
+        User.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? User.FindFirstValue("sub")
+        ?? throw new UnauthorizedAccessException("No admin user id in token."));
 
     /// <summary>Returns the readiness pool summary and items for a student.</summary>
     [HttpGet("api/admin/students/{studentId:guid}/readiness-pool")]
@@ -383,6 +391,7 @@ public sealed class AdminReadinessPoolController : ControllerBase
 
         var adminReviewRequiredCount = await _db.StudentActivityReadinessItems
             .CountAsync(i => i.RequiresAdminReview
+                          && i.AdminReviewStatus == AdminReviewStatus.PendingReview
                           && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.ReviewOnly), ct);
 
         var generatedTodayCount = await _db.StudentActivityReadinessItems
@@ -416,35 +425,167 @@ public sealed class AdminReadinessPoolController : ControllerBase
     }
 
     /// <summary>
-    /// Returns up to 50 scaffold items currently held back from students because
-    /// RequiresAdminReview=true. Read-only. No approve/reject action in this phase —
-    /// admins clear the hold by setting ReadinessPool:RequireAdminReview=false in config.
+    /// Returns up to 50 review scaffold items (Pending/Approved/Rejected), most recent first.
+    /// Read-only. Includes non-pending items so admins can see decision history and reopen
+    /// rejected items from the same table.
     /// </summary>
     [HttpGet("api/admin/readiness-pool/review-scaffold/pending-review")]
     public async Task<IActionResult> GetReviewScaffoldPendingReview(CancellationToken ct)
     {
         var items = await _db.StudentActivityReadinessItems
             .AsNoTracking()
-            .Where(i => i.RequiresAdminReview
-                     && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.ReviewOnly))
+            .Where(i => i.RequiresAdminReview)
             .OrderByDescending(i => i.CreatedAt)
             .Take(50)
-            .Select(i => new ReviewScaffoldPendingItemDto
-            {
-                Id = i.Id,
-                StudentId = i.StudentId,
-                Source = i.Source.ToString(),
-                Status = i.Status.ToString(),
-                TargetCefrLevel = i.TargetCefrLevel,
-                PrimarySkill = i.PrimarySkill,
-                CurriculumObjectiveKey = i.CurriculumObjectiveKey,
-                CurriculumObjectiveTitle = i.CurriculumObjectiveTitle,
-                RoutingReason = i.RoutingReason.ToString(),
-                CreatedAt = i.CreatedAt
-            })
             .ToListAsync(ct);
 
-        return Ok(items);
+        return Ok(items.Select(ToReviewScaffoldDetailDto));
+    }
+
+    /// <summary>
+    /// Approves a pending review scaffold item, making it eligible for Practice Gym
+    /// suggestions once all other lifecycle gates pass. Idempotent if already approved.
+    /// Never updates CEFR, completes objectives, or regenerates the Learning Plan.
+    /// </summary>
+    [HttpPost("api/admin/readiness-pool/review-scaffold/{itemId:guid}/approve")]
+    public async Task<IActionResult> ApproveReviewScaffoldItem(Guid itemId, CancellationToken ct)
+    {
+        var item = await _db.StudentActivityReadinessItems.FirstOrDefaultAsync(i => i.Id == itemId, ct);
+        if (item is null)
+            return NotFound(new { error = "Review scaffold item not found." });
+
+        var previousStatus = item.AdminReviewStatus;
+        try
+        {
+            item.ApproveAdminReview(AdminUserId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+
+        if (previousStatus != item.AdminReviewStatus)
+        {
+            _db.AdminAuditLogs.Add(new AdminAuditLog(
+                AdminUserId, "ApproveReviewScaffoldItem", "StudentActivityReadinessItem",
+                entityId: item.Id.ToString(),
+                targetStudentId: item.StudentId,
+                oldValueJson: $"{{\"adminReviewStatus\":\"{previousStatus}\"}}",
+                newValueJson: $"{{\"adminReviewStatus\":\"{item.AdminReviewStatus}\"}}"));
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return Ok(ToReviewScaffoldDetailDto(item));
+    }
+
+    /// <summary>
+    /// Rejects a review scaffold item, permanently hiding it from students unless
+    /// explicitly reopened. Idempotent if already rejected. Requires a reason.
+    /// </summary>
+    [HttpPost("api/admin/readiness-pool/review-scaffold/{itemId:guid}/reject")]
+    public async Task<IActionResult> RejectReviewScaffoldItem(
+        Guid itemId, [FromBody] ReviewScaffoldReviewActionRequest request, CancellationToken ct)
+    {
+        var item = await _db.StudentActivityReadinessItems.FirstOrDefaultAsync(i => i.Id == itemId, ct);
+        if (item is null)
+            return NotFound(new { error = "Review scaffold item not found." });
+
+        if (string.IsNullOrWhiteSpace(request?.Reason))
+            return BadRequest(new { error = "Reason is required to reject a review scaffold item." });
+
+        var previousStatus = item.AdminReviewStatus;
+        try
+        {
+            item.RejectAdminReview(AdminUserId, request.Reason, request.Notes);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+
+        if (previousStatus != item.AdminReviewStatus)
+        {
+            _db.AdminAuditLogs.Add(new AdminAuditLog(
+                AdminUserId, "RejectReviewScaffoldItem", "StudentActivityReadinessItem",
+                entityId: item.Id.ToString(),
+                targetStudentId: item.StudentId,
+                oldValueJson: $"{{\"adminReviewStatus\":\"{previousStatus}\"}}",
+                newValueJson: $"{{\"adminReviewStatus\":\"{item.AdminReviewStatus}\"}}",
+                reason: request.Reason));
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return Ok(ToReviewScaffoldDetailDto(item));
+    }
+
+    /// <summary>
+    /// Reopens a rejected review scaffold item back to PendingReview. Idempotent if
+    /// already pending. Not allowed once the item has been consumed.
+    /// </summary>
+    [HttpPost("api/admin/readiness-pool/review-scaffold/{itemId:guid}/reopen")]
+    public async Task<IActionResult> ReopenReviewScaffoldItem(
+        Guid itemId, [FromBody] ReviewScaffoldReviewActionRequest? request, CancellationToken ct)
+    {
+        var item = await _db.StudentActivityReadinessItems.FirstOrDefaultAsync(i => i.Id == itemId, ct);
+        if (item is null)
+            return NotFound(new { error = "Review scaffold item not found." });
+
+        var previousStatus = item.AdminReviewStatus;
+        try
+        {
+            item.ReopenAdminReview(AdminUserId, request?.Notes);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+
+        if (previousStatus != item.AdminReviewStatus)
+        {
+            _db.AdminAuditLogs.Add(new AdminAuditLog(
+                AdminUserId, "ReopenReviewScaffoldItem", "StudentActivityReadinessItem",
+                entityId: item.Id.ToString(),
+                targetStudentId: item.StudentId,
+                oldValueJson: $"{{\"adminReviewStatus\":\"{previousStatus}\"}}",
+                newValueJson: $"{{\"adminReviewStatus\":\"{item.AdminReviewStatus}\"}}",
+                reason: request?.Notes));
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return Ok(ToReviewScaffoldDetailDto(item));
+    }
+
+    private static ReviewScaffoldItemDetailDto ToReviewScaffoldDetailDto(StudentActivityReadinessItem i)
+    {
+        var lifecycleEligible = i.Status is ReadinessPoolStatus.Ready or ReadinessPoolStatus.ReviewOnly or ReadinessPoolStatus.Reserved;
+        var isStudentVisible = lifecycleEligible && i.PassesAdminReviewGate;
+        var isPracticeGymEligible = isStudentVisible
+            && i.Source == ReadinessPoolSource.PracticeGym
+            && i.Status is ReadinessPoolStatus.Ready or ReadinessPoolStatus.ReviewOnly;
+
+        return new ReviewScaffoldItemDetailDto
+        {
+            Id = i.Id,
+            StudentId = i.StudentId,
+            ActivityId = i.LearningActivityId,
+            Source = i.Source.ToString(),
+            Status = i.Status.ToString(),
+            TargetCefrLevel = i.TargetCefrLevel,
+            PrimarySkill = i.PrimarySkill,
+            CurriculumObjectiveKey = i.CurriculumObjectiveKey,
+            CurriculumObjectiveTitle = i.CurriculumObjectiveTitle,
+            PatternKey = i.PatternKey,
+            ActivityType = i.ActivityType,
+            RoutingReason = i.RoutingReason.ToString(),
+            AdminReviewStatus = i.AdminReviewStatus.ToString(),
+            AdminReviewedByUserId = i.AdminReviewedByUserId,
+            AdminReviewedAtUtc = i.AdminReviewedAtUtc,
+            AdminReviewReason = i.AdminReviewReason,
+            AdminReviewNotes = i.AdminReviewNotes,
+            IsStudentVisible = isStudentVisible,
+            IsPracticeGymEligible = isPracticeGymEligible,
+            CreatedAt = i.CreatedAt
+        };
     }
 
     /// <summary>

@@ -316,46 +316,102 @@
     }
   </sp-admin-card>
 
-  <!-- Review scaffold pending admin review -->
-  <sp-admin-card title="Review scaffold — pending admin review">
+  <!-- Review scaffold approval (Phase 19B) -->
+  <sp-admin-card title="Review scaffold — approval">
     <p class="sp-admin-section-sub">
-      Items generated while <code>ReadinessPool:RequireAdminReview</code> is true. Hidden from Practice Gym
-      until an admin sets that flag to false. No per-item approve/reject action in this phase.
+      Items generated while <code>ReadinessPool:RequireAdminReview</code> is true. Each item needs a
+      per-item admin decision before it can reach a student. Approving/rejecting never changes CEFR,
+      completes objectives, or regenerates the Learning Plan.
     </p>
+    @if (scaffoldActionError()) {
+      <sp-admin-alert variant="error">{{ scaffoldActionError() }}</sp-admin-alert>
+    }
     @if (scaffoldPendingLoading()) {
-      <sp-admin-loading-state message="Loading pending review items" />
+      <sp-admin-loading-state message="Loading review scaffold items" />
     } @else if (scaffoldPendingError()) {
-      <sp-admin-error-state title="Pending review list unavailable" [message]="scaffoldPendingError()" />
+      <sp-admin-error-state title="Review scaffold list unavailable" [message]="scaffoldPendingError()" />
     } @else if (scaffoldPending().length > 0) {
-      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="600px">
+      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="900px">
         <table>
           <thead>
             <tr>
               <th>Student</th>
-              <th>Skill</th>
-              <th>Objective</th>
+              <th>Skill / objective</th>
               <th>CEFR</th>
-              <th>Reason</th>
+              <th>Pattern</th>
+              <th>Review status</th>
+              <th>Visibility</th>
               <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             @for (item of scaffoldPending(); track item.id) {
               <tr>
                 <td class="sp-admin-mono-cell">{{ item.studentId }}</td>
-                <td>{{ item.primarySkill ?? '—' }}</td>
-                <td>{{ item.curriculumObjectiveTitle ?? item.curriculumObjectiveKey ?? '—' }}</td>
+                <td>
+                  {{ item.primarySkill ?? '—' }}
+                  <div class="sp-admin-section-sub">{{ item.curriculumObjectiveTitle ?? item.curriculumObjectiveKey ?? '—' }}</div>
+                </td>
                 <td>{{ item.targetCefrLevel }}</td>
-                <td>{{ item.routingReason }}</td>
+                <td>{{ item.patternKey ?? item.activityType ?? '—' }}</td>
+                <td>
+                  @if (item.adminReviewStatus === 'PendingReview') {
+                    <sp-admin-badge tone="warning">Pending review</sp-admin-badge>
+                  } @else if (item.adminReviewStatus === 'Approved') {
+                    <sp-admin-badge tone="success">Approved</sp-admin-badge>
+                  } @else if (item.adminReviewStatus === 'Rejected') {
+                    <sp-admin-badge tone="danger">Rejected</sp-admin-badge>
+                  } @else {
+                    <sp-admin-badge tone="neutral">Not required</sp-admin-badge>
+                  }
+                  @if (item.adminReviewReason) {
+                    <div class="sp-admin-section-sub">{{ item.adminReviewReason }}</div>
+                  }
+                </td>
+                <td>
+                  @if (item.isStudentVisible) {
+                    <sp-admin-badge tone="success" appearance="outline">Visible to student</sp-admin-badge>
+                  } @else {
+                    <sp-admin-badge tone="neutral" appearance="outline">Hidden from student</sp-admin-badge>
+                  }
+                  @if (item.isPracticeGymEligible) {
+                    <div><sp-admin-badge tone="info" appearance="outline">Practice Gym eligible</sp-admin-badge></div>
+                  }
+                </td>
                 <td>{{ item.createdAt | date:'short' }}</td>
+                <td>
+                  @if (item.adminReviewStatus === 'PendingReview') {
+                    <sp-admin-button size="xs" variant="success" [loading]="scaffoldActionPendingId() === item.id"
+                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="approveScaffoldItem(item)">
+                      Approve
+                    </sp-admin-button>
+                    <sp-admin-button size="xs" variant="danger" appearance="outline" [loading]="scaffoldActionPendingId() === item.id"
+                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="rejectScaffoldItem(item)">
+                      Reject
+                    </sp-admin-button>
+                  } @else if (item.adminReviewStatus === 'Approved' && item.status !== 'Consumed') {
+                    <sp-admin-button size="xs" variant="danger" appearance="outline" [loading]="scaffoldActionPendingId() === item.id"
+                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="rejectScaffoldItem(item)">
+                      Reject
+                    </sp-admin-button>
+                  } @else if (item.adminReviewStatus === 'Rejected' && item.status !== 'Consumed') {
+                    <sp-admin-button size="xs" variant="secondary" appearance="outline" [loading]="scaffoldActionPendingId() === item.id"
+                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="reopenScaffoldItem(item)">
+                      Reopen
+                    </sp-admin-button>
+                  } @else {
+                    <span class="sp-admin-section-sub">—</span>
+                  }
+                </td>
               </tr>
             }
           </tbody>
         </table>
       </sp-admin-table>
     } @else {
-      <sp-admin-not-implemented-state title="Nothing pending review">
-        No review scaffold items are currently held back for admin review.
+      <sp-admin-not-implemented-state title="Nothing to review">
+        No review scaffold items exist yet.
       </sp-admin-not-implemented-state>
     }
     <p class="sp-admin-section-sub" style="margin-top:0.5rem">

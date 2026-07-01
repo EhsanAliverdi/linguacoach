@@ -47,6 +47,14 @@ internal sealed class StudentActivityReadinessItemConfiguration
         builder.Property(e => e.RequiresAdminReview).HasColumnName("requires_admin_review").IsRequired()
             .HasDefaultValue(false);
 
+        // Admin approval (Phase 19B, per-item)
+        builder.Property(e => e.AdminReviewStatus).HasColumnName("admin_review_status").IsRequired()
+            .HasConversion<string>().HasMaxLength(50).HasDefaultValue(AdminReviewStatus.NotRequired);
+        builder.Property(e => e.AdminReviewedAtUtc).HasColumnName("admin_reviewed_at_utc");
+        builder.Property(e => e.AdminReviewedByUserId).HasColumnName("admin_reviewed_by_user_id");
+        builder.Property(e => e.AdminReviewReason).HasColumnName("admin_review_reason").HasMaxLength(500);
+        builder.Property(e => e.AdminReviewNotes).HasColumnName("admin_review_notes").HasMaxLength(2000);
+
         // Preference snapshot
         builder.Property(e => e.PreferredSessionDurationMinutes).HasColumnName("preferred_session_duration_minutes");
         builder.Property(e => e.DifficultyPreference).HasColumnName("difficulty_preference").HasMaxLength(50);
@@ -86,6 +94,9 @@ internal sealed class StudentActivityReadinessItemConfiguration
 
         builder.HasIndex(e => e.LearningSessionId)
             .HasDatabaseName("ix_readiness_items_session_id");
+
+        builder.HasIndex(e => new { e.RequiresAdminReview, e.AdminReviewStatus })
+            .HasDatabaseName("ix_readiness_items_admin_review_status");
 
     }
 }

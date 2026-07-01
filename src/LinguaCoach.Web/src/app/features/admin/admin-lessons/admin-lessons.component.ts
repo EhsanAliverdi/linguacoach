@@ -20,7 +20,7 @@ import {
 } from '../../../design-system/admin';
 import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldPendingItem } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldItemDetail } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
@@ -98,7 +98,9 @@ export class AdminLessonsComponent implements OnInit {
   // ── Review scaffold pending admin review ──────────────────────────────────
   scaffoldPendingLoading = signal(false);
   scaffoldPendingError = signal('');
-  scaffoldPending = signal<ReviewScaffoldPendingItem[]>([]);
+  scaffoldPending = signal<ReviewScaffoldItemDetail[]>([]);
+  scaffoldActionPendingId = signal<string | null>(null);
+  scaffoldActionError = signal('');
 
   // ── Generate for student ──────────────────────────────────────────────────
   studentProfileId = '';
@@ -246,4 +248,55 @@ export class AdminLessonsComponent implements OnInit {
   }
 
   refreshScaffoldPendingReview(): void { this.loadScaffoldPendingReview(); }
+
+  approveScaffoldItem(item: ReviewScaffoldItemDetail): void {
+    if (!confirm(`Approve this review scaffold item for student ${item.studentId}?`)) return;
+    this.scaffoldActionError.set('');
+    this.scaffoldActionPendingId.set(item.id);
+    this.adminApi.approveReviewScaffoldItem(item.id).subscribe({
+      next: () => {
+        this.scaffoldActionPendingId.set(null);
+        this.loadScaffoldPendingReview();
+      },
+      error: err => {
+        this.scaffoldActionError.set(err?.error?.error ?? err?.message ?? 'Approve failed.');
+        this.scaffoldActionPendingId.set(null);
+      },
+    });
+  }
+
+  rejectScaffoldItem(item: ReviewScaffoldItemDetail): void {
+    const reason = window.prompt('Reason for rejecting this review scaffold item:');
+    if (reason === null) return;
+    if (!reason.trim()) { this.scaffoldActionError.set('A reason is required to reject.'); return; }
+    if (!confirm(`Reject this review scaffold item for student ${item.studentId}?`)) return;
+    this.scaffoldActionError.set('');
+    this.scaffoldActionPendingId.set(item.id);
+    this.adminApi.rejectReviewScaffoldItem(item.id, { reason: reason.trim() }).subscribe({
+      next: () => {
+        this.scaffoldActionPendingId.set(null);
+        this.loadScaffoldPendingReview();
+      },
+      error: err => {
+        this.scaffoldActionError.set(err?.error?.error ?? err?.message ?? 'Reject failed.');
+        this.scaffoldActionPendingId.set(null);
+      },
+    });
+  }
+
+  reopenScaffoldItem(item: ReviewScaffoldItemDetail): void {
+    if (!confirm(`Reopen this rejected review scaffold item for student ${item.studentId}?`)) return;
+    this.scaffoldActionError.set('');
+    this.scaffoldActionPendingId.set(item.id);
+    this.adminApi.reopenReviewScaffoldItem(item.id).subscribe({
+      next: () => {
+        this.scaffoldActionPendingId.set(null);
+        this.loadScaffoldPendingReview();
+      },
+      error: err => {
+        this.scaffoldActionError.set(err?.error?.error ?? err?.message ?? 'Reopen failed.');
+        this.scaffoldActionPendingId.set(null);
+      },
+    });
+  }
 }

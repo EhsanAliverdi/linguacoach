@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 19A complete)**
+**Accurate as of: 2026-07-02 (Phase 19B complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 19A — Review Scaffold Controlled Enablement (2026-07-02)
+**Latest phase completed:** Phase 19B — Review Scaffold Per-Item Admin Approval (2026-07-02)
 
 **Branch:** main
 
-**Test totals (as of 19A):**
-- Backend unit: 1,675 (+15 from Phase 19A: options defaults, generation gating, entity flag, Practice Gym filter)
-- Backend integration: 1,324 (+5 from Phase 19A: dry-run shape/config defaults, pending-review endpoint auth/shape/read-only; pre-existing AI-provider failures unchanged, no regressions)
+**Test totals (as of 19B):**
+- Backend unit: 1,693 (+18 from Phase 19B: `AdminReviewStatus` transitions, idempotency, lifecycle guards)
+- Backend integration: 1,338 (+14 from Phase 19B: approve/reject/reopen auth/happy-path/idempotency/audit-log/CEFR-untouched; pre-existing AI-provider failures unchanged, no regressions)
 - Architecture: 3
-- **Backend total: 3,002**
-- Angular unit (Karma): 1,488/1,607 success (119 pre-existing failures, 0 new regressions, +5 new tests in `admin-lessons.component.spec.ts`)
-- Playwright E2E: unchanged (no new student-facing UI surface this phase)
+- **Backend total: 3,034**
+- Angular unit (Karma): 1,494/1,614 success (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase, 0 new regressions; `admin-lessons.component.spec.ts` itself 27/27, +9 net new tests)
+- Playwright E2E: unchanged (existing suite has no admin-lessons spec to extend; backend integration + Angular unit tests are the coverage for this phase's UI actions)
 
 **Build:** Clean production build. No known open build errors.
 
@@ -146,6 +146,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 61 | Phase 18A: Lesson Quality and Content Generation Upgrade | AI / Quality | 2026-07-01 | CEFR calibration tables in writing/listening/speaking prompts; support-language optional in 6 prompts; CEFR-aware pattern selection in batch planner; validator: empty-string check + option ID consistency |
 | 62 | Phase 18A-F: Generation Quality Admin Visibility | Admin / Quality | 2026-07-01 | GenerationValidationFailure entity + T69 migration; generation validation failures persisted from AiActivityGeneratorHandler; GET /api/admin/generation-quality/summary endpoint; Generation Quality card on Diagnostics page; prompt SeededAtUtc visibility; privacy/safety hardened |
 | 63 | Phase 19A: Review Scaffold Controlled Enablement | Readiness Pool | 2026-07-02 | Source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold flag (T71 migration); ReadinessPool appsettings section added; admin dry-run summary + pending-review endpoint; EnableReviewScaffoldGeneration remains false by default |
+| 64 | Phase 19B: Review Scaffold Per-Item Admin Approval | Readiness Pool / Admin | 2026-07-02 | `AdminReviewStatus` per-item state (T72 migration) with Approve/Reject/Reopen transitions + idempotency guards; admin API + audit log (`AdminAuditLog`); Practice Gym gate updated to require per-item Approved; admin UI approval table with Approve/Reject/Reopen actions; global safety gates (EnableReviewScaffoldGeneration/DryRunOnly/RequireAdminReview/AllowTodayLessonInsertion) unchanged |
 
 ---
 
@@ -273,7 +274,7 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 
 ### Review Scaffold
 - Phase 19A added controlled-enablement gating (source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold) but `EnableReviewScaffoldGeneration` still defaults `false` and `DryRunOnly` defaults `true`. Global enablement is an operator decision, not yet exercised in production.
-- `RequireAdminReview` is a global config flag, not a per-item approve/reject workflow. When held items need clearing, an admin currently must flip `ReadinessPool:RequireAdminReview=false` for all items at once after inspecting the admin pending-review list (`GET /api/admin/readiness-pool/review-scaffold/pending-review`). A per-item approval workflow is deferred to a future phase.
+- Phase 19B added per-item admin approval (`AdminReviewStatus`: PendingReview/Approved/Rejected, with Approve/Reject/Reopen endpoints + UI actions and an `AdminAuditLog` trail). An item now only reaches Practice Gym when it is individually `Approved` (or never required review) — the old "flip the global flag to release everything at once" behavior is gone. `EnableReviewScaffoldGeneration`/`DryRunOnly`/`RequireAdminReview`/`AllowTodayLessonInsertion` remain server-side config only; no global "enable" toggle exists in the admin UI.
 
 ### Observability
 - No production-level APM, distributed tracing, or alerting stack.
@@ -350,6 +351,7 @@ Phases recommended in order of priority. Dependencies are noted.
 | ~~5~~ | ~~18A~~ | ~~Lesson quality and content generation upgrade~~ | ~~**Complete 2026-07-01**~~ | ~~17C complete~~ |
 | ~~6~~ | ~~18B~~ | ~~Advanced feedback UX~~ | ~~**Complete 2026-07-01**~~ | ~~18A complete~~ |
 | ~~7~~ | ~~19A~~ | ~~Review scaffold controlled enablement~~ | ~~**Complete 2026-07-02** — config gates added; EnableReviewScaffoldGeneration remains off by default~~ | ~~17C complete~~ |
+| ~~7b~~ | ~~19B~~ | ~~Review scaffold per-item admin approval~~ | ~~**Complete 2026-07-02** — per-item AdminReviewStatus approve/reject/reopen workflow~~ | ~~19A complete~~ |
 
 ### Tier 3 — Medium-term (phases 8–10)
 
@@ -482,6 +484,22 @@ Phases recommended in order of priority. Dependencies are noted.
 - Deferred: per-item approve/reject workflow (see Known Gaps)
 
 Review: `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement-review.md`.
+
+---
+
+### Phase 19B — Review Scaffold Per-Item Admin Approval — complete (2026-07-02)
+
+**Purpose:** Replace the Phase 19A global "flip the flag to release everything" hold with a per-item admin approve/reject/reopen workflow, so admins can make individual decisions on scaffold items instead of an all-or-nothing gate.
+
+**Delivered:**
+- `AdminReviewStatus` enum (NotRequired/PendingReview/Approved/Rejected) + 4 new fields on `StudentActivityReadinessItem` (migration T72, with data backfill for existing held items)
+- Entity transition methods `ApproveAdminReview`/`RejectAdminReview`/`ReopenAdminReview` — idempotent, enforce lifecycle guards (cannot approve expired/failed/stale, cannot reject/reopen consumed), never touch CEFR/objectives/Learning Plan
+- `PracticeGymSuggestionService` gate updated: `RequiresAdminReview=true` items now need `AdminReviewStatus=Approved` specifically, not just the old global flag
+- Admin API: `GET .../pending-review` (now full detail across all review statuses), `POST .../approve`, `POST .../reject`, `POST .../reopen` — safe 404/409/400, `AdminAuditLog` trail
+- Admin UI: "Review scaffold — approval" table replaces the old read-only list, with per-row Approve/Reject/Reopen actions and status/visibility badges
+- No global "enable" toggle added; `EnableReviewScaffoldGeneration`/`DryRunOnly`/`RequireAdminReview`/`AllowTodayLessonInsertion` remain server-side config only
+
+Review: `docs/reviews/2026-07-02-phase-19b-review-scaffold-admin-approval-review.md`.
 
 ---
 

@@ -805,6 +805,37 @@ export interface ReviewScaffoldPendingItem {
   createdAt: string;
 }
 
+export type AdminReviewStatus = 'NotRequired' | 'PendingReview' | 'Approved' | 'Rejected';
+
+/** Phase 19B — full detail row for a review scaffold item, including per-item admin approval state. */
+export interface ReviewScaffoldItemDetail {
+  id: string;
+  studentId: string;
+  activityId: string | null;
+  source: string;
+  status: string;
+  targetCefrLevel: string;
+  primarySkill: string | null;
+  curriculumObjectiveKey: string | null;
+  curriculumObjectiveTitle: string | null;
+  patternKey: string | null;
+  activityType: string | null;
+  routingReason: string;
+  adminReviewStatus: AdminReviewStatus;
+  adminReviewedByUserId: string | null;
+  adminReviewedAtUtc: string | null;
+  adminReviewReason: string | null;
+  adminReviewNotes: string | null;
+  isStudentVisible: boolean;
+  isPracticeGymEligible: boolean;
+  createdAt: string;
+}
+
+export interface ReviewScaffoldReviewActionRequest {
+  reason?: string;
+  notes?: string;
+}
+
 export interface MasteryValidationSummary {
   totalStudentsEvaluated: number;
   totalObjectivesEvaluated: number;

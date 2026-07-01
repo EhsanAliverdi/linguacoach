@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminLessonsComponent } from './admin-lessons.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary, ReviewScaffoldItemDetail } from '../../../core/models/admin.models';
 
 const SETTINGS: AdminGenerationSettings = {
   readyLessonBufferSize: 5,
@@ -88,8 +88,34 @@ function makeApi(
       generatedAt: '2026-06-27T00:00:00Z',
     })),
     getReviewScaffoldPendingReview: jasmine.createSpy('getReviewScaffoldPendingReview').and.returnValue(of([])),
+    approveReviewScaffoldItem: jasmine.createSpy('approveReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
+    rejectReviewScaffoldItem: jasmine.createSpy('rejectReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
+    reopenReviewScaffoldItem: jasmine.createSpy('reopenReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
   };
 }
+
+const PENDING_ITEM: ReviewScaffoldItemDetail = {
+  id: 'item-1',
+  studentId: 'student-1',
+  activityId: null,
+  source: 'PracticeGym',
+  status: 'Ready',
+  targetCefrLevel: 'A2',
+  primarySkill: 'writing',
+  curriculumObjectiveKey: 'obj-1',
+  curriculumObjectiveTitle: 'Email basics',
+  patternKey: null,
+  activityType: null,
+  routingReason: 'Review',
+  adminReviewStatus: 'PendingReview',
+  adminReviewedByUserId: null,
+  adminReviewedAtUtc: null,
+  adminReviewReason: null,
+  adminReviewNotes: null,
+  isStudentVisible: false,
+  isPracticeGymEligible: false,
+  createdAt: '2026-07-01T00:00:00Z',
+};
 
 describe('AdminLessonsComponent', () => {
   let fixture: ComponentFixture<AdminLessonsComponent>;
@@ -228,23 +254,12 @@ describe('AdminLessonsComponent', () => {
   it('shows empty state when no items are pending admin review', async () => {
     await setup();
     expect(component.scaffoldPending().length).toBe(0);
-    expect(fixture.nativeElement.textContent).toContain('Nothing pending review');
+    expect(fixture.nativeElement.textContent).toContain('Nothing to review');
   });
 
-  it('renders pending review rows when present', async () => {
+  async function setupWithPendingItem(item: ReviewScaffoldItemDetail = PENDING_ITEM) {
     api = makeApi();
-    api.getReviewScaffoldPendingReview.and.returnValue(of([{
-      id: 'item-1',
-      studentId: 'student-1',
-      source: 'PracticeGym',
-      status: 'Ready',
-      targetCefrLevel: 'A2',
-      primarySkill: 'writing',
-      curriculumObjectiveKey: 'obj-1',
-      curriculumObjectiveTitle: 'Email basics',
-      routingReason: 'Review',
-      createdAt: '2026-07-01T00:00:00Z',
-    }]));
+    api.getReviewScaffoldPendingReview.and.returnValue(of([item]));
     await TestBed.configureTestingModule({
       imports: [AdminLessonsComponent],
       providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
@@ -254,9 +269,24 @@ describe('AdminLessonsComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+  }
 
+  it('renders pending review rows when present', async () => {
+    await setupWithPendingItem();
     expect(component.scaffoldPending().length).toBe(1);
     expect(fixture.nativeElement.textContent).toContain('Email basics');
+    expect(fixture.nativeElement.textContent).toContain('Pending review');
+  });
+
+  it('renders approved badge and hides approve/reject actions for non-actionable items', async () => {
+    await setupWithPendingItem({ ...PENDING_ITEM, adminReviewStatus: 'Approved', status: 'Consumed', isStudentVisible: true });
+    expect(fixture.nativeElement.textContent).toContain('Approved');
+  });
+
+  it('renders rejected badge', async () => {
+    await setupWithPendingItem({ ...PENDING_ITEM, adminReviewStatus: 'Rejected', adminReviewReason: 'Too hard for level' });
+    expect(fixture.nativeElement.textContent).toContain('Rejected');
+    expect(fixture.nativeElement.textContent).toContain('Too hard for level');
   });
 
   it('refreshScaffoldPendingReview reloads the pending review list', async () => {
@@ -264,5 +294,42 @@ describe('AdminLessonsComponent', () => {
     api.getReviewScaffoldPendingReview.calls.reset();
     component.refreshScaffoldPendingReview();
     expect(api.getReviewScaffoldPendingReview).toHaveBeenCalledTimes(1);
+  });
+
+  it('approveScaffoldItem calls the API when confirmed', async () => {
+    await setupWithPendingItem();
+    spyOn(window, 'confirm').and.returnValue(true);
+    component.approveScaffoldItem(PENDING_ITEM);
+    expect(api.approveReviewScaffoldItem).toHaveBeenCalledWith('item-1');
+  });
+
+  it('approveScaffoldItem does nothing when not confirmed', async () => {
+    await setupWithPendingItem();
+    spyOn(window, 'confirm').and.returnValue(false);
+    component.approveScaffoldItem(PENDING_ITEM);
+    expect(api.approveReviewScaffoldItem).not.toHaveBeenCalled();
+  });
+
+  it('rejectScaffoldItem requires a non-empty reason', async () => {
+    await setupWithPendingItem();
+    spyOn(window, 'prompt').and.returnValue('   ');
+    component.rejectScaffoldItem(PENDING_ITEM);
+    expect(api.rejectReviewScaffoldItem).not.toHaveBeenCalled();
+    expect(component.scaffoldActionError()).toBeTruthy();
+  });
+
+  it('rejectScaffoldItem calls the API with the reason when confirmed', async () => {
+    await setupWithPendingItem();
+    spyOn(window, 'prompt').and.returnValue('Too hard for level');
+    spyOn(window, 'confirm').and.returnValue(true);
+    component.rejectScaffoldItem(PENDING_ITEM);
+    expect(api.rejectReviewScaffoldItem).toHaveBeenCalledWith('item-1', { reason: 'Too hard for level' });
+  });
+
+  it('reopenScaffoldItem calls the API when confirmed', async () => {
+    await setupWithPendingItem({ ...PENDING_ITEM, adminReviewStatus: 'Rejected' });
+    spyOn(window, 'confirm').and.returnValue(true);
+    component.reopenScaffoldItem({ ...PENDING_ITEM, adminReviewStatus: 'Rejected' });
+    expect(api.reopenReviewScaffoldItem).toHaveBeenCalledWith('item-1');
   });
 });

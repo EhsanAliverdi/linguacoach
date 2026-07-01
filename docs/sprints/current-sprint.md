@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (19A)
+lastUpdated: 2026-07-02 (19B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,40 @@ Last updated: 2026-07-02
 ---
 
 ## Active sprint
+
+**Phase 19B — Review Scaffold Per-Item Admin Approval** — complete (2026-07-02)
+
+Adds a per-item admin approval workflow on top of the Phase 19A global admin-review hold. Admins can now approve/reject/reopen individual review scaffold items instead of only flipping the global `RequireAdminReview` flag. All Phase 19A global safety gates remain intact and unchanged: `EnableReviewScaffoldGeneration=false`, `DryRunOnly=true`, `RequireAdminReview=true`, `AllowTodayLessonInsertion=false` by default. No CEFR/objective/Learning Plan changes, no new activity formats, no global "enable" toggle added to the UI.
+
+**New Domain:**
+- `AdminReviewStatus` enum — `NotRequired` / `PendingReview` / `Approved` / `Rejected`
+- `StudentActivityReadinessItem` — new fields `AdminReviewStatus`, `AdminReviewedAtUtc`, `AdminReviewedByUserId`, `AdminReviewReason`, `AdminReviewNotes`; new transition methods `ApproveAdminReview`, `RejectAdminReview`, `ReopenAdminReview` (idempotent, enforce lifecycle/consumption guards), new `PassesAdminReviewGate` computed property
+
+**Modified Persistence:**
+- `StudentActivityReadinessItemConfiguration` — maps new admin-review columns + composite index `(RequiresAdminReview, AdminReviewStatus)`
+- Migration `T72_ReviewScaffoldAdminApproval` — adds columns + backfills existing `RequiresAdminReview=true` rows to `AdminReviewStatus=PendingReview` (they default to `NotRequired` otherwise)
+
+**Modified Infrastructure:**
+- `PracticeGymSuggestionService` — exclusion updated from `!RequiresAdminReview` to `!RequiresAdminReview || AdminReviewStatus == Approved`
+
+**New/modified API (`AdminReadinessPoolController`):**
+- `GET /api/admin/readiness-pool/review-scaffold/pending-review` — now returns full `ReviewScaffoldItemDetailDto` rows (all admin review statuses, not just pending) so history/reopen is visible
+- `POST .../{itemId}/approve`, `POST .../{itemId}/reject` (`{reason, notes?}`), `POST .../{itemId}/reopen` (`{notes?}`) — admin-only, safe 404/409/400, writes `AdminAuditLog`
+- `ReviewScaffoldDryRunSummary.AdminReviewRequiredCount` now counts only `AdminReviewStatus=PendingReview` items (previously counted all `RequiresAdminReview=true` items regardless of decision)
+
+**Modified Angular:**
+- `admin.models.ts` — new `ReviewScaffoldItemDetail`, `ReviewScaffoldReviewActionRequest`, `AdminReviewStatus` type
+- `admin.api.service.ts` — `approveReviewScaffoldItem`, `rejectReviewScaffoldItem`, `reopenReviewScaffoldItem`
+- `admin-lessons.component.ts`/`.html` — "Review scaffold — approval" table replaces the old read-only "pending admin review" table; per-row Approve/Reject/Reopen actions using existing `window.confirm`/`window.prompt` pattern (no new modal component), status/visibility badges
+
+**Tests added:**
+- `StudentActivityReadinessItemTests` — 18 new tests (23–40): create stamps `PendingReview`/`NotRequired`, approve/reject/reopen happy paths, idempotency, expired/failed/stale cannot approve, consumed cannot reject/reopen, not-required cannot reject, approval doesn't mutate lifecycle/CEFR fields
+- `ReviewScaffoldAdminApprovalTests` (integration, new file) — 14 tests: auth guards (401/403), safe 404, approve/reject/reopen happy paths + idempotency, reject requires reason (400), CEFR untouched, `AdminAuditLog` written, Practice Gym gate reflects rejection, pending-review list includes admin review fields
+- `admin-lessons.component.spec.ts` — extended with approve/reject/reopen action tests, badge rendering tests, non-actionable-item action-hiding test
+
+**Build/test totals:** Backend unit: 1,693 (+18, 0 regressions). Integration: 1,338 (+14, 0 regressions). Architecture: 3 (unchanged). Angular unit: 1,494/1,614 (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase — 0 new regressions; `admin-lessons.component.spec.ts` itself: 27/27 passing, +9 net new tests). Production build: clean. Playwright: not run this phase — backend integration + Angular unit coverage documented above as the substitute (existing Playwright suite has no admin-lessons spec to extend).
+
+---
 
 **Phase 19A — Review Scaffold Controlled Enablement** — complete (2026-07-02)
 

@@ -70,6 +70,13 @@ public sealed class StudentActivityReadinessItem : BaseEntity
     /// </summary>
     public bool RequiresAdminReview { get; private set; }
 
+    // --- Admin approval (Phase 19B, per-item) ---
+    public AdminReviewStatus AdminReviewStatus { get; private set; }
+    public DateTime? AdminReviewedAtUtc { get; private set; }
+    public Guid? AdminReviewedByUserId { get; private set; }
+    public string? AdminReviewReason { get; private set; }
+    public string? AdminReviewNotes { get; private set; }
+
     // --- Preference snapshot ---
     public int? PreferredSessionDurationMinutes { get; private set; }
     public string? DifficultyPreference { get; private set; }
@@ -170,6 +177,7 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         AttemptCount = 0;
         ExpiresAt = expiresAt;
         RequiresAdminReview = requiresAdminReview;
+        AdminReviewStatus = requiresAdminReview ? AdminReviewStatus.PendingReview : AdminReviewStatus.NotRequired;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -290,6 +298,93 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         SessionExerciseId = sessionExerciseId ?? SessionExerciseId;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    // --- Admin approval transitions (Phase 19B) ---
+
+    /// <summary>Statuses in which an admin decision may still be applied (not terminal/in-flight).</summary>
+    private static bool IsReviewableLifecycleStatus(ReadinessPoolStatus status) =>
+        status is ReadinessPoolStatus.Ready or ReadinessPoolStatus.ReviewOnly or ReadinessPoolStatus.Reserved;
+
+    /// <summary>
+    /// Approves a pending review-scaffold item. Idempotent if already Approved.
+    /// Never mutates CEFR, objective completion, or the Learning Plan.
+    /// </summary>
+    public void ApproveAdminReview(Guid adminUserId, string? notes = null)
+    {
+        if (AdminReviewStatus == AdminReviewStatus.Approved)
+            return; // idempotent no-op
+
+        if (AdminReviewStatus != AdminReviewStatus.PendingReview)
+            throw new InvalidOperationException(
+                $"ApproveAdminReview requires AdminReviewStatus=PendingReview. Current: {AdminReviewStatus}. Item: {Id}.");
+
+        if (!IsReviewableLifecycleStatus(Status))
+            throw new InvalidOperationException(
+                $"Cannot approve item {Id} with lifecycle status {Status} (expired/failed/stale/consumed/skipped items are not approvable).");
+
+        AdminReviewStatus = AdminReviewStatus.Approved;
+        AdminReviewedAtUtc = DateTime.UtcNow;
+        AdminReviewedByUserId = adminUserId;
+        AdminReviewReason = null;
+        AdminReviewNotes = notes?.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Rejects a review-scaffold item. Idempotent if already Rejected. Allowed from PendingReview,
+    /// or from Approved as long as the item has not been consumed.
+    /// </summary>
+    public void RejectAdminReview(Guid adminUserId, string reason, string? notes = null)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Reason is required to reject a review scaffold item.", nameof(reason));
+
+        if (AdminReviewStatus == AdminReviewStatus.Rejected)
+            return; // idempotent no-op
+
+        if (AdminReviewStatus == AdminReviewStatus.NotRequired)
+            throw new InvalidOperationException(
+                $"Cannot reject item {Id}: it does not belong to the review scaffold flow (AdminReviewStatus=NotRequired).");
+
+        if (AdminReviewStatus == AdminReviewStatus.Approved && Status == ReadinessPoolStatus.Consumed)
+            throw new InvalidOperationException(
+                $"Cannot reject item {Id}: it has already been consumed.");
+
+        AdminReviewStatus = AdminReviewStatus.Rejected;
+        AdminReviewedAtUtc = DateTime.UtcNow;
+        AdminReviewedByUserId = adminUserId;
+        AdminReviewReason = reason.Trim();
+        AdminReviewNotes = notes?.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Reopens a rejected item back to PendingReview. Idempotent if already PendingReview.
+    /// Not allowed once the item has been consumed.
+    /// </summary>
+    public void ReopenAdminReview(Guid adminUserId, string? notes = null)
+    {
+        if (AdminReviewStatus == AdminReviewStatus.PendingReview)
+            return; // idempotent no-op
+
+        if (AdminReviewStatus != AdminReviewStatus.Rejected)
+            throw new InvalidOperationException(
+                $"ReopenAdminReview requires AdminReviewStatus=Rejected. Current: {AdminReviewStatus}. Item: {Id}.");
+
+        if (Status == ReadinessPoolStatus.Consumed)
+            throw new InvalidOperationException($"Cannot reopen item {Id}: it has already been consumed.");
+
+        AdminReviewStatus = AdminReviewStatus.PendingReview;
+        AdminReviewedAtUtc = DateTime.UtcNow;
+        AdminReviewedByUserId = adminUserId;
+        AdminReviewReason = null;
+        AdminReviewNotes = notes?.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>True when a student could currently be served this item (approval gate only; other lifecycle gates apply separately).</summary>
+    public bool PassesAdminReviewGate =>
+        AdminReviewStatus is AdminReviewStatus.NotRequired or AdminReviewStatus.Approved;
 
     public bool IsServableAsNormalContent =>
         Status == ReadinessPoolStatus.Ready;

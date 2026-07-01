@@ -413,4 +413,250 @@ public sealed class StudentActivityReadinessItemTests
 
         item.Status.Should().Be(ReadinessPoolStatus.Ready);
     }
+
+    // --- Phase 19B: per-item admin approval ---
+
+    private static StudentActivityReadinessItem MakeReadyReviewScaffoldItem()
+    {
+        var item = new StudentActivityReadinessItem(
+            studentId: StudentId,
+            source: ReadinessPoolSource.PracticeGym,
+            targetCefrLevel: "B1",
+            routingReason: RoutingReason.Scaffold,
+            isLowerLevelContent: true,
+            originalCefrLevelSnapshot: "B2",
+            requiresAdminReview: true);
+        item.MarkGenerating();
+        item.MarkReady();
+        return item;
+    }
+
+    // 23. Creating with requiresAdminReview=true stamps AdminReviewStatus=PendingReview.
+    [Fact]
+    public void Create_WithRequiresAdminReview_SetsAdminReviewStatusPendingReview()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.PendingReview);
+        item.PassesAdminReviewGate.Should().BeFalse();
+    }
+
+    // 24. Normal items (requiresAdminReview=false) default to NotRequired and pass the gate.
+    [Fact]
+    public void Create_WithoutRequiresAdminReview_SetsAdminReviewStatusNotRequired()
+    {
+        var item = MakeQueued();
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.NotRequired);
+        item.PassesAdminReviewGate.Should().BeTrue();
+    }
+
+    // 25. Approve moves PendingReview -> Approved and stamps reviewer/timestamp.
+    [Fact]
+    public void ApproveAdminReview_FromPendingReview_SetsApprovedAndStampsReviewer()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        var adminId = Guid.NewGuid();
+
+        item.ApproveAdminReview(adminId, "looks fine");
+
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.Approved);
+        item.AdminReviewedByUserId.Should().Be(adminId);
+        item.AdminReviewedAtUtc.Should().NotBeNull();
+        item.AdminReviewNotes.Should().Be("looks fine");
+        item.PassesAdminReviewGate.Should().BeTrue();
+    }
+
+    // 26. Approve is idempotent when already Approved.
+    [Fact]
+    public void ApproveAdminReview_AlreadyApproved_IsIdempotent()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        var adminId = Guid.NewGuid();
+        item.ApproveAdminReview(adminId);
+        var firstTimestamp = item.AdminReviewedAtUtc;
+
+        item.ApproveAdminReview(Guid.NewGuid());
+
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.Approved);
+        item.AdminReviewedByUserId.Should().Be(adminId);
+        item.AdminReviewedAtUtc.Should().Be(firstTimestamp);
+    }
+
+    // 27. Cannot approve an Expired item.
+    [Fact]
+    public void ApproveAdminReview_ExpiredItem_Throws()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.Expire();
+
+        var act = () => item.ApproveAdminReview(Guid.NewGuid());
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 28. Cannot approve a Failed item.
+    [Fact]
+    public void ApproveAdminReview_FailedItem_Throws()
+    {
+        var item = new StudentActivityReadinessItem(
+            studentId: StudentId,
+            source: ReadinessPoolSource.PracticeGym,
+            targetCefrLevel: "B1",
+            routingReason: RoutingReason.Scaffold,
+            isLowerLevelContent: true,
+            originalCefrLevelSnapshot: "B2",
+            requiresAdminReview: true);
+        item.MarkGenerating();
+        item.MarkFailed("ERR_AI", "boom");
+
+        var act = () => item.ApproveAdminReview(Guid.NewGuid());
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 29. Cannot approve a Stale item.
+    [Fact]
+    public void ApproveAdminReview_StaleItem_Throws()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.MarkStale("profile changed");
+
+        var act = () => item.ApproveAdminReview(Guid.NewGuid());
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 30. Reject requires a non-empty reason.
+    [Fact]
+    public void RejectAdminReview_EmptyReason_Throws()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        var act = () => item.RejectAdminReview(Guid.NewGuid(), "");
+        act.Should().Throw<ArgumentException>();
+    }
+
+    // 31. Reject from PendingReview sets Rejected + persists reason/notes.
+    [Fact]
+    public void RejectAdminReview_FromPendingReview_PersistsReasonAndNotes()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        var adminId = Guid.NewGuid();
+
+        item.RejectAdminReview(adminId, "Too hard for level", "double-checked with mastery report");
+
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.Rejected);
+        item.AdminReviewedByUserId.Should().Be(adminId);
+        item.AdminReviewReason.Should().Be("Too hard for level");
+        item.AdminReviewNotes.Should().Be("double-checked with mastery report");
+        item.PassesAdminReviewGate.Should().BeFalse();
+    }
+
+    // 32. Reject is idempotent when already Rejected.
+    [Fact]
+    public void RejectAdminReview_AlreadyRejected_IsIdempotent()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.RejectAdminReview(Guid.NewGuid(), "first reason");
+        var firstReason = item.AdminReviewReason;
+
+        item.RejectAdminReview(Guid.NewGuid(), "second reason");
+
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.Rejected);
+        item.AdminReviewReason.Should().Be(firstReason);
+    }
+
+    // 33. Approved-but-consumed item cannot be rejected.
+    [Fact]
+    public void RejectAdminReview_ApprovedAndConsumed_Throws()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.ApproveAdminReview(Guid.NewGuid());
+        item.Reserve();
+        item.MarkConsumed();
+
+        var act = () => item.RejectAdminReview(Guid.NewGuid(), "too late");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 34. Approved-but-not-consumed item CAN be rejected.
+    [Fact]
+    public void RejectAdminReview_ApprovedNotConsumed_Succeeds()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.ApproveAdminReview(Guid.NewGuid());
+
+        item.RejectAdminReview(Guid.NewGuid(), "changed my mind");
+
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.Rejected);
+    }
+
+    // 35. Cannot reject an item that never required review.
+    [Fact]
+    public void RejectAdminReview_NotRequiredItem_Throws()
+    {
+        var item = MakeQueued();
+        item.MarkGenerating();
+        item.MarkReady();
+
+        var act = () => item.RejectAdminReview(Guid.NewGuid(), "n/a");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 36. Reopen moves Rejected -> PendingReview.
+    [Fact]
+    public void ReopenAdminReview_FromRejected_SetsPendingReview()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.RejectAdminReview(Guid.NewGuid(), "too hard");
+
+        item.ReopenAdminReview(Guid.NewGuid(), "reconsidered");
+
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.PendingReview);
+        item.AdminReviewReason.Should().BeNull();
+    }
+
+    // 37. Reopen is idempotent when already PendingReview.
+    [Fact]
+    public void ReopenAdminReview_AlreadyPending_IsIdempotent()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.ReopenAdminReview(Guid.NewGuid());
+        item.AdminReviewStatus.Should().Be(AdminReviewStatus.PendingReview);
+    }
+
+    // 38. Reopen only allowed from Rejected (not from Approved or NotRequired).
+    [Fact]
+    public void ReopenAdminReview_FromApproved_Throws()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.ApproveAdminReview(Guid.NewGuid());
+
+        var act = () => item.ReopenAdminReview(Guid.NewGuid());
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 39. Cannot reopen a consumed item (defence-in-depth: AdminReviewStatus and lifecycle
+    // Status are tracked independently, so a Rejected item can still be Reserved/Consumed
+    // by other code paths).
+    [Fact]
+    public void ReopenAdminReview_ConsumedItem_Throws()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        item.RejectAdminReview(Guid.NewGuid(), "hold");
+        item.Reserve();
+        item.MarkConsumed();
+
+        var act = () => item.ReopenAdminReview(Guid.NewGuid());
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // 40. Approving does not touch lifecycle Status, CEFR fields, or linked entities.
+    [Fact]
+    public void ApproveAdminReview_DoesNotMutateLifecycleOrCefrFields()
+    {
+        var item = MakeReadyReviewScaffoldItem();
+        var statusBefore = item.Status;
+        var cefrBefore = item.TargetCefrLevel;
+
+        item.ApproveAdminReview(Guid.NewGuid());
+
+        item.Status.Should().Be(statusBefore);
+        item.TargetCefrLevel.Should().Be(cefrBefore);
+    }
 }
