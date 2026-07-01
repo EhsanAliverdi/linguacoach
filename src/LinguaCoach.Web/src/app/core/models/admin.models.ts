@@ -836,6 +836,33 @@ export interface ReviewScaffoldReviewActionRequest {
   notes?: string;
 }
 
+/** Phase 19C — brief row used in the pilot summary's recent-items lists. */
+export interface ReviewScaffoldPilotItem {
+  id: string;
+  studentId: string;
+  primarySkill: string | null;
+  curriculumObjectiveTitle: string | null;
+  status: string;
+  createdAt: string;
+}
+
+/** Phase 19C — Practice Gym review scaffold pilot admin monitoring summary. */
+export interface ReviewScaffoldPilotSummary {
+  practiceGymPilotEnabled: boolean;
+  allowTodayLessonInsertion: boolean;
+  requireAdminReview: boolean;
+  maxStudentVisibleScaffoldSuggestions: number;
+  approvedCount: number;
+  studentVisibleCount: number;
+  pendingReviewCount: number;
+  rejectedCount: number;
+  consumedCount: number;
+  skippedOrExpiredCount: number;
+  recentStudentVisibleItems: ReviewScaffoldPilotItem[];
+  recentConsumedItems: ReviewScaffoldPilotItem[];
+  generatedAt: string;
+}
+
 export interface MasteryValidationSummary {
   totalStudentsEvaluated: number;
   totalObjectivesEvaluated: number;

@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminLessonsComponent } from './admin-lessons.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary, ReviewScaffoldItemDetail, MasteryValidationSummary } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, AggregatePoolHealthSummary, ReviewScaffoldItemDetail, MasteryValidationSummary, ReviewScaffoldPilotSummary } from '../../../core/models/admin.models';
 
 const SETTINGS: AdminGenerationSettings = {
   readyLessonBufferSize: 5,
@@ -47,6 +47,22 @@ const POOL_HEALTH: AggregatePoolHealthSummary = {
   averageReadyPerStudent: 0,
   oldestReadyItemCreatedAt: null,
   newestItemCreatedAt: null,
+  generatedAt: '2026-06-27T00:00:00Z',
+};
+
+const PILOT_SUMMARY: ReviewScaffoldPilotSummary = {
+  practiceGymPilotEnabled: false,
+  allowTodayLessonInsertion: false,
+  requireAdminReview: true,
+  maxStudentVisibleScaffoldSuggestions: 2,
+  approvedCount: 0,
+  studentVisibleCount: 0,
+  pendingReviewCount: 0,
+  rejectedCount: 0,
+  consumedCount: 0,
+  skippedOrExpiredCount: 0,
+  recentStudentVisibleItems: [],
+  recentConsumedItems: [],
   generatedAt: '2026-06-27T00:00:00Z',
 };
 
@@ -101,6 +117,7 @@ function makeApi(
       generatedAt: '2026-06-27T00:00:00Z',
     })),
     getReviewScaffoldPendingReview: jasmine.createSpy('getReviewScaffoldPendingReview').and.returnValue(of([])),
+    getReviewScaffoldPilotSummary: jasmine.createSpy('getReviewScaffoldPilotSummary').and.returnValue(of(PILOT_SUMMARY)),
     approveReviewScaffoldItem: jasmine.createSpy('approveReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
     rejectReviewScaffoldItem: jasmine.createSpy('rejectReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
     reopenReviewScaffoldItem: jasmine.createSpy('reopenReviewScaffoldItem').and.returnValue(of({} as ReviewScaffoldItemDetail)),
@@ -336,6 +353,56 @@ describe('AdminLessonsComponent', () => {
     await setup();
     expect(api.getReviewScaffoldDryRun).toHaveBeenCalledTimes(1);
     expect(api.getReviewScaffoldPendingReview).toHaveBeenCalledTimes(1);
+  });
+
+  // Phase 19C — pilot status monitoring
+
+  it('calls getReviewScaffoldPilotSummary on init and renders pilot disabled status', async () => {
+    await setup();
+    expect(api.getReviewScaffoldPilotSummary).toHaveBeenCalledTimes(1);
+    const card = fixture.nativeElement.querySelector('[data-testid="pilot-status-card"]');
+    expect(card.textContent).toContain('Pilot disabled');
+    expect(card.textContent).toContain('Today lesson insertion disabled');
+  });
+
+  it('renders pilot enabled status and counts when pilot is on', async () => {
+    api = makeApi();
+    api.getReviewScaffoldPilotSummary.and.returnValue(of({
+      ...PILOT_SUMMARY,
+      practiceGymPilotEnabled: true,
+      approvedCount: 5,
+      studentVisibleCount: 2,
+      pendingReviewCount: 1,
+      rejectedCount: 1,
+      consumedCount: 3,
+    }));
+    await TestBed.configureTestingModule({
+      imports: [AdminLessonsComponent],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminLessonsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('[data-testid="pilot-status-card"]');
+    expect(card.textContent).toContain('Pilot enabled');
+
+    const items = component.pilotStatusItems();
+    expect(items.find(i => i.label === 'Student-visible now')?.value).toBe(2);
+    expect(items.find(i => i.label === 'Approved (total)')?.value).toBe(5);
+
+    // No internal diagnostics (confidence bands, provider/model info) ever appear.
+    expect(card.textContent).not.toContain('confidence');
+    expect(card.textContent).not.toContain('provider');
+  });
+
+  it('refreshPilotSummary reloads the pilot summary', async () => {
+    await setup();
+    api.getReviewScaffoldPilotSummary.calls.reset();
+    component.refreshPilotSummary();
+    expect(api.getReviewScaffoldPilotSummary).toHaveBeenCalledTimes(1);
   });
 
   it('populates scaffold dry-run config fields', async () => {

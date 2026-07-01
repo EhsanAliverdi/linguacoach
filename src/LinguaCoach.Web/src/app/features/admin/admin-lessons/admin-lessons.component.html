@@ -407,4 +407,37 @@
     </p>
   </sp-admin-card>
 
+  <!-- Practice Gym review scaffold pilot (Phase 19C) -->
+  <sp-admin-graph-card title="Practice Gym review scaffold pilot" data-testid="pilot-status-card"
+    subtitle="Enable ReadinessPool:PracticeGymPilotEnabled to surface approved items to students in Practice Gym only."
+    [status]="pilotSummaryLoading() ? 'loading' : pilotSummaryError() ? 'unavailable' : (pilotSummary()?.practiceGymPilotEnabled ? 'live' : 'partial')">
+    @if (pilotSummaryLoading()) {
+      <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Pilot status" message="Loading..." />
+    } @else if (pilotSummaryError()) {
+      <sp-admin-error-state title="Pilot summary unavailable" [message]="pilotSummaryError()" />
+    } @else if (pilotSummary()) {
+      <div class="sp-admin-kpi-row" data-testid="pilot-status-badges">
+        <sp-admin-badge [tone]="pilotSummary()!.practiceGymPilotEnabled ? 'success' : 'neutral'" appearance="soft" size="sm">
+          Pilot {{ pilotSummary()!.practiceGymPilotEnabled ? 'enabled' : 'disabled' }}
+        </sp-admin-badge>
+        <sp-admin-badge [tone]="pilotSummary()!.allowTodayLessonInsertion ? 'danger' : 'success'" appearance="soft" size="sm">
+          Today lesson insertion {{ pilotSummary()!.allowTodayLessonInsertion ? 'allowed' : 'disabled' }}
+        </sp-admin-badge>
+      </div>
+      @if (pilotStatusItems().length > 0) {
+        <sp-admin-breakdown-bars [items]="pilotStatusItems()" [showPct]="false" />
+      } @else {
+        <sp-admin-visual-placeholder state="not-available" title="Pilot status" message="No review scaffold items yet" />
+      }
+      <p class="sp-admin-section-sub" style="margin-top:0.75rem">
+        Max visible per response = <strong>{{ pilotSummary()!.maxStudentVisibleScaffoldSuggestions }}</strong>,
+        require admin review = <strong>{{ pilotSummary()!.requireAdminReview ? 'yes' : 'no' }}</strong>.
+      </p>
+      <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+        Last refreshed: {{ pilotSummary()!.generatedAt | date:'HH:mm:ss' }}
+        <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshPilotSummary()">Refresh</sp-admin-button>
+      </p>
+    }
+  </sp-admin-graph-card>
+
 </sp-admin-page-body>

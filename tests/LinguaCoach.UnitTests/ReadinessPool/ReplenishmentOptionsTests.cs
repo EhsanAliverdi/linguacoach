@@ -592,4 +592,40 @@ public sealed class ReplenishmentOptionsTests
         summary.SkippedDuplicates.Should().Be(2);
         summary.SkippedAtMaxBuffer.Should().Be(1);
     }
+
+    // Phase 19C tests ──────────────────────────────────────────────────────────
+
+    // 42. PracticeGymPilotEnabled defaults to false — students see nothing new until an
+    //     admin explicitly opts the pilot in, even if generation/approval are already running.
+    [Fact]
+    public void DefaultOptions_PracticeGymPilotEnabled_DefaultsFalse()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.PracticeGymPilotEnabled.Should().BeFalse();
+    }
+
+    // 43. Pilot label/reason defaults are non-empty and avoid negative wording.
+    [Fact]
+    public void DefaultOptions_PilotLabelAndReason_AreFriendlyAndNonEmpty()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.PracticeGymPilotLabel.Should().NotBeNullOrWhiteSpace();
+        opts.PracticeGymPilotReason.Should().NotBeNullOrWhiteSpace();
+
+        string[] negativeWords = ["fail", "weak", "low confidence", "bad"];
+        foreach (var word in negativeWords)
+        {
+            opts.PracticeGymPilotLabel.ToLowerInvariant().Should().NotContain(word);
+            opts.PracticeGymPilotReason.ToLowerInvariant().Should().NotContain(word);
+        }
+    }
+
+    // 44. MaxStudentVisibleScaffoldSuggestions has a small, conservative default.
+    [Fact]
+    public void DefaultOptions_MaxStudentVisibleScaffoldSuggestions_IsConservative()
+    {
+        var opts = new ReadinessPoolReplenishmentOptions();
+        opts.MaxStudentVisibleScaffoldSuggestions.Should().BeGreaterThan(0);
+        opts.MaxStudentVisibleScaffoldSuggestions.Should().BeLessThanOrEqualTo(4);
+    }
 }

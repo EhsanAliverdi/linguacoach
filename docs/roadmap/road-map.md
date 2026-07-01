@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 19B complete)**
+**Accurate as of: 2026-07-02 (Phase 19C complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 19B — Review Scaffold Per-Item Admin Approval (2026-07-02)
+**Latest phase completed:** Phase 19C — Review Scaffold Practice Gym Pilot Rollout (2026-07-02)
 
 **Branch:** main
 
-**Test totals (as of 19B):**
-- Backend unit: 1,693 (+18 from Phase 19B: `AdminReviewStatus` transitions, idempotency, lifecycle guards)
-- Backend integration: 1,338 (+14 from Phase 19B: approve/reject/reopen auth/happy-path/idempotency/audit-log/CEFR-untouched; pre-existing AI-provider failures unchanged, no regressions)
+**Test totals (as of 19C):**
+- Backend unit: 1,715 (+11 from Phase 19C: pilot gate on/off, cap enforcement, label override, rollback, cross-student isolation, Today-lesson-exclusion proof, safe/friendly config defaults)
+- Backend integration: 1,342 (+4 from Phase 19C: pilot-summary endpoint auth guards + count reporting)
 - Architecture: 3
-- **Backend total: 3,034**
-- Angular unit (Karma): 1,494/1,614 success (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase, 0 new regressions; `admin-lessons.component.spec.ts` itself 27/27, +9 net new tests)
-- Playwright E2E: unchanged (existing suite has no admin-lessons spec to extend; backend integration + Angular unit tests are the coverage for this phase's UI actions)
+- **Backend total: 3,060**
+- Angular unit (Karma): 1,505/1,626 success (121 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase, 0 new regressions; the two files this phase touched — `admin-lessons.component.spec.ts` + `practice-gym.component.spec.ts` — 116/116 passing)
+- Playwright E2E: unchanged (existing suite has no admin-lessons/practice-gym review-queue spec to extend; backend integration + Angular unit tests are the coverage for this phase's UI)
 
 **Build:** Clean production build. No known open build errors.
 
@@ -147,6 +147,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 62 | Phase 18A-F: Generation Quality Admin Visibility | Admin / Quality | 2026-07-01 | GenerationValidationFailure entity + T69 migration; generation validation failures persisted from AiActivityGeneratorHandler; GET /api/admin/generation-quality/summary endpoint; Generation Quality card on Diagnostics page; prompt SeededAtUtc visibility; privacy/safety hardened |
 | 63 | Phase 19A: Review Scaffold Controlled Enablement | Readiness Pool | 2026-07-02 | Source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold flag (T71 migration); ReadinessPool appsettings section added; admin dry-run summary + pending-review endpoint; EnableReviewScaffoldGeneration remains false by default |
 | 64 | Phase 19B: Review Scaffold Per-Item Admin Approval | Readiness Pool / Admin | 2026-07-02 | `AdminReviewStatus` per-item state (T72 migration) with Approve/Reject/Reopen transitions + idempotency guards; admin API + audit log (`AdminAuditLog`); Practice Gym gate updated to require per-item Approved; admin UI approval table with Approve/Reject/Reopen actions; global safety gates (EnableReviewScaffoldGeneration/DryRunOnly/RequireAdminReview/AllowTodayLessonInsertion) unchanged |
+| 65 | Phase 19C: Review Scaffold Practice Gym Pilot Rollout | Readiness Pool / Admin | 2026-07-02 | `PracticeGymPilotEnabled` gate (default false) layered on top of 19A/19B; friendly non-negative student-facing pilot label/reason override; `MaxStudentVisibleScaffoldSuggestions` cap; admin pilot-summary endpoint + monitoring card; instantly-reversible rollback with no data deletion; Today lesson insertion still disabled by default |
 
 ---
 
@@ -275,6 +276,7 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 ### Review Scaffold
 - Phase 19A added controlled-enablement gating (source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold) but `EnableReviewScaffoldGeneration` still defaults `false` and `DryRunOnly` defaults `true`. Global enablement is an operator decision, not yet exercised in production.
 - Phase 19B added per-item admin approval (`AdminReviewStatus`: PendingReview/Approved/Rejected, with Approve/Reject/Reopen endpoints + UI actions and an `AdminAuditLog` trail). An item now only reaches Practice Gym when it is individually `Approved` (or never required review) — the old "flip the global flag to release everything at once" behavior is gone. `EnableReviewScaffoldGeneration`/`DryRunOnly`/`RequireAdminReview`/`AllowTodayLessonInsertion` remain server-side config only; no global "enable" toggle exists in the admin UI.
+- Phase 19C added a dedicated `PracticeGymPilotEnabled` gate (default `false`) layered on top of 19A/19B: an item can now be generated and individually approved while still hidden from students until this one flag flips, and flipping it back off hides everything again with no data deletion. Added friendly, configurable, non-negative student-facing copy (`PracticeGymPilotLabel`/`PracticeGymPilotReason`) and a scaffold-specific visible-suggestion cap (`MaxStudentVisibleScaffoldSuggestions`, default 2), plus an admin pilot-summary endpoint/monitoring card. `PracticeGymPilotEnabled=false` in production today — the pilot has not been switched on for real students yet.
 
 ### Observability
 - No production-level APM, distributed tracing, or alerting stack.
@@ -352,6 +354,7 @@ Phases recommended in order of priority. Dependencies are noted.
 | ~~6~~ | ~~18B~~ | ~~Advanced feedback UX~~ | ~~**Complete 2026-07-01**~~ | ~~18A complete~~ |
 | ~~7~~ | ~~19A~~ | ~~Review scaffold controlled enablement~~ | ~~**Complete 2026-07-02** — config gates added; EnableReviewScaffoldGeneration remains off by default~~ | ~~17C complete~~ |
 | ~~7b~~ | ~~19B~~ | ~~Review scaffold per-item admin approval~~ | ~~**Complete 2026-07-02** — per-item AdminReviewStatus approve/reject/reopen workflow~~ | ~~19A complete~~ |
+| ~~7c~~ | ~~19C~~ | ~~Review scaffold Practice Gym pilot rollout~~ | ~~**Complete 2026-07-02** — PracticeGymPilotEnabled gate; pilot remains off by default~~ | ~~19B complete~~ |
 
 ### Tier 3 — Medium-term (phases 8–10)
 
@@ -500,6 +503,23 @@ Review: `docs/reviews/2026-07-01-phase-19a-review-scaffold-controlled-enablement
 - No global "enable" toggle added; `EnableReviewScaffoldGeneration`/`DryRunOnly`/`RequireAdminReview`/`AllowTodayLessonInsertion` remain server-side config only
 
 Review: `docs/reviews/2026-07-02-phase-19b-review-scaffold-admin-approval-review.md`.
+
+---
+
+### Phase 19C — Review Scaffold Practice Gym Pilot Rollout — complete (2026-07-02)
+
+**Purpose:** Let approved review scaffold items reach students in Practice Gym under a controlled, instantly-reversible pilot, without exercising the Phase 19A/19B generation and approval gates any differently than before.
+
+**Delivered:**
+- `PracticeGymPilotEnabled` config gate (default `false`) — additional AND condition on top of the existing per-item `AdminReviewStatus=Approved` gate, applied to all three suggestion buckets (Suggested/Continue/Review) that could carry a scaffold item
+- `PracticeGymPilotLabel`/`PracticeGymPilotReason` (default "Review" / "This helps you practise a skill you are building.") — override the routing-reason-specific `CallToAction`/`Explanation` copy for any scaffold-origin item, so pilot wording is friendly, non-negative, and centrally configurable
+- `MaxStudentVisibleScaffoldSuggestions` (default 2) — scaffold-specific visible-items cap, independent of the general `MaxReview=4` page cap
+- Admin API: `GET .../review-scaffold/pilot-summary` — pilot/Today-insertion status flags + approved/student-visible/pending/rejected/consumed/skipped-or-expired counts + recent items (no admin diagnostics)
+- Admin UI: new "Practice Gym review scaffold pilot" monitoring card on `admin-lessons` (reuses existing design-system components)
+- No changes to the Practice Gym or dashboard Angular templates — existing "Review queue" section and DTO shape already satisfied the visual-distinguishability and no-diagnostics-leak requirements
+- Rollback: `PracticeGymPilotEnabled=false` hides all approved-but-unconsumed scaffold items instantly, with no data deletion
+
+Review: `docs/reviews/2026-07-02-phase-19c-review-scaffold-practice-gym-pilot-rollout-review.md`.
 
 ---
 

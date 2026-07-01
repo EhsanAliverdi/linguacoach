@@ -555,8 +555,85 @@ public sealed class AdminReadinessPoolController : ControllerBase
         return Ok(ToReviewScaffoldDetailDto(item));
     }
 
+    /// <summary>
+    /// Phase 19C admin monitoring: pilot status plus student-visible/approved/pending/rejected/
+    /// consumed/skipped-or-expired counts for review scaffold items. Read-only.
+    /// </summary>
+    [HttpGet("api/admin/readiness-pool/review-scaffold/pilot-summary")]
+    public async Task<IActionResult> GetReviewScaffoldPilotSummary(CancellationToken ct)
+    {
+        var scaffoldItems = _db.StudentActivityReadinessItems
+            .AsNoTracking()
+            .Where(i => i.RequiresAdminReview);
+
+        var approvedCount = await scaffoldItems.CountAsync(i => i.AdminReviewStatus == AdminReviewStatus.Approved, ct);
+        var pendingCount = await scaffoldItems.CountAsync(i => i.AdminReviewStatus == AdminReviewStatus.PendingReview, ct);
+        var rejectedCount = await scaffoldItems.CountAsync(i => i.AdminReviewStatus == AdminReviewStatus.Rejected, ct);
+        var consumedCount = await scaffoldItems.CountAsync(i => i.Status == ReadinessPoolStatus.Consumed, ct);
+        var skippedOrExpiredCount = await scaffoldItems.CountAsync(i =>
+            i.Status == ReadinessPoolStatus.Expired
+            || i.Status == ReadinessPoolStatus.Stale
+            || i.Status == ReadinessPoolStatus.Failed
+            || i.Status == ReadinessPoolStatus.Skipped, ct);
+
+        var studentVisibleQuery = scaffoldItems.Where(i =>
+            i.AdminReviewStatus == AdminReviewStatus.Approved
+            && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.ReviewOnly || i.Status == ReadinessPoolStatus.Reserved)
+            && i.Source == ReadinessPoolSource.PracticeGym
+            && _replenishmentOpts.PracticeGymPilotEnabled);
+
+        var studentVisibleCount = await studentVisibleQuery.CountAsync(ct);
+
+        var recentStudentVisible = await studentVisibleQuery
+            .OrderByDescending(i => i.CreatedAt)
+            .Take(10)
+            .Select(ToPilotItemDto)
+            .ToListAsync(ct);
+
+        var recentConsumed = await scaffoldItems
+            .Where(i => i.Status == ReadinessPoolStatus.Consumed)
+            .OrderByDescending(i => i.UpdatedAt)
+            .Take(10)
+            .Select(ToPilotItemDto)
+            .ToListAsync(ct);
+
+        var summary = new ReviewScaffoldPilotSummaryDto
+        {
+            PracticeGymPilotEnabled = _replenishmentOpts.PracticeGymPilotEnabled,
+            AllowTodayLessonInsertion = _replenishmentOpts.AllowTodayLessonInsertion,
+            RequireAdminReview = _replenishmentOpts.RequireAdminReview,
+            MaxStudentVisibleScaffoldSuggestions = _replenishmentOpts.MaxStudentVisibleScaffoldSuggestions,
+            ApprovedCount = approvedCount,
+            StudentVisibleCount = studentVisibleCount,
+            PendingReviewCount = pendingCount,
+            RejectedCount = rejectedCount,
+            ConsumedCount = consumedCount,
+            SkippedOrExpiredCount = skippedOrExpiredCount,
+            RecentStudentVisibleItems = recentStudentVisible,
+            RecentConsumedItems = recentConsumed,
+            GeneratedAt = DateTime.UtcNow
+        };
+
+        return Ok(summary);
+    }
+
+    private static readonly System.Linq.Expressions.Expression<Func<StudentActivityReadinessItem, ReviewScaffoldPilotItemDto>> ToPilotItemDto =
+        i => new ReviewScaffoldPilotItemDto
+        {
+            Id = i.Id,
+            StudentId = i.StudentId,
+            PrimarySkill = i.PrimarySkill,
+            CurriculumObjectiveTitle = i.CurriculumObjectiveTitle,
+            Status = i.Status.ToString(),
+            CreatedAt = i.CreatedAt
+        };
+
     private static ReviewScaffoldItemDetailDto ToReviewScaffoldDetailDto(StudentActivityReadinessItem i)
     {
+        // Note: these flags reflect structural eligibility (lifecycle status + admin approval),
+        // same as Phase 19B. They intentionally do NOT factor in PracticeGymPilotEnabled — an
+        // item can be "eligible" here while still hidden from students until the Phase 19C
+        // pilot flag is on. Use the pilot-summary endpoint for the actual pilot-gated count.
         var lifecycleEligible = i.Status is ReadinessPoolStatus.Ready or ReadinessPoolStatus.ReviewOnly or ReadinessPoolStatus.Reserved;
         var isStudentVisible = lifecycleEligible && i.PassesAdminReviewGate;
         var isPracticeGymEligible = isStudentVisible

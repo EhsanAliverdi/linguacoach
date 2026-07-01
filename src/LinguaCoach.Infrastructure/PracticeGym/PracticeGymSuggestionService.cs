@@ -6,6 +6,7 @@ using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Infrastructure.PracticeGym;
 
@@ -23,11 +24,20 @@ namespace LinguaCoach.Infrastructure.PracticeGym;
 ///     go to ReviewItems if IsLowerLevelContent, otherwise may appear in Suggested.
 ///   - Reserved valid items go to ContinueItems.
 ///   - general_english is fallback context — workplace is never default.
+///
+/// Phase 19C pilot gate:
+///   - Approved review/scaffold items (RequiresAdminReview=true) are further gated on
+///     PracticeGymPilotEnabled. When the pilot is off, they are excluded from ReviewItems
+///     entirely — even though generation and admin approval (19A/19B) may already be running.
+///   - When the pilot is on, visible scaffold items are capped at MaxStudentVisibleScaffoldSuggestions
+///     and their CallToAction/Explanation are replaced with the configured friendly pilot
+///     label/reason so wording stays non-negative regardless of RoutingReason.
 /// </summary>
 public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IReadinessPoolReplenishmentService _replenishment;
+    private readonly ReadinessPoolReplenishmentOptions _opts;
     private readonly ILogger<PracticeGymSuggestionService> _logger;
 
     private const int MaxSuggested = 6;
@@ -37,10 +47,12 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
     public PracticeGymSuggestionService(
         LinguaCoachDbContext db,
         IReadinessPoolReplenishmentService replenishment,
+        IOptions<ReadinessPoolReplenishmentOptions> opts,
         ILogger<PracticeGymSuggestionService> logger)
     {
         _db = db;
         _replenishment = replenishment;
+        _opts = opts.Value;
         _logger = logger;
     }
 
@@ -67,29 +79,47 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
                      && (!i.RequiresAdminReview || i.AdminReviewStatus == AdminReviewStatus.Approved))
             .ToListAsync(ct);
 
-        // ContinueItems: reserved, not expired.
+        // ContinueItems: reserved, not expired. Scaffold items stay pilot-gated so rollback
+        // (PracticeGymPilotEnabled=false) hides approved-but-unconsumed scaffold items too.
         var continueItems = rawItems
             .Where(i => i.Status == ReadinessPoolStatus.Reserved
-                     && (i.ExpiresAt == null || i.ExpiresAt > DateTime.UtcNow))
+                     && (i.ExpiresAt == null || i.ExpiresAt > DateTime.UtcNow)
+                     && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled))
             .Take(MaxContinue)
             .Select(ToDto)
             .ToList();
 
         // ReviewItems: ReviewOnly status OR Ready+lower-level with review/scaffold/remediation reason.
-        var reviewItems = rawItems
+        // Phase 19C: items that required admin review (i.e. came through the review/scaffold
+        // generation pipeline) are pilot-gated on top of the existing per-item approval gate —
+        // they only reach students when PracticeGymPilotEnabled=true, and are capped separately.
+        var reviewCandidates = rawItems
             .Where(i => i.Status == ReadinessPoolStatus.ReviewOnly
                      || (i.Status == ReadinessPoolStatus.Ready
                          && i.IsLowerLevelContent
                          && i.RoutingReason != RoutingReason.Normal
                          && i.RoutingReason != RoutingReason.Fallback))
+            .Where(i => !i.RequiresAdminReview || _opts.PracticeGymPilotEnabled)
+            .ToList();
+
+        var nonScaffoldReview = reviewCandidates.Where(i => !i.RequiresAdminReview);
+        var scaffoldReview = reviewCandidates
+            .Where(i => i.RequiresAdminReview)
+            .Take(_opts.MaxStudentVisibleScaffoldSuggestions);
+
+        var reviewItems = nonScaffoldReview
+            .Concat(scaffoldReview)
             .Take(MaxReview)
             .Select(ToDto)
             .ToList();
 
-        // SuggestedItems: Ready, not lower-level-only review content.
+        // SuggestedItems: Ready, not lower-level-only review content. Defence-in-depth:
+        // scaffold-origin items never appear here even if a future routing change stops
+        // pairing them with IsLowerLevelContent — the pilot gate still applies.
         var suggestable = rawItems
             .Where(i => i.Status == ReadinessPoolStatus.Ready
-                     && !(i.IsLowerLevelContent && i.RoutingReason != RoutingReason.Normal && i.RoutingReason != RoutingReason.Fallback))
+                     && !(i.IsLowerLevelContent && i.RoutingReason != RoutingReason.Normal && i.RoutingReason != RoutingReason.Fallback)
+                     && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled))
             .ToList();
 
         var ranked = RankSuggestions(suggestable, focusTags, contextTags)
@@ -255,10 +285,11 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
             .ThenBy(i => i.CreatedAt);
     }
 
-    private static PracticeGymSuggestionItemDto ToDto(StudentActivityReadinessItem i)
+    private PracticeGymSuggestionItemDto ToDto(StudentActivityReadinessItem i)
     {
-        var (callToAction, explanation) = BuildCallToAction(i.RoutingReason, i.IsLowerLevelContent,
-            i.PrimarySkill, i.CurriculumObjectiveTitle);
+        var (callToAction, explanation) = i.RequiresAdminReview
+            ? (_opts.PracticeGymPilotLabel, _opts.PracticeGymPilotReason)
+            : BuildCallToAction(i.RoutingReason, i.IsLowerLevelContent, i.PrimarySkill, i.CurriculumObjectiveTitle);
 
         return new PracticeGymSuggestionItemDto
         {

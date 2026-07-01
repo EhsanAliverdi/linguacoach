@@ -47,6 +47,7 @@ import {
   WritingEvaluationWithDryRunDto,
   WritingSignalApplicationSummaryDto,
   WritingSignalSafetySummaryDto,
+  ReviewScaffoldPilotSummary,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -171,6 +172,9 @@ export class AdminApiService {
   }
   getReviewScaffoldPendingReview(): Observable<ReviewScaffoldItemDetail[]> {
     return this.http.get<ReviewScaffoldItemDetail[]>(`${this.api}/readiness-pool/review-scaffold/pending-review`);
+  }
+  getReviewScaffoldPilotSummary(): Observable<ReviewScaffoldPilotSummary> {
+    return this.http.get<ReviewScaffoldPilotSummary>(`${this.api}/readiness-pool/review-scaffold/pilot-summary`);
   }
   approveReviewScaffoldItem(itemId: string): Observable<ReviewScaffoldItemDetail> {
     return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/approve`, {});

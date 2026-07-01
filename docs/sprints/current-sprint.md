@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (19B)
+lastUpdated: 2026-07-02 (19C)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,40 @@ Last updated: 2026-07-02
 ---
 
 ## Active sprint
+
+**Phase 19C — Review Scaffold Practice Gym Pilot Rollout** — complete (2026-07-02)
+
+Adds a dedicated `PracticeGymPilotEnabled` gate on top of the Phase 19A/19B generation + per-item approval pipeline, so an admin can run generation and approval in production without any new content reaching students until a single, instantly-reversible flag flips. Approved scaffold items get friendly, configurable, non-negative student-facing copy (`PracticeGymPilotLabel`/`PracticeGymPilotReason`) and a per-response visibility cap (`MaxStudentVisibleScaffoldSuggestions`). Today lesson insertion remains untouched and disabled by default; no CEFR/objective/Learning Plan changes; no new activity formats; no Practice Gym rewrite.
+
+**New/modified Application:**
+- `ReadinessPoolReplenishmentOptions` — new `PracticeGymPilotEnabled` (default false), `PracticeGymPilotLabel` (default "Review"), `PracticeGymPilotReason` (default "This helps you practise a skill you are building."), `MaxStudentVisibleScaffoldSuggestions` (default 2)
+- `ReadinessPoolDtos` — new `ReviewScaffoldPilotSummaryDto`, `ReviewScaffoldPilotItemDto`
+
+**Modified Infrastructure:**
+- `PracticeGymSuggestionService` — scaffold items (`RequiresAdminReview=true`) in the ReviewItems, ContinueItems, and (defensively) SuggestedItems buckets are now additionally gated on `PracticeGymPilotEnabled`, capped at `MaxStudentVisibleScaffoldSuggestions`, and have their `CallToAction`/`Explanation` overridden with the configured pilot label/reason
+
+**New/modified API (`AdminReadinessPoolController`):**
+- `GET /api/admin/readiness-pool/review-scaffold/pilot-summary` — pilot/Today-insertion status, approved/student-visible/pending/rejected/consumed/skipped-or-expired counts, recent student-visible/consumed items (no admin diagnostics)
+- `ReviewScaffoldItemDetailDto.IsStudentVisible`/`IsPracticeGymEligible` deliberately left unchanged (structural eligibility, not pilot-gated) to keep the Phase 19B approval test contract intact — see the review doc §12 for why
+
+**Modified Angular:**
+- `admin.models.ts` — new `ReviewScaffoldPilotSummary`, `ReviewScaffoldPilotItem`
+- `admin.api.service.ts` — `getReviewScaffoldPilotSummary`
+- `admin-lessons.component.ts`/`.html` — new "Practice Gym review scaffold pilot" monitoring card (reuses existing `sp-admin-graph-card`/`sp-admin-breakdown-bars`/`sp-admin-badge`, no new design-system components), refreshed after approve/reject actions
+- `practice-gym.component.ts`/`.html` — no changes needed; existing "Review queue" section and card layout already satisfy the visual-distinguishability and no-diagnostics-leak requirements
+
+**Tests added:**
+- `PracticeGymSuggestionServiceTests` — +8 tests (19–26): pilot on/off, pending/rejected hidden, cap enforcement, label override, rollback (Continue bucket), cross-student isolation, Today-lesson-source exclusion proof
+- `ReplenishmentOptionsTests` — +3 tests (42–44): pilot default off, friendly/non-negative default copy, conservative visible cap
+- `ReviewScaffoldPilotSummaryTests` (integration, new file) — 4 tests: auth guards, default-config safe reporting, approved-vs-student-visible count distinction while pilot is off
+- `admin-lessons.component.spec.ts` — +3 tests: pilot summary loads on init and renders disabled/enabled status + counts with no diagnostics text, refresh reloads
+- `practice-gym.component.spec.ts` — +2 tests: pilot label/reason render with no negative wording or diagnostics, review queue empty state still works when API returns no review items
+
+**Build/test totals:** Backend unit: 1,715 (+11, 0 regressions). Integration: 1,342 (+4, 0 regressions). Architecture: 3 (unchanged). Angular unit: 1,505/1,626 (121 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase — 0 new regressions; the two files this phase touched: 116/116 passing). Production build: clean. Playwright: not run this phase — same rationale as Phase 19B (no existing spec to extend); backend + Angular unit coverage documented as the substitute.
+
+See `docs/reviews/2026-07-02-phase-19c-review-scaffold-practice-gym-pilot-rollout-review.md` for the full audit table and design rationale.
+
+---
 
 **Phase 19B — Review Scaffold Per-Item Admin Approval** — complete (2026-07-02)
 

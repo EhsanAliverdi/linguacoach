@@ -8,11 +8,13 @@ using LinguaCoach.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.UnitTests.PracticeGym;
 
 /// <summary>
-/// Unit tests for PracticeGymSuggestionService — Phase 10O.
+/// Unit tests for PracticeGymSuggestionService — Phase 10O, extended in Phase 19C for the
+/// Practice Gym review scaffold pilot gate.
 /// Uses an in-memory database and a stub replenishment service.
 /// </summary>
 public sealed class PracticeGymSuggestionServiceTests : IDisposable
@@ -34,9 +36,11 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         _db = new LinguaCoachDbContext(options);
         _db.Database.EnsureCreated();
         _replenishment = new StubReplenishmentService { TargetCount = 10, ReadyCount = 0 };
-        _sut = new PracticeGymSuggestionService(
-            _db, _replenishment, NullLogger<PracticeGymSuggestionService>.Instance);
+        _sut = BuildSut(new ReadinessPoolReplenishmentOptions());
     }
+
+    private PracticeGymSuggestionService BuildSut(ReadinessPoolReplenishmentOptions opts) =>
+        new(_db, _replenishment, Options.Create(opts), NullLogger<PracticeGymSuggestionService>.Instance);
 
     // 1. Consumed items excluded from all sections.
     [Fact]
@@ -225,6 +229,134 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         result.SuggestedItems.Should().HaveCount(1);
     }
 
+    // --- Phase 19C: Practice Gym review scaffold pilot gate ---
+
+    // 19. Approved scaffold item hidden when pilot disabled (default).
+    [Fact]
+    public async Task GetSuggestions_PilotDisabled_ApprovedScaffoldItemHidden()
+    {
+        SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true,
+            requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.Approved);
+
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().BeEmpty();
+    }
+
+    // 20. Approved scaffold item visible when pilot enabled and all gates pass.
+    [Fact]
+    public async Task GetSuggestions_PilotEnabled_ApprovedScaffoldItemVisible()
+    {
+        var sut = BuildSut(new ReadinessPoolReplenishmentOptions { PracticeGymPilotEnabled = true });
+        SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true,
+            requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.Approved);
+
+        var result = await sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().HaveCount(1);
+        result.ReviewItems[0].CallToAction.Should().Be("Review");
+        result.ReviewItems[0].Explanation.Should().Be("This helps you practise a skill you are building.");
+    }
+
+    // 21. Pending review scaffold item hidden even when pilot enabled.
+    [Fact]
+    public async Task GetSuggestions_PilotEnabled_PendingReviewItemHidden()
+    {
+        var sut = BuildSut(new ReadinessPoolReplenishmentOptions { PracticeGymPilotEnabled = true });
+        SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true,
+            requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.PendingReview);
+
+        var result = await sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().BeEmpty();
+    }
+
+    // 22. Rejected review scaffold item hidden even when pilot enabled.
+    [Fact]
+    public async Task GetSuggestions_PilotEnabled_RejectedItemHidden()
+    {
+        var sut = BuildSut(new ReadinessPoolReplenishmentOptions { PracticeGymPilotEnabled = true });
+        SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true,
+            requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.Rejected);
+
+        var result = await sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().BeEmpty();
+    }
+
+    // 23. Max visible scaffold suggestions cap respected.
+    [Fact]
+    public async Task GetSuggestions_PilotEnabled_RespectsMaxVisibleScaffoldCap()
+    {
+        var sut = BuildSut(new ReadinessPoolReplenishmentOptions
+        {
+            PracticeGymPilotEnabled = true,
+            MaxStudentVisibleScaffoldSuggestions = 2
+        });
+
+        for (var i = 0; i < 4; i++)
+        {
+            SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true,
+                requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.Approved);
+        }
+
+        var result = await sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().HaveCount(2);
+    }
+
+    // 24. Approved-but-unconsumed reserved scaffold item hidden by rollback (pilot disabled).
+    [Fact]
+    public async Task GetSuggestions_PilotDisabled_ApprovedReservedScaffoldItemHiddenFromContinue()
+    {
+        SeedItem(status: ReadinessPoolStatus.Reserved, expiresAt: DateTime.UtcNow.AddHours(2),
+            routingReason: RoutingReason.Review, isLower: true,
+            requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.Approved);
+
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ContinueItems.Should().BeEmpty();
+    }
+
+    // 25. Approved scaffold item for another student is never visible to this student.
+    [Fact]
+    public async Task GetSuggestions_PilotEnabled_DoesNotLeakAnotherStudentsScaffoldItem()
+    {
+        var sut = BuildSut(new ReadinessPoolReplenishmentOptions { PracticeGymPilotEnabled = true });
+        var otherStudentId = Guid.NewGuid();
+        SeedItem(status: ReadinessPoolStatus.ReviewOnly, routingReason: RoutingReason.Review, isLower: true,
+            requiresAdminReview: true, adminReviewStatus: AdminReviewStatus.Approved, studentId: otherStudentId);
+
+        var result = await sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().BeEmpty();
+    }
+
+    // 26. Today lesson insertion is not exercised by this service — Practice Gym source only.
+    // Structural proof lives in ReadinessPoolReplenishmentService (source-allowlist gate);
+    // this asserts the suggestion service only ever queries the PracticeGym source.
+    [Fact]
+    public async Task GetSuggestions_OnlyQueriesPracticeGymSource()
+    {
+        var sut = BuildSut(new ReadinessPoolReplenishmentOptions { PracticeGymPilotEnabled = true });
+        var todayLessonItem = new StudentActivityReadinessItem(
+            studentId: StudentId,
+            source: ReadinessPoolSource.TodayLesson,
+            targetCefrLevel: "B2",
+            routingReason: RoutingReason.Review,
+            isLowerLevelContent: true,
+            requiresAdminReview: true);
+        ForceStatus(todayLessonItem, ReadinessPoolStatus.ReviewOnly);
+        ForceAdminReviewStatus(todayLessonItem, AdminReviewStatus.Approved);
+        _db.StudentActivityReadinessItems.Add(todayLessonItem);
+        _db.SaveChanges();
+
+        var result = await sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ReviewItems.Should().BeEmpty();
+        result.SuggestedItems.Should().BeEmpty();
+    }
+
     // --- helpers ---
 
     private StudentActivityReadinessItem SeedItem(
@@ -233,10 +365,12 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         bool isLower = false,
         DateTime? expiresAt = null,
         Guid? learningActivityId = null,
-        bool requiresAdminReview = false)
+        bool requiresAdminReview = false,
+        AdminReviewStatus? adminReviewStatus = null,
+        Guid? studentId = null)
     {
         var item = new StudentActivityReadinessItem(
-            studentId: StudentId,
+            studentId: studentId ?? StudentId,
             source: ReadinessPoolSource.PracticeGym,
             targetCefrLevel: "B2",
             routingReason: routingReason,
@@ -245,6 +379,7 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
             requiresAdminReview: requiresAdminReview);
 
         ForceStatus(item, status);
+        if (adminReviewStatus.HasValue) ForceAdminReviewStatus(item, adminReviewStatus.Value);
         if (learningActivityId.HasValue) ForceLinkedActivity(item, learningActivityId.Value);
 
         _db.StudentActivityReadinessItems.Add(item);
@@ -255,6 +390,11 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
     private static void ForceStatus(StudentActivityReadinessItem item, ReadinessPoolStatus status) =>
         typeof(StudentActivityReadinessItem)
             .GetProperty(nameof(StudentActivityReadinessItem.Status))!
+            .SetValue(item, status);
+
+    private static void ForceAdminReviewStatus(StudentActivityReadinessItem item, AdminReviewStatus status) =>
+        typeof(StudentActivityReadinessItem)
+            .GetProperty(nameof(StudentActivityReadinessItem.AdminReviewStatus))!
             .SetValue(item, status);
 
     private static void ForceLinkedActivity(StudentActivityReadinessItem item, Guid activityId) =>

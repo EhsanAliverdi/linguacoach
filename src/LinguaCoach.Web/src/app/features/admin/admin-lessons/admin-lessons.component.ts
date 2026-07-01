@@ -24,7 +24,7 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldItemDetail, MasteryValidationSummary } from '../../../core/models/admin.models';
+import { AdminGenerationBatchesResponse, AggregatePoolHealthSummary, ReviewScaffoldDryRunSummary, ReviewScaffoldItemDetail, ReviewScaffoldPilotSummary, MasteryValidationSummary } from '../../../core/models/admin.models';
 
 @Component({
   selector: 'app-admin-lessons',
@@ -110,6 +110,28 @@ export class AdminLessonsComponent implements OnInit {
   scaffoldActionPendingId = signal<string | null>(null);
   scaffoldActionError = signal('');
 
+  // ── Phase 19C: Practice Gym review scaffold pilot monitoring ──────────────
+  pilotSummaryLoading = signal(false);
+  pilotSummaryError = signal('');
+  pilotSummary = signal<ReviewScaffoldPilotSummary | null>(null);
+
+  pilotStatusItems = computed<BreakdownBarItem[]>(() => {
+    const p = this.pilotSummary();
+    if (!p) return [];
+    const values: [string, number, BreakdownBarItem['tone']][] = [
+      ['Student-visible now', p.studentVisibleCount, 'green'],
+      ['Approved (total)', p.approvedCount, 'indigo'],
+      ['Pending review', p.pendingReviewCount, 'amber'],
+      ['Rejected', p.rejectedCount, 'slate'],
+      ['Consumed', p.consumedCount, 'teal'],
+      ['Skipped / expired', p.skippedOrExpiredCount, 'danger'],
+    ];
+    const max = Math.max(...values.map(v => v[1]), 1);
+    return values
+      .filter(([, value]) => value > 0)
+      .map(([label, value, tone]) => ({ label, value, pct: Math.round((value / max) * 100), tone }));
+  });
+
   // ── Mastery validation (system-wide diagnostic) ───────────────────────────
   masteryLoading = signal(false);
   masteryError = signal('');
@@ -127,8 +149,23 @@ export class AdminLessonsComponent implements OnInit {
     this.loadPoolHealth();
     this.loadScaffoldDryRun();
     this.loadScaffoldPendingReview();
+    this.loadPilotSummary();
     this.loadMasteryValidation();
   }
+
+  private loadPilotSummary(): void {
+    this.pilotSummaryLoading.set(true);
+    this.pilotSummaryError.set('');
+    this.adminApi.getReviewScaffoldPilotSummary().subscribe({
+      next: p => { this.pilotSummary.set(p); this.pilotSummaryLoading.set(false); },
+      error: err => {
+        this.pilotSummaryError.set(err?.error?.error ?? err?.message ?? 'Failed to load pilot summary.');
+        this.pilotSummaryLoading.set(false);
+      },
+    });
+  }
+
+  refreshPilotSummary(): void { this.loadPilotSummary(); }
 
   // ── Pool health — chart data ───────────────────────────────────────────────
 
@@ -364,6 +401,7 @@ export class AdminLessonsComponent implements OnInit {
       next: () => {
         this.scaffoldActionPendingId.set(null);
         this.loadScaffoldPendingReview();
+        this.loadPilotSummary();
       },
       error: err => {
         this.scaffoldActionError.set(err?.error?.error ?? err?.message ?? 'Approve failed.');
@@ -383,6 +421,7 @@ export class AdminLessonsComponent implements OnInit {
       next: () => {
         this.scaffoldActionPendingId.set(null);
         this.loadScaffoldPendingReview();
+        this.loadPilotSummary();
       },
       error: err => {
         this.scaffoldActionError.set(err?.error?.error ?? err?.message ?? 'Reject failed.');

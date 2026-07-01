@@ -144,6 +144,41 @@ public sealed class ReviewScaffoldReviewActionRequest
 }
 
 /// <summary>
+/// Phase 19C admin monitoring summary for the Practice Gym review scaffold pilot.
+/// Read-only. Never includes provider/model details or raw AI payloads.
+/// </summary>
+public sealed class ReviewScaffoldPilotSummaryDto
+{
+    public bool PracticeGymPilotEnabled { get; init; }
+    public bool AllowTodayLessonInsertion { get; init; }
+    public bool RequireAdminReview { get; init; }
+    public int MaxStudentVisibleScaffoldSuggestions { get; init; }
+
+    public int ApprovedCount { get; init; }
+    public int StudentVisibleCount { get; init; }
+    public int PendingReviewCount { get; init; }
+    public int RejectedCount { get; init; }
+    public int ConsumedCount { get; init; }
+    public int SkippedOrExpiredCount { get; init; }
+
+    public IReadOnlyList<ReviewScaffoldPilotItemDto> RecentStudentVisibleItems { get; init; } = [];
+    public IReadOnlyList<ReviewScaffoldPilotItemDto> RecentConsumedItems { get; init; } = [];
+
+    public DateTime GeneratedAt { get; init; }
+}
+
+/// <summary>Brief row for the pilot summary's recent-items lists. No admin diagnostics.</summary>
+public sealed class ReviewScaffoldPilotItemDto
+{
+    public Guid Id { get; init; }
+    public Guid StudentId { get; init; }
+    public string? PrimarySkill { get; init; }
+    public string? CurriculumObjectiveTitle { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
+}
+
+/// <summary>
 /// Helper to build a CreateReadinessItemRequest from a CurriculumRoutingRecommendation + student context.
 /// </summary>
 public static class ReadinessItemRequestBuilder

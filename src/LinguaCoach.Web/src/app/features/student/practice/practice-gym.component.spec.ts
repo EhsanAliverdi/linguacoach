@@ -985,6 +985,48 @@ describe('PracticeGymComponent', () => {
     expect(retryBtn).toBeTruthy();
   });
 
+  // ── Phase 19C: review scaffold pilot labels ────────────────────────────────
+
+  it('renders the pilot-friendly review label and reason for an approved scaffold item', async () => {
+    const item = makeSuggestionItem({
+      readinessItemId: 'scaffold-1',
+      routingReason: 'Review',
+      isLowerLevelContent: true,
+      callToAction: 'Review',
+      explanation: 'This helps you practise a skill you are building.',
+    });
+    suggestionsService.getSuggestions.and.returnValue(of({ ...emptySuggestions, reviewItems: [item] }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+
+    const card = f.nativeElement.querySelector('[data-testid="suggestion-card-scaffold-1"]');
+    expect(card.textContent).toContain('Review');
+    expect(card.textContent).toContain('This helps you practise a skill you are building.');
+
+    // No negative wording and no internal diagnostics ever rendered.
+    const lower = card.textContent.toLowerCase();
+    expect(lower).not.toContain('failed');
+    expect(lower).not.toContain('weakness');
+    expect(lower).not.toContain('low confidence');
+    expect(lower).not.toContain('provider');
+    expect(lower).not.toContain('admin');
+  });
+
+  it('review queue is empty (hidden) when the API returns no review items', async () => {
+    suggestionsService.getSuggestions.and.returnValue(of({
+      ...emptySuggestions, suggestedItems: [makeSuggestionItem()], reviewItems: [],
+    }));
+    const f = TestBed.createComponent(PracticeGymComponent);
+    f.detectChanges();
+    await f.whenStable();
+
+    const grid = f.nativeElement.querySelector('[data-testid="review-grid"]');
+    expect(grid).toBeNull();
+    const emptyState = f.nativeElement.querySelector('[data-testid="review-queue-empty"]');
+    expect(emptyState).toBeTruthy();
+  });
+
   it('retry button triggers a fresh suggestions load', async () => {
     suggestionsService.getSuggestions.and.returnValue(throwError(() => new Error('net')));
     const f = TestBed.createComponent(PracticeGymComponent);

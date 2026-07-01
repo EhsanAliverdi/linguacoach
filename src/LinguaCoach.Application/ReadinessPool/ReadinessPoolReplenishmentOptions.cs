@@ -91,4 +91,32 @@ public sealed class ReadinessPoolReplenishmentOptions
     /// Prevents runaway over-fill when a student has many reserved-but-not-consumed items.
     /// </summary>
     public int MaxBufferCount { get; set; } = 20;
+
+    /// <summary>
+    /// Phase 19C pilot gate. When false (default), admin-approved review/scaffold items are
+    /// never surfaced to students in Practice Gym even though generation and per-item approval
+    /// (Phase 19A/19B) may already be running. Flipping this to false is the fastest rollback:
+    /// it hides all approved-but-unconsumed scaffold items without deleting any data.
+    /// </summary>
+    public bool PracticeGymPilotEnabled { get; set; } = false;
+
+    /// <summary>
+    /// Student-facing label shown on Practice Gym cards for approved review/scaffold items
+    /// during the pilot. Replaces the routing-reason-specific label so wording stays friendly
+    /// and non-negative regardless of why the item was generated.
+    /// </summary>
+    public string PracticeGymPilotLabel { get; set; } = "Review";
+
+    /// <summary>
+    /// Student-facing reason shown on Practice Gym cards for approved review/scaffold items
+    /// during the pilot. Must avoid negative wording ("failed", "weakness", "low confidence").
+    /// </summary>
+    public string PracticeGymPilotReason { get; set; } = "This helps you practise a skill you are building.";
+
+    /// <summary>
+    /// Maximum number of approved review/scaffold items shown to a single student in one
+    /// Practice Gym response during the pilot. Independent of the general ReviewItems page
+    /// size cap — keeps scaffold content from crowding out normal practice.
+    /// </summary>
+    public int MaxStudentVisibleScaffoldSuggestions { get; set; } = 2;
 }
