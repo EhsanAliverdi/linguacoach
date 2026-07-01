@@ -395,17 +395,23 @@
 
   <div class="sp-admin-form-stack">
     @if (f.mode === 'create') {
-    <sp-admin-form-field label="Model *">
-      <select class="sp-admin-native-select" [(ngModel)]="f.modelName" (ngModelChange)="onOverrideModelChange(f, $event)">
-        <option value="">-- select a model --</option>
-        @for (group of pricingByProvider(); track group.provider) {
-        <optgroup [label]="group.provider | uppercase">
-          @for (prow of group.rows; track prow.modelName) {
-          <option [value]="prow.modelName">{{ prow.modelName }}</option>
-          }
-        </optgroup>
+    <sp-admin-form-field label="Provider *">
+      <select class="sp-admin-native-select" [(ngModel)]="f.providerName" (ngModelChange)="f.modelName = ''">
+        <option value="">-- select a provider --</option>
+        @for (p of overrideProviderOptions(); track p) {
+        <option [value]="p">{{ p | uppercase }}</option>
         }
       </select>
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Model *" hint="Pick a registered model or type any model name, including ones not yet priced in config.">
+      <input class="sp-admin-native-input" type="text" [(ngModel)]="f.modelName" [disabled]="!f.providerName"
+        placeholder="e.g. gemini-2.5-flash-lite" list="override-model-options" />
+      <datalist id="override-model-options">
+        @for (m of overrideModelOptions(f.providerName); track m) {
+        <option [value]="m">{{ m }}</option>
+        }
+      </datalist>
     </sp-admin-form-field>
 
     @if (f.modelName && baseConfigPricing(f.modelName); as base) {

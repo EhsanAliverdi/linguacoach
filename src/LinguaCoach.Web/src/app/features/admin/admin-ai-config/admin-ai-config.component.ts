@@ -217,13 +217,14 @@ export class AdminAiConfigComponent implements OnInit {
     return utcStr.slice(0, 10);
   }
 
-  onOverrideModelChange(f: OverrideFormState, modelName: string): void {
-    for (const group of this.pricingByProvider()) {
-      if (group.rows.some(r => r.modelName === modelName)) {
-        f.providerName = group.provider;
-        return;
-      }
-    }
+  overrideProviderOptions(): string[] {
+    return this.providers().map(p => p.catalog.providerName).sort((a, b) => a.localeCompare(b));
+  }
+
+  overrideModelOptions(providerName: string): string[] {
+    const credentialModels = this.modelsFor(providerName);
+    const configModels = this.pricing().filter(r => r.providerName === providerName).map(r => r.modelName);
+    return Array.from(new Set([...credentialModels, ...configModels])).sort((a, b) => a.localeCompare(b));
   }
 
   baseConfigPricing(modelName: string): { input: string; output: string } | null {
@@ -294,8 +295,12 @@ export class AdminAiConfigComponent implements OnInit {
   saveOverride(): void {
     const f = this.overrideForm();
     if (!f) return;
+    if (f.mode === 'create' && !f.providerName.trim()) {
+      this.overrideForm.set({ ...f, error: 'Select a provider.' });
+      return;
+    }
     if (!f.modelName.trim()) {
-      this.overrideForm.set({ ...f, error: 'Select a model.' });
+      this.overrideForm.set({ ...f, error: 'Enter a model name.' });
       return;
     }
     if (f.inputPricePer1KTokens === null || f.outputPricePer1KTokens === null ||
