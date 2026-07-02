@@ -311,14 +311,49 @@ public sealed class PlacementService :
     public async Task<PlacementResultDto> HandleAsync(GetPlacementResultQuery query, CancellationToken ct = default)
     {
         var profile = await GetProfileAsync(query.UserId, ct);
+        // Order by most recent: a student can have more than one PlacementAssessment
+        // row (e.g. an earlier abandoned/interrupted attempt plus a later completed
+        // one) and an unordered FirstOrDefaultAsync can non-deterministically return
+        // a stale row, incorrectly reporting a completed placement as "not completed".
         var assessment = await _db.PlacementAssessments
-            .FirstOrDefaultAsync(a => a.StudentProfileId == profile.Id, ct)
+            .Where(a => a.StudentProfileId == profile.Id)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync(ct)
             ?? throw new InvalidOperationException("Placement has not been started.");
 
-        if (assessment.Status != PlacementStatus.Completed || assessment.ResultJson is null)
+        if (assessment.Status != PlacementStatus.Completed)
+            throw new InvalidOperationException("Placement is not completed yet.");
+
+        // Adaptive assessments (Phase 13A/13B) complete via CompleteAdaptive() and
+        // never populate the legacy ResultJson field (that's only written by this
+        // service's own non-adaptive Complete() path) -- build the DTO from the
+        // adaptive PlacementSkillResults rows instead of throwing.
+        if (assessment.ResultJson is null && assessment.IsAdaptive)
+            return await BuildAdaptiveResultDtoAsync(assessment, ct);
+
+        if (assessment.ResultJson is null)
             throw new InvalidOperationException("Placement is not completed yet.");
 
         return await BuildResultDtoAsync(assessment, ct);
+    }
+
+    private async Task<PlacementResultDto> BuildAdaptiveResultDtoAsync(PlacementAssessment assessment, CancellationToken ct)
+    {
+        var skillResults = await _db.PlacementSkillResults
+            .Where(r => r.PlacementAssessmentId == assessment.Id)
+            .ToListAsync(ct);
+
+        return new PlacementResultDto(
+            EstimatedOverallLevel: assessment.OverallEstimatedLevel ?? "A2",
+            SkillLevels: skillResults
+                .Select(r => new PlacementSkillLevelDto(SkillLabels.GetValueOrDefault(r.Skill, r.Skill), r.EstimatedCefrLevel))
+                .ToList(),
+            Strengths: skillResults.Select(r => r.Strengths).Where(s => !string.IsNullOrWhiteSpace(s)).ToList()!,
+            Weaknesses: skillResults.Select(r => r.Weaknesses).Where(s => !string.IsNullOrWhiteSpace(s)).ToList()!,
+            RecommendedStartingCourse: null,
+            RecommendedSessionDuration: null,
+            PlacementNotes: assessment.ResultSummary,
+            IsCompleted: true);
     }
 
     // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

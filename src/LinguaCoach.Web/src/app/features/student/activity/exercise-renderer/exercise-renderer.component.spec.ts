@@ -311,5 +311,54 @@ describe('ExerciseRendererComponent â€” Phase 9 speaking/listening dispatch
     expect(el).toBeTruthy();
     expect(el.textContent).toContain('not available in the lesson player yet');
   });
+
+  // Phase 20G: a gap-fill activity generated via the pattern engine (module_stage_v1)
+  // nests its items under practiceContent.exerciseData, not at the top level of
+  // contentJson. gapFillContent previously only read the top-level `items` field,
+  // so every pattern-engine-generated gap-fill activity rendered with zero fillable
+  // blanks -- a real, live P0 found during the Phase 20E/20G pilot walkthrough
+  // (activity 1f297527-8d19-42f7-b0cb-c2be25e45163, pattern gap_fill_workplace_phrase).
+  const GAP_FILL_STAGED_CONTENT = {
+    schemaVersion: 'module_stage_v1',
+    learnContent: {},
+    practiceContent: {
+      instructions: 'Fill in each blank with the correct workplace word or phrase.',
+      exerciseData: {
+        items: [
+          { sentence: 'To ______ this point, sales were lower than expected.', answer: 'elaborate on', hint: null, distractors: ['focus on'] },
+          { sentence: '______, our priority is the client proposal.', answer: 'In essence', hint: null, distractors: ['Briefly'] },
+        ],
+      },
+    },
+    feedbackPlan: {},
+  };
+
+  it('gapFillContent extracts items from staged exerciseData when top-level items are absent', async () => {
+    await setup('gapFill', GAP_FILL_STAGED_CONTENT);
+    const content = component.gapFillContent;
+    expect(content.items.length).toBe(2);
+    expect(content.items[0].acceptedAnswers).toContain('elaborate on');
+    expect(content.items[1].acceptedAnswers).toContain('In essence');
+    expect(content.instructions).toBe('Fill in each blank with the correct workplace word or phrase.');
+  });
+
+  it('dispatches gapFill renderer with fillable inputs for staged content', async () => {
+    await setup('gapFill', GAP_FILL_STAGED_CONTENT);
+    const el = fixture.nativeElement.querySelector('app-gap-fill');
+    expect(el).toBeTruthy();
+    const inputs = fixture.nativeElement.querySelectorAll('input');
+    expect(inputs.length).toBeGreaterThan(0);
+  });
+
+  it('gapFillContent still prefers top-level items when present (legacy content)', async () => {
+    await setup('gapFill', {
+      items: [{ sentence: 'Legacy ______ sentence.', answer: 'test' }],
+      schemaVersion: 'module_stage_v1',
+      practiceContent: { exerciseData: { items: [{ sentence: 'Should not be used.', answer: 'wrong' }] } },
+    });
+    const content = component.gapFillContent;
+    expect(content.items.length).toBe(1);
+    expect(content.items[0].acceptedAnswers).toContain('test');
+  });
 });
 

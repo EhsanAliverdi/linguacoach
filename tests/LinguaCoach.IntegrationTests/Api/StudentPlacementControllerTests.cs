@@ -280,6 +280,36 @@ public sealed class StudentPlacementControllerTests : IClassFixture<PlacementTes
     }
 
     [Fact]
+    public async Task GetResult_AfterAdaptiveCompletion_ReturnsOkNotBadRequest()
+    {
+        // Phase 20G regression: GetPlacementResultAsync required the legacy
+        // ResultJson field, which the adaptive completion path (this test's
+        // /api/student/placement/complete) never populates -- only the
+        // non-adaptive PlacementService.Complete() path sets ResultJson. This
+        // caused a real live 400 ("Placement is not completed yet.") for every
+        // student who placed via the adaptive flow, which is the only placement
+        // flow reachable from the current student UI.
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"sp_result_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var startResp = await client.PostAsync("/api/student/placement/start", null);
+        startResp.EnsureSuccessStatusCode();
+        var startBody = await startResp.Content.ReadFromJsonAsync<JsonElement>();
+        var assessmentId = startBody.GetProperty("assessmentId").GetString()!;
+
+        var completeResp = await client.PostAsJsonAsync("/api/student/placement/complete",
+            new { assessmentId = Guid.Parse(assessmentId) });
+        completeResp.EnsureSuccessStatusCode();
+
+        var resultResp = await client.GetAsync("/api/placement/result");
+
+        Assert.Equal(HttpStatusCode.OK, resultResp.StatusCode);
+        var result = await resultResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(result.GetProperty("isCompleted").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(result.GetProperty("estimatedOverallLevel").GetString()));
+    }
+
+    [Fact]
     public async Task Complete_OtherStudentsAssessment_Returns404()
     {
         var (tokenA, _) = await _factory.CreateOnboardedStudentAsync($"sp_comp_a_{Guid.NewGuid():N}@test.com");

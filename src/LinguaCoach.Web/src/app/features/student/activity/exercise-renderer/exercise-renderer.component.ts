@@ -199,11 +199,21 @@ export class ExerciseRendererComponent {
 
   get gapFillContent(): GapFillContent {
     const raw = this.raw;
-    const wordBank = this.stringArray(raw['wordBank']) ?? this.collectWordBankFromItems(raw['items']);
+    // module_stage_v1 activities (pattern-generated content) nest their items under
+    // practiceContent.exerciseData rather than at the top level -- fall back to that
+    // via stagedExerciseData, matching freeTextContent. Without this, a gap-fill
+    // activity whose content came from the pattern engine renders with zero items
+    // (an unfillable, uncompletable exercise) even though the AI-generated content
+    // is present and correct.
+    const ed = this.stagedExerciseData;
+    const itemsSource = this.arrayValue(raw['items']).length ? raw['items'] : ed['items'];
+    const wordBank = this.stringArray(raw['wordBank']) ?? this.collectWordBankFromItems(itemsSource);
     return {
       learningGoal: this.stringValue(raw['learningGoal']) ?? this.activity.learningGoal,
-      instructions: this.stringValue(raw['instructions']) ?? this.activity.instructions,
-      items: this.mapGapItems(raw['items'], raw['passage']),
+      instructions: this.stringValue(raw['instructions'])
+        ?? this.stringValue(this.objectValue(raw['practiceContent'])?.['instructions'])
+        ?? this.activity.instructions,
+      items: this.mapGapItems(itemsSource, raw['passage']),
       wordBank,
     };
   }
