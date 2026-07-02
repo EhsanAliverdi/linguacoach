@@ -154,23 +154,30 @@ All of the following must be true:
 - [ ] Admin can see the readiness verdict and repair history for this
       student.
 
-## 8. Known limitations (as of Phase 20F, 2026-07-02)
+## 8. Known limitations (as of Phase 20G, 2026-07-02)
 
 - **Fixed and confirmed live in Phase 20F:**
   `POST /api/student/placement/start` and the readiness audit both 500'd
-  in production for every student. Root cause: 6 EF Core migrations had no
-  `.Designer.cs` file and were silently invisible to
-  `dotnet ef database update`/`Database.Migrate()` — not a failure, just
-  never applied, on every environment, forever. Fixed by restoring the
-  missing Designer.cs files and making the affected migrations'
-  idempotent. Confirmed directly against `https://speakpath.app`:
-  readiness audit → 200, placement start → 201, the placement UI rendered
-  and answered a real question live. See
+  in production for every student — root cause was 6 EF Core migrations
+  silently invisible to `Database.Migrate()`. See
   `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
-- The **Pilot readiness card and Speaking Submissions / Writing
-  Evaluations sub-widgets on Admin Student Detail** were casualties of the
-  same root cause — the readiness card is confirmed working; re-verify the
-  other two sub-widgets the next time you're on Admin Student Detail.
+- **Fixed and confirmed live in Phase 20G:** gap-fill activities rendered
+  with zero fillable blanks; `/api/placement/result` 400'd on every
+  dashboard/profile load after placement; `/journey` always showed
+  "complete your placement" regardless of real state. See
+  `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
+- **Open, P0, not yet fixed:** the readiness audit 500s again, but only
+  for the pilot student's specific data (confirmed isolated — a different,
+  more-advanced student returns 200 on the same endpoint; the pilot
+  student's individual sub-endpoints — progress-summary, placement/latest,
+  writing-evaluations, readiness-pool — all return 200, only the combined
+  audit fails). Root cause not identified; needs production DB/log access.
+  Tracked as `TODO-20G-3`. **Does not block the student experience** — the
+  student-facing golden path is fully confirmed working end-to-end.
+- **Open, P1, not fixed:** Practice Gym's "Suggested for you" shows the
+  same suggestion 6 times for the pilot student — confirmed real duplicate
+  backend readiness-pool data (one objective, no diversification), not a
+  rendering bug. Tracked as `TODO-20G-1`.
 - `refill_practice_gym_if_empty`, `backfill_missing_activity_metadata`,
   `regenerate_missing_tts_for_listening_if_supported`,
   `normalize_student_lifecycle_if_safe` are not implemented yet — a
@@ -197,13 +204,13 @@ All of the following must be true:
 
 ## 10. Final checklist: ready to invite one student?
 
-As of 2026-07-02 (Phase 20F): **The placement/readiness P0 is fixed and
-confirmed live** — this specific blocker no longer stands in the way.
-`pilot.student.20e@speakpath.app` (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`)
-now has an in-progress placement assessment started during the Phase 20F
-live validation. Before inviting a real student, complete a fresh run of
-this runbook's steps 2–7 for that student (or a new one) — through
-placement completion, at least one activity, feedback, Practice Gym,
-Journey, and Progress — since Phase 20E was blocked before reaching any of
-those and they remain unverified. Only mark this checklist complete when
-every box in section 7 is checked.
+As of 2026-07-02 (Phase 20G): **Conditionally yes, with one open
+admin-tool caveat.** Every box in section 7 has now been checked live
+against production for `pilot.student.20e@speakpath.app`: placement
+start/complete, dashboard, Today, one full activity (submitted and
+scored), feedback, Practice Gym, Journey, and Progress all work. The one
+open item is `TODO-20G-3` — the admin readiness audit 500s for this
+specific student's data (confirmed not to affect any other student or the
+student-facing experience). Recommend proceeding with a real student pilot
+invite while tracking `TODO-20G-3` for resolution before relying on the
+readiness tool for this particular student.

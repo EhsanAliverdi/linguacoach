@@ -6,17 +6,17 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 20F complete)**
+**Accurate as of: 2026-07-02 (Phase 20G complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
-**✅ Production placement/readiness P0 fixed and confirmed live (2026-07-02):** Phase 20F found and fixed the root cause of the Phase 20E P0 (`POST /api/student/placement/start` 500ing in production) — 6 EF Core migrations were silently invisible to `dotnet ef database update` because they had no `.Designer.cs` file. Deployed via CI/CD and directly confirmed against `https://speakpath.app`: readiness audit returns 200, placement start returns 201, the placement UI is interactive live. The Phase 20E pilot student can now resume the walkthrough.
+**✅ Live student golden path confirmed working end-to-end (2026-07-02):** Phase 20G completed the Phase 20E/20F pilot walkthrough against production: the pilot student completed placement (CEFR B2), got a real generated lesson, completed an activity with scored feedback, and Dashboard/Practice Gym/Journey/Progress/Profile all load with real data. Three real live bugs were found and fixed in-session (gap-fill activity unfillable, placement-result 400, Journey always-empty). **One admin-only regression remains open:** the readiness audit 500s for this specific student's data (`TODO-20G-3`) — isolated, not systemic, does not block the student experience.
 
 ---
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20F — Production Placement/Readiness P0 Unblocker (2026-07-02) — root cause fixed and confirmed live in production. Resolves the Phase 20E P0 (`TODO-20E-1`).
+**Latest phase completed:** Phase 20G — Live Student Pilot Golden Path Completion (2026-07-02) — student-facing golden path confirmed working end-to-end live in production. One admin-tool regression open (`TODO-20G-3`).
 
 **Branch:** main
 

@@ -613,3 +613,28 @@ progress is always computed live from the ledger.
 **What:** Understand and prevent the process gap that allowed six migration files to be committed without their required Designer.cs, and three separate migrations to independently reimplement the same table under different names, without any of it being caught for what looks like several days to weeks of wall-clock phase history.
 **Why:** This phase fixed the symptom safely and idempotently; it did not change how migrations get authored/reviewed. `docs/roadmap/road-map.md` §20 states "Migrations are hand-authored, named T1–T66 in sequence" — that invariant had already broken down before this incident.
 **Deferred from:** Phase 20F, 2026-07-02 (explicitly out of scope for a P0 unblocker phase).
+
+---
+
+## Live Student Pilot Golden Path Completion (Phase 20G)
+
+### TODO-20G-1 — Practice Gym "Suggested for you" shows 6 identical duplicate cards
+**What:** The pilot student's Practice Gym "Suggested for you" section shows the same suggestion ("Giving Structured Explanations," speaking, B2) 6 times as separate cards. Confirmed via raw API inspection (`GET /api/practice-gym/suggestions`) that these are 6 genuinely distinct `StudentActivityReadinessItem` rows (distinct `readinessItemId`/`linkedLearningActivityId`), all generated for the same curriculum objective (`b2.speaking.structured_explanations`) with no diversification across the plan's other 4 objectives.
+**Why:** Confusing/broken-looking student experience even though each card is individually functional — reads as a rendering bug but is real backend readiness-pool data.
+**Context:** `PracticeGymSuggestionService` (or whichever service produces the readiness-pool replenishment for Practice Gym) needs to either diversify across objectives when selecting "Suggested for you," or the replenishment job needs to stop generating >1 ready item per objective at a time. Not investigated in depth — root cause and correct fix require understanding the intended replenishment/selection design.
+**Context doc:** `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
+**Deferred from:** Phase 20G, 2026-07-02.
+
+### TODO-20G-2 — Progress page "Recent activity" timeline didn't show a just-completed activity
+**What:** After completing a vocabulary gap-fill activity live, the Progress page's Recent Activity timeline still only showed "Placement assessment completed" — the activity completion event wasn't visible.
+**Why:** Minor discoverability gap; not investigated (time-boxed out of this phase). Could be a query window, event-type filter, or timing/caching issue in `StudentProgressSummaryHandler.BuildRecentActivityAsync`.
+**Context:** `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
+**Deferred from:** Phase 20G, 2026-07-02.
+
+### TODO-20G-3 — P0: readiness audit 500s again for the pilot student specifically (URGENT, needs prod DB/log access)
+**What:** After the pilot student completed placement and one activity, `GET /api/admin/students/{id}/readiness` started returning 500 (`ExceptionType=PostgresException`) consistently (5/5 sequential and 5/5 parallel calls all failed). **Confirmed isolated to this one student** — the same endpoint returns 200 for a different, even-more-advanced student (`cfcca014-5950-4392-945b-dc668ceb72e1`). Confirmed the individual pieces work: `progress-summary`, `placement/latest`, `writing-evaluations`, `readiness-pool`, `readiness-pool/health` all independently return 200 for the pilot student — only the combined readiness audit fails.
+**Why this is different from `TODO-20E-1`/Phase 20F:** that was a systemic migration-discovery bug affecting every student; this is isolated to one student's specific data combination (most likely correlated with the `TODO-20G-1` duplicate-suggestion data — 49 Practice Gym readiness items for one objective, an unusual `speaking` objective mapped to a `ListeningComprehension`-typed activity via pattern `listening_multiple_choice_single`).
+**Working hypothesis, not confirmed:** one of `StudentReadinessAuditService`'s unwrapped (no try/catch) queries — `AddActivityContentChecksAsync`, `AddAudioTtsChecksAsync`, or `AddFeedbackAndReviewScaffoldChecksAsync` — throws on this specific data shape.
+**What's needed:** production server log or DB console access to read the actual Postgres error text (correlation IDs logged per request, e.g. `3011528666f4`). A local reproduction attempt (driving a test student through placement via direct API calls against the repo's Docker sandbox) did not reproduce the bug at the placement-only stage; reproducing the full activity-completion + duplicate-Practice-Gym-item state locally was not completed within this phase's time budget.
+**Context:** `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
+**Deferred from:** Phase 20G, 2026-07-02, same escalation pattern as `TODO-20E-1` — production DB/log access was not available in this session.

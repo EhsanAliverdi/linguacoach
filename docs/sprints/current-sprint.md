@@ -4298,3 +4298,62 @@ The Phase 20E pilot student can resume the walkthrough from placement
 onward.
 
 Review: `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
+
+---
+
+## Phase 20G — Live Student Pilot Golden Path Completion (2026-07-02)
+
+**Goal:** Resume the live pilot walkthrough and complete the real student
+golden path — placement through activity completion, feedback, Practice
+Gym, Journey, Progress, and Profile — against production.
+
+**Delivered — all live, against `https://speakpath.app`:**
+
+- Completed the pilot student's placement assessment in full (19 adaptive
+  items) → CEFR **B2**, real Learning Plan generated (5 objectives).
+- **P0 found + fixed live:** gap-fill activities rendered with zero
+  fillable blanks — `ExerciseRendererComponent.gapFillContent` never
+  unwrapped `practiceContent.exerciseData` for pattern-engine content.
+  Fixed, deployed, reloaded live — real content + word bank rendered.
+- **Completed the activity end-to-end**: submitted answers, got scored
+  feedback (4/6, 67%) with per-item corrections. Dashboard streak and
+  plan progress updated correctly afterward.
+- **P0 found + fixed live:** `/api/placement/result` 400'd on every
+  dashboard/profile load after placement completion — the adaptive
+  completion path never populated the legacy `ResultJson` field the
+  handler required. Fixed with an adaptive-aware DTO builder + assessment
+  lookup ordering fix.
+- **P0 found + fixed live:** `/journey` always showed "complete your
+  placement" regardless of real state — the controller passed the JWT
+  user ID to a method expecting a StudentProfile ID (different GUIDs).
+  Added `GetJourneyForUserAsync` to resolve correctly.
+- Validated live: Dashboard, Today, Practice Gym, Journey, Progress,
+  Profile, and 7 admin routes (dashboard, students list, student detail,
+  lessons, feature gates, AI operations, diagnostics) — all load with
+  real data, no crashes.
+- **P0 found, documented, NOT fixed:** readiness audit 500s again for the
+  pilot student specifically (isolated — confirmed a different student
+  returns 200) after placement + activity completion. Root cause not
+  identified; needs production DB/log access. `TODO-20G-3`.
+- **P1 found, documented:** Practice Gym shows the same suggestion 6
+  times (real duplicate backend data, one objective, no diversification).
+  `TODO-20G-1`.
+
+**What is NOT changed:**
+
+- No AI scoring, CEFR update, objective completion, Learning Plan
+  regeneration, or review scaffold behavior changed.
+- No runtime setting changed in production.
+- No attempts/submissions/evaluations deleted anywhere.
+
+**Test coverage:** 1,750 backend unit (unchanged), 1,380 backend
+integration (+2 new regression tests), 5/5 architecture tests (unchanged).
+1,551/1,671 Angular unit tests pass (+3 new; same 120 pre-existing
+failures — 0 new regressions). Production build clean.
+
+**Final verdict:** Ready for one controlled student pilot — conditionally
+yes. Every student-facing route and the full activity-completion loop
+work live. One admin-only regression (`TODO-20G-3`) remains open and does
+not block the student experience.
+
+Review: `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
