@@ -4229,3 +4229,67 @@ intended golden-path flow cannot complete against production until
 `TODO-20E-1`.
 
 Review: `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`.
+
+---
+
+## Phase 20F — Production Placement/Readiness P0 Unblocker (2026-07-02)
+
+**Goal:** Diagnose and fix the production `PostgresException` blocking
+placement start, the Phase 20D readiness audit, and two background jobs
+(`TODO-20E-1`), without any new features, UI redesign, or destructive
+production data changes.
+
+**Root cause:** 6 EF Core migration classes (`T62_AdaptivePlacementEngine`,
+`T63_PlacementResponseSubmission`, `T65_SpeakingEvaluationFoundation`,
+`T66_SpeakingEvaluationAppliedSignal`, `T67_WritingEvaluationTables`,
+`T68_WritingEvaluationAppliedSignal`) had no `.Designer.cs` companion
+file — the file carrying the `[Migration("id")]` attribute EF Core's
+discovery relies on. Without it, a migration is silently invisible to
+`dotnet ef database update`/`Database.Migrate()` on every environment,
+forever — not a failure, just never applied. Compounded by 3 pairs of
+migrations independently creating the same table, latent because the
+"invisible" half of each pair had never run anywhere.
+
+**Delivered:**
+
+- Added the 6 missing `.Designer.cs` files.
+- Made 5 affected migrations' `Up()` idempotent (`ADD COLUMN`/
+  `CREATE TABLE`/`CREATE INDEX ... IF NOT EXISTS`) so whichever migration
+  of a duplicate pair runs first doesn't conflict with the other, in any
+  environment's specific migration history.
+- New regression test `tests/LinguaCoach.ArchitectureTests/MigrationDiscoveryTests.cs`
+  — reflects over every `Migration`-derived class and asserts each has a
+  `[Migration]` attribute. Caught a real bug on its first run
+  (`T68_WritingEvaluationAppliedSignal`, missed by manual review).
+- Validated against a from-scratch fresh local Postgres (all 64
+  migrations apply, 0 errors) and a local sandbox independently drifted
+  to match production's exact symptom pattern (previously-invisible
+  migrations now apply; `POST /api/student/placement/start` → 201;
+  `GET /api/admin/students/{id}/readiness` → 200; both previously-failing
+  background jobs now complete with `Failed=0`).
+- No production DB/SSH/log access was available in this session — the
+  fix was pushed via the normal `main` → CI/CD deploy pipeline, which runs
+  `Database.Migrate()` against the real production database automatically.
+  A live confirmation check is required post-deploy (`TODO-20F-1`).
+
+**What is NOT changed:**
+
+- No AI scoring, CEFR update, objective-completion, or Learning Plan
+  regeneration behavior changed.
+- No application/business-logic file changed — only migration files and a
+  new regression test.
+- No attempts/submissions/evaluations deleted or modified anywhere.
+- No `DROP` or destructive SQL anywhere in this fix; every change is
+  additive-and-idempotent by construction.
+
+**Test coverage:** 1,750 backend unit (unchanged), 1,378 backend
+integration (unchanged — SQLite `EnsureCreated()`-based tests don't
+exercise migration files, which is exactly why this bug was invisible to
+CI), 5/5 architecture tests (+2 new). No frontend code changed this phase.
+
+**Final verdict:** Root cause fixed with high confidence, validated
+locally against both a fresh database and a database that independently
+reproduced production's exact symptom. Not yet confirmed live against
+production — see `TODO-20F-1`.
+
+Review: `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.

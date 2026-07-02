@@ -579,14 +579,9 @@ progress is always computed live from the ledger.
 
 ## Controlled Student Pilot Smoke QA (Phase 20E)
 
-### TODO-20E-1 — P0: production `PostgresException` blocking placement start and the readiness audit (URGENT, needs prod DB/log access)
-**What:** `POST /api/student/placement/start`, `GET /api/admin/students/{id}/readiness`, `GET /api/admin/students/{id}/writing-evaluations`, `GET /api/admin/students/{id}/placement/latest`, `GET /api/placement/status`, and `GET /api/student/placement/current` all return HTTP 500 with `ExceptionType=PostgresException` in production, for both a brand-new pilot student and a pre-existing student. Two background jobs (`writing-evaluation`, `writing-signal-application`) have also been throwing `PostgresException` roughly every 5 minutes for hours.
-**Why this blocks everything:** a student cannot start placement, so cannot reach `CourseReady`, so the entire rest of the pilot flow (Today lesson, activity completion, feedback, Practice Gym with real content) is unreachable. This is the #1 reason Phase 20E's final verdict is "not ready for a controlled student pilot."
-**Why CI didn't catch it:** integration tests run against SQLite in-memory (`CLAUDE.md`/`AGENTS.md` policy), never real PostgreSQL — a Postgres-specific migration/schema issue would not reproduce there.
-**Circumstantial lead, not a confirmed cause:** `src/LinguaCoach.Persistence/Migrations` has migrations whose T-number and filename timestamp are out of the documented "T1–T66 in sequence" order (e.g. `T59_SpeakingEvaluationTables` timestamped after T63/T65; `T70_AiPromptContentHash` timestamped after T71). EF Core applies by filename timestamp, not T-number, so actual apply order may not match the intended logical order.
-**What's needed:** an operator with production server log or DB console access to read the actual Postgres error text for a fresh failing request (correlation IDs are logged per-request, e.g. `89af27f68e52`) and either run a pending migration or fix the specific schema mismatch.
-**Context:** `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md` (P0-1), `docs/pilot/student-pilot-runbook.md` ("Known limitations").
-**Deferred from:** Phase 20E, 2026-07-02, by explicit user decision (AskUserQuestion: "skip root-causing this now; just document it as a blocking finding") — production DB access was not available in that session.
+### TODO-20E-1 — P0: production `PostgresException` blocking placement start and the readiness audit
+**Status: FIXED in Phase 20F (2026-07-02), pending one live confirmation after deploy.** Root cause: 6 EF Core migration classes (`T62_AdaptivePlacementEngine`, `T63_PlacementResponseSubmission`, `T65_SpeakingEvaluationFoundation`, `T66_SpeakingEvaluationAppliedSignal`, `T67_WritingEvaluationTables`, `T68_WritingEvaluationAppliedSignal`) had no `.Designer.cs` file, so EF Core's migration discovery (which reads the `[Migration("id")]` attribute the code generator normally places there) never saw them — not a failure, just silent invisibility, on every environment, always. Compounded by 3 pairs of migrations independently creating the same table, latent because the "invisible" side of each pair had never run anywhere. Fixed by adding the 6 missing Designer.cs files and making all 5 affected migrations' `Up()` idempotent (`ADD COLUMN`/`CREATE TABLE`/`CREATE INDEX ... IF NOT EXISTS`). Verified against a from-scratch fresh database (all 64 migrations apply, 0 errors) and against a local sandbox independently drifted to match production's exact symptom (all previously-invisible migrations now apply; `POST /api/student/placement/start` → 201; `GET /api/admin/students/{id}/readiness` → 200; background jobs stop throwing). See `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
+**Remaining:** production itself was not directly accessed in Phase 20F (no DB/SSH/log access available); the fix was pushed via the normal `main` → CI/CD deploy pipeline, which runs `Database.Migrate()` on the real production database automatically on next API startup. **A live check against `https://speakpath.app` after deployment completes is required** to close this out — see `TODO-20F-1`.
 
 ### TODO-20E-2 — Wire `repairAllSafeStudentReadiness` ("run all") to a button in Admin Student Detail
 **What:** `AdminApiService.repairAllSafeStudentReadiness` (→ `POST /api/admin/students/{id}/readiness/repair-safe-all`) exists but is not called from any button in `admin-student-detail.component.ts`. `run_all_safe_repairs` is also never returned as a `RecommendedActionKey` by any individual check, so today an admin must run the four safe repairs one at a time.
@@ -598,3 +593,24 @@ progress is always computed live from the ledger.
 **What:** `grep -rn 'â€' src/LinguaCoach.Web/src` still finds the Phase 15H-class encoding bug in code comments and Jasmine `describe`/`it` titles (never rendered to a user). Four user-visible instances were fixed in Phase 20E; these remaining ones are cosmetic-only and non-functional.
 **Why deferred:** Pure churn with no user-facing benefit; not worth the diff noise outside a dedicated cleanup pass.
 **Deferred from:** Phase 20E, 2026-07-02.
+
+---
+
+## Production Placement/Readiness P0 Unblocker (Phase 20F)
+
+### TODO-20F-1 — Confirm the migration fix live against production
+**What:** After this commit deploys via the normal CI/CD pipeline, run one live check against `https://speakpath.app`: `GET /api/admin/students/{id}/readiness` for `pilot.student.20e@speakpath.app` (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`) should return 200 with structured checks (not 500), and `POST /api/student/placement/start` for that student should return 201.
+**Why:** Phase 20F's fix was validated against a local Docker sandbox (real Postgres, rebuilt from current source) that independently reproduced production's exact symptom pattern — not against production itself, since no DB/SSH/log access was available in that session.
+**Context:** `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
+**Deferred from:** Phase 20F, 2026-07-02.
+
+### TODO-20F-2 — Add a real-Postgres migration-application smoke test
+**What:** Add a CI-run test (e.g. via Testcontainers) that applies every migration in `src/LinguaCoach.Persistence/Migrations` from an empty PostgreSQL database and asserts success, distinct from the existing SQLite `EnsureCreated()`-based integration tests (which never execute migration files at all).
+**Why:** The Phase 20F root cause (6 migrations silently invisible to EF Core) went undetected by the full existing test suite because integration tests bypass real migrations entirely. The new `MigrationDiscoveryTests` (Phase 20F) catches the "missing Designer.cs" class of bug via reflection, but does not verify the migration SQL actually executes cleanly against real Postgres, including the three duplicate-table collisions this phase also found and fixed.
+**Context:** `tests/LinguaCoach.ArchitectureTests/MigrationDiscoveryTests.cs`, `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
+**Deferred from:** Phase 20F engineering review, 2026-07-02.
+
+### TODO-20F-3 — Retro: why did 6 migrations ship without Designer.cs and 3 pairs duplicate the same table?
+**What:** Understand and prevent the process gap that allowed six migration files to be committed without their required Designer.cs, and three separate migrations to independently reimplement the same table under different names, without any of it being caught for what looks like several days to weeks of wall-clock phase history.
+**Why:** This phase fixed the symptom safely and idempotently; it did not change how migrations get authored/reviewed. `docs/roadmap/road-map.md` §20 states "Migrations are hand-authored, named T1–T66 in sequence" — that invariant had already broken down before this incident.
+**Deferred from:** Phase 20F, 2026-07-02 (explicitly out of scope for a P0 unblocker phase).

@@ -11,57 +11,50 @@ namespace LinguaCoach.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "speaking_evaluations",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    activity_attempt_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    student_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    learning_activity_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    status = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    provider_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    model_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    started_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    completed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    failed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    failure_reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    transcript = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
-                    overall_score = table.Column<double>(type: "double precision", nullable: true),
-                    fluency_score = table.Column<double>(type: "double precision", nullable: true),
-                    pronunciation_score = table.Column<double>(type: "double precision", nullable: true),
-                    completeness_score = table.Column<double>(type: "double precision", nullable: true),
-                    relevance_score = table.Column<double>(type: "double precision", nullable: true),
-                    feedback_text = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    suggested_improvement = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    retry_count = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_speaking_evaluations", x => x.id);
-                });
+            // Guarded with IF NOT EXISTS: this migration's table (speaking_evaluations)
+            // is also created by T59_SpeakingEvaluationTables. Because this migration
+            // previously had no .Designer.cs file, EF Core never discovered or applied
+            // it on any environment, so which of the two migrations "wins" the race
+            // depends on filename-timestamp order relative to whichever one an
+            // environment applies first. Making both idempotent makes the outcome safe
+            // regardless of order. See
+            // docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md.
+            migrationBuilder.Sql(@"
+CREATE TABLE IF NOT EXISTS speaking_evaluations (
+    id uuid NOT NULL,
+    activity_attempt_id uuid NOT NULL,
+    student_profile_id uuid NOT NULL,
+    learning_activity_id uuid NOT NULL,
+    status integer NOT NULL DEFAULT 0,
+    provider_name character varying(100),
+    model_name character varying(100),
+    started_at_utc timestamp with time zone,
+    completed_at_utc timestamp with time zone,
+    failed_at_utc timestamp with time zone,
+    failure_reason character varying(500),
+    transcript character varying(4000),
+    overall_score double precision,
+    fluency_score double precision,
+    pronunciation_score double precision,
+    completeness_score double precision,
+    relevance_score double precision,
+    feedback_text character varying(2000),
+    suggested_improvement character varying(500),
+    retry_count integer NOT NULL DEFAULT 0,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT ""PK_speaking_evaluations"" PRIMARY KEY (id)
+);
 
-            migrationBuilder.CreateIndex(
-                name: "ix_speaking_evaluations_attempt",
-                table: "speaking_evaluations",
-                column: "activity_attempt_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_speaking_evaluations_student",
-                table: "speaking_evaluations",
-                column: "student_profile_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_speaking_evaluations_status",
-                table: "speaking_evaluations",
-                column: "status");
+CREATE INDEX IF NOT EXISTS ix_speaking_evaluations_attempt ON speaking_evaluations (activity_attempt_id);
+CREATE INDEX IF NOT EXISTS ix_speaking_evaluations_student ON speaking_evaluations (student_profile_id);
+CREATE INDEX IF NOT EXISTS ix_speaking_evaluations_status ON speaking_evaluations (status);
+");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "speaking_evaluations");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS speaking_evaluations;");
         }
     }
 }

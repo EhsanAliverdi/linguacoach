@@ -30,12 +30,26 @@ namespace LinguaCoach.Persistence.Migrations
                 type: "double precision",
                 nullable: true);
 
-            migrationBuilder.AddColumn<bool>(
-                name: "is_provisional",
-                table: "placement_assessments",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
+            // is_provisional and is_adaptive are guarded rather than added with a plain
+            // AddColumn: this migration's filename timestamp (20260627120000) sorts AFTER
+            // T64_PostPlacementModelSync (20260627093047), so on every environment that
+            // migrates this repo from scratch, T64 runs BEFORE this migration and already
+            // adds both columns defensively. A plain AddColumn here would fail with
+            // "column already exists" and abort this entire migration's transaction,
+            // silently halting every later migration (T63 onward) from ever applying.
+            // See docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md.
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'placement_assessments' AND column_name = 'is_provisional'
+    ) THEN
+        ALTER TABLE placement_assessments ADD COLUMN is_provisional boolean NOT NULL DEFAULT false;
+        ALTER TABLE placement_assessments ALTER COLUMN is_provisional DROP DEFAULT;
+    END IF;
+END $$;
+");
 
             migrationBuilder.AddColumn<string>(
                 name: "result_summary",
@@ -51,12 +65,18 @@ namespace LinguaCoach.Persistence.Migrations
                 maxLength: 50,
                 nullable: true);
 
-            migrationBuilder.AddColumn<bool>(
-                name: "is_adaptive",
-                table: "placement_assessments",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'placement_assessments' AND column_name = 'is_adaptive'
+    ) THEN
+        ALTER TABLE placement_assessments ADD COLUMN is_adaptive boolean NOT NULL DEFAULT false;
+        ALTER TABLE placement_assessments ALTER COLUMN is_adaptive DROP DEFAULT;
+    END IF;
+END $$;
+");
 
             // Create placement_assessment_items table
             migrationBuilder.CreateTable(

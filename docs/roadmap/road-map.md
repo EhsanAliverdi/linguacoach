@@ -6,17 +6,17 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 20E complete)**
+**Accurate as of: 2026-07-02 (Phase 20F complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
-**⚠ Production is currently broken for new students:** `POST /api/student/placement/start` returns 500 in production (Phase 20E finding, `TODO-20E-1` in `TODOS.md`). A student cannot get past placement today. Fix this before any pilot invite or further student-facing phase work.
+**⚠ Production placement fix shipped but not yet live-confirmed:** Phase 20F found and fixed the root cause of the Phase 20E P0 (`POST /api/student/placement/start` 500ing in production) — 6 EF Core migrations were silently invisible to `dotnet ef database update` because they had no `.Designer.cs` file. The fix was validated locally (fresh DB + a database that independently reproduced production's exact symptom) but not directly against `https://speakpath.app` (no prod DB/SSH/log access was available). It ships via the normal `main` → CI/CD deploy pipeline. **`TODO-20F-1` (live confirmation check) must pass before treating the pilot as unblocked.**
 
 ---
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20E — Controlled Student Pilot Smoke QA (2026-07-02) — verdict: **not ready for a pilot**, see `TODO-20E-1`.
+**Latest phase completed:** Phase 20F — Production Placement/Readiness P0 Unblocker (2026-07-02) — root cause fixed, pending live confirmation (`TODO-20F-1`). Resolves the Phase 20E P0 (`TODO-20E-1`).
 
 **Branch:** main
 

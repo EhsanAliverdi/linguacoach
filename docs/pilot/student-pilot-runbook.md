@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (Phase 20E)
+lastUpdated: 2026-07-02 (Phase 20F)
 owner: product
 ---
 
@@ -154,26 +154,27 @@ All of the following must be true:
 - [ ] Admin can see the readiness verdict and repair history for this
       student.
 
-## 8. Known limitations (as of Phase 20E, 2026-07-02)
+## 8. Known limitations (as of Phase 20F, 2026-07-02)
 
-- **`POST /api/student/placement/start` returns 500 in production right
-  now.** A brand-new student cannot start placement. This blocks the
-  entire pilot flow past onboarding. **Do not invite a real student until
-  this is fixed** — see
-  `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`
-  for the full diagnostic trail (widespread `PostgresException` across
-  `readiness`, `writing-evaluations`, `placement/latest`,
-  `placement/status`, `placement/current`, `placement/start`, plus two
-  failing background jobs). Root cause was not identified in Phase 20E
-  (no production DB/log access was available); it needs an operator with
-  that access.
-- The **Pilot readiness card itself is a casualty of the same issue** —
-  it currently shows "Pilot readiness unavailable" for every student
-  checked in Phase 20E, both new and pre-existing. Until that's fixed,
-  this runbook's steps 2–4 cannot actually be exercised; fall back to the
-  manual walkthrough in step 5.
-- Ten and eleven Speaking Submissions / Writing Evaluations sub-widgets on
-  Admin Student Detail also show "unavailable" for the same reason.
+- **Fixed in Phase 20F, pending live confirmation (`TODO-20F-1`):**
+  `POST /api/student/placement/start` and the readiness audit both 500'd
+  in production for every student. Root cause: 6 EF Core migrations had no
+  `.Designer.cs` file and were silently invisible to
+  `dotnet ef database update`/`Database.Migrate()` — not a failure, just
+  never applied, on every environment, forever. Fixed by restoring the
+  missing Designer.cs files and making the affected migrations'
+  idempotent. Validated locally against a fresh database and a database
+  independently drifted to match production's exact symptom; **not yet
+  directly confirmed against `https://speakpath.app`** (no production
+  DB/SSH/log access was available in that session — the fix ships via the
+  normal `main` → CI/CD deploy pipeline). See
+  `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
+  **Until `TODO-20F-1` is confirmed, treat this runbook the same as before:
+  do not invite a real student.**
+- The **Pilot readiness card and Speaking Submissions / Writing
+  Evaluations sub-widgets on Admin Student Detail** were casualties of the
+  same root cause and should now also work once the fix is live — verify
+  this alongside `TODO-20F-1`.
 - `refill_practice_gym_if_empty`, `backfill_missing_activity_metadata`,
   `regenerate_missing_tts_for_listening_if_supported`,
   `normalize_student_lifecycle_if_safe` are not implemented yet — a
@@ -200,10 +201,11 @@ All of the following must be true:
 
 ## 10. Final checklist: ready to invite one student?
 
-As of 2026-07-02 (Phase 20E): **No.** Blocked on the production placement
-issue described in "Known limitations." Re-run this runbook's steps 2–7
-against `pilot.student.20e@speakpath.app`
+As of 2026-07-02 (Phase 20F): **Not yet — pending live confirmation.** The
+production placement/readiness fix (see "Known limitations") has been
+pushed but not directly confirmed against `https://speakpath.app`. Once
+`TODO-20F-1` passes, re-run this runbook's steps 2–7 against
+`pilot.student.20e@speakpath.app`
 (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`, already created and sitting at
-"onboarding complete, placement not started" in production) once that
-issue is fixed, and only mark this checklist complete when every box in
-section 7 is checked.
+"onboarding complete, placement not started" in production), and only
+mark this checklist complete when every box in section 7 is checked.
