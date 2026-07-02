@@ -4419,12 +4419,27 @@ completion, Learning Plan regeneration, or review scaffold behavior
 changed. No runtime setting changed in production. No
 attempts/submissions/evaluations deleted anywhere.
 
-Commit: `4dc49cc` — "Phase 20H — Fix readiness audit 500 edge case and
-Practice Gym duplicate suggestions". **Not yet pushed or deployed** —
-pushing to `main` triggers the CI/CD deploy to production
-(`speakpath.app`) and requires explicit user go-ahead, which had not been
-given as of this entry. Both `TODO-20G-1` and `TODO-20G-3` are fixed and
-locally verified; **live validation against `speakpath.app` is pending**
-authorization to push/deploy.
+Commits: `4dc49cc` (fix), `8d216fd` (docs), `80cb0eb` (follow-up dedupe-key
+fix — see below). Deployed via the existing CI/CD pipeline in two runs
+(`28621275227`, `28622255816`), both green.
+
+**Live validation against `https://speakpath.app`, 2026-07-03:** readiness
+audit for `pilot.student.20e@speakpath.app` returns 200 with a structured
+`activities.check_failed` warning (`technicalDetail: "PostgresException"`)
+— direct confirmation the original 500's exact failure mode is now caught
+safely. First Practice Gym check post-deploy still showed 6 cards for one
+objective, but each had a **distinct** materialized activity id (queued
+before the replenishment dedup-key fix caught up) — the suggestion
+service's same-activity/same-item dedupe didn't collapse those. Follow-up
+commit `80cb0eb` reprioritizes the dedupe key to group by
+`(CurriculumObjectiveKey, PatternKey, ActivityType)` first, redeployed,
+re-checked: the same 6 items now show 6 distinct patterns/activity types
+— zero literal duplicate rows. Dashboard/Today/Journey/Progress/Profile
+all return 200 on both deploys. Both `TODO-20G-1` and `TODO-20G-3` are
+**confirmed RESOLVED live.** New follow-up `TODO-20H-1` logged for a
+separately-scoped observation (Suggested list doesn't diversify across
+objectives — not a duplicate-data bug, out of this phase's scope).
+
+**Final verdict: ready to invite one real controlled pilot student — YES.**
 
 Review: `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.

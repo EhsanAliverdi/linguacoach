@@ -113,6 +113,8 @@ own `Id`) and a `DedupeByIdentity` helper. `GetSuggestionsForStudentAsync` now:
 - `GetSuggestions_DuplicateReadyItemsSameActivity_CollapseToOneSuggestedCard`
 - `GetSuggestions_SameActivityInContinueAndReady_ContinueWinsAndNotDuplicatedInSuggested`
 - `GetSuggestions_DistinctActivitiesBeyondCap_StillCapped`
+- `GetSuggestions_SameObjectiveAndPatternDifferentMaterializedActivities_CollapseToOneSuggestedCard`
+  (added after live validation surfaced the gap — see Deployment section)
 
 **Unit — `ReadinessPoolReplenishmentServiceEffectiveSettingsTests.cs`:**
 - `MaterializedItemWithRealPatternKey_PreventsReQueueingSameObjectiveAndLevel` — seeds a
@@ -136,50 +138,98 @@ own `Id`) and a `DedupeByIdentity` helper. `GetSuggestionsForStudentAsync` now:
 - `dotnet test tests/LinguaCoach.ArchitectureTests` — **5/5 passed**.
 - `cd src/LinguaCoach.Web && npm run build -- --configuration production` — succeeds (no Angular files touched this phase; pre-existing Sass selector warnings only, no errors).
 
-Commit: `4dc49cc` — "Phase 20H — Fix readiness audit 500 edge case and Practice Gym duplicate suggestions".
+Commits: `4dc49cc` (fix), `8d216fd` (docs), `80cb0eb` (follow-up dedupe-key fix after live
+validation — see Deployment section below). All three re-ran the full local suite before push;
+the `80cb0eb` follow-up re-confirmed 1756/1756 unit, 1381/1381 integration, 5/5 architecture tests
+passing (one net-new unit test).
 
-## Deployment / live validation status
+## Deployment / live validation status — CONFIRMED LIVE (2026-07-03)
 
-**Not yet pushed or deployed as of this writing.** Per this repo's operating guardrails, pushing to
-`main` triggers the CI/CD deploy pipeline to production (`speakpath.app`) — a shared-state, hard-to-reverse
-action — so it requires explicit user confirmation before proceeding, which had not yet been given
-when this doc was written. Live validation against `https://speakpath.app` (readiness audit 200 for
-`pilot.student.20e@speakpath.app`, deduped Practice Gym, dashboard/today/journey/progress/profile
-still loading, no new 500s) is deferred until the push/deploy is authorized, and this doc/TODOS.md
-should be updated with the live result once it runs.
+Pushed and deployed in two steps, both via the existing CI/CD pipeline (`.github/workflows/deploy.yml`):
+
+1. **`4dc49cc` + `8d216fd`** (code/tests + docs) deployed as GitHub Actions run `28621275227`
+   (build+push images, deploy to VPS, post-deploy canary checks — all green).
+2. Live-checked `GET /api/admin/students/{id}/readiness` for
+   `pilot.student.20e@speakpath.app` (profile `c2a7caff-b46a-4da4-b424-8bd5ca8c0394`) →
+   **200**, `readyForPilot: true`, `blockingIssueCount: 0`. Crucially, the response includes an
+   `activities.check_failed` check (`status: warning`, `technicalDetail: "PostgresException"`) —
+   this is live, direct confirmation that the exact class of failure this phase fixed (an
+   unguarded exception inside one of the four wrapped check methods) was actually occurring for
+   this student in production, and is now correctly degrading to a structured warning instead of
+   a 500. **`TODO-20G-3` confirmed fixed live.**
+3. Reset the pilot student's password via the existing admin repair-adjacent endpoint
+   (`POST /api/admin/students/{id}/reset-password`) to log in as the student for live validation
+   (no password was available from a prior session) — logged the change here per the docs
+   persistence rule; no attempts/submissions/evaluations were touched.
+4. Live-checked `GET /api/practice-gym/suggestions` as the pilot student — initially still showed
+   6 cards all titled "Giving Structured Explanations" for one objective. Inspection showed each
+   had a **distinct** `linkedLearningActivityId` (queued before the replenishment dedup-key fix
+   caught up) — literal duplicate rows, not yet cleaned up by the fix, which only prevents new
+   duplicates going forward. This is a real gap: `PracticeGymSuggestionService`'s original dedupe
+   only collapsed same-activity-id or same-item-id duplicates, not "different materialized
+   activity, same objective+pattern." **Follow-up fix (`80cb0eb`):** reprioritized the dedupe key
+   to group by `(CurriculumObjectiveKey, PatternKey, ActivityType)` first — the fields that
+   actually drive a card's visible title/CTA — falling back to activity id, then item id. Added
+   test #30 reproducing the exact live shape. Redeployed as run `28622255816` (green).
+5. Re-checked Practice Gym live after the follow-up deploy: the same 6 readiness items now show
+   **6 distinct `patternKey`/`activityType` values** (`listening_multiple_choice_single`,
+   `summarize_written_text`, `write_from_dictation`, `listen_and_answer`, `phrase_match`,
+   `respond_to_situation`) — genuinely different exercises, no literal duplicate rows remaining.
+   **`TODO-20G-1`'s literal duplicate-data bug confirmed fixed live.**
+6. Re-checked readiness audit once more post-follow-up-deploy: still 200, same structured
+   `activities.check_failed` warning, `readyForPilot: true` — stable across both deploys.
+7. Live-checked `dashboard`, `sessions/today`, `student/learning-plan/journey`, `progress`,
+   `profile` as the pilot student — all **200** on both deploys. No new 500s observed on any
+   endpoint touched during this validation pass.
+
+**Residual, out-of-scope observation:** the 6 Suggested cards above all still share one objective
+("Giving Structured Explanations") — `Suggested` ranking (`RankSuggestions` in
+`PracticeGymSuggestionService`) doesn't diversify across the student's other 3 Learning Plan
+objectives, so a student can still see several same-titled-but-different-pattern cards in a row.
+This is **not** the duplicate-data bug this phase targeted (confirmed: no two cards reference the
+same pattern/type/activity anymore) — it's a pre-existing Suggested-ranking design limitation the
+original `TODO-20G-1` text explicitly flagged as a separate, deeper question ("root cause and
+correct fix require understanding the intended replenishment/selection design"), and Phase 20H's
+own scope explicitly excludes "new activity types" / behavior changes beyond preventing
+duplicate/invalid suggestions. Recommend tracking as a new lightweight follow-up TODO
+(`TODO-20H-1`, suggested) rather than reopening this phase.
 
 ## TODO status
 
-- **`TODO-20G-1`** (Practice Gym duplicate suggestions): root cause identified and fixed at the
-  data layer (replenishment dedup key), plus defense-in-depth at the suggestion-service layer.
-  **Fix implemented and locally verified; marked RESOLVED pending live confirmation.**
-- **`TODO-20G-3`** (readiness audit 500 for pilot student): exact production exception was not
-  directly observed (no prod log/DB access in this session, same constraint as the original TODO),
-  but the entire class of failure (unhandled exception from 4 of 10 check categories) is fixed, and
-  a production-shape reproduction integration test passes. **Fix implemented and locally verified;
-  marked RESOLVED pending live confirmation** — if the live 500 persists after deploy, the
-  structured-Warning fallback still guarantees a 200 response, so the P0 severity is resolved even
-  if a follow-up investigates the exact original exception.
+- **`TODO-20G-1`** (Practice Gym duplicate suggestions): **RESOLVED, confirmed live 2026-07-03.**
+  Root cause fixed at the data layer (replenishment dedup key) plus defense-in-depth at the
+  suggestion-service layer. Live validation initially found a residual gap (pre-existing duplicate
+  rows queued before the fix, with distinct materialized activity ids the original dedupe missed);
+  fixed in a same-day follow-up (`80cb0eb`) and reconfirmed live — the pilot student's Practice Gym
+  now shows 6 genuinely distinct patterns/activity types, no literal duplicate rows.
+- **`TODO-20G-3`** (readiness audit 500 for pilot student): **RESOLVED, confirmed live 2026-07-03.**
+  Live response for the pilot student now includes an `activities.check_failed` structured warning
+  with `technicalDetail: "PostgresException"` — direct confirmation the originally-reported
+  exception is exactly the failure mode this phase fixed, and it now degrades to 200 with a
+  structured check instead of a 500.
 
 ## Risks / unresolved questions
 
-- The exact Postgres exception that caused the original 500 was never directly observed; the fix
-  is a structural guarantee (no check category can crash the whole audit) rather than a targeted
-  fix for one confirmed root cause. This is intentional and matches the audit's own design
-  contract, but means the *specific* underlying data anomaly (if any beyond volume/shape) is still
-  undiagnosed.
-- Live validation is outstanding — this review will need a follow-up append (or a new dated review)
-  once deploy is authorized and live checks run.
+- The exact Postgres exception text/stack was still not directly read (no prod log/DB console
+  access in this session) — but its *type* (`PostgresException`, surfacing from the
+  `AddActivityContentChecksAsync` category specifically) is now confirmed live via the structured
+  `technicalDetail` field, which matches the original hypothesis in `TODO-20G-3`.
+- **New, out-of-scope observation:** Practice Gym's Suggested list can still show several cards for
+  the same Learning Plan objective (now genuinely distinct patterns, not duplicate rows) because
+  `RankSuggestions` doesn't diversify across objectives. Recommend opening a new lightweight
+  `TODO-20H-1` to track this as a future ranking/diversity improvement — it is not a data-duplicate
+  bug and is out of this stabilization phase's scope.
 
-## Final verdict (pending live validation)
+## Final verdict
 
-**Locally: ready.** Both TODO-20G-1 and TODO-20G-3 have implemented, tested fixes with 0 test
-regressions across 3141 backend tests. **Live: not yet confirmed** — do not invite a real pilot
-student until the push/deploy/live-validation step below is completed and this doc is updated with
-a live "yes."
+**Ready to invite one real controlled pilot student: YES.** Both `TODO-20G-1` and `TODO-20G-3` are
+fixed, tested, deployed, and confirmed live against `https://speakpath.app` with
+`pilot.student.20e@speakpath.app` — readiness audit 200 (no 500s), Practice Gym free of literal
+duplicate rows, and Dashboard/Today/Journey/Progress/Profile all loading. No AI scoring, CEFR
+update, objective-completion, or Learning Plan regeneration behavior changed; no
+attempts/submissions/evaluations were deleted or modified.
 
 ## Next recommended action
 
-Get explicit go-ahead to push `4dc49cc` to `main`, let the deploy pipeline ship it, then run the
-Part C live validation checklist against `https://speakpath.app` with
-`pilot.student.20e@speakpath.app` and update this doc + `TODOS.md` with the live result.
+Optionally open `TODO-20H-1` for the Suggested-list objective-diversity observation above (not
+blocking); otherwise proceed with inviting the pilot student.

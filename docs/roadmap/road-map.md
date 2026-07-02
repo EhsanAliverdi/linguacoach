@@ -6,19 +6,19 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-03 (Phase 20H complete, locally verified; deploy/live validation pending)**
+**Accurate as of: 2026-07-03 (Phase 20H complete, confirmed live against speakpath.app)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
 **✅ Live student golden path confirmed working end-to-end (2026-07-02):** Phase 20G completed the Phase 20E/20F pilot walkthrough against production: the pilot student completed placement (CEFR B2), got a real generated lesson, completed an activity with scored feedback, and Dashboard/Practice Gym/Journey/Progress/Profile all load with real data. Three real live bugs were found and fixed in-session (gap-fill activity unfillable, placement-result 400, Journey always-empty). **One admin-only regression remains open:** the readiness audit 500s for this specific student's data (`TODO-20G-3`) — isolated, not systemic, does not block the student experience.
 
-**✅ Both remaining Phase 20G issues fixed (2026-07-03, Phase 20H):** `TODO-20G-3` (readiness audit 500 for the pilot student) and `TODO-20G-1` (Practice Gym duplicate suggestions) both have implemented, locally-verified fixes (1,755 unit / 1,381 integration / 5 architecture tests passing). **Not yet pushed, deployed, or live-validated** — pending explicit user authorization to push to `main` and trigger the production deploy.
+**✅ Both remaining Phase 20G issues fixed and confirmed live (2026-07-03, Phase 20H):** `TODO-20G-3` (readiness audit 500 for the pilot student) and `TODO-20G-1` (Practice Gym duplicate suggestions) are both resolved and live-validated against `https://speakpath.app` for `pilot.student.20e@speakpath.app` — readiness audit returns 200 (with a structured warning confirming the exact original failure now degrades safely instead of 500ing), Practice Gym shows zero literal duplicate rows, and Dashboard/Today/Journey/Progress/Profile all load. **Ready to invite one real controlled pilot student.**
 
 ---
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20H — Live Pilot Stabilization (2026-07-03) — fixed the readiness audit 500 (`TODO-20G-3`) and Practice Gym duplicate suggestions (`TODO-20G-1`) left open by Phase 20G. Locally verified (committed as `4dc49cc`); deploy and live validation against `speakpath.app` pending user go-ahead.
+**Latest phase completed:** Phase 20H — Live Pilot Stabilization (2026-07-03) — fixed and live-confirmed the readiness audit 500 (`TODO-20G-3`) and Practice Gym duplicate suggestions (`TODO-20G-1`) left open by Phase 20G. Committed as `4dc49cc`/`8d216fd`/`80cb0eb`; deployed and validated live against `speakpath.app`.
 
 **Branch:** main
 

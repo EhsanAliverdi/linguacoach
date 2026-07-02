@@ -39,18 +39,28 @@ replenishment kept re-queuing duplicates for the same objective/level
 forever. Fixed by dropping `PatternKey` from the dedup key. Also added
 defense-in-depth dedupe in `PracticeGymSuggestionService` so a single item
 can never appear in more than one bucket (Continue/Review/Suggested),
-with Continue winning ties, caps still applied after dedupe.
+with Continue winning ties, caps still applied after dedupe. **Live
+validation found a residual gap:** pre-existing duplicate rows (queued
+before the fix) each had a distinct materialized activity id, which the
+same-activity/same-item dedupe didn't catch. Fixed same-day in a
+follow-up commit (`80cb0eb`) that reprioritizes the dedupe key to group
+by `(CurriculumObjectiveKey, PatternKey, ActivityType)` first.
 
-**Test coverage:** 1,755 backend unit tests pass, 1,381 backend
+**Test coverage:** 1,756 backend unit tests pass, 1,381 backend
 integration tests pass, 5/5 architecture tests pass. Angular production
 build succeeds (no Angular files touched this phase).
 
-**Status:** both fixes implemented and locally verified, committed as
-`4dc49cc`. **Not yet pushed, deployed, or live-validated** — pushing to
-`main` triggers the CI/CD deploy to production (`speakpath.app`) and
-requires explicit user go-ahead, which had not been given as of this
-update. Do not treat either TODO as confirmed-live until a follow-up
-records the live check against `speakpath.app`.
+**Status: deployed and confirmed live against `https://speakpath.app`
+(2026-07-03).** Committed as `4dc49cc`/`8d216fd`/`80cb0eb`. Readiness
+audit for `pilot.student.20e@speakpath.app` returns 200 with a structured
+`activities.check_failed` warning (`technicalDetail: "PostgresException"`)
+— direct live confirmation the original 500's failure mode is now caught
+safely. Practice Gym shows 6 distinct patterns/activity types for one
+objective, zero literal duplicate rows. Dashboard/Today/Journey/Progress/
+Profile all return 200. **Ready to invite one real controlled pilot
+student.** One new, separately-scoped observation logged as `TODO-20H-1`
+(Suggested list doesn't diversify across the plan's other objectives —
+not a duplicate-data bug).
 
 Review: `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.
 
@@ -92,13 +102,13 @@ data (confirmed isolated — a different, more-advanced student returns
 only the combined audit fails). Root cause not identified; needs
 production DB/log access. Tracked as `TODO-20G-3`. Does not block the
 student experience. **Fixed in Phase 20H (2026-07-03), see above —
-locally verified, live validation pending.**
+confirmed live.**
 
 **One P1 found, documented:** Practice Gym's "Suggested for you" shows
 the same suggestion 6 times — confirmed real duplicate backend data (one
 curriculum objective, no diversification), not a rendering bug.
-`TODO-20G-1`. **Fixed in Phase 20H (2026-07-03), see above — locally
-verified, live validation pending.**
+`TODO-20G-1`. **Fixed in Phase 20H (2026-07-03), see above — confirmed
+live.**
 
 **What is NOT changed:** No AI scoring, CEFR update, objective
 completion, Learning Plan regeneration, or review scaffold behavior

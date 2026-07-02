@@ -220,10 +220,15 @@ student-facing experience). Recommend proceeding with a real student pilot
 invite while tracking `TODO-20G-3` for resolution before relying on the
 readiness tool for this particular student.
 
-**Update, Phase 20H (2026-07-03):** both `TODO-20G-3` and `TODO-20G-1`
-now have implemented, locally-verified fixes (see section 8 above) —
-**pending push, deploy, and live confirmation against
-`speakpath.app`.** Once deployed, re-run the readiness audit for
-`pilot.student.20e@speakpath.app` and re-check Practice Gym for
-duplicates as part of confirming this checklist is fully green; until
-then, treat both items as fixed-but-unconfirmed-live, not resolved.
+**Update, Phase 20H (2026-07-03): ready, no open caveats.** Both
+`TODO-20G-3` and `TODO-20G-1` are fixed, deployed, and confirmed live
+against `https://speakpath.app` for `pilot.student.20e@speakpath.app`:
+the readiness audit returns 200 (`readyForPilot: true`), and Practice Gym
+shows zero literal duplicate rows (6 genuinely distinct patterns/activity
+types for one objective, not repeats of the same activity). Dashboard,
+Today, Journey, Progress, and Profile all still return 200. **Ready to
+invite one real controlled pilot student.** One new, separately-scoped
+observation was logged as `TODO-20H-1` — Practice Gym's Suggested list
+doesn't yet diversify across a student's other Learning Plan objectives;
+this is a ranking-design question, not a duplicate-data bug, and does not
+block inviting a pilot student.
