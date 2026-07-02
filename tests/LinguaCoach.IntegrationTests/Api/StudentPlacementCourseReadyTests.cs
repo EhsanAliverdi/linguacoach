@@ -262,6 +262,9 @@ public sealed class ThrowingLearningPlanService : ILearningPlanService
             Array.Empty<StudentJourneyMilestone>(),
             "None"));
 
+    public Task<StudentJourneyResult> GetJourneyForUserAsync(Guid userId, CancellationToken ct = default)
+        => GetJourneyAsync(userId, ct);
+
     private static LearningPlanSummary EmptySummary(Guid profileId) => new(
         Guid.NewGuid(), profileId, "A2", LearningPlanStatus.Active,
         "placement_completed", 0, 0, 0, 0, 0, 0, 0, 0, null,

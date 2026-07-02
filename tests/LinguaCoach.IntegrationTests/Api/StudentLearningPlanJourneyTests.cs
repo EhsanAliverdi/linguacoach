@@ -2,6 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using LinguaCoach.Application.LearningPlan;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -131,5 +135,46 @@ public sealed class StudentLearningPlanJourneyTests : IClassFixture<PlacementTes
             Assert.True(obj.TryGetProperty("sequenceNumber", out var seqEl), "Missing sequenceNumber");
             Assert.True(seqEl.GetInt32() > 0);
         }
+    }
+
+    // ── Test 5: Phase 20G regression — journey resolves by user ID, not profile ID ──
+    //
+    // GetJourney previously called ILearningPlanService.GetJourneyAsync(userId, ...),
+    // but that method's parameter is a StudentProfileId, not a UserId -- two distinct
+    // GUIDs. This meant the endpoint could never find a matching profile and always
+    // silently fell back to an empty journey (planStatus "None", totalObjectives 0),
+    // even when a real, populated learning plan existed for the student. Found live
+    // in production during the Phase 20E/20G pilot walkthrough: the dashboard showed
+    // a real plan with objective progress, but /journey showed "complete your
+    // placement assessment" as if nothing existed. Fixed via a new
+    // GetJourneyForUserAsync method that resolves the profile by UserId first.
+    [Fact]
+    public async Task GetJourney_ResolvesActivePlan_ByUserIdNotProfileId()
+    {
+        var (token, userId) = await _factory.CreateOnboardedStudentAsync(
+            $"journey_userid_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        // Force a real, populated plan to exist for this student — deterministically,
+        // without depending on any async/deferred generation triggered by placement.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == userId);
+            var learningPlan = scope.ServiceProvider.GetRequiredService<ILearningPlanService>();
+            await learningPlan.GetOrCreatePlanAsync(profile.Id);
+        }
+
+        var resp = await client.GetAsync("/api/student/learning-plan/journey");
+        resp.EnsureSuccessStatusCode();
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>(JsonOpts);
+
+        // The bug returned "None"/0 here even though the plan above was just created.
+        Assert.Equal("Active", body.GetProperty("planStatus").GetString());
+        Assert.True(body.GetProperty("totalObjectives").GetInt32() > 0,
+            "Expected the journey endpoint (resolved via the JWT user ID) to see the " +
+            "plan just created for this student's profile ID -- got 0 objectives, " +
+            "meaning the user ID -> profile ID resolution is broken again.");
     }
 }

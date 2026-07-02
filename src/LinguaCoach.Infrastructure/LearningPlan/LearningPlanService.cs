@@ -516,6 +516,20 @@ public sealed class LearningPlanService : ILearningPlanService
         }
     }
 
+    public async Task<StudentJourneyResult> GetJourneyForUserAsync(
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var profile = await _db.StudentProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+
+        if (profile is null)
+            return EmptyJourney(_routing.NormalizeCefrLevel(null));
+
+        return await GetJourneyAsync(profile.Id, ct);
+    }
+
     public async Task<StudentJourneyResult> GetJourneyAsync(
         Guid studentProfileId,
         CancellationToken ct = default)

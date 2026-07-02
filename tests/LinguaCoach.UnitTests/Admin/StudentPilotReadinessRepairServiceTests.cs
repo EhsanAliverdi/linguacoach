@@ -225,6 +225,9 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
         public Task<StudentJourneyResult> GetJourneyAsync(Guid studentProfileId, CancellationToken ct = default) =>
             throw new NotSupportedException();
 
+        public Task<StudentJourneyResult> GetJourneyForUserAsync(Guid userId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
         public Task<LearningPlanSummary> GetOrCreatePlanAsync(Guid studentProfileId, CancellationToken ct = default)
         {
             WasCalled = true;

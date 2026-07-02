@@ -18,6 +18,16 @@ public interface ILearningPlanService
     Task<StudentJourneyResult> GetJourneyAsync(
         Guid studentProfileId,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Same as <see cref="GetJourneyAsync"/> but resolves the student profile from the
+    /// authenticated user's account ID rather than the student profile ID directly.
+    /// For the student-facing Journey page, whose only identity is the JWT's user ID.
+    /// </summary>
+    Task<StudentJourneyResult> GetJourneyForUserAsync(
+        Guid userId,
+        CancellationToken ct = default);
+
     /// <summary>
     /// Returns the student's current active plan summary, generating one if none exists.
     /// </summary>

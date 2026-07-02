@@ -300,6 +300,9 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
         public Task<StudentJourneyResult> GetJourneyAsync(Guid studentProfileId, CancellationToken ct = default) =>
             Task.FromResult(Journey);
 
+        public Task<StudentJourneyResult> GetJourneyForUserAsync(Guid userId, CancellationToken ct = default) =>
+            Task.FromResult(Journey);
+
         public Task<LearningPlanSummary> GetOrCreatePlanAsync(Guid studentProfileId, CancellationToken ct = default) =>
             throw new NotSupportedException("Not used by the audit service.");
 

@@ -33,7 +33,7 @@ public sealed class StudentLearningPlanController : ControllerBase
 
         try
         {
-            var journey = await _learningPlan.GetJourneyAsync(userId, ct);
+            var journey = await _learningPlan.GetJourneyForUserAsync(userId, ct);
             return Ok(journey);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
