@@ -16,9 +16,9 @@ export class Step5ExperienceComponent {
   experienceLevels: ExperienceOption[] = [
     { label: 'No professional experience yet', description: 'Still studying or just starting out.', value: 0 },
     { label: 'Entry level / graduate', description: 'Recently joined the workforce.', value: 1 },
-    { label: 'Junior (0â€“2 years)', description: 'Early in my career, learning the role.', value: 2 },
-    { label: 'Mid-level (2â€“5 years)', description: 'Working independently in my role.', value: 3 },
-    { label: 'Senior (5â€“10 years)', description: 'Experienced, often mentoring others.', value: 4 },
+    { label: 'Junior (0–2 years)', description: 'Early in my career, learning the role.', value: 2 },
+    { label: 'Mid-level (2–5 years)', description: 'Working independently in my role.', value: 3 },
+    { label: 'Senior (5–10 years)', description: 'Experienced, often mentoring others.', value: 4 },
     { label: 'Lead / manager (10+ years)', description: 'Leading teams or managing others.', value: 5 },
   ];
 

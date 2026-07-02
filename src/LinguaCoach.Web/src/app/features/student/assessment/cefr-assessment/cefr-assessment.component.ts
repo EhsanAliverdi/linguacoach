@@ -19,7 +19,7 @@ export class CefrAssessmentComponent {
   sampleText = '';
   errorMessage = signal('');
 
-  readonly prompt = 'Write a short email (5â€“10 sentences) to a project manager asking for an update on a pending document approval. Use professional English.';
+  readonly prompt = 'Write a short email (5–10 sentences) to a project manager asking for an update on a pending document approval. Use professional English.';
 
   constructor(private assessmentService: AssessmentService, private router: Router) {}
 

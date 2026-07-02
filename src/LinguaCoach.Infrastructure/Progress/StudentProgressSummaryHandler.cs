@@ -35,20 +35,17 @@ public sealed class StudentProgressSummaryHandler : IStudentProgressSummaryHandl
 
         var studentProfileId = profile.Id;
 
-        // Run independent queries in parallel
-        var planProgressTask = LoadPlanProgressAsync(studentProfileId, ct);
-        var placementTask = LoadPlacementAsync(studentProfileId, ct);
-        var skillsTask = LoadSkillsAsync(studentProfileId, ct);
-        var recentActivityTask = BuildRecentActivityAsync(studentProfileId, ct);
-        var focusTask = LoadFocusAsync(studentProfileId, ct);
-
-        await Task.WhenAll(planProgressTask, placementTask, skillsTask, recentActivityTask, focusTask);
-
-        var planProgress = planProgressTask.Result;
-        var (placementDate, placementCefr) = placementTask.Result;
-        var skills = skillsTask.Result;
-        var recentActivity = recentActivityTask.Result;
-        var focus = focusTask.Result;
+        // Sequential, not parallel: all loaders below share the single scoped
+        // DbContext (including transitively via ILearningPlanService), which EF
+        // Core does not allow to run more than one operation on concurrently.
+        // Running these via Task.WhenAll intermittently threw
+        // "A second operation was started on this context instance before a
+        // previous operation completed" and surfaced as a raw 500 to students.
+        var planProgress = await LoadPlanProgressAsync(studentProfileId, ct);
+        var (placementDate, placementCefr) = await LoadPlacementAsync(studentProfileId, ct);
+        var skills = await LoadSkillsAsync(studentProfileId, ct);
+        var recentActivity = await BuildRecentActivityAsync(studentProfileId, ct);
+        var focus = await LoadFocusAsync(studentProfileId, ct);
 
         var currentCefr = profile.CefrLevel;
         var cefrImproved = IsCefrHigher(placementCefr, currentCefr);

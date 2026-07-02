@@ -4174,3 +4174,58 @@ When unsure, choose the option that makes SpeakPath feel more like a structured 
 **Remaining AI pricing TODOs:**
 - `TODO-10V-3B`: zero-cost alert UI in AI Usage or AI Config
 - `TODO-10V-UNIQUE-CONSTRAINT`: optional unique index on `(ProviderName, ModelName, EffectiveFromUtc)`
+
+---
+
+## Phase 20E — Controlled Student Pilot Smoke QA (2026-07-02)
+
+**Goal:** Use the Phase 20D readiness/repair tooling to prove one real
+student can complete the intended learning flow end-to-end without
+developer hand-holding. Ran against production, by explicit user decision.
+
+**Delivered:**
+
+- Created a real pilot student via the admin Create Student flow
+  (`pilot.student.20e@speakpath.app`) and walked login → forced password
+  change → onboarding (5 steps) → placement → dashboard/journey/practice/
+  progress/profile by hand.
+- **P0 found, fixed:** `StudentProgressSummaryHandler` and
+  `AdminStudentProgressHandler` raced `Task.WhenAll(...)` across loaders
+  sharing one scoped `DbContext` — a genuine EF Core concurrency bug that
+  leaked a raw exception message to the student on `/progress`. Fixed by
+  awaiting sequentially in both handlers.
+- **P2 found, fixed:** 4 more instances of the Phase 15H UTF-8 mojibake
+  bug on the pilot path (onboarding step 5 experience labels, activity
+  feedback retry text, CEFR assessment prompt, onboarding-v2 summary).
+- **P0 found, NOT fixed (documented only, by explicit user decision):** a
+  production-only `PostgresException` blocks `POST /api/student/placement/start`
+  and several related endpoints for every student, plus two recurring
+  background job failures. This is the reason the golden path could not be
+  walked past placement, and the reason the Phase 20D readiness audit
+  itself could not be exercised in this session (its own endpoint 500s).
+  Filed as `TODO-20E-1` (urgent, needs production DB/log access).
+- New `docs/pilot/student-pilot-runbook.md` — how to create/select a pilot
+  student, run the readiness audit, dry-run and real repairs, which routes
+  to check, pass/fail criteria, known limitations, and a final "ready to
+  invite one student?" checklist (currently: **No**).
+
+**What is NOT changed:**
+
+- No AI scoring, CEFR update, objective-completion, or Learning Plan
+  regeneration behavior changed.
+- No runtime setting changed in production.
+- No existing student's data modified; no attempts/submissions/evaluations
+  deleted anywhere.
+- Phase 20D's readiness/repair logic itself was not modified.
+
+**Test coverage:** 1,750 backend unit (unchanged), 1,378 backend
+integration (unchanged), 3 architecture tests all pass. 1,548/1,668
+Angular unit tests pass (120 pre-existing failures, unchanged baseline; 0
+new regressions). Production build clean. No new Playwright smoke — the
+intended golden-path flow cannot complete against production until
+`TODO-20E-1` is fixed.
+
+**Final verdict:** Not ready for a controlled student pilot. Blocked on
+`TODO-20E-1`.
+
+Review: `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`.

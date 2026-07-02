@@ -1,12 +1,25 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20D)
+lastUpdated: 2026-07-02 (20E)
 owner: architecture
 supersedes:
 supersededBy:
 ---
 
 # Student Data Readiness, Backfill & Pilot Cleanup (Phase 20D)
+
+## ⚠ Known production issue (Phase 20E, 2026-07-02)
+
+`GET /api/admin/students/{id}/readiness` currently returns HTTP 500
+(`PostgresException`) in production for every student checked, both new
+and pre-existing. The audit service design described below is unchanged
+and still correct against the SQLite-backed test suite; the failure is
+believed to be a production schema/migration issue outside this service's
+own code (see `TODO-20E-1` in `TODOS.md` and
+`docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`
+for the full diagnostic trail). Do not trust a "Pilot readiness
+unavailable" card as evidence this service is broken by design — verify
+against `TODO-20E-1`'s status first.
 
 ## Problem this solves
 

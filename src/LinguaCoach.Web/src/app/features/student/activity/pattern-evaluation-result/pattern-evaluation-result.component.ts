@@ -83,7 +83,7 @@ export class PatternEvaluationResultComponent {
     if (p >= 90) return 'Ready for the next challenge.';
     if (p >= 70) return 'Small improvements suggested below.';
     if (p >= 40) return 'Review the corrections below and try again.';
-    return 'Retry recommended â€” check the corrections below.';
+    return 'Retry recommended — check the corrections below.';
   }
 
   // True when score is below excellent threshold â€” drives the instruction line colour.

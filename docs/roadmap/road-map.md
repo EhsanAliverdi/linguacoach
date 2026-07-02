@@ -6,15 +6,17 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 20D complete)**
+**Accurate as of: 2026-07-02 (Phase 20E complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
+
+**⚠ Production is currently broken for new students:** `POST /api/student/placement/start` returns 500 in production (Phase 20E finding, `TODO-20E-1` in `TODOS.md`). A student cannot get past placement today. Fix this before any pilot invite or further student-facing phase work.
 
 ---
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20D — Student Data Readiness, Backfill & Pilot Cleanup (2026-07-02)
+**Latest phase completed:** Phase 20E — Controlled Student Pilot Smoke QA (2026-07-02) — verdict: **not ready for a pilot**, see `TODO-20E-1`.
 
 **Branch:** main
 
@@ -702,7 +704,7 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | Enterprise SaaS | 5% | No org/teacher/cohort model. Phase 21A. |
 | Observability / ops | 20% | AI usage admin exists. No APM, tracing, alerting. Phase 22A. |
 | Student UI polish | 60% | Visual rehaul done (15I). Advanced feedback UX, streak, coach not yet real. |
-| Production readiness | 40% | App runs in Docker. No smoke test automation, no backup runbook, no monitoring. |
+| Production readiness | 25% | App runs in Docker. Phase 20E found production placement-start is broken (`TODO-20E-1`, `PostgresException`). No smoke test automation, no backup runbook, no monitoring. |
 
 ---
 
@@ -710,6 +712,7 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-07-02 | Phase 20E ran directly against production, with explicit user sign-off per action | No staging environment exists; user provided prod admin credentials and made two explicit AskUserQuestion scope decisions (create-and-repair one fresh pilot student only; document the discovered `PostgresException` production issue rather than root-cause/fix it in-session) |
 | 2026-06-09 | Non-workplace generalisation | SpeakPath must not be workplace-specific by default. Workplace is one selectable context. |
 | 2026-06-09 | Placement is a standalone entity, not a LearningModule | PlacementAssessment decoupled from learning path to allow independent lifecycle |
 | 2026-06-12 | Exercise pattern library replaces activity type enum | Patterns are more composable; content model is in JSON not enum-driven code |

@@ -574,3 +574,27 @@ Note: `refresh_progress_projection_if_supported` (the 5th suggested repair
 action) was registered as `NotApplicable` rather than deferred — there is
 no stored progress/mastery projection in this codebase to refresh;
 progress is always computed live from the ledger.
+
+---
+
+## Controlled Student Pilot Smoke QA (Phase 20E)
+
+### TODO-20E-1 — P0: production `PostgresException` blocking placement start and the readiness audit (URGENT, needs prod DB/log access)
+**What:** `POST /api/student/placement/start`, `GET /api/admin/students/{id}/readiness`, `GET /api/admin/students/{id}/writing-evaluations`, `GET /api/admin/students/{id}/placement/latest`, `GET /api/placement/status`, and `GET /api/student/placement/current` all return HTTP 500 with `ExceptionType=PostgresException` in production, for both a brand-new pilot student and a pre-existing student. Two background jobs (`writing-evaluation`, `writing-signal-application`) have also been throwing `PostgresException` roughly every 5 minutes for hours.
+**Why this blocks everything:** a student cannot start placement, so cannot reach `CourseReady`, so the entire rest of the pilot flow (Today lesson, activity completion, feedback, Practice Gym with real content) is unreachable. This is the #1 reason Phase 20E's final verdict is "not ready for a controlled student pilot."
+**Why CI didn't catch it:** integration tests run against SQLite in-memory (`CLAUDE.md`/`AGENTS.md` policy), never real PostgreSQL — a Postgres-specific migration/schema issue would not reproduce there.
+**Circumstantial lead, not a confirmed cause:** `src/LinguaCoach.Persistence/Migrations` has migrations whose T-number and filename timestamp are out of the documented "T1–T66 in sequence" order (e.g. `T59_SpeakingEvaluationTables` timestamped after T63/T65; `T70_AiPromptContentHash` timestamped after T71). EF Core applies by filename timestamp, not T-number, so actual apply order may not match the intended logical order.
+**What's needed:** an operator with production server log or DB console access to read the actual Postgres error text for a fresh failing request (correlation IDs are logged per-request, e.g. `89af27f68e52`) and either run a pending migration or fix the specific schema mismatch.
+**Context:** `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md` (P0-1), `docs/pilot/student-pilot-runbook.md` ("Known limitations").
+**Deferred from:** Phase 20E, 2026-07-02, by explicit user decision (AskUserQuestion: "skip root-causing this now; just document it as a blocking finding") — production DB access was not available in that session.
+
+### TODO-20E-2 — Wire `repairAllSafeStudentReadiness` ("run all") to a button in Admin Student Detail
+**What:** `AdminApiService.repairAllSafeStudentReadiness` (→ `POST /api/admin/students/{id}/readiness/repair-safe-all`) exists but is not called from any button in `admin-student-detail.component.ts`. `run_all_safe_repairs` is also never returned as a `RecommendedActionKey` by any individual check, so today an admin must run the four safe repairs one at a time.
+**Why:** Out of scope for Phase 20D (found during Phase 20E's use of the tooling); low risk, small UI addition.
+**Context:** `src/LinguaCoach.Web/src/app/features/admin/admin-student-detail/admin-student-detail.component.ts`, `src/LinguaCoach.Infrastructure/Admin/StudentPilotReadinessRepairService.cs` (`RunAllSafeRepairsAsync` already implemented server-side).
+**Deferred from:** Phase 20E, 2026-07-02.
+
+### TODO-20E-3 — Remaining mojibake (UTF-8 double-encoding) instances in code comments/test titles
+**What:** `grep -rn 'â€' src/LinguaCoach.Web/src` still finds the Phase 15H-class encoding bug in code comments and Jasmine `describe`/`it` titles (never rendered to a user). Four user-visible instances were fixed in Phase 20E; these remaining ones are cosmetic-only and non-functional.
+**Why deferred:** Pure churn with no user-facing benefit; not worth the diff noise outside a dedicated cleanup pass.
+**Deferred from:** Phase 20E, 2026-07-02.

@@ -30,17 +30,16 @@ public sealed class AdminStudentProgressHandler : IAdminStudentProgressQuery
             .FirstOrDefaultAsync(p => p.Id == query.StudentProfileId, ct);
         if (profile == null) return null;
 
-        var planProgressTask = LoadPlanProgressAsync(query.StudentProfileId, ct);
-        var placementTask = LoadPlacementAsync(query.StudentProfileId, ct);
-        var skillsTask = LoadSkillSummaryAsync(query.StudentProfileId, ct);
-        var lastActivityTask = LoadLastActivityAsync(query.StudentProfileId, ct);
-
-        await Task.WhenAll(planProgressTask, placementTask, skillsTask, lastActivityTask);
-
-        var plan = planProgressTask.Result;
-        var (placementDate, placementCefr) = placementTask.Result;
-        var (strongest, weakest, weakCount) = skillsTask.Result;
-        var lastActivity = lastActivityTask.Result;
+        // Sequential, not parallel: all loaders below share the single scoped
+        // DbContext (including transitively via ILearningPlanService), which EF
+        // Core does not allow to run more than one operation on concurrently.
+        // Running these via Task.WhenAll intermittently threw
+        // "A second operation was started on this context instance before a
+        // previous operation completed" and surfaced as a 500 in admin.
+        var plan = await LoadPlanProgressAsync(query.StudentProfileId, ct);
+        var (placementDate, placementCefr) = await LoadPlacementAsync(query.StudentProfileId, ct);
+        var (strongest, weakest, weakCount) = await LoadSkillSummaryAsync(query.StudentProfileId, ct);
+        var lastActivity = await LoadLastActivityAsync(query.StudentProfileId, ct);
 
         return new AdminStudentProgressResult(
             CurrentCefrLevel: profile.CefrLevel,

@@ -8,12 +8,12 @@ import { OnboardingV2Step, OnboardingV2Status } from '../../../../../core/models
   imports: [CommonModule],
   template: `
     <div class="sp-card text-center" data-testid="step-summary">
-      <div class="text-4xl mb-4">âœ“</div>
+      <div class="text-4xl mb-4">✓</div>
       <h2 class="sp-heading-2 mb-2">{{ step.title }}</h2>
       <p class="text-slate-600 mb-6" *ngIf="step.description">{{ step.description }}</p>
       <p class="text-xs text-slate-400 mb-6" *ngIf="status.preliminaryCefrLevel">
         Estimated starting level: <strong>{{ status.preliminaryCefrLevel }}</strong>
-        â€” this is a rough guide and will be refined after your placement check.
+        — this is a rough guide and will be refined after your placement check.
       </p>
       <button
         class="sp-btn-primary w-full"

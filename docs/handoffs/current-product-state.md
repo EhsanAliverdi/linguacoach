@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20D)
+lastUpdated: 2026-07-02 (20E)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,62 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-02 (20D)
+Last updated: 2026-07-02 (20E)
+
+---
+
+## Controlled Student Pilot Smoke QA (Phase 20E, 2026-07-02)
+
+Ran the Phase 20D readiness/repair tooling against production for the
+first time, using a freshly-created pilot student
+(`pilot.student.20e@speakpath.app`), and walked the full intended student
+journey by hand. **Verdict: not ready for a controlled student pilot.**
+
+**What was found:**
+
+- **P0, unresolved:** production returns `PostgresException` 500s on
+  `POST /api/student/placement/start` and several related endpoints
+  (`readiness`, `writing-evaluations`, `placement/latest`,
+  `placement/status`, `placement/current`), plus two recurring background
+  job failures (`writing-evaluation`, `writing-signal-application`). A
+  brand-new student cannot start placement in production today — this
+  blocks the entire pilot flow past onboarding and was **not fixed** in
+  this session (root cause needs production DB/log access not available
+  here). See `TODO-20E-1` in `TODOS.md`.
+- **P0, fixed:** `/progress` (student) and the admin progress-summary
+  endpoint both raced `Task.WhenAll(...)` across loaders that share one
+  scoped `DbContext`, which EF Core forbids — this surfaced to the student
+  as a raw, unstyled internal exception message ("A second operation was
+  started on this context instance..."). Fixed in both
+  `StudentProgressSummaryHandler` and `AdminStudentProgressHandler` by
+  awaiting the loaders sequentially instead. Confirmed this pattern
+  existed nowhere else in the codebase.
+- **P2, fixed:** four more instances of the Phase 15H UTF-8 mojibake bug
+  found and fixed in onboarding step 5, activity feedback text, the CEFR
+  assessment prompt, and the onboarding-v2 summary step.
+
+**What is NOT changed:**
+
+- No AI scoring, CEFR update, objective-completion, or Learning Plan
+  regeneration behavior changed.
+- No runtime setting was changed in production.
+- No existing student's data was read-write modified; only a newly
+  created pilot student was touched. No attempts/submissions/evaluations
+  were deleted anywhere.
+- The readiness audit/repair logic itself (Phase 20D) was not modified —
+  it could not be exercised in this session because its own endpoint is a
+  casualty of the unresolved P0 above.
+
+**Test coverage:** 1,750 backend unit tests pass (unchanged). 1,378
+backend integration tests pass (unchanged). 3/3 architecture tests pass.
+1,548/1,668 Angular unit tests pass (120 pre-existing, unrelated failures
+— unchanged baseline; 0 new regressions from 4 text-only edits).
+Production build clean. No Playwright smoke was added — the intended
+golden-path flow cannot complete against production until the P0 above is
+fixed.
+
+Review: `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`.
+Runbook: `docs/pilot/student-pilot-runbook.md`.
 
 ---
 
