@@ -4268,9 +4268,15 @@ migrations independently creating the same table, latent because the
   `GET /api/admin/students/{id}/readiness` → 200; both previously-failing
   background jobs now complete with `Failed=0`).
 - No production DB/SSH/log access was available in this session — the
-  fix was pushed via the normal `main` → CI/CD deploy pipeline, which runs
-  `Database.Migrate()` against the real production database automatically.
-  A live confirmation check is required post-deploy (`TODO-20F-1`).
+  fix was pushed via the normal `main` → CI/CD deploy pipeline (`gh run
+  28570470545`, ~2.5 min), which ran `Database.Migrate()` against the real
+  production database automatically on next API startup.
+- **Confirmed live against `https://speakpath.app` immediately after
+  deploy:** readiness audit for `pilot.student.20e@speakpath.app` → 200
+  (was 500); `POST /api/student/placement/start` → 201 (was 500);
+  placement UI rendered and answered a real Question 1; zero errors in
+  production diagnostics in the 15-minute window spanning the deploy and
+  this check. `TODO-20F-1` resolved.
 
 **What is NOT changed:**
 
@@ -4287,9 +4293,8 @@ integration (unchanged — SQLite `EnsureCreated()`-based tests don't
 exercise migration files, which is exactly why this bug was invisible to
 CI), 5/5 architecture tests (+2 new). No frontend code changed this phase.
 
-**Final verdict:** Root cause fixed with high confidence, validated
-locally against both a fresh database and a database that independently
-reproduced production's exact symptom. Not yet confirmed live against
-production — see `TODO-20F-1`.
+**Final verdict:** Root cause fixed and **confirmed live in production.**
+The Phase 20E pilot student can resume the walkthrough from placement
+onward.
 
 Review: `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.

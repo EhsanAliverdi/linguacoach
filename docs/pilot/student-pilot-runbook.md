@@ -156,25 +156,21 @@ All of the following must be true:
 
 ## 8. Known limitations (as of Phase 20F, 2026-07-02)
 
-- **Fixed in Phase 20F, pending live confirmation (`TODO-20F-1`):**
+- **Fixed and confirmed live in Phase 20F:**
   `POST /api/student/placement/start` and the readiness audit both 500'd
   in production for every student. Root cause: 6 EF Core migrations had no
   `.Designer.cs` file and were silently invisible to
   `dotnet ef database update`/`Database.Migrate()` — not a failure, just
   never applied, on every environment, forever. Fixed by restoring the
   missing Designer.cs files and making the affected migrations'
-  idempotent. Validated locally against a fresh database and a database
-  independently drifted to match production's exact symptom; **not yet
-  directly confirmed against `https://speakpath.app`** (no production
-  DB/SSH/log access was available in that session — the fix ships via the
-  normal `main` → CI/CD deploy pipeline). See
+  idempotent. Confirmed directly against `https://speakpath.app`:
+  readiness audit → 200, placement start → 201, the placement UI rendered
+  and answered a real question live. See
   `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
-  **Until `TODO-20F-1` is confirmed, treat this runbook the same as before:
-  do not invite a real student.**
 - The **Pilot readiness card and Speaking Submissions / Writing
   Evaluations sub-widgets on Admin Student Detail** were casualties of the
-  same root cause and should now also work once the fix is live — verify
-  this alongside `TODO-20F-1`.
+  same root cause — the readiness card is confirmed working; re-verify the
+  other two sub-widgets the next time you're on Admin Student Detail.
 - `refill_practice_gym_if_empty`, `backfill_missing_activity_metadata`,
   `regenerate_missing_tts_for_listening_if_supported`,
   `normalize_student_lifecycle_if_safe` are not implemented yet — a
@@ -201,11 +197,13 @@ All of the following must be true:
 
 ## 10. Final checklist: ready to invite one student?
 
-As of 2026-07-02 (Phase 20F): **Not yet — pending live confirmation.** The
-production placement/readiness fix (see "Known limitations") has been
-pushed but not directly confirmed against `https://speakpath.app`. Once
-`TODO-20F-1` passes, re-run this runbook's steps 2–7 against
-`pilot.student.20e@speakpath.app`
-(`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`, already created and sitting at
-"onboarding complete, placement not started" in production), and only
-mark this checklist complete when every box in section 7 is checked.
+As of 2026-07-02 (Phase 20F): **The placement/readiness P0 is fixed and
+confirmed live** — this specific blocker no longer stands in the way.
+`pilot.student.20e@speakpath.app` (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`)
+now has an in-progress placement assessment started during the Phase 20F
+live validation. Before inviting a real student, complete a fresh run of
+this runbook's steps 2–7 for that student (or a new one) — through
+placement completion, at least one activity, feedback, Practice Gym,
+Journey, and Progress — since Phase 20E was blocked before reaching any of
+those and they remain unverified. Only mark this checklist complete when
+every box in section 7 is checked.

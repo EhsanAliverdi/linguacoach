@@ -10,13 +10,13 @@ owner: product / engineering
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
-**⚠ Production placement fix shipped but not yet live-confirmed:** Phase 20F found and fixed the root cause of the Phase 20E P0 (`POST /api/student/placement/start` 500ing in production) — 6 EF Core migrations were silently invisible to `dotnet ef database update` because they had no `.Designer.cs` file. The fix was validated locally (fresh DB + a database that independently reproduced production's exact symptom) but not directly against `https://speakpath.app` (no prod DB/SSH/log access was available). It ships via the normal `main` → CI/CD deploy pipeline. **`TODO-20F-1` (live confirmation check) must pass before treating the pilot as unblocked.**
+**✅ Production placement/readiness P0 fixed and confirmed live (2026-07-02):** Phase 20F found and fixed the root cause of the Phase 20E P0 (`POST /api/student/placement/start` 500ing in production) — 6 EF Core migrations were silently invisible to `dotnet ef database update` because they had no `.Designer.cs` file. Deployed via CI/CD and directly confirmed against `https://speakpath.app`: readiness audit returns 200, placement start returns 201, the placement UI is interactive live. The Phase 20E pilot student can now resume the walkthrough.
 
 ---
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20F — Production Placement/Readiness P0 Unblocker (2026-07-02) — root cause fixed, pending live confirmation (`TODO-20F-1`). Resolves the Phase 20E P0 (`TODO-20E-1`).
+**Latest phase completed:** Phase 20F — Production Placement/Readiness P0 Unblocker (2026-07-02) — root cause fixed and confirmed live in production. Resolves the Phase 20E P0 (`TODO-20E-1`).
 
 **Branch:** main
 

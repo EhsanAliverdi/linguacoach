@@ -35,15 +35,13 @@ in any given environment's history doesn't conflict with the other. No
 `DROP`, no data mutation, additive-only throughout.
 
 **Validated against:** a from-scratch fresh local Postgres database (all
-64 migrations apply cleanly, 0 errors) and a local sandbox independently
-drifted to match production's exact symptom (previously-invisible
-migrations now apply; `POST /api/student/placement/start` → 201;
-`GET /api/admin/students/{id}/readiness` → 200; the two previously-failing
-background jobs now complete with `Failed=0`). Production itself was not
-directly accessed (no DB/SSH/log access available this session); the fix
-ships via the normal `main` → CI/CD deploy pipeline, which runs
-`Database.Migrate()` against production automatically. A live
-confirmation check is still required — see `TODO-20F-1`.
+64 migrations apply cleanly, 0 errors), a local sandbox independently
+drifted to match production's exact symptom, **and confirmed live against
+`https://speakpath.app` immediately after deploy:**
+`GET /api/admin/students/{id}/readiness` → 200 (was 500), `POST
+/api/student/placement/start` → 201 (was 500), the placement UI rendered
+and answered a real question, and admin diagnostics showed zero errors in
+the 15 minutes spanning the deploy and this check. `TODO-20F-1` resolved.
 
 **What is NOT changed:** No AI scoring, CEFR update, objective-completion,
 or Learning Plan regeneration logic touched. No application/business logic

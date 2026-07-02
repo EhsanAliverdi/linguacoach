@@ -95,7 +95,15 @@ No SQLite/integration-test-level regression test was added for the placement-sta
 
 ## Production validation result
 
-Not yet performed at the time of writing this review — validation was performed against a local Docker sandbox built from current `main` + this phase's fix, since no production access was available. Once this commit is pushed and the CI/CD pipeline redeploys, the same `db.Database.Migrate()` call verified locally (`src/LinguaCoach.Api/Program.cs:278`) will run against the real production database on next API container startup. **A follow-up check against `https://speakpath.app` after deployment completes is required** to close this out — checking `POST /api/student/placement/start` and `GET /api/admin/students/{id}/readiness` for `pilot.student.20e@speakpath.app` (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`, the Phase 20E pilot student, still sitting at "onboarding complete, placement not started").
+**Confirmed live, 2026-07-02.** Commit `b44a67d` was pushed to `main`, triggering `.github/workflows/deploy.yml` (`gh run 28570470545`): tests → build+push images (1m58s) → SSH deploy to VPS (41s), including its own post-deploy canary checks step, all green. Immediately after, logged into `https://speakpath.app` directly (as both admin and as the Phase 20E pilot student) and confirmed:
+
+- `GET /api/admin/students/c2a7caff-b46a-4da4-b424-8bd5ca8c0394/readiness` (admin, for `pilot.student.20e@speakpath.app`) → **HTTP 200** — `readyForPilot: true`, `readinessStatus: "needsAttention"`, `blockingIssueCount: 0`, `warningCount: 2`, `infoCount: 4`. A real, structured, non-500 result.
+- `POST /api/student/placement/start` (as the pilot student) → **HTTP 201**, valid `PlacementAssessment` response with `itemCount: 36`.
+- `GET /api/student/placement/next?assessmentId=...` → **HTTP 200** — the placement UI rendered "Question 1 · Listening" with real answer options (A/B/C), fully interactive.
+- `GET /api/placement/status` and `GET /api/student/placement/current` (previously also 500) → both **HTTP 200**.
+- `GET /api/admin/diagnostics/events?level=Error&limit=20` filtered to the 15-minute window spanning the deploy and this check → **zero error events.**
+
+The P0 is fixed in production, not just locally.
 
 ## Local validation results
 
@@ -115,19 +123,19 @@ Not yet performed at the time of writing this review — validation was performe
 
 ## TODO-20E-1 status
 
-**Root cause found and fixed locally; production fix pending deployment via this commit.** `TODOS.md` updated to mark `TODO-20E-1` resolved pending live confirmation, with a new follow-up TODO for the required post-deploy live check.
+**RESOLVED, confirmed live.** `TODOS.md` updated: `TODO-20E-1` marked fixed, and its follow-up `TODO-20F-1` (live confirmation) marked resolved with the results above.
 
 ## Remaining risks / unresolved questions
 
-- **Production has not yet been directly confirmed fixed** — this fix was validated against a local environment that reproduces the exact symptom class, not against `https://speakpath.app` itself. A live check after deployment is required before declaring the pilot fully unblocked (see "Next recommended action").
-- The three duplicate-table pairs (`T59` vs `T65`/`T66`, `T68_PendingModelChanges` vs `T68_WritingEvaluationAppliedSignal`) are evidence of a deeper process gap: at some point, the same feature was migrated twice under different names, and at least one of each pair silently never applied for months. No process change is proposed in this phase (out of scope — this is a P0 unblocker, not a migration-process overhaul), but is worth a retro.
+- The three duplicate-table pairs (`T59` vs `T65`/`T66`, `T68_PendingModelChanges` vs `T68_WritingEvaluationAppliedSignal`) are evidence of a deeper process gap: at some point, the same feature was migrated twice under different names, and at least one of each pair silently never applied for months. No process change is proposed in this phase (out of scope — this is a P0 unblocker, not a migration-process overhaul), but is worth a retro (`TODO-20F-3`).
 - `docs/roadmap/road-map.md` §20 states "Migrations are hand-authored, named T1–T66 in sequence. Never auto-generate migrations." This phase's migrations (T67 onward, plus the various duplicates) show that invariant already broke down before this session; not re-litigated here, but noted as a maintenance-notes accuracy gap.
-- No integration test exercises real Postgres via actual migration files (all integration tests use SQLite `EnsureCreated()`), so a *future* instance of "migration file exists but has no Designer.cs" would only be caught by the new architecture test — which is dependency-free and fast, but does not verify the migration's SQL actually executes cleanly against Postgres. A real-Postgres migration-application smoke test (e.g., via Testcontainers, run in CI) would close this gap; tracked as a new TODO.
+- No integration test exercises real Postgres via actual migration files (all integration tests use SQLite `EnsureCreated()`), so a *future* instance of "migration file exists but has no Designer.cs" would only be caught by the new architecture test — which is dependency-free and fast, but does not verify the migration's SQL actually executes cleanly against Postgres. A real-Postgres migration-application smoke test (e.g., via Testcontainers, run in CI) would close this gap; tracked as `TODO-20F-2`.
+- The Phase 20E pilot student (`pilot.student.20e@speakpath.app`) now has one in-progress placement assessment started during this live validation (`assessmentId=9945e76e-35dc-4ee3-a0ed-8e1f3b22d8bb`) — left in-progress, not completed, since finishing the full assessment was out of scope for this P0 confirmation check. A future pilot session can complete it or start fresh.
 
 ## Whether the live pilot can resume
 
-**Conditionally yes — pending one live confirmation step after this commit deploys.** All evidence from local reproduction (which independently matched production's exact symptom pattern) says this fix resolves the P0. The Phase 20E pilot student (`pilot.student.20e@speakpath.app`) can resume the walkthrough from the placement step once deployment completes and a live check confirms `POST /api/student/placement/start` no longer 500s.
+**Yes.** The P0 blocker is fixed and confirmed live. The Phase 20E pilot student can resume the walkthrough from the placement step (an assessment is already in progress for them from this validation) onward through activity completion, feedback, Practice Gym, Journey, and Progress — none of which were reachable in Phase 20E.
 
 ## Final verdict
 
-Root cause identified with high confidence (reproduced locally, both as the exact failure and as the fix). Fix applied, is additive/idempotent/non-destructive, and passes all available local validation including a from-scratch fresh-database migration run. Not yet confirmed live against production. **Recommended next action: after this commit deploys, run a single live check (readiness audit + placement start) against `pilot.student.20e@speakpath.app` in production and update this review + `TODOS.md` with the result.**
+Root cause identified and fixed with full confidence: reproduced locally (both as the exact failure and as the fix, against both a fresh database and a database independently drifted to match production), and **directly confirmed live against `https://speakpath.app`** — readiness audit returns structured 200 results, placement start returns 201, the placement UI renders and is interactive, and zero new errors appear in production diagnostics. **Recommended next action: resume the Phase 20E pilot walkthrough from the placement step through activity completion, feedback, and the remaining student routes, to close out the original pilot-readiness acceptance criteria.**

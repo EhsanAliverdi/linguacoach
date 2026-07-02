@@ -599,8 +599,7 @@ progress is always computed live from the ledger.
 ## Production Placement/Readiness P0 Unblocker (Phase 20F)
 
 ### TODO-20F-1 — Confirm the migration fix live against production
-**What:** After this commit deploys via the normal CI/CD pipeline, run one live check against `https://speakpath.app`: `GET /api/admin/students/{id}/readiness` for `pilot.student.20e@speakpath.app` (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`) should return 200 with structured checks (not 500), and `POST /api/student/placement/start` for that student should return 201.
-**Why:** Phase 20F's fix was validated against a local Docker sandbox (real Postgres, rebuilt from current source) that independently reproduced production's exact symptom pattern — not against production itself, since no DB/SSH/log access was available in that session.
+**Status: RESOLVED, confirmed live 2026-07-02.** After the fix deployed via CI/CD (`gh run 28570470545`, ~2.5 min build+deploy), live-checked against `https://speakpath.app`: `GET /api/admin/students/{id}/readiness` for `pilot.student.20e@speakpath.app` (`c2a7caff-b46a-4da4-b424-8bd5ca8c0394`) → **200**, `readyForPilot: true`, `readinessStatus: needsAttention` (0 blocking, 2 warnings, 4 info — a real, non-500, structured result). `POST /api/student/placement/start` (as the pilot student) → **201**, followed by `GET /api/student/placement/next` → **200** with a real Question 1 (Listening) rendering correctly in the UI with answer options. `/api/placement/status` and `/api/student/placement/current` also returned 200 (previously 500). Admin diagnostics showed **zero errors logged** in the 15 minutes spanning the deploy and this check.
 **Context:** `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
 **Deferred from:** Phase 20F, 2026-07-02.
 
