@@ -12,6 +12,7 @@ public sealed record FeatureGateSettingValueDto
     public required string DefaultValueJson { get; init; }
     public required FeatureGateValueSource ValueSource { get; init; }
     public required bool IsEditableAtRuntime { get; init; }
+    public required bool IsRuntimeEffective { get; init; }
     public required FeatureGateRiskLevel RiskLevel { get; init; }
     public bool RequiresConfirmation { get; init; }
     public double? MinValue { get; init; }

@@ -1571,6 +1571,7 @@ export interface FeatureGateSettingValue {
   defaultValueJson: string;
   valueSource: FeatureGateValueSource;
   isEditableAtRuntime: boolean;
+  isRuntimeEffective: boolean;
   riskLevel: FeatureGateRiskLevel;
   requiresConfirmation: boolean;
   minValue: number | null;

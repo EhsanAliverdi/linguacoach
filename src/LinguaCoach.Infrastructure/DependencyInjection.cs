@@ -386,6 +386,8 @@ public static class DependencyInjection
                 configuration.GetSection(ReadinessPoolReplenishmentOptions.SectionName));
         else
             services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.ReadinessPool.IEffectiveReadinessPoolSettingsProvider,
+            LinguaCoach.Infrastructure.ReadinessPool.EffectiveReadinessPoolSettingsProvider>();
         services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
         services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
         services.AddScoped<Jobs.NotificationDispatchJob>();

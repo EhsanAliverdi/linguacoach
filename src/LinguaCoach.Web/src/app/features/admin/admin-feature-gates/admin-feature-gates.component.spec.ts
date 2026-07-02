@@ -26,6 +26,7 @@ const PILOT_GROUP: FeatureGateGroup = {
       defaultValueJson: 'false',
       valueSource: 'appSettings',
       isEditableAtRuntime: true,
+      isRuntimeEffective: true,
       riskLevel: 'medium',
       requiresConfirmation: false,
       minValue: null,
@@ -42,6 +43,7 @@ const PILOT_GROUP: FeatureGateGroup = {
       defaultValueJson: '2',
       valueSource: 'appSettings',
       isEditableAtRuntime: true,
+      isRuntimeEffective: true,
       riskLevel: 'low',
       requiresConfirmation: false,
       minValue: 0,
@@ -76,6 +78,7 @@ const LOCKED_GROUP: FeatureGateGroup = {
       defaultValueJson: 'false',
       valueSource: 'hardcoded',
       isEditableAtRuntime: false,
+      isRuntimeEffective: false,
       riskLevel: 'critical',
       requiresConfirmation: false,
       minValue: null,
@@ -195,6 +198,13 @@ describe('AdminFeatureGatesComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('sp-admin-toggle')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('sp-admin-number-input')).toBeTruthy();
+  });
+
+  it('shows a Runtime effective badge for runtime-wired editable settings', async () => {
+    await setup();
+    component.openDrawer(PILOT_GROUP);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Runtime effective');
   });
 
   it('locked gates do not show a Save button', async () => {

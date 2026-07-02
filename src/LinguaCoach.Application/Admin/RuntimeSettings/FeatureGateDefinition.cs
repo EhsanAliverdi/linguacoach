@@ -14,6 +14,15 @@ public sealed record FeatureGateSettingDefinition
     public required FeatureGateDataType DataType { get; init; }
     public required string DefaultValueJson { get; init; }
     public bool IsEditableAtRuntime { get; init; }
+
+    /// <summary>
+    /// When true, a change to this setting is consumed by a real running service/job on its
+    /// next run/request — no redeploy or restart needed (Phase 20C). When false, the value is
+    /// stored and displayed but no code path currently reads it (e.g. some lesson-generation
+    /// fields have no consuming job yet); editing it has no observable effect.
+    /// </summary>
+    public bool IsRuntimeEffective { get; init; } = true;
+
     public FeatureGateRiskLevel RiskLevel { get; init; } = FeatureGateRiskLevel.Low;
     public bool RequiresConfirmation { get; init; }
     public double? MinValue { get; init; }

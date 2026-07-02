@@ -518,10 +518,7 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 ## Admin Runtime Settings / Feature Gates (Phase 20B)
 
 ### TODO-20B-1 — Wire `RuntimeSettingOverride` into `ReadinessPoolReplenishmentService`'s live read path
-**What:** Make the background replenishment engine read the active `RuntimeSettingOverride` row (if any) instead of only `IOptions<ReadinessPoolReplenishmentOptions>`, so admin edits to review-scaffold/Practice-Gym-pilot settings take effect without a redeploy.
-**Why:** Phase 20B explicitly scoped the admin UI to show effective values and let admins write overrides, but left the actual runtime consumer unchanged, per the phase brief ("acceptable if some existing code still reads appsettings directly").
-**Context:** `ReadinessPoolReplenishmentService` currently injects `IOptions<ReadinessPoolReplenishmentOptions>` directly. Wiring would mean either replacing that injection with `IRuntimeSettingsService`/`IFeatureGateRegistry`, or adding a small resolver shared by both the admin registry and the runtime service.
-**Deferred from:** Phase 20B engineering review, 2026-07-02.
+**Status: RESOLVED in Phase 20C (2026-07-02).** `IEffectiveReadinessPoolSettingsProvider` (`Application/ReadinessPool/`, implemented in `Infrastructure/ReadinessPool/EffectiveReadinessPoolSettingsProvider.cs`) now resolves appsettings + active `RuntimeSettingOverride` rows, and both `ReadinessPoolReplenishmentService` and `PracticeGymSuggestionService` depend on it instead of `IOptions<ReadinessPoolReplenishmentOptions>` directly. Admin edits to review-scaffold/Practice-Gym-pilot settings now take effect on the next job run/request with no redeploy. See `docs/architecture/runtime-settings-and-feature-gates.md` ("Runtime-effective wiring") and the Phase 20C review doc.
 
 ### TODO-20B-2 — Make `ReadinessPoolReplenishmentOptions` buffer/threshold fields admin-editable
 **What:** Extend the feature-gate registry so `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MinimumReadyThreshold`, `MaxBufferCount`, `ReadyItemExpiryDays`, `ReservedItemExpiryHours`, `GeneratingTimeoutMinutes`, `FailedRetryDelayMinutes`, and `MaxItemsGeneratedPerRun` are runtime-editable (currently read-only/observational in the registry).
@@ -534,3 +531,13 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **Why:** Phase 20B's brief required these to "default conservative and must not be changed by this phase" — they are shown in the registry for visibility but forced read-only regardless of the underlying appsettings mutability.
 **Context:** `AllowObjectiveCompletion`/`AllowCefrUpdate` are hardcoded `false` in code and must stay that way; only the four signal-application flags above are realistic candidates for future runtime editing.
 **Deferred from:** Phase 20B engineering review, 2026-07-02 (explicit product/safety decision, not a technical limitation).
+
+---
+
+## Runtime Settings Effective Wiring (Phase 20C)
+
+### TODO-20C-1 — Build real enforcement for the 7 lesson-generation fields with no consuming job
+**What:** Add actual timeout/concurrency/retry-attempt enforcement so `MaxGenerationAttempts`, `GenerationTimeoutSeconds`, `MaxConcurrentGenerationJobs`, `EnableTtsGeneration`, `TtsTimeoutSeconds`, `MaxConcurrentTtsJobs`, and `PracticeGymReadyExercisesPerType` are runtime-effective (currently editable/audited but display-only).
+**Why:** Code search during Phase 20C confirmed no job in this codebase reads these fields at all — `ActivityMaterializationJob` and `PracticeGymGenerationJob` have no timeout wrapper, concurrency limiter, or attempt-count retry loop today. Wiring them would mean building new behavior (not redirecting a read), which was judged out of Phase 20C's "careful and limited" mandate.
+**Context:** Would likely require: a `CancellationTokenSource` timeout wrapper around AI generation calls (`GenerationTimeoutSeconds`, `TtsTimeoutSeconds`), a semaphore or Quartz `[DisallowConcurrentExecution]`-style guard per student/job type (`MaxConcurrentGenerationJobs`, `MaxConcurrentTtsJobs`), an attempt-count check before giving up on a queued item (`MaxGenerationAttempts` — note a similarly-named field already exists and is read on `ReadinessPoolReplenishmentOptions`, a different class from `LessonGenerationSettings`; do not conflate them), and a cap on the Practice Gym per-type cache size (`PracticeGymReadyExercisesPerType`).
+**Deferred from:** Phase 20C engineering review, 2026-07-02.

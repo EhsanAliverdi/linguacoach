@@ -9,7 +9,6 @@ using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Infrastructure.ReadinessPool;
 
@@ -37,7 +36,12 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
     private readonly IStudentMasteryEvaluationService _mastery;
     private readonly ILearningGoalContextResolver _goalResolver;
     private readonly ICurriculumRoutingService _routing;
-    private readonly ReadinessPoolReplenishmentOptions _opts;
+    private readonly IEffectiveReadinessPoolSettingsProvider _settingsProvider;
+
+    // Resolved fresh (from appsettings + any active admin override) at the top of every
+    // public entry point — see RunAsync/GetHealthAsync. Defaults to safe class defaults
+    // until first resolved.
+    private ReadinessPoolReplenishmentOptions _opts = new();
     private readonly ILogger<ReadinessPoolReplenishmentService> _logger;
 
     public ReadinessPoolReplenishmentService(
@@ -47,7 +51,7 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         IStudentMasteryEvaluationService mastery,
         ILearningGoalContextResolver goalResolver,
         ICurriculumRoutingService routing,
-        IOptions<ReadinessPoolReplenishmentOptions> opts,
+        IEffectiveReadinessPoolSettingsProvider settingsProvider,
         ILogger<ReadinessPoolReplenishmentService> logger)
     {
         _db = db;
@@ -56,12 +60,14 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         _mastery = mastery;
         _goalResolver = goalResolver;
         _routing = routing;
-        _opts = opts.Value;
+        _settingsProvider = settingsProvider;
         _logger = logger;
     }
 
     public async Task<ReplenishmentRunSummary> RunAsync(CancellationToken ct = default)
     {
+        _opts = await _settingsProvider.GetEffectiveAsync(ct);
+
         var started = DateTime.UtcNow;
         var totalQueued = 0;
         var totalExpired = 0;
@@ -173,6 +179,8 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         ReadinessPoolSource source,
         CancellationToken ct = default)
     {
+        _opts = await _settingsProvider.GetEffectiveAsync(ct);
+
         var target = source == ReadinessPoolSource.TodayLesson
             ? _opts.TodayLessonPoolTargetCount
             : _opts.PracticeGymPoolTargetCount;
@@ -574,6 +582,19 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             }
 
             existingKeySet.Add(key);
+
+            // DryRunOnly: review/scaffold items are computed (routing, dedup, caps all still
+            // apply) but never persisted. Normal new-learning items are unaffected regardless
+            // of DryRunOnly — this flag only gates the review/scaffold generation path.
+            var isScaffoldItem = allowReviewOrScaffold && routing.RoutingReason != RoutingReason.Normal;
+            if (isScaffoldItem && _opts.DryRunOnly)
+            {
+                skipped++;
+                _logger.LogDebug(
+                    "ReadinessPool: DryRunOnly active — simulated (not persisted) scaffold item for student {StudentId} source={Source} obj={Obj}.",
+                    profile.Id, source, routing.CurriculumObjectiveKey);
+                continue;
+            }
 
             var req = ReadinessItemRequestBuilder.FromRoutingRecommendation(
                 studentId: profile.Id,

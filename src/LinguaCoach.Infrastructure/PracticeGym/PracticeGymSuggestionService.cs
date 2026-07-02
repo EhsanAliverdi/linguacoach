@@ -6,7 +6,6 @@ using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Infrastructure.PracticeGym;
 
@@ -37,7 +36,10 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IReadinessPoolReplenishmentService _replenishment;
-    private readonly ReadinessPoolReplenishmentOptions _opts;
+    private readonly IEffectiveReadinessPoolSettingsProvider _settingsProvider;
+
+    // Resolved fresh at the top of GetSuggestionsForStudentAsync — see below.
+    private ReadinessPoolReplenishmentOptions _opts = new();
     private readonly ILogger<PracticeGymSuggestionService> _logger;
 
     private const int MaxSuggested = 6;
@@ -47,12 +49,12 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
     public PracticeGymSuggestionService(
         LinguaCoachDbContext db,
         IReadinessPoolReplenishmentService replenishment,
-        IOptions<ReadinessPoolReplenishmentOptions> opts,
+        IEffectiveReadinessPoolSettingsProvider settingsProvider,
         ILogger<PracticeGymSuggestionService> logger)
     {
         _db = db;
         _replenishment = replenishment;
-        _opts = opts.Value;
+        _settingsProvider = settingsProvider;
         _logger = logger;
     }
 
@@ -60,6 +62,8 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         Guid studentId,
         CancellationToken ct = default)
     {
+        _opts = await _settingsProvider.GetEffectiveAsync(ct);
+
         var (profile, profileId) = await ResolveProfileAsync(studentId, ct);
 
         var focusTags   = profile?.FocusAreas   ?? [];

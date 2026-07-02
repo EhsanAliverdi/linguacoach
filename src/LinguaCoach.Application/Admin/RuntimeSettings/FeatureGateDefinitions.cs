@@ -189,16 +189,17 @@ public static class FeatureGateDefinitions
             Int("LessonGeneration.ReadyLessonBufferSize", "Ready lesson buffer size", "Target number of ready lessons maintained per student.", 5, min: 1),
             Int("LessonGeneration.RefillThreshold", "Refill threshold", "Ready-lesson count at or below which a refill is triggered. Must stay below the buffer size.", 1, min: 0),
             Int("LessonGeneration.RefillBatchSize", "Refill batch size", "Number of lessons generated per refill batch.", 4, min: 1),
-            Int("LessonGeneration.MaxGenerationAttempts", "Max generation attempts", "Maximum generation attempts per lesson before it is abandoned.", 2, min: 1),
-            Int("LessonGeneration.GenerationTimeoutSeconds", "Generation timeout (seconds)", "Per-lesson generation timeout.", 120, min: 1),
+            Int("LessonGeneration.MaxGenerationAttempts", "Max generation attempts", "Maximum generation attempts per lesson before it is abandoned. No job currently reads this field — display only.", 2, min: 1, isRuntimeEffective: false),
+            Int("LessonGeneration.GenerationTimeoutSeconds", "Generation timeout (seconds)", "Per-lesson generation timeout. No job currently reads this field — display only.", 120, min: 1, isRuntimeEffective: false),
             new FeatureGateSettingDefinition
             {
                 Key = "LessonGeneration.MaxConcurrentGenerationJobs",
                 DisplayName = "Max concurrent generation jobs",
-                Description = "Maximum number of lesson-generation jobs allowed to run concurrently.",
+                Description = "Maximum number of lesson-generation jobs allowed to run concurrently. No job currently reads this field — display only.",
                 DataType = FeatureGateDataType.Integer,
                 DefaultValueJson = "2",
                 IsEditableAtRuntime = true,
+                IsRuntimeEffective = false,
                 RiskLevel = FeatureGateRiskLevel.Medium,
                 MinValue = 1,
             },
@@ -228,14 +229,15 @@ public static class FeatureGateDefinitions
             {
                 Key = "LessonGeneration.EnableTtsGeneration",
                 DisplayName = "Enable TTS generation",
-                Description = "When off, audio assets are not generated for new lessons.",
+                Description = "When off, audio assets are not generated for new lessons. No job currently reads this field — display only.",
                 DataType = FeatureGateDataType.Boolean,
                 DefaultValueJson = "true",
                 IsEditableAtRuntime = true,
+                IsRuntimeEffective = false,
                 RiskLevel = FeatureGateRiskLevel.Low,
             },
-            Int("LessonGeneration.TtsTimeoutSeconds", "TTS timeout (seconds)", "Per-request timeout for TTS generation.", 60, min: 1),
-            Int("LessonGeneration.MaxConcurrentTtsJobs", "Max concurrent TTS jobs", "Maximum number of TTS generation jobs allowed to run concurrently.", 2, min: 1),
+            Int("LessonGeneration.TtsTimeoutSeconds", "TTS timeout (seconds)", "Per-request timeout for TTS generation. No job currently reads this field — display only.", 60, min: 1, isRuntimeEffective: false),
+            Int("LessonGeneration.MaxConcurrentTtsJobs", "Max concurrent TTS jobs", "Maximum number of TTS generation jobs allowed to run concurrently. No job currently reads this field — display only.", 2, min: 1, isRuntimeEffective: false),
         ],
     };
 
@@ -248,7 +250,7 @@ public static class FeatureGateDefinitions
         BackingStore = FeatureGateBackingStore.LessonGenerationSettingsTable,
         Settings =
         [
-            Int("LessonGeneration.PracticeGymReadyExercisesPerType", "Ready exercises per type", "Target number of ready Practice Gym exercises cached per exercise type.", 10, min: 1),
+            Int("LessonGeneration.PracticeGymReadyExercisesPerType", "Ready exercises per type", "Target number of ready Practice Gym exercises cached per exercise type. No job currently reads this field — display only.", 10, min: 1, isRuntimeEffective: false),
             Int("LessonGeneration.PracticeGymRefillThresholdPerType", "Refill threshold per type", "Ready-count at or below which a refill is triggered for a given exercise type. Must stay below the ready count.", 3, min: 0),
             Int("LessonGeneration.PracticeGymRefillCountPerType", "Refill count per type", "Number of exercises generated per refill for a given exercise type.", 7, min: 1),
         ],
@@ -307,7 +309,7 @@ public static class FeatureGateDefinitions
         Settings = [],
     };
 
-    private static FeatureGateSettingDefinition Int(string key, string displayName, string description, int defaultValue, int? min = null, int? max = null) => new()
+    private static FeatureGateSettingDefinition Int(string key, string displayName, string description, int defaultValue, int? min = null, int? max = null, bool isRuntimeEffective = true) => new()
     {
         Key = key,
         DisplayName = displayName,
@@ -315,6 +317,7 @@ public static class FeatureGateDefinitions
         DataType = FeatureGateDataType.Integer,
         DefaultValueJson = defaultValue.ToString(),
         IsEditableAtRuntime = true,
+        IsRuntimeEffective = isRuntimeEffective,
         RiskLevel = FeatureGateRiskLevel.Low,
         MinValue = min,
         MaxValue = max,

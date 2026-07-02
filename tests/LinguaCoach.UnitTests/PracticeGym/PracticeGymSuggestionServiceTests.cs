@@ -8,7 +8,6 @@ using LinguaCoach.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.UnitTests.PracticeGym;
 
@@ -40,7 +39,7 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
     }
 
     private PracticeGymSuggestionService BuildSut(ReadinessPoolReplenishmentOptions opts) =>
-        new(_db, _replenishment, Options.Create(opts), NullLogger<PracticeGymSuggestionService>.Instance);
+        new(_db, _replenishment, new StubSettingsProvider(opts), NullLogger<PracticeGymSuggestionService>.Instance);
 
     // 1. Consumed items excluded from all sections.
     [Fact]
@@ -410,6 +409,16 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
 }
 
 /// <summary>Stub replenishment service for unit tests — returns configurable health.</summary>
+internal sealed class StubSettingsProvider : IEffectiveReadinessPoolSettingsProvider
+{
+    private readonly ReadinessPoolReplenishmentOptions _opts;
+
+    public StubSettingsProvider(ReadinessPoolReplenishmentOptions opts) => _opts = opts;
+
+    public Task<ReadinessPoolReplenishmentOptions> GetEffectiveAsync(CancellationToken ct = default) =>
+        Task.FromResult(_opts);
+}
+
 internal sealed class StubReplenishmentService : IReadinessPoolReplenishmentService
 {
     public int TargetCount { get; set; } = 10;

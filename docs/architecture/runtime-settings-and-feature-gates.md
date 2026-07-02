@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-02 00:00
+lastUpdated: 2026-07-02 (20C)
 owner: architecture
 supersedes:
 supersededBy:
 ---
 
-# Runtime Settings & Feature Gates (Phase 20B)
+# Runtime Settings & Feature Gates (Phase 20B, wired in 20C)
 
 ## Problem this solves
 
@@ -71,16 +71,79 @@ For `AppSettingsReadOnly` groups: values always come from `IOptions<T>`;
 `AllowObjectiveCompletion`/`AllowCefrUpdate` report `Hardcoded` as their
 source.
 
-## Important scope boundary
+## Runtime-effective wiring (Phase 20C)
 
-`ReadinessPoolReplenishmentService` (the actual background replenishment
-engine) still reads only `IOptions<ReadinessPoolReplenishmentOptions>` — it
-does **not** consult `RuntimeSettingOverride` rows. Per this phase's
-explicit scope, that's acceptable: the admin summary/settings UI correctly
-shows the effective value and source, but wiring the override into the live
-replenishment read path is deferred (see `TODOS.md`). No AI scoring, CEFR
-update, objective completion, Learning Plan regeneration, or review
-scaffold *runtime* behavior changed as part of this phase.
+Phase 20B's scope boundary said `ReadinessPoolReplenishmentService` read
+only appsettings and did not consult `RuntimeSettingOverride`. Phase 20C
+closes that gap for the safe, reviewed groups:
+
+- **New `IEffectiveReadinessPoolSettingsProvider`**
+  (`Application/ReadinessPool/IEffectiveReadinessPoolSettingsProvider.cs`,
+  implemented by `Infrastructure/ReadinessPool/EffectiveReadinessPoolSettingsProvider.cs`)
+  — clones the `IOptions<ReadinessPoolReplenishmentOptions>` snapshot, then
+  applies any active `RuntimeSettingOverride` rows with key prefix
+  `"ReadinessPool."` on top, one field at a time. Fails safe at two levels:
+  a DB failure returns the unmodified appsettings clone (logged as a
+  warning); a single corrupt override value is skipped (that field keeps
+  its appsettings value) without affecting any other override.
+- **`ReadinessPoolReplenishmentService` and `PracticeGymSuggestionService`**
+  now depend on this provider instead of `IOptions<ReadinessPoolReplenishmentOptions>`
+  directly. Each public entry point (`RunAsync`, `GetHealthAsync`,
+  `GetSuggestionsForStudentAsync`) resolves the effective snapshot once at
+  the top of the call; every private helper method keeps reading the same
+  `_opts` field exactly as before — a deliberately minimal, low-risk diff.
+  Since both services are `Scoped` and Quartz creates a fresh DI scope per
+  job execution (and ASP.NET Core creates one per HTTP request), this is
+  sufficient to make admin overrides take effect on the *next* run/request
+  with no caching layer, no app restart, and no distributed cache needed.
+- **`DryRunOnly` fix**: this flag existed since Phase 19A but was never
+  actually read by the generation path — it was only ever displayed on the
+  dry-run summary endpoint. `FillShortfallAsync` now skips persisting a
+  scaffold/review item (computing routing/dedup/caps as normal, just not
+  calling `CreateQueuedAsync`) whenever `EnableReviewScaffoldGeneration &&
+  DryRunOnly` for that item. Normal new-learning generation is completely
+  unaffected by this flag.
+- **`review-scaffold-generation`** and **`practice-gym-review-scaffold-pilot`**
+  groups are now fully runtime-effective: `EnableReviewScaffoldGeneration`,
+  `DryRunOnly`, `RequireAdminReview`, `MaxScaffoldItemsPerStudentPerDay`,
+  `ScaffoldAllowedSources`, `AllowTodayLessonInsertion`,
+  `MinimumConfidenceForReviewNeed`, `PracticeGymPilotEnabled`,
+  `PracticeGymPilotLabel`, `PracticeGymPilotReason`,
+  `MaxStudentVisibleScaffoldSuggestions`.
+- **`lesson-generation-buffer`** (`ReadyLessonBufferSize`, `RefillThreshold`,
+  `RefillBatchSize`, `EnableBackgroundGeneration`) and
+  **`practice-gym-generation-per-type`**
+  (`PracticeGymRefillThresholdPerType`, `PracticeGymRefillCountPerType`)
+  were **already runtime-effective before Phase 20C** — the consuming jobs
+  (`LessonBufferRefillJob`, `LessonBatchGenerationJob`,
+  `PracticeGymBufferRefillJob`) read `LessonGenerationSettings` directly
+  from the database, the same row the admin PUT endpoint writes to. Phase
+  20C only added tests/labeling confirming this, no code change needed.
+- **Display-only (not wired, no code change)**: `MaxGenerationAttempts`,
+  `GenerationTimeoutSeconds`, `MaxConcurrentGenerationJobs` (in
+  `lesson-generation-buffer`), `EnableTtsGeneration`, `TtsTimeoutSeconds`,
+  `MaxConcurrentTtsJobs` (`tts-generation`), and
+  `PracticeGymReadyExercisesPerType` (`practice-gym-generation-per-type`)
+  are editable and audited, but **no job in this codebase actually reads
+  them today** (confirmed by code search — `ActivityMaterializationJob`
+  and `PracticeGymGenerationJob` have no timeout/concurrency/attempt-count
+  enforcement at all). Wiring these would mean *building new enforcement
+  behavior* (a concurrency limiter, a timeout wrapper, a retry counter),
+  not just redirecting a read — out of this phase's safe/limited scope.
+  Each such setting's registry `Description` says so explicitly, and the
+  admin drawer shows a "Display only — requires deployment" badge for
+  them. See `TODO-20C-1`.
+- **AI signal-safety gates and `learning-plan-regeneration`** remain
+  exactly as Phase 20B left them: read-only, no new provider, no behavior
+  change. No dangerous AI learning gate was made editable or wired.
+
+Each `FeatureGateSettingDefinition` now carries an `IsRuntimeEffective`
+flag (`Application/Admin/RuntimeSettings/FeatureGateDefinition.cs`) so the
+admin drawer can show "Runtime effective" vs. "Display only" per editable
+setting, surfaced through `FeatureGateSettingValueDto.IsRuntimeEffective`.
+
+No AI scoring, CEFR update, objective completion, or Learning Plan
+regeneration behavior changed as part of this phase.
 
 ## API
 

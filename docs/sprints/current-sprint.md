@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20B)
+lastUpdated: 2026-07-02 (20C)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,78 @@ Last updated: 2026-07-02
 ---
 
 ## Active sprint
+
+**Phase 20C — Runtime Settings Effective Wiring** — complete (2026-07-02)
+
+Wires the Phase 20B admin-editable review-scaffold/Practice-Gym-pilot settings into the
+actual runtime services, so admin overrides take effect on the next job run/request without
+a redeploy — closing the gap Phase 20B explicitly deferred. Also fixes a pre-existing gap
+where `DryRunOnly` was defined and displayed but never actually enforced in the generation
+path. Careful and limited: no learning-behaviour change beyond honoring existing safe
+settings, no dangerous AI signal-safety gate made editable or wired, defaults unchanged when
+no override exists.
+
+**New Application:**
+- `IEffectiveReadinessPoolSettingsProvider` (`Application/ReadinessPool/`) — resolves
+  effective `ReadinessPoolReplenishmentOptions` (appsettings + active `RuntimeSettingOverride`
+  rows), fails safe on DB/parse errors
+
+**New Infrastructure:**
+- `EffectiveReadinessPoolSettingsProvider` — clone-then-apply-overrides resolution, mirrors
+  `RuntimeSettingsService`'s key/JSON encoding
+
+**Modified Infrastructure:**
+- `ReadinessPoolReplenishmentService` — now depends on the new provider instead of
+  `IOptions<ReadinessPoolReplenishmentOptions>`; resolves effective settings once at the top
+  of `RunAsync`/`GetHealthAsync`; added the missing `DryRunOnly` enforcement in
+  `FillShortfallAsync` (skips persisting scaffold/review items when
+  `EnableReviewScaffoldGeneration && DryRunOnly`, normal generation unaffected)
+- `PracticeGymSuggestionService` — same provider swap, resolved at the top of
+  `GetSuggestionsForStudentAsync`
+
+**Modified Application (Phase 20B registry, additive):**
+- `FeatureGateSettingDefinition`/`FeatureGateSettingValueDto` — new `IsRuntimeEffective` flag,
+  set per-setting in `FeatureGateDefinitions` (true for all review-scaffold/pilot settings and
+  the lesson-generation fields jobs already consume; false — "display only, no consuming code
+  path exists yet" — for `MaxGenerationAttempts`/`GenerationTimeoutSeconds`/
+  `MaxConcurrentGenerationJobs`/`EnableTtsGeneration`/`TtsTimeoutSeconds`/
+  `MaxConcurrentTtsJobs`/`PracticeGymReadyExercisesPerType`, none of which any job reads today)
+
+**New Angular:**
+- Feature-gates drawer shows a "Runtime effective" / "Display only — requires deployment"
+  badge per editable setting
+
+**Tests added:**
+- `EffectiveReadinessPoolSettingsProviderTests` (unit, 9 tests) — no-override baseline,
+  per-type override application, inactive-override ignored, corrupt-value fail-safe, DB-failure
+  fail-safe, registry/provider key sync check
+- `ReadinessPoolReplenishmentServiceEffectiveSettingsTests` (unit, 5 tests, with lightweight
+  fakes for ledger/mastery/routing/goal-context) — baseline-false blocks generation,
+  `DryRunOnly=true` computes-but-doesn't-persist, `DryRunOnly=false` persists,
+  `RequireAdminReview` flows through, `MaxScaffoldItemsPerStudentPerDay=0` blocks from the
+  first attempt
+- `AdminRuntimeSettingsEffectiveWiringTests` (integration, 5 tests) — admin PUT of
+  `PracticeGymPilotEnabled` through the real API makes an approved scaffold item visible via
+  the real suggestion service in a fresh DI scope; label/reason PUT reflected in the
+  suggestion DTO; DELETE override reverts to appsettings default; lesson-generation-buffer PUT
+  reflected in the `LessonGenerationSettings` row; student role → 403
+- Extended `PracticeGymSuggestionServiceTests` (`BuildSut` now injects a stub
+  `IEffectiveReadinessPoolSettingsProvider`) — existing Phase 19C pilot tests now exercise the
+  new wiring path unchanged
+
+**Build/test totals:** Backend unit: 1,731 (+14, 0 regressions). Integration: 1,370 (+5, 0
+regressions). Architecture: 3 (unchanged). Angular unit: 1,538/1,658 (120 pre-existing
+failures, unrelated, unchanged from Phase 20B — 0 new regressions; +1 new badge test passes).
+Production build: clean.
+
+Explicitly deferred (`TODO-20C-1`): wiring the 7 lesson-generation settings with no consuming
+job today would require building new enforcement behavior (timeout wrapper, concurrency
+limiter, retry counter) — out of this phase's safe/limited scope.
+
+See `docs/reviews/2026-07-02-phase-20c-runtime-settings-effective-wiring-review.md` for the
+full design rationale.
+
+---
 
 **Phase 20B — Admin Runtime Settings & Feature Gates** — complete (2026-07-02)
 

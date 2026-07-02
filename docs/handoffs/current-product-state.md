@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20B)
+lastUpdated: 2026-07-02 (20C)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,31 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-02 (20B)
+Last updated: 2026-07-02 (20C)
+
+---
+
+## Runtime Settings Effective Wiring (Phase 20C, 2026-07-02)
+
+Admin edits to review-scaffold and Practice Gym pilot settings now change real student-facing behavior on the next run/request — not just the admin display.
+
+**What changed:**
+
+- Admin overrides for `EnableReviewScaffoldGeneration`, `DryRunOnly`, `RequireAdminReview`, `MaxScaffoldItemsPerStudentPerDay`, `ScaffoldAllowedSources`, `AllowTodayLessonInsertion`, `MinimumConfidenceForReviewNeed`, `PracticeGymPilotEnabled`, `PracticeGymPilotLabel`, `PracticeGymPilotReason`, and `MaxStudentVisibleScaffoldSuggestions` now flow into `ReadinessPoolReplenishmentService` and `PracticeGymSuggestionService` — the actual background replenishment job and Practice Gym suggestion API. No app restart or redeploy needed; the change applies on the next job run or HTTP request.
+- **Fixed a pre-existing gap:** `DryRunOnly` (default `true`, safe) existed since Phase 19A but was never actually consulted by the real generation code — only shown on an admin dry-run display. It's now enforced: when on, review/scaffold items are computed but not persisted; normal lesson generation is unaffected.
+- Lesson-generation buffer settings (`ReadyLessonBufferSize`, `RefillThreshold`, `RefillBatchSize`, `EnableBackgroundGeneration`, and the Practice-Gym-per-type refill settings) were confirmed to already be effective — the background jobs read the same database row the admin page writes to.
+- The admin feature-gates drawer now shows a "Runtime effective" or "Display only — requires deployment" badge next to each editable setting.
+
+**What is NOT changed:**
+
+- No AI scoring, CEFR update, objective completion, or Learning Plan regeneration behavior changed.
+- AI signal-safety gates (mastery-signal application, review/positive signal gates, CEFR-update/objective-completion flags) remain locked and untouched — no dangerous AI learning gate was made editable or wired into behavior.
+- Seven lesson-generation settings (`MaxGenerationAttempts`, `GenerationTimeoutSeconds`, `MaxConcurrentGenerationJobs`, `EnableTtsGeneration`, `TtsTimeoutSeconds`, `MaxConcurrentTtsJobs`, `PracticeGymReadyExercisesPerType`) remain editable/audited but display-only — no job in the codebase reads them today, and adding that enforcement was judged out of scope for this careful, limited phase (tracked as `TODO-20C-1`).
+- Defaults are unchanged for every student where no admin override exists.
+
+**Test coverage:** 1,731 backend unit tests pass (+14 new). 1,370 backend integration tests pass (+5 new). 1,538/1,658 Angular unit tests pass (120 pre-existing, unrelated failures; 0 new regressions). Production build clean.
+
+Review: `docs/reviews/2026-07-02-phase-20c-runtime-settings-effective-wiring-review.md`.
 
 ---
 

@@ -323,6 +323,7 @@ public sealed class RuntimeSettingsService : IRuntimeSettingsService
             DefaultValueJson = s.DefaultValueJson,
             ValueSource = source,
             IsEditableAtRuntime = s.IsEditableAtRuntime && !def.IsReadOnly,
+            IsRuntimeEffective = s.IsRuntimeEffective,
             RiskLevel = s.RiskLevel,
             RequiresConfirmation = s.RequiresConfirmation,
             MinValue = s.MinValue,
