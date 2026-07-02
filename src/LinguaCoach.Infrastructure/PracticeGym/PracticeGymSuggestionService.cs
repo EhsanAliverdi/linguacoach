@@ -280,19 +280,32 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         return (profile, profileId);
     }
 
-    // Identity used to dedupe suggestion cards, in priority order: materialized activity id
-    // (strongest — the same generated exercise), else readiness item id itself (each row is its
-    // own distinct piece of pool state), which prevents e.g. several rows for the same objective
-    // that were never diversified by pattern from all surfacing as separate cards for the same
-    // underlying materialized content while still allowing genuinely different exercises.
-    private static (Guid? ActivityId, Guid ItemId) ItemIdentityKey(StudentActivityReadinessItem i) =>
-        (i.LearningActivityId, i.LearningActivityId is null ? i.Id : Guid.Empty);
+    // Identity used to dedupe suggestion cards, in priority order:
+    //   1. objective key + pattern key + activity type — the strongest signal for what a student
+    //      actually sees as "the same card": title/CTA/explanation are all derived from these
+    //      fields (see ToDto/BuildTitle/BuildCallToAction below), so several readiness-pool rows
+    //      queued for one objective (e.g. before ReadinessPoolReplenishmentService.DuplicateKey's
+    //      own dedup fix caught up) read as identical cards even though each has a distinct
+    //      LearningActivityId — they must collapse to one visible suggestion. This also subsumes
+    //      the same-activity case (same activity implies same objective/pattern/type).
+    //   2. otherwise materialized activity id, if objective/pattern metadata is missing but the
+    //      item is materialized — still a meaningful identity to dedupe on.
+    //   3. otherwise the readiness item's own id — no stronger signal to group on, so it stands
+    //      alone (never over-dedupe genuinely unrelated content just because metadata is sparse).
+    private static string ItemIdentityKey(StudentActivityReadinessItem i)
+    {
+        if (i.CurriculumObjectiveKey is { Length: > 0 } objectiveKey && i.PatternKey is { Length: > 0 } patternKey)
+            return $"objective:{objectiveKey}|{patternKey}|{i.ActivityType}";
+        if (i.LearningActivityId is { } activityId)
+            return $"activity:{activityId}";
+        return $"item:{i.Id}";
+    }
 
     // Removes items that share an identity key, keeping the first occurrence (callers pass
     // already-priority-ordered sequences, e.g. reserved-before-others, oldest-first).
     private static List<StudentActivityReadinessItem> DedupeByIdentity(IEnumerable<StudentActivityReadinessItem> items)
     {
-        var seen = new HashSet<(Guid?, Guid)>();
+        var seen = new HashSet<string>();
         var result = new List<StudentActivityReadinessItem>();
         foreach (var item in items)
         {

@@ -399,6 +399,23 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         result.SuggestedItems.Should().HaveCount(6);
     }
 
+    // 30. Live regression (2026-07-03): several distinct materialized activities for the same
+    // objective/pattern — each queued separately before ReadinessPoolReplenishmentService's own
+    // dedup fix caught up — must still collapse to one card. Different LearningActivityId per
+    // item (unlike #27's same-activity case), so only the objective+pattern+type tier can catch it.
+    [Fact]
+    public async Task GetSuggestions_SameObjectiveAndPatternDifferentMaterializedActivities_CollapseToOneSuggestedCard()
+    {
+        for (var i = 0; i < 6; i++)
+            SeedItem(status: ReadinessPoolStatus.Ready, learningActivityId: Guid.NewGuid(),
+                curriculumObjectiveKey: "b2.speaking.structured_explanations",
+                patternKey: "listening_multiple_choice_single");
+
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.SuggestedItems.Should().HaveCount(1);
+    }
+
     // --- helpers ---
 
     private StudentActivityReadinessItem SeedItem(
@@ -409,7 +426,9 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         Guid? learningActivityId = null,
         bool requiresAdminReview = false,
         AdminReviewStatus? adminReviewStatus = null,
-        Guid? studentId = null)
+        Guid? studentId = null,
+        string? curriculumObjectiveKey = null,
+        string? patternKey = null)
     {
         var item = new StudentActivityReadinessItem(
             studentId: studentId ?? StudentId,
@@ -417,6 +436,8 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
             targetCefrLevel: "B2",
             routingReason: routingReason,
             isLowerLevelContent: isLower,
+            curriculumObjectiveKey: curriculumObjectiveKey,
+            patternKey: patternKey,
             expiresAt: expiresAt,
             requiresAdminReview: requiresAdminReview);
 
