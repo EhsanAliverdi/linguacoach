@@ -52,6 +52,9 @@ import {
   FeatureGateGroup,
   UpdateFeatureGateRequest,
   ResetFeatureGateRequest,
+  StudentReadinessSummary,
+  StudentReadinessRepairRequest,
+  StudentReadinessRepairResult,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -502,5 +505,21 @@ export class AdminApiService {
   resetFeatureGateOverride(groupKey: string, request: ResetFeatureGateRequest): Observable<FeatureGateGroup> {
     return this.http.request<FeatureGateGroup>(
       'DELETE', `${this.api}/runtime-settings/feature-gates/${groupKey}/override`, { body: request });
+  }
+
+  // Phase 20D — Student pilot readiness
+
+  getStudentReadiness(studentProfileId: string): Observable<StudentReadinessSummary> {
+    return this.http.get<StudentReadinessSummary>(`${this.api}/students/${studentProfileId}/readiness`);
+  }
+
+  repairStudentReadiness(studentProfileId: string, request: StudentReadinessRepairRequest): Observable<StudentReadinessRepairResult> {
+    return this.http.post<StudentReadinessRepairResult>(
+      `${this.api}/students/${studentProfileId}/readiness/repair`, request);
+  }
+
+  repairAllSafeStudentReadiness(studentProfileId: string, request: StudentReadinessRepairRequest): Observable<StudentReadinessRepairResult[]> {
+    return this.http.post<StudentReadinessRepairResult[]>(
+      `${this.api}/students/${studentProfileId}/readiness/repair-safe-all`, request);
   }
 }

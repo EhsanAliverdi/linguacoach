@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20C)
+lastUpdated: 2026-07-02 (20D)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,53 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-02 (20C)
+Last updated: 2026-07-02 (20D)
+
+---
+
+## Student Data Readiness, Backfill & Pilot Cleanup (Phase 20D, 2026-07-02)
+
+Admins can now answer "can this student safely use the app end-to-end
+today?" for any student, and fix a limited set of common data gaps
+without a database console or a redeploy.
+
+**What changed:**
+
+- New "Pilot readiness" panel on Admin Student Detail: a
+  Ready / Needs attention / Blocked verdict, blocking/warning/info counts,
+  an expandable list of ~20 individual checks (account, placement/CEFR,
+  Learning Plan, Today lesson, Practice Gym, activity content, audio/TTS,
+  review scaffold, progress), and a list of recommended repair actions.
+- Admins can run a repair action as a dry run (preview only, no DB change)
+  or for real (requires typing a reason). Every real repair writes one
+  audit-log entry and is safe to run more than once — running it again
+  when there's nothing left to fix is a no-op.
+- Four real repair actions ship this phase: generate a missing Learning
+  Plan, refill an empty Today lesson, expire readiness items that no
+  longer match the student's CEFR level, and expire stale reserved items.
+  A fifth button runs all four in sequence.
+- Five further suggested repair actions (refill Practice Gym, backfill
+  activity metadata, regenerate missing TTS audio, normalize lifecycle
+  stage, refresh progress projection) are shown as "Not implemented yet"
+  with the reason why, rather than guessed at — tracked in `TODOS.md`.
+
+**What is NOT changed:**
+
+- The audit itself never writes to the database — it only reads.
+- No historical activity attempt, submission, or evaluation is ever
+  deleted or modified by any repair action.
+- No AI scoring, CEFR update, objective-completion, or Learning Plan
+  regeneration-from-AI behavior changed.
+- No existing student-facing UI or behavior changed except through an
+  explicit, reason-required, audited repair action run by an admin.
+
+**Test coverage:** 1,750 backend unit tests pass (+20 new). 1,378 backend
+integration tests pass (+8 new). 1,548/1,668 Angular unit tests pass (120
+pre-existing, unrelated failures — unchanged baseline; +10 new tests).
+Production build clean.
+
+Review: `docs/reviews/2026-07-02-phase-20d-student-data-readiness-backfill-pilot-cleanup-review.md`.
+Architecture: `docs/architecture/student-readiness-and-backfill.md`.
 
 ---
 

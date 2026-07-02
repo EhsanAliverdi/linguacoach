@@ -541,3 +541,36 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **Why:** Code search during Phase 20C confirmed no job in this codebase reads these fields at all — `ActivityMaterializationJob` and `PracticeGymGenerationJob` have no timeout wrapper, concurrency limiter, or attempt-count retry loop today. Wiring them would mean building new behavior (not redirecting a read), which was judged out of Phase 20C's "careful and limited" mandate.
 **Context:** Would likely require: a `CancellationTokenSource` timeout wrapper around AI generation calls (`GenerationTimeoutSeconds`, `TtsTimeoutSeconds`), a semaphore or Quartz `[DisallowConcurrentExecution]`-style guard per student/job type (`MaxConcurrentGenerationJobs`, `MaxConcurrentTtsJobs`), an attempt-count check before giving up on a queued item (`MaxGenerationAttempts` — note a similarly-named field already exists and is read on `ReadinessPoolReplenishmentOptions`, a different class from `LessonGenerationSettings`; do not conflate them), and a cap on the Practice Gym per-type cache size (`PracticeGymReadyExercisesPerType`).
 **Deferred from:** Phase 20C engineering review, 2026-07-02.
+
+---
+
+## Student Data Readiness, Backfill & Pilot Cleanup (Phase 20D)
+
+### TODO-20D-1 — Single-student Practice Gym replenishment repair action
+**What:** Implement `refill_practice_gym_if_empty` — currently registered with `IsImplemented=false`.
+**Why:** No single-student-scoped entry point exists today. `IReadinessPoolReplenishmentService.RunAsync()` processes all active students in one call; running it as a side effect of one admin repair button would be a wasteful global sweep, not a targeted fix.
+**Context:** Needs a new, narrowly-scoped overload (or a new method) on `IReadinessPoolReplenishmentService` that runs the existing shortfall-fill logic for exactly one student. `GetHealthAsync` (already per-student, already read-only) is sufficient for the readiness *check*; only the *repair* is missing.
+**Deferred from:** Phase 20D engineering review, 2026-07-02.
+
+### TODO-20D-2 — Backfill missing activity metadata
+**What:** Implement `backfill_missing_activity_metadata` — currently registered with `IsImplemented=false`.
+**Why:** No concrete, safe backfill target was identified during the Phase 20D survey — "which metadata" was never scoped by the phase brief to a specific field.
+**Context:** Needs a follow-up survey of `LearningActivity`/`StudentActivityReadinessItem` fields that can legitimately go missing on older records, and a decision on what a safe, non-inventive backfill value would be for each.
+**Deferred from:** Phase 20D engineering review, 2026-07-02.
+
+### TODO-20D-3 — Single-activity TTS regeneration repair action
+**What:** Implement `regenerate_missing_tts_for_listening_if_supported` — currently registered with `IsImplemented=false`.
+**Why:** No single-activity/single-student TTS generation entry point exists; `TtsAudioGenerationJob` only operates batch-wide on a schedule.
+**Context:** Needs a new method that generates a TTS `AudioAsset` for one `LearningActivity`, reusing the same provider/config path `TtsAudioGenerationJob` already uses, gated by the existing `EnableTtsGeneration` effective setting (Phase 20C).
+**Deferred from:** Phase 20D engineering review, 2026-07-02.
+
+### TODO-20D-4 — Safe lifecycle-stage normalization repair action
+**What:** Implement `normalize_student_lifecycle_if_safe` — currently registered with `IsImplemented=false`.
+**Why:** Lifecycle transitions are normally driven by dedicated flows (placement completion, onboarding). Forcing a stage jump from an admin repair risks bypassing invariants that were not fully covered by the Phase 20D survey.
+**Context:** Would need an explicit, reviewed rule set for which stage transitions are safe to force administratively (e.g. `CourseReady` → `ActiveLearning` once a plan and a session exist) versus which require re-running an actual flow (e.g. anything before `PlacementCompleted`).
+**Deferred from:** Phase 20D engineering review, 2026-07-02.
+
+Note: `refresh_progress_projection_if_supported` (the 5th suggested repair
+action) was registered as `NotApplicable` rather than deferred — there is
+no stored progress/mastery projection in this codebase to refresh;
+progress is always computed live from the ledger.

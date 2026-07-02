@@ -9,7 +9,8 @@ import {
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
-  AdminWritingEvaluationItemDto,
+  AdminWritingEvaluationItemDto, StudentReadinessSummary, StudentReadinessRepairRequest,
+  StudentReadinessRepairResult,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -157,6 +158,36 @@ export class AdminStudentDetailComponent implements OnInit {
   poolHealth = signal<StudentReadinessPoolHealth | null>(null);
   poolHealthLoading = signal(true);
   poolHealthError = signal('');
+
+  // Phase 20D — Pilot readiness audit + repair
+  readiness = signal<StudentReadinessSummary | null>(null);
+  readinessLoading = signal(true);
+  readinessError = signal('');
+  readinessChecksExpanded = signal(false);
+
+  repairingActionKey = signal<string | null>(null);
+  repairReason = signal('');
+  repairRunning = signal(false);
+  repairError = signal('');
+  repairResult = signal<StudentReadinessRepairResult | null>(null);
+
+  readonly readinessBadgeTone = computed<SpAdminBadgeTone>(() => {
+    switch (this.readiness()?.readinessStatus) {
+      case 'ready': return 'success';
+      case 'needsAttention': return 'warning';
+      case 'blocked': return 'danger';
+      default: return 'neutral';
+    }
+  });
+
+  readonly readinessBadgeLabel = computed(() => {
+    switch (this.readiness()?.readinessStatus) {
+      case 'ready': return 'Ready';
+      case 'needsAttention': return 'Needs attention';
+      case 'blocked': return 'Blocked';
+      default: return 'Not started';
+    }
+  });
 
   masteryPoolSummary = signal<AdminMasteryPoolSummary | null>(null);
   masteryPoolSummaryLoading = signal(true);
@@ -307,6 +338,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadAuditHistory(id);
     this.loadPolicy(id);
     this.loadPoolHealth(id);
+    this.loadReadiness(id);
     this.loadMasteryPoolSummary(id);
     this.loadPlacement(id);
     this.loadSpeakingAttempts(id);
@@ -347,6 +379,91 @@ export class AdminStudentDetailComponent implements OnInit {
       next: ps => { this.progressSummary.set(ps); this.progressSummaryLoading.set(false); },
       error: () => { this.progressSummaryError.set('Could not load progress summary.'); this.progressSummaryLoading.set(false); },
     });
+  }
+
+  // ── Pilot readiness (Phase 20D) ─────────────────────────────────────────
+
+  private loadReadiness(id: string): void {
+    this.readinessLoading.set(true);
+    this.readinessError.set('');
+    this.adminApi.getStudentReadiness(id).subscribe({
+      next: r => { this.readiness.set(r); this.readinessLoading.set(false); },
+      error: () => { this.readinessError.set('Could not load pilot readiness.'); this.readinessLoading.set(false); },
+    });
+  }
+
+  toggleReadinessChecks(): void {
+    this.readinessChecksExpanded.update(v => !v);
+  }
+
+  readinessCheckTone(status: string): SpAdminBadgeTone {
+    if (status === 'pass') return 'success';
+    if (status === 'warning') return 'warning';
+    if (status === 'fail') return 'danger';
+    return 'neutral';
+  }
+
+  startRepair(actionKey: string): void {
+    this.repairingActionKey.set(actionKey);
+    this.repairReason.set('');
+    this.repairError.set('');
+    this.repairResult.set(null);
+  }
+
+  cancelRepair(): void {
+    this.repairingActionKey.set(null);
+    this.repairReason.set('');
+    this.repairError.set('');
+    this.repairResult.set(null);
+  }
+
+  runRepair(dryRun: boolean): void {
+    const student = this.student();
+    const actionKey = this.repairingActionKey();
+    if (!student || !actionKey) return;
+    if (!dryRun && !this.repairReason().trim()) {
+      this.repairError.set('A reason is required to run a real repair.');
+      return;
+    }
+    this.repairRunning.set(true);
+    this.repairError.set('');
+    const request: StudentReadinessRepairRequest = {
+      actionKey,
+      reason: this.repairReason().trim() || null,
+      dryRun,
+    };
+    this.adminApi.repairStudentReadiness(student.studentProfileId, request).subscribe({
+      next: result => {
+        this.repairRunning.set(false);
+        this.repairResult.set(result);
+        if (!dryRun) {
+          this.toast.success(`Repair "${actionKey}" applied for ${student.email}`);
+          this.loadReadiness(student.studentProfileId);
+        }
+      },
+      error: err => {
+        this.repairRunning.set(false);
+        this.repairError.set(err.error?.error ?? 'Could not run repair.');
+      },
+    });
+  }
+
+  repairFooterActions(): SpAdminButtonGroupAction[] {
+    if (this.repairResult() && !this.repairResult()!.dryRun) {
+      return [{ id: 'done', label: 'Done' }];
+    }
+    return [
+      { id: 'cancel', label: 'Cancel', variant: 'neutral', appearance: 'outline' },
+      { id: 'dryRun', label: this.repairRunning() ? 'Running...' : 'Dry run', variant: 'neutral', appearance: 'outline', loading: this.repairRunning(), disabled: this.repairRunning() },
+      { id: 'run', label: this.repairRunning() ? 'Running...' : 'Run repair', variant: 'primary', appearance: 'solid', loading: this.repairRunning(), disabled: this.repairRunning() || !this.repairReason().trim() },
+    ];
+  }
+
+  onRepairFooterAction(actionId: string): void {
+    if (actionId === 'dryRun') this.runRepair(true);
+    else if (actionId === 'run') this.runRepair(false);
+    else if (actionId === 'done') this.cancelRepair();
+    else this.cancelRepair();
   }
 
   private loadSpeakingAttempts(id: string): void {

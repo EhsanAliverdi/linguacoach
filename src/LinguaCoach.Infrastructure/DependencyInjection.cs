@@ -399,6 +399,12 @@ public static class DependencyInjection
         services.AddSingleton<IFeatureGateRegistry, LinguaCoach.Infrastructure.Admin.FeatureGateRegistryService>();
         services.AddScoped<IRuntimeSettingsService, LinguaCoach.Infrastructure.Admin.RuntimeSettingsService>();
 
+        // Student readiness audit + repair (Phase 20D)
+        services.AddScoped<LinguaCoach.Application.Admin.StudentReadiness.IStudentReadinessAuditService,
+            LinguaCoach.Infrastructure.Admin.StudentReadinessAuditService>();
+        services.AddScoped<LinguaCoach.Application.Admin.StudentReadiness.IStudentPilotReadinessRepairService,
+            LinguaCoach.Infrastructure.Admin.StudentPilotReadinessRepairService>();
+
         // Placement assessment
         services.AddScoped<PlacementAudioService>();
         services.AddScoped<FakePlacementEvaluator>();

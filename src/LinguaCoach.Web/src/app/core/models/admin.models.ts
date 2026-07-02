@@ -1606,3 +1606,57 @@ export interface UpdateFeatureGateRequest {
 export interface ResetFeatureGateRequest {
   reason: string;
 }
+
+// ── Student pilot readiness (Phase 20D) ─────────────────────────────────────────
+
+export type ReadinessCheckStatus = 'pass' | 'warning' | 'fail' | 'notApplicable' | 'notImplemented';
+export type ReadinessCheckSeverity = 'info' | 'warning' | 'blocking';
+export type ReadinessOverallStatus = 'ready' | 'needsAttention' | 'blocked' | 'notStarted';
+export type ReadinessRepairRiskLevel = 'low' | 'medium' | 'high';
+
+export interface StudentReadinessCheck {
+  key: string;
+  displayName: string;
+  category: string;
+  status: ReadinessCheckStatus;
+  severity: ReadinessCheckSeverity;
+  message: string;
+  technicalDetail: string | null;
+  recommendedActionKey: string | null;
+  canRepair: boolean;
+  repairRiskLevel: ReadinessRepairRiskLevel | null;
+  lastCheckedAtUtc: string;
+}
+
+export interface StudentReadinessSummary {
+  studentId: string;
+  studentEmail: string | null;
+  generatedAtUtc: string;
+  readyForPilot: boolean;
+  readinessStatus: ReadinessOverallStatus;
+  blockingIssueCount: number;
+  warningCount: number;
+  infoCount: number;
+  lastRepairAtUtc: string | null;
+  checks: StudentReadinessCheck[];
+  recommendedActions: string[];
+  unavailableSections: string[];
+}
+
+export interface StudentReadinessRepairRequest {
+  actionKey: string;
+  reason?: string | null;
+  dryRun: boolean;
+}
+
+export interface StudentReadinessRepairResult {
+  actionKey: string;
+  dryRun: boolean;
+  changedCount: number;
+  skippedCount: number;
+  warnings: string[];
+  errors: string[];
+  beforeSummary: string | null;
+  afterSummary: string | null;
+  auditLogId: string | null;
+}

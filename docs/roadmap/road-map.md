@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 20C complete)**
+**Accurate as of: 2026-07-02 (Phase 20D complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20C — Runtime Settings Effective Wiring (2026-07-02)
+**Latest phase completed:** Phase 20D — Student Data Readiness, Backfill & Pilot Cleanup (2026-07-02)
 
 **Branch:** main
 
-**Test totals (as of 20C):**
-- Backend unit: 1,731 (+14 from Phase 20C: `EffectiveReadinessPoolSettingsProvider` resolution/fail-safe, `ReadinessPoolReplenishmentService` DryRunOnly/Enable/cap wiring with fakes)
-- Backend integration: 1,370 (+5 from Phase 20C: `AdminRuntimeSettingsEffectiveWiringTests` — admin PUT changes real suggestion-service behavior, reset reverts, lesson-generation-buffer PUT reflected in DB, student 403)
+**Test totals (as of 20D):**
+- Backend unit: 1,750 (+20 from Phase 20D: `StudentReadinessAuditServiceTests`, `StudentPilotReadinessRepairServiceTests`)
+- Backend integration: 1,378 (+8 from Phase 20D: `AdminStudentReadinessEndpointTests` — auth, 404, dry-run/real repair via API, repair visibly fixes a check, no secrets/prompts in response)
 - Architecture: 3
-- **Backend total: 3,104**
-- Angular unit (Karma): 1,538/1,658 success (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase, 0 new regressions; +1 new "Runtime effective" badge test)
-- Playwright E2E: unchanged (no existing admin-settings Playwright pattern to extend cheaply)
+- **Backend total: 3,131**
+- Angular unit (Karma): 1,548/1,668 success (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unchanged baseline, 0 new regressions; +10 new pilot-readiness-panel tests)
+- Playwright E2E: unchanged (no existing admin-student-detail Playwright pattern to extend cheaply)
 
 **Build:** Clean production build. No known open build errors.
 
@@ -151,6 +151,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 66 | Phase 20A: Admin AI Operations Dashboard | Admin / AI | 2026-07-02 | Read-only `GET /api/admin/ai-operations/summary` aggregating existing speaking/writing evaluation, generation quality, AI usage, and readiness-pool/pilot services; new `/admin/ai-operations` page (provider/model usage, evaluation queue counts, generation failures, 10-flag signal safety gate card, combined recent-failures table); no new AI behaviour, scoring, or mutation path |
 | 67 | Phase 20B: Admin Runtime Settings & Feature Gates | Admin / Platform | 2026-07-02 | Typed feature-gate registry (8 groups) + `RuntimeSettingOverride` table for previously appsettings-only review-scaffold/Practice-Gym-pilot flags; existing `LessonGenerationSettings` table wrapped by the same registry; AI signal-safety gates surfaced read-only; new `/admin/settings/feature-gates` page with slide-in drawer, `?gate=` deep links, server-side validation, typed-`CONFIRM` for High/Critical risk changes, `AdminAuditLog` on every change/reset; Admin Lessons/AI Operations pages now link to it instead of showing static config text; control-plane only — no AI/CEFR/objective/Learning-Plan/review-scaffold runtime behaviour changed |
 | 68 | Phase 20C: Runtime Settings Effective Wiring | Admin / Platform | 2026-07-02 | New `IEffectiveReadinessPoolSettingsProvider` wires review-scaffold/Practice-Gym-pilot admin overrides into `ReadinessPoolReplenishmentService`/`PracticeGymSuggestionService` (fresh DI scope per job/request = no caching needed); fixed a pre-existing gap where `DryRunOnly` was displayed but never enforced in the real generation path; lesson-generation-buffer settings confirmed already runtime-effective (jobs read the same DB row admin writes to); 7 unconsumed lesson-generation fields marked "display only" rather than inventing new enforcement behaviour (`TODO-20C-1`); AI signal-safety gates untouched/still locked; defaults unchanged when no override exists |
+| 69 | Phase 20D: Student Data Readiness, Backfill & Pilot Cleanup | Admin / Platform | 2026-07-02 | New `IStudentReadinessAuditService` (~20 read-only checks: account, placement/CEFR, Learning Plan, Today lesson, Practice Gym, activity content, audio/TTS, review scaffold, progress) and `IStudentPilotReadinessRepairService` (4 real, idempotent, audited repair actions — generate missing plan, refill empty Today lesson, expire CEFR-invalid readiness items, expire stale reserved items — plus run-all; 5 further suggested actions registered as "Not implemented yet" with a documented reason, `TODO-20D-1..4`); new admin API `GET/POST /api/admin/students/{id}/readiness[/repair\|/repair-safe-all]`; new "Pilot readiness" panel on Admin Student Detail with a reason-required repair slide-over; never deletes attempts/submissions/evaluations; every real repair requires a reason and writes one `AdminAuditLog` row; no AI/CEFR/objective/Learning-Plan-regeneration behaviour changed |
 
 ---
 

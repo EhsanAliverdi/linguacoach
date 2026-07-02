@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20C)
+lastUpdated: 2026-07-02 (20D)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,78 @@ Last updated: 2026-07-02
 ---
 
 ## Active sprint
+
+**Phase 20D — Student Data Readiness, Backfill & Pilot Cleanup** — complete (2026-07-02)
+
+Adds a read-only per-student "can this student safely use the app
+end-to-end today?" audit (`IStudentReadinessAuditService`, ~20 checks
+across account, placement/CEFR, Learning Plan, Today lesson, Practice
+Gym, activity content, audio/TTS, review scaffold, progress) plus a small
+set of explicit, idempotent, audited repair actions
+(`IStudentPilotReadinessRepairService`): generate a missing Learning Plan,
+refill an empty Today lesson, expire CEFR-invalid readiness items, expire
+stale reserved items, and run all four together. 5 further suggested
+repair actions are registered as "Not implemented yet" with a documented
+reason rather than invented, tracked as `TODO-20D-1..4`. No AI scoring,
+CEFR, objective-completion, or Learning Plan regeneration logic changed;
+no historical attempt/submission/evaluation ever deleted; every real
+repair requires a reason and writes one `AdminAuditLog` row.
+
+**New Application:**
+- `Application/Admin/StudentReadiness/` — enums, DTOs,
+  `StudentReadinessRepairActions` registry (10 keys, 5 implemented),
+  `IStudentReadinessAuditService`, `IStudentPilotReadinessRepairService`
+
+**New Infrastructure:**
+- `StudentReadinessAuditService` — ~20 read-only checks, never mutates;
+  Learning Plan existence checked via direct DB query (never
+  `GetOrCreatePlanAsync`, which auto-generates)
+- `StudentPilotReadinessRepairService` — 4 real repair actions + run-all,
+  each reusing an existing safe service method or entity mutator; requires
+  a reason for real repairs; writes one `AdminAuditLog` row per real
+  repair; idempotent
+
+**New API:**
+- `AdminStudentReadinessController` — `GET .../readiness`,
+  `POST .../readiness/repair`, `POST .../readiness/repair-safe-all`
+  (admin-only)
+
+**New Angular:**
+- "Pilot readiness" card on Admin Student Detail (Ready/NeedsAttention/
+  Blocked badge, expandable checklist, recommended actions) + a
+  reason-required repair slide-over reusing the existing
+  `sp-admin-slide-over` pattern
+
+**Tests added:**
+- `StudentReadinessAuditServiceTests` (unit, 11 tests)
+- `StudentPilotReadinessRepairServiceTests` (unit, 8 tests) — proves
+  dry-run makes no DB changes, real repair requires a reason, one audit
+  log per repair, idempotency, and that repairs never touch
+  `ActivityAttempt`/`AudioAsset`/evaluation tables
+- `AdminStudentReadinessEndpointTests` (integration, 8 tests) — auth,
+  404 unknown student, dry-run and real repair via the API, a real repair
+  visibly flips a check from warning to pass, no secrets/prompts in the
+  response
+- 10 new tests on `admin-student-detail.component.spec.ts` (panel load,
+  badge/count rendering, checklist expand, recommended actions, dry-run,
+  reason validation, real repair + refresh, loading/error states)
+
+Two logic bugs were found and fixed while writing the audit-service unit
+tests (Practice Gym "stuck" check was unreachable due to a redundant
+condition; review-scaffold `pending_not_visible` check incorrectly failed
+on the normal `PendingReview` queue state) — see the review doc for
+details.
+
+**Build/test totals:** Backend unit: 1,750 (+20, 0 regressions).
+Integration: 1,378 (+8, 0 regressions). Architecture: 3 (unchanged).
+Angular unit: 1,548/1,668 (120 pre-existing failures, unchanged baseline
+— 0 new regressions; +10 new tests pass). Production build: clean.
+
+See `docs/architecture/student-readiness-and-backfill.md` for the design
+and `docs/reviews/2026-07-02-phase-20d-student-data-readiness-backfill-pilot-cleanup-review.md`
+for the full review.
+
+---
 
 **Phase 20C — Runtime Settings Effective Wiring** — complete (2026-07-02)
 

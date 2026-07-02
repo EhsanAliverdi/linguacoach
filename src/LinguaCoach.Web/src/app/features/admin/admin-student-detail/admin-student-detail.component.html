@@ -285,6 +285,67 @@
         }
       </sp-admin-card>
 
+      <!-- Pilot readiness — Phase 20D -->
+      <sp-admin-card title="Pilot readiness" data-testid="pilot-readiness-card">
+        @if (readinessLoading()) {
+          <sp-admin-loading-state message="Loading pilot readiness" />
+        } @else if (readinessError()) {
+          <sp-admin-error-state title="Pilot readiness unavailable" [message]="readinessError()" />
+        } @else if (readiness()) {
+          @let r = readiness()!;
+          <div class="sp-admin-flex sp-admin-items-center sp-admin-gap-3">
+            <sp-admin-badge [tone]="readinessBadgeTone()">{{ readinessBadgeLabel() }}</sp-admin-badge>
+            <span class="sp-admin-text-xs sp-admin-text-muted">
+              {{ r.blockingIssueCount }} blocking, {{ r.warningCount }} warning, {{ r.infoCount }} info
+            </span>
+          </div>
+          <div class="sp-admin-mt-2 sp-admin-text-xs sp-admin-text-muted">
+            Checked {{ r.generatedAtUtc | date:'medium' }}
+            @if (r.lastRepairAtUtc) {
+              &middot; Last repair {{ r.lastRepairAtUtc | date:'medium' }}
+            }
+          </div>
+
+          <div class="sp-admin-mt-3">
+            <sp-admin-button appearance="outline" size="sm" (clicked)="toggleReadinessChecks()">
+              {{ readinessChecksExpanded() ? 'Hide checks' : 'Show checks (' + r.checks.length + ')' }}
+            </sp-admin-button>
+          </div>
+
+          @if (readinessChecksExpanded()) {
+            <div class="sp-admin-mt-3 sp-admin-detail-list">
+              @for (check of r.checks; track check.key) {
+                <div class="sp-admin-flex sp-admin-items-center sp-admin-gap-2 sp-admin-mb-2">
+                  <sp-admin-badge [tone]="readinessCheckTone(check.status)">{{ check.status }}</sp-admin-badge>
+                  <span class="sp-admin-text-xs">{{ check.displayName }}: {{ check.message }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          @if (r.recommendedActions.length > 0) {
+            <div class="sp-admin-mt-3">
+              <div class="sp-admin-section-title">Recommended actions</div>
+              <div class="sp-admin-mt-2 sp-admin-flex sp-admin-gap-2" style="flex-wrap: wrap;">
+                @for (actionKey of r.recommendedActions; track actionKey) {
+                  <sp-admin-button appearance="outline" size="sm" (clicked)="startRepair(actionKey)">
+                    {{ actionKey }}
+                  </sp-admin-button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (r.unavailableSections.length > 0) {
+            <sp-admin-alert variant="info" class="sp-admin-mt-3">
+              Not implemented yet: {{ r.unavailableSections.join(', ') }}
+            </sp-admin-alert>
+          }
+        } @else {
+          <sp-admin-empty-state message="Pilot readiness data not available." />
+        }
+      </sp-admin-card>
+
       <!-- Practice Gym summary — Phase 15D -->
       <sp-admin-card title="Practice Gym" data-testid="practice-summary-card">
         @if (practiceSummaryLoading()) {
@@ -1212,6 +1273,44 @@
     <sp-admin-button-group slot="footer"
       [actions]="resetDataFooterActions()"
       (actionSelected)="onResetDataFooterAction($event)" />
+  </sp-admin-slide-over>
+}
+
+<!-- Pilot readiness repair — Phase 20D -->
+@if (repairingActionKey()) {
+  <sp-admin-slide-over
+    [open]="true"
+    title="Run readiness repair"
+    [subtitle]="repairingActionKey()!"
+    (closed)="cancelRepair()">
+    @if (repairResult(); as result) {
+      <sp-admin-alert [variant]="result.dryRun ? 'info' : 'success'" class="sp-admin-mb-4">
+        {{ result.dryRun ? 'Dry run complete.' : 'Repair applied.' }}
+        Changed: {{ result.changedCount }}, Skipped: {{ result.skippedCount }}.
+      </sp-admin-alert>
+      @if (result.warnings.length > 0) {
+        <sp-admin-alert variant="warning" class="sp-admin-mb-2">{{ result.warnings.join(' ') }}</sp-admin-alert>
+      }
+      @if (result.errors.length > 0) {
+        <sp-admin-alert variant="error" class="sp-admin-mb-2">{{ result.errors.join(' ') }}</sp-admin-alert>
+      }
+      <dl class="sp-admin-detail-list">
+        @if (result.beforeSummary) { <div><dt>Before</dt><dd class="sp-admin-text-xs sp-admin-text-muted">{{ result.beforeSummary }}</dd></div> }
+        @if (result.afterSummary) { <div><dt>After</dt><dd class="sp-admin-text-xs sp-admin-text-muted">{{ result.afterSummary }}</dd></div> }
+      </dl>
+    } @else {
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Reason (required for a real repair)">
+          <sp-admin-textarea [ngModel]="repairReason()" (ngModelChange)="repairReason.set($event)" name="repairReason" [rows]="2" placeholder="Why is this repair being run?" />
+        </sp-admin-form-field>
+        @if (repairError()) {
+          <sp-admin-alert variant="error">{{ repairError() }}</sp-admin-alert>
+        }
+      </div>
+    }
+    <sp-admin-button-group slot="footer"
+      [actions]="repairFooterActions()"
+      (actionSelected)="onRepairFooterAction($event)" />
   </sp-admin-slide-over>
 }
 
