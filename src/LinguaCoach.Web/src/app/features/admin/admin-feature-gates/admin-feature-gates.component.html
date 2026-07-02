@@ -1,0 +1,209 @@
+<sp-admin-page-header
+  title="Feature Gates & Settings"
+  subtitle="View, change, and audit operational flags without editing appsettings or redeploying."
+/>
+
+<sp-admin-page-body>
+  <sp-admin-card variant="flat" padding="sm">
+    <div class="fg-filters">
+      <sp-admin-input
+        [ngModel]="searchText()"
+        (ngModelChange)="searchText.set($event)"
+        name="fg-search"
+        placeholder="Search by name or key…"
+      />
+      <sp-admin-select
+        [options]="categoryOptions"
+        [ngModel]="categoryFilter()"
+        (ngModelChange)="categoryFilter.set($event)"
+        name="fg-category"
+      />
+      <sp-admin-select
+        [options]="riskOptions"
+        [ngModel]="riskFilter()"
+        (ngModelChange)="riskFilter.set($event)"
+        name="fg-risk"
+      />
+      <sp-admin-select
+        [options]="statusOptions"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event)"
+        name="fg-status"
+      />
+    </div>
+  </sp-admin-card>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading feature gates…" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Feature gates unavailable" [message]="error()" />
+  } @else if (filteredGroups().length === 0) {
+    <sp-admin-empty-state title="No feature gates match" message="Try adjusting your search or filters." />
+  } @else {
+    <div class="fg-grid">
+      @for (group of filteredGroups(); track group.groupKey) {
+        <sp-admin-card
+          [title]="group.displayName"
+          [hover]="true"
+          data-testid="feature-gate-card"
+          (click)="openDrawer(group)"
+        >
+          <p class="fg-card-desc">{{ group.description }}</p>
+          <div class="fg-card-badges">
+            <sp-admin-badge tone="primary" appearance="soft">{{ categoryLabel(group.category) }}</sp-admin-badge>
+            <sp-admin-badge [tone]="riskTone(groupRisk(group))" appearance="soft">{{ groupRisk(group) }} risk</sp-admin-badge>
+            <sp-admin-badge [tone]="statusTone(group)" appearance="soft">{{ statusLabel(group) }}</sp-admin-badge>
+          </div>
+        </sp-admin-card>
+      }
+    </div>
+  }
+</sp-admin-page-body>
+
+<sp-admin-drawer
+  [open]="drawerOpen()"
+  [title]="selectedGroup()?.displayName ?? ''"
+  side="right"
+  size="lg"
+  (closed)="closeDrawer()"
+>
+  @if (selectedGroup(); as group) {
+    <p class="fg-drawer-desc">{{ group.description }}</p>
+
+    <div class="fg-card-badges fg-drawer-badges">
+      <sp-admin-badge tone="primary" appearance="soft">{{ categoryLabel(group.category) }}</sp-admin-badge>
+      <sp-admin-badge [tone]="riskTone(groupRisk(group))" appearance="soft">{{ groupRisk(group) }} risk</sp-admin-badge>
+      <sp-admin-badge [tone]="statusTone(group)" appearance="soft">{{ statusLabel(group) }}</sp-admin-badge>
+      @if (group.requiresRestart) {
+        <sp-admin-badge tone="warning" appearance="soft">Requires deployment</sp-admin-badge>
+      }
+    </div>
+
+    @if (group.isReadOnly) {
+      <sp-admin-alert variant="info">
+        This gate is locked and read-only in this phase.
+        @if (group.warningText) { {{ group.warningText }} }
+      </sp-admin-alert>
+    } @else if (group.warningText) {
+      <sp-admin-alert variant="warning">{{ group.warningText }}</sp-admin-alert>
+    }
+
+    @if (group.dependencies.length > 0) {
+      <div class="fg-deps">
+        <strong>Dependencies</strong>
+        <ul>
+          @for (dep of group.dependencies; track dep) {
+            <li>{{ dep }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="fg-settings">
+      @for (setting of group.settings; track setting.key) {
+        <div class="fg-setting-row">
+          <div class="fg-setting-header">
+            <span class="fg-setting-name">{{ setting.displayName }}</span>
+            <sp-admin-code-pill [value]="setting.key" tone="neutral" />
+            <sp-admin-badge [tone]="riskTone(setting.riskLevel)" appearance="soft" size="sm">{{ setting.riskLevel }}</sp-admin-badge>
+          </div>
+          <p class="fg-setting-desc">{{ setting.description }}</p>
+          <p class="fg-setting-meta">
+            Effective: <strong>{{ setting.effectiveValueJson }}</strong>
+            · Source: <strong>{{ setting.valueSource }}</strong>
+            · Default: <strong>{{ setting.defaultValueJson }}</strong>
+          </p>
+
+          @if (!setting.isEditableAtRuntime) {
+            <sp-admin-alert variant="info">Read-only{{ group.requiresRestart ? ' — requires an appsettings change and redeploy.' : '.' }}</sp-admin-alert>
+          } @else if (setting.dataType === 'boolean') {
+            <sp-admin-toggle
+              [checked]="!!editValues()[setting.key]"
+              (changed)="setValue(setting.key, $event)"
+            />
+          } @else if (setting.dataType === 'integer') {
+            <sp-admin-form-field>
+              <sp-admin-number-input
+                [ngModel]="editValues()[setting.key]"
+                (ngModelChange)="setValue(setting.key, $event)"
+                [min]="setting.minValue"
+                [max]="setting.maxValue"
+                name="int-{{ setting.key }}"
+              />
+            </sp-admin-form-field>
+          } @else if (setting.dataType === 'string' && setting.allowedValues) {
+            <sp-admin-select
+              [options]="allowedValueOptions(setting)"
+              [ngModel]="editValues()[setting.key]"
+              (ngModelChange)="setValue(setting.key, $event)"
+              name="sel-{{ setting.key }}"
+            />
+          } @else if (setting.dataType === 'string') {
+            <sp-admin-input
+              [ngModel]="editValues()[setting.key]"
+              (ngModelChange)="setValue(setting.key, $event)"
+              name="str-{{ setting.key }}"
+            />
+          } @else if (setting.dataType === 'stringArray' && setting.allowedValues) {
+            <div class="fg-source-checks">
+              @for (option of setting.allowedValues; track option) {
+                <sp-admin-checkbox
+                  [label]="option"
+                  [ngModel]="isSourceSelected(setting, option)"
+                  (ngModelChange)="toggleSourceOption(setting, option, $event)"
+                  name="src-{{ setting.key }}-{{ option }}"
+                />
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (group.hasActiveOverride && group.lastChangeReason) {
+      <p class="fg-audit-line">
+        Last changed by {{ group.lastChangedByUserId }} at {{ group.lastChangedAtUtc | date:'medium' }} — "{{ group.lastChangeReason }}"
+      </p>
+    }
+
+    @if (!group.isReadOnly) {
+      <sp-admin-form-field label="Reason" [required]="true" hint="Required for every change.">
+        <sp-admin-textarea
+          [ngModel]="reason()"
+          (ngModelChange)="reason.set($event)"
+          [rows]="2"
+          placeholder="Why are you making this change?"
+        />
+      </sp-admin-form-field>
+
+      @if (needsConfirmation()) {
+        <sp-admin-form-field label="Type CONFIRM to proceed" [required]="true" hint="Required for high-risk or critical-risk changes.">
+          <sp-admin-input
+            [ngModel]="confirmationText()"
+            (ngModelChange)="confirmationText.set($event)"
+            name="confirmationText"
+          />
+        </sp-admin-form-field>
+      }
+
+      @if (saveError()) {
+        <sp-admin-alert variant="error">{{ saveError() }}</sp-admin-alert>
+      }
+
+      <div class="fg-drawer-actions">
+        <sp-admin-button variant="primary" [loading]="saving()" [disabled]="saving() || resetting()" (clicked)="save()">
+          Save
+        </sp-admin-button>
+        <sp-admin-button
+          variant="neutral"
+          appearance="outline"
+          [loading]="resetting()"
+          [disabled]="saving() || resetting() || !group.hasActiveOverride"
+          (clicked)="resetToDefault()"
+        >
+          Reset to default
+        </sp-admin-button>
+      </div>
+    }
+  }
+</sp-admin-drawer>

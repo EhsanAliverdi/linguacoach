@@ -1554,3 +1554,54 @@ export interface WritingSignalSafetySummaryDto {
   reviewApplied: number;
   invariantViolationsDetected: boolean;
 }
+
+// ── Runtime settings / feature gates (Phase 20B) ───────────────────────────────
+
+export type FeatureGateCategory = 'reviewScaffoldPracticeGymPilot' | 'readinessPoolLessonGeneration' | 'aiSignalSafety';
+export type FeatureGateDataType = 'boolean' | 'integer' | 'string' | 'stringArray';
+export type FeatureGateRiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type FeatureGateValueSource = 'appSettings' | 'databaseOverride' | 'default' | 'hardcoded';
+
+export interface FeatureGateSettingValue {
+  key: string;
+  displayName: string;
+  description: string;
+  dataType: FeatureGateDataType;
+  effectiveValueJson: string;
+  defaultValueJson: string;
+  valueSource: FeatureGateValueSource;
+  isEditableAtRuntime: boolean;
+  riskLevel: FeatureGateRiskLevel;
+  requiresConfirmation: boolean;
+  minValue: number | null;
+  maxValue: number | null;
+  maxLength: number | null;
+  allowedValues: string[] | null;
+}
+
+export interface FeatureGateGroup {
+  groupKey: string;
+  displayName: string;
+  description: string;
+  category: FeatureGateCategory;
+  isReadOnly: boolean;
+  requiresRestart: boolean;
+  productionChangeAllowed: boolean;
+  dependencies: string[];
+  warningText: string | null;
+  settings: FeatureGateSettingValue[];
+  lastChangedByUserId: string | null;
+  lastChangedAtUtc: string | null;
+  lastChangeReason: string | null;
+  hasActiveOverride: boolean;
+}
+
+export interface UpdateFeatureGateRequest {
+  values: Record<string, unknown>;
+  reason: string;
+  confirmationText?: string | null;
+}
+
+export interface ResetFeatureGateRequest {
+  reason: string;
+}

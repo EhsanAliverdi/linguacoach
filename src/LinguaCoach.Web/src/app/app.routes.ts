@@ -99,6 +99,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-ai-operations/admin-ai-operations.component').then(m => m.AdminAiOperationsComponent),
       },
       {
+        path: 'settings/feature-gates',
+        loadComponent: () => import('./features/admin/admin-feature-gates/admin-feature-gates.component').then(m => m.AdminFeatureGatesComponent),
+      },
+      {
         path: 'integrations',
         loadComponent: () => import('./features/admin/admin-integrations/admin-integrations.component').then(m => m.AdminIntegrationsComponent),
       },

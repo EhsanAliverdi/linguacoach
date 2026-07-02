@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminAiOperationsComponent } from './admin-ai-operations.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
@@ -120,7 +121,7 @@ describe('AdminAiOperationsComponent', () => {
     api = makeApi(summary);
     await TestBed.configureTestingModule({
       imports: [AdminAiOperationsComponent],
-      providers: [{ provide: AdminApiService, useValue: api }],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminAiOperationsComponent);
     component = fixture.componentInstance;
@@ -139,7 +140,7 @@ describe('AdminAiOperationsComponent', () => {
     api = makeApi();
     TestBed.configureTestingModule({
       imports: [AdminAiOperationsComponent],
-      providers: [{ provide: AdminApiService, useValue: api }],
+      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminAiOperationsComponent);
     // No detectChanges — ngOnInit not yet resolved by the fake async observable, so still loading.
@@ -232,5 +233,13 @@ describe('AdminAiOperationsComponent', () => {
     api.getAiOperationsSummary.calls.reset();
     component.load();
     expect(api.getAiOperationsSummary).toHaveBeenCalledTimes(1);
+  });
+
+  it('links to feature gate settings for locked signal safety gates', async () => {
+    await setup();
+    const speakingLink = fixture.nativeElement.querySelector('[data-testid="ai-ops-open-settings-speaking"]');
+    const writingLink = fixture.nativeElement.querySelector('[data-testid="ai-ops-open-settings-writing"]');
+    expect(speakingLink).toBeTruthy();
+    expect(writingLink).toBeTruthy();
   });
 });

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-28 (16E)
+lastUpdated: 2026-07-02 (20B)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,31 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-06-28 (16E)
+Last updated: 2026-07-02 (20B)
+
+---
+
+## Admin Runtime Settings & Feature Gates (Phase 20B, 2026-07-02)
+
+Admins can now view, safely edit, and audit operational flags without editing appsettings or redeploying.
+
+**What changed:**
+
+- **New: `/admin/settings/feature-gates` page.** Category/search/risk/status filters over 8 feature-gate groups, each opening a slide-in drawer showing description, risk level, effective value + source (appsettings / database override / default / hardcoded), default value, dependencies, and — where safe — editable controls.
+- **Editable this phase:** Review scaffold generation (`EnableReviewScaffoldGeneration`, `DryRunOnly`, `RequireAdminReview`, allowed sources, Today-lesson insertion, confidence threshold, daily cap) and the Practice Gym pilot (enabled flag, student-facing label/reason, max visible suggestions) — previously appsettings-only, now backed by a new `RuntimeSettingOverride` table. Lesson-generation buffer/TTS/Practice-Gym-per-type settings — already DB-backed, now surfaced through the same registry/drawer instead of only the Lessons page form.
+- **Read-only this phase:** AI signal-safety gates (speaking/writing mastery-signal application, review/positive signal gates, CEFR-update and objective-completion flags — the latter two are hardcoded `false` in code, not configurable at all) and Learning Plan regeneration (no dedicated flag exists; shown for visibility only).
+- **Safety:** Every edit requires a reason; High/Critical-risk changes (enabling generation, allowing Today-lesson insertion) require typing `CONFIRM`; every change/reset writes an `AdminAuditLog` entry; server validates ranges/allowed-values/unknown-keys and rejects edits to locked gates.
+- **Admin Lessons and Admin AI Operations pages** now show "Configure"/"Open settings" links (deep-linking via `?gate=`) instead of static "enable `ReadinessPool:X` in config" text.
+
+**What is NOT changed:**
+
+- No change to AI scoring, CEFR update logic, objective completion, or Learning Plan regeneration.
+- No change to actual review-scaffold/Practice-Gym-pilot runtime behavior — `ReadinessPoolReplenishmentService` still reads only appsettings; wiring the new override table into that live read path is deferred.
+- No secrets, provider API keys, or connection strings are stored or exposed by this registry.
+
+**Test coverage:** 1,717 backend unit tests pass (+13 new). 1,365 backend integration tests pass (+14 new). 1,537/1,657 Angular unit tests pass (120 pre-existing, unrelated failures; all new/touched specs pass). Production build clean.
+
+Review: `docs/reviews/2026-07-02-phase-20b-admin-runtime-settings-feature-gates-review.md`.
 
 ---
 

@@ -49,6 +49,9 @@ import {
   WritingSignalSafetySummaryDto,
   ReviewScaffoldPilotSummary,
   AdminAiOperationsSummary,
+  FeatureGateGroup,
+  UpdateFeatureGateRequest,
+  ResetFeatureGateRequest,
 } from '../models/admin.models';
 import { environment } from '../../../environments/environment';
 
@@ -480,5 +483,24 @@ export class AdminApiService {
   expirePlacement(studentProfileId: string, assessmentId: string): Observable<{ expired: boolean }> {
     return this.http.post<{ expired: boolean }>(
       `${this.api}/students/${studentProfileId}/placement/${assessmentId}/expire`, {});
+  }
+
+  // Phase 20B — Runtime settings / feature gates
+
+  getFeatureGates(): Observable<FeatureGateGroup[]> {
+    return this.http.get<FeatureGateGroup[]>(`${this.api}/runtime-settings/feature-gates`);
+  }
+
+  getFeatureGate(groupKey: string): Observable<FeatureGateGroup> {
+    return this.http.get<FeatureGateGroup>(`${this.api}/runtime-settings/feature-gates/${groupKey}`);
+  }
+
+  updateFeatureGate(groupKey: string, request: UpdateFeatureGateRequest): Observable<FeatureGateGroup> {
+    return this.http.put<FeatureGateGroup>(`${this.api}/runtime-settings/feature-gates/${groupKey}/settings`, request);
+  }
+
+  resetFeatureGateOverride(groupKey: string, request: ResetFeatureGateRequest): Observable<FeatureGateGroup> {
+    return this.http.request<FeatureGateGroup>(
+      'DELETE', `${this.api}/runtime-settings/feature-gates/${groupKey}/override`, { body: request });
   }
 }

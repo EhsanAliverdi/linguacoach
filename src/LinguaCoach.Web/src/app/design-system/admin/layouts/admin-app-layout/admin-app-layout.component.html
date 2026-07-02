@@ -117,6 +117,9 @@
         <li><sp-admin-sidebar-nav-item label="Security" route="/admin/security" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="shield" />
         </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Feature Gates" route="/admin/settings/feature-gates" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="settings" />
+        </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
   </nav>
@@ -243,6 +246,9 @@
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Security" route="/admin/security" [collapsed]="collapsed()">
             <sp-admin-icon name="shield" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Feature Gates" route="/admin/settings/feature-gates" [collapsed]="collapsed()">
+            <sp-admin-icon name="settings" />
           </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>

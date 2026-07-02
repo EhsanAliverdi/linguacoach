@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20A)
+lastUpdated: 2026-07-02 (20B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,52 @@ Last updated: 2026-07-02
 ---
 
 ## Active sprint
+
+**Phase 20B — Admin Runtime Settings & Feature Gates** — complete (2026-07-02)
+
+Builds the first admin control plane for operational flags: a typed feature-gate
+registry, an admin settings page with a slide-in drawer, server-side validation, and
+audit logging, so review-scaffold/Practice-Gym/lesson-generation flags become
+viewable, editable (where safe), and auditable without an appsettings edit + redeploy.
+Control-plane only: no change to AI scoring, CEFR update logic, objective completion,
+Learning Plan regeneration, or actual review-scaffold/Practice-Gym runtime behavior.
+`ReadinessPoolReplenishmentService` still reads only `IOptions<ReadinessPoolReplenishmentOptions>`
+(deferred wiring, see `TODOS.md`).
+
+**New Domain:**
+- `RuntimeSettingOverride` — generic key/value/reason/who/when override row (new table), used only for the `ReadinessPoolReplenishmentOptions`-backed review-scaffold/Practice-Gym-pilot settings, which had no DB override mechanism before this phase
+- `LessonGenerationSettings.ResetToDefaults()` — new method on the existing DB-backed settings entity
+
+**New migration:** `T_Phase20B_RuntimeSettingOverride` (via `dotnet ef migrations add`)
+
+**New Application (`Application/Admin/RuntimeSettings/`):**
+- `FeatureGateDefinitions` — static registry of 8 groups (`review-scaffold-generation`, `practice-gym-review-scaffold-pilot`, `lesson-generation-buffer`, `tts-generation`, `practice-gym-generation-per-type`, `ai-signal-safety-speaking`, `ai-signal-safety-writing`, `learning-plan-regeneration`) built only from properties that already exist on `ReadinessPoolReplenishmentOptions`, `LessonGenerationSettings`, `SpeakingEvaluationOptions`, `WritingEvaluationOptions`
+- `IFeatureGateRegistry`, `IRuntimeSettingsService`, and supporting DTOs/enums
+
+**New Infrastructure:**
+- `FeatureGateRegistryService`, `RuntimeSettingsService` — effective-value resolution (DB override → appsettings/DB row → default), server-side validation (range/maxLength/allowed-values/typed `CONFIRM` for High/Critical risk), `AdminAuditLog` writes on every change/reset
+
+**New API:**
+- `AdminRuntimeSettingsController` (admin-only): `GET /api/admin/runtime-settings/feature-gates`, `GET .../feature-gates/{key}`, `PUT .../feature-gates/{key}/settings`, `DELETE .../feature-gates/{key}/override`
+
+**New Angular:**
+- `admin.models.ts` — `FeatureGateGroup`/`FeatureGateSettingValue` + supporting types
+- `admin.api.service.ts` — `getFeatureGates()`, `getFeatureGate()`, `updateFeatureGate()`, `resetFeatureGateOverride()`
+- `admin-feature-gates.component.ts`/`.html` (new page at `/admin/settings/feature-gates`) — category/search/risk/status filters, `sp-admin-drawer` for view/edit/reset, `?gate=` deep-link support
+- `app.routes.ts` / `admin-app-layout.component.html` — new route + "Feature Gates" nav item under **System**
+- Admin Lessons and Admin AI Operations pages — "Configure"/"Open settings" CTAs replacing static "enable in config" text, deep-linking into the relevant gate's drawer
+
+**Tests added:**
+- `RuntimeSettingsServiceTests` (unit, 13 tests) — effective-value resolution, validation rejection, locked-gate rejection, confirmation requirement, reset behavior, cross-field validation reuse from `LessonGenerationSettings.Update()`
+- `AdminRuntimeSettingsEndpointTests` (integration, 14 tests) — auth guards, list/detail, update (valid/invalid/unknown-key/locked/confirmation), reset + audit, no secrets in response
+- `admin-feature-gates.component.spec.ts` (19 tests) — load/filter/drawer/save/reset/validation/deep-link
+- Extended `admin-lessons.component.spec.ts` and `admin-ai-operations.component.spec.ts` for the new CTAs
+
+**Build/test totals:** Backend unit: 1,717 (+13, 0 regressions). Integration: 1,365 (+14, 0 regressions). Architecture: 3 (unchanged). Angular unit: 1,537/1,657 (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase — 0 new regressions; all touched/new specs pass). Production build: clean.
+
+See `docs/reviews/2026-07-02-phase-20b-admin-runtime-settings-feature-gates-review.md` for the full design rationale.
+
+---
 
 **Phase 20A — Admin AI Operations Dashboard** — complete (2026-07-02)
 

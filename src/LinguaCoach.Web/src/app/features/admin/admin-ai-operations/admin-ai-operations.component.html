@@ -190,6 +190,16 @@
 
     <!-- ── Signal safety gates ──────────────────────────────────────────────────── -->
     <sp-admin-card title="Signal safety gates" variant="section" padding="md" data-testid="ai-ops-safety-gates">
+      <div class="sp-admin-kpi-row" style="margin-bottom:0.75rem">
+        <sp-admin-button size="xs" appearance="outline" variant="neutral" data-testid="ai-ops-open-settings-speaking"
+          routerLink="/admin/settings/feature-gates" [queryParams]="{ gate: 'ai-signal-safety-speaking' }">
+          Open settings (Speaking)
+        </sp-admin-button>
+        <sp-admin-button size="xs" appearance="outline" variant="neutral" data-testid="ai-ops-open-settings-writing"
+          routerLink="/admin/settings/feature-gates" [queryParams]="{ gate: 'ai-signal-safety-writing' }">
+          Open settings (Writing)
+        </sp-admin-button>
+      </div>
       @if (s.signalGateSummary.anyInvariantViolationsDetected) {
         <sp-admin-alert variant="error" data-testid="ai-ops-invariant-violation">
           Invariant violation detected — one or more safety gates report an unexpected state. Investigate immediately.

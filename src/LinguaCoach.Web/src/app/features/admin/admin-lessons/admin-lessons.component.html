@@ -237,8 +237,12 @@
   <div class="sp-admin-two-col-start">
 
     <sp-admin-graph-card title="Review scaffold generation"
-      subtitle="Enable ReadinessPool:EnableReviewScaffoldGeneration in config to activate."
+      subtitle="Controlled by the Review scaffold generation feature gate."
       [status]="scaffoldDryRunLoading() ? 'loading' : scaffoldDryRunError() ? 'unavailable' : (scaffoldDryRun()?.status === 'Enabled' ? 'live' : scaffoldDryRun()?.status === 'DryRun' ? 'partial' : 'unavailable')">
+      <sp-admin-button size="xs" appearance="outline" variant="neutral"
+        routerLink="/admin/settings/feature-gates" [queryParams]="{ gate: 'review-scaffold-generation' }">
+        Configure
+      </sp-admin-button>
       @if (scaffoldDryRunLoading()) {
         <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Review scaffold generation" message="Loading..." />
       } @else if (scaffoldDryRunError()) {
@@ -409,8 +413,12 @@
 
   <!-- Practice Gym review scaffold pilot (Phase 19C) -->
   <sp-admin-graph-card title="Practice Gym review scaffold pilot" data-testid="pilot-status-card"
-    subtitle="Enable ReadinessPool:PracticeGymPilotEnabled to surface approved items to students in Practice Gym only."
+    subtitle="Controlled by the Practice Gym review scaffold pilot feature gate."
     [status]="pilotSummaryLoading() ? 'loading' : pilotSummaryError() ? 'unavailable' : (pilotSummary()?.practiceGymPilotEnabled ? 'live' : 'partial')">
+    <sp-admin-button size="xs" appearance="outline" variant="neutral" data-testid="pilot-configure-cta"
+      routerLink="/admin/settings/feature-gates" [queryParams]="{ gate: 'practice-gym-review-scaffold-pilot' }">
+      Configure
+    </sp-admin-button>
     @if (pilotSummaryLoading()) {
       <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Pilot status" message="Loading..." />
     } @else if (pilotSummaryError()) {

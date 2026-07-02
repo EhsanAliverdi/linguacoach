@@ -75,4 +75,23 @@ public sealed class LessonGenerationSettings : BaseEntity
         PracticeGymRefillCountPerType = practiceGymRefillCountPerType;
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    /// <summary>Resets all mutable settings back to their class defaults.</summary>
+    public void ResetToDefaults()
+    {
+        ReadyLessonBufferSize = 5;
+        RefillThreshold = 1;
+        RefillBatchSize = 4;
+        MaxGenerationAttempts = 2;
+        GenerationTimeoutSeconds = 120;
+        TtsTimeoutSeconds = 60;
+        MaxConcurrentGenerationJobs = 2;
+        MaxConcurrentTtsJobs = 2;
+        EnableBackgroundGeneration = true;
+        EnableTtsGeneration = true;
+        PracticeGymReadyExercisesPerType = 10;
+        PracticeGymRefillThresholdPerType = 3;
+        PracticeGymRefillCountPerType = 7;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 }

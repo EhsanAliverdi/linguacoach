@@ -4,6 +4,7 @@ using LinguaCoach.Application.Notifications;
 using LinguaCoach.Infrastructure.Notifications;
 using LinguaCoach.Infrastructure.Activity.Evaluators;
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Admin.RuntimeSettings;
 using LinguaCoach.Application.Assessment;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Auth;
@@ -391,6 +392,10 @@ public static class DependencyInjection
 
         // Practice Gym suggestion service (Phase 10O)
         services.AddScoped<IPracticeGymSuggestionService, LinguaCoach.Infrastructure.PracticeGym.PracticeGymSuggestionService>();
+
+        // Admin runtime settings / feature gate registry (Phase 20B)
+        services.AddSingleton<IFeatureGateRegistry, LinguaCoach.Infrastructure.Admin.FeatureGateRegistryService>();
+        services.AddScoped<IRuntimeSettingsService, LinguaCoach.Infrastructure.Admin.RuntimeSettingsService>();
 
         // Placement assessment
         services.AddScoped<PlacementAudioService>();

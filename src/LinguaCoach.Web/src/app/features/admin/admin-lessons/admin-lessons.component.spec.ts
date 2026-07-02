@@ -494,4 +494,11 @@ describe('AdminLessonsComponent', () => {
     component.reopenScaffoldItem({ ...PENDING_ITEM, adminReviewStatus: 'Rejected' });
     expect(api.reopenReviewScaffoldItem).toHaveBeenCalledWith('item-1');
   });
+
+  it('renders a Configure CTA for the disabled Practice Gym pilot', async () => {
+    await setup();
+    const cta = fixture.nativeElement.querySelector('[data-testid="pilot-configure-cta"]');
+    expect(cta).toBeTruthy();
+    expect(cta.textContent).toContain('Configure');
+  });
 });

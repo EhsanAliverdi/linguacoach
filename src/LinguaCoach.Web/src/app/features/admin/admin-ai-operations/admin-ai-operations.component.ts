@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { AdminAiOperationsSummary } from '../../../core/models/admin.models';
 import {
@@ -24,6 +25,7 @@ import {
   templateUrl: './admin-ai-operations.component.html',
   imports: [
     CommonModule,
+    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,

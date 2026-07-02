@@ -6,7 +6,7 @@ owner: product / engineering
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 20A complete)**
+**Accurate as of: 2026-07-02 (Phase 20B complete)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -14,17 +14,17 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20A — Admin AI Operations Dashboard (2026-07-02)
+**Latest phase completed:** Phase 20B — Admin Runtime Settings & Feature Gates (2026-07-02)
 
 **Branch:** main
 
-**Test totals (as of 20A):**
-- Backend unit: 1,704 (unchanged — Phase 20A added no new unit tests, only integration + Angular)
-- Backend integration: 1,351 (+9 from Phase 20A: AI operations summary auth guards, seeded counts, safety-gate/config reporting, no-leak assertions)
+**Test totals (as of 20B):**
+- Backend unit: 1,717 (+13 from Phase 20B: `RuntimeSettingsService` effective-value resolution, validation, locked-gate rejection, confirmation requirement, reset)
+- Backend integration: 1,365 (+14 from Phase 20B: `AdminRuntimeSettingsEndpointTests` — auth guards, list/detail, update/reset, audit, no-leak assertions)
 - Architecture: 3
-- **Backend total: 3,058**
-- Angular unit (Karma): 1,520/1,640 success (120 pre-existing failures in `AdminStudentDetailComponent`, unrelated to this phase, 0 new regressions; the new `admin-ai-operations.component.spec.ts`: 14/14)
-- Playwright E2E: unchanged (no existing spec to extend cheaply; backend integration + Angular unit tests are the coverage for this phase's UI)
+- **Backend total: 3,085**
+- Angular unit (Karma): 1,537/1,657 success (120 pre-existing failures in `AdminStudentDetailComponent`/`AdminAiConfigComponent`, unrelated to this phase, 0 new regressions; new `admin-feature-gates.component.spec.ts`: 19/19, extended `admin-lessons`/`admin-ai-operations` specs pass)
+- Playwright E2E: unchanged (no existing admin-settings Playwright pattern to extend cheaply)
 
 **Build:** Clean production build. No known open build errors.
 
@@ -149,6 +149,7 @@ As of Phase 16J, all six student pages are functionally complete, the speaking e
 | 64 | Phase 19B: Review Scaffold Per-Item Admin Approval | Readiness Pool / Admin | 2026-07-02 | `AdminReviewStatus` per-item state (T72 migration) with Approve/Reject/Reopen transitions + idempotency guards; admin API + audit log (`AdminAuditLog`); Practice Gym gate updated to require per-item Approved; admin UI approval table with Approve/Reject/Reopen actions; global safety gates (EnableReviewScaffoldGeneration/DryRunOnly/RequireAdminReview/AllowTodayLessonInsertion) unchanged |
 | 65 | Phase 19C: Review Scaffold Practice Gym Pilot Rollout | Readiness Pool / Admin | 2026-07-02 | `PracticeGymPilotEnabled` gate (default false) layered on top of 19A/19B; friendly non-negative student-facing pilot label/reason override; `MaxStudentVisibleScaffoldSuggestions` cap; admin pilot-summary endpoint + monitoring card; instantly-reversible rollback with no data deletion; Today lesson insertion still disabled by default |
 | 66 | Phase 20A: Admin AI Operations Dashboard | Admin / AI | 2026-07-02 | Read-only `GET /api/admin/ai-operations/summary` aggregating existing speaking/writing evaluation, generation quality, AI usage, and readiness-pool/pilot services; new `/admin/ai-operations` page (provider/model usage, evaluation queue counts, generation failures, 10-flag signal safety gate card, combined recent-failures table); no new AI behaviour, scoring, or mutation path |
+| 67 | Phase 20B: Admin Runtime Settings & Feature Gates | Admin / Platform | 2026-07-02 | Typed feature-gate registry (8 groups) + `RuntimeSettingOverride` table for previously appsettings-only review-scaffold/Practice-Gym-pilot flags; existing `LessonGenerationSettings` table wrapped by the same registry; AI signal-safety gates surfaced read-only; new `/admin/settings/feature-gates` page with slide-in drawer, `?gate=` deep links, server-side validation, typed-`CONFIRM` for High/Critical risk changes, `AdminAuditLog` on every change/reset; Admin Lessons/AI Operations pages now link to it instead of showing static config text; control-plane only — no AI/CEFR/objective/Learning-Plan/review-scaffold runtime behaviour changed |
 
 ---
 
@@ -278,12 +279,16 @@ Every provider call tracked: featureKey, provider, model, userId, isFallback, wa
 - Phase 19A added controlled-enablement gating (source restriction, per-student daily cap, deterministic confidence banding, global admin-review hold) but `EnableReviewScaffoldGeneration` still defaults `false` and `DryRunOnly` defaults `true`. Global enablement is an operator decision, not yet exercised in production.
 - Phase 19B added per-item admin approval (`AdminReviewStatus`: PendingReview/Approved/Rejected, with Approve/Reject/Reopen endpoints + UI actions and an `AdminAuditLog` trail). An item now only reaches Practice Gym when it is individually `Approved` (or never required review) — the old "flip the global flag to release everything at once" behavior is gone. `EnableReviewScaffoldGeneration`/`DryRunOnly`/`RequireAdminReview`/`AllowTodayLessonInsertion` remain server-side config only; no global "enable" toggle exists in the admin UI.
 - Phase 19C added a dedicated `PracticeGymPilotEnabled` gate (default `false`) layered on top of 19A/19B: an item can now be generated and individually approved while still hidden from students until this one flag flips, and flipping it back off hides everything again with no data deletion. Added friendly, configurable, non-negative student-facing copy (`PracticeGymPilotLabel`/`PracticeGymPilotReason`) and a scaffold-specific visible-suggestion cap (`MaxStudentVisibleScaffoldSuggestions`, default 2), plus an admin pilot-summary endpoint/monitoring card. `PracticeGymPilotEnabled=false` in production today — the pilot has not been switched on for real students yet.
+- Phase 20B made `EnableReviewScaffoldGeneration`/`DryRunOnly`/`RequireAdminReview`/`AllowTodayLessonInsertion`/`ScaffoldAllowedSources`/`MinimumConfidenceForReviewNeed` and the Practice Gym pilot flags admin-runtime-editable (via `RuntimeSettingOverride`, no redeploy) through `/admin/settings/feature-gates` — the "server-side config only" limitation called out above is resolved for these specific flags. `ReadinessPoolReplenishmentService` itself still reads only appsettings, so the live replenishment behavior is unchanged until that read path is wired to the override table (deferred, see `TODOS.md`).
 
 ### Observability
 - No production-level APM, distributed tracing, or alerting stack.
 - AI cost/latency not tracked at per-call level in `SpeakingEvaluation`.
 - Memory staleness detection (TODO-4) not implemented.
 - Phase 20A added a read-only Admin AI Operations dashboard (`/admin/ai-operations`) aggregating speaking/writing evaluation, generation quality, AI usage, and readiness-pool/pilot state into one page — this narrows the gap but does not replace real APM/tracing. Provider health-check/ping and retry tooling remain deferred (see Phase 20A entry above).
+
+### Admin Operational Config
+- Phase 20B added a typed feature-gate registry and admin control plane (`/admin/settings/feature-gates`) for review-scaffold/Practice-Gym-pilot and lesson-generation settings, with validation, typed-`CONFIRM` for High/Critical risk changes, and `AdminAuditLog` audit trail. AI signal-safety gates (`ApplyMasterySignals`, `AllowReviewSignals`, `AllowPositiveSignals`, `AllowObjectiveCompletion`, `AllowCefrUpdate`) are surfaced for visibility but remain read-only this phase — changing them still requires an appsettings edit and redeploy. "AI can regenerate Learning Plan" has no dedicated flag in code; the registry shows this as an informational, locked entry rather than inventing one.
 
 ### Audio Cleanup
 - No background job to delete old speaking audio (TODO-6). 50-file per-student cap is the interim guard.

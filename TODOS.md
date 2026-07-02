@@ -512,3 +512,25 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 **Why:** `AdminAiOperationsSummaryDto` lists this under `unavailableSections` — the phase brief explicitly said "Do not invent cost values," so cost is only ever shown when already persisted on the AI usage log.
 **Context:** Would require a pricing table lookup even for providers that don't charge (e.g. to answer "what would this have cost on a real provider"), which is a product decision, not just an engineering one.
 **Deferred from:** Phase 20A engineering review, 2026-07-02.
+
+---
+
+## Admin Runtime Settings / Feature Gates (Phase 20B)
+
+### TODO-20B-1 — Wire `RuntimeSettingOverride` into `ReadinessPoolReplenishmentService`'s live read path
+**What:** Make the background replenishment engine read the active `RuntimeSettingOverride` row (if any) instead of only `IOptions<ReadinessPoolReplenishmentOptions>`, so admin edits to review-scaffold/Practice-Gym-pilot settings take effect without a redeploy.
+**Why:** Phase 20B explicitly scoped the admin UI to show effective values and let admins write overrides, but left the actual runtime consumer unchanged, per the phase brief ("acceptable if some existing code still reads appsettings directly").
+**Context:** `ReadinessPoolReplenishmentService` currently injects `IOptions<ReadinessPoolReplenishmentOptions>` directly. Wiring would mean either replacing that injection with `IRuntimeSettingsService`/`IFeatureGateRegistry`, or adding a small resolver shared by both the admin registry and the runtime service.
+**Deferred from:** Phase 20B engineering review, 2026-07-02.
+
+### TODO-20B-2 — Make `ReadinessPoolReplenishmentOptions` buffer/threshold fields admin-editable
+**What:** Extend the feature-gate registry so `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MinimumReadyThreshold`, `MaxBufferCount`, `ReadyItemExpiryDays`, `ReservedItemExpiryHours`, `GeneratingTimeoutMinutes`, `FailedRetryDelayMinutes`, and `MaxItemsGeneratedPerRun` are runtime-editable (currently read-only/observational in the registry).
+**Why:** These weren't in the phase's required editable list (that list mapped to `LessonGenerationSettings` fields instead), so they were left read-only to keep scope tight.
+**Context:** Would reuse the same `RuntimeSettingOverride` table and `review-scaffold-generation`-style group pattern already built in this phase.
+**Deferred from:** Phase 20B engineering review, 2026-07-02.
+
+### TODO-20B-3 — Runtime-editable AI signal-safety gates
+**What:** Allow `ApplyMasterySignals`, `MinimumConfidenceForMasterySignal`, `AllowReviewSignals`, and `AllowPositiveSignals` (speaking and writing) to be changed at runtime through the registry, with appropriate confirmation/audit requirements.
+**Why:** Phase 20B's brief required these to "default conservative and must not be changed by this phase" — they are shown in the registry for visibility but forced read-only regardless of the underlying appsettings mutability.
+**Context:** `AllowObjectiveCompletion`/`AllowCefrUpdate` are hardcoded `false` in code and must stay that way; only the four signal-application flags above are realistic candidates for future runtime editing.
+**Deferred from:** Phase 20B engineering review, 2026-07-02 (explicit product/safety decision, not a technical limitation).
