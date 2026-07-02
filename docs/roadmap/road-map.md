@@ -577,6 +577,31 @@ Review: `docs/reviews/2026-07-02-phase-20a-admin-ai-operations-dashboard-review.
 
 ---
 
+### Phase 21A Precursors — Deferred, Not Scheduled
+
+Two smaller items surfaced while scoping the access-control gap ahead of
+Phase 21A. Both are fully planned but **not started** — deprioritized in
+favor of current work. Each has a dedicated implementation plan doc.
+
+**Teacher role (minimal, admin-provisioned, read-only)**
+Adds `UserRole.Teacher` so instructors can log in and see a read-only view
+of the full student roster, without the full Organisation/Cohort model.
+Admin-provisioned only, no self-signup, no per-teacher scoping (teachers see
+ALL students — cohort-based scoping remains genuine Phase 21A scope).
+Plan: `docs/architecture/teacher-role-and-read-access.md`.
+
+**"View as user" — admin impersonation**
+Lets an Admin view the app as a specific student (without a second login)
+to verify the effect of admin-side changes from the student's perspective.
+Short-lived, audited, admin-only, Student-target-only impersonation token
+with a persistent "Viewing as X — Return to Admin" banner. Interim
+workaround in use today: separate browser contexts (incognito/second
+profile) per role, which requires no code since JWTs are stored per browser
+context.
+Plan: `docs/architecture/view-as-user-impersonation.md`.
+
+---
+
 ### Phase 22A — Production Operations Hardening
 
 **Purpose:** Ensure the production environment is observable, recoverable, and deployable with confidence.

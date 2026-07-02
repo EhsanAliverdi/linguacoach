@@ -122,6 +122,36 @@ From product owner brainstorm (2026-06-12). Architecture/planning notes only —
 
 ---
 
+## Teacher Role (minimal, read-only) `Not started`
+
+Deferred — Phase 21A precursor (2026-07-03). Full implementation plan:
+`docs/architecture/teacher-role-and-read-access.md`.
+
+Adds `UserRole.Teacher` so instructors can log in and see a read-only view
+of the full student roster, without the full Organisation/Cohort model
+(that remains Phase 21A). Admin-provisioned only, no self-signup, no
+per-teacher scoping. See also the related, already-tracked items below:
+"Admin / teacher progress view per student" (line ~881) and "Teacher /
+admin review of AI feedback quality" (line ~903) — this item is the
+access-control prerequisite for both.
+
+---
+
+## "View As User" — Admin Impersonation `Not started`
+
+Deferred — Phase 21A precursor (2026-07-03). Design notes:
+`docs/architecture/view-as-user-impersonation.md`.
+
+Lets an Admin view the app as a specific student, without a second login,
+to verify the effect of admin-side changes from the student's perspective.
+Standard enterprise pattern (Stripe/Zendesk/Intercom-style): short-lived,
+audited, admin-only, Student-target-only impersonation token with a
+persistent "Viewing as X — Return to Admin" banner. Interim workaround in
+use today: separate browser contexts (incognito/second profile) per role —
+requires no code, since JWTs are stored per browser context.
+
+---
+
 ## Multi-Course / Enrolment Model `Not started`
 
 From product owner brainstorm (2026-06-12). Future architecture direction — not current sprint implementation.
