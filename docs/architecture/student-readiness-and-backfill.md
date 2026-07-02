@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20E)
+lastUpdated: 2026-07-03 (20H)
 owner: architecture
 supersedes:
 supersededBy:
@@ -8,18 +8,27 @@ supersededBy:
 
 # Student Data Readiness, Backfill & Pilot Cleanup (Phase 20D)
 
-## ⚠ Known production issue (Phase 20E, 2026-07-02)
+## Resolved production issues (history)
 
-`GET /api/admin/students/{id}/readiness` currently returns HTTP 500
-(`PostgresException`) in production for every student checked, both new
-and pre-existing. The audit service design described below is unchanged
-and still correct against the SQLite-backed test suite; the failure is
-believed to be a production schema/migration issue outside this service's
-own code (see `TODO-20E-1` in `TODOS.md` and
-`docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`
-for the full diagnostic trail). Do not trust a "Pilot readiness
-unavailable" card as evidence this service is broken by design — verify
-against `TODO-20E-1`'s status first.
+Two distinct production 500 incidents have hit this audit endpoint since Phase 20D shipped, both
+now resolved:
+
+- **Phase 20E/20F (`TODO-20E-1`):** systemic — 6 migrations missing their `Designer.cs`, causing
+  every student's audit call to 500. Fixed in Phase 20F (migration files restored); confirmed live
+  2026-07-02 (`TODO-20F-1`). See `docs/reviews/2026-07-02-phase-20f-production-placement-readiness-p0-unblocker-review.md`.
+- **Phase 20G/20H (`TODO-20G-3`):** isolated to one student's specific data shape (a large batch of
+  duplicate Practice Gym readiness rows for one objective, compounded by the `TODO-20G-1` dedup bug
+  below). Root cause: 4 of the audit's 10 check-category methods
+  (`AddPracticeGymChecksAsync`, `AddActivityContentChecksAsync`, `AddAudioTtsChecksAsync`,
+  `AddFeedbackAndReviewScaffoldChecksAsync`) had no exception handling, so any unexpected data shape
+  in those queries crashed the whole audit instead of degrading to a structured `Warning` check like
+  the other six categories already did. Fixed in Phase 20H by wrapping all four in try/catch,
+  matching the existing `AddLearningPlanChecksAsync`/`AddProgressChecksAsync` pattern — the audit
+  now guarantees it never 500s on valid student data, regardless of check-specific data anomalies.
+  See `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.
+
+If a future audit call 500s again, it means a **new** exception path exists outside these ten
+methods (e.g. in `GetReadinessAsync` itself, before/after the ten calls) — check there first.
 
 ## Problem this solves
 

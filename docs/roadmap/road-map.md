@@ -1,22 +1,24 @@
 ---
 status: current
-lastUpdated: 2026-07-02
+lastUpdated: 2026-07-03 (20H)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-02 (Phase 20G complete)**
+**Accurate as of: 2026-07-03 (Phase 20H complete, locally verified; deploy/live validation pending)**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
 **✅ Live student golden path confirmed working end-to-end (2026-07-02):** Phase 20G completed the Phase 20E/20F pilot walkthrough against production: the pilot student completed placement (CEFR B2), got a real generated lesson, completed an activity with scored feedback, and Dashboard/Practice Gym/Journey/Progress/Profile all load with real data. Three real live bugs were found and fixed in-session (gap-fill activity unfillable, placement-result 400, Journey always-empty). **One admin-only regression remains open:** the readiness audit 500s for this specific student's data (`TODO-20G-3`) — isolated, not systemic, does not block the student experience.
 
+**✅ Both remaining Phase 20G issues fixed (2026-07-03, Phase 20H):** `TODO-20G-3` (readiness audit 500 for the pilot student) and `TODO-20G-1` (Practice Gym duplicate suggestions) both have implemented, locally-verified fixes (1,755 unit / 1,381 integration / 5 architecture tests passing). **Not yet pushed, deployed, or live-validated** — pending explicit user authorization to push to `main` and trigger the production deploy.
+
 ---
 
 ## 1. Current Project Status
 
-**Latest phase completed:** Phase 20G — Live Student Pilot Golden Path Completion (2026-07-02) — student-facing golden path confirmed working end-to-end live in production. One admin-tool regression open (`TODO-20G-3`).
+**Latest phase completed:** Phase 20H — Live Pilot Stabilization (2026-07-03) — fixed the readiness audit 500 (`TODO-20G-3`) and Practice Gym duplicate suggestions (`TODO-20G-1`) left open by Phase 20G. Locally verified (committed as `4dc49cc`); deploy and live validation against `speakpath.app` pending user go-ahead.
 
 **Branch:** main
 

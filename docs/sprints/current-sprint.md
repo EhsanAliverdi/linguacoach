@@ -4357,3 +4357,74 @@ work live. One admin-only regression (`TODO-20G-3`) remains open and does
 not block the student experience.
 
 Review: `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
+
+## Phase 20H — Live Pilot Stabilization: Readiness Edge Case + Practice Gym Deduplication (2026-07-03)
+
+**Goal:** Remove the last two known blockers/risks from Phase 20G before
+inviting a real controlled pilot student — the admin readiness audit 500
+for `pilot.student.20e@speakpath.app` (`TODO-20G-3`), and duplicate
+Practice Gym "Suggested for you" cards (`TODO-20G-1`). Stabilization
+only — no new AI scoring, CEFR update, objective completion, Learning
+Plan regeneration, activity types, or UI redesign.
+
+**Root cause — readiness audit 500 (`TODO-20G-3`):** 4 of
+`StudentReadinessAuditService`'s 10 check-category methods
+(`AddPracticeGymChecksAsync`, `AddActivityContentChecksAsync`,
+`AddAudioTtsChecksAsync`, `AddFeedbackAndReviewScaffoldChecksAsync`) had
+zero exception handling, unlike the other 6 which already caught failures
+and converted them into structured `Warning` checks. Any unexpected data
+shape in those four crashed the whole audit with a raw 500 for that one
+student.
+
+**Root cause — Practice Gym duplicates (`TODO-20G-1`):**
+`ReadinessPoolReplenishmentService.FillShortfallAsync`'s duplicate-key
+included `PatternKey`, but `PatternKey` is only assigned during
+materialization (after an item is queued) — so the queue-time key was
+always `(objective, null, cefr)` and could never match a materialized
+item's `(objective, "real pattern", cefr)`. Replenishment kept re-queuing
+duplicates for the same objective/level forever.
+
+**Fixes applied:**
+
+- Wrapped all 4 unguarded check methods in try/catch matching the
+  existing pattern — failures now become a structured `Warning` check
+  (`*.check_failed`), never a raw exception; no stack trace or exception
+  message leaked, only `ex.GetType().Name` in `TechnicalDetail`. Also
+  hardened `AddAudioTtsChecksAsync`'s `AudioAssets` query with an explicit
+  null-FK filter.
+- Dropped `PatternKey` from `ReadinessPoolReplenishmentService`'s
+  `DuplicateKey` — now `(ObjectiveKey, CefrLevel)` only.
+- Added defense-in-depth dedupe in `PracticeGymSuggestionService`: a
+  single item can never appear in more than one bucket
+  (Continue/Review/Suggested), Continue wins ties, caps still applied
+  after dedupe.
+
+**New tests:** `StudentReadinessAuditServiceTests.cs` (structured Warning
+on collaborator exception), `PracticeGymSuggestionServiceTests.cs` (3
+dedupe/cap tests), `ReadinessPoolReplenishmentServiceEffectiveSettingsTests.cs`
+(reproduces the bug pre-fix, confirms fixed post-fix),
+`AdminStudentReadinessEndpointTests.cs` (integration test reproducing the
+exact reported production shape — 49 duplicate Practice Gym readiness
+items for one objective, a `speaking` objective linked to a
+`ListeningComprehension`-typed activity — asserts 200 with structured
+checks).
+
+**Test coverage:** 1,755 backend unit tests pass, 1,381 backend
+integration tests pass (+includes the new production-shape reproduction
+test), 5/5 architecture tests pass. Angular production build succeeds (no
+Angular files touched this phase).
+
+**What is NOT changed:** No AI scoring, CEFR update, objective
+completion, Learning Plan regeneration, or review scaffold behavior
+changed. No runtime setting changed in production. No
+attempts/submissions/evaluations deleted anywhere.
+
+Commit: `4dc49cc` — "Phase 20H — Fix readiness audit 500 edge case and
+Practice Gym duplicate suggestions". **Not yet pushed or deployed** —
+pushing to `main` triggers the CI/CD deploy to production
+(`speakpath.app`) and requires explicit user go-ahead, which had not been
+given as of this entry. Both `TODO-20G-1` and `TODO-20G-3` are fixed and
+locally verified; **live validation against `speakpath.app` is pending**
+authorization to push/deploy.
+
+Review: `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.

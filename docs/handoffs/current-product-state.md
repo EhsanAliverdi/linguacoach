@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (20G)
+lastUpdated: 2026-07-03 (20H)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,51 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-02 (20G)
+Last updated: 2026-07-03 (20H)
+
+---
+
+## Live Pilot Stabilization: Readiness Edge Case + Practice Gym Deduplication (Phase 20H, 2026-07-03)
+
+Fixed both issues left open by Phase 20G below: the admin readiness audit
+500 for the pilot student (`TODO-20G-3`) and duplicate Practice Gym
+"Suggested for you" cards (`TODO-20G-1`).
+
+**Readiness audit 500 (`TODO-20G-3`):** root cause was 4 of
+`StudentReadinessAuditService`'s 10 check-category methods
+(`AddPracticeGymChecksAsync`, `AddActivityContentChecksAsync`,
+`AddAudioTtsChecksAsync`, `AddFeedbackAndReviewScaffoldChecksAsync`)
+having zero exception handling, unlike the other 6 which already
+converted failures into structured `Warning` checks. Fixed by wrapping
+all 4 in try/catch matching the existing pattern — an unexpected data
+shape now becomes a structured `Warning` check, never a raw 500. Also
+hardened a null-FK query in the audio/TTS check. A new integration test
+reproduces the exact reported production shape (49 duplicate Practice Gym
+readiness items for one objective, a `speaking` objective linked to a
+`ListeningComprehension`-typed activity) and confirms 200.
+
+**Practice Gym duplicates (`TODO-20G-1`):** root cause was
+`ReadinessPoolReplenishmentService.FillShortfallAsync`'s duplicate-key
+including `PatternKey`, which is only assigned during materialization —
+so the queue-time key could never match a materialized item's key, and
+replenishment kept re-queuing duplicates for the same objective/level
+forever. Fixed by dropping `PatternKey` from the dedup key. Also added
+defense-in-depth dedupe in `PracticeGymSuggestionService` so a single item
+can never appear in more than one bucket (Continue/Review/Suggested),
+with Continue winning ties, caps still applied after dedupe.
+
+**Test coverage:** 1,755 backend unit tests pass, 1,381 backend
+integration tests pass, 5/5 architecture tests pass. Angular production
+build succeeds (no Angular files touched this phase).
+
+**Status:** both fixes implemented and locally verified, committed as
+`4dc49cc`. **Not yet pushed, deployed, or live-validated** — pushing to
+`main` triggers the CI/CD deploy to production (`speakpath.app`) and
+requires explicit user go-ahead, which had not been given as of this
+update. Do not treat either TODO as confirmed-live until a follow-up
+records the live check against `speakpath.app`.
+
+Review: `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.
 
 ---
 
@@ -41,18 +85,20 @@ Practice Gym, Journey, Progress, Profile) loads with real data live.
   never matched, for every student, always. Added
   `GetJourneyForUserAsync` to resolve correctly. Confirmed live.
 
-**One admin-only P0 found, documented, not fixed:** the Phase 20D
-readiness audit 500s again for this specific pilot student's data
-(confirmed isolated — a different, more-advanced student returns 200;
-all individual sub-endpoints return 200 for the pilot student too — only
-the combined audit fails). Root cause not identified; needs production
-DB/log access. Tracked as `TODO-20G-3`. Does not block the student
-experience.
+**One admin-only P0 found, documented, not fixed in this phase:** the
+Phase 20D readiness audit 500s again for this specific pilot student's
+data (confirmed isolated — a different, more-advanced student returns
+200; all individual sub-endpoints return 200 for the pilot student too —
+only the combined audit fails). Root cause not identified; needs
+production DB/log access. Tracked as `TODO-20G-3`. Does not block the
+student experience. **Fixed in Phase 20H (2026-07-03), see above —
+locally verified, live validation pending.**
 
 **One P1 found, documented:** Practice Gym's "Suggested for you" shows
 the same suggestion 6 times — confirmed real duplicate backend data (one
 curriculum objective, no diversification), not a rendering bug.
-`TODO-20G-1`.
+`TODO-20G-1`. **Fixed in Phase 20H (2026-07-03), see above — locally
+verified, live validation pending.**
 
 **What is NOT changed:** No AI scoring, CEFR update, objective
 completion, Learning Plan regeneration, or review scaffold behavior

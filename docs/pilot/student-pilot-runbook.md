@@ -154,7 +154,7 @@ All of the following must be true:
 - [ ] Admin can see the readiness verdict and repair history for this
       student.
 
-## 8. Known limitations (as of Phase 20G, 2026-07-02)
+## 8. Known limitations (as of Phase 20H, 2026-07-03)
 
 - **Fixed and confirmed live in Phase 20F:**
   `POST /api/student/placement/start` and the readiness audit both 500'd
@@ -166,18 +166,23 @@ All of the following must be true:
   dashboard/profile load after placement; `/journey` always showed
   "complete your placement" regardless of real state. See
   `docs/reviews/2026-07-02-phase-20g-live-student-pilot-golden-path-review.md`.
-- **Open, P0, not yet fixed:** the readiness audit 500s again, but only
-  for the pilot student's specific data (confirmed isolated — a different,
-  more-advanced student returns 200 on the same endpoint; the pilot
-  student's individual sub-endpoints — progress-summary, placement/latest,
-  writing-evaluations, readiness-pool — all return 200, only the combined
-  audit fails). Root cause not identified; needs production DB/log access.
-  Tracked as `TODO-20G-3`. **Does not block the student experience** — the
-  student-facing golden path is fully confirmed working end-to-end.
-- **Open, P1, not fixed:** Practice Gym's "Suggested for you" shows the
-  same suggestion 6 times for the pilot student — confirmed real duplicate
-  backend readiness-pool data (one objective, no diversification), not a
-  rendering bug. Tracked as `TODO-20G-1`.
+- **Fixed in Phase 20H (2026-07-03), locally verified, deploy/live
+  validation pending:** the readiness audit 500 that recurred for the
+  pilot student's specific data (`TODO-20G-3`). Root cause was 4 of the
+  10 readiness check-category methods having no exception handling —
+  wrapped in try/catch so a failure now returns a structured `Warning`
+  check instead of a raw 500. A new integration test reproduces the exact
+  reported production data shape and confirms 200. **Not yet pushed,
+  deployed, or confirmed live against `speakpath.app`** — do not rely on
+  this being fixed in production until a follow-up records a live check.
+  See `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.
+- **Fixed in Phase 20H (2026-07-03), locally verified, deploy/live
+  validation pending:** Practice Gym's "Suggested for you" showing the
+  same suggestion multiple times (`TODO-20G-1`). Root cause was a
+  replenishment dedup key that could never match a materialized item's
+  key, so duplicates kept queuing; also added defense-in-depth dedupe in
+  the suggestion service itself. **Not yet pushed, deployed, or confirmed
+  live against `speakpath.app`.**
 - `refill_practice_gym_if_empty`, `backfill_missing_activity_metadata`,
   `regenerate_missing_tts_for_listening_if_supported`,
   `normalize_student_lifecycle_if_safe` are not implemented yet — a
@@ -214,3 +219,11 @@ specific student's data (confirmed not to affect any other student or the
 student-facing experience). Recommend proceeding with a real student pilot
 invite while tracking `TODO-20G-3` for resolution before relying on the
 readiness tool for this particular student.
+
+**Update, Phase 20H (2026-07-03):** both `TODO-20G-3` and `TODO-20G-1`
+now have implemented, locally-verified fixes (see section 8 above) —
+**pending push, deploy, and live confirmation against
+`speakpath.app`.** Once deployed, re-run the readiness audit for
+`pilot.student.20e@speakpath.app` and re-check Practice Gym for
+duplicates as part of confirming this checklist is fully green; until
+then, treat both items as fixed-but-unconfirmed-live, not resolved.
