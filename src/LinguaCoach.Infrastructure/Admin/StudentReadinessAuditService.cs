@@ -375,6 +375,22 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
             return;
         }
 
+        try
+        {
+            await AddPracticeGymChecksCoreAsync(checks, profile, now, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Readiness audit: Practice Gym checks failed for student {StudentId}.", profile.Id);
+            checks.Add(Check("practicegym.check_failed", "Practice Gym checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
+                "Could not fully evaluate Practice Gym readiness for this student.", now, technicalDetail: ex.GetType().Name));
+        }
+    }
+
+    private async Task AddPracticeGymChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
+    {
+        const string category = "Practice Gym";
+
         var health = await _replenishment.GetHealthAsync(profile.Id, ReadinessPoolSource.PracticeGym, ct);
         // Nothing ready and nothing in flight, but failures are piling up — replenishment isn't
         // recovering on its own. NeedsReplenishment is not a useful signal here: with a nonzero
@@ -400,6 +416,22 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
     // --- 7. Activity content validity ---
 
     private async Task AddActivityContentChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
+    {
+        const string category = "Activity content validity";
+
+        try
+        {
+            await AddActivityContentChecksCoreAsync(checks, profile, now, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Readiness audit: activity content checks failed for student {StudentId}.", profile.Id);
+            checks.Add(Check("activities.check_failed", "Activity content checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
+                "Could not fully evaluate activity content validity for this student.", now, technicalDetail: ex.GetType().Name));
+        }
+    }
+
+    private async Task AddActivityContentChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
     {
         const string category = "Activity content validity";
 
@@ -453,6 +485,22 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
     {
         const string category = "Audio/TTS";
 
+        try
+        {
+            await AddAudioTtsChecksCoreAsync(checks, profile, now, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Readiness audit: audio/TTS checks failed for student {StudentId}.", profile.Id);
+            checks.Add(Check("audio.check_failed", "Audio/TTS checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
+                "Could not fully evaluate audio/TTS readiness for this student.", now, technicalDetail: ex.GetType().Name));
+        }
+    }
+
+    private async Task AddAudioTtsChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
+    {
+        const string category = "Audio/TTS";
+
         var settings = await _db.LessonGenerationSettings.AsNoTracking().FirstOrDefaultAsync(ct);
         var ttsEnabled = settings?.EnableTtsGeneration ?? true;
 
@@ -475,7 +523,8 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
         }
 
         var readyAudioActivityIds = await _db.AudioAssets.AsNoTracking()
-            .Where(a => listeningActivityIds.Contains(a.LearningActivityId!.Value)
+            .Where(a => a.LearningActivityId != null
+                && listeningActivityIds.Contains(a.LearningActivityId.Value)
                 && a.AssetType == AssetType.ListeningTts
                 && a.GenerationStatus == GenerationStatus.Ready)
             .Select(a => a.LearningActivityId!.Value)
@@ -498,6 +547,22 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
     // --- 9. Feedback/completion & review scaffold ---
 
     private async Task AddFeedbackAndReviewScaffoldChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
+    {
+        const string category = "Feedback/completion";
+
+        try
+        {
+            await AddFeedbackAndReviewScaffoldChecksCoreAsync(checks, profile, now, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Readiness audit: feedback/review scaffold checks failed for student {StudentId}.", profile.Id);
+            checks.Add(Check("feedback.check_failed", "Feedback/review scaffold checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
+                "Could not fully evaluate feedback/review scaffold state for this student.", now, technicalDetail: ex.GetType().Name));
+        }
+    }
+
+    private async Task AddFeedbackAndReviewScaffoldChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
     {
         const string category = "Feedback/completion";
         var effective = await _settingsProvider.GetEffectiveAsync(ct);

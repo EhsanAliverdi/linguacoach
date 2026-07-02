@@ -156,6 +156,56 @@ public sealed class AdminStudentReadinessEndpointTests : IClassFixture<ApiTestFa
     }
 
     [Fact]
+    public async Task GetReadiness_ProductionLikeDuplicateAndMismatchedActivityShape_Returns200WithStructuredChecks()
+    {
+        // TODO-20G-3 regression: reproduces the reported production shape — many duplicate
+        // readiness rows for the same objective, plus a "speaking" objective mapped to a
+        // ListeningComprehension-typed activity via an unusual pattern. The audit must return
+        // 200 with structured checks regardless, never a raw 500.
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var (_, userId) = await _factory.CreateStudentAndGetTokenAsync($"readinessprodshape_{Guid.NewGuid():N}@t.com");
+        var profileId = await GetProfileIdAsync(userId);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+            var activity = new LearningActivity(
+                ActivityType.ListeningComprehension, ActivitySource.AiGenerated, "Listening practice", "B2",
+                "{\"transcript\":\"hi\"}");
+            db.LearningActivities.Add(activity);
+
+            for (var i = 0; i < 49; i++)
+            {
+                var item = new StudentActivityReadinessItem(
+                    studentId: profileId, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B2",
+                    routingReason: RoutingReason.Normal, isLowerLevelContent: false,
+                    curriculumObjectiveKey: "speaking.fluency", primarySkill: "speaking",
+                    patternKey: "listening_multiple_choice_single");
+                db.StudentActivityReadinessItems.Add(item);
+                item.MarkGenerating();
+                item.MarkReady(learningActivityId: activity.Id);
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        var response = await ClientWithToken(adminToken).GetAsync($"/api/admin/students/{profileId}/readiness");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.TryGetProperty("checks", out var checks));
+        Assert.True(checks.GetArrayLength() > 0);
+        // Every check must be a structured status, never a leaked raw exception message.
+        foreach (var check in checks.EnumerateArray())
+        {
+            var message = check.GetProperty("message").GetString();
+            Assert.DoesNotContain("StackTrace", message);
+            Assert.DoesNotContain("System.", message);
+        }
+    }
+
+    [Fact]
     public async Task Response_NeverContainsSecretsOrRawPrompts()
     {
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();

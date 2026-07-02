@@ -516,7 +516,12 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             toCreate = canCreate;
         }
 
-        // Build a set of existing active item keys to prevent duplicates.
+        // Build a set of existing active item keys to prevent duplicates. PatternKey is only
+        // assigned during materialization (PracticeGymGenerationJob), well after an item is
+        // queued here — so it is always null at queue time. Keying on PatternKey would let this
+        // dedup check compare (Obj, null, Cefr) against a materialized item's (Obj, "actual_pattern",
+        // Cefr) and never match, silently re-queuing duplicates for the same objective/level
+        // forever. Dedup on objective + CEFR level only.
         var existingKeys = await _db.StudentActivityReadinessItems
             .Where(i => i.StudentId == profile.Id
                      && i.Source == source
@@ -526,7 +531,6 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
                       || i.Status == ReadinessPoolStatus.Reserved))
             .Select(i => new DuplicateKey(
                 i.CurriculumObjectiveKey,
-                i.PatternKey,
                 i.TargetCefrLevel))
             .ToListAsync(ct);
 
@@ -572,7 +576,6 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
             // Duplicate check.
             var key = new DuplicateKey(
                 routing.CurriculumObjectiveKey,
-                null,
                 routing.TargetCefrLevel);
 
             if (existingKeySet.Contains(key))
@@ -621,9 +624,10 @@ public sealed class ReadinessPoolReplenishmentService : IReadinessPoolReplenishm
         return (queued, skipped, skippedAtMaxBuffer, skippedDailyCap);
     }
 
-    // Value type for duplicate detection (objective key + pattern key + cefr level).
+    // Value type for duplicate detection (objective key + cefr level). PatternKey is
+    // deliberately excluded — it is only known after materialization, so including it here
+    // would make queue-time and materialized-item keys never match. See usage above.
     private readonly record struct DuplicateKey(
         string? ObjectiveKey,
-        string? PatternKey,
         string CefrLevel);
 }

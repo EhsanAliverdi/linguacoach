@@ -270,6 +270,27 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SettingsProviderThrows_FeedbackChecksReturnWarning_NotException()
+    {
+        // TODO-20G-3 regression: the audit must never propagate an unhandled exception from a
+        // single check category. AddFeedbackAndReviewScaffoldChecksAsync depends on
+        // IEffectiveReadinessPoolSettingsProvider — simulate the kind of unexpected failure
+        // (bad data shape, transient dependency failure) production hit for one specific student.
+        _exerciseTypes.ForToday = [MakeExerciseType()];
+        var student = SeedCourseReadyStudent();
+        _settingsProvider = new FakeSettingsProvider(new ReadinessPoolReplenishmentOptions()) { ShouldThrow = true };
+
+        var sut = BuildSut();
+        var summary = await sut.GetReadinessAsync(student.Id);
+
+        Assert.NotNull(summary);
+        var check = summary!.Checks.Single(c => c.Key == "feedback.check_failed");
+        Assert.Equal(ReadinessCheckStatus.Warning, check.Status);
+        Assert.Equal(ReadinessCheckSeverity.Warning, check.Severity);
+        Assert.DoesNotContain("Exception", check.Message);
+    }
+
+    [Fact]
     public async Task EmptyLedger_IsPass_NotCrash()
     {
         _exerciseTypes.ForToday = [MakeExerciseType()];
@@ -420,6 +441,12 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
 
     private sealed class FakeSettingsProvider(ReadinessPoolReplenishmentOptions opts) : IEffectiveReadinessPoolSettingsProvider
     {
-        public Task<ReadinessPoolReplenishmentOptions> GetEffectiveAsync(CancellationToken ct = default) => Task.FromResult(opts);
+        public bool ShouldThrow { get; set; }
+
+        public Task<ReadinessPoolReplenishmentOptions> GetEffectiveAsync(CancellationToken ct = default)
+        {
+            if (ShouldThrow) throw new InvalidOperationException("simulated settings provider failure");
+            return Task.FromResult(opts);
+        }
     }
 }

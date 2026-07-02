@@ -24,6 +24,7 @@ public sealed class ReadinessPoolReplenishmentServiceEffectiveSettingsTests : ID
 {
     private readonly LinguaCoachDbContext _db;
     private readonly Guid _studentId = Guid.NewGuid();
+    private readonly Guid _profileId;
 
     public ReadinessPoolReplenishmentServiceEffectiveSettingsTests()
     {
@@ -43,6 +44,9 @@ public sealed class ReadinessPoolReplenishmentServiceEffectiveSettingsTests : ID
             .SetValue(student, OnboardingStatus.Complete);
         _db.StudentProfiles.Add(student);
         _db.SaveChanges();
+        // StudentProfile(Guid userId) stores the ctor arg as UserId, not Id — StudentActivityReadinessItem.StudentId
+        // (and every readiness-pool query) is keyed on profile.Id, which is auto-generated.
+        _profileId = student.Id;
     }
 
     public void Dispose()
@@ -143,6 +147,41 @@ public sealed class ReadinessPoolReplenishmentServiceEffectiveSettingsTests : ID
         await sut.RunAsync();
 
         Assert.Empty(ScaffoldItems());
+    }
+
+    // --- Phase 20H: TODO-20G-1 duplicate-suggestion regression ---
+
+    // A materialized item (real PatternKey assigned post-generation, as PracticeGymGenerationJob
+    // does) for an objective/level must stop further replenishment runs from re-queuing more
+    // items for that same objective/level — even though the new candidate's dedup key is always
+    // computed with a null PatternKey at queue time (pattern isn't chosen until materialization).
+    [Fact]
+    public async Task MaterializedItemWithRealPatternKey_PreventsReQueueingSameObjectiveAndLevel()
+    {
+        var existing = new StudentActivityReadinessItem(
+            studentId: _profileId, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B1",
+            routingReason: RoutingReason.Normal, isLowerLevelContent: false,
+            curriculumObjectiveKey: "test-objective", patternKey: "listening_multiple_choice_single");
+        _db.StudentActivityReadinessItems.Add(existing);
+        existing.MarkGenerating();
+        existing.MarkReady();
+        await _db.SaveChangesAsync();
+
+        var opts = new ReadinessPoolReplenishmentOptions(); // defaults: PracticeGymPoolTargetCount=10
+        var sut = BuildSut(opts);
+
+        await sut.RunAsync();
+
+        var practiceGymItems = _db.StudentActivityReadinessItems
+            .Where(i => i.Source == ReadinessPoolSource.PracticeGym
+                     && i.CurriculumObjectiveKey == "test-objective"
+                     && i.TargetCefrLevel == "B1")
+            .ToList();
+
+        // FakeRoutingService always recommends the same objective/level regardless of primary
+        // skill, so every FillShortfallAsync slot in this run targets the same duplicate key —
+        // only the one pre-seeded item should remain.
+        Assert.Single(practiceGymItems);
     }
 
     // --- fakes ---

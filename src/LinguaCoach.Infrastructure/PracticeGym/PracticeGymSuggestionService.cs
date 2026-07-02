@@ -85,46 +85,56 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 
         // ContinueItems: reserved, not expired. Scaffold items stay pilot-gated so rollback
         // (PracticeGymPilotEnabled=false) hides approved-but-unconsumed scaffold items too.
-        var continueItems = rawItems
+        // Deduped by underlying activity/objective identity — Continue is populated first so it
+        // always wins ties against Suggested/Review below.
+        var continueCandidates = DedupeByIdentity(rawItems
             .Where(i => i.Status == ReadinessPoolStatus.Reserved
                      && (i.ExpiresAt == null || i.ExpiresAt > DateTime.UtcNow)
-                     && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled))
+                     && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled)));
+
+        var continueItems = continueCandidates
             .Take(MaxContinue)
             .Select(ToDto)
             .ToList();
+
+        var claimedKeys = continueCandidates.Select(ItemIdentityKey).ToHashSet();
 
         // ReviewItems: ReviewOnly status OR Ready+lower-level with review/scaffold/remediation reason.
         // Phase 19C: items that required admin review (i.e. came through the review/scaffold
         // generation pipeline) are pilot-gated on top of the existing per-item approval gate —
         // they only reach students when PracticeGymPilotEnabled=true, and are capped separately.
-        var reviewCandidates = rawItems
+        var reviewCandidates = DedupeByIdentity(rawItems
             .Where(i => i.Status == ReadinessPoolStatus.ReviewOnly
                      || (i.Status == ReadinessPoolStatus.Ready
                          && i.IsLowerLevelContent
                          && i.RoutingReason != RoutingReason.Normal
                          && i.RoutingReason != RoutingReason.Fallback))
             .Where(i => !i.RequiresAdminReview || _opts.PracticeGymPilotEnabled)
-            .ToList();
+            .Where(i => !claimedKeys.Contains(ItemIdentityKey(i))));
 
         var nonScaffoldReview = reviewCandidates.Where(i => !i.RequiresAdminReview);
         var scaffoldReview = reviewCandidates
             .Where(i => i.RequiresAdminReview)
             .Take(_opts.MaxStudentVisibleScaffoldSuggestions);
 
-        var reviewItems = nonScaffoldReview
+        var reviewKept = nonScaffoldReview
             .Concat(scaffoldReview)
             .Take(MaxReview)
-            .Select(ToDto)
             .ToList();
+
+        var reviewItems = reviewKept.Select(ToDto).ToList();
+
+        claimedKeys.UnionWith(reviewKept.Select(ItemIdentityKey));
 
         // SuggestedItems: Ready, not lower-level-only review content. Defence-in-depth:
         // scaffold-origin items never appear here even if a future routing change stops
-        // pairing them with IsLowerLevelContent — the pilot gate still applies.
-        var suggestable = rawItems
+        // pairing them with IsLowerLevelContent — the pilot gate still applies. Also excludes
+        // anything already placed in Continue/Review so a single item never appears twice.
+        var suggestable = DedupeByIdentity(rawItems
             .Where(i => i.Status == ReadinessPoolStatus.Ready
                      && !(i.IsLowerLevelContent && i.RoutingReason != RoutingReason.Normal && i.RoutingReason != RoutingReason.Fallback)
                      && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled))
-            .ToList();
+            .Where(i => !claimedKeys.Contains(ItemIdentityKey(i))));
 
         var ranked = RankSuggestions(suggestable, focusTags, contextTags)
             .Take(MaxSuggested)
@@ -268,6 +278,28 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 
         var profileId = profile?.Id ?? studentId;
         return (profile, profileId);
+    }
+
+    // Identity used to dedupe suggestion cards, in priority order: materialized activity id
+    // (strongest — the same generated exercise), else readiness item id itself (each row is its
+    // own distinct piece of pool state), which prevents e.g. several rows for the same objective
+    // that were never diversified by pattern from all surfacing as separate cards for the same
+    // underlying materialized content while still allowing genuinely different exercises.
+    private static (Guid? ActivityId, Guid ItemId) ItemIdentityKey(StudentActivityReadinessItem i) =>
+        (i.LearningActivityId, i.LearningActivityId is null ? i.Id : Guid.Empty);
+
+    // Removes items that share an identity key, keeping the first occurrence (callers pass
+    // already-priority-ordered sequences, e.g. reserved-before-others, oldest-first).
+    private static List<StudentActivityReadinessItem> DedupeByIdentity(IEnumerable<StudentActivityReadinessItem> items)
+    {
+        var seen = new HashSet<(Guid?, Guid)>();
+        var result = new List<StudentActivityReadinessItem>();
+        foreach (var item in items)
+        {
+            if (seen.Add(ItemIdentityKey(item)))
+                result.Add(item);
+        }
+        return result;
     }
 
     private static IEnumerable<StudentActivityReadinessItem> RankSuggestions(

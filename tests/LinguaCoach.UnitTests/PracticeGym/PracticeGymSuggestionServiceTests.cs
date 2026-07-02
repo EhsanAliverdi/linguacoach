@@ -356,6 +356,49 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         result.SuggestedItems.Should().BeEmpty();
     }
 
+    // --- Phase 20H: duplicate suggestion dedupe ---
+
+    // 27. Multiple Ready items sharing the same materialized activity id collapse to one Suggested card.
+    [Fact]
+    public async Task GetSuggestions_DuplicateReadyItemsSameActivity_CollapseToOneSuggestedCard()
+    {
+        var activityId = Guid.NewGuid();
+        SeedItem(status: ReadinessPoolStatus.Ready, learningActivityId: activityId);
+        SeedItem(status: ReadinessPoolStatus.Ready, learningActivityId: activityId);
+        SeedItem(status: ReadinessPoolStatus.Ready, learningActivityId: activityId);
+
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.SuggestedItems.Should().HaveCount(1);
+    }
+
+    // 28. An item reserved (Continue) for an activity is not also shown in Suggested/Review for
+    // the same activity — Continue wins, no card appears in more than one bucket.
+    [Fact]
+    public async Task GetSuggestions_SameActivityInContinueAndReady_ContinueWinsAndNotDuplicatedInSuggested()
+    {
+        var activityId = Guid.NewGuid();
+        SeedItem(status: ReadinessPoolStatus.Reserved, expiresAt: DateTime.UtcNow.AddHours(2), learningActivityId: activityId);
+        SeedItem(status: ReadinessPoolStatus.Ready, learningActivityId: activityId);
+
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.ContinueItems.Should().HaveCount(1);
+        result.SuggestedItems.Should().BeEmpty();
+    }
+
+    // 29. Caps still apply after dedupe — genuinely distinct activities beyond MaxSuggested (6) are still capped.
+    [Fact]
+    public async Task GetSuggestions_DistinctActivitiesBeyondCap_StillCapped()
+    {
+        for (var i = 0; i < 8; i++)
+            SeedItem(status: ReadinessPoolStatus.Ready, learningActivityId: Guid.NewGuid());
+
+        var result = await _sut.GetSuggestionsForStudentAsync(StudentId);
+
+        result.SuggestedItems.Should().HaveCount(6);
+    }
+
     // --- helpers ---
 
     private StudentActivityReadinessItem SeedItem(
