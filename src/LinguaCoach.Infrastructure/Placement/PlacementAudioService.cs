@@ -1,6 +1,8 @@
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Application.Speaking;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Infrastructure.Speaking;
+using LinguaCoach.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -17,15 +19,18 @@ public sealed class PlacementAudioService
 {
     private readonly TtsProviderResolver _ttsResolver;
     private readonly IConfiguration _configuration;
+    private readonly LinguaCoachDbContext _db;
     private readonly ILogger<PlacementAudioService> _logger;
 
     public PlacementAudioService(
         TtsProviderResolver ttsResolver,
         IConfiguration configuration,
+        LinguaCoachDbContext db,
         ILogger<PlacementAudioService> logger)
     {
         _ttsResolver = ttsResolver;
         _configuration = configuration;
+        _db = db;
         _logger = logger;
     }
 
@@ -49,10 +54,17 @@ public sealed class PlacementAudioService
         {
             var (tts, options) = _ttsResolver.Resolve("tts.placement", "tts.placement", "en-GB");
 
+            var started = DateTime.UtcNow;
             var result = await tts.GenerateSpeechAsync(
                 audioScript,
                 options,
                 ct);
+            var durationMs = (long)(DateTime.UtcNow - started).TotalMilliseconds;
+
+            // Same gap as ListeningAudioService (found live 2026-07-03): TTS calls bypass
+            // AiExecutionService's usage logging entirely, so nothing here ever wrote a
+            // ai_usage_logs row despite the TTS provider call succeeding.
+            await LogTtsUsageAsync("tts.placement", options.Model, result, durationMs, ct);
 
             if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)
             {
@@ -112,6 +124,33 @@ public sealed class PlacementAudioService
 
     private static string BuildAudioUrl(Guid assessmentId)
         => $"/api/placement/audio/{assessmentId}/listening";
+
+    private async Task LogTtsUsageAsync(
+        string featureKey, string? model, TtsResult result, long durationMs, CancellationToken ct)
+    {
+        try
+        {
+            _db.AiUsageLogs.Add(new AiUsageLog(
+                studentProfileId: null,
+                featureKey,
+                string.IsNullOrWhiteSpace(result.Provider) ? "unknown" : result.Provider,
+                string.IsNullOrWhiteSpace(model) ? "unknown" : model,
+                isFallback: false,
+                wasSuccessful: result.Success,
+                failureReason: result.FailureReason,
+                inputTokens: 0,
+                outputTokens: 0,
+                costUsd: 0m,
+                durationMs,
+                correlationId: null));
+
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write TTS usage log for {FeatureKey}", featureKey);
+        }
+    }
 }
 
 public sealed record PlacementAudioFile(byte[] Bytes, string ContentType);

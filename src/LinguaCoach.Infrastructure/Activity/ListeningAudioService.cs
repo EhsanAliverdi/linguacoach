@@ -7,6 +7,7 @@ using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Speaking;
+using LinguaCoach.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Activity;
@@ -15,15 +16,18 @@ public sealed class ListeningAudioService
 {
     private readonly TtsProviderResolver _ttsResolver;
     private readonly IFileStorageService _storage;
+    private readonly LinguaCoachDbContext _db;
     private readonly ILogger<ListeningAudioService> _logger;
 
     public ListeningAudioService(
         TtsProviderResolver ttsResolver,
         IFileStorageService storage,
+        LinguaCoachDbContext db,
         ILogger<ListeningAudioService> logger)
     {
         _ttsResolver = ttsResolver;
         _storage = storage;
+        _db = db;
         _logger = logger;
     }
 
@@ -75,10 +79,22 @@ public sealed class ListeningAudioService
             return;
         }
 
+        var started = DateTime.UtcNow;
         var result = await tts.GenerateSpeechAsync(
             content.EffectiveAudioScript!,
             ttsOptions,
             ct);
+        var durationMs = (long)(DateTime.UtcNow - started).TotalMilliseconds;
+
+        // TTS calls bypass AiExecutionService (the shared LLM wrapper that logs to
+        // ai_usage_logs) since ITextToSpeechService is a separate interface with no token/cost
+        // fields — found live 2026-07-03: TTS generation genuinely works (confirmed via a real
+        // playable audio file), but every call was invisible in AI Operations/cost tracking
+        // because nothing here ever wrote a usage-log row. Log it directly, matching
+        // AiExecutionService's LogUsageAsync shape (0 tokens/cost since TTS isn't priced by token
+        // in this codebase).
+        await LogTtsUsageAsync("tts.listening", ttsOptions.Model ?? result.Voice, result,
+            durationMs, ct);
 
         if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)
         {
@@ -138,6 +154,34 @@ public sealed class ListeningAudioService
         return content.Audio is { AudioAvailable: true } && !string.IsNullOrWhiteSpace(content.Audio.StorageKey)
             ? content.Audio.StorageKey
             : null;
+    }
+
+    private async Task LogTtsUsageAsync(
+        string featureKey, string? model, TtsResult result, long durationMs, CancellationToken ct)
+    {
+        try
+        {
+            _db.AiUsageLogs.Add(new AiUsageLog(
+                studentProfileId: null,
+                featureKey,
+                string.IsNullOrWhiteSpace(result.Provider) ? "unknown" : result.Provider,
+                string.IsNullOrWhiteSpace(model) ? "unknown" : model,
+                isFallback: false,
+                wasSuccessful: result.Success,
+                failureReason: result.FailureReason,
+                inputTokens: 0,
+                outputTokens: 0,
+                costUsd: 0m,
+                durationMs,
+                correlationId: null));
+
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            // Usage logging must never block audio generation from succeeding.
+            _logger.LogWarning(ex, "Failed to write TTS usage log for {FeatureKey}", featureKey);
+        }
     }
 
     private static string ContentTypeToExtension(string contentType) => contentType switch
