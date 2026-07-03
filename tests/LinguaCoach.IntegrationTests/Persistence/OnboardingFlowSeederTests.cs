@@ -156,4 +156,53 @@ public sealed class OnboardingFlowSeederTests : IDisposable
         for (var i = 1; i < orders.Count; i++)
             Assert.True(orders[i] > orders[i - 1], "Step orders must be strictly ascending");
     }
+
+    // ── Regression: production had an older, already-seeded flow missing the
+    // Phase 20I steps (session_duration, career_context, learning_goal_description,
+    // work_experience) because the pre-fix seeder bailed out entirely once any
+    // active flow existed. SeedAsync must now publish a new version instead.
+
+    [Fact]
+    public async Task SeedAsync_ActiveFlowMissingNewerSteps_PublishesNewVersionWithAllSteps()
+    {
+        // Simulate a pre-Phase-20I production flow: only the original steps.
+        var oldFlow = new OnboardingFlowDefinition("Default Flow", version: 1);
+        oldFlow.Activate();
+        oldFlow.AddStep(new OnboardingStepDefinition(
+            oldFlow.Id, "welcome", "Welcome to SpeakPath", OnboardingStepTypeV2.Welcome,
+            OnboardingStepRequirementType.SystemRequired, stepOrder: 1, isEnabled: true));
+        oldFlow.AddStep(new OnboardingStepDefinition(
+            oldFlow.Id, "summary", "You're all set!", OnboardingStepTypeV2.Summary,
+            OnboardingStepRequirementType.SystemRequired, stepOrder: 2, isEnabled: true));
+        _db.OnboardingFlowDefinitions.Add(oldFlow);
+        await _db.SaveChangesAsync();
+
+        await OnboardingFlowSeeder.SeedAsync(_db);
+
+        var flows = await _db.OnboardingFlowDefinitions.Include(f => f.Steps).ToListAsync();
+        Assert.Equal(2, flows.Count);
+
+        var reloadedOld = flows.Single(f => f.Id == oldFlow.Id);
+        Assert.False(reloadedOld.IsActive);
+
+        var newFlow = flows.Single(f => f.Id != oldFlow.Id);
+        Assert.True(newFlow.IsActive);
+        Assert.Equal(2, newFlow.Version);
+        Assert.Contains(newFlow.Steps, s => s.StepKey == "session_duration");
+        Assert.Contains(newFlow.Steps, s => s.StepKey == "career_context");
+        Assert.Contains(newFlow.Steps, s => s.StepKey == "work_experience");
+        Assert.Contains(newFlow.Steps, s => s.StepKey == "learning_goal_description");
+    }
+
+    [Fact]
+    public async Task SeedAsync_ActiveFlowAlreadyUpToDate_DoesNotCreateNewVersion()
+    {
+        await OnboardingFlowSeeder.SeedAsync(_db);
+        var countAfterFirst = await _db.OnboardingFlowDefinitions.CountAsync();
+
+        await OnboardingFlowSeeder.SeedAsync(_db);
+        var countAfterSecond = await _db.OnboardingFlowDefinitions.CountAsync();
+
+        Assert.Equal(countAfterFirst, countAfterSecond);
+    }
 }

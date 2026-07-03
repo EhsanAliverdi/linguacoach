@@ -13,25 +13,58 @@ public static class OnboardingFlowSeeder
     public static async Task SeedAsync(LinguaCoachDbContext db)
     {
         var existingActive = await db.OnboardingFlowDefinitions
-            .AnyAsync(f => f.IsActive);
+            .Include(f => f.Steps)
+            .FirstOrDefaultAsync(f => f.IsActive);
 
-        if (existingActive) return;
+        // Only ever reconcile the seeder's own "Default Flow" — an admin may have built and
+        // activated a genuinely custom flow via /admin/onboarding, which must never be touched
+        // or replaced by this seeder regardless of its step set.
+        if (existingActive is not null && existingActive.Name == "Default Flow")
+        {
+            // Flows are immutable once created (see class doc) — if BuildDefaultSteps has
+            // grown since this flow was seeded (e.g. new answer-mapping steps added in code),
+            // publish a new version rather than mutating the active one, matching this
+            // seeder's documented "a new version creates a new flow" contract.
+            var currentKeys = existingActive.Steps.Select(s => s.StepKey).ToHashSet();
+            var placeholderSteps = BuildDefaultSteps(existingActive.Id);
+            var targetKeys = placeholderSteps.Select(s => s.StepKey).ToHashSet();
+            if (targetKeys.SetEquals(currentKeys)) return; // already up to date
+
+            var newFlow = new OnboardingFlowDefinition("Default Flow", version: existingActive.Version + 1);
+            var newSteps = BuildDefaultSteps(newFlow.Id);
+            ValidateNoDuplicateKeys(newSteps);
+            foreach (var step in newSteps)
+                newFlow.AddStep(step);
+
+            existingActive.Deactivate();
+            newFlow.Activate();
+            db.OnboardingFlowDefinitions.Add(newFlow);
+            await db.SaveChangesAsync();
+            return;
+        }
+
+        // An active flow exists but isn't ours (admin-built custom flow) — leave it alone.
+        if (existingActive is not null) return;
 
         var flow = new OnboardingFlowDefinition("Default Flow", version: 1);
         flow.Activate();
 
         var steps = BuildDefaultSteps(flow.Id);
-        // Validate no duplicate step keys before inserting.
-        var keys = steps.Select(s => s.StepKey).ToList();
-        var duplicates = keys.GroupBy(k => k).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
-        if (duplicates.Any())
-            throw new InvalidOperationException($"Duplicate step keys in default flow: {string.Join(", ", duplicates)}");
+        ValidateNoDuplicateKeys(steps);
 
         foreach (var step in steps)
             flow.AddStep(step);
 
         db.OnboardingFlowDefinitions.Add(flow);
         await db.SaveChangesAsync();
+    }
+
+    private static void ValidateNoDuplicateKeys(List<OnboardingStepDefinition> steps)
+    {
+        var duplicates = steps.Select(s => s.StepKey)
+            .GroupBy(k => k).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+        if (duplicates.Any())
+            throw new InvalidOperationException($"Duplicate step keys in default flow: {string.Join(", ", duplicates)}");
     }
 
     private static List<OnboardingStepDefinition> BuildDefaultSteps(Guid flowId)

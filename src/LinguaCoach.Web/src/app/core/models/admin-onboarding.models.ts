@@ -62,6 +62,8 @@ export const STEP_TYPES = [
   'FreeText',
   'AssessmentQuestion',
   'Summary',
+  'WorkExperience',
+  'SessionDuration',
 ] as const;
 
 export const REQUIREMENT_TYPES = ['SystemRequired', 'AdminConfigured'] as const;
@@ -73,4 +75,8 @@ export const ANSWER_MAPPINGS = [
   'LearningGoals',
   'FocusAreas',
   'DifficultyPreference',
+  'CareerContext',
+  'SessionDuration',
+  'WorkExperience',
+  'LearningGoalDescription',
 ] as const;
