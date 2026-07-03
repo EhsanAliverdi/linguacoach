@@ -683,11 +683,11 @@ progress is always computed live from the ledger.
 **Context:** `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
 **Deferred from:** Phase 20I, 2026-07-03 (depends on TODO-20I-4 landing first).
 
-### TODO-20I-6 — Today-lesson TTS audio never invoked (needs live diagnosis before a fix)
-**What:** `ai_usage_logs` has zero rows ever for `tts.listening`/`tts.placement`, despite `LessonGenerationSettings.EnableTtsGeneration = true`, all 15 Quartz jobs (including `tts-audio-generation`) registered, and valid Gemini credentials that work for every other AI feature. MinIO has no audio files.
-**Why:** None of the config/credential/job-registration causes checked out — needs to be reproduced live (complete a Today-lesson listening activity as a fresh test student, watch `ai_usage_logs`/Diagnostics in real time) to determine whether `ListeningAudioService.EnsureAudioAsync` is even being reached, before guessing at a code fix.
+### TODO-20I-6 — RESOLVED, 2026-07-03: TTS usage was invisible, not broken
+**What:** Original claim ("MinIO has no audio files", TTS never invoked) was based on stale/incomplete evidence. Live reproduction proved TTS generation genuinely works — a real ~970KB Gemini-generated WAV file was confirmed playable, with correct duration/voice metadata, generated the same day. The actual bug: `ListeningAudioService.EnsureAudioAsync` and `PlacementAudioService.EnsureListeningAudioAsync` both call `ITextToSpeechService.GenerateSpeechAsync` directly, completely bypassing `AiExecutionService`'s shared usage-logging wrapper — so `ai_usage_logs` never got a row for `tts.listening`/`tts.placement` even though the calls succeeded. Fixed by logging usage directly in both services, mirroring `AiExecutionService.LogUsageAsync`'s `AiUsageLog` shape (0 tokens/cost since TTS isn't token-priced in this codebase).
+**Why:** Cost/usage tracking for TTS was silently invisible to AI Operations, even though audio generation itself was fine. No user-facing behavior changed.
 **Context:** `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
-**Deferred from:** Phase 20I, 2026-07-03.
+**Fixed in:** commit `94dfd96`, 2026-07-03. Full backend suite (3161 tests) green before push.
 
 ### TODO-20I-7 — Onboarding V2 admin builder has no OptionsJson editor (known limitation of the seeder reconciliation fix)
 **What:** `/admin/onboarding`'s "Add step"/"Edit step" forms have no field for a step's `OptionsJson` — an admin can create a new step's key/title/type/mapping/order, but not its selectable options. `OnboardingFlowSeeder`'s reconciliation logic (added this phase to fix two seeded option-key bugs) compares each step's `(key, OptionsJson)` to decide whether to publish a new flow version — if the admin UI ever gains OptionsJson editing, that comparison would need to skip admin-customized steps, or every deploy would silently overwrite an admin's option edits with the code-seeded defaults.
