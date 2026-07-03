@@ -190,7 +190,9 @@ public sealed class OnboardingFlowSeederTests : IDisposable
         Assert.Equal(2, newFlow.Version);
         Assert.Contains(newFlow.Steps, s => s.StepKey == "session_duration");
         Assert.Contains(newFlow.Steps, s => s.StepKey == "career_context");
-        Assert.Contains(newFlow.Steps, s => s.StepKey == "work_experience");
+        // Phase 6b: work_experience split into two independent steps.
+        Assert.Contains(newFlow.Steps, s => s.StepKey == "professional_experience_level");
+        Assert.Contains(newFlow.Steps, s => s.StepKey == "role_familiarity");
         Assert.Contains(newFlow.Steps, s => s.StepKey == "learning_goal_description");
     }
 
@@ -225,15 +227,29 @@ public sealed class OnboardingFlowSeederTests : IDisposable
     }
 
     [Fact]
-    public async Task SeedAsync_SemanticStepTypes_HaveNoContent()
+    public async Task SeedAsync_InfoStepTypes_HaveNoContent()
     {
+        // Phase 6b: Welcome/Summary are non-question "Info" steps — everything else (including
+        // support_language, now a generic SingleChoice with dynamically-sourced choices) has Content.
         await OnboardingFlowSeeder.SeedAsync(_db);
 
         var supportLanguageStep = await _db.OnboardingStepDefinitions.FirstAsync(s => s.StepKey == "support_language");
-        Assert.Null(supportLanguageStep.Content);
+        Assert.NotNull(supportLanguageStep.Content);
 
         var welcomeStep = await _db.OnboardingStepDefinitions.FirstAsync(s => s.StepKey == "welcome");
         Assert.Null(welcomeStep.Content);
+    }
+
+    [Fact]
+    public async Task SeedAsync_StepsAreGroupedIntoCategories()
+    {
+        await OnboardingFlowSeeder.SeedAsync(_db);
+
+        var flow = await _db.OnboardingFlowDefinitions.Include(f => f.Categories).FirstAsync(f => f.IsActive);
+        Assert.True(flow.Categories.Count >= 5);
+
+        var steps = await _db.OnboardingStepDefinitions.Where(s => s.FlowDefinitionId == flow.Id).ToListAsync();
+        Assert.All(steps, s => Assert.NotNull(s.CategoryId));
     }
 
     [Fact]

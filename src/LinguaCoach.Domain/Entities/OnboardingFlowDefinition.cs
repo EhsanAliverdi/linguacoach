@@ -12,6 +12,9 @@ public sealed class OnboardingFlowDefinition : BaseEntity
     private readonly List<OnboardingStepDefinition> _steps = new();
     public IReadOnlyList<OnboardingStepDefinition> Steps => _steps.AsReadOnly();
 
+    private readonly List<OnboardingCategoryDefinition> _categories = new();
+    public IReadOnlyList<OnboardingCategoryDefinition> Categories => _categories.AsReadOnly();
+
     private OnboardingFlowDefinition() { }
 
     public OnboardingFlowDefinition(string name, int version)
@@ -51,5 +54,11 @@ public sealed class OnboardingFlowDefinition : BaseEntity
         if (_steps.Any(s => s.StepKey == step.StepKey))
             throw new InvalidOperationException($"Duplicate step key '{step.StepKey}' in flow '{Name}'.");
         _steps.Add(step);
+    }
+
+    public void AddCategory(OnboardingCategoryDefinition category)
+    {
+        ArgumentNullException.ThrowIfNull(category);
+        _categories.Add(category);
     }
 }

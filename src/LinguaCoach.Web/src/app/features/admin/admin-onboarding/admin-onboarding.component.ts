@@ -6,8 +6,9 @@ import {
   AdminOnboardingFlowSummary,
   AdminOnboardingFlowDto,
   AdminOnboardingStepDto,
-  AdminOnboardingOptionDto,
+  AdminOnboardingCategoryDto,
   StepRequest,
+  CategoryRequest,
   STEP_TYPES,
   REQUIREMENT_TYPES,
   ANSWER_MAPPINGS,
@@ -33,6 +34,10 @@ import {
   SpAdminTableComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
+
+function emptyQuestionContent(): QuestionContent {
+  return { type: 'single_choice', id: 'q1', questionText: '', choices: [{ key: 'A', label: '' }, { key: 'B', label: '' }] };
+}
 
 @Component({
   selector: 'app-admin-onboarding',
@@ -71,13 +76,16 @@ export class AdminOnboardingComponent implements OnInit {
 
   slideOverOpen = signal(false);
   editingStep = signal<AdminOnboardingStepDto | null>(null);
-
   stepForm: StepRequest = this.emptyStepForm();
+
+  categorySlideOverOpen = signal(false);
+  editingCategory = signal<AdminOnboardingCategoryDto | null>(null);
+  categoryForm: CategoryRequest = this.emptyCategoryForm();
 
   /** Step types the shared QuestionEditorComponent can author for onboarding — profile-capture
    * questions only (no passage/audio groups, those are placement-specific). */
   readonly questionEditorTypes: EditableQuestionType[] = ['single_choice', 'multiple_choice', 'free_text'];
-  questionContent = signal<QuestionContent>(this.contentFromOptions('SingleChoice', null));
+  questionContent = signal<QuestionContent>(emptyQuestionContent());
 
   readonly stepTypeOptions = STEP_TYPES.map(t => ({ value: t, label: t }));
   readonly requirementTypeOptions = REQUIREMENT_TYPES.map(t => ({ value: t, label: t }));
@@ -87,6 +95,9 @@ export class AdminOnboardingComponent implements OnInit {
     this.flows().find(f => f.isActive) ?? null
   );
 
+  readonly categories = computed(() => this.activeFlow()?.categories ?? []);
+  readonly categoryOptions = computed(() => this.categories().map(c => ({ value: c.categoryId, label: c.name })));
+
   readonly totalSteps = computed(() => this.activeFlow()?.steps.length ?? 0);
   readonly enabledSteps = computed(() => this.activeFlow()?.steps.filter(s => s.isEnabled).length ?? 0);
 
@@ -94,9 +105,18 @@ export class AdminOnboardingComponent implements OnInit {
     { key: 'stepOrder', label: '#', width: '48px' },
     { key: 'stepKey', label: 'Key' },
     { key: 'title', label: 'Title' },
+    { key: 'category', label: 'Category' },
     { key: 'stepType', label: 'Type' },
     { key: 'requirementType', label: 'Required?' },
     { key: 'answerMapping', label: 'Mapping' },
+    { key: 'isEnabled', label: 'Enabled' },
+    { key: '_actions', label: '' },
+  ];
+
+  readonly categoryColumns = [
+    { key: 'categoryOrder', label: '#', width: '48px' },
+    { key: 'name', label: 'Name' },
+    { key: 'description', label: 'Description' },
     { key: 'isEnabled', label: 'Enabled' },
     { key: '_actions', label: '' },
   ];
@@ -128,10 +148,17 @@ export class AdminOnboardingComponent implements OnInit {
     });
   }
 
+  categoryName(categoryId: string | null | undefined): string {
+    if (!categoryId) return '—';
+    return this.categories().find(c => c.categoryId === categoryId)?.name ?? '—';
+  }
+
+  // ── Steps ──────────────────────────────────────────────────────────────────
+
   openAddStep(): void {
     this.editingStep.set(null);
-    this.stepForm = this.emptyStepForm();
-    this.questionContent.set(this.contentFromOptions(this.stepForm.stepType, null));
+    this.stepForm = { ...this.emptyStepForm(), categoryId: this.categories()[0]?.categoryId ?? null };
+    this.questionContent.set(emptyQuestionContent());
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
@@ -149,8 +176,9 @@ export class AdminOnboardingComponent implements OnInit {
       stepOrder: step.stepOrder,
       isEnabled: step.isEnabled,
       options: step.options ? [...step.options] : null,
+      categoryId: step.categoryId ?? null,
     };
-    this.questionContent.set(this.contentFromOptions(step.stepType, step.options));
+    this.questionContent.set(step.content ?? emptyQuestionContent());
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
@@ -163,32 +191,12 @@ export class AdminOnboardingComponent implements OnInit {
   onStepTypeChange(stepType: string): void {
     this.stepForm = { ...this.stepForm, stepType };
     if (this.isGenericQuestionType(stepType)) {
-      this.questionContent.set(this.contentFromOptions(stepType, this.stepForm.options));
+      this.questionContent.set(emptyQuestionContent());
     }
   }
 
   onQuestionContentChange(content: QuestionContent): void {
     this.questionContent.set(content);
-  }
-
-  private contentFromOptions(stepType: string, options: AdminOnboardingOptionDto[] | null): QuestionContent {
-    const choices = (options ?? []).map(o => ({ key: o.key, label: o.label }));
-    const fallbackChoices = choices.length ? choices : [{ key: 'A', label: '' }, { key: 'B', label: '' }];
-
-    if (stepType === 'MultipleChoice') {
-      return { type: 'multiple_choice', id: 'q1', questionText: '', choices: fallbackChoices };
-    }
-    if (stepType === 'FreeText') {
-      return { type: 'free_text', id: 'q1', questionText: '' };
-    }
-    return { type: 'single_choice', id: 'q1', questionText: '', choices: fallbackChoices };
-  }
-
-  private optionsFromContent(content: QuestionContent): AdminOnboardingOptionDto[] | null {
-    if (content.type === 'single_choice' || content.type === 'multiple_choice') {
-      return content.choices.map(c => ({ key: c.key, label: c.label }));
-    }
-    return null;
   }
 
   closeSlideOver(): void {
@@ -201,14 +209,15 @@ export class AdminOnboardingComponent implements OnInit {
     if (!flow) return;
     this.actionError.set('');
 
-    if (this.isGenericQuestionType(this.stepForm.stepType)) {
-      this.stepForm = { ...this.stepForm, options: this.optionsFromContent(this.questionContent()) };
-    }
+    const request: StepRequest = {
+      ...this.stepForm,
+      content: this.isGenericQuestionType(this.stepForm.stepType) ? this.questionContent() : null,
+    };
 
     const editing = this.editingStep();
     const obs = editing
-      ? this.svc.updateStep(flow.flowId, editing.stepKey, this.stepForm)
-      : this.svc.addStep(flow.flowId, this.stepForm);
+      ? this.svc.updateStep(flow.flowId, editing.stepKey, request)
+      : this.svc.addStep(flow.flowId, request);
 
     obs.subscribe({
       next: () => {
@@ -230,6 +239,64 @@ export class AdminOnboardingComponent implements OnInit {
     });
   }
 
+  // ── Categories ─────────────────────────────────────────────────────────────
+
+  openAddCategory(): void {
+    this.editingCategory.set(null);
+    this.categoryForm = { ...this.emptyCategoryForm(), categoryOrder: this.categories().length + 1 };
+    this.actionError.set('');
+    this.actionSuccess.set('');
+    this.categorySlideOverOpen.set(true);
+  }
+
+  openEditCategory(category: AdminOnboardingCategoryDto): void {
+    this.editingCategory.set(category);
+    this.categoryForm = {
+      name: category.name,
+      description: category.description,
+      categoryOrder: category.categoryOrder,
+      isEnabled: category.isEnabled,
+    };
+    this.actionError.set('');
+    this.actionSuccess.set('');
+    this.categorySlideOverOpen.set(true);
+  }
+
+  closeCategorySlideOver(): void {
+    this.categorySlideOverOpen.set(false);
+    this.editingCategory.set(null);
+  }
+
+  saveCategory(): void {
+    const flow = this.activeFlow();
+    if (!flow) return;
+    this.actionError.set('');
+
+    const editing = this.editingCategory();
+    const obs = editing
+      ? this.svc.updateCategory(flow.flowId, editing.categoryId, this.categoryForm)
+      : this.svc.addCategory(flow.flowId, this.categoryForm);
+
+    obs.subscribe({
+      next: () => {
+        this.actionSuccess.set(editing ? 'Category updated.' : 'Category added.');
+        this.categorySlideOverOpen.set(false);
+        this.loadAll();
+      },
+      error: err => this.actionError.set(err.error?.error ?? 'Could not save category.'),
+    });
+  }
+
+  removeCategory(category: AdminOnboardingCategoryDto): void {
+    const flow = this.activeFlow();
+    if (!flow) return;
+    this.actionError.set('');
+    this.svc.removeCategory(flow.flowId, category.categoryId).subscribe({
+      next: () => { this.actionSuccess.set('Category removed.'); this.loadAll(); },
+      error: err => this.actionError.set(err.error?.error ?? 'Could not remove category.'),
+    });
+  }
+
   activateFlow(flowId: string): void {
     this.actionError.set('');
     this.svc.activateFlow(flowId).subscribe({
@@ -240,6 +307,10 @@ export class AdminOnboardingComponent implements OnInit {
 
   stepTone(step: AdminOnboardingStepDto): 'success' | 'neutral' {
     return step.isEnabled ? 'success' : 'neutral';
+  }
+
+  categoryTone(category: AdminOnboardingCategoryDto): 'success' | 'neutral' {
+    return category.isEnabled ? 'success' : 'neutral';
   }
 
   private emptyStepForm(): StepRequest {
@@ -253,6 +324,11 @@ export class AdminOnboardingComponent implements OnInit {
       stepOrder: 1,
       isEnabled: true,
       options: null,
+      categoryId: null,
     };
+  }
+
+  private emptyCategoryForm(): CategoryRequest {
+    return { name: '', description: null, categoryOrder: 1, isEnabled: true };
   }
 }

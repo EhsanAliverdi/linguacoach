@@ -21,6 +21,7 @@ public sealed class OnboardingV2QueryHandler : IOnboardingV2Query
     {
         var flow = await _db.OnboardingFlowDefinitions
             .Include(f => f.Steps)
+            .Include(f => f.Categories)
             .Where(f => f.IsActive)
             .FirstOrDefaultAsync(ct)
             ?? throw new InvalidOperationException("No active onboarding flow definition found.");
@@ -90,10 +91,16 @@ public sealed class OnboardingV2QueryHandler : IOnboardingV2Query
             .OrderBy(s => s.StepOrder)
             .ToList();
 
+        var categoriesById = flow.Categories.ToDictionary(c => c.Id);
+
+        var stepDtos = new List<OnboardingV2StepDto>();
+        foreach (var step in orderedSteps)
+            stepDtos.Add(await MapStepToDtoAsync(step, categoriesById, ct));
+
         return new OnboardingV2StatusDto(
             FlowId: flow.Id,
             CurrentStepKey: progress.CurrentStepKey,
-            Steps: orderedSteps.Select(MapStepToDto).ToList(),
+            Steps: stepDtos,
             CompletedStepKeys: progress.CompletedStepKeys,
             PercentageComplete: progress.PercentageComplete,
             IsComplete: progress.IsComplete,
@@ -101,7 +108,8 @@ public sealed class OnboardingV2QueryHandler : IOnboardingV2Query
         );
     }
 
-    internal static OnboardingV2StepDto MapStepToDto(OnboardingStepDefinition step)
+    private async Task<OnboardingV2StepDto> MapStepToDtoAsync(
+        OnboardingStepDefinition step, Dictionary<Guid, OnboardingCategoryDefinition> categoriesById, CancellationToken ct)
     {
         List<OnboardingOptionDto>? options = null;
         if (step.OptionsJson is not null)
@@ -125,6 +133,11 @@ public sealed class OnboardingV2QueryHandler : IOnboardingV2Query
             }
         }
 
+        var content = await OnboardingContentResolver.ResolveAsync(step.Content, _db, ct);
+        var redactedContent = content is not null ? QuestionContentRedactor.RedactCorrectAnswers(content) : null;
+
+        var category = step.CategoryId is Guid catId && categoriesById.TryGetValue(catId, out var cat) ? cat : null;
+
         return new OnboardingV2StepDto(
             StepKey: step.StepKey,
             Title: step.Title,
@@ -135,7 +148,9 @@ public sealed class OnboardingV2QueryHandler : IOnboardingV2Query
             IsEnabled: step.IsEnabled,
             Options: options,
             ValidationMetadata: validation,
-            Content: step.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(step.Content) : null
+            Content: redactedContent,
+            CategoryId: category?.Id,
+            CategoryName: category?.Name
             // AssessmentMetadataJson intentionally excluded.
         );
     }

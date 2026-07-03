@@ -31,5 +31,12 @@ internal sealed class OnboardingFlowDefinitionConfiguration : IEntityTypeConfigu
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(f => f.Steps).HasField("_steps").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(f => f.Categories)
+            .WithOne()
+            .HasForeignKey(c => c.FlowDefinitionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(f => f.Categories).HasField("_categories").UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

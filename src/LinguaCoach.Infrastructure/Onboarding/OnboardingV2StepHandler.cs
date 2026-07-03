@@ -1,7 +1,9 @@
 using System.Text.Json;
 using LinguaCoach.Application.Onboarding;
+using LinguaCoach.Application.Questions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +12,12 @@ namespace LinguaCoach.Infrastructure.Onboarding;
 public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly IQuestionAnswerValidator _validator;
 
-    public OnboardingV2StepHandler(LinguaCoachDbContext db)
+    public OnboardingV2StepHandler(LinguaCoachDbContext db, IQuestionAnswerValidator validator)
     {
         _db = db;
+        _validator = validator;
     }
 
     public async Task<SubmitOnboardingStepResult> HandleAsync(SubmitOnboardingStepCommand command, CancellationToken ct = default)
@@ -36,28 +40,30 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
         if (!step.IsEnabled)
             throw new OnboardingV2ValidationException($"Step '{command.StepKey}' is not enabled.");
 
-        // Validate answer against step rules.
-        ValidateAnswer(step, command.AnswerJson);
+        // Unified Question-Schema Phase 6b: validate the shared QuestionAnswer shape against the
+        // step's (dynamically-resolved) Content — replaces the old per-StepType switch. Info steps
+        // (Welcome/Summary) have no Content, so nothing to validate.
+        var content = await OnboardingContentResolver.ResolveAsync(step.Content, _db, ct);
+        var answer = ParseAnswer(command.AnswerJson);
+
+        if (content is not null && !IsSkip(step, answer))
+        {
+            var result = _validator.Validate(content, answer);
+            if (!result.IsValid)
+                throw new OnboardingV2ValidationException(result.Error ?? "Invalid answer.");
+        }
 
         // Update StudentProfile preferences for system-required preference steps.
-        await ApplyAnswerToProfileAsync(step, command.AnswerJson, command.UserId, ct);
+        await ApplyAnswerToProfileAsync(step, content, answer, command.UserId, ct);
 
         // Upsert response (unique constraint on progress_id + step_key).
         var existing = await _db.StudentOnboardingResponses
             .FirstOrDefaultAsync(r => r.ProgressId == progress.Id && r.StepKey == command.StepKey, ct);
 
-        if (existing is null)
-        {
-            var response = new StudentOnboardingResponse(progress.Id, command.StepKey, command.AnswerJson);
-            _db.StudentOnboardingResponses.Add(response);
-        }
-        else
-        {
-            // Re-submission replaces the answer (same student, same step).
+        if (existing is not null)
             _db.StudentOnboardingResponses.Remove(existing);
-            var response = new StudentOnboardingResponse(progress.Id, command.StepKey, command.AnswerJson);
-            _db.StudentOnboardingResponses.Add(response);
-        }
+
+        _db.StudentOnboardingResponses.Add(new StudentOnboardingResponse(progress.Id, command.StepKey, command.AnswerJson));
 
         progress.RecordStepCompleted(command.StepKey);
 
@@ -111,82 +117,18 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
         );
     }
 
-    private static void ValidateAnswer(OnboardingStepDefinition step, string answerJson)
-    {
-        // Parse validation metadata.
-        int maxLength = 500;
-        int maxSelections = 10;
-        if (step.ValidationMetadataJson is not null)
-        {
-            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(step.ValidationMetadataJson);
-            if (meta is not null)
-            {
-                if (meta.TryGetValue("maxLength", out var ml) && ml.ValueKind == JsonValueKind.Number)
-                    maxLength = ml.GetInt32();
-                if (meta.TryGetValue("maxSelections", out var ms) && ms.ValueKind == JsonValueKind.Number)
-                    maxSelections = ms.GetInt32();
-            }
-        }
+    private static QuestionAnswer ParseAnswer(string answerJson) =>
+        QuestionContentJson.TryDeserializeAnswerOrEmpty(answerJson);
 
-        var parsed = JsonSerializer.Deserialize<JsonElement>(answerJson);
-
-        switch (step.StepType)
-        {
-            case OnboardingStepTypeV2.FreeText or OnboardingStepTypeV2.PreferredName:
-                var text = parsed.TryGetProperty("value", out var v) ? v.GetString() : null;
-                if (text is not null && text.Length > maxLength)
-                    throw new OnboardingV2ValidationException($"Answer exceeds maximum length of {maxLength} characters.");
-                break;
-
-            case OnboardingStepTypeV2.SingleChoice or OnboardingStepTypeV2.AssessmentQuestion
-                or OnboardingStepTypeV2.SessionDuration:
-                if (step.OptionsJson is not null)
-                {
-                    var validKeys = ParseOptionKeys(step.OptionsJson);
-                    var selected = parsed.TryGetProperty("key", out var k) ? k.GetString() : null;
-                    if (selected is not null && !validKeys.Contains(selected))
-                        throw new OnboardingV2ValidationException($"Invalid option key '{selected}'.");
-                }
-                break;
-
-            case OnboardingStepTypeV2.WorkExperience:
-                // This step is AdminConfigured (skippable) — an empty object represents
-                // "skipped," which is valid. If either field is provided, both must be.
-                var hasExperience = parsed.TryGetProperty("experienceLevel", out var expEl) && expEl.ValueKind == JsonValueKind.String;
-                var hasFamiliarity = parsed.TryGetProperty("roleFamiliarity", out var famEl) && famEl.ValueKind == JsonValueKind.String;
-                if (hasExperience != hasFamiliarity)
-                    throw new OnboardingV2ValidationException("Both experienceLevel and roleFamiliarity are required together.");
-                break;
-
-            case OnboardingStepTypeV2.MultipleChoice or OnboardingStepTypeV2.LearningGoals
-                or OnboardingStepTypeV2.FocusAreas:
-                if (parsed.TryGetProperty("keys", out var keysEl) && keysEl.ValueKind == JsonValueKind.Array)
-                {
-                    var selectedKeys = keysEl.EnumerateArray().Select(e => e.GetString()).ToList();
-                    if (selectedKeys.Count > maxSelections)
-                        throw new OnboardingV2ValidationException($"Too many selections. Maximum is {maxSelections}.");
-
-                    if (step.OptionsJson is not null)
-                    {
-                        var validKeys = ParseOptionKeys(step.OptionsJson);
-                        var invalid = selectedKeys.Where(k => k is not null && !validKeys.Contains(k!)).ToList();
-                        if (invalid.Any())
-                            throw new OnboardingV2ValidationException($"Invalid option key(s): {string.Join(", ", invalid)}.");
-                    }
-                }
-                break;
-        }
-    }
-
-    private static HashSet<string> ParseOptionKeys(string optionsJson)
-    {
-        var options = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(optionsJson);
-        return options?.Select(o => o["key"]).ToHashSet() ?? new HashSet<string>();
-    }
+    /// <summary>AdminConfigured (skippable) steps submit an empty answers array to skip — valid
+    /// regardless of the step's own validation rules (mirrors the old per-step-type "skip" buttons).</summary>
+    private static bool IsSkip(OnboardingStepDefinition step, QuestionAnswer answer) =>
+        step.RequirementType == OnboardingStepRequirementType.AdminConfigured && answer.Answers.Count == 0;
 
     private async Task ApplyAnswerToProfileAsync(
         OnboardingStepDefinition step,
-        string answerJson,
+        QuestionContent? content,
+        QuestionAnswer answer,
         Guid userId,
         CancellationToken ct)
     {
@@ -195,72 +137,77 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
         var profile = await _db.StudentProfiles.FirstOrDefaultAsync(sp => sp.UserId == userId, ct);
         if (profile is null) return;
 
-        var parsed = JsonSerializer.Deserialize<JsonElement>(answerJson);
+        var questionId = content?.Id ?? "q1";
+        var values = answer.Find(questionId)?.Values ?? [];
+        var single = values.FirstOrDefault();
 
         switch (step.AnswerMapping)
         {
             case OnboardingAnswerMapping.PreferredName:
-                var name = parsed.TryGetProperty("value", out var nv) ? nv.GetString() : null;
-                UpdatePreferencesPreservingOthers(profile, preferredName: name);
+                UpdatePreferencesPreservingOthers(profile, preferredName: single);
                 break;
 
             case OnboardingAnswerMapping.SupportLanguage:
-                var code = parsed.TryGetProperty("languageCode", out var lc) ? lc.GetString() : null;
-                var langName = parsed.TryGetProperty("languageName", out var ln) ? ln.GetString() : null;
-                var helpPref = parsed.TryGetProperty("translationHelp", out var th)
-                    ? Enum.TryParse<TranslationHelpPreference>(th.GetString(), out var tp) ? tp : (TranslationHelpPreference?)null
-                    : null;
+                var code = string.IsNullOrWhiteSpace(single) || single == "none" ? null : single;
+                var name = code is null ? null : await _db.Languages.Where(l => l.Code == code).Select(l => l.Name).FirstOrDefaultAsync(ct);
+                var help = code is null ? TranslationHelpPreference.Never : TranslationHelpPreference.WhenDifficult;
                 UpdatePreferencesPreservingOthers(profile,
-                    supportLanguageCode: code, supportLanguageName: langName, translationHelpPreference: helpPref,
-                    // "None"/cleared selections must actually clear these fields, not be treated
-                    // as "untouched" — force-apply even when null since this step explicitly ran.
+                    supportLanguageCode: code, supportLanguageName: name, translationHelpPreference: help,
                     forceSupportLanguage: true);
                 break;
 
             case OnboardingAnswerMapping.LearningGoals:
-                var goals = ParseStringList(parsed, "keys");
-                var customGoal = parsed.TryGetProperty("custom", out var cg) ? cg.GetString() : null;
-                UpdatePreferencesPreservingOthers(profile, learningGoals: goals, customLearningGoal: customGoal);
+                UpdatePreferencesPreservingOthers(profile, learningGoals: values);
+                break;
+
+            case OnboardingAnswerMapping.CustomLearningGoal:
+                profile.UpdateLearningPreferences(
+                    preferredName: profile.PreferredName, supportLanguageCode: profile.SupportLanguageCode,
+                    supportLanguageName: profile.SupportLanguageName, translationHelpPreference: profile.TranslationHelpPreference,
+                    learningGoals: profile.LearningGoals, customLearningGoal: string.IsNullOrWhiteSpace(single) ? null : single,
+                    focusAreas: profile.FocusAreas, customFocusArea: profile.CustomFocusArea,
+                    difficultyPreference: profile.DifficultyPreference, preferredSessionDurationMinutes: profile.PreferredSessionDurationMinutes);
                 break;
 
             case OnboardingAnswerMapping.FocusAreas:
-                var areas = ParseStringList(parsed, "keys");
-                var customArea = parsed.TryGetProperty("custom", out var ca) ? ca.GetString() : null;
-                UpdatePreferencesPreservingOthers(profile, focusAreas: areas, customFocusArea: customArea);
+                UpdatePreferencesPreservingOthers(profile, focusAreas: values);
+                break;
+
+            case OnboardingAnswerMapping.CustomFocusArea:
+                profile.UpdateLearningPreferences(
+                    preferredName: profile.PreferredName, supportLanguageCode: profile.SupportLanguageCode,
+                    supportLanguageName: profile.SupportLanguageName, translationHelpPreference: profile.TranslationHelpPreference,
+                    learningGoals: profile.LearningGoals, customLearningGoal: profile.CustomLearningGoal,
+                    focusAreas: profile.FocusAreas, customFocusArea: string.IsNullOrWhiteSpace(single) ? null : single,
+                    difficultyPreference: profile.DifficultyPreference, preferredSessionDurationMinutes: profile.PreferredSessionDurationMinutes);
                 break;
 
             case OnboardingAnswerMapping.DifficultyPreference:
-                var diffStr = parsed.TryGetProperty("key", out var dk) ? dk.GetString() : null;
-                var diff = diffStr is not null && Enum.TryParse<DifficultyPreference>(diffStr, out var dp)
-                    ? dp : (DifficultyPreference?)null;
+                var diff = single is not null && Enum.TryParse<DifficultyPreference>(single, out var dp) ? dp : (DifficultyPreference?)null;
                 UpdatePreferencesPreservingOthers(profile, difficultyPreference: diff);
                 break;
 
             case OnboardingAnswerMapping.CareerContext:
-                var careerText = parsed.TryGetProperty("value", out var cv) ? cv.GetString() : null;
-                profile.UpdateOnboardingFreeTextContext(careerContextText: careerText, learningGoalDescription: null);
+                profile.UpdateOnboardingFreeTextContext(careerContextText: single, learningGoalDescription: null);
                 break;
 
             case OnboardingAnswerMapping.LearningGoalDescription:
-                var goalDescription = parsed.TryGetProperty("value", out var gv) ? gv.GetString() : null;
-                profile.UpdateOnboardingFreeTextContext(careerContextText: null, learningGoalDescription: goalDescription);
+                profile.UpdateOnboardingFreeTextContext(careerContextText: null, learningGoalDescription: single);
                 break;
 
             case OnboardingAnswerMapping.SessionDuration:
-                var minutesStr = parsed.TryGetProperty("key", out var mk) ? mk.GetString() : null;
-                if (minutesStr is not null && int.TryParse(minutesStr, out var minutes) && minutes > 0)
+                if (single is not null && int.TryParse(single, out var minutes) && minutes > 0)
                     UpdatePreferencesPreservingOthers(profile, preferredSessionDurationMinutes: minutes);
                 break;
 
-            case OnboardingAnswerMapping.WorkExperience:
-                var expStr = parsed.TryGetProperty("experienceLevel", out var el) ? el.GetString() : null;
-                var famStr = parsed.TryGetProperty("roleFamiliarity", out var rf) ? rf.GetString() : null;
-                if (expStr is not null && famStr is not null
-                    && Enum.TryParse<ProfessionalExperienceLevel>(expStr, out var expLevel)
-                    && Enum.TryParse<RoleFamiliarity>(famStr, out var familiarity))
-                {
-                    profile.SetExperienceContext(expLevel, familiarity);
-                }
+            case OnboardingAnswerMapping.ProfessionalExperienceLevel:
+                if (single is not null && Enum.TryParse<ProfessionalExperienceLevel>(single, out var expLevel))
+                    profile.SetProfessionalExperienceLevel(expLevel);
+                break;
+
+            case OnboardingAnswerMapping.RoleFamiliarity:
+                if (single is not null && Enum.TryParse<RoleFamiliarity>(single, out var familiarity))
+                    profile.SetRoleFamiliarity(familiarity);
                 break;
         }
     }
@@ -270,9 +217,7 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
     /// unconditionally (only LearningGoals/FocusAreas/PreferredSessionDurationMinutes skip the
     /// update when null) — safe for /profile's single full-form submission, but wrong for V2's
     /// one-field-per-step submission model: without this, submitting e.g. difficulty_preference
-    /// silently wiped out whatever support_language had just set, and vice versa (found live
-    /// 2026-07-03: support_language_code and difficulty_preference were always empty after a
-    /// full onboarding run, even though each step's own submission succeeded). Reads the
+    /// silently wiped out whatever support_language had just set, and vice versa. Reads the
     /// profile's current values for every field the caller doesn't explicitly pass, so a step
     /// can only ever change the field(s) it owns.
     /// </summary>
@@ -309,7 +254,7 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
     /// </summary>
     private static readonly HashSet<string> WorkOnlyStepKeys = new(StringComparer.OrdinalIgnoreCase)
     {
-        "career_context", "work_experience"
+        "career_context", "professional_experience_level", "role_familiarity"
     };
 
     private async Task<bool> IsWorkRelevantAsync(Guid progressId, CancellationToken ct)
@@ -321,18 +266,8 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
 
         if (goalsResponse is null) return false;
 
-        var parsed = JsonSerializer.Deserialize<JsonElement>(goalsResponse);
-        if (!parsed.TryGetProperty("keys", out var keysEl) || keysEl.ValueKind != JsonValueKind.Array)
-            return false;
-
-        return keysEl.EnumerateArray()
-            .Any(k => string.Equals(k.GetString(), "work", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static IReadOnlyList<string>? ParseStringList(JsonElement parsed, string propertyName)
-    {
-        if (parsed.TryGetProperty(propertyName, out var arr) && arr.ValueKind == JsonValueKind.Array)
-            return arr.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToList();
-        return null;
+        var answer = ParseAnswer(goalsResponse);
+        var values = answer.Answers.FirstOrDefault()?.Values ?? [];
+        return values.Any(v => string.Equals(v, "work", StringComparison.OrdinalIgnoreCase));
     }
 }

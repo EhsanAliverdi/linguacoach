@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Onboarding;
+using LinguaCoach.Domain.Questions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,9 @@ public sealed class AdminOnboardingController : ControllerBase
     private readonly IAdminUpdateOnboardingStepHandler _updateStep;
     private readonly IAdminRemoveOnboardingStepHandler _removeStep;
     private readonly IAdminReorderOnboardingStepsHandler _reorderSteps;
+    private readonly IAdminAddOnboardingCategoryHandler _addCategory;
+    private readonly IAdminUpdateOnboardingCategoryHandler _updateCategory;
+    private readonly IAdminRemoveOnboardingCategoryHandler _removeCategory;
 
     public AdminOnboardingController(
         IAdminOnboardingFlowQuery flowQuery,
@@ -26,7 +30,10 @@ public sealed class AdminOnboardingController : ControllerBase
         IAdminAddOnboardingStepHandler addStep,
         IAdminUpdateOnboardingStepHandler updateStep,
         IAdminRemoveOnboardingStepHandler removeStep,
-        IAdminReorderOnboardingStepsHandler reorderSteps)
+        IAdminReorderOnboardingStepsHandler reorderSteps,
+        IAdminAddOnboardingCategoryHandler addCategory,
+        IAdminUpdateOnboardingCategoryHandler updateCategory,
+        IAdminRemoveOnboardingCategoryHandler removeCategory)
     {
         _flowQuery = flowQuery;
         _flowListQuery = flowListQuery;
@@ -36,6 +43,9 @@ public sealed class AdminOnboardingController : ControllerBase
         _updateStep = updateStep;
         _removeStep = removeStep;
         _reorderSteps = reorderSteps;
+        _addCategory = addCategory;
+        _updateCategory = updateCategory;
+        _removeCategory = removeCategory;
     }
 
     // GET api/admin/onboarding/flows
@@ -105,7 +115,8 @@ public sealed class AdminOnboardingController : ControllerBase
             var result = await _addStep.HandleAsync(new AddOnboardingStepCommand(
                 flowId, request.StepKey, request.Title, request.Description,
                 request.StepType, request.RequirementType, request.AnswerMapping,
-                request.StepOrder, request.IsEnabled, request.Options), ct);
+                request.StepOrder, request.IsEnabled, request.Options,
+                request.CategoryId, request.Content), ct);
             return Ok(result);
         }
         catch (OnboardingV2ValidationException ex)
@@ -127,7 +138,8 @@ public sealed class AdminOnboardingController : ControllerBase
             var result = await _updateStep.HandleAsync(new UpdateOnboardingStepCommand(
                 flowId, stepKey, request.Title, request.Description,
                 request.StepType, request.RequirementType, request.AnswerMapping,
-                request.StepOrder, request.IsEnabled, request.Options), ct);
+                request.StepOrder, request.IsEnabled, request.Options,
+                request.CategoryId, request.Content), ct);
             return Ok(result);
         }
         catch (OnboardingV2ValidationException ex)
@@ -174,6 +186,55 @@ public sealed class AdminOnboardingController : ControllerBase
         }
     }
 
+    // ── Categories (Phase 6b) ────────────────────────────────────────────────
+
+    // POST api/admin/onboarding/flows/{flowId}/categories
+    [HttpPost("flows/{flowId:guid}/categories")]
+    public async Task<IActionResult> AddCategory(Guid flowId, [FromBody] CategoryRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _addCategory.HandleAsync(
+                new AddOnboardingCategoryCommand(flowId, request.Name, request.Description, request.CategoryOrder, request.IsEnabled), ct);
+            return Ok(result);
+        }
+        catch (OnboardingV2ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // PUT api/admin/onboarding/flows/{flowId}/categories/{categoryId}
+    [HttpPut("flows/{flowId:guid}/categories/{categoryId:guid}")]
+    public async Task<IActionResult> UpdateCategory(Guid flowId, Guid categoryId, [FromBody] CategoryRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _updateCategory.HandleAsync(
+                new UpdateOnboardingCategoryCommand(flowId, categoryId, request.Name, request.Description, request.CategoryOrder, request.IsEnabled), ct);
+            return Ok(result);
+        }
+        catch (OnboardingV2ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // DELETE api/admin/onboarding/flows/{flowId}/categories/{categoryId}
+    [HttpDelete("flows/{flowId:guid}/categories/{categoryId:guid}")]
+    public async Task<IActionResult> RemoveCategory(Guid flowId, Guid categoryId, CancellationToken ct)
+    {
+        try
+        {
+            await _removeCategory.HandleAsync(new RemoveOnboardingCategoryCommand(flowId, categoryId), ct);
+            return NoContent();
+        }
+        catch (OnboardingV2ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     // ── Request models ────────────────────────────────────────────────────────
 
     public sealed record CreateFlowRequest(string Name, int Version);
@@ -187,7 +248,11 @@ public sealed class AdminOnboardingController : ControllerBase
         string AnswerMapping,
         int StepOrder,
         bool IsEnabled,
-        IReadOnlyList<OnboardingOptionDto>? Options);
+        IReadOnlyList<OnboardingOptionDto>? Options,
+        Guid? CategoryId = null,
+        QuestionContent? Content = null);
 
     public sealed record ReorderStepsRequest(IReadOnlyList<string> StepKeyOrder);
+
+    public sealed record CategoryRequest(string Name, string? Description, int CategoryOrder, bool IsEnabled);
 }

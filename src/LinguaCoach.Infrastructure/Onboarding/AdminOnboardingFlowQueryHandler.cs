@@ -20,6 +20,7 @@ public sealed class AdminOnboardingFlowQueryHandler : IAdminOnboardingFlowQuery
     {
         var flow = await _db.OnboardingFlowDefinitions
             .Include(f => f.Steps)
+            .Include(f => f.Categories)
             .Where(f => f.IsActive)
             .FirstOrDefaultAsync(ct);
 
@@ -37,9 +38,15 @@ public sealed class AdminOnboardingFlowQueryHandler : IAdminOnboardingFlowQuery
                 StepOrder: s.StepOrder,
                 IsEnabled: s.IsEnabled,
                 Options: ParseOptions(s.OptionsJson),
-                Content: s.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(s.Content) : null
+                Content: s.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(s.Content) : null,
+                CategoryId: s.CategoryId
                 // AssessmentMetadataJson excluded even from admin view for now.
             ))
+            .ToList();
+
+        var categories = flow.Categories
+            .OrderBy(c => c.CategoryOrder)
+            .Select(c => new AdminOnboardingCategoryDto(c.Id, c.Name, c.Description, c.CategoryOrder, c.IsEnabled))
             .ToList();
 
         return new AdminOnboardingFlowDto(
@@ -47,7 +54,8 @@ public sealed class AdminOnboardingFlowQueryHandler : IAdminOnboardingFlowQuery
             Name: flow.Name,
             Version: flow.Version,
             IsActive: flow.IsActive,
-            Steps: steps
+            Steps: steps,
+            Categories: categories
         );
     }
 

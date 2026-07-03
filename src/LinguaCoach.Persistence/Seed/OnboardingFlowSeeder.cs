@@ -1,4 +1,3 @@
-using System.Text.Json;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Domain.Questions;
@@ -9,6 +8,13 @@ namespace LinguaCoach.Persistence.Seed;
 // Seeds the default onboarding v2 flow. Idempotent: re-runs are safe.
 // Flows are immutable once students have progress. A new version creates a new flow.
 // Admin-configured steps are seeded disabled by default.
+//
+// Unified Question-Schema Phase 6b: steps are grouped into categories and authored via the
+// shared QuestionContent schema (SingleChoice/MultipleChoice/FreeText + AnswerMapping) instead
+// of one-off StepTypes per semantic field — a CEFR-scored question is just a SingleChoice with
+// a CorrectAnswerKey, "support language" is a SingleChoice whose choices are sourced dynamically
+// from the Languages table (OptionsSource), and "work experience" is two independent SingleChoice
+// steps instead of one composite step.
 public static class OnboardingFlowSeeder
 {
     public static async Task SeedAsync(LinguaCoachDbContext db)
@@ -22,17 +28,7 @@ public static class OnboardingFlowSeeder
         // or replaced by this seeder regardless of its step set.
         if (existingActive is not null && existingActive.Name == "Default Flow")
         {
-            // Flows are immutable once created (see class doc) — if BuildDefaultSteps has
-            // grown or changed since this flow was seeded (new steps, or a fixed typo in an
-            // existing step's OptionsJson — e.g. a seeded option key that didn't match its
-            // target enum's member names, silently failing Enum.TryParse), publish a new
-            // version rather than mutating the active one, matching this seeder's documented
-            // "a new version creates a new flow" contract. Known limitation: the admin UI
-            // currently has no way to edit a step's OptionsJson, so this content comparison
-            // can't yet distinguish "seeder needs to fix a bug" from "admin customized this
-            // step's options" — if that admin capability is added later, this needs to skip
-            // steps an admin has touched (e.g. an UpdatedAt/IsCustomized flag).
-            var placeholderSteps = BuildDefaultSteps(existingActive.Id);
+            var (placeholderSteps, _) = BuildDefaultFlow(existingActive.Id);
             var currentSignatures = existingActive.Steps
                 .Select(s => (s.StepKey, s.OptionsJson)).ToHashSet();
             var targetSignatures = placeholderSteps
@@ -40,8 +36,10 @@ public static class OnboardingFlowSeeder
             if (targetSignatures.SetEquals(currentSignatures)) return; // already up to date
 
             var newFlow = new OnboardingFlowDefinition("Default Flow", version: existingActive.Version + 1);
-            var newSteps = BuildDefaultSteps(newFlow.Id);
+            var (newSteps, newCategories) = BuildDefaultFlow(newFlow.Id);
             ValidateNoDuplicateKeys(newSteps);
+            foreach (var category in newCategories)
+                newFlow.AddCategory(category);
             foreach (var step in newSteps)
                 newFlow.AddStep(step);
 
@@ -58,9 +56,11 @@ public static class OnboardingFlowSeeder
         var flow = new OnboardingFlowDefinition("Default Flow", version: 1);
         flow.Activate();
 
-        var steps = BuildDefaultSteps(flow.Id);
+        var (steps, categories) = BuildDefaultFlow(flow.Id);
         ValidateNoDuplicateKeys(steps);
 
+        foreach (var category in categories)
+            flow.AddCategory(category);
         foreach (var step in steps)
             flow.AddStep(step);
 
@@ -76,318 +76,271 @@ public static class OnboardingFlowSeeder
             throw new InvalidOperationException($"Duplicate step keys in default flow: {string.Join(", ", duplicates)}");
     }
 
-    private static List<OnboardingStepDefinition> BuildDefaultSteps(Guid flowId)
+    private static (List<OnboardingStepDefinition> Steps, List<OnboardingCategoryDefinition> Categories) BuildDefaultFlow(Guid flowId)
     {
-        var steps = BuildStepList(flowId);
-
-        // Unified Question-Schema Phase 5: shadow ContentJson for the generic step types
-        // (SingleChoice/MultipleChoice/FreeText/AssessmentQuestion) — null for the others, which
-        // keep their own dedicated orchestration.
-        foreach (var step in steps)
+        var categories = new List<OnboardingCategoryDefinition>
         {
-            var content = OnboardingContentConverter.FromLegacyStep(
-                step.StepType, step.Title, step.OptionsJson, step.ValidationMetadataJson, step.AssessmentMetadataJson);
-            if (content is not null) step.SetContent(content);
-        }
+            new(flowId, "Welcome", categoryOrder: 1),
+            new(flowId, "About you", categoryOrder: 2),
+            new(flowId, "Goals", categoryOrder: 3),
+            new(flowId, "Preferences", categoryOrder: 4),
+            new(flowId, "Work context", categoryOrder: 5, description: "Only shown if your goals mention work."),
+            new(flowId, "Quick check", categoryOrder: 6),
+            new(flowId, "Summary", categoryOrder: 7),
+        };
 
-        return steps;
-    }
+        var welcome = categories[0];
+        var aboutYou = categories[1];
+        var goals = categories[2];
+        var preferences = categories[3];
+        var workContext = categories[4];
+        var quickCheck = categories[5];
+        var summary = categories[6];
 
-    private static List<OnboardingStepDefinition> BuildStepList(Guid flowId)
-    {
-        return new List<OnboardingStepDefinition>
+        var steps = new List<OnboardingStepDefinition>
         {
-            // Step 1: Welcome
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "welcome",
-                title: "Welcome to SpeakPath",
-                stepType: OnboardingStepTypeV2.Welcome,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 1,
-                isEnabled: true,
-                description: "Let's set up your personalised English learning experience. This will only take a few minutes."
-            ),
+            BuildStep(flowId, welcome.Id, "welcome", "Welcome to SpeakPath",
+                OnboardingStepTypeV2.Welcome, OnboardingStepRequirementType.SystemRequired, 1,
+                description: "Let's set up your personalised English learning experience. This will only take a few minutes."),
 
-            // Step 2: Preferred name
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "preferred_name",
-                title: "What should we call you?",
-                stepType: OnboardingStepTypeV2.PreferredName,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 2,
-                isEnabled: true,
+            BuildStep(flowId, aboutYou.Id, "preferred_name", "What should we call you?",
+                OnboardingStepTypeV2.FreeText, OnboardingStepRequirementType.SystemRequired, 2,
                 description: "Enter the name you'd like SpeakPath to use when talking to you.",
-                validationMetadataJson: Json(new { maxLength = 100 }),
-                answerMapping: OnboardingAnswerMapping.PreferredName
-            ),
+                answerMapping: OnboardingAnswerMapping.PreferredName,
+                content: new FreeTextQuestion { QuestionText = "What should we call you?", MaxLength = 100 }),
 
-            // Step 3: Support language
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "support_language",
-                title: "Would you like support in another language?",
-                stepType: OnboardingStepTypeV2.SupportLanguage,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 3,
-                isEnabled: true,
+            BuildStep(flowId, aboutYou.Id, "support_language", "Would you like support in another language?",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 3,
                 description: "If you'd like explanations in your first language when something is unclear, select it here. This is optional — SpeakPath teaches in English.",
-                optionsJson: JsonOptions(new[]
-                {
-                    ("none", "No, English only"),
-                    ("fa", "Persian / Farsi"),
-                    ("ar", "Arabic"),
-                    ("zh", "Chinese (Mandarin)"),
-                    ("es", "Spanish"),
-                    ("pt", "Portuguese"),
-                    ("hi", "Hindi"),
-                    ("other", "Other")
-                }),
-                answerMapping: OnboardingAnswerMapping.SupportLanguage
-            ),
+                answerMapping: OnboardingAnswerMapping.SupportLanguage,
+                content: new SingleChoiceQuestion { QuestionText = "Would you like support in another language?", Choices = [], OptionsSource = "languages" }),
 
-            // Step 4: Learning goals
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "learning_goals",
-                title: "What do you want to use English for?",
-                stepType: OnboardingStepTypeV2.LearningGoals,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 4,
-                isEnabled: true,
+            BuildStep(flowId, goals.Id, "learning_goals", "What do you want to use English for?",
+                OnboardingStepTypeV2.MultipleChoice, OnboardingStepRequirementType.SystemRequired, 4,
                 description: "Select all that apply. This helps SpeakPath personalise your practice.",
-                optionsJson: JsonOptions(new[]
+                answerMapping: OnboardingAnswerMapping.LearningGoals,
+                content: new MultipleChoiceQuestion
                 {
-                    ("day_to_day", "Day-to-day conversations"),
-                    ("work", "Work and professional communication"),
-                    ("study", "Study or academic English"),
-                    ("travel", "Travel"),
-                    ("job_interview", "Job interviews"),
-                    ("social", "Social situations"),
-                    ("migration", "Migration or settlement"),
-                    ("writing_confidence", "Writing confidence"),
-                    ("listening_confidence", "Listening and understanding"),
-                    ("pronunciation", "Pronunciation and speaking clearly")
+                    QuestionText = "What do you want to use English for?",
+                    Choices =
+                    [
+                        new() { Key = "day_to_day", Label = "Day-to-day conversations" },
+                        new() { Key = "work", Label = "Work and professional communication" },
+                        new() { Key = "study", Label = "Study or academic English" },
+                        new() { Key = "travel", Label = "Travel" },
+                        new() { Key = "job_interview", Label = "Job interviews" },
+                        new() { Key = "social", Label = "Social situations" },
+                        new() { Key = "migration", Label = "Migration or settlement" },
+                        new() { Key = "writing_confidence", Label = "Writing confidence" },
+                        new() { Key = "listening_confidence", Label = "Listening and understanding" },
+                        new() { Key = "pronunciation", Label = "Pronunciation and speaking clearly" },
+                    ],
                 }),
-                validationMetadataJson: Json(new { maxSelections = 5 }),
-                answerMapping: OnboardingAnswerMapping.LearningGoals
-            ),
 
-            // Step 5: Focus areas
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "focus_areas",
-                title: "Where would you like the most practice?",
-                stepType: OnboardingStepTypeV2.FocusAreas,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 5,
-                isEnabled: true,
+            BuildStep(flowId, goals.Id, "custom_learning_goal", "Anything else you'd like to use English for?",
+                OnboardingStepTypeV2.FreeText, OnboardingStepRequirementType.AdminConfigured, 5,
+                description: "Optional — describe it in your own words.",
+                answerMapping: OnboardingAnswerMapping.CustomLearningGoal,
+                content: new FreeTextQuestion { QuestionText = "Anything else you'd like to use English for?", MaxLength = 200 }),
+
+            BuildStep(flowId, goals.Id, "focus_areas", "Where would you like the most practice?",
+                OnboardingStepTypeV2.MultipleChoice, OnboardingStepRequirementType.SystemRequired, 6,
                 description: "Select your top areas. SpeakPath will prioritise these in your lessons.",
-                optionsJson: JsonOptions(new[]
+                answerMapping: OnboardingAnswerMapping.FocusAreas,
+                content: new MultipleChoiceQuestion
                 {
-                    ("speaking", "Speaking"),
-                    ("listening", "Listening"),
-                    ("writing", "Writing"),
-                    ("reading", "Reading"),
-                    ("vocabulary", "Vocabulary"),
-                    ("grammar", "Grammar")
+                    QuestionText = "Where would you like the most practice?",
+                    Choices =
+                    [
+                        new() { Key = "speaking", Label = "Speaking" },
+                        new() { Key = "listening", Label = "Listening" },
+                        new() { Key = "writing", Label = "Writing" },
+                        new() { Key = "reading", Label = "Reading" },
+                        new() { Key = "vocabulary", Label = "Vocabulary" },
+                        new() { Key = "grammar", Label = "Grammar" },
+                    ],
                 }),
-                validationMetadataJson: Json(new { maxSelections = 3 }),
-                answerMapping: OnboardingAnswerMapping.FocusAreas
-            ),
 
-            // Step 6: Difficulty preference
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "difficulty_preference",
-                title: "How challenging should your practice feel?",
-                stepType: OnboardingStepTypeV2.DifficultyPreference,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 6,
-                isEnabled: true,
-                description: "You can change this at any time from your profile.",
-                // Option keys must match DifficultyPreference enum member names exactly
-                // (Gentle/Balanced/Challenging) -- "Moderate" doesn't exist, so Enum.TryParse
-                // in OnboardingV2StepHandler silently failed and difficulty_preference was
-                // always null regardless of what the student selected.
-                optionsJson: JsonOptions(new[]
-                {
-                    ("Gentle", "Gentle — I want to build confidence gradually"),
-                    ("Balanced", "Moderate — a steady challenge is good for me"),
-                    ("Challenging", "Challenging — push me to improve quickly")
-                }),
-                answerMapping: OnboardingAnswerMapping.DifficultyPreference
-            ),
+            BuildStep(flowId, goals.Id, "custom_focus_area", "Any other area you'd like to focus on?",
+                OnboardingStepTypeV2.FreeText, OnboardingStepRequirementType.AdminConfigured, 7,
+                description: "Optional — describe it in your own words.",
+                answerMapping: OnboardingAnswerMapping.CustomFocusArea,
+                content: new FreeTextQuestion { QuestionText = "Any other area you'd like to focus on?", MaxLength = 200 }),
 
-            // Step 7: Session duration
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "session_duration",
-                title: "How much time do you want to spend in each lesson?",
-                stepType: OnboardingStepTypeV2.SessionDuration,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 7,
-                isEnabled: true,
-                description: "We'll use this to build lessons that fit your schedule.",
-                optionsJson: JsonOptions(new[]
-                {
-                    ("10", "10 minutes — quick daily check-in"),
-                    ("15", "15 minutes — focused short practice"),
-                    ("20", "20 minutes — balanced daily session"),
-                    ("30", "30 minutes — deep practice session")
-                }),
-                answerMapping: OnboardingAnswerMapping.SessionDuration
-            ),
-
-            // Step 8: Career context — only shown to students whose learning_goals included "work"
-            // (see OnboardingV2StepHandler.WorkOnlyStepKeys). AdminConfigured so it never blocks
-            // completion for students who skip it.
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "career_context",
-                title: "What is your job, field, or target workplace context?",
-                stepType: OnboardingStepTypeV2.FreeText,
-                requirementType: OnboardingStepRequirementType.AdminConfigured,
-                stepOrder: 8,
-                isEnabled: true,
-                description: "SpeakPath uses your workplace context to create realistic, relevant practice scenarios.",
-                validationMetadataJson: Json(new { maxLength = 200 }),
-                answerMapping: OnboardingAnswerMapping.CareerContext
-            ),
-
-            // Step 9: Optional expanded "why" free text — no hardcoded example in any one language.
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "learning_goal_description",
-                title: "Anything else you'd like to tell us?",
-                stepType: OnboardingStepTypeV2.FreeText,
-                requirementType: OnboardingStepRequirementType.AdminConfigured,
-                stepOrder: 9,
-                isEnabled: true,
+            BuildStep(flowId, goals.Id, "learning_goal_description", "Anything else you'd like to tell us?",
+                OnboardingStepTypeV2.FreeText, OnboardingStepRequirementType.AdminConfigured, 8,
                 description: "Optional — describe a real situation you find difficult. You can write in your own language too.",
-                validationMetadataJson: Json(new { maxLength = 1000 }),
-                answerMapping: OnboardingAnswerMapping.LearningGoalDescription
-            ),
+                answerMapping: OnboardingAnswerMapping.LearningGoalDescription,
+                content: new FreeTextQuestion { QuestionText = "Anything else you'd like to tell us?", MaxLength = 1000, IsMultiline = true }),
 
-            // Step 10: Work experience — only shown to students whose learning_goals included "work".
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "work_experience",
-                title: "Tell us about your work experience",
-                stepType: OnboardingStepTypeV2.WorkExperience,
-                requirementType: OnboardingStepRequirementType.AdminConfigured,
-                stepOrder: 10,
-                isEnabled: true,
-                description: "This helps us tailor your lessons to the right level of workplace complexity.",
-                optionsJson: JsonOptions(new[]
+            BuildStep(flowId, preferences.Id, "difficulty_preference", "How challenging should your practice feel?",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 9,
+                description: "You can change this at any time from your profile.",
+                answerMapping: OnboardingAnswerMapping.DifficultyPreference,
+                // Option keys must match DifficultyPreference enum member names exactly.
+                content: new SingleChoiceQuestion
                 {
-                    ("NoProfessionalExperience", "No professional experience yet"),
-                    ("EntryLevelOrGraduate", "Entry level / graduate"),
-                    ("Junior_0_2Years", "Junior (0-2 years)"),
-                    ("MidLevel_2_5Years", "Mid-level (2-5 years)"),
-                    ("Senior_5_10Years", "Senior (5-10 years)"),
-                    ("LeadOrManager_10PlusYears", "Lead / manager (10+ years)")
+                    QuestionText = "How challenging should your practice feel?",
+                    Choices =
+                    [
+                        new() { Key = "Gentle", Label = "Gentle — I want to build confidence gradually" },
+                        new() { Key = "Balanced", Label = "Moderate — a steady challenge is good for me" },
+                        new() { Key = "Challenging", Label = "Challenging — push me to improve quickly" },
+                    ],
                 }),
-                answerMapping: OnboardingAnswerMapping.WorkExperience
-            ),
 
-            // Step 11: Assessment intro
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "assessment_intro",
-                title: "Quick check-in",
-                stepType: OnboardingStepTypeV2.SingleChoice,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 11,
-                isEnabled: true,
+            BuildStep(flowId, preferences.Id, "session_duration", "How much time do you want to spend in each lesson?",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 10,
+                description: "We'll use this to build lessons that fit your schedule.",
+                answerMapping: OnboardingAnswerMapping.SessionDuration,
+                content: new SingleChoiceQuestion
+                {
+                    QuestionText = "How much time do you want to spend in each lesson?",
+                    Choices =
+                    [
+                        new() { Key = "10", Label = "10 minutes — quick daily check-in" },
+                        new() { Key = "15", Label = "15 minutes — focused short practice" },
+                        new() { Key = "20", Label = "20 minutes — balanced daily session" },
+                        new() { Key = "30", Label = "30 minutes — deep practice session" },
+                    ],
+                }),
+
+            // Only shown to students whose learning_goals included "work" (see
+            // OnboardingV2StepHandler.WorkOnlyStepKeys). AdminConfigured so it never blocks
+            // completion for students who skip it.
+            BuildStep(flowId, workContext.Id, "career_context", "What is your job, field, or target workplace context?",
+                OnboardingStepTypeV2.FreeText, OnboardingStepRequirementType.AdminConfigured, 11,
+                description: "SpeakPath uses your workplace context to create realistic, relevant practice scenarios.",
+                answerMapping: OnboardingAnswerMapping.CareerContext,
+                content: new FreeTextQuestion { QuestionText = "What is your job, field, or target workplace context?", MaxLength = 200, IsMultiline = true }),
+
+            // Work experience (Phase 6b: split into two independent SingleChoice steps instead
+            // of one composite step — StudentProfile.SetProfessionalExperienceLevel/SetRoleFamiliarity
+            // each set their own field, recomputing WorkplaceSeniority once both are known).
+            BuildStep(flowId, workContext.Id, "professional_experience_level", "How many years of professional experience do you have?",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.AdminConfigured, 12,
+                answerMapping: OnboardingAnswerMapping.ProfessionalExperienceLevel,
+                content: new SingleChoiceQuestion
+                {
+                    QuestionText = "How many years of professional experience do you have?",
+                    Choices =
+                    [
+                        new() { Key = "NoProfessionalExperience", Label = "No professional experience yet" },
+                        new() { Key = "EntryLevelOrGraduate", Label = "Entry level / graduate" },
+                        new() { Key = "Junior_0_2Years", Label = "Junior (0-2 years)" },
+                        new() { Key = "MidLevel_2_5Years", Label = "Mid-level (2-5 years)" },
+                        new() { Key = "Senior_5_10Years", Label = "Senior (5-10 years)" },
+                        new() { Key = "LeadOrManager_10PlusYears", Label = "Lead / manager (10+ years)" },
+                    ],
+                }),
+
+            BuildStep(flowId, workContext.Id, "role_familiarity", "How familiar are you with your current type of role?",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.AdminConfigured, 13,
+                answerMapping: OnboardingAnswerMapping.RoleFamiliarity,
+                content: new SingleChoiceQuestion
+                {
+                    QuestionText = "How familiar are you with your current type of role?",
+                    Choices =
+                    [
+                        new() { Key = "NewToRole", Label = "New to this type of role" },
+                        new() { Key = "UnderstandsBasics", Label = "Understand the basics" },
+                        new() { Key = "CurrentlyWorkingInRole", Label = "Currently working in this role" },
+                        new() { Key = "ExperiencedInRole", Label = "Experienced in this role" },
+                        new() { Key = "ManagesOrTrainsOthers", Label = "Manage or train others in this role" },
+                    ],
+                }),
+
+            BuildStep(flowId, quickCheck.Id, "assessment_intro", "Quick check-in",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 14,
                 description: "Two quick questions will help SpeakPath set the right starting level for you. There are no wrong answers — just pick what feels right.",
-                optionsJson: JsonOptions(new[]
+                content: new SingleChoiceQuestion
                 {
-                    ("ready", "I'm ready"),
-                    ("skip", "Skip for now")
-                })
-            ),
+                    QuestionText = "Quick check-in",
+                    Choices = [new() { Key = "ready", Label = "I'm ready" }, new() { Key = "skip", Label = "Skip for now" }],
+                }),
 
-            // Step 12: Assessment Q1
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "assessment_q1",
-                title: "Read the sentence and choose the correct word.",
-                stepType: OnboardingStepTypeV2.AssessmentQuestion,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 12,
-                isEnabled: true,
+            // CEFR-scored: a SingleChoice with CorrectAnswerKey set, scored via the shared
+            // IQuestionScorer (identical code path to placement) — no separate "AssessmentQuestion"
+            // step type needed.
+            BuildStep(flowId, quickCheck.Id, "assessment_q1", "Read the sentence and choose the correct word.",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 15,
                 description: "She _____ to the office every day by train.",
-                optionsJson: JsonOptions(new[]
+                content: new SingleChoiceQuestion
                 {
-                    ("travel", "travel"),
-                    ("travels", "travels"),
-                    ("travelled", "travelled"),
-                    ("is travel", "is travel")
+                    QuestionText = "Read the sentence and choose the correct word.",
+                    Choices =
+                    [
+                        new() { Key = "travel", Label = "travel" }, new() { Key = "travels", Label = "travels" },
+                        new() { Key = "travelled", Label = "travelled" }, new() { Key = "is travel", Label = "is travel" },
+                    ],
+                    CorrectAnswerKey = "travels",
                 }),
-                // AssessmentMetadataJson is server-side only — never sent to student API.
-                assessmentMetadataJson: Json(new { correctAnswerKey = "travels", cefrScoreWeight = 2 })
-            ),
 
-            // Step 13: Assessment Q2
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "assessment_q2",
-                title: "Choose the sentence that is correct.",
-                stepType: OnboardingStepTypeV2.AssessmentQuestion,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 13,
-                isEnabled: true,
-                optionsJson: JsonOptions(new[]
+            BuildStep(flowId, quickCheck.Id, "assessment_q2", "Choose the sentence that is correct.",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 16,
+                content: new SingleChoiceQuestion
                 {
-                    ("a", "Despite of the rain, we continued walking."),
-                    ("b", "Although it was raining, we continued walking."),
-                    ("c", "However the rain, we continued walking."),
-                    ("d", "In spite the rain, we continued walking.")
+                    QuestionText = "Choose the sentence that is correct.",
+                    Choices =
+                    [
+                        new() { Key = "a", Label = "Despite of the rain, we continued walking." },
+                        new() { Key = "b", Label = "Although it was raining, we continued walking." },
+                        new() { Key = "c", Label = "However the rain, we continued walking." },
+                        new() { Key = "d", Label = "In spite the rain, we continued walking." },
+                    ],
+                    CorrectAnswerKey = "b",
                 }),
-                assessmentMetadataJson: Json(new { correctAnswerKey = "b", cefrScoreWeight = 3 })
-            ),
 
-            // Step 14: Summary / completion
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "summary",
-                title: "You're all set!",
-                stepType: OnboardingStepTypeV2.Summary,
-                requirementType: OnboardingStepRequirementType.SystemRequired,
-                stepOrder: 14,
-                isEnabled: true,
-                description: "SpeakPath has personalised your experience based on your answers. Your lessons will adapt as you progress."
-            ),
+            BuildStep(flowId, summary.Id, "summary", "You're all set!",
+                OnboardingStepTypeV2.Summary, OnboardingStepRequirementType.SystemRequired, 17,
+                description: "SpeakPath has personalised your experience based on your answers. Your lessons will adapt as you progress."),
 
             // Admin-configured example step — disabled by default.
-            // To enable: update is_enabled = true via admin API (future work).
-            new(
-                flowDefinitionId: flowId,
-                stepKey: "custom_why_learning",
-                title: "Why are you learning English right now?",
-                stepType: OnboardingStepTypeV2.SingleChoice,
-                requirementType: OnboardingStepRequirementType.AdminConfigured,
-                stepOrder: 15,
+            BuildStep(flowId, preferences.Id, "custom_why_learning", "Why are you learning English right now?",
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.AdminConfigured, 18,
                 isEnabled: false,
                 description: "Optional extra question. Admin-configured.",
-                optionsJson: JsonOptions(new[]
+                content: new SingleChoiceQuestion
                 {
-                    ("new_job", "I have a new job or promotion"),
-                    ("moving", "I'm moving to an English-speaking country"),
-                    ("study", "I'm starting a course or university"),
-                    ("personal", "Personal growth"),
-                    ("other", "Something else")
-                })
-            )
+                    QuestionText = "Why are you learning English right now?",
+                    Choices =
+                    [
+                        new() { Key = "new_job", Label = "I have a new job or promotion" },
+                        new() { Key = "moving", Label = "I'm moving to an English-speaking country" },
+                        new() { Key = "study", Label = "I'm starting a course or university" },
+                        new() { Key = "personal", Label = "Personal growth" },
+                        new() { Key = "other", Label = "Something else" },
+                    ],
+                }),
         };
+
+        return (steps, categories);
     }
 
-    private static string Json(object obj) =>
-        JsonSerializer.Serialize(obj, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    private static OnboardingStepDefinition BuildStep(
+        Guid flowId, Guid categoryId, string stepKey, string title,
+        OnboardingStepTypeV2 stepType, OnboardingStepRequirementType requirementType, int stepOrder,
+        string? description = null, bool isEnabled = true,
+        OnboardingAnswerMapping answerMapping = OnboardingAnswerMapping.None,
+        QuestionContent? content = null)
+    {
+        var (optionsJson, validationMetadataJson) = OnboardingContentConverter.ToLegacyFields(content);
 
-    private static string JsonOptions(IEnumerable<(string key, string label)> options) =>
-        JsonSerializer.Serialize(
-            options.Select(o => new { key = o.key, label = o.label }).ToList());
+        var step = new OnboardingStepDefinition(
+            flowDefinitionId: flowId,
+            stepKey: stepKey,
+            title: title,
+            stepType: stepType,
+            requirementType: requirementType,
+            stepOrder: stepOrder,
+            isEnabled: isEnabled,
+            description: description,
+            optionsJson: optionsJson,
+            validationMetadataJson: validationMetadataJson,
+            answerMapping: answerMapping,
+            categoryId: categoryId);
+
+        if (content is not null) step.SetContent(content);
+        return step;
+    }
 }

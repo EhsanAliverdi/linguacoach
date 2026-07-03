@@ -28,22 +28,26 @@ public sealed class AdminUpdateOnboardingStepHandler : IAdminUpdateOnboardingSte
         if (!Enum.TryParse<OnboardingAnswerMapping>(command.AnswerMapping, out var mapping))
             throw new OnboardingV2ValidationException($"Unknown answer mapping '{command.AnswerMapping}'.");
 
-        var optionsJson = SerializeOptions(command.Options);
+        // Unified Question-Schema Phase 6b: admins author Content directly via the shared editor;
+        // legacy OptionsJson is derived from it for display continuity.
+        var (optionsJson, _) = command.Content is not null
+            ? OnboardingContentConverter.ToLegacyFields(command.Content)
+            : (SerializeOptions(command.Options), (string?)null);
 
         step.Update(command.Title, command.Description, stepType, reqType,
-            command.StepOrder, command.IsEnabled, optionsJson, mapping);
+            command.StepOrder, command.IsEnabled, optionsJson, mapping, command.CategoryId);
 
-        // Unified Question-Schema Phase 6: keep the shadow Content in sync with the just-updated
-        // Options, for the step types the shared schema covers.
-        var content = OnboardingContentConverter.FromLegacyStep(stepType, step.Title, optionsJson, null, null);
+        var content = command.Content
+            ?? OnboardingContentConverter.FromLegacyStep(stepType, step.Title, optionsJson, step.ValidationMetadataJson, null);
         step.SetContent(content);
 
         await _db.SaveChangesAsync(ct);
 
         return new AdminOnboardingStepDto(step.StepKey, step.Title, step.Description,
             step.StepType.ToString(), step.RequirementType.ToString(), step.AnswerMapping.ToString(),
-            step.StepOrder, step.IsEnabled, command.Options,
-            content is not null ? QuestionContentRedactor.RedactCorrectAnswers(content) : null);
+            step.StepOrder, step.IsEnabled, command.Options ?? ParseOptions(optionsJson),
+            content is not null ? QuestionContentRedactor.RedactCorrectAnswers(content) : null,
+            step.CategoryId);
     }
 
     private static string? SerializeOptions(IReadOnlyList<OnboardingOptionDto>? options)
@@ -51,5 +55,12 @@ public sealed class AdminUpdateOnboardingStepHandler : IAdminUpdateOnboardingSte
         if (options is null || options.Count == 0) return null;
         var list = options.Select(o => new Dictionary<string, string> { ["key"] = o.Key, ["label"] = o.Label }).ToList();
         return JsonSerializer.Serialize(list);
+    }
+
+    private static IReadOnlyList<OnboardingOptionDto>? ParseOptions(string? optionsJson)
+    {
+        if (optionsJson is null) return null;
+        var parsed = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(optionsJson);
+        return parsed?.Select(o => new OnboardingOptionDto(o["key"], o["label"])).ToList();
     }
 }

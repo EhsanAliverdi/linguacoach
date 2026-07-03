@@ -267,6 +267,30 @@ public sealed class StudentProfile : BaseEntity
     }
 
     /// <summary>
+    /// Sets just the experience-level half of work experience (Unified Question-Schema Phase 6b —
+    /// WorkExperience is now two independent onboarding steps instead of one composite step).
+    /// Recomputes WorkplaceSeniority once both halves are known; leaves it untouched otherwise.
+    /// </summary>
+    public void SetProfessionalExperienceLevel(ProfessionalExperienceLevel experienceLevel)
+    {
+        ProfessionalExperienceLevel = experienceLevel;
+        RecomputeWorkplaceSeniority();
+    }
+
+    /// <summary>Sets just the role-familiarity half of work experience. See SetProfessionalExperienceLevel.</summary>
+    public void SetRoleFamiliarity(RoleFamiliarity roleFamiliarity)
+    {
+        RoleFamiliarity = roleFamiliarity;
+        RecomputeWorkplaceSeniority();
+    }
+
+    private void RecomputeWorkplaceSeniority()
+    {
+        if (ProfessionalExperienceLevel.HasValue && RoleFamiliarity.HasValue)
+            WorkplaceSeniority = WorkplaceSeniorityCalculator.Compute(ProfessionalExperienceLevel.Value, RoleFamiliarity.Value);
+    }
+
+    /// <summary>
     /// Admin reset: clears onboarding selections and returns the student to the
     /// start of onboarding. Does not touch admin-set profile fields (name, career
     /// context) or CEFR level — those are cleared separately if requested.

@@ -173,7 +173,23 @@ public sealed class OnboardingV2QueryHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task HandleAsync_SemanticStepTypes_HaveNoContent()
+    public async Task HandleAsync_InfoStepTypes_HaveNoContent()
+    {
+        // Phase 6b: Welcome/Summary are non-question "Info" steps — everything else (including
+        // support_language, now a generic SingleChoice with dynamically-resolved choices) has Content.
+        var userId = Guid.NewGuid();
+        var profile = new StudentProfile(userId);
+        _db.StudentProfiles.Add(profile);
+        await _db.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new GetOnboardingV2Query(userId));
+
+        var welcome = result.Steps.First(s => s.StepKey == "welcome");
+        Assert.Null(welcome.Content);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SupportLanguageStep_HasDynamicallyResolvedChoices()
     {
         var userId = Guid.NewGuid();
         var profile = new StudentProfile(userId);
@@ -183,6 +199,7 @@ public sealed class OnboardingV2QueryHandlerTests : IDisposable
         var result = await _handler.HandleAsync(new GetOnboardingV2Query(userId));
 
         var supportLanguage = result.Steps.First(s => s.StepKey == "support_language");
-        Assert.Null(supportLanguage.Content);
+        var content = Assert.IsType<Domain.Questions.SingleChoiceQuestion>(supportLanguage.Content);
+        Assert.Contains(content.Choices, c => c.Key == "none");
     }
 }

@@ -18,7 +18,10 @@ public sealed record OnboardingV2StepDto(
     // Unified Question-Schema (Phase 5/6) — the shared, polymorphic representation of this step,
     // for the generic step types only (null for the semantically-named one-off types). Always
     // redacted of correct-answer fields before reaching this DTO, same as AssessmentMetadataJson.
-    QuestionContent? Content = null
+    QuestionContent? Content = null,
+    // Phase 6b — which category this step belongs to.
+    Guid? CategoryId = null,
+    string? CategoryName = null
     // AssessmentMetadataJson is intentionally excluded — server-side only.
 );
 
@@ -81,7 +84,8 @@ public sealed record AdminOnboardingFlowDto(
     string Name,
     int Version,
     bool IsActive,
-    IReadOnlyList<AdminOnboardingStepDto> Steps
+    IReadOnlyList<AdminOnboardingStepDto> Steps,
+    IReadOnlyList<AdminOnboardingCategoryDto>? Categories = null
 );
 
 // Admin view includes RequirementType and AnswerMapping but NOT AssessmentMetadataJson —
@@ -96,8 +100,35 @@ public sealed record AdminOnboardingStepDto(
     int StepOrder,
     bool IsEnabled,
     IReadOnlyList<OnboardingOptionDto>? Options,
-    QuestionContent? Content = null
+    QuestionContent? Content = null,
+    Guid? CategoryId = null
 );
+
+// ── Categories (Phase 6b) ───────────────────────────────────────────────────────
+
+public sealed record AdminOnboardingCategoryDto(
+    Guid CategoryId, string Name, string? Description, int CategoryOrder, bool IsEnabled);
+
+public sealed record AddOnboardingCategoryCommand(Guid FlowId, string Name, string? Description, int CategoryOrder, bool IsEnabled);
+
+public interface IAdminAddOnboardingCategoryHandler
+{
+    Task<AdminOnboardingCategoryDto> HandleAsync(AddOnboardingCategoryCommand command, CancellationToken ct = default);
+}
+
+public sealed record UpdateOnboardingCategoryCommand(Guid FlowId, Guid CategoryId, string Name, string? Description, int CategoryOrder, bool IsEnabled);
+
+public interface IAdminUpdateOnboardingCategoryHandler
+{
+    Task<AdminOnboardingCategoryDto> HandleAsync(UpdateOnboardingCategoryCommand command, CancellationToken ct = default);
+}
+
+public sealed record RemoveOnboardingCategoryCommand(Guid FlowId, Guid CategoryId);
+
+public interface IAdminRemoveOnboardingCategoryHandler
+{
+    Task HandleAsync(RemoveOnboardingCategoryCommand command, CancellationToken ct = default);
+}
 
 public interface IAdminOnboardingFlowQuery
 {
@@ -153,7 +184,9 @@ public sealed record AddOnboardingStepCommand(
     string AnswerMapping,
     int StepOrder,
     bool IsEnabled,
-    IReadOnlyList<OnboardingOptionDto>? Options
+    IReadOnlyList<OnboardingOptionDto>? Options,
+    Guid? CategoryId = null,
+    QuestionContent? Content = null
 );
 
 public interface IAdminAddOnboardingStepHandler
@@ -173,7 +206,9 @@ public sealed record UpdateOnboardingStepCommand(
     string AnswerMapping,
     int StepOrder,
     bool IsEnabled,
-    IReadOnlyList<OnboardingOptionDto>? Options
+    IReadOnlyList<OnboardingOptionDto>? Options,
+    Guid? CategoryId = null,
+    QuestionContent? Content = null
 );
 
 public interface IAdminUpdateOnboardingStepHandler

@@ -1,3 +1,5 @@
+import { QuestionContent } from '../../shared/question/question-content.models';
+
 export interface AdminOnboardingFlowSummary {
   flowId: string;
   name: string;
@@ -7,8 +9,6 @@ export interface AdminOnboardingFlowSummary {
   requiredSteps: number;
   createdAt: string;
 }
-
-import { QuestionContent } from '../../shared/question/question-content.models';
 
 export interface AdminOnboardingOptionDto {
   key: string;
@@ -26,6 +26,15 @@ export interface AdminOnboardingStepDto {
   isEnabled: boolean;
   options: AdminOnboardingOptionDto[] | null;
   content?: QuestionContent | null;
+  categoryId?: string | null;
+}
+
+export interface AdminOnboardingCategoryDto {
+  categoryId: string;
+  name: string;
+  description: string | null;
+  categoryOrder: number;
+  isEnabled: boolean;
 }
 
 export interface AdminOnboardingFlowDto {
@@ -34,6 +43,7 @@ export interface AdminOnboardingFlowDto {
   version: number;
   isActive: boolean;
   steps: AdminOnboardingStepDto[];
+  categories?: AdminOnboardingCategoryDto[];
 }
 
 export interface CreateFlowRequest {
@@ -51,22 +61,26 @@ export interface StepRequest {
   stepOrder: number;
   isEnabled: boolean;
   options: AdminOnboardingOptionDto[] | null;
+  categoryId?: string | null;
+  content?: QuestionContent | null;
 }
 
+export interface CategoryRequest {
+  name: string;
+  description: string | null;
+  categoryOrder: number;
+  isEnabled: boolean;
+}
+
+// Unified Question-Schema Phase 6b: onboarding step types are generic — the shared schema
+// (SingleChoice/MultipleChoice/FreeText) plus AnswerMapping carries all the semantics that used
+// to require a dedicated step type per profile field.
 export const STEP_TYPES = [
   'Welcome',
-  'PreferredName',
-  'SupportLanguage',
-  'LearningGoals',
-  'FocusAreas',
-  'DifficultyPreference',
   'SingleChoice',
   'MultipleChoice',
   'FreeText',
-  'AssessmentQuestion',
   'Summary',
-  'WorkExperience',
-  'SessionDuration',
 ] as const;
 
 export const REQUIREMENT_TYPES = ['SystemRequired', 'AdminConfigured'] as const;
@@ -76,10 +90,13 @@ export const ANSWER_MAPPINGS = [
   'PreferredName',
   'SupportLanguage',
   'LearningGoals',
+  'CustomLearningGoal',
   'FocusAreas',
+  'CustomFocusArea',
   'DifficultyPreference',
   'CareerContext',
   'SessionDuration',
-  'WorkExperience',
+  'ProfessionalExperienceLevel',
+  'RoleFamiliarity',
   'LearningGoalDescription',
 ] as const;

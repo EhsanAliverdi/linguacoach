@@ -49,6 +49,47 @@
         [value]="flows().length.toString()" />
     </div>
 
+    <!-- ── Categories ──────────────────────────────────────────────────────── -->
+    @if (activeFlow()) {
+      <sp-admin-card>
+        <div class="sp-admin-card-header">
+          <div class="sp-admin-card-title">Categories</div>
+          <sp-admin-button variant="primary" appearance="outline" size="sm" (clicked)="openAddCategory()">
+            Add category
+          </sp-admin-button>
+        </div>
+
+        @if (categories().length === 0) {
+          <sp-admin-empty-state
+            title="No categories configured"
+            message="Add categories to group onboarding steps into sections (e.g. Welcome, About you, Goals)." />
+        } @else {
+          <sp-admin-table [columns]="categoryColumns" [rows]="$any(categories())">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('categoryOrder') { <span>{{ row.categoryOrder }}</span> }
+                @case ('name') { <span>{{ row.name }}</span> }
+                @case ('description') { <span>{{ row.description || '—' }}</span> }
+                @case ('isEnabled') {
+                  <sp-admin-badge [tone]="categoryTone(row)">{{ row.isEnabled ? 'Yes' : 'No' }}</sp-admin-badge>
+                }
+                @case ('_actions') {
+                  <div class="sp-admin-row-actions">
+                    <sp-admin-button variant="neutral" appearance="ghost" size="xs" (clicked)="openEditCategory(row)">
+                      Edit
+                    </sp-admin-button>
+                    <sp-admin-button variant="danger" appearance="ghost" size="xs" (clicked)="removeCategory(row)">
+                      Remove
+                    </sp-admin-button>
+                  </div>
+                }
+              }
+            </ng-template>
+          </sp-admin-table>
+        }
+      </sp-admin-card>
+    }
+
     <!-- ── Active flow steps ───────────────────────────────────────────────── -->
     @if (activeFlow()) {
       <sp-admin-card>
@@ -76,6 +117,7 @@
                 @case ('stepOrder') { <span>{{ row.stepOrder }}</span> }
                 @case ('stepKey') { <code class="sp-admin-code-pill">{{ row.stepKey }}</code> }
                 @case ('title') { <span>{{ row.title }}</span> }
+                @case ('category') { <span>{{ categoryName(row.categoryId) }}</span> }
                 @case ('stepType') { <sp-admin-badge tone="neutral">{{ row.stepType }}</sp-admin-badge> }
                 @case ('requirementType') {
                   <sp-admin-badge [tone]="row.requirementType === 'SystemRequired' ? 'warning' : 'neutral'">
@@ -163,6 +205,10 @@
       <sp-admin-textarea [(ngModel)]="stepForm.description" placeholder="Optional help text shown to students" />
     </sp-admin-form-field>
 
+    <sp-admin-form-field label="Category" hint="Groups this step into a visual section for students">
+      <sp-admin-select [(ngModel)]="stepForm.categoryId" [options]="categoryOptions()" />
+    </sp-admin-form-field>
+
     <sp-admin-form-field label="Step type" [required]="true">
       <sp-admin-select [ngModel]="stepForm.stepType" (ngModelChange)="onStepTypeChange($event)" [options]="stepTypeOptions" />
     </sp-admin-form-field>
@@ -202,6 +248,47 @@
     </sp-admin-button>
     <sp-admin-button variant="primary" (clicked)="saveStep()">
       {{ editingStep() ? 'Save changes' : 'Add step' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-slide-over>
+
+<!-- ── Add / Edit category slide-over ─────────────────────────────────────── -->
+<sp-admin-slide-over
+  [open]="categorySlideOverOpen()"
+  [title]="editingCategory() ? 'Edit category' : 'Add category'"
+  (closed)="closeCategorySlideOver()">
+
+  <div class="sp-admin-form-stack">
+
+    <sp-admin-form-field label="Name" [required]="true">
+      <sp-admin-input [(ngModel)]="categoryForm.name" placeholder="e.g. About you" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Description">
+      <sp-admin-textarea [(ngModel)]="categoryForm.description" placeholder="Optional note shown only to admins" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Category order" [required]="true" hint="Lower number = shown earlier">
+      <sp-admin-input type="number" [(ngModel)]="categoryForm.categoryOrder" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Enabled">
+      <sp-admin-checkbox [(ngModel)]="categoryForm.isEnabled" label="This category is active" />
+    </sp-admin-form-field>
+
+  </div>
+
+  @if (actionError()) {
+    <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
+  }
+
+  <div class="sp-admin-slide-over-footer" slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeCategorySlideOver()">
+      Cancel
+    </sp-admin-button>
+    <sp-admin-button variant="primary" (clicked)="saveCategory()">
+      {{ editingCategory() ? 'Save changes' : 'Add category' }}
     </sp-admin-button>
   </div>
 

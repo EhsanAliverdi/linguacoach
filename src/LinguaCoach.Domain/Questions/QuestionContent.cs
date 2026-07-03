@@ -36,6 +36,10 @@ public sealed class SingleChoiceQuestion : QuestionContent
     public required string QuestionText { get; init; }
     public required IReadOnlyList<ChoiceOption> Choices { get; init; }
     public string? CorrectAnswerKey { get; init; }
+    /// <summary>When set (e.g. "languages"), Choices is resolved dynamically from the named
+    /// lookup at read time instead of being admin-authored — the one genuine special case
+    /// (onboarding's former SupportLanguage step) that isn't just admin-picked options.</summary>
+    public string? OptionsSource { get; init; }
 }
 
 /// <summary>Zero or more correct choices may be selected.</summary>
@@ -44,6 +48,7 @@ public sealed class MultipleChoiceQuestion : QuestionContent
     public required string QuestionText { get; init; }
     public required IReadOnlyList<ChoiceOption> Choices { get; init; }
     public IReadOnlyList<string>? CorrectAnswerKeys { get; init; }
+    public string? OptionsSource { get; init; }
 }
 
 public sealed class GapFillQuestion : QuestionContent
@@ -57,6 +62,9 @@ public sealed class FreeTextQuestion : QuestionContent
     public required string QuestionText { get; init; }
     public string? Placeholder { get; init; }
     public int? MaxLength { get; init; }
+    /// <summary>Single-line input vs multi-line textarea — covers "free text" vs
+    /// "free multiline text" without a separate question type.</summary>
+    public bool IsMultiline { get; init; }
 }
 
 /// <summary>An audio stimulus (script authored by an admin, converted to speech and stored via
@@ -86,8 +94,8 @@ public static class QuestionContentRedactor
 {
     public static QuestionContent RedactCorrectAnswers(QuestionContent content) => content switch
     {
-        SingleChoiceQuestion q => new SingleChoiceQuestion { Id = q.Id, QuestionText = q.QuestionText, Choices = q.Choices, CorrectAnswerKey = null },
-        MultipleChoiceQuestion q => new MultipleChoiceQuestion { Id = q.Id, QuestionText = q.QuestionText, Choices = q.Choices, CorrectAnswerKeys = null },
+        SingleChoiceQuestion q => new SingleChoiceQuestion { Id = q.Id, QuestionText = q.QuestionText, Choices = q.Choices, CorrectAnswerKey = null, OptionsSource = q.OptionsSource },
+        MultipleChoiceQuestion q => new MultipleChoiceQuestion { Id = q.Id, QuestionText = q.QuestionText, Choices = q.Choices, CorrectAnswerKeys = null, OptionsSource = q.OptionsSource },
         GapFillQuestion q => new GapFillQuestion { Id = q.Id, QuestionText = q.QuestionText, CorrectAnswer = null },
         FreeTextQuestion q => q,
         ListeningGroupQuestion q => new ListeningGroupQuestion

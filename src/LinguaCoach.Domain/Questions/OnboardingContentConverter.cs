@@ -44,6 +44,23 @@ public static class OnboardingContentConverter
         };
     }
 
+    /// <summary>Reverse projection (Phase 6b): derives the legacy OptionsJson/ValidationMetadataJson
+    /// from admin-authored QuestionContent, so the still-present legacy columns stay populated for
+    /// display continuity until they're dropped (Phase 7).</summary>
+    public static (string? OptionsJson, string? ValidationMetadataJson) ToLegacyFields(QuestionContent? content)
+    {
+        return content switch
+        {
+            SingleChoiceQuestion q => (SerializeChoices(q.Choices), null),
+            MultipleChoiceQuestion q => (SerializeChoices(q.Choices), null),
+            FreeTextQuestion q => (null, q.MaxLength is int ml ? JsonSerializer.Serialize(new { maxLength = ml }) : null),
+            _ => (null, null),
+        };
+    }
+
+    private static string SerializeChoices(IReadOnlyList<ChoiceOption> choices) =>
+        JsonSerializer.Serialize(choices.Select(c => new { key = c.Key, label = c.Label }).ToList());
+
     private static List<ChoiceOption> ParseChoices(string? optionsJson)
     {
         if (optionsJson is null) return [];

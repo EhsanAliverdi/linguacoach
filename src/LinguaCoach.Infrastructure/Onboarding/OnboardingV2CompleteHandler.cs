@@ -1,6 +1,8 @@
 using System.Text.Json;
 using LinguaCoach.Application.Onboarding;
+using LinguaCoach.Application.Questions;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Domain.Services;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +12,12 @@ namespace LinguaCoach.Infrastructure.Onboarding;
 public sealed class OnboardingV2CompleteHandler : IOnboardingV2CompleteHandler
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly IQuestionScorer _scorer;
 
-    public OnboardingV2CompleteHandler(LinguaCoachDbContext db)
+    public OnboardingV2CompleteHandler(LinguaCoachDbContext db, IQuestionScorer scorer)
     {
         _db = db;
+        _scorer = scorer;
     }
 
     public async Task<CompleteOnboardingV2Result> HandleAsync(CompleteOnboardingV2Command command, CancellationToken ct = default)
@@ -44,37 +48,33 @@ public sealed class OnboardingV2CompleteHandler : IOnboardingV2CompleteHandler
             throw new OnboardingV2ValidationException(
                 $"Required steps not completed: {string.Join(", ", missing)}.");
 
-        // Compute preliminary CEFR from assessment responses.
-        var assessmentSteps = flow.Steps
-            .Where(s => s.StepType == OnboardingStepTypeV2.AssessmentQuestion && s.IsEnabled && s.AssessmentMetadataJson is not null)
+        // Unified Question-Schema Phase 6b: a CEFR-scored onboarding question is just a
+        // SingleChoice step whose Content has a CorrectAnswerKey set — scored via the same
+        // IQuestionScorer placement uses, no separate "AssessmentQuestion" step type needed.
+        var scoredSteps = flow.Steps
+            .Where(s => s.IsEnabled && s.Content is SingleChoiceQuestion { CorrectAnswerKey: not null })
             .ToList();
 
         var scores = new List<AssessmentScore>();
-        if (assessmentSteps.Any())
+        if (scoredSteps.Count > 0)
         {
             var responses = await _db.StudentOnboardingResponses
                 .Where(r => r.ProgressId == progress.Id)
                 .ToListAsync(ct);
 
-            foreach (var assessStep in assessmentSteps)
+            foreach (var step in scoredSteps)
             {
-                var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(assessStep.AssessmentMetadataJson!);
-                if (meta is null) continue;
-
-                var correctKey = meta.TryGetValue("correctAnswerKey", out var ck) ? ck.GetString() : null;
-                var weight = meta.TryGetValue("cefrScoreWeight", out var w) && w.ValueKind == JsonValueKind.Number
-                    ? w.GetInt32() : 1;
-
-                var response = responses.FirstOrDefault(r => r.StepKey == assessStep.StepKey);
+                var content = (SingleChoiceQuestion)step.Content!;
+                var response = responses.FirstOrDefault(r => r.StepKey == step.StepKey);
                 if (response is null)
                 {
-                    scores.Add(new AssessmentScore(IsCorrect: false, Weight: weight));
+                    scores.Add(new AssessmentScore(IsCorrect: false, Weight: 1));
                     continue;
                 }
 
-                var answer = JsonSerializer.Deserialize<JsonElement>(response.AnswerJson);
-                var selectedKey = answer.TryGetProperty("key", out var sk) ? sk.GetString() : null;
-                scores.Add(new AssessmentScore(IsCorrect: selectedKey == correctKey, Weight: weight));
+                var answer = ParseAnswer(response.AnswerJson);
+                var scoreResult = _scorer.Score(content, answer);
+                scores.Add(new AssessmentScore(IsCorrect: scoreResult.IsCorrect, Weight: 1));
             }
         }
 
@@ -110,4 +110,7 @@ public sealed class OnboardingV2CompleteHandler : IOnboardingV2CompleteHandler
 
         return new CompleteOnboardingV2Result(Success: true, PreliminaryCefrLevel: preliminaryCefr);
     }
+
+    private static QuestionAnswer ParseAnswer(string answerJson) =>
+        QuestionContentJson.TryDeserializeAnswerOrEmpty(answerJson);
 }

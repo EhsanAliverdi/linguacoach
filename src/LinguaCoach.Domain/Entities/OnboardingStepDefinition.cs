@@ -10,6 +10,10 @@ public sealed class OnboardingStepDefinition : BaseEntity
     public Guid FlowDefinitionId { get; private set; }
     public OnboardingFlowDefinition? FlowDefinition { get; private set; }
 
+    /// <summary>Which category (Unified Question-Schema Phase 6b) this step belongs to — null for
+    /// steps created before categories existed (historical/superseded flow versions only).</summary>
+    public Guid? CategoryId { get; private set; }
+
     public string StepKey { get; private set; } = string.Empty;
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
@@ -53,13 +57,15 @@ public sealed class OnboardingStepDefinition : BaseEntity
         string? optionsJson = null,
         string? validationMetadataJson = null,
         OnboardingAnswerMapping answerMapping = OnboardingAnswerMapping.None,
-        string? assessmentMetadataJson = null)
+        string? assessmentMetadataJson = null,
+        Guid? categoryId = null)
     {
         if (flowDefinitionId == Guid.Empty) throw new ArgumentException("FlowDefinitionId required.", nameof(flowDefinitionId));
         if (string.IsNullOrWhiteSpace(stepKey)) throw new ArgumentException("StepKey is required.", nameof(stepKey));
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required.", nameof(title));
 
         FlowDefinitionId = flowDefinitionId;
+        CategoryId = categoryId;
         StepKey = stepKey.Trim();
         Title = title.Trim();
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
@@ -81,7 +87,8 @@ public sealed class OnboardingStepDefinition : BaseEntity
         int stepOrder,
         bool isEnabled,
         string? optionsJson,
-        OnboardingAnswerMapping answerMapping)
+        OnboardingAnswerMapping answerMapping,
+        Guid? categoryId = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required.", nameof(title));
         Title = title.Trim();
@@ -92,6 +99,7 @@ public sealed class OnboardingStepDefinition : BaseEntity
         IsEnabled = isEnabled;
         OptionsJson = optionsJson;
         AnswerMapping = answerMapping;
+        if (categoryId is not null) CategoryId = categoryId;
     }
 
     public void SetOrder(int order) => StepOrder = order;

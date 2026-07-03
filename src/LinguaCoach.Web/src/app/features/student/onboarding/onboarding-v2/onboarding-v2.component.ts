@@ -1,40 +1,26 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { OnboardingV2Service } from '../../../../core/services/onboarding-v2.service';
 import { OnboardingV2Status, OnboardingV2Step } from '../../../../core/models/onboarding-v2.models';
 import { OnboardingV2WelcomeComponent } from './steps/onboarding-v2-welcome.component';
-import { OnboardingV2PreferredNameComponent } from './steps/onboarding-v2-preferred-name.component';
-import { OnboardingV2SupportLanguageComponent } from './steps/onboarding-v2-support-language.component';
-import { OnboardingV2LearningGoalsComponent } from './steps/onboarding-v2-learning-goals.component';
-import { OnboardingV2FocusAreasComponent } from './steps/onboarding-v2-focus-areas.component';
-import { OnboardingV2DifficultyComponent } from './steps/onboarding-v2-difficulty.component';
-import { OnboardingV2SingleChoiceComponent } from './steps/onboarding-v2-single-choice.component';
-import { OnboardingV2MultipleChoiceComponent } from './steps/onboarding-v2-multiple-choice.component';
-import { OnboardingV2FreeTextComponent } from './steps/onboarding-v2-free-text.component';
-import { OnboardingV2AssessmentComponent } from './steps/onboarding-v2-assessment.component';
 import { OnboardingV2SummaryComponent } from './steps/onboarding-v2-summary.component';
-import { OnboardingV2SessionDurationComponent } from './steps/onboarding-v2-session-duration.component';
-import { OnboardingV2WorkExperienceComponent } from './steps/onboarding-v2-work-experience.component';
+import { OnboardingV2QuestionStepComponent } from './steps/onboarding-v2-question.component';
 
+/**
+ * Unified Question-Schema Phase 6b — routes to just 3 branches (Welcome / Summary / generic
+ * Question) instead of 13 per-step-type components. Every question-shaped step (SingleChoice/
+ * MultipleChoice/FreeText) renders through the same OnboardingV2QuestionStepComponent, which
+ * itself delegates to the shared QuestionRendererComponent.
+ */
 @Component({
   selector: 'app-onboarding-v2',
   standalone: true,
   imports: [
     CommonModule,
     OnboardingV2WelcomeComponent,
-    OnboardingV2PreferredNameComponent,
-    OnboardingV2SupportLanguageComponent,
-    OnboardingV2LearningGoalsComponent,
-    OnboardingV2FocusAreasComponent,
-    OnboardingV2DifficultyComponent,
-    OnboardingV2SingleChoiceComponent,
-    OnboardingV2MultipleChoiceComponent,
-    OnboardingV2FreeTextComponent,
-    OnboardingV2AssessmentComponent,
     OnboardingV2SummaryComponent,
-    OnboardingV2SessionDurationComponent,
-    OnboardingV2WorkExperienceComponent,
+    OnboardingV2QuestionStepComponent,
   ],
   template: `
     <div class="sp-page">
@@ -54,7 +40,7 @@ import { OnboardingV2WorkExperienceComponent } from './steps/onboarding-v2-work-
           <!-- Progress bar -->
           <div class="mb-6" *ngIf="!status.isComplete">
             <div class="flex justify-between text-xs text-slate-500 mb-1">
-              <span>Progress</span>
+              <span>{{ currentStep?.categoryName ?? 'Progress' }}</span>
               <span>{{ status.percentageComplete }}%</span>
             </div>
             <div class="w-full bg-slate-200 rounded-full h-2">
@@ -74,64 +60,14 @@ import { OnboardingV2WorkExperienceComponent } from './steps/onboarding-v2-work-
               [step]="currentStep"
               (submitted)="onStepSubmitted($event)"
             />
-            <app-onboarding-v2-preferred-name
-              *ngIf="currentStep.stepType === 'PreferredName'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-support-language
-              *ngIf="currentStep.stepType === 'SupportLanguage'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-learning-goals
-              *ngIf="currentStep.stepType === 'LearningGoals'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-focus-areas
-              *ngIf="currentStep.stepType === 'FocusAreas'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-difficulty
-              *ngIf="currentStep.stepType === 'DifficultyPreference'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-single-choice
-              *ngIf="currentStep.stepType === 'SingleChoice'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-multiple-choice
-              *ngIf="currentStep.stepType === 'MultipleChoice'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-free-text
-              *ngIf="currentStep.stepType === 'FreeText'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-assessment
-              *ngIf="currentStep.stepType === 'AssessmentQuestion'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
             <app-onboarding-v2-summary
               *ngIf="currentStep.stepType === 'Summary'"
               [step]="currentStep"
               [status]="status"
               (completed)="onCompleted()"
             />
-            <app-onboarding-v2-session-duration
-              *ngIf="currentStep.stepType === 'SessionDuration'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-work-experience
-              *ngIf="currentStep.stepType === 'WorkExperience'"
+            <app-onboarding-v2-question
+              *ngIf="currentStep.stepType !== 'Welcome' && currentStep.stepType !== 'Summary'"
               [step]="currentStep"
               (submitted)="onStepSubmitted($event)"
             />
@@ -234,4 +170,3 @@ export class OnboardingV2Component implements OnInit {
     });
   }
 }
-

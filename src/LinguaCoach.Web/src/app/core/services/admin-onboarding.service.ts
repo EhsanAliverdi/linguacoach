@@ -3,9 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AdminOnboardingCategoryDto,
   AdminOnboardingFlowDto,
   AdminOnboardingFlowSummary,
   AdminOnboardingStepDto,
+  CategoryRequest,
   CreateFlowRequest,
   StepRequest,
 } from '../models/admin-onboarding.models';
@@ -46,5 +48,17 @@ export class AdminOnboardingService {
 
   reorderSteps(flowId: string, stepKeyOrder: string[]): Observable<void> {
     return this.http.put<void>(`${this.base}/flows/${flowId}/steps/reorder`, { stepKeyOrder });
+  }
+
+  addCategory(flowId: string, request: CategoryRequest): Observable<AdminOnboardingCategoryDto> {
+    return this.http.post<AdminOnboardingCategoryDto>(`${this.base}/flows/${flowId}/categories`, request);
+  }
+
+  updateCategory(flowId: string, categoryId: string, request: CategoryRequest): Observable<AdminOnboardingCategoryDto> {
+    return this.http.put<AdminOnboardingCategoryDto>(`${this.base}/flows/${flowId}/categories/${categoryId}`, request);
+  }
+
+  removeCategory(flowId: string, categoryId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/flows/${flowId}/categories/${categoryId}`);
   }
 }

@@ -17,6 +17,7 @@ internal sealed class OnboardingStepDefinitionConfiguration : IEntityTypeConfigu
             .HasDefaultValueSql("now()");
 
         builder.Property(s => s.FlowDefinitionId).HasColumnName("flow_definition_id").IsRequired();
+        builder.Property(s => s.CategoryId).HasColumnName("category_id");
         builder.Property(s => s.StepKey).HasColumnName("step_key").IsRequired().HasMaxLength(100);
         builder.Property(s => s.Title).HasColumnName("title").IsRequired().HasMaxLength(200);
         builder.Property(s => s.Description).HasColumnName("description").HasMaxLength(2000);

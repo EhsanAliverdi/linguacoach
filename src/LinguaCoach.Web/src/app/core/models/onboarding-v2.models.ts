@@ -25,6 +25,9 @@ export interface OnboardingV2Step {
    * for the generic step types only (null for the semantically-named one-off types). Always
    * redacted of correct-answer fields by the backend. */
   content?: QuestionContent | null;
+  /** Phase 6b — which category this step belongs to, for grouping steps into visual sections. */
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 export interface OnboardingV2Status {

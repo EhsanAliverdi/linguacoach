@@ -54,6 +54,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // T47 — Onboarding v2
     public DbSet<OnboardingFlowDefinition> OnboardingFlowDefinitions => Set<OnboardingFlowDefinition>();
     public DbSet<OnboardingStepDefinition> OnboardingStepDefinitions => Set<OnboardingStepDefinition>();
+    public DbSet<OnboardingCategoryDefinition> OnboardingCategoryDefinitions => Set<OnboardingCategoryDefinition>();
     public DbSet<StudentOnboardingProgress> StudentOnboardingProgress => Set<StudentOnboardingProgress>();
     public DbSet<StudentOnboardingResponse> StudentOnboardingResponses => Set<StudentOnboardingResponse>();
 

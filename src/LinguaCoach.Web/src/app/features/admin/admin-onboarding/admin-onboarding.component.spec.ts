@@ -261,7 +261,7 @@ describe('AdminOnboardingComponent', () => {
     component.stepForm.title = 'New Step';
     component.saveStep();
     tick();
-    expect(svc.addStep).toHaveBeenCalledWith('flow-1', component.stepForm);
+    expect(svc.addStep).toHaveBeenCalledWith('flow-1', jasmine.objectContaining(component.stepForm));
   }));
 
   it('saveStep calls updateStep when editingStep is set', fakeAsync(async () => {
@@ -269,7 +269,7 @@ describe('AdminOnboardingComponent', () => {
     component.openEditStep(STEP_B);
     component.saveStep();
     tick();
-    expect(svc.updateStep).toHaveBeenCalledWith('flow-1', 'preferred_name', component.stepForm);
+    expect(svc.updateStep).toHaveBeenCalledWith('flow-1', 'preferred_name', jasmine.objectContaining(component.stepForm));
   }));
 
   it('saveStep closes slide-over on success', fakeAsync(async () => {
