@@ -465,6 +465,12 @@ public static class DependencyInjection
         // Phase 20I-5 — Adaptive placement listening audio
         services.AddScoped<LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService>();
 
+        // Unified question schema — shared answer validation/scoring for onboarding + placement
+        services.AddScoped<LinguaCoach.Application.Questions.IQuestionAnswerValidator,
+            LinguaCoach.Infrastructure.Questions.QuestionAnswerValidator>();
+        services.AddScoped<LinguaCoach.Application.Questions.IQuestionScorer,
+            LinguaCoach.Infrastructure.Questions.QuestionScorer>();
+
         // Phase 20I-4 — Admin-configurable placement item bank
         services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemListQuery,
             LinguaCoach.Infrastructure.Placement.AdminPlacementItemListQueryHandler>();
