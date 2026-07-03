@@ -8,6 +8,8 @@ export interface AdminOnboardingFlowSummary {
   createdAt: string;
 }
 
+import { QuestionContent } from '../../shared/question/question-content.models';
+
 export interface AdminOnboardingOptionDto {
   key: string;
   label: string;
@@ -23,6 +25,7 @@ export interface AdminOnboardingStepDto {
   stepOrder: number;
   isEnabled: boolean;
   options: AdminOnboardingOptionDto[] | null;
+  content?: QuestionContent | null;
 }
 
 export interface AdminOnboardingFlowDto {

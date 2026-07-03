@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,12 +50,18 @@ public sealed class AdminAddOnboardingStepHandler : IAdminAddOnboardingStepHandl
             optionsJson: optionsJson,
             answerMapping: mapping);
 
+        // Unified Question-Schema Phase 6: keep the shadow Content in sync with whatever the
+        // admin just authored via Options, for the step types the shared schema covers.
+        var content = OnboardingContentConverter.FromLegacyStep(stepType, step.Title, optionsJson, null, null);
+        if (content is not null) step.SetContent(content);
+
         _db.Set<OnboardingStepDefinition>().Add(step);
         await _db.SaveChangesAsync(ct);
 
         return new AdminOnboardingStepDto(step.StepKey, step.Title, step.Description,
             step.StepType.ToString(), step.RequirementType.ToString(), step.AnswerMapping.ToString(),
-            step.StepOrder, step.IsEnabled, command.Options);
+            step.StepOrder, step.IsEnabled, command.Options,
+            content is not null ? QuestionContentRedactor.RedactCorrectAnswers(content) : null);
     }
 
     private static string? SerializeOptions(IReadOnlyList<OnboardingOptionDto>? options)

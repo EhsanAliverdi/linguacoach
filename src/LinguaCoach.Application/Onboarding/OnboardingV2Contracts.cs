@@ -1,4 +1,5 @@
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 
 namespace LinguaCoach.Application.Onboarding;
 
@@ -13,7 +14,11 @@ public sealed record OnboardingV2StepDto(
     int StepOrder,
     bool IsEnabled,
     IReadOnlyList<OnboardingOptionDto>? Options,
-    OnboardingValidationMetadataDto? ValidationMetadata
+    OnboardingValidationMetadataDto? ValidationMetadata,
+    // Unified Question-Schema (Phase 5/6) — the shared, polymorphic representation of this step,
+    // for the generic step types only (null for the semantically-named one-off types). Always
+    // redacted of correct-answer fields before reaching this DTO, same as AssessmentMetadataJson.
+    QuestionContent? Content = null
     // AssessmentMetadataJson is intentionally excluded — server-side only.
 );
 
@@ -79,7 +84,8 @@ public sealed record AdminOnboardingFlowDto(
     IReadOnlyList<AdminOnboardingStepDto> Steps
 );
 
-// Admin view includes RequirementType and AnswerMapping but NOT AssessmentMetadataJson.
+// Admin view includes RequirementType and AnswerMapping but NOT AssessmentMetadataJson —
+// Content (Phase 5/6) follows the same restriction: redacted of correct-answer fields even here.
 public sealed record AdminOnboardingStepDto(
     string StepKey,
     string Title,
@@ -89,7 +95,8 @@ public sealed record AdminOnboardingStepDto(
     string AnswerMapping,
     int StepOrder,
     bool IsEnabled,
-    IReadOnlyList<OnboardingOptionDto>? Options
+    IReadOnlyList<OnboardingOptionDto>? Options,
+    QuestionContent? Content = null
 );
 
 public interface IAdminOnboardingFlowQuery

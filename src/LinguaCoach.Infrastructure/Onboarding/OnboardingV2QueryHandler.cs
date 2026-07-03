@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -133,7 +134,8 @@ public sealed class OnboardingV2QueryHandler : IOnboardingV2Query
             StepOrder: step.StepOrder,
             IsEnabled: step.IsEnabled,
             Options: options,
-            ValidationMetadata: validation
+            ValidationMetadata: validation,
+            Content: step.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(step.Content) : null
             // AssessmentMetadataJson intentionally excluded.
         );
     }

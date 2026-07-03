@@ -164,7 +164,7 @@
     </sp-admin-form-field>
 
     <sp-admin-form-field label="Step type" [required]="true">
-      <sp-admin-select [(ngModel)]="stepForm.stepType" [options]="stepTypeOptions" />
+      <sp-admin-select [ngModel]="stepForm.stepType" (ngModelChange)="onStepTypeChange($event)" [options]="stepTypeOptions" />
     </sp-admin-form-field>
 
     <sp-admin-form-field label="Requirement type" [required]="true" hint="SystemRequired: cannot be skipped. AdminConfigured: set by admin.">
@@ -184,6 +184,13 @@
     </sp-admin-form-field>
 
   </div>
+
+  @if (isGenericQuestionType(stepForm.stepType)) {
+    <app-question-editor
+      [content]="questionContent()"
+      (contentChange)="onQuestionContentChange($event)"
+      [availableTypes]="questionEditorTypes" />
+  }
 
   @if (actionError()) {
     <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>

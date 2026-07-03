@@ -6,11 +6,14 @@ import {
   AdminOnboardingFlowSummary,
   AdminOnboardingFlowDto,
   AdminOnboardingStepDto,
+  AdminOnboardingOptionDto,
   StepRequest,
   STEP_TYPES,
   REQUIREMENT_TYPES,
   ANSWER_MAPPINGS,
 } from '../../../core/models/admin-onboarding.models';
+import { QuestionContent } from '../../../shared/question/question-content.models';
+import { QuestionEditorComponent, EditableQuestionType } from '../../../shared/question/question-editor.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -54,6 +57,7 @@ import {
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
     SpAdminTextareaComponent,
+    QuestionEditorComponent,
   ],
   templateUrl: './admin-onboarding.component.html',
 })
@@ -69,6 +73,11 @@ export class AdminOnboardingComponent implements OnInit {
   editingStep = signal<AdminOnboardingStepDto | null>(null);
 
   stepForm: StepRequest = this.emptyStepForm();
+
+  /** Step types the shared QuestionEditorComponent can author for onboarding — profile-capture
+   * questions only (no passage/audio groups, those are placement-specific). */
+  readonly questionEditorTypes: EditableQuestionType[] = ['single_choice', 'multiple_choice', 'free_text'];
+  questionContent = signal<QuestionContent>(this.contentFromOptions('SingleChoice', null));
 
   readonly stepTypeOptions = STEP_TYPES.map(t => ({ value: t, label: t }));
   readonly requirementTypeOptions = REQUIREMENT_TYPES.map(t => ({ value: t, label: t }));
@@ -122,6 +131,7 @@ export class AdminOnboardingComponent implements OnInit {
   openAddStep(): void {
     this.editingStep.set(null);
     this.stepForm = this.emptyStepForm();
+    this.questionContent.set(this.contentFromOptions(this.stepForm.stepType, null));
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
@@ -140,9 +150,45 @@ export class AdminOnboardingComponent implements OnInit {
       isEnabled: step.isEnabled,
       options: step.options ? [...step.options] : null,
     };
+    this.questionContent.set(this.contentFromOptions(step.stepType, step.options));
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
+  }
+
+  isGenericQuestionType(stepType: string): boolean {
+    return stepType === 'SingleChoice' || stepType === 'MultipleChoice' || stepType === 'FreeText';
+  }
+
+  onStepTypeChange(stepType: string): void {
+    this.stepForm = { ...this.stepForm, stepType };
+    if (this.isGenericQuestionType(stepType)) {
+      this.questionContent.set(this.contentFromOptions(stepType, this.stepForm.options));
+    }
+  }
+
+  onQuestionContentChange(content: QuestionContent): void {
+    this.questionContent.set(content);
+  }
+
+  private contentFromOptions(stepType: string, options: AdminOnboardingOptionDto[] | null): QuestionContent {
+    const choices = (options ?? []).map(o => ({ key: o.key, label: o.label }));
+    const fallbackChoices = choices.length ? choices : [{ key: 'A', label: '' }, { key: 'B', label: '' }];
+
+    if (stepType === 'MultipleChoice') {
+      return { type: 'multiple_choice', id: 'q1', questionText: '', choices: fallbackChoices };
+    }
+    if (stepType === 'FreeText') {
+      return { type: 'free_text', id: 'q1', questionText: '' };
+    }
+    return { type: 'single_choice', id: 'q1', questionText: '', choices: fallbackChoices };
+  }
+
+  private optionsFromContent(content: QuestionContent): AdminOnboardingOptionDto[] | null {
+    if (content.type === 'single_choice' || content.type === 'multiple_choice') {
+      return content.choices.map(c => ({ key: c.key, label: c.label }));
+    }
+    return null;
   }
 
   closeSlideOver(): void {
@@ -154,6 +200,10 @@ export class AdminOnboardingComponent implements OnInit {
     const flow = this.activeFlow();
     if (!flow) return;
     this.actionError.set('');
+
+    if (this.isGenericQuestionType(this.stepForm.stepType)) {
+      this.stepForm = { ...this.stepForm, options: this.optionsFromContent(this.questionContent()) };
+    }
 
     const editing = this.editingStep();
     const obs = editing

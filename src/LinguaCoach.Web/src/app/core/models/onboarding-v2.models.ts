@@ -1,3 +1,5 @@
+import { QuestionContent } from '../../shared/question/question-content.models';
+
 export interface OnboardingV2Option {
   key: string;
   label: string;
@@ -19,6 +21,10 @@ export interface OnboardingV2Step {
   isEnabled: boolean;
   options?: OnboardingV2Option[];
   validationMetadata?: OnboardingV2ValidationMetadata;
+  /** Unified Question-Schema (Phase 5/6) — the shared, polymorphic representation of this step,
+   * for the generic step types only (null for the semantically-named one-off types). Always
+   * redacted of correct-answer fields by the backend. */
+  content?: QuestionContent | null;
 }
 
 export interface OnboardingV2Status {

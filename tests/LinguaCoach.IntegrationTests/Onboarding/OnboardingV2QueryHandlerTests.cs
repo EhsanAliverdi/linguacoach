@@ -137,4 +137,52 @@ public sealed class OnboardingV2QueryHandlerTests : IDisposable
 
         Assert.True(result.IsComplete);
     }
+
+    // ── Unified Question-Schema Phase 5/6: Content exposure ─────────────────
+
+    [Fact]
+    public async Task HandleAsync_GenericStepTypes_HaveContentPopulated()
+    {
+        var userId = Guid.NewGuid();
+        var profile = new StudentProfile(userId);
+        _db.StudentProfiles.Add(profile);
+        await _db.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new GetOnboardingV2Query(userId));
+
+        var assessmentIntro = result.Steps.First(s => s.StepKey == "assessment_intro");
+        Assert.NotNull(assessmentIntro.Content);
+
+        var assessmentQ1 = result.Steps.First(s => s.StepKey == "assessment_q1");
+        Assert.NotNull(assessmentQ1.Content);
+    }
+
+    [Fact]
+    public async Task HandleAsync_AssessmentQuestionContent_NeverExposesCorrectAnswerKey()
+    {
+        var userId = Guid.NewGuid();
+        var profile = new StudentProfile(userId);
+        _db.StudentProfiles.Add(profile);
+        await _db.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new GetOnboardingV2Query(userId));
+
+        var assessmentQ1 = result.Steps.First(s => s.StepKey == "assessment_q1");
+        var content = Assert.IsType<Domain.Questions.SingleChoiceQuestion>(assessmentQ1.Content);
+        Assert.Null(content.CorrectAnswerKey);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SemanticStepTypes_HaveNoContent()
+    {
+        var userId = Guid.NewGuid();
+        var profile = new StudentProfile(userId);
+        _db.StudentProfiles.Add(profile);
+        await _db.SaveChangesAsync();
+
+        var result = await _handler.HandleAsync(new GetOnboardingV2Query(userId));
+
+        var supportLanguage = result.Steps.First(s => s.StepKey == "support_language");
+        Assert.Null(supportLanguage.Content);
+    }
 }

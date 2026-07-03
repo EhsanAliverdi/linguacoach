@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,7 +36,8 @@ public sealed class AdminOnboardingFlowQueryHandler : IAdminOnboardingFlowQuery
                 AnswerMapping: s.AnswerMapping.ToString(),
                 StepOrder: s.StepOrder,
                 IsEnabled: s.IsEnabled,
-                Options: ParseOptions(s.OptionsJson)
+                Options: ParseOptions(s.OptionsJson),
+                Content: s.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(s.Content) : null
                 // AssessmentMetadataJson excluded even from admin view for now.
             ))
             .ToList();

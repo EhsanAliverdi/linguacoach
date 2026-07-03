@@ -115,6 +115,39 @@ public sealed class AdminOnboardingEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.NoContent, delResp.StatusCode);
     }
 
+    [Fact]
+    public async Task AddStep_SingleChoiceWithOptions_ContentIsPopulatedAndOptionsDriven()
+    {
+        // Unified Question-Schema Phase 6: adding a generic-type step keeps the shadow Content
+        // in sync with whatever Options the admin submitted.
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var createResp = await client.PostAsJsonAsync("/api/admin/onboarding/flows",
+            new { name = $"ContentFlow {Guid.NewGuid():N}", version = 60 });
+        var flowBody = await createResp.Content.ReadFromJsonAsync<JsonElement>();
+        var flowId = GetFlowId(flowBody);
+
+        var addResp = await client.PostAsJsonAsync($"/api/admin/onboarding/flows/{flowId}/steps", new
+        {
+            stepKey = "quick_check",
+            title = "Quick check",
+            description = (string?)null,
+            stepType = "SingleChoice",
+            requirementType = "AdminConfigured",
+            answerMapping = "None",
+            stepOrder = 1,
+            isEnabled = true,
+            options = new[] { new { key = "a", label = "Option A" }, new { key = "b", label = "Option B" } },
+        });
+
+        Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
+        var body = await addResp.Content.ReadFromJsonAsync<JsonElement>();
+        var content = body.GetProperty("content");
+        Assert.Equal("single_choice", content.GetProperty("type").GetString());
+        Assert.Equal(2, content.GetProperty("choices").GetArrayLength());
+    }
+
     // ── POST activate ─────────────────────────────────────────────────────────
 
     [Fact]
