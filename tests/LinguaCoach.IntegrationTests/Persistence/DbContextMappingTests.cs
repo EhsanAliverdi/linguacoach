@@ -171,4 +171,25 @@ public sealed class DbContextMappingTests : IDisposable
         _db.Languages.Add(duplicate);
         Assert.Throws<DbUpdateException>(() => _db.SaveChanges());
     }
+
+    [Fact]
+    public void PlacementSkillResult_DuplicateSkillForSameAssessmentThrows()
+    {
+        // Regression: a completion race in PlacementAssessmentService.FinalizeCompletionAsync
+        // could insert two skill-result rows for the same (assessment, skill) pair. This
+        // unique index turns that into a constraint violation the service now catches.
+        var student = new StudentProfile(Guid.NewGuid());
+        _db.StudentProfiles.Add(student);
+        var assessment = PlacementAssessment.CreateAdaptive(student.Id, "student");
+        _db.PlacementAssessments.Add(assessment);
+        _db.SaveChanges();
+
+        _db.PlacementSkillResults.Add(
+            PlacementSkillResult.Create(assessment.Id, "listening", "A2", 0.35, 4));
+        _db.SaveChanges();
+
+        _db.PlacementSkillResults.Add(
+            PlacementSkillResult.Create(assessment.Id, "listening", "A2", 0.35, 4));
+        Assert.Throws<DbUpdateException>(() => _db.SaveChanges());
+    }
 }

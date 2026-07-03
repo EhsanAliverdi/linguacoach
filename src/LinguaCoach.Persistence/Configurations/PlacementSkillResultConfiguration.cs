@@ -31,5 +31,13 @@ internal sealed class PlacementSkillResultConfiguration : IEntityTypeConfigurati
 
         builder.HasIndex(e => e.PlacementAssessmentId)
             .HasDatabaseName("ix_placement_skill_results_assessment_id");
+
+        // Concurrent SubmitResponseAsync calls that both complete the final item can race past
+        // the "no existing results" check in FinalizeCompletionAsync before either commits,
+        // each inserting a full set of skill results. This unique index turns that race into a
+        // constraint violation instead of silent duplicate rows (see PlacementAssessmentService).
+        builder.HasIndex(e => new { e.PlacementAssessmentId, e.Skill })
+            .IsUnique()
+            .HasDatabaseName("ux_placement_skill_results_assessment_skill");
     }
 }

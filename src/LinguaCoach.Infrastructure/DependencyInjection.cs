@@ -1,3 +1,4 @@
+using System.Linq;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Activity.Evaluators;
 using LinguaCoach.Application.Notifications;
@@ -448,6 +449,14 @@ public static class DependencyInjection
                 configuration.GetSection(LinguaCoach.Application.Placement.PlacementAssessmentOptions.Section));
         else
             services.Configure<LinguaCoach.Application.Placement.PlacementAssessmentOptions>(_ => { });
+
+        // .NET config binding appends config-bound array items to the class default rather than
+        // replacing it, so SkillsToAssess ends up with each skill listed twice (default + config,
+        // both "listening, reading, writing, vocabulary, grammar, speaking"). That silently doubled
+        // placement item generation and produced duplicate placement_skill_results rows on
+        // completion. Deduplicate once here instead of patching every call site.
+        services.PostConfigure<LinguaCoach.Application.Placement.PlacementAssessmentOptions>(o =>
+            o.SkillsToAssess = o.SkillsToAssess.Distinct().ToArray());
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementScoringService,
             LinguaCoach.Infrastructure.Placement.PlacementScoringService>();
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementAssessmentService,

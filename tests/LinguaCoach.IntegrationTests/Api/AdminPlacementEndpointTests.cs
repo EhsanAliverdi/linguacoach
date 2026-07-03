@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -53,6 +54,33 @@ public sealed class AdminPlacementEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.False(body.GetProperty("hasPlacement").GetBoolean());
+    }
+
+    [Fact]
+    public async Task GetLatestPlacement_AfterCompletion_ReturnsHasPlacementTrue()
+    {
+        // Regression: the success path used to return the summary DTO as-is, which has
+        // no `hasPlacement` field, so the frontend's `!hasPlacement` check always read
+        // it as "no placement" even for a completed assessment.
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var studentId = await CreateStudentProfileAsync();
+        var client = CreateAdminClient(adminToken);
+
+        var startResp = await client.PostAsJsonAsync(
+            $"/api/admin/students/{studentId}/placement/start", new { });
+        var startBody = await startResp.Content.ReadFromJsonAsync<JsonElement>();
+        var assessmentId = startBody.GetProperty("assessmentId").GetString()!;
+
+        await client.PostAsJsonAsync(
+            $"/api/admin/students/{studentId}/placement/{assessmentId}/complete", new { });
+
+        var response = await client.GetAsync($"/api/admin/students/{studentId}/placement/latest");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("hasPlacement").GetBoolean());
+        Assert.Equal(assessmentId, body.GetProperty("assessmentId").GetString());
+        Assert.Equal("Completed", body.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -168,6 +196,34 @@ public sealed class AdminPlacementEndpointTests : IClassFixture<ApiTestFactory>
         var body = await completeResp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Completed", body.GetProperty("status").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("overallCefrLevel").GetString()));
+    }
+
+    [Fact]
+    public async Task CompletePlacement_SkillResultsHaveNoDuplicateSkill()
+    {
+        // Regression: .NET config binding appends config-bound array items to the class
+        // default rather than replacing it, so PlacementAssessmentOptions.SkillsToAssess
+        // ended up listing every skill twice unless deduplicated in DI setup. That produced
+        // two identical skill-result rows per skill on every completed placement in production.
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var studentId = await CreateStudentProfileAsync();
+        var client = CreateAdminClient(adminToken);
+
+        var startResp = await client.PostAsJsonAsync(
+            $"/api/admin/students/{studentId}/placement/start", new { });
+        var startBody = await startResp.Content.ReadFromJsonAsync<JsonElement>();
+        var assessmentId = startBody.GetProperty("assessmentId").GetString()!;
+
+        var completeResp = await client.PostAsJsonAsync(
+            $"/api/admin/students/{studentId}/placement/{assessmentId}/complete", new { });
+
+        Assert.Equal(HttpStatusCode.OK, completeResp.StatusCode);
+        var body = await completeResp.Content.ReadFromJsonAsync<JsonElement>();
+        var skills = body.GetProperty("skillResults").EnumerateArray()
+            .Select(e => e.GetProperty("skill").GetString())
+            .ToList();
+
+        Assert.Equal(skills.Distinct().Count(), skills.Count);
     }
 
     [Fact]

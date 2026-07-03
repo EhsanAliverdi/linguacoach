@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-03 (20H)
+lastUpdated: 2026-07-03 (20I)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,53 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-03 (20H)
+Last updated: 2026-07-03 (20I)
+
+---
+
+## Full Live Student/Admin QA & Data Consistency Audit (Phase 20I, 2026-07-03)
+
+Deep live QA against `pilot.student.20e` (admin + DB views) and a fresh QA
+account (full student-side walkthrough: onboarding → placement → Today
+lesson → activity → feedback). Full findings, deferred scope, and
+product-owner questions: `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`.
+
+Two P1 data-integrity bugs found and fixed, both silent/cosmetic to the
+student but real for admin trust and data cleanliness:
+
+**Admin "Adaptive placement assessment" panel always showed "No placement
+assessment on record"** even for students with a genuinely completed
+placement. Root cause: `AdminPlacementController.GetLatestPlacement`
+returned `{ hasPlacement = false }` on the not-found path but just
+`Ok(result)` (no `hasPlacement` field at all) on success — the frontend's
+`!hasPlacement` check reads a missing field as falsy, so every successful
+response was misread as "no placement." This is very likely how a stray
+`InProgress` placement assessment ended up in `pilot.student.20e`'s
+history from an earlier audit session (the panel's "Start placement"
+button creates a new assessment when it thinks there isn't one). Fixed by
+explicitly returning `hasPlacement = true` on success.
+
+**Every completed placement assessment produced two identical rows per
+skill in `placement_skill_results`** (12 rows instead of 6), visibly
+duplicating the "Skill breakdown" grid on the student-facing placement
+result page. Root cause: .NET config binding appends config-bound array
+items to the class default instead of replacing it, so
+`PlacementAssessmentOptions.SkillsToAssess` (6-skill default +
+identical 6-skill `appsettings.json` list) resolved to 12 entries at
+runtime. Several call sites already defended with `.Distinct()` — two
+(`BuildSkillResults`, `CreateInitialItems`) did not. Fixed at the source
+via `services.PostConfigure<PlacementAssessmentOptions>` deduplication in
+DI setup, plus a unique index on `placement_skill_results
+(placement_assessment_id, skill)` as defense-in-depth (with a
+pre-index cleanup step in the migration for existing duplicate rows).
+
+Both fixes have new regression tests; full backend suite (3151 tests)
+green.
+
+Product questions raised, not resolved: whether `language_pairs` (only
+one seeded row, Persian↔English) should be expanded before inviting
+non-Persian pilot students, and whether `pilot.student.20e`'s ~1614-item
+Practice Gym queue backlog is expected job behavior or a bug.
 
 ---
 

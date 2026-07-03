@@ -647,3 +647,26 @@ progress is always computed live from the ledger.
 **Why:** Not a data-duplicate bug (confirmed: no two cards share the same pattern/activity type/materialized activity) — `PracticeGymSuggestionService.RankSuggestions` simply doesn't have an objective-diversity term in its ranking, so if one objective currently has the most/best-scoring ready items, it can dominate all `MaxSuggested` (6) slots.
 **Context:** `docs/reviews/2026-07-03-phase-20h-live-pilot-stabilization-readiness-practice-gym-review.md`.
 **Deferred from:** Phase 20H, 2026-07-03 (explicitly out of scope for a stabilization-only phase — requires a ranking/selection design decision, not a bug fix).
+**Status as of Phase 20I:** Not re-evaluated — still valid, not re-confirmed against `pilot.student.20e`'s live Practice Gym UI this pass. See `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`.
+
+---
+
+## Full Live Student/Admin QA (Phase 20I)
+
+### TODO-20I-1 — `language_pairs` table has only one seeded row (Persian↔English)
+**What:** Onboarding step 1 ("Choose your language path") only ever offers "Persian to English" because that's the only row in `language_pairs`. Product question, not a confirmed bug — onboarding placeholder copy is bilingual EN/FA by design, suggesting this may be intentional single-language-pair scoping for the current pilot cohort.
+**Why:** Blocks inviting non-Persian-speaking pilot students without either seeding more pairs or hiding/skipping this onboarding step when only one pair exists.
+**Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part B/C.
+**Deferred from:** Phase 20I, 2026-07-03 (product decision needed, not a code bug).
+
+### TODO-20I-2 — Practice Gym readiness-pool queue backlog (1614 queued items) for `pilot.student.20e`
+**What:** Admin readiness audit for `pilot.student.20e` shows Practice Gym pool health: 177 ready (target 10), **1614 queued**, 35 failed, 7 expired. The queued count is disproportionate for a single student and wasn't root-caused.
+**Why:** Could indicate a runaway enqueue loop in the readiness replenishment job, or could be expected steady-state behavior — not distinguished this pass.
+**Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part J.
+**Deferred from:** Phase 20I, 2026-07-03 (needs a DB/job-log investigation before scaling pilot beyond one student).
+
+### TODO-20I-3 — `GET /api/api/admin/generation-quality/summary` 404s (double `/api/api/` prefix)
+**What:** Admin Diagnostics page shows a recurring 404 for a URL with a doubled `/api/api/` prefix, and the AI Operations "Generation quality — last 30 days" widget shows "Could not load generation quality data."
+**Why:** Likely a stray leading slash in a frontend URL constant. Low severity (informational widget only), not fixed this pass.
+**Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part A / Deferred section.
+**Deferred from:** Phase 20I, 2026-07-03.

@@ -35,7 +35,28 @@ public sealed class AdminPlacementController : ControllerBase
         if (result is null)
             return Ok(new { hasPlacement = false });
 
-        return Ok(result);
+        // The frontend's AdminPlacementLatestResponse always checks `hasPlacement`;
+        // PlacementAssessmentSummaryDto has no such field, so it must be added here
+        // or every successful response is misread as "no placement" client-side.
+        return Ok(new
+        {
+            hasPlacement = true,
+            result.AssessmentId,
+            result.StudentProfileId,
+            result.Status,
+            result.StartedAtUtc,
+            result.CompletedAtUtc,
+            result.ExpiredAtUtc,
+            result.OverallCefrLevel,
+            result.OverallConfidence,
+            result.IsProvisional,
+            result.ResultSummary,
+            result.Source,
+            result.SkillResults,
+            result.LearningPlanRegenerated,
+            result.LearningPlanRegenerationWarning,
+            result.ItemCount
+        });
     }
 
     [HttpGet("api/admin/students/{studentId:guid}/placement/history")]

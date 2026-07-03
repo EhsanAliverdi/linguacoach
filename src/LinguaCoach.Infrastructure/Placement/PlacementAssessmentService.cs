@@ -717,6 +717,27 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         foreach (var r in skillResults)
             _db.PlacementSkillResults.Add(r);
 
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException) when (assessment.Status != PlacementStatus.Completed)
+        {
+            // Lost the race to a concurrent completion — a unique index on
+            // (assessment, skill) rejected our duplicate insert. Detach the
+            // rows we just tried to add and return the winner's result instead.
+            foreach (var r in skillResults)
+                _db.Entry(r).State = EntityState.Detached;
+
+            var winnerResults = await _db.PlacementSkillResults
+                .Where(r => r.PlacementAssessmentId == assessment.Id)
+                .ToListAsync(ct);
+            var winnerAssessment = await _db.PlacementAssessments
+                .Include(a => a.Items)
+                .FirstAsync(a => a.Id == assessment.Id, ct);
+            return ToSummaryDto(winnerAssessment, winnerResults);
+        }
+
         var overallCefr = ComputeOverallCefr(skillResults, _opts.StartingLevelFallback);
         var overallConfidence = skillResults.Count > 0
             ? Math.Round(skillResults.Average(r => r.Confidence), 3)

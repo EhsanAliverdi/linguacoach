@@ -754,6 +754,7 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-06-28 | Audio response: no STT, separate from SpeakingRolePlay | STT requires privacy review; audio-attempt endpoint is a clean separation of concerns |
 | 2026-06-30 | Speaking mastery signals: review-only, no CEFR update, no objective completion | Conservative integration path; AI evaluation not yet validated for hard state changes |
 | 2026-06-30 | CEFR update from AI evaluation: permanently disabled in current design | Overclaiming risk; CEFR is a high-value signal that must come from validated sources |
+| 2026-07-03 | Phase 20I QA used a freshly created QA student for all student-side UI testing, not `pilot.student.20e`'s real credentials | Avoids disrupting the real pilot student's account (forced password reset); admin/DB views used for `pilot.student.20e`-specific checks instead |
 
 ---
 

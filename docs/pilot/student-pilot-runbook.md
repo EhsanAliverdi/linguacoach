@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (Phase 20F)
+lastUpdated: 2026-07-03 (Phase 20I)
 owner: product
 ---
 
@@ -13,8 +13,12 @@ Phase 20E — see
 `docs/reviews/2026-07-02-phase-20e-controlled-student-pilot-smoke-qa-review.md`
 for the full findings from that run.
 
-**Current status: NOT ready to invite a real student.** See "Known
-limitations" below before doing anything else with this runbook.
+**Current status (Phase 20I, 2026-07-03): ready to invite one real
+Persian-speaking pilot student** (matching the existing cohort — see
+`TODO-20I-1` on `language_pairs` before inviting a non-Persian speaker).
+**Not yet ready to expand to 3–5 students** — see "Known limitations"
+below and `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`
+for the full audit and deferred scope.
 
 ## 1. Create or select a pilot student
 
@@ -154,8 +158,28 @@ All of the following must be true:
 - [ ] Admin can see the readiness verdict and repair history for this
       student.
 
-## 8. Known limitations (as of Phase 20H, 2026-07-03)
+## 8. Known limitations (as of Phase 20I, 2026-07-03)
 
+- **Fixed in Phase 20I (2026-07-03), locally verified with 4 new tests,
+  deploy/live validation pending:** Admin "Adaptive placement assessment"
+  panel always showed "No placement assessment on record" even when a
+  student had a completed placement (missing `hasPlacement: true` on the
+  API success path) — its "Start placement" button is the likely source
+  of a stray duplicate placement assessment found in `pilot.student.20e`'s
+  history. Also fixed: every completed placement produced two identical
+  rows per skill in `placement_skill_results` (visibly duplicating the
+  "Skill breakdown" grid on the placement result page), caused by a
+  `.NET` config-binding quirk doubling `PlacementAssessmentOptions.SkillsToAssess`.
+  **Not yet pushed, deployed, or confirmed live against `speakpath.app`.**
+  See `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`.
+- **Product question, not yet resolved:** `language_pairs` has only one
+  seeded row (Persian↔English), so onboarding step 1 only ever offers
+  "Persian to English." Fine for the current Persian-speaking cohort;
+  seed more pairs before inviting a non-Persian-speaking student.
+- **Not investigated, flagged for follow-up:** `pilot.student.20e`'s
+  Practice Gym readiness pool shows a ~1614-item queued backlog (target
+  ready count is 10) — not confirmed as a bug, but disproportionate
+  enough to warrant a check before scaling past one student.
 - **Fixed and confirmed live in Phase 20F:**
   `POST /api/student/placement/start` and the readiness audit both 500'd
   in production for every student — root cause was 6 EF Core migrations
