@@ -207,7 +207,22 @@ export class OnboardingV2Component implements OnInit {
   }
 
   onCompleted(): void {
-    this.triggerComplete();
+    // The summary step's "Start learning" button never went through onStepSubmitted, so
+    // "summary" (a SystemRequired step) was never added to CompletedStepKeys -- /complete
+    // always rejected with "Required steps not completed: summary". Submit it explicitly
+    // before completing.
+    const stepKey = this.status?.currentStepKey;
+    if (!stepKey) {
+      this.triggerComplete();
+      return;
+    }
+    this.submitError = null;
+    this.svc.submitStep(stepKey, '{}').subscribe({
+      next: () => this.triggerComplete(),
+      error: (err) => {
+        this.submitError = err?.error?.error ?? 'Could not save your answer. Please try again.';
+      },
+    });
   }
 
   private triggerComplete(): void {
