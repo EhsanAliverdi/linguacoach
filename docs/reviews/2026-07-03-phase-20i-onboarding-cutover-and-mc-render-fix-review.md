@@ -77,6 +77,37 @@ npm test (full Angular suite)                 → 1548/1668 passed, 120 failed
 
 Secret scan (`git diff | grep -iE "password|secret|api_key|connectionstring"`) and `git diff --check` both clean before commit.
 
-## Not yet live-verified
+## Live verification (2026-07-03) — 4 more real bugs found and fixed
 
-This document was written before pushing/deploying this session's Phase 1-3 changes. Live verification (fresh student through the full V2 flow on `speakpath.app`, confirming preference fields populate and the student isn't blocked from Today/Practice/Dashboard) is required before this phase is considered done — see the follow-up entry in this same doc or a subsequent commit once deployed.
+Live verification with a fresh student was not a formality — it caught 4 additional real, previously-undiscovered bugs, each only reachable because this was **the first time V2 onboarding was ever driven end-to-end by a real student** since it was built in Phase 10I/11A. Each was fixed, redeployed, and re-verified before moving to the next:
+
+1. **The seeder never re-ran against the already-seeded production flow.** `OnboardingFlowSeeder.SeedAsync` bailed out entirely (`if (existingActive) return`) once any active flow existed, so the 4 new steps from Phase 2 above were completely absent in production — students skipped straight from `difficulty_preference` to the assessment intro. Fixed by making the seeder reconcile: if its own "Default Flow" is missing steps `BuildDefaultSteps()` now defines, publish a new version (deactivate old, activate new) rather than mutate the active flow in place, matching the class's own documented immutability contract. Also added the 4 new step types/mappings to the admin builder's frontend dropdowns (`STEP_TYPES`/`ANSWER_MAPPINGS`), which hadn't been updated either — the admin UI couldn't have created these steps manually even as a workaround.
+
+2. **Two onboarding step components leaked state into each other.** `career_context` then `learning_goal_description` (both `FreeText`) — Angular reused the same `OnboardingV2FreeTextComponent` instance since `*ngIf` only re-renders on a truthiness change, not a step-key change, so the second step's textarea inherited the first step's answer verbatim. `assessment_q1`/`assessment_q2` (both `AssessmentQuestion`) had the identical bug — Q1's selected answer key could carry over as a pre-selected, submittable answer to Q2. Fixed with `ngOnChanges` resets in `FreeTextComponent`, `AssessmentComponent`, and (defensively) `SingleChoiceComponent`.
+
+3. **`CompletedStepKeys` never persisted, ever, for any student.** `StudentOnboardingProgress.RecordStepCompleted()` mutates a `List<string>` in place (`.Add(stepKey)`); the EF mapping used `HasConversion` with no `ValueComparer`, so the default reference-equality change tracker never saw a change on the same List instance — `completed_step_keys` stayed `[]` in the database regardless of how many steps a student completed. `/api/onboarding/complete` therefore always failed with "Required steps not completed" listing *every* step. This is the single most severe bug found this session: it made V2 onboarding **completely uncompletable, for every student, since the feature was built** — nobody had ever tried to finish it for real before this session. Fixed with an explicit `ValueComparer<List<string>>`; also hardened `StudentProfile.LearningGoals`/`FocusAreas` with the same comparer defensively (currently safe only because their setter reassigns via `.ToList()` rather than mutating in place).
+
+4. **The summary step's completion button never recorded itself as completed.** After fixing #3, `/complete` failed with only one step missing: `summary`. `OnboardingV2SummaryComponent`'s "Start learning" button emitted `completed` directly to the parent, which called `triggerComplete()` without ever submitting the `summary` step itself (a `SystemRequired` step) through the normal step-submission flow. Fixed by submitting the current step before completing, mirroring every other step.
+
+5. **Two enum-string mismatches meant two more fields were silently null even after #3 was fixed**, discovered via a DB check on a fully-completed profile: `support_language_code` and `difficulty_preference` were still empty. Root cause (two separate, unrelated bugs found together): (a) `StudentProfile.UpdateLearningPreferences` unconditionally overwrites `SupportLanguageCode`/`SupportLanguageName`/`TranslationHelpPreference`/`DifficultyPreference`/etc. on *every* call — only `LearningGoals`/`FocusAreas`/`PreferredSessionDurationMinutes` skip the update when null — so each subsequent onboarding step (which calls this method with the other fields left null) silently wiped out what an earlier step had just set; (b) the support-language step sent `translationHelp: 'WhenAsked'` and the difficulty step's seeded option key was `'Moderate'`, neither of which matches the actual enum member names (`TranslationHelpPreference.WhenDifficult`, `DifficultyPreference.Balanced`), so `Enum.TryParse` silently failed regardless of bug (a). Fixed (a) by adding `UpdatePreferencesPreservingOthers()` to `OnboardingV2StepHandler`, which reads the profile's current value for every field the calling step doesn't own, rather than changing `UpdateLearningPreferences` itself (which `/profile`'s full-form submission relies on overwriting everything). Fixed (b) by correcting the frontend string and the seeded option key (user-facing label unchanged). Broadened the seeder's reconciliation check from step-*keys* to step-*content* (key + options) so fix (b) actually reached the already-created production flow.
+
+**Final confirmed-live result** (`qa.phase20i.finalcheck@example.com`, full flow including Spanish support language, "work" goal, career context, work experience, both assessment questions):
+
+```
+onboarding_status: 2 (Complete)
+support_language_code: es          support_language_name: Spanish
+translation_help_preference: 1 (WhenDifficult)
+career_context: "Junior software engineer"
+learning_goals: ["work"]           focus_areas: ["speaking"]
+difficulty_preference: 1 (Balanced)
+preferred_session_duration_minutes: 20
+professional_experience_level: 3 (MidLevel_2_5Years)
+role_familiarity: 3 (ExperiencedInRole)
+lifecycle_stage: 4 (PlacementRequired)
+```
+
+Every field the AI generation layer depends on is now correctly captured, and the student lands cleanly on the dashboard with "Start placement" — no errors, no raw exceptions, no blocked features. Total commits this phase: `4972548`, `0419c4a`, `6b26a16`, `268c631`, `6e737f8`, `d6e6d75`.
+
+## Local validation (final)
+
+All 6 deploys re-ran the full backend suite before shipping; final count: `dotnet test --configuration Release` → 3161/3161 passed (ArchitectureTests 5, UnitTests 1757, IntegrationTests 1399, including 12 new/updated tests across this phase's 6 commits). `npm run build -- --configuration production` green on every deploy.

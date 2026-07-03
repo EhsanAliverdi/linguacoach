@@ -14,10 +14,18 @@ Phase 20E — see
 for the full findings from that run.
 
 **Current status (Phase 20I, 2026-07-03): ready to invite one real
-Persian-speaking pilot student** (matching the existing cohort — see
-`TODO-20I-1` on `language_pairs` before inviting a non-Persian speaker).
-**Not yet ready to expand to 3–5 students** — see "Known limitations"
-below and `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`
+pilot student, any of the 8 support languages seeded in onboarding**
+(Persian, Arabic, Chinese, Spanish, Portuguese, Hindi, English-only, or
+Other — no longer limited to Persian, since onboarding was cut over to
+the admin-configurable V2 flow this phase; see
+`docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`).
+Onboarding was end-to-end live-verified after the cutover: a fresh
+student's support language, translation preference, career context,
+learning goals, focus areas, difficulty, session duration, and work
+experience all now correctly persist, and the student lands cleanly on
+the dashboard afterward. **Not yet ready to expand to 3–5 students** —
+see "Known limitations" below and
+`docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`
 for the full audit and deferred scope.
 
 ## 1. Create or select a pilot student
@@ -160,22 +168,24 @@ All of the following must be true:
 
 ## 8. Known limitations (as of Phase 20I, 2026-07-03)
 
-- **Fixed in Phase 20I (2026-07-03), locally verified with 4 new tests,
-  deploy/live validation pending:** Admin "Adaptive placement assessment"
-  panel always showed "No placement assessment on record" even when a
-  student had a completed placement (missing `hasPlacement: true` on the
-  API success path) — its "Start placement" button is the likely source
-  of a stray duplicate placement assessment found in `pilot.student.20e`'s
-  history. Also fixed: every completed placement produced two identical
-  rows per skill in `placement_skill_results` (visibly duplicating the
-  "Skill breakdown" grid on the placement result page), caused by a
-  `.NET` config-binding quirk doubling `PlacementAssessmentOptions.SkillsToAssess`.
-  **Not yet pushed, deployed, or confirmed live against `speakpath.app`.**
-  See `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`.
-- **Product question, not yet resolved:** `language_pairs` has only one
-  seeded row (Persian↔English), so onboarding step 1 only ever offers
-  "Persian to English." Fine for the current Persian-speaking cohort;
-  seed more pairs before inviting a non-Persian-speaking student.
+- **Fixed and confirmed live in Phase 20I (2026-07-03):** Admin "Adaptive
+  placement assessment" panel always showed "No placement assessment on
+  record" even when a student had a completed placement (missing
+  `hasPlacement: true` on the API success path). Also fixed: every
+  completed placement produced two identical rows per skill in
+  `placement_skill_results`, caused by a `.NET` config-binding quirk
+  doubling `PlacementAssessmentOptions.SkillsToAssess`. See
+  `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`.
+- **Fixed and confirmed live in Phase 20I (2026-07-03):** onboarding was
+  cut over from the hardcoded V1 flow to the admin-configurable V2 flow —
+  `language_pairs`'s single Persian-only row no longer limits students,
+  since V2's `support_language` step offers 8 languages independent of
+  that table. Live end-to-end verification during the cutover also found
+  and fixed 4 more real bugs, the most severe being that V2 onboarding
+  completion had never actually worked for any student since the feature
+  was built (a missing EF `ValueComparer` silently prevented
+  `completed_step_keys` from ever persisting). Full bug-by-bug writeup:
+  `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
 - **Not investigated, flagged for follow-up:** `pilot.student.20e`'s
   Practice Gym readiness pool shows a ~1614-item queued backlog (target
   ready count is 10) — not confirmed as a bug, but disproportionate
