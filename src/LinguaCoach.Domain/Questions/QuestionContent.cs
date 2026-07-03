@@ -77,3 +77,30 @@ public sealed class ReadingGroupQuestion : QuestionContent
     public required string Passage { get; init; }
     public required IReadOnlyList<QuestionContent> Questions { get; init; }
 }
+
+/// <summary>Strips correct-answer fields from a QuestionContent tree before it's sent to a
+/// student — the client only ever needs to know what to ask/render, never what scores correctly.
+/// Must be applied to every student-facing DTO that carries Content (e.g. PlacementNextItemDto);
+/// admin-facing DTOs intentionally keep the correct answers.</summary>
+public static class QuestionContentRedactor
+{
+    public static QuestionContent RedactCorrectAnswers(QuestionContent content) => content switch
+    {
+        SingleChoiceQuestion q => new SingleChoiceQuestion { Id = q.Id, QuestionText = q.QuestionText, Choices = q.Choices, CorrectAnswerKey = null },
+        MultipleChoiceQuestion q => new MultipleChoiceQuestion { Id = q.Id, QuestionText = q.QuestionText, Choices = q.Choices, CorrectAnswerKeys = null },
+        GapFillQuestion q => new GapFillQuestion { Id = q.Id, QuestionText = q.QuestionText, CorrectAnswer = null },
+        FreeTextQuestion q => q,
+        ListeningGroupQuestion q => new ListeningGroupQuestion
+        {
+            Id = q.Id, Instructions = q.Instructions, AudioScript = q.AudioScript,
+            AudioStorageKey = q.AudioStorageKey, AudioContentType = q.AudioContentType,
+            Questions = q.Questions.Select(RedactCorrectAnswers).ToList(),
+        },
+        ReadingGroupQuestion q => new ReadingGroupQuestion
+        {
+            Id = q.Id, Instructions = q.Instructions, Passage = q.Passage,
+            Questions = q.Questions.Select(RedactCorrectAnswers).ToList(),
+        },
+        _ => content,
+    };
+}

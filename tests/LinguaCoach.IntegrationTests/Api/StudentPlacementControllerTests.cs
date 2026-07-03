@@ -186,6 +186,34 @@ public sealed class StudentPlacementControllerTests : IClassFixture<PlacementTes
     }
 
     [Fact]
+    public async Task GetNext_ContentNeverLeaksCorrectAnswerToStudent()
+    {
+        // Security regression: PlacementNextItemDto.Content must be redacted before it reaches
+        // the student — the raw definition's SingleChoiceQuestion carries CorrectAnswerKey.
+        var (token, _, assessmentId, _) = await StartedAssessmentAsync($"sp_noanswer_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync($"/api/student/placement/next?assessmentId={assessmentId}");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var content = body.GetProperty("content");
+
+        AssertNoCorrectAnswerLeak(content);
+    }
+
+    private static void AssertNoCorrectAnswerLeak(JsonElement content)
+    {
+        if (content.TryGetProperty("correctAnswerKey", out var key))
+            Assert.Equal(JsonValueKind.Null, key.ValueKind);
+        if (content.TryGetProperty("correctAnswerKeys", out var keys))
+            Assert.Equal(JsonValueKind.Null, keys.ValueKind);
+        if (content.TryGetProperty("correctAnswer", out var answer))
+            Assert.Equal(JsonValueKind.Null, answer.ValueKind);
+        if (content.TryGetProperty("questions", out var questions) && questions.ValueKind == JsonValueKind.Array)
+            foreach (var sub in questions.EnumerateArray())
+                AssertNoCorrectAnswerLeak(sub);
+    }
+
+    [Fact]
     public async Task GetNext_OtherStudentsAssessment_Returns404()
     {
         var (_, _, assessmentId, _) = await StartedAssessmentAsync($"sp_owner_a_{Guid.NewGuid():N}@test.com");

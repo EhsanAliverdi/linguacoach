@@ -561,7 +561,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 EstimateRemaining(assessment.Items, skillStates),
                 nextItem.ReadingPassage,
                 !string.IsNullOrWhiteSpace(nextItem.ListeningAudioScript),
-                nextItem.Content)
+                nextItem.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(nextItem.Content) : null)
             : null;
 
         return new SubmitResponseResult(
@@ -616,7 +616,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             EstimateRemaining(items, states),
             nextUnanswered.ReadingPassage,
             !string.IsNullOrWhiteSpace(nextUnanswered.ListeningAudioScript),
-            nextUnanswered.Content);
+            nextUnanswered.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(nextUnanswered.Content) : null);
     }
 
     private int EstimateRemaining(
