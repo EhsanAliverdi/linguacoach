@@ -27,6 +27,16 @@ public sealed class PlacementAssessmentItem : BaseEntity
     /// <summary>Seconds the candidate spent on this item, if captured by the client.</summary>
     public int? DurationSeconds { get; private set; }
 
+    /// <summary>Full passage a reading-skill item's prompt refers to (Phase 20I-5), copied from PlacementItemDefinition at issuance.</summary>
+    public string? ReadingPassage { get; private set; }
+
+    /// <summary>Script to convert to speech for a listening-skill item (Phase 20I-5), copied from PlacementItemDefinition at issuance.</summary>
+    public string? ListeningAudioScript { get; private set; }
+
+    /// <summary>Storage key for the generated listening audio, once EnsureAudioAsync has run — null until then.</summary>
+    public string? AudioStorageKey { get; private set; }
+    public string? AudioContentType { get; private set; }
+
     private PlacementAssessmentItem() { }
 
     public static PlacementAssessmentItem Create(
@@ -36,7 +46,9 @@ public sealed class PlacementAssessmentItem : BaseEntity
         string itemType,
         string prompt,
         string? correctAnswer,
-        int itemOrder)
+        int itemOrder,
+        string? readingPassage = null,
+        string? listeningAudioScript = null)
     {
         if (assessmentId == Guid.Empty)
             throw new ArgumentException("AssessmentId required.", nameof(assessmentId));
@@ -53,8 +65,16 @@ public sealed class PlacementAssessmentItem : BaseEntity
             ItemType = itemType,
             Prompt = prompt,
             CorrectAnswer = correctAnswer,
-            ItemOrder = itemOrder
+            ItemOrder = itemOrder,
+            ReadingPassage = readingPassage,
+            ListeningAudioScript = listeningAudioScript
         };
+    }
+
+    public void RecordAudio(string storageKey, string contentType)
+    {
+        AudioStorageKey = storageKey;
+        AudioContentType = contentType;
     }
 
     public void RecordResponse(string response, bool isCorrect, double score,

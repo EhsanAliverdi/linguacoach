@@ -38,7 +38,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
     // ── Item bank (Phase 20I-4: admin-configurable, loaded from PlacementItemDefinition) ───
 
-    private record PlacementItemTemplate(string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer);
+    private record PlacementItemTemplate(
+        string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer,
+        string? ReadingPassage, string? ListeningAudioScript);
 
     /// <summary>Loads the enabled item bank once per outer call — replaces the old hardcoded static list.</summary>
     private async Task<List<PlacementItemTemplate>> LoadItemBankAsync(CancellationToken ct)
@@ -46,7 +48,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         return await _db.PlacementItemDefinitions
             .Where(i => i.IsEnabled)
             .OrderBy(i => i.ItemOrder)
-            .Select(i => new PlacementItemTemplate(i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer))
+            .Select(i => new PlacementItemTemplate(
+                i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
+                i.ReadingPassage, i.ListeningAudioScript))
             .ToListAsync(ct);
     }
 
@@ -423,7 +427,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             {
                 items.Add(PlacementAssessmentItem.Create(
                     assessmentId, template.Skill, template.CefrLevel,
-                    template.ItemType, template.Prompt, template.CorrectAnswer, order++));
+                    template.ItemType, template.Prompt, template.CorrectAnswer, order++,
+                    template.ReadingPassage, template.ListeningAudioScript));
             }
 
             if (startIdx + 1 < CefrLevels.Length)
@@ -436,7 +441,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 {
                     items.Add(PlacementAssessmentItem.Create(
                         assessmentId, template.Skill, template.CefrLevel,
-                        template.ItemType, template.Prompt, template.CorrectAnswer, order++));
+                        template.ItemType, template.Prompt, template.CorrectAnswer, order++,
+                        template.ReadingPassage, template.ListeningAudioScript));
                 }
             }
         }
@@ -549,7 +555,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 nextItem.Id, nextItem.Skill, nextItem.TargetCefrLevel, nextItem.ItemType,
                 nextItem.Prompt, nextItem.ItemOrder,
                 assessment.Items.Count(i => i.IsCorrect.HasValue),
-                EstimateRemaining(assessment.Items, skillStates))
+                EstimateRemaining(assessment.Items, skillStates),
+                nextItem.ReadingPassage,
+                !string.IsNullOrWhiteSpace(nextItem.ListeningAudioScript))
             : null;
 
         return new SubmitResponseResult(
@@ -576,7 +584,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var newOrder = assessment.Items.Count;
         var newItem = PlacementAssessmentItem.Create(
             assessment.Id, template.Skill, template.CefrLevel,
-            template.ItemType, template.Prompt, template.CorrectAnswer, newOrder);
+            template.ItemType, template.Prompt, template.CorrectAnswer, newOrder,
+            template.ReadingPassage, template.ListeningAudioScript);
 
         _db.PlacementAssessmentItems.Add(newItem);
         await _db.SaveChangesAsync(ct);
@@ -600,7 +609,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             nextUnanswered.Id, nextUnanswered.Skill, nextUnanswered.TargetCefrLevel,
             nextUnanswered.ItemType, nextUnanswered.Prompt, nextUnanswered.ItemOrder,
             items.Count(i => i.IsCorrect.HasValue),
-            EstimateRemaining(items, states));
+            EstimateRemaining(items, states),
+            nextUnanswered.ReadingPassage,
+            !string.IsNullOrWhiteSpace(nextUnanswered.ListeningAudioScript));
     }
 
     private int EstimateRemaining(

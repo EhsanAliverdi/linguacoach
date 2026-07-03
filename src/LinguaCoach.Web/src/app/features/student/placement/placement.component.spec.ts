@@ -59,6 +59,7 @@ describe('PlacementComponent', () => {
       getAdaptiveNextItem: jasmine.createSpy('getAdaptiveNextItem').and.returnValue(of(mockItem)),
       respondToItem: jasmine.createSpy('respondToItem'),
       completeAdaptive: jasmine.createSpy('completeAdaptive'),
+      getAdaptiveItemAudioBlobUrl: jasmine.createSpy('getAdaptiveItemAudioBlobUrl').and.returnValue(of('blob:fake-url')),
       ...overrides,
     };
 
@@ -330,6 +331,81 @@ describe('PlacementComponent', () => {
         { navigate: jasmine.createSpy() } as any,
       ));
     expect(comp.parseChoices('Complete the sentence: She ___ to school.')).toEqual([]);
+  });
+
+  // ── Listening audio (Phase 20I-5) ────────────────────────────────────────
+
+  const listeningItem: AdaptivePlacementNextItem = {
+    ...mockItem,
+    itemId: 'item-listening',
+    skill: 'listening',
+    hasAudio: true,
+  };
+
+  it('loads audio blob URL when the item hasAudio', () => {
+    const getAdaptiveItemAudioBlobUrl = jasmine.createSpy('getAdaptiveItemAudioBlobUrl').and.returnValue(of('blob:fake-url'));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(listeningItem),
+      getAdaptiveItemAudioBlobUrl,
+    });
+    fixture.detectChanges();
+
+    expect(getAdaptiveItemAudioBlobUrl).toHaveBeenCalledWith('assess-1', 'item-listening');
+    expect(fixture.componentInstance.audioUrl()).toBe('blob:fake-url');
+  });
+
+  it('does not load audio when the item has no audio', () => {
+    const getAdaptiveItemAudioBlobUrl = jasmine.createSpy('getAdaptiveItemAudioBlobUrl');
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(mockItem),
+      getAdaptiveItemAudioBlobUrl,
+    });
+    fixture.detectChanges();
+
+    expect(getAdaptiveItemAudioBlobUrl).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.audioUrl()).toBeNull();
+  });
+
+  it('audioUrl stays null when audio fails to load', () => {
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(listeningItem),
+      getAdaptiveItemAudioBlobUrl: () => throwError(() => new Error('audio failed')),
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.audioUrl()).toBeNull();
+    // Question still renders — text remains usable without audio.
+    expect(fixture.componentInstance.state()).toBe('question');
+  });
+
+  it('resets audioUrl when moving to the next question', () => {
+    const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2', hasAudio: false };
+    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
+      itemId: 'item-listening',
+      isCorrect: true,
+      score: 1,
+      evaluationNotes: '',
+      assessmentComplete: false,
+      completionReason: null,
+      nextItem,
+      summary: null,
+    }));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(listeningItem),
+      respondToItem,
+    });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.audioUrl()).toBe('blob:fake-url');
+
+    fixture.componentInstance.selectChoice('A');
+    fixture.componentInstance.submitAnswer();
+
+    expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-2');
+    expect(fixture.componentInstance.audioUrl()).toBeNull();
   });
 
   // ── skillLabel() ──────────────────────────────────────────────────────────

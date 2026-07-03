@@ -27,6 +27,10 @@ internal sealed class PlacementAssessmentItemConfiguration : IEntityTypeConfigur
         builder.Property(e => e.CorrectAnswer).HasColumnName("correct_answer").HasMaxLength(500);
         builder.Property(e => e.EvaluationNotes).HasColumnName("evaluation_notes").HasMaxLength(1000);
         builder.Property(e => e.DurationSeconds).HasColumnName("duration_seconds");
+        builder.Property(e => e.ReadingPassage).HasColumnName("reading_passage").HasMaxLength(4000);
+        builder.Property(e => e.ListeningAudioScript).HasColumnName("listening_audio_script").HasMaxLength(4000);
+        builder.Property(e => e.AudioStorageKey).HasColumnName("audio_storage_key").HasMaxLength(500);
+        builder.Property(e => e.AudioContentType).HasColumnName("audio_content_type").HasMaxLength(100);
 
         builder.HasOne<PlacementAssessment>()
             .WithMany(a => a.Items)

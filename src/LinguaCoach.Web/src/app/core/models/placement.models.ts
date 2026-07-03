@@ -109,6 +109,8 @@ export interface AdaptivePlacementNextItem {
   itemOrder: number;
   answeredCount: number;
   estimatedRemainingItems: number;
+  readingPassage?: string | null;
+  hasAudio?: boolean;
 }
 
 export interface AdaptivePlacementRespondRequest {

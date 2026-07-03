@@ -80,4 +80,12 @@ export class PlacementService {
     return this.http.post<AdaptivePlacementSummary>(
       `${this.api}/student/placement/complete`, { assessmentId });
   }
+
+  /** Fetches (generating on first request) an adaptive listening item's audio as a blob URL. */
+  getAdaptiveItemAudioBlobUrl(assessmentId: string, itemId: string): Observable<string> {
+    const url = `${this.api}/student/placement/audio/${assessmentId}/items/${itemId}/listening`;
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      map(blob => URL.createObjectURL(blob))
+    );
+  }
 }

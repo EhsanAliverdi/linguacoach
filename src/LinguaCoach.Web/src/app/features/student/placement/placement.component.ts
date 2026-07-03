@@ -39,6 +39,7 @@ export class PlacementComponent implements OnInit {
 
   selectedAnswer = signal('');
   gapFillAnswer = signal('');
+  audioUrl = signal<string | null>(null);
   private itemStartTime = 0;
 
   questionText = computed(() => this.parseQuestionText(this.currentItem()?.prompt ?? ''));
@@ -124,11 +125,7 @@ export class PlacementComponent implements OnInit {
           // No more items — trigger completion
           this.triggerCompletion(assessmentId);
         } else {
-          this.currentItem.set(item);
-          this.selectedAnswer.set('');
-          this.gapFillAnswer.set('');
-          this.itemStartTime = Date.now();
-          this.state.set('question');
+          this.setCurrentItem(assessmentId, item);
         }
       },
       error: () => {
@@ -136,6 +133,28 @@ export class PlacementComponent implements OnInit {
         this.state.set('error');
       },
     });
+  }
+
+  private setCurrentItem(assessmentId: string, item: AdaptivePlacementNextItem): void {
+    this.revokeAudioUrl();
+    this.currentItem.set(item);
+    this.selectedAnswer.set('');
+    this.gapFillAnswer.set('');
+    this.itemStartTime = Date.now();
+    this.state.set('question');
+
+    if (item.hasAudio) {
+      this.placement.getAdaptiveItemAudioBlobUrl(assessmentId, item.itemId).subscribe({
+        next: url => this.audioUrl.set(url),
+        error: () => this.audioUrl.set(null), // audio failed to generate — text remains usable
+      });
+    }
+  }
+
+  private revokeAudioUrl(): void {
+    const url = this.audioUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.audioUrl.set(null);
   }
 
   submitAnswer(): void {
@@ -164,11 +183,7 @@ export class PlacementComponent implements OnInit {
             this.triggerCompletion(assessment.assessmentId);
           }
         } else if (result.nextItem) {
-          this.currentItem.set(result.nextItem);
-          this.selectedAnswer.set('');
-          this.gapFillAnswer.set('');
-          this.itemStartTime = Date.now();
-          this.state.set('question');
+          this.setCurrentItem(assessment.assessmentId, result.nextItem);
         } else {
           this.triggerCompletion(assessment.assessmentId);
         }

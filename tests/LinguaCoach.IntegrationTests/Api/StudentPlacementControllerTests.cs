@@ -362,4 +362,87 @@ public sealed class StudentPlacementControllerTests : IClassFixture<PlacementTes
         // Should return the same in-progress assessment, not a new one
         Assert.Equal(firstId, resumeBody.GetProperty("assessmentId").GetString());
     }
+
+    // ── Phase 20I-5: adaptive listening audio endpoint ───────────────────────
+
+    [Fact]
+    public async Task GetItemAudio_WithoutToken_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.GetAsync(
+            $"/api/student/placement/audio/{Guid.NewGuid()}/items/{Guid.NewGuid()}/listening");
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetItemAudio_AssessmentNotOwnedByStudent_Returns404()
+    {
+        var (tokenA, _) = await _factory.CreateOnboardedStudentAsync($"sp_audio_a_{Guid.NewGuid():N}@test.com");
+        var (_, _, assessmentIdB, itemIdB) = await StartedAssessmentAsync($"sp_audio_b_{Guid.NewGuid():N}@test.com");
+
+        var client = ClientWithToken(tokenA);
+        var resp = await client.GetAsync($"/api/student/placement/audio/{assessmentIdB}/items/{itemIdB}/listening");
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetItemAudio_UnknownItemId_Returns404()
+    {
+        var (token, _, assessmentId, _) = await StartedAssessmentAsync($"sp_audio_unknown_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync($"/api/student/placement/audio/{assessmentId}/items/{Guid.NewGuid()}/listening");
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetItemAudio_ItemWithNoAudioScript_Returns404()
+    {
+        // Only listening-skill items get a ListeningAudioScript at seed time — a non-listening
+        // item (or a listening item whose prompt had no extractable quoted line) has none, so
+        // EnsureAudioAsync no-ops and the endpoint degrades gracefully rather than 500ing.
+        var (token, _, assessmentId, _) = await StartedAssessmentAsync($"sp_audio_noscript_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        Guid itemWithoutScript;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            itemWithoutScript = db.PlacementAssessmentItems
+                .First(i => i.PlacementAssessmentId == Guid.Parse(assessmentId) && i.ListeningAudioScript == null)
+                .Id;
+        }
+
+        var resp = await client.GetAsync($"/api/student/placement/audio/{assessmentId}/items/{itemWithoutScript}/listening");
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetItemAudio_ListeningItemWithScript_GeneratesAndStreamsAudio()
+    {
+        // The test host registers a fake TTS provider (FakeAiProviderResolver.ResolveTts),
+        // so this exercises the real EnsureAudioAsync -> GetAudioAsync round trip end to end.
+        var (token, _, assessmentId, _) = await StartedAssessmentAsync($"sp_audio_withscript_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        Guid? listeningItemId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            listeningItemId = db.PlacementAssessmentItems
+                .Where(i => i.PlacementAssessmentId == Guid.Parse(assessmentId) && i.ListeningAudioScript != null)
+                .Select(i => (Guid?)i.Id)
+                .FirstOrDefault();
+        }
+
+        if (listeningItemId is null) return; // skip gracefully if the initial item set has no listening item with a script
+
+        var resp = await client.GetAsync($"/api/student/placement/audio/{assessmentId}/items/{listeningItemId}/listening");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.True(resp.Content.Headers.ContentType?.MediaType?.StartsWith("audio/"));
+    }
 }

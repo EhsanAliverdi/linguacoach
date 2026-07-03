@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using LinguaCoach.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,25 +13,61 @@ public static class PlacementItemBankSeeder
 {
     public static async Task SeedAsync(LinguaCoachDbContext db)
     {
-        var existingPrompts = await db.PlacementItemDefinitions
-            .Select(i => i.Prompt)
-            .ToListAsync();
-        var existingSet = existingPrompts.ToHashSet(StringComparer.Ordinal);
+        var existing = await db.PlacementItemDefinitions.ToListAsync();
+        var existingByPrompt = existing.ToDictionary(i => i.Prompt, StringComparer.Ordinal);
 
         var order = 0;
         var toAdd = new List<PlacementItemDefinition>();
+        var dirty = false;
         foreach (var t in DefaultItems)
         {
             order++;
-            if (existingSet.Contains(t.Prompt)) continue;
+            var audioScript = t.Skill == "listening" ? DeriveListeningAudioScript(t.Prompt, t.CorrectAnswer) : null;
+
+            if (existingByPrompt.TryGetValue(t.Prompt, out var existingItem))
+            {
+                // Phase 20I-5: backfill ListeningAudioScript onto rows the seeder already created
+                // before this field existed (Phase 20I-4 deployed with it always null). Only
+                // touches rows whose CorrectAnswer still matches the seed default — an admin who
+                // has since edited the item's answer keeps their content untouched.
+                if (audioScript is not null
+                    && existingItem.ListeningAudioScript is null
+                    && existingItem.CorrectAnswer == t.CorrectAnswer)
+                {
+                    existingItem.Update(
+                        existingItem.Skill, existingItem.CefrLevel, existingItem.ItemType,
+                        existingItem.Prompt, existingItem.CorrectAnswer, existingItem.ItemOrder,
+                        existingItem.IsEnabled, existingItem.ReadingPassage, audioScript);
+                    dirty = true;
+                }
+                continue;
+            }
+
             toAdd.Add(new PlacementItemDefinition(
-                t.Skill, t.CefrLevel, t.ItemType, t.Prompt, t.CorrectAnswer, order));
+                t.Skill, t.CefrLevel, t.ItemType, t.Prompt, t.CorrectAnswer, order,
+                listeningAudioScript: audioScript));
         }
 
-        if (toAdd.Count == 0) return;
+        if (toAdd.Count > 0) db.PlacementItemDefinitions.AddRange(toAdd);
+        if (toAdd.Count > 0 || dirty) await db.SaveChangesAsync();
+    }
 
-        db.PlacementItemDefinitions.AddRange(toAdd);
-        await db.SaveChangesAsync();
+    private static readonly Regex QuotedTextPattern = new("'([^']+)'", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Best-effort derivation of a TTS-ready script from a listening prompt's quoted "You hear: '...'"
+    /// text (Phase 20I-5). Substitutes a "___" gap with the correct answer so the spoken sentence
+    /// reads naturally. Returns null when the prompt has no quoted text to extract (a few listening
+    /// items describe a scenario in prose rather than quoting a line, e.g. "You hear a complaint about
+    /// slow service...") — those items keep showing as text-only, same as before this phase.
+    /// </summary>
+    private static string? DeriveListeningAudioScript(string prompt, string correctAnswer)
+    {
+        var match = QuotedTextPattern.Match(prompt);
+        if (!match.Success) return null;
+
+        var script = match.Groups[1].Value;
+        return script.Contains("___") ? script.Replace("___", correctAnswer) : script;
     }
 
     private sealed record SeedItem(string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer);

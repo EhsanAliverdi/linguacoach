@@ -72,4 +72,66 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         Assert.Equal("AdminEditedAnswer", reloaded.CorrectAnswer);
         Assert.Equal(72, await _db.PlacementItemDefinitions.CountAsync());
     }
+
+    // ── Phase 20I-5: listening audio script derivation ──────────────────────
+
+    [Fact]
+    public async Task SeedAsync_DerivesListeningAudioScriptFromQuotedPromptText()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
+
+        Assert.Equal("Turn left at the traffic lights.", item.ListeningAudioScript);
+    }
+
+    [Fact]
+    public async Task SeedAsync_SubstitutesGapFillBlankWithCorrectAnswerInAudioScript()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Prompt == "You hear: 'My name is ___.' (Maria/Monday/Morning)");
+
+        Assert.Equal("My name is Maria.", item.ListeningAudioScript);
+    }
+
+    [Fact]
+    public async Task SeedAsync_LeavesAudioScriptNullWhenPromptHasNoQuotedLine()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Prompt == "You hear a complaint about slow service. What is the caller's main concern? (A) price (B) quality (C) speed");
+
+        Assert.Null(item.ListeningAudioScript);
+    }
+
+    [Fact]
+    public async Task SeedAsync_NonListeningItemsHaveNoAudioScript()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var grammarItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "grammar").ToListAsync();
+        Assert.All(grammarItems, i => Assert.Null(i.ListeningAudioScript));
+    }
+
+    [Fact]
+    public async Task SeedAsync_BackfillsAudioScriptOntoRowsSeededBeforeThisFieldExisted()
+    {
+        // Simulates the real production state after the Phase 20I-4 deploy: rows already
+        // exist with ListeningAudioScript null, since that deploy predates this field.
+        await PlacementItemBankSeeder.SeedAsync(_db);
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
+        item.Update(item.Skill, item.CefrLevel, item.ItemType, item.Prompt, item.CorrectAnswer,
+            item.ItemOrder, item.IsEnabled, item.ReadingPassage, listeningAudioScript: null);
+        await _db.SaveChangesAsync();
+
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
+        Assert.Equal("Turn left at the traffic lights.", reloaded.ListeningAudioScript);
+    }
 }

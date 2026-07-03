@@ -20,7 +20,9 @@ public sealed record PlacementNextItemDto(
     string Prompt,
     int ItemOrder,
     int AnsweredCount,
-    int EstimatedRemainingItems);
+    int EstimatedRemainingItems,
+    string? ReadingPassage = null,
+    bool HasAudio = false);
 
 public sealed record PlacementSkillProgressDto(
     string Skill,

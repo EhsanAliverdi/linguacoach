@@ -462,6 +462,9 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementAssessmentService,
             LinguaCoach.Infrastructure.Placement.PlacementAssessmentService>();
 
+        // Phase 20I-5 — Adaptive placement listening audio
+        services.AddScoped<LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService>();
+
         // Phase 20I-4 — Admin-configurable placement item bank
         services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemListQuery,
             LinguaCoach.Infrastructure.Placement.AdminPlacementItemListQueryHandler>();

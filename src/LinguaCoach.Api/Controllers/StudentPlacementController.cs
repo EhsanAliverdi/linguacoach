@@ -21,17 +21,20 @@ public sealed class StudentPlacementController : ControllerBase
     private readonly IPlacementAssessmentService _placement;
     private readonly LinguaCoachDbContext _db;
     private readonly PlacementAssessmentOptions _opts;
+    private readonly LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService _audio;
     private readonly ILogger<StudentPlacementController> _logger;
 
     public StudentPlacementController(
         IPlacementAssessmentService placement,
         LinguaCoachDbContext db,
         IOptions<PlacementAssessmentOptions> opts,
+        LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService audio,
         ILogger<StudentPlacementController> logger)
     {
         _placement = placement;
         _db = db;
         _opts = opts.Value;
+        _audio = audio;
         _logger = logger;
     }
 
@@ -193,6 +196,31 @@ public sealed class StudentPlacementController : ControllerBase
             _logger.LogWarning(ex, "Cannot complete placement {AssessmentId}", request.AssessmentId);
             return Conflict(new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Streams (generating on first request) the listening audio for an adaptive placement item.
+    /// Phase 20I-5: replaces the never-wired legacy PlacementAudioService/PlacementController
+    /// path for the currently-live adaptive engine.
+    /// </summary>
+    [HttpGet("audio/{assessmentId:guid}/items/{itemId:guid}/listening")]
+    public async Task<IActionResult> GetItemAudio(Guid assessmentId, Guid itemId, CancellationToken ct)
+    {
+        var profile = await GetStudentProfileAsync(ct);
+        if (profile is null) return NotFound(new { error = "Student profile not found." });
+
+        if (!await AssessmentBelongsAsync(profile.Id, assessmentId, ct))
+            return NotFound(new { error = "Assessment not found." });
+
+        var item = await _db.PlacementAssessmentItems
+            .FirstOrDefaultAsync(i => i.Id == itemId && i.PlacementAssessmentId == assessmentId, ct);
+        if (item is null) return NotFound(new { error = "Item not found." });
+
+        await _audio.EnsureAudioAsync(item, "en-GB", ct);
+        var file = await _audio.GetAudioAsync(item, ct);
+        if (file is null) return NotFound(new { error = "Audio is not available for this item." });
+
+        return File(file.Bytes, file.ContentType);
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
