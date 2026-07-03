@@ -146,6 +146,15 @@ Angular unit/e2e suites and `npm run build -- --configuration production` were *
 
 **Ready to expand to 3–5 students:** Not yet — recommend first (a) deploying and live-verifying this fix, (b) getting product-owner answers to the `language_pairs` and Practice Gym queue-backlog questions above, and (c) a follow-up pass covering the Parts explicitly deferred this session (Journey/Progress/Profile end-to-end, admin operational pages, runtime-settings inventory).
 
+## Live validation after deploy (2026-07-03, confirmed)
+
+Commit `feeef07` pushed to `main`, `Deploy` workflow run `28634269004` completed successfully. Re-checked Admin → Students → `pilot.student.20e` → Overview → "Adaptive placement assessment" panel live on `speakpath.app`:
+
+- **Before fix:** "No placement assessment on record. Start placement."
+- **After fix (confirmed live):** "Status: Completed, Overall CEFR: B2, Confidence: 80%, Items answered: 53, Started Jul 2 4:41 PM, Completed Jul 2 5:13 PM," and a per-skill results table with **exactly six rows** (listening, writing, vocabulary, speaking, grammar, reading — one each, no duplicates).
+
+Both P1 fixes are confirmed working in production.
+
 ## Next recommended action
 
 Push this commit, watch the `Deploy` workflow, then live-verify: (1) Admin → `pilot.student.20e` → Overview → "Adaptive placement assessment" now shows the completed B2 assessment instead of "No placement assessment on record", and (2) a freshly completed placement (new test account) shows exactly one row per skill in the result breakdown, both on-screen and in `placement_skill_results`.
