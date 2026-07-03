@@ -462,6 +462,16 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementAssessmentService,
             LinguaCoach.Infrastructure.Placement.PlacementAssessmentService>();
 
+        // Phase 20I-4 — Admin-configurable placement item bank
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemListQuery,
+            LinguaCoach.Infrastructure.Placement.AdminPlacementItemListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminAddPlacementItemHandler,
+            LinguaCoach.Infrastructure.Placement.AdminAddPlacementItemHandler>();
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminUpdatePlacementItemHandler,
+            LinguaCoach.Infrastructure.Placement.AdminUpdatePlacementItemHandler>();
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminRemovePlacementItemHandler,
+            LinguaCoach.Infrastructure.Placement.AdminRemovePlacementItemHandler>();
+
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)
             services.Configure<LinguaCoach.Application.Speaking.SpeakingEvaluationOptions>(

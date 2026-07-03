@@ -3,6 +3,7 @@ using System;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LinguaCoach.Persistence.Migrations
 {
     [DbContext(typeof(LinguaCoachDbContext))]
-    partial class LinguaCoachDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703071516_T20I_4_PlacementItemBank")]
+    partial class T20I_4_PlacementItemBank
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

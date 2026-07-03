@@ -71,6 +71,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<PlacementAssessmentItem> PlacementAssessmentItems => Set<PlacementAssessmentItem>();
     public DbSet<PlacementSkillResult> PlacementSkillResults => Set<PlacementSkillResult>();
 
+    // Phase 20I-4 — Admin-configurable placement item bank
+    public DbSet<PlacementItemDefinition> PlacementItemDefinitions => Set<PlacementItemDefinition>();
+
     // Phase 10R — Usage governance, token tracking & quota enforcement
     public DbSet<FeatureDefinition> FeatureDefinitions => Set<FeatureDefinition>();
     public DbSet<UsagePolicy> UsagePolicies => Set<UsagePolicy>();

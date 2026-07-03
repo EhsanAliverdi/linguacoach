@@ -134,6 +134,10 @@ export const routes: Routes = [
         path: 'onboarding',
         loadComponent: () => import('./features/admin/admin-onboarding/admin-onboarding.component').then(m => m.AdminOnboardingComponent),
       },
+      {
+        path: 'placement-items',
+        loadComponent: () => import('./features/admin/admin-placement-items/admin-placement-items.component').then(m => m.AdminPlacementItemsComponent),
+      },
     ],
   },
 

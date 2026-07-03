@@ -95,6 +95,7 @@ public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await LinguaCoach.Persistence.Seed.CurriculumObjectiveSeeder.SeedAsync(db, logger);
         await LinguaCoach.Persistence.Seed.UsageGovernanceSeeder.SeedAsync(db);
         await LinguaCoach.Persistence.Seed.OnboardingFlowSeeder.SeedAsync(db);
+        await LinguaCoach.Persistence.Seed.PlacementItemBankSeeder.SeedAsync(db);
     }
 
     public async Task<string> CreateAdminAndGetTokenAsync()

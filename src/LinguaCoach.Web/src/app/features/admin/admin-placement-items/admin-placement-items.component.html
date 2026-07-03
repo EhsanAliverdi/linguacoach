@@ -1,0 +1,152 @@
+<sp-admin-page-header
+  title="Placement items"
+  subtitle="Configure the adaptive placement assessment item bank: prompts, correct answers, reading passages, and listening scripts.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading placement items" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Could not load placement items" [message]="error()" />
+  } @else {
+
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert>
+    }
+    @if (actionError()) {
+      <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
+    }
+
+    <!-- ── KPI strip ───────────────────────────────────────────────────────── -->
+    <div class="sp-admin-kpi-row" aria-label="Placement item bank summary">
+      <sp-admin-kpi-card
+        label="Total items"
+        variant="indigo"
+        layout="tile"
+        icon="activity"
+        [value]="totalItems().toString()" />
+      <sp-admin-kpi-card
+        label="Enabled items"
+        variant="indigo"
+        layout="tile"
+        icon="check"
+        [value]="enabledItems().toString()" />
+      <sp-admin-kpi-card
+        label="Skills covered"
+        variant="slate"
+        layout="tile"
+        icon="layers"
+        [value]="skillCount().toString()" />
+    </div>
+
+    <!-- ── Item bank ───────────────────────────────────────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Item bank</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <sp-admin-select [ngModel]="skillFilter()" (ngModelChange)="skillFilter.set($event)" [options]="skillOptions" style="min-width:160px;" />
+          <sp-admin-button variant="primary" size="sm" (clicked)="openAddItem()">
+            Add item
+          </sp-admin-button>
+        </div>
+      </div>
+
+      @if (filteredItems().length === 0) {
+        <sp-admin-empty-state
+          title="No items"
+          message="Add items to the placement bank for this skill." />
+      } @else {
+        <sp-admin-table [columns]="itemColumns" [rows]="$any(filteredItems())">
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('skill') { <sp-admin-badge tone="neutral">{{ row.skill }}</sp-admin-badge> }
+              @case ('cefrLevel') { <span>{{ row.cefrLevel }}</span> }
+              @case ('itemType') { <span>{{ row.itemType }}</span> }
+              @case ('prompt') { <span style="max-width: 480px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.prompt }}</span> }
+              @case ('isEnabled') {
+                <sp-admin-badge [tone]="itemTone(row)">{{ row.isEnabled ? 'Yes' : 'No' }}</sp-admin-badge>
+              }
+              @case ('_actions') {
+                <div class="sp-admin-row-actions">
+                  <sp-admin-button variant="neutral" appearance="ghost" size="xs" (clicked)="openEditItem(row)">
+                    Edit
+                  </sp-admin-button>
+                  <sp-admin-button variant="danger" appearance="ghost" size="xs" (clicked)="removeItem(row)">
+                    Remove
+                  </sp-admin-button>
+                </div>
+              }
+            }
+          </ng-template>
+        </sp-admin-table>
+      }
+    </sp-admin-card>
+
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Add / Edit item slide-over ─────────────────────────────────────────── -->
+<sp-admin-slide-over
+  [open]="slideOverOpen()"
+  [title]="editingItem() ? 'Edit item' : 'Add item'"
+  (closed)="closeSlideOver()">
+
+  <div class="sp-admin-form-stack">
+
+    <sp-admin-form-field label="Skill" [required]="true">
+      <sp-admin-select [(ngModel)]="itemForm.skill" [options]="formSkillOptions" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="CEFR level" [required]="true">
+      <sp-admin-select [(ngModel)]="itemForm.cefrLevel" [options]="cefrLevelOptions" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Item type" [required]="true">
+      <sp-admin-select [(ngModel)]="itemForm.itemType" [options]="itemTypeOptions" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Prompt" [required]="true" hint="The question text shown to the student">
+      <sp-admin-textarea [(ngModel)]="itemForm.prompt" placeholder="Question text" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Correct answer" [required]="true">
+      <sp-admin-input [(ngModel)]="itemForm.correctAnswer" placeholder="e.g. A, or the exact expected word" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Reading passage" hint="Optional — for reading-skill items, the full passage the prompt refers to">
+      <sp-admin-textarea [(ngModel)]="itemForm.readingPassage" placeholder="Optional reading passage" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Listening audio script" hint="Optional — for listening-skill items, the text that gets converted to speech">
+      <sp-admin-textarea [(ngModel)]="itemForm.listeningAudioScript" placeholder="Optional listening script" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Item order" hint="Used for admin list ordering only">
+      <sp-admin-input type="number" [(ngModel)]="itemForm.itemOrder" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Enabled">
+      <sp-admin-checkbox [(ngModel)]="itemForm.isEnabled" label="This item is active and eligible for selection" />
+    </sp-admin-form-field>
+
+  </div>
+
+  @if (actionError()) {
+    <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
+  }
+
+  <div class="sp-admin-slide-over-footer" slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeSlideOver()">
+      Cancel
+    </sp-admin-button>
+    <sp-admin-button variant="primary" (clicked)="saveItem()">
+      {{ editingItem() ? 'Save changes' : 'Add item' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-slide-over>
