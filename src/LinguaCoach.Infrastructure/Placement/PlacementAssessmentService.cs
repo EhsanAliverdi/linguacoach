@@ -335,7 +335,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     private static PlacementItemHistoryDto ToItemHistoryDto(PlacementAssessmentItem i) =>
         new(i.Id, i.Skill, i.TargetCefrLevel, i.ItemType, i.Prompt,
             i.Response, i.IsCorrect, i.Score, i.EvaluatedAtUtc,
-            i.EvaluationNotes, i.DurationSeconds, i.ItemOrder);
+            i.EvaluationNotes, i.DurationSeconds, i.ItemOrder,
+            i.Content, i.Answer);
 
     // ── IPlacementAssessmentService ──────────────────────────────────────────────
 
@@ -559,7 +560,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 assessment.Items.Count(i => i.IsCorrect.HasValue),
                 EstimateRemaining(assessment.Items, skillStates),
                 nextItem.ReadingPassage,
-                !string.IsNullOrWhiteSpace(nextItem.ListeningAudioScript))
+                !string.IsNullOrWhiteSpace(nextItem.ListeningAudioScript),
+                nextItem.Content)
             : null;
 
         return new SubmitResponseResult(
@@ -613,7 +615,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             items.Count(i => i.IsCorrect.HasValue),
             EstimateRemaining(items, states),
             nextUnanswered.ReadingPassage,
-            !string.IsNullOrWhiteSpace(nextUnanswered.ListeningAudioScript));
+            !string.IsNullOrWhiteSpace(nextUnanswered.ListeningAudioScript),
+            nextUnanswered.Content);
     }
 
     private int EstimateRemaining(

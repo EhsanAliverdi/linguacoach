@@ -1,3 +1,5 @@
+using LinguaCoach.Domain.Questions;
+
 namespace LinguaCoach.Application.Placement;
 
 // ── Phase 13B — Response Submission + Progress DTOs ─────────────────────────
@@ -22,7 +24,11 @@ public sealed record PlacementNextItemDto(
     int AnsweredCount,
     int EstimatedRemainingItems,
     string? ReadingPassage = null,
-    bool HasAudio = false);
+    bool HasAudio = false,
+    // Unified Question-Schema (Phase 2) — the shared, polymorphic representation of this item,
+    // additive alongside the legacy flat fields above until the frontend renderer (Phase 3)
+    // switches to consuming it and the flat fields are dropped (Phase 7).
+    QuestionContent? Content = null);
 
 public sealed record PlacementSkillProgressDto(
     string Skill,
@@ -44,7 +50,9 @@ public sealed record PlacementItemHistoryDto(
     DateTime? EvaluatedAtUtc,
     string? EvaluationNotes,
     int? DurationSeconds,
-    int ItemOrder);
+    int ItemOrder,
+    QuestionContent? Content = null,
+    QuestionAnswer? Answer = null);
 
 public sealed record PlacementAssessmentProgressDto(
     Guid AssessmentId,

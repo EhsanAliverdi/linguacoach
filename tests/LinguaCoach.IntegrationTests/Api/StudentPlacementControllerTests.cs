@@ -178,6 +178,11 @@ public sealed class StudentPlacementControllerTests : IClassFixture<PlacementTes
         Assert.True(body.TryGetProperty("prompt", out _));
         Assert.True(body.TryGetProperty("itemType", out _));
         Assert.True(body.TryGetProperty("skill", out _));
+
+        // Unified Question-Schema Phase 2: the shared, polymorphic content is present
+        // alongside the legacy flat fields, with its "type" discriminator populated.
+        Assert.True(body.TryGetProperty("content", out var content));
+        Assert.True(content.TryGetProperty("type", out _));
     }
 
     [Fact]
