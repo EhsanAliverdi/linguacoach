@@ -408,6 +408,94 @@ describe('PlacementComponent', () => {
     expect(fixture.componentInstance.audioUrl()).toBeNull();
   });
 
+  // ── Unified Question-Schema (Phase 3): content-driven answers ───────────
+
+  it('canSubmit is false until the structured content answer is complete', () => {
+    const contentItem: AdaptivePlacementNextItem = {
+      ...mockItem,
+      content: {
+        type: 'single_choice',
+        id: 'q1',
+        questionText: 'Choose the correct verb form.',
+        choices: [{ key: 'A', label: 'was' }, { key: 'B', label: 'were' }],
+      },
+    };
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(contentItem),
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.canSubmit()).toBeFalse();
+    fixture.componentInstance.answers.set([{ questionId: 'q1', values: ['A'] }]);
+    expect(fixture.componentInstance.canSubmit()).toBeTrue();
+  });
+
+  it('submitAnswer() sends the first leaf answer as the legacy response string', () => {
+    const contentItem: AdaptivePlacementNextItem = {
+      ...mockItem,
+      content: {
+        type: 'single_choice',
+        id: 'q1',
+        questionText: 'Choose the correct verb form.',
+        choices: [{ key: 'A', label: 'was' }, { key: 'B', label: 'were' }],
+      },
+    };
+    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
+      itemId: 'item-1',
+      isCorrect: true,
+      score: 1,
+      evaluationNotes: '',
+      assessmentComplete: true,
+      completionReason: 'max_items',
+      nextItem: null,
+      summary: makeSummary({ status: 'Completed' }),
+    }));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(contentItem),
+      respondToItem,
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.answers.set([{ questionId: 'q1', values: ['B'] }]);
+    fixture.componentInstance.submitAnswer();
+
+    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ response: 'B' }));
+  });
+
+  it('resets structured answers when moving to the next question', () => {
+    const contentItem: AdaptivePlacementNextItem = {
+      ...mockItem,
+      content: {
+        type: 'gap_fill',
+        id: 'q1',
+        questionText: 'Complete the sentence.',
+      },
+    };
+    const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2' };
+    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
+      itemId: 'item-1',
+      isCorrect: true,
+      score: 1,
+      evaluationNotes: '',
+      assessmentComplete: false,
+      completionReason: null,
+      nextItem,
+      summary: null,
+    }));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(contentItem),
+      respondToItem,
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.answers.set([{ questionId: 'q1', values: ['answer'] }]);
+    fixture.componentInstance.submitAnswer();
+
+    expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-2');
+    expect(fixture.componentInstance.answers()).toEqual([]);
+  });
+
   // ── skillLabel() ──────────────────────────────────────────────────────────
 
   it('skillLabel() capitalises first letter', () => {

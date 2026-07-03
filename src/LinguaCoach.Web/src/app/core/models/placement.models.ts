@@ -1,3 +1,5 @@
+import { QuestionContent } from '../../shared/question/question-content.models';
+
 export type PlacementStatusValue = 'NotStarted' | 'InProgress' | 'Completed';
 
 export interface PlacementQuestion {
@@ -111,6 +113,10 @@ export interface AdaptivePlacementNextItem {
   estimatedRemainingItems: number;
   readingPassage?: string | null;
   hasAudio?: boolean;
+  /** Unified Question-Schema (Phase 2/3) — the shared, polymorphic representation of this
+   * item. Present for every item once the backend backfill has run; the legacy flat fields
+   * above are kept only as a defensive fallback. */
+  content?: QuestionContent | null;
 }
 
 export interface AdaptivePlacementRespondRequest {

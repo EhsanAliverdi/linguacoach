@@ -8,6 +8,8 @@ import {
   AdaptivePlacementNextItem,
   PlacementConfig,
 } from '../../../core/models/placement.models';
+import { QuestionRendererComponent } from '../../../shared/question/question-renderer.component';
+import { QuestionAnswerItem, flattenLeafQuestions } from '../../../shared/question/question-content.models';
 
 export type PlacementPageState =
   | 'loading'
@@ -26,7 +28,7 @@ interface ParsedChoice {
 @Component({
   selector: 'app-placement',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, QuestionRendererComponent],
   templateUrl: './placement.component.html',
 })
 export class PlacementComponent implements OnInit {
@@ -40,6 +42,10 @@ export class PlacementComponent implements OnInit {
   selectedAnswer = signal('');
   gapFillAnswer = signal('');
   audioUrl = signal<string | null>(null);
+  audioLoading = signal(false);
+  /** Unified Question-Schema (Phase 3) — structured per-sub-question answers, addressed by
+   * QuestionContent.id, collected by the shared QuestionRendererComponent. */
+  answers = signal<QuestionAnswerItem[]>([]);
   private itemStartTime = 0;
 
   questionText = computed(() => this.parseQuestionText(this.currentItem()?.prompt ?? ''));
@@ -60,6 +66,15 @@ export class PlacementComponent implements OnInit {
   canSubmit = computed(() => {
     const item = this.currentItem();
     if (!item) return false;
+
+    if (item.content) {
+      const leaves = flattenLeafQuestions(item.content);
+      return leaves.every(leaf => {
+        const values = this.answers().find(a => a.questionId === leaf.id)?.values ?? [];
+        return values.length > 0 && values.every(v => v.trim().length > 0);
+      });
+    }
+
     if (item.itemType === 'multiple_choice') return !!this.selectedAnswer();
     return !!this.gapFillAnswer().trim();
   });
@@ -140,13 +155,15 @@ export class PlacementComponent implements OnInit {
     this.currentItem.set(item);
     this.selectedAnswer.set('');
     this.gapFillAnswer.set('');
+    this.answers.set([]);
     this.itemStartTime = Date.now();
     this.state.set('question');
 
     if (item.hasAudio) {
+      this.audioLoading.set(true);
       this.placement.getAdaptiveItemAudioBlobUrl(assessmentId, item.itemId).subscribe({
-        next: url => this.audioUrl.set(url),
-        error: () => this.audioUrl.set(null), // audio failed to generate — text remains usable
+        next: url => { this.audioUrl.set(url); this.audioLoading.set(false); },
+        error: () => { this.audioUrl.set(null); this.audioLoading.set(false); }, // audio failed to generate — text remains usable
       });
     }
   }
@@ -157,14 +174,30 @@ export class PlacementComponent implements OnInit {
     this.audioUrl.set(null);
   }
 
+  /** The backend's respond endpoint still scores a single legacy response string per item —
+   * true multi-sub-question submission needs a backend change not yet made. Every item today
+   * has exactly one leaf sub-question (no admin editor for multi-question groups exists yet —
+   * that's Phase 4), so taking the first leaf's first value is lossless for all content that
+   * can currently be authored. */
+  private buildLegacyResponse(item: AdaptivePlacementNextItem): string {
+    if (item.content) {
+      const leaves = flattenLeafQuestions(item.content);
+      const firstLeaf = leaves[0];
+      const values = this.answers().find(a => a.questionId === firstLeaf?.id)?.values ?? [];
+      return (values[0] ?? '').trim();
+    }
+
+    return item.itemType === 'multiple_choice'
+      ? this.selectedAnswer()
+      : this.gapFillAnswer().trim();
+  }
+
   submitAnswer(): void {
     const item = this.currentItem();
     const assessment = this.assessment();
     if (!item || !assessment || !this.canSubmit() || this.state() === 'submitting') return;
 
-    const response = item.itemType === 'multiple_choice'
-      ? this.selectedAnswer()
-      : this.gapFillAnswer().trim();
+    const response = this.buildLegacyResponse(item);
     const durationSeconds = Math.max(1, Math.round((Date.now() - this.itemStartTime) / 1000));
 
     this.state.set('submitting');
