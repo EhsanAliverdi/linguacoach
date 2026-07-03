@@ -47,11 +47,9 @@ public sealed class PlacementAssessmentItem : BaseEntity
     /// <summary>The submitted answer in the shared QuestionAnswer shape, set when RecordResponse runs.</summary>
     public string? AnswerJson { get; private set; }
 
-    public QuestionContent? Content =>
-        ContentJson is null ? null : JsonSerializer.Deserialize<QuestionContent>(ContentJson);
+    public QuestionContent? Content => QuestionContentJson.TryDeserializeContent(ContentJson);
 
-    public QuestionAnswer? Answer =>
-        AnswerJson is null ? null : JsonSerializer.Deserialize<QuestionAnswer>(AnswerJson);
+    public QuestionAnswer? Answer => QuestionContentJson.TryDeserializeAnswer(AnswerJson);
 
     private PlacementAssessmentItem() { }
 

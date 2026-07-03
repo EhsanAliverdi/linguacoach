@@ -34,8 +34,7 @@ public sealed class OnboardingStepDefinition : BaseEntity
     /// which keep their own dedicated orchestration.</summary>
     public string? ContentJson { get; private set; }
 
-    public QuestionContent? Content =>
-        ContentJson is null ? null : JsonSerializer.Deserialize<QuestionContent>(ContentJson);
+    public QuestionContent? Content => QuestionContentJson.TryDeserializeContent(ContentJson);
 
     public void SetContent(QuestionContent? content) =>
         ContentJson = content is null ? null : JsonSerializer.Serialize<QuestionContent>(content);

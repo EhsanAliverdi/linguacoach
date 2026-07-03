@@ -29,8 +29,7 @@ public sealed class PlacementItemDefinition : BaseEntity
     /// created before this field existed and not yet backfilled.</summary>
     public string? ContentJson { get; private set; }
 
-    public QuestionContent? Content =>
-        ContentJson is null ? null : JsonSerializer.Deserialize<QuestionContent>(ContentJson);
+    public QuestionContent? Content => QuestionContentJson.TryDeserializeContent(ContentJson);
 
     public void SetContent(QuestionContent content) =>
         ContentJson = JsonSerializer.Serialize<QuestionContent>(content);

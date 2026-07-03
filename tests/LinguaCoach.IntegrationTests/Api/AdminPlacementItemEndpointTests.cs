@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -42,6 +45,31 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
             Assert.True(item.TryGetProperty("content", out var content));
             Assert.True(content.TryGetProperty("type", out _));
         }
+    }
+
+    [Fact]
+    public async Task List_WithMalformedContentJsonOnOneRow_StillReturns200ForAllOtherRows()
+    {
+        // Regression: a single row with unparseable content_json (e.g. from a schema in flux
+        // across phases, or hand-edited data) must not 500 the whole list endpoint — the
+        // defensive QuestionContentJson.TryDeserializeContent should swallow the parse failure
+        // and fall back to deriving Content from the legacy flat fields for that row only.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var item = await db.PlacementItemDefinitions.FirstAsync();
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE placement_item_definitions SET content_json = 'not valid json' WHERE id = {item.Id}");
+        }
+
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.GetAsync("/api/admin/placement-items");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetArrayLength() >= 72);
     }
 
     [Fact]
