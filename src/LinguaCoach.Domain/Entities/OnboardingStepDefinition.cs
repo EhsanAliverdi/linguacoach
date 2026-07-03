@@ -1,5 +1,7 @@
+using System.Text.Json;
 using LinguaCoach.Domain.Common;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 
 namespace LinguaCoach.Domain.Entities;
 
@@ -24,6 +26,19 @@ public sealed class OnboardingStepDefinition : BaseEntity
     public OnboardingAnswerMapping AnswerMapping { get; private set; }
     // Server-side only: never returned to student API. Contains correctAnswerKey + cefrScoreWeight.
     public string? AssessmentMetadataJson { get; private set; }
+
+    /// <summary>Unified Question-Schema (Phase 5) snapshot of this step's content, derived from
+    /// OptionsJson/ValidationMetadataJson/AssessmentMetadataJson for the generic step types
+    /// (SingleChoice, MultipleChoice, FreeText, AssessmentQuestion) — null for the semantically-named
+    /// one-off types (SupportLanguage, LearningGoals, etc.) and non-question steps (Welcome, Summary),
+    /// which keep their own dedicated orchestration.</summary>
+    public string? ContentJson { get; private set; }
+
+    public QuestionContent? Content =>
+        ContentJson is null ? null : JsonSerializer.Deserialize<QuestionContent>(ContentJson);
+
+    public void SetContent(QuestionContent? content) =>
+        ContentJson = content is null ? null : JsonSerializer.Serialize<QuestionContent>(content);
 
     private OnboardingStepDefinition() { }
 

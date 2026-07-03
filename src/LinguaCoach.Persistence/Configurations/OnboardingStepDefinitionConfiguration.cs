@@ -33,6 +33,8 @@ internal sealed class OnboardingStepDefinitionConfiguration : IEntityTypeConfigu
             .HasConversion<string>();
         // Assessment metadata (correct answers, scoring weights) — server-side only, never exposed to students.
         builder.Property(s => s.AssessmentMetadataJson).HasColumnName("assessment_metadata_json").HasColumnType("jsonb");
+        builder.Property(s => s.ContentJson).HasColumnName("content_json").HasColumnType("jsonb");
+        builder.Ignore(s => s.Content);
 
         // Unique step key per flow.
         builder.HasIndex(s => new { s.FlowDefinitionId, s.StepKey })

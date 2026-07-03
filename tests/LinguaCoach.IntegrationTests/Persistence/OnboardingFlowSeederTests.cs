@@ -205,4 +205,55 @@ public sealed class OnboardingFlowSeederTests : IDisposable
 
         Assert.Equal(countAfterFirst, countAfterSecond);
     }
+
+    // ── Unified Question-Schema Phase 5: ContentJson shadow ─────────────────
+
+    [Fact]
+    public async Task SeedAsync_GenericStepTypes_HaveContentPopulated()
+    {
+        await OnboardingFlowSeeder.SeedAsync(_db);
+
+        var steps = await _db.OnboardingStepDefinitions.ToListAsync();
+        var genericTypes = new[]
+        {
+            OnboardingStepTypeV2.SingleChoice, OnboardingStepTypeV2.MultipleChoice,
+            OnboardingStepTypeV2.FreeText, OnboardingStepTypeV2.AssessmentQuestion,
+        };
+
+        foreach (var step in steps.Where(s => genericTypes.Contains(s.StepType)))
+            Assert.NotNull(step.Content);
+    }
+
+    [Fact]
+    public async Task SeedAsync_SemanticStepTypes_HaveNoContent()
+    {
+        await OnboardingFlowSeeder.SeedAsync(_db);
+
+        var supportLanguageStep = await _db.OnboardingStepDefinitions.FirstAsync(s => s.StepKey == "support_language");
+        Assert.Null(supportLanguageStep.Content);
+
+        var welcomeStep = await _db.OnboardingStepDefinitions.FirstAsync(s => s.StepKey == "welcome");
+        Assert.Null(welcomeStep.Content);
+    }
+
+    [Fact]
+    public async Task SeedAsync_AssessmentQuestion_ContentCarriesCorrectAnswerKey()
+    {
+        await OnboardingFlowSeeder.SeedAsync(_db);
+
+        var step = await _db.OnboardingStepDefinitions.FirstAsync(s => s.StepKey == "assessment_q1");
+        var content = Assert.IsType<Domain.Questions.SingleChoiceQuestion>(step.Content);
+        Assert.Equal("travels", content.CorrectAnswerKey);
+        Assert.Equal(4, content.Choices.Count);
+    }
+
+    [Fact]
+    public async Task SeedAsync_FreeTextStep_ContentCarriesMaxLength()
+    {
+        await OnboardingFlowSeeder.SeedAsync(_db);
+
+        var step = await _db.OnboardingStepDefinitions.FirstAsync(s => s.StepKey == "career_context");
+        var content = Assert.IsType<Domain.Questions.FreeTextQuestion>(step.Content);
+        Assert.Equal(200, content.MaxLength);
+    }
 }

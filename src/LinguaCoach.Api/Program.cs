@@ -286,6 +286,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     await ExercisePatternSeeder.SeedAsync(db, seederLogger);
     await ExerciseTypeDefinitionSeeder.SeedAsync(db, seederLogger);
     await OnboardingFlowSeeder.SeedAsync(db);
+    await LinguaCoach.Persistence.Seed.OnboardingStepDefinitionContentBackfiller.BackfillAsync(db);
     await PlacementItemBankSeeder.SeedAsync(db);
     await LinguaCoach.Persistence.Seed.PlacementAssessmentItemContentBackfiller.BackfillAsync(db);
     await LinguaCoach.Persistence.Seed.CurriculumObjectiveSeeder.SeedAsync(db, seederLogger);

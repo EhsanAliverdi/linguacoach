@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Persistence.Seed;
@@ -76,6 +77,23 @@ public static class OnboardingFlowSeeder
     }
 
     private static List<OnboardingStepDefinition> BuildDefaultSteps(Guid flowId)
+    {
+        var steps = BuildStepList(flowId);
+
+        // Unified Question-Schema Phase 5: shadow ContentJson for the generic step types
+        // (SingleChoice/MultipleChoice/FreeText/AssessmentQuestion) — null for the others, which
+        // keep their own dedicated orchestration.
+        foreach (var step in steps)
+        {
+            var content = OnboardingContentConverter.FromLegacyStep(
+                step.StepType, step.Title, step.OptionsJson, step.ValidationMetadataJson, step.AssessmentMetadataJson);
+            if (content is not null) step.SetContent(content);
+        }
+
+        return steps;
+    }
+
+    private static List<OnboardingStepDefinition> BuildStepList(Guid flowId)
     {
         return new List<OnboardingStepDefinition>
         {
