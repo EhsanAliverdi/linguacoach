@@ -22,13 +22,21 @@ public static class OnboardingFlowSeeder
         if (existingActive is not null && existingActive.Name == "Default Flow")
         {
             // Flows are immutable once created (see class doc) — if BuildDefaultSteps has
-            // grown since this flow was seeded (e.g. new answer-mapping steps added in code),
-            // publish a new version rather than mutating the active one, matching this
-            // seeder's documented "a new version creates a new flow" contract.
-            var currentKeys = existingActive.Steps.Select(s => s.StepKey).ToHashSet();
+            // grown or changed since this flow was seeded (new steps, or a fixed typo in an
+            // existing step's OptionsJson — e.g. a seeded option key that didn't match its
+            // target enum's member names, silently failing Enum.TryParse), publish a new
+            // version rather than mutating the active one, matching this seeder's documented
+            // "a new version creates a new flow" contract. Known limitation: the admin UI
+            // currently has no way to edit a step's OptionsJson, so this content comparison
+            // can't yet distinguish "seeder needs to fix a bug" from "admin customized this
+            // step's options" — if that admin capability is added later, this needs to skip
+            // steps an admin has touched (e.g. an UpdatedAt/IsCustomized flag).
             var placeholderSteps = BuildDefaultSteps(existingActive.Id);
-            var targetKeys = placeholderSteps.Select(s => s.StepKey).ToHashSet();
-            if (targetKeys.SetEquals(currentKeys)) return; // already up to date
+            var currentSignatures = existingActive.Steps
+                .Select(s => (s.StepKey, s.OptionsJson)).ToHashSet();
+            var targetSignatures = placeholderSteps
+                .Select(s => (s.StepKey, s.OptionsJson)).ToHashSet();
+            if (targetSignatures.SetEquals(currentSignatures)) return; // already up to date
 
             var newFlow = new OnboardingFlowDefinition("Default Flow", version: existingActive.Version + 1);
             var newSteps = BuildDefaultSteps(newFlow.Id);
@@ -181,10 +189,14 @@ public static class OnboardingFlowSeeder
                 stepOrder: 6,
                 isEnabled: true,
                 description: "You can change this at any time from your profile.",
+                // Option keys must match DifficultyPreference enum member names exactly
+                // (Gentle/Balanced/Challenging) -- "Moderate" doesn't exist, so Enum.TryParse
+                // in OnboardingV2StepHandler silently failed and difficulty_preference was
+                // always null regardless of what the student selected.
                 optionsJson: JsonOptions(new[]
                 {
                     ("Gentle", "Gentle — I want to build confidence gradually"),
-                    ("Moderate", "Moderate — a steady challenge is good for me"),
+                    ("Balanced", "Moderate — a steady challenge is good for me"),
                     ("Challenging", "Challenging — push me to improve quickly")
                 }),
                 answerMapping: OnboardingAnswerMapping.DifficultyPreference

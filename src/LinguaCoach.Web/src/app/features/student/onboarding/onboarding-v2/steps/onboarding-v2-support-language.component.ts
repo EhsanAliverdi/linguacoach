@@ -45,7 +45,10 @@ export class OnboardingV2SupportLanguageComponent {
     this.submitted.emit(JSON.stringify({
       languageCode: langCode,
       languageName: langCode ? langName : null,
-      translationHelp: langCode ? 'WhenAsked' : 'Never',
+      // Must match TranslationHelpPreference enum member names exactly -- 'WhenAsked' doesn't
+      // exist (Never/WhenDifficult/AlwaysAvailable), so Enum.TryParse silently failed and this
+      // field was always null regardless of what the student selected here.
+      translationHelp: langCode ? 'WhenDifficult' : 'Never',
     }));
   }
 }

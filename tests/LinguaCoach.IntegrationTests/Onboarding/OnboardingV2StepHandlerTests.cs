@@ -111,7 +111,7 @@ public sealed class OnboardingV2StepHandlerTests : IDisposable
         var afterFocus = await _handler.HandleAsync(new SubmitOnboardingStepCommand(
             _userId, "focus_areas", """{"keys":["speaking"]}"""));
         var afterDifficulty = await _handler.HandleAsync(new SubmitOnboardingStepCommand(
-            _userId, "difficulty_preference", """{"key":"Moderate"}"""));
+            _userId, "difficulty_preference", """{"key":"Balanced"}"""));
 
         // Next step after difficulty_preference should be session_duration (not career_context),
         // and after session_duration should skip straight past career_context/work_experience
@@ -123,6 +123,40 @@ public sealed class OnboardingV2StepHandlerTests : IDisposable
 
         Assert.NotEqual("career_context", afterDuration.CurrentStepKey);
         Assert.Equal("learning_goal_description", afterDuration.CurrentStepKey);
+    }
+
+    [Fact]
+    public async Task SequentialStepSubmissions_DoNotWipeEachOthersFields()
+    {
+        // Regression found live 2026-07-03: StudentProfile.UpdateLearningPreferences
+        // unconditionally overwrites PreferredName/SupportLanguageCode/SupportLanguageName/
+        // TranslationHelpPreference/CustomLearningGoal/CustomFocusArea/DifficultyPreference on
+        // every call (unlike LearningGoals/FocusAreas/PreferredSessionDurationMinutes, which
+        // skip the update when null). Submitting support_language then difficulty_preference
+        // (each of which calls UpdateLearningPreferences with the other's fields left null)
+        // silently wiped support_language_code back to null. Every field set by an earlier step
+        // must survive every later step's submission.
+        var profileId = await SeedProfileAndProgressAsync();
+
+        await _handler.HandleAsync(new SubmitOnboardingStepCommand(
+            _userId, "support_language", """{"languageCode":"es","languageName":"Spanish","translationHelp":"WhenDifficult"}"""));
+        await _handler.HandleAsync(new SubmitOnboardingStepCommand(
+            _userId, "learning_goals", """{"keys":["work"]}"""));
+        await _handler.HandleAsync(new SubmitOnboardingStepCommand(
+            _userId, "focus_areas", """{"keys":["speaking"]}"""));
+        await _handler.HandleAsync(new SubmitOnboardingStepCommand(
+            _userId, "difficulty_preference", """{"key":"Balanced"}"""));
+        await _handler.HandleAsync(new SubmitOnboardingStepCommand(
+            _userId, "session_duration", """{"key":"20"}"""));
+
+        var profile = await _db.StudentProfiles.FirstAsync(p => p.Id == profileId);
+        Assert.Equal("es", profile.SupportLanguageCode);
+        Assert.Equal("Spanish", profile.SupportLanguageName);
+        Assert.Equal(TranslationHelpPreference.WhenDifficult, profile.TranslationHelpPreference);
+        Assert.Equal(DifficultyPreference.Balanced, profile.DifficultyPreference);
+        Assert.Equal(20, profile.PreferredSessionDurationMinutes);
+        Assert.Contains("work", profile.LearningGoals);
+        Assert.Contains("speaking", profile.FocusAreas);
     }
 
     [Fact]
@@ -155,7 +189,7 @@ public sealed class OnboardingV2StepHandlerTests : IDisposable
         await _handler.HandleAsync(new SubmitOnboardingStepCommand(
             _userId, "focus_areas", """{"keys":["speaking"]}"""));
         await _handler.HandleAsync(new SubmitOnboardingStepCommand(
-            _userId, "difficulty_preference", """{"key":"Moderate"}"""));
+            _userId, "difficulty_preference", """{"key":"Balanced"}"""));
 
         var afterDuration = await _handler.HandleAsync(new SubmitOnboardingStepCommand(
             _userId, "session_duration", """{"key":"15"}"""));

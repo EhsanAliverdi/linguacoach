@@ -201,11 +201,7 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
         {
             case OnboardingAnswerMapping.PreferredName:
                 var name = parsed.TryGetProperty("value", out var nv) ? nv.GetString() : null;
-                profile.UpdateLearningPreferences(
-                    preferredName: name,
-                    supportLanguageCode: null, supportLanguageName: null, translationHelpPreference: null,
-                    learningGoals: null, customLearningGoal: null, focusAreas: null,
-                    customFocusArea: null, difficultyPreference: null, preferredSessionDurationMinutes: null);
+                UpdatePreferencesPreservingOthers(profile, preferredName: name);
                 break;
 
             case OnboardingAnswerMapping.SupportLanguage:
@@ -214,42 +210,30 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
                 var helpPref = parsed.TryGetProperty("translationHelp", out var th)
                     ? Enum.TryParse<TranslationHelpPreference>(th.GetString(), out var tp) ? tp : (TranslationHelpPreference?)null
                     : null;
-                profile.UpdateLearningPreferences(
-                    preferredName: null, supportLanguageCode: code, supportLanguageName: langName,
-                    translationHelpPreference: helpPref, learningGoals: null, customLearningGoal: null,
-                    focusAreas: null, customFocusArea: null, difficultyPreference: null,
-                    preferredSessionDurationMinutes: null);
+                UpdatePreferencesPreservingOthers(profile,
+                    supportLanguageCode: code, supportLanguageName: langName, translationHelpPreference: helpPref,
+                    // "None"/cleared selections must actually clear these fields, not be treated
+                    // as "untouched" — force-apply even when null since this step explicitly ran.
+                    forceSupportLanguage: true);
                 break;
 
             case OnboardingAnswerMapping.LearningGoals:
                 var goals = ParseStringList(parsed, "keys");
                 var customGoal = parsed.TryGetProperty("custom", out var cg) ? cg.GetString() : null;
-                profile.UpdateLearningPreferences(
-                    preferredName: null, supportLanguageCode: null, supportLanguageName: null,
-                    translationHelpPreference: null, learningGoals: goals, customLearningGoal: customGoal,
-                    focusAreas: null, customFocusArea: null, difficultyPreference: null,
-                    preferredSessionDurationMinutes: null);
+                UpdatePreferencesPreservingOthers(profile, learningGoals: goals, customLearningGoal: customGoal);
                 break;
 
             case OnboardingAnswerMapping.FocusAreas:
                 var areas = ParseStringList(parsed, "keys");
                 var customArea = parsed.TryGetProperty("custom", out var ca) ? ca.GetString() : null;
-                profile.UpdateLearningPreferences(
-                    preferredName: null, supportLanguageCode: null, supportLanguageName: null,
-                    translationHelpPreference: null, learningGoals: null, customLearningGoal: null,
-                    focusAreas: areas, customFocusArea: customArea, difficultyPreference: null,
-                    preferredSessionDurationMinutes: null);
+                UpdatePreferencesPreservingOthers(profile, focusAreas: areas, customFocusArea: customArea);
                 break;
 
             case OnboardingAnswerMapping.DifficultyPreference:
                 var diffStr = parsed.TryGetProperty("key", out var dk) ? dk.GetString() : null;
                 var diff = diffStr is not null && Enum.TryParse<DifficultyPreference>(diffStr, out var dp)
                     ? dp : (DifficultyPreference?)null;
-                profile.UpdateLearningPreferences(
-                    preferredName: null, supportLanguageCode: null, supportLanguageName: null,
-                    translationHelpPreference: null, learningGoals: null, customLearningGoal: null,
-                    focusAreas: null, customFocusArea: null, difficultyPreference: diff,
-                    preferredSessionDurationMinutes: null);
+                UpdatePreferencesPreservingOthers(profile, difficultyPreference: diff);
                 break;
 
             case OnboardingAnswerMapping.CareerContext:
@@ -265,13 +249,7 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
             case OnboardingAnswerMapping.SessionDuration:
                 var minutesStr = parsed.TryGetProperty("key", out var mk) ? mk.GetString() : null;
                 if (minutesStr is not null && int.TryParse(minutesStr, out var minutes) && minutes > 0)
-                {
-                    profile.UpdateLearningPreferences(
-                        preferredName: null, supportLanguageCode: null, supportLanguageName: null,
-                        translationHelpPreference: null, learningGoals: null, customLearningGoal: null,
-                        focusAreas: null, customFocusArea: null, difficultyPreference: null,
-                        preferredSessionDurationMinutes: minutes);
-                }
+                    UpdatePreferencesPreservingOthers(profile, preferredSessionDurationMinutes: minutes);
                 break;
 
             case OnboardingAnswerMapping.WorkExperience:
@@ -285,6 +263,44 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
                 }
                 break;
         }
+    }
+
+    /// <summary>
+    /// StudentProfile.UpdateLearningPreferences overwrites every scalar field it's given
+    /// unconditionally (only LearningGoals/FocusAreas/PreferredSessionDurationMinutes skip the
+    /// update when null) — safe for /profile's single full-form submission, but wrong for V2's
+    /// one-field-per-step submission model: without this, submitting e.g. difficulty_preference
+    /// silently wiped out whatever support_language had just set, and vice versa (found live
+    /// 2026-07-03: support_language_code and difficulty_preference were always empty after a
+    /// full onboarding run, even though each step's own submission succeeded). Reads the
+    /// profile's current values for every field the caller doesn't explicitly pass, so a step
+    /// can only ever change the field(s) it owns.
+    /// </summary>
+    private static void UpdatePreferencesPreservingOthers(
+        Domain.Entities.StudentProfile profile,
+        string? preferredName = null,
+        string? supportLanguageCode = null,
+        string? supportLanguageName = null,
+        TranslationHelpPreference? translationHelpPreference = null,
+        IReadOnlyList<string>? learningGoals = null,
+        string? customLearningGoal = null,
+        IReadOnlyList<string>? focusAreas = null,
+        string? customFocusArea = null,
+        DifficultyPreference? difficultyPreference = null,
+        int? preferredSessionDurationMinutes = null,
+        bool forceSupportLanguage = false)
+    {
+        profile.UpdateLearningPreferences(
+            preferredName: preferredName ?? profile.PreferredName,
+            supportLanguageCode: forceSupportLanguage ? supportLanguageCode : supportLanguageCode ?? profile.SupportLanguageCode,
+            supportLanguageName: forceSupportLanguage ? supportLanguageName : supportLanguageName ?? profile.SupportLanguageName,
+            translationHelpPreference: forceSupportLanguage ? translationHelpPreference : translationHelpPreference ?? profile.TranslationHelpPreference,
+            learningGoals: learningGoals ?? profile.LearningGoals,
+            customLearningGoal: customLearningGoal ?? profile.CustomLearningGoal,
+            focusAreas: focusAreas ?? profile.FocusAreas,
+            customFocusArea: customFocusArea ?? profile.CustomFocusArea,
+            difficultyPreference: difficultyPreference ?? profile.DifficultyPreference,
+            preferredSessionDurationMinutes: preferredSessionDurationMinutes ?? profile.PreferredSessionDurationMinutes);
     }
 
     /// <summary>
