@@ -14,7 +14,9 @@ public sealed record PatternEvaluationRequest(
     string? CefrLevel = null,
     string? DomainComplexity = null,
     string? SessionContextJson = null,
-    string? StudentSkillContext = null);
+    string? StudentSkillContext = null,
+    string? SourceLanguageName = null,
+    string? TargetLanguageName = null);
 
 public sealed class PatternEvaluationResult
 {

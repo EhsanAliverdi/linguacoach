@@ -624,6 +624,31 @@ public sealed class ModuleStageContentValidatorTests
         result.Errors.Should().Contain(e => e.Contains("pairs"));
     }
 
+    [Fact]
+    public void Validate_PhraseMatch_EmptyPairsArray_FailsEvenWithoutCountSettings()
+    {
+        // Regression test: a present-but-empty "pairs" array must fail validation even when
+        // countSettings is null (e.g. PracticeCountSettings failed to load for this pattern) —
+        // EnforceCounts/EnforceWorkloadSanity only run when countSettings is available, so without
+        // this check an empty-but-present array could slip through and be persisted, producing an
+        // uncompletable activity (see docs/reviews/2026-07-03-pilot-student-onboarding-placement-practice-live-audit.md).
+        var json = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "title": "T",
+          "learnContent": {"teachingTitle": "T", "explanation": "E", "keyPoints": [], "examples": [], "strategy": "S", "commonMistakes": [], "sourceLanguageSupport": null},
+          "practiceContent": {"instructions": "I", "scenario": null, "task": "T", "exerciseData": {"pairs": []}},
+          "feedbackPlan": {"evaluationCriteria": [], "rubric": [], "feedbackFocus": "F", "successCriteria": []}
+        }
+        """;
+
+        var result = ModuleStageContentValidator.Validate(
+            Parse(json), ActivityType.VocabularyPractice, "phrase_match", countSettings: null);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("pairs") && e.Contains("empty"));
+    }
+
     [Theory]
     [InlineData("pairs")]
     [InlineData("answerKey")]

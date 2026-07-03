@@ -179,7 +179,7 @@ public sealed class ExercisePrepareHandler : IPrepareExerciseHandler
             CefrLevel: routing.TargetCefrLevel,
             CareerContext: profile.CareerProfile?.Name ?? "General",
             LanguagePairCode: BuildPairCode(profile.LanguagePair),
-            SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
             TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
             TopicHint: $"{session.Title}: {exercise.Instructions}",
             RecentMistakesSummary: recentMistakes,

@@ -137,9 +137,11 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
         var ledgerSignals = await BuildLedgerSignalsAsync(studentProfileId, ct);
 
         // ── 7. Apply dynamic pattern selection per slot ───────────────────────
+        var resolvedGoalContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "SessionGeneratorService" });
         var steps = ApplyDynamicPatternSelection(
             template, skillScores, recentPatternKeys, catalogEntries,
-            _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "SessionGeneratorService" }).ContextSummary, profile.SkillFocus,
+            resolvedGoalContext.ContextSummary, profile.SkillFocus,
             ledgerSignals);
 
         // Filter any step whose chosen key is still not in the ready catalog.
@@ -148,7 +150,7 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
             throw new InvalidOperationException("No enabled ready exercise types are available for today's lesson.");
 
         // ── 8. Build session metadata ─────────────────────────────────────────
-        var (title, topic, goal, focusSkill) = BuildSessionMetadata(steps, currentModule, profile);
+        var (title, topic, goal, focusSkill) = BuildSessionMetadata(steps, currentModule, resolvedGoalContext);
 
         var memorySnapshot = await BuildMemorySnapshotAsync(studentProfileId, ct);
 
@@ -365,21 +367,25 @@ public sealed class SessionGeneratorService : ISessionGeneratorService
     private static (string title, string topic, string goal, string focusSkill) BuildSessionMetadata(
         List<ExerciseStepTemplate> steps,
         LearningModule? module,
-        StudentProfile profile)
+        ResolvedLearningGoalContext resolvedGoalContext)
     {
         // Determine dominant skill from template steps.
         var focusSkill = steps
             .GroupBy(s => s.PrimarySkill)
             .OrderByDescending(g => g.Count())
             .Select(g => g.Key)
-            .FirstOrDefault() ?? "workplace communication";
+            .FirstOrDefault() ?? "general communication";
 
-        var moduleTopic = module?.Title ?? "Professional workplace communication";
-        var careerContext = profile.CareerProfile?.Name ?? profile.CareerContext ?? "workplace professional";
+        var moduleTopic = module?.Title ?? "General English practice";
+        // Never workplace-only by default — resolvedGoalContext already prioritises the student's
+        // explicit Learning Goals/Focus Areas over the legacy career field, falling back to
+        // "general English communication" only when nothing else is set (see Fix 7,
+        // docs/reviews/2026-07-03-workplace-default-content-and-placement-gating-review.md).
+        var goalContext = resolvedGoalContext.ContextSummary;
 
-        var topic = $"{moduleTopic} — {careerContext}";
+        var topic = $"{moduleTopic} — {goalContext}";
         var title = $"{moduleTopic}";
-        var goal = $"Practise {focusSkill.ToLowerInvariant()} skills in a {careerContext.ToLowerInvariant()} context.";
+        var goal = $"Practise {focusSkill.ToLowerInvariant()} skills in the context of {goalContext.ToLowerInvariant()}.";
 
         return (title, topic, goal, focusSkill);
     }

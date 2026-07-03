@@ -425,7 +425,7 @@ public sealed class LessonBatchGenerationJob : IJob
             curriculumObjective = routing.CurriculumObjectiveTitle,
             domainComplexity = profile.WorkplaceSeniority?.ToString() ?? "intermediate_workplace",
             careerContext = profile.CareerProfile?.Name ?? "General",
-            sourceLanguage = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            sourceLanguage = LanguageSupportResolver.ResolveSourceLanguageName(profile),
             targetLanguage = profile.LanguagePair?.TargetLanguage?.Name ?? "English",
             learnerPreferences = new
             {

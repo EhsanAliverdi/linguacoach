@@ -391,6 +391,29 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             assessment.Items.Count);
     }
 
+    /// <summary>
+    /// Used when the profile's lifecycle stage says placement is complete but no completed
+    /// adaptive assessment row exists for this student (e.g. placed via the legacy flow).
+    /// Avoids starting a new, never-completable adaptive assessment for an already-placed student.
+    /// </summary>
+    private static PlacementAssessmentSummaryDto ToSyntheticCompletedSummaryDto(StudentProfile profile) =>
+        new(
+            AssessmentId: Guid.Empty,
+            StudentProfileId: profile.Id,
+            Status: PlacementStatus.Completed.ToString(),
+            StartedAtUtc: null,
+            CompletedAtUtc: null,
+            ExpiredAtUtc: null,
+            OverallCefrLevel: profile.CefrLevel,
+            OverallConfidence: null,
+            IsProvisional: false,
+            ResultSummary: "Placement was completed through an earlier process.",
+            Source: "LifecycleStage",
+            SkillResults: [],
+            LearningPlanRegenerated: false,
+            LearningPlanRegenerationWarning: null,
+            ItemCount: 0);
+
     private static PlacementHistoryItemDto ToHistoryDto(PlacementAssessment a) =>
         new(a.Id, a.Status.ToString(), a.StartedAtUtc, a.CompletedAtUtc,
             a.OverallEstimatedLevel, a.OverallConfidence, a.IsProvisional, a.Items.Count);
@@ -405,6 +428,34 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     public async Task<PlacementAssessmentSummaryDto> StartAssessmentAsync(
         Guid studentProfileId, string source, CancellationToken ct = default)
     {
+        var profile = await _db.StudentProfiles
+            .FirstOrDefaultAsync(p => p.Id == studentProfileId, ct)
+            ?? throw new InvalidOperationException($"Student profile {studentProfileId} not found.");
+
+        // The student's lifecycle stage is the trusted signal for "placement is actually done" —
+        // it may have been set by a different flow (e.g. the legacy static-section placement)
+        // than this adaptive one. Starting a fresh adaptive assessment here would create a
+        // second, orphaned InProgress row that nothing ever completes, causing /profile (which
+        // reads the latest assessment row) to disagree with /dashboard (which reads LifecycleStage).
+        if (profile.LifecycleStage >= StudentLifecycleStage.PlacementCompleted)
+        {
+            var completed = await _db.PlacementAssessments
+                .Include(a => a.Items)
+                .Where(a => a.StudentProfileId == studentProfileId && a.Status == PlacementStatus.Completed)
+                .OrderByDescending(a => a.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (completed is not null)
+            {
+                var completedResults = await _db.PlacementSkillResults
+                    .Where(r => r.PlacementAssessmentId == completed.Id)
+                    .ToListAsync(ct);
+                return ToSummaryDto(completed, completedResults);
+            }
+
+            return ToSyntheticCompletedSummaryDto(profile);
+        }
+
         var existing = await _db.PlacementAssessments
             .Include(a => a.Items)
             .Where(a => a.StudentProfileId == studentProfileId && a.Status == PlacementStatus.InProgress)
@@ -417,10 +468,6 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 .ToListAsync(ct);
             return ToSummaryDto(existing, existingResults);
         }
-
-        var profile = await _db.StudentProfiles
-            .FirstOrDefaultAsync(p => p.Id == studentProfileId, ct)
-            ?? throw new InvalidOperationException($"Student profile {studentProfileId} not found.");
 
         var startingLevel = !string.IsNullOrWhiteSpace(profile.CefrLevel)
             ? profile.CefrLevel
@@ -490,13 +537,25 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     public async Task<PlacementAssessmentSummaryDto?> GetLatestAssessmentAsync(
         Guid studentProfileId, CancellationToken ct = default)
     {
+        // Prefer a Completed row over a later InProgress one — a stray InProgress row can be
+        // created after placement is already complete (see StartAssessmentAsync's guard above),
+        // and without this a newer stray row would otherwise shadow the real completed result.
         var assessment = await _db.PlacementAssessments
             .Include(a => a.Items)
             .Where(a => a.StudentProfileId == studentProfileId)
-            .OrderByDescending(a => a.CreatedAt)
+            .OrderByDescending(a => a.Status == PlacementStatus.Completed)
+            .ThenByDescending(a => a.CreatedAt)
             .FirstOrDefaultAsync(ct);
 
-        if (assessment is null) return null;
+        if (assessment is null)
+        {
+            var profile = await _db.StudentProfiles
+                .FirstOrDefaultAsync(p => p.Id == studentProfileId, ct);
+
+            return profile is not null && profile.LifecycleStage >= StudentLifecycleStage.PlacementCompleted
+                ? ToSyntheticCompletedSummaryDto(profile)
+                : null;
+        }
 
         var skillResults = await _db.PlacementSkillResults
             .Where(r => r.PlacementAssessmentId == assessment.Id)

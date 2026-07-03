@@ -201,7 +201,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 StudentSubmission: command.SubmittedContent,
                 CefrLevel: profile.CefrLevel ?? "B1",
                 CareerContext: profile.CareerProfile?.Name ?? "General",
-                SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+                SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
                 TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
                 LearnerPreferenceContext: LearnerPreferenceContextFormatter.Build(
                     profile, profile.LanguagePair?.TargetLanguage?.Name),
@@ -345,7 +345,9 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             SubmittedAnswerJson: submittedAnswerJson,
             CefrLevel: profile.CefrLevel,
             DomainComplexity: profile.CareerProfile?.Name,
-            StudentSkillContext: studentSkillContext);
+            StudentSkillContext: studentSkillContext,
+            SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
+            TargetLanguageName: LanguageSupportResolver.ResolveTargetLanguageName(profile));
 
         var evalResult = await _patternRouter.EvaluateAsync(evalRequest, ct);
 

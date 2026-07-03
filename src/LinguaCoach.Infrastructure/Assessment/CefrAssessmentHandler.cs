@@ -2,7 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Assessment;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,17 +18,20 @@ public sealed class CefrAssessmentHandler : ICefrAssessmentHandler
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
     private readonly IAiProvider _aiProvider;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<CefrAssessmentHandler> _logger;
 
     public CefrAssessmentHandler(
         LinguaCoachDbContext db,
         IAiContextBuilder contextBuilder,
         IAiProvider aiProvider,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<CefrAssessmentHandler> logger)
     {
         _db = db;
         _contextBuilder = contextBuilder;
         _aiProvider = aiProvider;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -51,9 +56,10 @@ public sealed class CefrAssessmentHandler : ICefrAssessmentHandler
 
         var variables = new Dictionary<string, string>
         {
-            ["sourceLanguageName"] = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            ["sourceLanguageName"] = LanguageSupportResolver.ResolveSourceLanguageName(profile),
             ["targetLanguageName"] = profile.LanguagePair?.TargetLanguage?.Name ?? "English",
-            ["careerProfile"] = profile.CareerProfile?.Name ?? "Document Controller",
+            ["careerProfile"] = _goalContextResolver.Resolve(
+                profile, new LearningGoalResolutionContext { Source = "CefrAssessmentHandler" }).ContextSummary,
             ["studentSample"] = command.StudentSample,
         };
 

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -23,6 +24,7 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
     private readonly IAiContextBuilder _contextBuilder;
     private readonly AiExecutionService _aiExecution;
     private readonly LearningPathDtoBuilder _dtoBuilder;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<AiLearningPathGeneratorHandler> _logger;
 
     public AiLearningPathGeneratorHandler(
@@ -30,12 +32,14 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
         IAiContextBuilder contextBuilder,
         AiExecutionService aiExecution,
         LearningPathDtoBuilder dtoBuilder,
+        ILearningGoalContextResolver goalContextResolver,
         ILogger<AiLearningPathGeneratorHandler> logger)
     {
         _db = db;
         _contextBuilder = contextBuilder;
         _aiExecution = aiExecution;
         _dtoBuilder = dtoBuilder;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -60,9 +64,13 @@ public sealed class AiLearningPathGeneratorHandler : ILearningPathGenerator
         if (existingPath is not null)
             return await _dtoBuilder.BuildAsync(existingPath, profile.Id, ct);
 
-        var careerContext = profile.CareerProfile?.Name ?? "General workplace";
+        // Never workplace-only by default — explicit Learning Goals/Focus Areas take priority
+        // over the legacy career field, falling back to "general English communication" only
+        // when nothing is set (see Fix 7, docs/reviews/2026-07-03-workplace-default-content-and-placement-gating-review.md).
+        var careerContext = _goalContextResolver.Resolve(
+            profile, new LearningGoalResolutionContext { Source = "AiLearningPathGeneratorHandler" }).ContextSummary;
         var cefrLevel = profile.CefrLevel ?? "B1";
-        var sourceLang = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian";
+        var sourceLang = LanguageSupportResolver.ResolveSourceLanguageName(profile);
         var targetLang = profile.LanguagePair?.TargetLanguage?.Name ?? "English";
         var skillFocus = profile.SkillFocus?.ToString() ?? "general communication";
 

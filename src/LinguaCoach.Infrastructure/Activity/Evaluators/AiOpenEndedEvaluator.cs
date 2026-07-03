@@ -56,8 +56,8 @@ public sealed class AiOpenEndedEvaluator : IPatternEvaluator
             ["studentSubmission"] = request.SubmittedAnswerJson,
             ["cefrLevel"] = request.CefrLevel ?? "B1",
             ["careerContext"] = request.DomainComplexity ?? "General",
-            ["sourceLanguageName"] = "Persian",
-            ["targetLanguageName"] = "English",
+            ["sourceLanguageName"] = request.SourceLanguageName ?? "English",
+            ["targetLanguageName"] = request.TargetLanguageName ?? "English",
             ["exercisePatternKey"] = request.ExercisePatternKey ?? string.Empty,
             ["studentSkillContext"] = request.StudentSkillContext ?? "No specific skill history available yet.",
         };

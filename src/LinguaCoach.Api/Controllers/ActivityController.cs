@@ -7,6 +7,7 @@ using LinguaCoach.Domain;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -495,7 +496,9 @@ public sealed class ActivityController : ControllerBase
                         ContentJson: activity.AiGeneratedContentJson,
                         SubmittedAnswerJson: sttResult.Transcript!,
                         CefrLevel: profile.CefrLevel ?? "B1",
-                        DomainComplexity: profile.CareerProfile?.Name ?? "General"),
+                        DomainComplexity: profile.CareerProfile?.Name ?? "General",
+                        SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
+                        TargetLanguageName: LanguageSupportResolver.ResolveTargetLanguageName(profile)),
                     ct);
 
                 score = evalResult.Score;
@@ -543,8 +546,8 @@ public sealed class ActivityController : ControllerBase
                     activityContentJson: activity.AiGeneratedContentJson,
                     cefrLevel: profile.CefrLevel ?? "B1",
                     careerContext: profile.CareerProfile?.Name ?? "General",
-                    sourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
-                    targetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
+                    sourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
+                    targetLanguageName: LanguageSupportResolver.ResolveTargetLanguageName(profile),
                     ct: ct);
                 promptKey = SpeakingRolePlayEvaluator.EvaluatePromptKey;
                 feedback = SpeakingRolePlayEvaluator.ParseFeedback(Guid.Empty, feedbackJson, score);

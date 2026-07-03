@@ -1,3 +1,4 @@
+using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -24,11 +25,16 @@ public sealed class LearningPlannerService : ILearningPlanner
     private const int AntiRepetitionLessons = 3;
 
     private readonly LinguaCoachDbContext _db;
+    private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ILogger<LearningPlannerService> _logger;
 
-    public LearningPlannerService(LinguaCoachDbContext db, ILogger<LearningPlannerService> logger)
+    public LearningPlannerService(
+        LinguaCoachDbContext db,
+        ILearningGoalContextResolver goalContextResolver,
+        ILogger<LearningPlannerService> logger)
     {
         _db = db;
+        _goalContextResolver = goalContextResolver;
         _logger = logger;
     }
 
@@ -146,9 +152,10 @@ public sealed class LearningPlannerService : ILearningPlanner
 
         return new LessonPlan(
             StudentProfileId: studentProfileId,
-            LanguagePairCode: $"{profile.LanguagePair?.SourceLanguage?.Code ?? "fa"}-{profile.LanguagePair?.TargetLanguage?.Code ?? "en"}",
+            LanguagePairCode: $"{profile.LanguagePair?.SourceLanguage?.Code ?? "en"}-{profile.LanguagePair?.TargetLanguage?.Code ?? "en"}",
             CefrLevel: profile.CefrLevel ?? "B1",
-            CareerContext: profile.CareerProfile?.Name ?? "Document Controller",
+            CareerContext: _goalContextResolver.Resolve(
+                profile, new LearningGoalResolutionContext { Source = "LearningPlannerService" }).ContextSummary,
             LessonType: LessonType.Writing,
             TargetVocabulary: targetVocab,
             ReviewVocabulary: reviewVocab,

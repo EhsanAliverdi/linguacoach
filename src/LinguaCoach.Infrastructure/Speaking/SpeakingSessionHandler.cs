@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -125,7 +126,7 @@ public sealed class SpeakingSessionHandler : ICreateSpeakingSessionHandler, ISub
 
         var variables = new Dictionary<string, string>
         {
-            ["sourceLanguageName"] = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            ["sourceLanguageName"] = LanguageSupportResolver.ResolveSourceLanguageName(profile),
             ["cefrLevel"] = session.CefrLevel,
             ["careerContext"] = session.CareerContext,
             ["scenarioGoal"] = scenario.Goal,
@@ -224,7 +225,7 @@ public sealed class SpeakingSessionHandler : ICreateSpeakingSessionHandler, ISub
     {
         var variables = new Dictionary<string, string>
         {
-            ["sourceLanguageName"] = profile.LanguagePair?.SourceLanguage?.Name ?? "Persian",
+            ["sourceLanguageName"] = LanguageSupportResolver.ResolveSourceLanguageName(profile),
             ["cefrLevel"] = session.CefrLevel,
             ["careerContext"] = session.CareerContext,
             ["scenarioGoal"] = scenario.Goal,

@@ -40,6 +40,7 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 
     // Resolved fresh at the top of GetSuggestionsForStudentAsync — see below.
     private ReadinessPoolReplenishmentOptions _opts = new();
+    private Dictionary<Guid, LearningActivity> _linkedActivities = new();
     private readonly ILogger<PracticeGymSuggestionService> _logger;
 
     private const int MaxSuggested = 6;
@@ -82,6 +83,23 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
                      && i.Status != ReadinessPoolStatus.Generating
                      && (!i.RequiresAdminReview || i.AdminReviewStatus == AdminReviewStatus.Approved))
             .ToListAsync(ct);
+
+        // Batch-load the real materialized activity for each linked item so ToDto can prefer its
+        // actual Title/ActivityType/Difficulty over the pre-generation routing snapshot — the
+        // snapshot's CurriculumObjectiveTitle/TargetCefrLevel come from a routing recommendation
+        // that isn't guaranteed to match what was actually generated for the pattern requested.
+        var linkedActivityIds = rawItems
+            .Where(i => i.LearningActivityId.HasValue)
+            .Select(i => i.LearningActivityId!.Value)
+            .Distinct()
+            .ToList();
+
+        _linkedActivities = linkedActivityIds.Count == 0
+            ? new Dictionary<Guid, LearningActivity>()
+            : await _db.LearningActivities
+                .AsNoTracking()
+                .Where(a => linkedActivityIds.Contains(a.Id))
+                .ToDictionaryAsync(a => a.Id, ct);
 
         // ContinueItems: reserved, not expired. Scaffold items stay pilot-gated so rollback
         // (PracticeGymPilotEnabled=false) hides approved-but-unconsumed scaffold items too.
@@ -336,6 +354,23 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 
     private PracticeGymSuggestionItemDto ToDto(StudentActivityReadinessItem i)
     {
+        // Once materialized, the linked LearningActivity's own AI-generated title and real
+        // CefrLevel are ground truth — the readiness-item snapshot was taken from a curriculum
+        // routing recommendation *before* generation and isn't guaranteed to match what the
+        // pattern actually produced (see Fix 1 in the 2026-07-03 pilot-student audit).
+        LearningActivity? linkedActivity = i.LearningActivityId.HasValue
+            ? _linkedActivities.GetValueOrDefault(i.LearningActivityId.Value)
+            : null;
+
+        var displayTitle = linkedActivity is not null && !string.IsNullOrWhiteSpace(linkedActivity.Title)
+            ? linkedActivity.Title
+            : BuildTitle(i.PrimarySkill, i.ActivityType, i.CurriculumObjectiveTitle);
+
+        var displayActivityType = linkedActivity?.ActivityType.ToString() ?? i.ActivityType;
+        var displayCefrLevel = !string.IsNullOrWhiteSpace(linkedActivity?.Difficulty)
+            ? linkedActivity!.Difficulty
+            : i.TargetCefrLevel;
+
         var (callToAction, explanation) = i.RequiresAdminReview
             ? (_opts.PracticeGymPilotLabel, _opts.PracticeGymPilotReason)
             : BuildCallToAction(i.RoutingReason, i.IsLowerLevelContent, i.PrimarySkill, i.CurriculumObjectiveTitle);
@@ -343,13 +378,13 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         return new PracticeGymSuggestionItemDto
         {
             ReadinessItemId          = i.Id,
-            Title                    = BuildTitle(i.PrimarySkill, i.ActivityType, i.CurriculumObjectiveTitle),
+            Title                    = displayTitle,
             Description              = explanation,
             PrimarySkill             = i.PrimarySkill,
             SecondarySkills          = ParseJsonStringArray(i.SecondarySkillsJson),
             PatternKey               = i.PatternKey,
-            ActivityType             = i.ActivityType,
-            TargetCefrLevel          = i.TargetCefrLevel,
+            ActivityType             = displayActivityType,
+            TargetCefrLevel          = displayCefrLevel,
             StudentCefrLevelSnapshot = i.OriginalCefrLevelSnapshot,
             CurriculumObjectiveKey   = i.CurriculumObjectiveKey,
             CurriculumObjectiveTitle = i.CurriculumObjectiveTitle,

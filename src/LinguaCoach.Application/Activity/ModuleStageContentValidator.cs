@@ -236,7 +236,15 @@ public static class ModuleStageContentValidator
                     if (!HasPropertyIgnoreCase(exerciseData, requiredKey))
                         errors.Add($"practiceContent.exerciseData is missing required field \"{requiredKey}\".");
                     else
+                    {
                         ValidateStringFieldNotEmpty(exerciseData, requiredKey, errors);
+                        // Required array fields (e.g. "pairs", "items") must not be present-but-empty.
+                        // This check runs unconditionally, independent of countSettings, so a payload
+                        // with zero items can never pass validation even if PracticeCountSettings
+                        // failed to load for this pattern — EnforceCounts/EnforceWorkloadSanity below
+                        // only run when countSettings is available.
+                        ValidateArrayFieldNotEmpty(exerciseData, requiredKey, errors);
+                    }
                 }
 
                 if (exercisePatternKey is not null
@@ -454,6 +462,17 @@ public static class ModuleStageContentValidator
             if (prop.Value.ValueKind == JsonValueKind.String
                 && string.IsNullOrWhiteSpace(prop.Value.GetString()))
                 errors.Add($"practiceContent.exerciseData.\"{name}\" must not be empty or whitespace.");
+            return;
+        }
+    }
+
+    private static void ValidateArrayFieldNotEmpty(JsonElement obj, string name, List<string> errors)
+    {
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (!string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
+            if (prop.Value.ValueKind == JsonValueKind.Array && prop.Value.GetArrayLength() == 0)
+                errors.Add($"practiceContent.exerciseData.\"{name}\" must not be an empty array.");
             return;
         }
     }

@@ -4,6 +4,7 @@ using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -144,7 +145,7 @@ public sealed class PlacementService :
         var input = new PlacementEvaluationInput(
             StudentProfileId: profile.Id,
             CareerContext: profile.CareerProfile?.Name ?? "General workplace",
-            SourceLanguageName: profile.LanguagePair?.SourceLanguage?.Name ?? "the student's language",
+            SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
             TargetLanguageName: profile.LanguagePair?.TargetLanguage?.Name ?? "English",
             SelfReportedLevel: selfReported,
             ProfessionalExperienceLevel: profile.ProfessionalExperienceLevel?.ToString() ?? "Unknown",

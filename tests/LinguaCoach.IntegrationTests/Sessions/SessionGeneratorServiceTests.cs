@@ -121,6 +121,41 @@ public sealed class SessionGeneratorServiceTests : IDisposable
         Assert.False(result.IsResuming);
     }
 
+    /// <summary>
+    /// Regression test for the 2026-07-03 workplace-default content review: an explicit,
+    /// non-workplace Learning Goal must win over the legacy career/job field for session
+    /// topic/goal text, even when the career field is also populated. Before this fix,
+    /// BuildSessionMetadata hardcoded a "workplace professional" fallback that bypassed the
+    /// already-correct LearningGoalContextResolver priority chain entirely.
+    /// See docs/reviews/2026-07-03-workplace-default-content-and-placement-gating-review.md.
+    /// </summary>
+    [Fact]
+    public async Task GetOrCreate_WithExplicitNonWorkplaceGoal_DoesNotUseWorkplaceFallbackText()
+    {
+        var (profile, _) = await SeedCourseReadyStudentAsync();
+        // CareerContext ("Document Controller") is already set by SeedCourseReadyStudentAsync —
+        // the explicit goal below must still win over it for topic/goal framing.
+        profile.UpdateLearningPreferences(
+            preferredName: null,
+            supportLanguageCode: null,
+            supportLanguageName: null,
+            translationHelpPreference: null,
+            learningGoals: ["Day-to-day English"],
+            customLearningGoal: null,
+            focusAreas: null,
+            customFocusArea: null,
+            difficultyPreference: null,
+            preferredSessionDurationMinutes: null);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetOrCreateTodaysSessionAsync(CommandFor(profile));
+
+        Assert.DoesNotContain("workplace", result.Topic, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("workplace", result.SessionGoal, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Document Controller", result.Topic, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Day-to-day English", result.Topic, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task GetOrCreate_CalledTwice_ReturnsSameSession()
     {
