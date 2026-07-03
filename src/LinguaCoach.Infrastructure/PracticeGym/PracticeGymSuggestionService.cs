@@ -41,6 +41,7 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
     // Resolved fresh at the top of GetSuggestionsForStudentAsync — see below.
     private ReadinessPoolReplenishmentOptions _opts = new();
     private Dictionary<Guid, LearningActivity> _linkedActivities = new();
+    private Dictionary<string, ExercisePatternDefinition> _patternsByKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<PracticeGymSuggestionService> _logger;
 
     private const int MaxSuggested = 6;
@@ -100,6 +101,26 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
                 .AsNoTracking()
                 .Where(a => linkedActivityIds.Contains(a.Id))
                 .ToDictionaryAsync(a => a.Id, ct);
+
+        // PatternKey is set at queue time and is reliable (it drives what actually gets
+        // generated), unlike PrimarySkill/CurriculumObjectiveTitle which are snapshotted from a
+        // curriculum-routing recommendation that can pick a different objective/skill than the
+        // pattern actually requested — e.g. a "speaking" objective queued alongside a
+        // listening_multiple_choice_single pattern. Look up the pattern's own PrimarySkill so the
+        // card's skill chip always matches what the activity actually trains.
+        var patternKeys = rawItems
+            .Where(i => !string.IsNullOrWhiteSpace(i.PatternKey))
+            .Select(i => i.PatternKey!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        _patternsByKey = patternKeys.Count == 0
+            ? new Dictionary<string, ExercisePatternDefinition>(StringComparer.OrdinalIgnoreCase)
+            : (await _db.ExercisePatterns
+                .AsNoTracking()
+                .Where(p => patternKeys.Contains(p.Key))
+                .ToListAsync(ct))
+                .ToDictionary(p => p.Key, StringComparer.OrdinalIgnoreCase);
 
         // ContinueItems: reserved, not expired. Scaffold items stay pilot-gated so rollback
         // (PracticeGymPilotEnabled=false) hides approved-but-unconsumed scaffold items too.
@@ -362,26 +383,43 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
             ? _linkedActivities.GetValueOrDefault(i.LearningActivityId.Value)
             : null;
 
+        // PatternKey is set at queue time and drives what actually gets generated — unlike
+        // PrimarySkill/CurriculumObjectiveTitle, which are snapshotted from a curriculum-routing
+        // recommendation that can pick a different objective/skill than the pattern requested
+        // (e.g. a "speaking" objective queued alongside a listening_multiple_choice_single
+        // pattern). Prefer the pattern definition's own PrimarySkill whenever available so the
+        // card's skill chip and CTA text always match what the activity actually trains.
+        var pattern = !string.IsNullOrWhiteSpace(i.PatternKey)
+            ? _patternsByKey.GetValueOrDefault(i.PatternKey)
+            : null;
+        var displayPrimarySkill = !string.IsNullOrWhiteSpace(pattern?.PrimarySkill)
+            ? pattern!.PrimarySkill
+            : i.PrimarySkill;
+
         var displayTitle = linkedActivity is not null && !string.IsNullOrWhiteSpace(linkedActivity.Title)
             ? linkedActivity.Title
-            : BuildTitle(i.PrimarySkill, i.ActivityType, i.CurriculumObjectiveTitle);
+            : BuildTitle(displayPrimarySkill, i.ActivityType, i.CurriculumObjectiveTitle);
 
-        var displayActivityType = linkedActivity?.ActivityType.ToString() ?? i.ActivityType;
+        var displayActivityType = linkedActivity?.ActivityType.ToString()
+            ?? pattern?.ActivityType.ToString()
+            ?? i.ActivityType;
         var displayCefrLevel = !string.IsNullOrWhiteSpace(linkedActivity?.Difficulty)
             ? linkedActivity!.Difficulty
             : i.TargetCefrLevel;
 
         var (callToAction, explanation) = i.RequiresAdminReview
             ? (_opts.PracticeGymPilotLabel, _opts.PracticeGymPilotReason)
-            : BuildCallToAction(i.RoutingReason, i.IsLowerLevelContent, i.PrimarySkill, i.CurriculumObjectiveTitle);
+            : BuildCallToAction(i.RoutingReason, i.IsLowerLevelContent, displayPrimarySkill, i.CurriculumObjectiveTitle);
 
         return new PracticeGymSuggestionItemDto
         {
             ReadinessItemId          = i.Id,
             Title                    = displayTitle,
             Description              = explanation,
-            PrimarySkill             = i.PrimarySkill,
-            SecondarySkills          = ParseJsonStringArray(i.SecondarySkillsJson),
+            PrimarySkill             = displayPrimarySkill,
+            SecondarySkills          = !string.IsNullOrWhiteSpace(pattern?.SecondarySkillsJson)
+                                           ? ParseJsonStringArray(pattern!.SecondarySkillsJson)
+                                           : ParseJsonStringArray(i.SecondarySkillsJson),
             PatternKey               = i.PatternKey,
             ActivityType             = displayActivityType,
             TargetCefrLevel          = displayCefrLevel,

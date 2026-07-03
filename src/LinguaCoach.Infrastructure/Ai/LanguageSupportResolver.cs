@@ -8,16 +8,25 @@ namespace LinguaCoach.Infrastructure.Ai;
 /// (e.g. "sourceLanguageSupport", "feedbackInSourceLanguage" prompt fields).
 ///
 /// Never defaults to a specific foreign language (e.g. "Persian") when the
-/// student has no genuine support-language preference — that produced
-/// unprompted foreign-language content for students who never chose one.
-/// Falls back to the target language name instead, which yields no
-/// translation content rather than a guessed one.
+/// student has no genuine, explicit support-language preference — that
+/// produced unprompted foreign-language content for students who never
+/// opted in. Translation content is only enabled when the student has
+/// explicitly set TranslationHelpPreference to WhenDifficult or
+/// AlwaysAvailable on /profile — "Not set" (null) must behave the same as
+/// "no", since the student hasn't opted in yet. LanguagePair.SourceLanguage
+/// (a v1-onboarding "native language" field, distinct from the newer
+/// SupportLanguageCode preference) is only consulted as a fallback once the
+/// student has opted in, never to infer opt-in itself.
 /// </summary>
 public static class LanguageSupportResolver
 {
     public static string ResolveSourceLanguageName(StudentProfile profile)
     {
-        if (profile.TranslationHelpPreference == TranslationHelpPreference.Never)
+        var hasOptedIntoTranslationHelp =
+            profile.TranslationHelpPreference == TranslationHelpPreference.WhenDifficult
+            || profile.TranslationHelpPreference == TranslationHelpPreference.AlwaysAvailable;
+
+        if (!hasOptedIntoTranslationHelp)
             return ResolveTargetLanguageName(profile);
 
         return profile.SupportLanguageName
