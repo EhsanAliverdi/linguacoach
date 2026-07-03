@@ -126,6 +126,26 @@ public sealed class OnboardingV2StepHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordStepCompleted_PersistsAcrossChangeTrackerReload()
+    {
+        // Regression: RecordStepCompleted() mutates CompletedStepKeys (a List<string>) in
+        // place. Without an explicit EF ValueComparer, the default reference-equality change
+        // tracker never saw a change on the same List instance, so completed_step_keys was
+        // silently never written to the DB -- every V2 onboarding completion failed with
+        // "Required steps not completed" listing every step, discovered live 2026-07-03.
+        // Clearing the change tracker forces the next query to hit the DB for real, instead of
+        // returning the already-tracked in-memory entity (which would pass even if the SQL
+        // UPDATE never happened).
+        var profileId = await SeedProfileAndProgressAsync();
+
+        await _handler.HandleAsync(new SubmitOnboardingStepCommand(_userId, "welcome", "{}"));
+        _db.ChangeTracker.Clear();
+
+        var reloaded = await _db.StudentOnboardingProgress.FirstAsync(p => p.UserId == _userId);
+        Assert.Contains("welcome", reloaded.CompletedStepKeys);
+    }
+
+    [Fact]
     public async Task AfterLearningGoals_WithWork_IncludesCareerContextAndWorkExperience()
     {
         await SeedProfileAndProgressAsync();

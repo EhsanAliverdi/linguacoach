@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LinguaCoach.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LinguaCoach.Persistence.Configurations;
@@ -48,19 +49,32 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         builder.Property(sp => sp.SupportLanguageCode).HasColumnName("support_language_code").HasMaxLength(10);
         builder.Property(sp => sp.SupportLanguageName).HasColumnName("support_language_name").HasMaxLength(100);
         builder.Property(sp => sp.TranslationHelpPreference).HasColumnName("translation_help_preference");
+        // ValueComparer added defensively alongside the identical CompletedStepKeys fix
+        // (StudentOnboardingProgressConfiguration) — these two currently only get reassigned
+        // via UpdateLearningPreferences's `.ToList()` (a new instance, so EF's default
+        // reference-equality tracking happens to work), but any future in-place mutation
+        // (e.g. `.Add(...)`) would silently stop persisting without this.
         builder.Property(sp => sp.LearningGoals)
             .HasColumnName("learning_goals")
             .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>());
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                (a, b) => a!.SequenceEqual(b!),
+                v => v.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
+                v => v.ToList()));
         builder.Property(sp => sp.CustomLearningGoal).HasColumnName("custom_learning_goal").HasMaxLength(200);
         builder.Property(sp => sp.FocusAreas)
             .HasColumnName("focus_areas")
             .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>());
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                (a, b) => a!.SequenceEqual(b!),
+                v => v.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
+                v => v.ToList()));
         builder.Property(sp => sp.CustomFocusArea).HasColumnName("custom_focus_area").HasMaxLength(200);
         builder.Property(sp => sp.DifficultyPreference).HasColumnName("difficulty_preference");
         builder.Property(sp => sp.LearningPreferencesUpdatedAt).HasColumnName("learning_preferences_updated_at");
