@@ -2,6 +2,7 @@ using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -40,18 +41,19 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
     private record PlacementItemTemplate(
         string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer,
-        string? ReadingPassage, string? ListeningAudioScript);
+        string? ReadingPassage, string? ListeningAudioScript, QuestionContent? Content);
 
     /// <summary>Loads the enabled item bank once per outer call — replaces the old hardcoded static list.</summary>
     private async Task<List<PlacementItemTemplate>> LoadItemBankAsync(CancellationToken ct)
     {
-        return await _db.PlacementItemDefinitions
+        var rows = await _db.PlacementItemDefinitions
             .Where(i => i.IsEnabled)
             .OrderBy(i => i.ItemOrder)
-            .Select(i => new PlacementItemTemplate(
-                i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
-                i.ReadingPassage, i.ListeningAudioScript))
             .ToListAsync(ct);
+
+        return rows.Select(i => new PlacementItemTemplate(
+            i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
+            i.ReadingPassage, i.ListeningAudioScript, i.Content)).ToList();
     }
 
     private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2"];
@@ -428,7 +430,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 items.Add(PlacementAssessmentItem.Create(
                     assessmentId, template.Skill, template.CefrLevel,
                     template.ItemType, template.Prompt, template.CorrectAnswer, order++,
-                    template.ReadingPassage, template.ListeningAudioScript));
+                    template.ReadingPassage, template.ListeningAudioScript, template.Content));
             }
 
             if (startIdx + 1 < CefrLevels.Length)
@@ -442,7 +444,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                     items.Add(PlacementAssessmentItem.Create(
                         assessmentId, template.Skill, template.CefrLevel,
                         template.ItemType, template.Prompt, template.CorrectAnswer, order++,
-                        template.ReadingPassage, template.ListeningAudioScript));
+                        template.ReadingPassage, template.ListeningAudioScript, template.Content));
                 }
             }
         }
@@ -585,7 +587,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var newItem = PlacementAssessmentItem.Create(
             assessment.Id, template.Skill, template.CefrLevel,
             template.ItemType, template.Prompt, template.CorrectAnswer, newOrder,
-            template.ReadingPassage, template.ListeningAudioScript);
+            template.ReadingPassage, template.ListeningAudioScript, template.Content);
 
         _db.PlacementAssessmentItems.Add(newItem);
         await _db.SaveChangesAsync(ct);

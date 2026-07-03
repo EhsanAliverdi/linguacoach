@@ -24,6 +24,8 @@ internal sealed class PlacementItemDefinitionConfiguration : IEntityTypeConfigur
         builder.Property(i => i.ListeningAudioScript).HasColumnName("listening_audio_script").HasMaxLength(4000);
         builder.Property(i => i.ItemOrder).HasColumnName("item_order").IsRequired();
         builder.Property(i => i.IsEnabled).HasColumnName("is_enabled").IsRequired();
+        builder.Property(i => i.ContentJson).HasColumnName("content_json").HasColumnType("jsonb");
+        builder.Ignore(i => i.Content);
 
         // Prompt uniqueness is the de-facto item identity used by the adaptive selection
         // logic's "used prompts" dedup — enforce it at the DB level too.

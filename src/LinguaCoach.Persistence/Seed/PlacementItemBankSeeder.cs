@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Questions;
 using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Persistence.Seed;
@@ -40,12 +41,26 @@ public static class PlacementItemBankSeeder
                         existingItem.IsEnabled, existingItem.ReadingPassage, audioScript);
                     dirty = true;
                 }
+
+                // Unified Question-Schema Phase 2: backfill ContentJson onto rows created before
+                // this field existed. Same "hasn't been admin-edited" guard as the audio backfill above.
+                if (existingItem.ContentJson is null && existingItem.CorrectAnswer == t.CorrectAnswer)
+                {
+                    existingItem.SetContent(LegacyPlacementContentConverter.FromLegacyItem(
+                        existingItem.ItemType, existingItem.Prompt, existingItem.CorrectAnswer,
+                        existingItem.ReadingPassage, existingItem.ListeningAudioScript ?? audioScript));
+                    dirty = true;
+                }
+
                 continue;
             }
 
-            toAdd.Add(new PlacementItemDefinition(
+            var newItem = new PlacementItemDefinition(
                 t.Skill, t.CefrLevel, t.ItemType, t.Prompt, t.CorrectAnswer, order,
-                listeningAudioScript: audioScript));
+                listeningAudioScript: audioScript);
+            newItem.SetContent(LegacyPlacementContentConverter.FromLegacyItem(
+                t.ItemType, t.Prompt, t.CorrectAnswer, null, audioScript));
+            toAdd.Add(newItem);
         }
 
         if (toAdd.Count > 0) db.PlacementItemDefinitions.AddRange(toAdd);

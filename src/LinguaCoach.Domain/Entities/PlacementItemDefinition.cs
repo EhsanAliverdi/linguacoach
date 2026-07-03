@@ -1,4 +1,6 @@
+using System.Text.Json;
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.Questions;
 
 namespace LinguaCoach.Domain.Entities;
 
@@ -21,6 +23,17 @@ public sealed class PlacementItemDefinition : BaseEntity
 
     public int ItemOrder { get; private set; }
     public bool IsEnabled { get; private set; }
+
+    /// <summary>Unified question schema (Phase 2) snapshot of this item's content, kept in sync
+    /// with the legacy flat fields above until they're dropped (Phase 7). Null only for rows
+    /// created before this field existed and not yet backfilled.</summary>
+    public string? ContentJson { get; private set; }
+
+    public QuestionContent? Content =>
+        ContentJson is null ? null : JsonSerializer.Deserialize<QuestionContent>(ContentJson);
+
+    public void SetContent(QuestionContent content) =>
+        ContentJson = JsonSerializer.Serialize<QuestionContent>(content);
 
     private PlacementItemDefinition() { }
 

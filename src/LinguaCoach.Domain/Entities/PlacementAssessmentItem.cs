@@ -1,4 +1,6 @@
+using System.Text.Json;
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.Questions;
 
 namespace LinguaCoach.Domain.Entities;
 
@@ -37,6 +39,20 @@ public sealed class PlacementAssessmentItem : BaseEntity
     public string? AudioStorageKey { get; private set; }
     public string? AudioContentType { get; private set; }
 
+    /// <summary>Unified question schema (Phase 2) snapshot of this item's content, copied from the
+    /// PlacementItemDefinition at issuance and kept in sync with the legacy flat fields above until
+    /// they're dropped (Phase 7).</summary>
+    public string? ContentJson { get; private set; }
+
+    /// <summary>The submitted answer in the shared QuestionAnswer shape, set when RecordResponse runs.</summary>
+    public string? AnswerJson { get; private set; }
+
+    public QuestionContent? Content =>
+        ContentJson is null ? null : JsonSerializer.Deserialize<QuestionContent>(ContentJson);
+
+    public QuestionAnswer? Answer =>
+        AnswerJson is null ? null : JsonSerializer.Deserialize<QuestionAnswer>(AnswerJson);
+
     private PlacementAssessmentItem() { }
 
     public static PlacementAssessmentItem Create(
@@ -48,7 +64,8 @@ public sealed class PlacementAssessmentItem : BaseEntity
         string? correctAnswer,
         int itemOrder,
         string? readingPassage = null,
-        string? listeningAudioScript = null)
+        string? listeningAudioScript = null,
+        QuestionContent? content = null)
     {
         if (assessmentId == Guid.Empty)
             throw new ArgumentException("AssessmentId required.", nameof(assessmentId));
@@ -67,8 +84,19 @@ public sealed class PlacementAssessmentItem : BaseEntity
             CorrectAnswer = correctAnswer,
             ItemOrder = itemOrder,
             ReadingPassage = readingPassage,
-            ListeningAudioScript = listeningAudioScript
+            ListeningAudioScript = listeningAudioScript,
+            ContentJson = content is null ? null : JsonSerializer.Serialize<QuestionContent>(content),
         };
+    }
+
+    /// <summary>One-time backfill of ContentJson/AnswerJson onto a row created before those fields
+    /// existed (Unified Question-Schema Phase 2). Unlike RecordResponse, this does not re-score —
+    /// it only shadows the already-recorded legacy response in the shared answer shape.</summary>
+    public void BackfillContent(QuestionContent content, string? response)
+    {
+        ContentJson = JsonSerializer.Serialize<QuestionContent>(content);
+        if (response is not null)
+            AnswerJson = JsonSerializer.Serialize(new QuestionAnswer([new QuestionAnswerItem("q1", [response])]));
     }
 
     public void RecordAudio(string storageKey, string contentType)
@@ -88,5 +116,9 @@ public sealed class PlacementAssessmentItem : BaseEntity
         EvaluationNotes = evaluationNotes;
         DurationSeconds = durationSeconds;
         EvaluatedAtUtc = DateTime.UtcNow;
+
+        // Shadow the answer in the shared QuestionAnswer shape (Unified Question-Schema Phase 2) —
+        // a standalone leaf question's single response, addressed by its default "q1" id.
+        AnswerJson = JsonSerializer.Serialize(new QuestionAnswer([new QuestionAnswerItem("q1", [response])]));
     }
 }

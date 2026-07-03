@@ -1,5 +1,6 @@
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,6 +31,9 @@ public sealed class AdminAddPlacementItemHandler : IAdminAddPlacementItemHandler
         {
             throw new PlacementItemValidationException(ex.Message);
         }
+
+        item.SetContent(LegacyPlacementContentConverter.FromLegacyItem(
+            item.ItemType, item.Prompt, item.CorrectAnswer, item.ReadingPassage, item.ListeningAudioScript));
 
         _db.PlacementItemDefinitions.Add(item);
         await _db.SaveChangesAsync(ct);

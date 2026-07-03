@@ -1,3 +1,6 @@
+using LinguaCoach.Domain.Questions;
+using LinguaCoach.Infrastructure.Placement;
+using LinguaCoach.Infrastructure.Questions;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
@@ -133,5 +136,66 @@ public sealed class PlacementItemBankSeederTests : IDisposable
 
         var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
         Assert.Equal("Turn left at the traffic lights.", reloaded.ListeningAudioScript);
+    }
+
+    // ── Unified Question-Schema Phase 2: ContentJson shadow ─────────────────
+
+    [Fact]
+    public async Task SeedAsync_PopulatesContentJsonForEveryItem()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var items = await _db.PlacementItemDefinitions.ToListAsync();
+        Assert.All(items, i => Assert.NotNull(i.ContentJson));
+        Assert.All(items, i => Assert.NotNull(i.Content));
+    }
+
+    [Fact]
+    public async Task SeedAsync_ListeningItem_ProducesListeningGroupContent()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
+
+        var group = Assert.IsType<ListeningGroupQuestion>(item.Content);
+        Assert.Equal("Turn left at the traffic lights.", group.AudioScript);
+        var leaf = Assert.IsType<SingleChoiceQuestion>(Assert.Single(group.Questions));
+        Assert.Equal("B", leaf.CorrectAnswerKey);
+    }
+
+    [Fact]
+    public async Task SeedAsync_GapFillItem_ProducesGapFillContentWithSameCorrectAnswer()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Skill == "grammar" && i.ItemType == "gap_fill");
+
+        var leaf = Assert.IsType<GapFillQuestion>(item.Content);
+        Assert.Equal(item.CorrectAnswer, leaf.CorrectAnswer);
+    }
+
+    [Fact]
+    public async Task Content_ScoredWithSharedScorer_MatchesLegacyPlacementScoringService()
+    {
+        // Proves the new shared IQuestionScorer produces identical correctness to the legacy
+        // PlacementScoringService for every seeded item, de-risking the future cutover where
+        // PlacementAssessmentService switches from flat-field scoring to Content-based scoring.
+        await PlacementItemBankSeeder.SeedAsync(_db);
+        var legacyScorer = new PlacementScoringService();
+        var sharedScorer = new QuestionScorer();
+
+        var items = await _db.PlacementItemDefinitions.ToListAsync();
+        foreach (var item in items)
+        {
+            var legacyResult = legacyScorer.Score(item.CorrectAnswer, item.CorrectAnswer, item.ItemType);
+
+            var answer = new QuestionAnswer([new QuestionAnswerItem("q1", [item.CorrectAnswer])]);
+            var sharedResult = sharedScorer.Score(item.Content!, answer);
+
+            Assert.True(legacyResult.IsCorrect, $"Legacy scorer disagreed with itself for item {item.Id}.");
+            Assert.True(sharedResult.IsCorrect, $"Shared scorer marked correct answer wrong for item {item.Id} ({item.Prompt}).");
+        }
     }
 }
