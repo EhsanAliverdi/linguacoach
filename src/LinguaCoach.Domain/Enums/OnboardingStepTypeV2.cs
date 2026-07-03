@@ -12,5 +12,7 @@ public enum OnboardingStepTypeV2
     MultipleChoice = 7,
     FreeText = 8,
     AssessmentQuestion = 9,
-    Summary = 10
+    Summary = 10,
+    WorkExperience = 11,
+    SessionDuration = 12
 }

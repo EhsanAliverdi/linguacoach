@@ -25,6 +25,20 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private const int VocabPracticeIntervalAttempts = 4; // every 4th activity
     private const int ListeningIntervalAttempts = 5; // every 5th activity
 
+    // Legacy/explicit-type paths create a LearningActivity without an ExercisePatternKey,
+    // so there's nothing to resolve InteractionMode from. Rather than pass null (which the
+    // frontend's exercise-renderer silently reads as free-text entry, even for activity types
+    // that are really multiple-choice/audio/etc.), look up the InteractionMode of the pattern
+    // that normally serves this ActivityType elsewhere in the app, for DTO purposes only —
+    // this does not assign a pattern key to the activity itself.
+    private static readonly Dictionary<ActivityType, string> DefaultPatternKeyByActivityType = new()
+    {
+        [ActivityType.VocabularyPractice] = Domain.ExercisePatternKey.PhraseMatch,
+        [ActivityType.ListeningComprehension] = Domain.ExercisePatternKey.ListenAndAnswer,
+        [ActivityType.WritingScenario] = Domain.ExercisePatternKey.OpenWritingTask,
+        [ActivityType.SpeakingRolePlay] = Domain.ExercisePatternKey.SpeakingRoleplayTurn,
+    };
+
     private static readonly HashSet<string> ListeningPatternKeys = new(StringComparer.OrdinalIgnoreCase)
     {
         Domain.ExercisePatternKey.ListenAndAnswer,
@@ -170,7 +184,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                     "VocabularyPractice activity created ActivityId={ActivityId} StudentProfileId={ProfileId}",
                     vocabActivity.Id, profile.Id);
 
-                return MapToDto(vocabActivity, null);
+                var vocabMode = await ResolveDefaultInteractionModeAsync(ActivityType.VocabularyPractice, ct);
+                return MapToDto(vocabActivity, vocabMode);
             }
             catch (InvalidOperationException)
             {
@@ -242,7 +257,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             await _db.SaveChangesAsync(ct);
         }
 
-        return MapToDto(activity, null);
+        var primaryMode = await ResolveDefaultInteractionModeAsync(activityType, ct);
+        return MapToDto(activity, primaryMode);
     }
 
     // ── IGetActivityByIdHandler ────────────────────────────────────────────────
@@ -406,7 +422,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
                 learningModuleId: currentModuleId);
             _db.LearningActivities.Add(vocabActivity);
             await _db.SaveChangesAsync(ct);
-            return MapToDto(vocabActivity, null);
+            var vocabMode = await ResolveDefaultInteractionModeAsync(ActivityType.VocabularyPractice, ct);
+            return MapToDto(vocabActivity, vocabMode);
         }
 
         var context = new ActivityGenerationContext(
@@ -452,7 +469,8 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             await _db.SaveChangesAsync(ct);
         }
 
-        return MapToDto(activity, null);
+        var legacyMode = await ResolveDefaultInteractionModeAsync(activityType, ct);
+        return MapToDto(activity, legacyMode);
     }
 
     private async Task<ActivityDto> HandleExerciseTypeKeyedAsync(
@@ -649,6 +667,15 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
             _logger.LogWarning(ex, "Failed to resolve current module for profile {ProfileId}. Proceeding without module context.", studentProfileId);
             return (null, null);
         }
+    }
+
+    private async Task<InteractionMode?> ResolveDefaultInteractionModeAsync(ActivityType activityType, CancellationToken ct)
+    {
+        if (!DefaultPatternKeyByActivityType.TryGetValue(activityType, out var patternKey))
+            return null;
+
+        var pattern = await _patternRepo.GetByKeyAsync(patternKey, ct);
+        return pattern?.InteractionMode;
     }
 
     private static string BuildPairCode(Domain.Entities.LanguagePair? pair)

@@ -12,6 +12,44 @@ Last updated: 2026-07-03 (20I)
 
 ---
 
+## Onboarding V2 Cutover + MC-Render Fix (Phase 20I continued, 2026-07-03)
+
+Follow-up manual QA by the product owner found onboarding step-ordering/content
+problems and confirmed a previously-orphaned system: a fully-built,
+admin-configurable onboarding flow ("V2", `/admin/onboarding`) existed
+alongside the live hardcoded 5-step flow ("V1") but was never routed to.
+Full findings and root cause: `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
+
+**Decision: V1 retired outright, all students (new and existing) now go
+through V2.** All 12 existing student accounts were already
+onboarding-complete, so there was no in-flight-student migration risk.
+Closed V2's remaining answer-mapping gaps (career context, session
+duration, work experience, learning-goal free text) by reusing existing
+`StudentProfile` setters, added a conditional skip so career-context/work-
+experience only show to students whose goals include "work," and fixed a
+critical cross-cutting bug found during implementation: `OnboardingV2CompleteHandler`
+never set the legacy `StudentProfile.OnboardingStatus` field that
+`ActivityGetHandler`, `DashboardQueryHandler`, `GetProgressHandler`, and
+several other handlers still gate on — without this fix, a V2-onboarded
+student would have been silently blocked from Today lessons, dashboard,
+and progress.
+
+Also fixed: `ActivityGetHandler` passed `interactionMode: null` on 4
+non-pattern-keyed code paths, which the frontend reads as free-text entry
+regardless of the actual content shape — real content generated as
+multiple-choice would render as a plain text box. Root-caused, not just
+patched: resolves the `InteractionMode` of the exercise pattern that
+normally serves each `ActivityType` instead.
+
+Deferred to follow-up (approved plan, not yet built): an admin-configurable
+placement item bank (replacing the static 72-item C# array, mirroring the
+onboarding-step admin CRUD pattern) to also add real reading passages and
+listening audio; and a live diagnosis of why Today-lesson TTS audio has
+never been generated in production despite valid config. See
+`TODO-20I-4`, `TODO-20I-5`, `TODO-20I-6`.
+
+---
+
 ## Full Live Student/Admin QA & Data Consistency Audit (Phase 20I, 2026-07-03)
 
 Deep live QA against `pilot.student.20e` (admin + DB views) and a fresh QA

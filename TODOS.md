@@ -654,8 +654,8 @@ progress is always computed live from the ledger.
 ## Full Live Student/Admin QA (Phase 20I)
 
 ### TODO-20I-1 — `language_pairs` table has only one seeded row (Persian↔English)
-**What:** Onboarding step 1 ("Choose your language path") only ever offers "Persian to English" because that's the only row in `language_pairs`. Product question, not a confirmed bug — onboarding placeholder copy is bilingual EN/FA by design, suggesting this may be intentional single-language-pair scoping for the current pilot cohort.
-**Why:** Blocks inviting non-Persian-speaking pilot students without either seeding more pairs or hiding/skipping this onboarding step when only one pair exists.
+**Status: Resolved, 2026-07-03.** Onboarding was cut over to the V2 flow, whose `support_language` step already offers 8 languages (not tied to `language_pairs`) and writes directly to `SupportLanguageCode`/`SupportLanguageName` — the fields the resolvers actually read. `language_pairs`'s single row no longer gates the student's native-language choice. See `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
+**Original what/why:** Onboarding step 1 ("Choose your language path") only ever offered "Persian to English" because that's the only row in `language_pairs`.
 **Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part B/C.
 **Deferred from:** Phase 20I, 2026-07-03 (product decision needed, not a code bug).
 
@@ -669,4 +669,22 @@ progress is always computed live from the ledger.
 **What:** Admin Diagnostics page shows a recurring 404 for a URL with a doubled `/api/api/` prefix, and the AI Operations "Generation quality — last 30 days" widget shows "Could not load generation quality data."
 **Why:** Likely a stray leading slash in a frontend URL constant. Low severity (informational widget only), not fixed this pass.
 **Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part A / Deferred section.
+**Deferred from:** Phase 20I, 2026-07-03.
+
+### TODO-20I-4 — Admin-configurable placement item bank (Phase 4 of the onboarding-cutover plan)
+**What:** Replace `PlacementAssessmentService`'s static 72-item `ItemBank` array with a DB-backed `PlacementItemDefinition` entity, administered through a new admin page mirroring the onboarding-step CRUD pattern (`AdminOnboardingController` → `PlacementItemDefinition`), adding `ReadingPassage` and `ListeningAudioScript` fields to close the placement content-quality gaps (single-sentence "reading" items, text-only "listening" items).
+**Why:** Confirmed in this session's plan as a low-risk refactor (`PlacementAssessmentService` already holds an EF `DbContext`; nothing else references the static list). Product owner explicitly asked for placement to be as flexible/admin-editable as onboarding.
+**Context:** `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
+**Deferred from:** Phase 20I, 2026-07-03 (larger surface area — new entity, migration, admin CRUD stack, frontend admin page — scoped for a dedicated follow-up session).
+
+### TODO-20I-5 — Wire real TTS audio into placement listening items
+**What:** `PlacementAudioService` (calls `tts.placement`, generates real speech) and the frontend `PlacementService.getListeningAudioBlobUrl()` already exist but belong to an older, parallel placement API the live UI no longer uses. Wire them into the live adaptive placement engine's listening items once TODO-20I-4 adds a `ListeningAudioScript` field to author from.
+**Why:** Confirmed the audio infrastructure isn't missing, just unwired to the currently-live engine — closes finding (6) from the onboarding-cutover review (listening items are text pretending to be audio).
+**Context:** `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
+**Deferred from:** Phase 20I, 2026-07-03 (depends on TODO-20I-4 landing first).
+
+### TODO-20I-6 — Today-lesson TTS audio never invoked (needs live diagnosis before a fix)
+**What:** `ai_usage_logs` has zero rows ever for `tts.listening`/`tts.placement`, despite `LessonGenerationSettings.EnableTtsGeneration = true`, all 15 Quartz jobs (including `tts-audio-generation`) registered, and valid Gemini credentials that work for every other AI feature. MinIO has no audio files.
+**Why:** None of the config/credential/job-registration causes checked out — needs to be reproduced live (complete a Today-lesson listening activity as a fresh test student, watch `ai_usage_logs`/Diagnostics in real time) to determine whether `ListeningAudioService.EnsureAudioAsync` is even being reached, before guessing at a code fix.
+**Context:** `docs/reviews/2026-07-03-phase-20i-onboarding-cutover-and-mc-render-fix-review.md`.
 **Deferred from:** Phase 20I, 2026-07-03.

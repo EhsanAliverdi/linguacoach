@@ -68,9 +68,23 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
             .ToList();
 
         var currentIndex = orderedEnabledSteps.FindIndex(s => s.StepKey == command.StepKey);
-        var nextStep = currentIndex >= 0 && currentIndex < orderedEnabledSteps.Count - 1
-            ? orderedEnabledSteps[currentIndex + 1]
-            : null;
+        var candidateIndex = currentIndex + 1;
+        OnboardingStepDefinition? nextStep = null;
+        if (currentIndex >= 0)
+        {
+            var workRelevant = await IsWorkRelevantAsync(progress.Id, ct);
+            while (candidateIndex < orderedEnabledSteps.Count)
+            {
+                var candidate = orderedEnabledSteps[candidateIndex];
+                if (!workRelevant && WorkOnlyStepKeys.Contains(candidate.StepKey))
+                {
+                    candidateIndex++;
+                    continue;
+                }
+                nextStep = candidate;
+                break;
+            }
+        }
         progress.UpdateCurrentStep(nextStep?.StepKey);
 
         // Percentage based on required+enabled steps only (rule 6).
@@ -124,7 +138,8 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
                     throw new OnboardingV2ValidationException($"Answer exceeds maximum length of {maxLength} characters.");
                 break;
 
-            case OnboardingStepTypeV2.SingleChoice or OnboardingStepTypeV2.AssessmentQuestion:
+            case OnboardingStepTypeV2.SingleChoice or OnboardingStepTypeV2.AssessmentQuestion
+                or OnboardingStepTypeV2.SessionDuration:
                 if (step.OptionsJson is not null)
                 {
                     var validKeys = ParseOptionKeys(step.OptionsJson);
@@ -132,6 +147,15 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
                     if (selected is not null && !validKeys.Contains(selected))
                         throw new OnboardingV2ValidationException($"Invalid option key '{selected}'.");
                 }
+                break;
+
+            case OnboardingStepTypeV2.WorkExperience:
+                // This step is AdminConfigured (skippable) — an empty object represents
+                // "skipped," which is valid. If either field is provided, both must be.
+                var hasExperience = parsed.TryGetProperty("experienceLevel", out var expEl) && expEl.ValueKind == JsonValueKind.String;
+                var hasFamiliarity = parsed.TryGetProperty("roleFamiliarity", out var famEl) && famEl.ValueKind == JsonValueKind.String;
+                if (hasExperience != hasFamiliarity)
+                    throw new OnboardingV2ValidationException("Both experienceLevel and roleFamiliarity are required together.");
                 break;
 
             case OnboardingStepTypeV2.MultipleChoice or OnboardingStepTypeV2.LearningGoals
@@ -227,7 +251,66 @@ public sealed class OnboardingV2StepHandler : IOnboardingV2StepHandler
                     focusAreas: null, customFocusArea: null, difficultyPreference: diff,
                     preferredSessionDurationMinutes: null);
                 break;
+
+            case OnboardingAnswerMapping.CareerContext:
+                var careerText = parsed.TryGetProperty("value", out var cv) ? cv.GetString() : null;
+                profile.UpdateOnboardingFreeTextContext(careerContextText: careerText, learningGoalDescription: null);
+                break;
+
+            case OnboardingAnswerMapping.LearningGoalDescription:
+                var goalDescription = parsed.TryGetProperty("value", out var gv) ? gv.GetString() : null;
+                profile.UpdateOnboardingFreeTextContext(careerContextText: null, learningGoalDescription: goalDescription);
+                break;
+
+            case OnboardingAnswerMapping.SessionDuration:
+                var minutesStr = parsed.TryGetProperty("key", out var mk) ? mk.GetString() : null;
+                if (minutesStr is not null && int.TryParse(minutesStr, out var minutes) && minutes > 0)
+                {
+                    profile.UpdateLearningPreferences(
+                        preferredName: null, supportLanguageCode: null, supportLanguageName: null,
+                        translationHelpPreference: null, learningGoals: null, customLearningGoal: null,
+                        focusAreas: null, customFocusArea: null, difficultyPreference: null,
+                        preferredSessionDurationMinutes: minutes);
+                }
+                break;
+
+            case OnboardingAnswerMapping.WorkExperience:
+                var expStr = parsed.TryGetProperty("experienceLevel", out var el) ? el.GetString() : null;
+                var famStr = parsed.TryGetProperty("roleFamiliarity", out var rf) ? rf.GetString() : null;
+                if (expStr is not null && famStr is not null
+                    && Enum.TryParse<ProfessionalExperienceLevel>(expStr, out var expLevel)
+                    && Enum.TryParse<RoleFamiliarity>(famStr, out var familiarity))
+                {
+                    profile.SetExperienceContext(expLevel, familiarity);
+                }
+                break;
         }
+    }
+
+    /// <summary>
+    /// Career context and work-experience steps are only relevant to students whose learning
+    /// goals include work/professional communication — everyone else skips straight past them.
+    /// </summary>
+    private static readonly HashSet<string> WorkOnlyStepKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "career_context", "work_experience"
+    };
+
+    private async Task<bool> IsWorkRelevantAsync(Guid progressId, CancellationToken ct)
+    {
+        var goalsResponse = await _db.StudentOnboardingResponses
+            .Where(r => r.ProgressId == progressId && r.StepKey == "learning_goals")
+            .Select(r => r.AnswerJson)
+            .FirstOrDefaultAsync(ct);
+
+        if (goalsResponse is null) return false;
+
+        var parsed = JsonSerializer.Deserialize<JsonElement>(goalsResponse);
+        if (!parsed.TryGetProperty("keys", out var keysEl) || keysEl.ValueKind != JsonValueKind.Array)
+            return false;
+
+        return keysEl.EnumerateArray()
+            .Any(k => string.Equals(k.GetString(), "work", StringComparison.OrdinalIgnoreCase));
     }
 
     private static IReadOnlyList<string>? ParseStringList(JsonElement parsed, string propertyName)

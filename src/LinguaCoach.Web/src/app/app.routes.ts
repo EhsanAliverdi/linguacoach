@@ -145,11 +145,6 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'resume', pathMatch: 'full' },
       { path: 'resume', loadComponent: () => import('./features/student/onboarding/onboarding-resume/onboarding-resume.component').then(m => m.OnboardingResumeComponent) },
-      { path: 'step-1', loadComponent: () => import('./features/student/onboarding/step1-language/step1-language.component').then(m => m.Step1LanguageComponent) },
-      { path: 'step-2', loadComponent: () => import('./features/student/onboarding/step2-track/step2-track.component').then(m => m.Step2TrackComponent) },
-      { path: 'step-3', loadComponent: () => import('./features/student/onboarding/step3-career/step3-career.component').then(m => m.Step3CareerComponent) },
-      { path: 'step-4', loadComponent: () => import('./features/student/onboarding/step4-skill/step4-skill.component').then(m => m.Step4SkillComponent) },
-      { path: 'step-5', loadComponent: () => import('./features/student/onboarding/step5-experience/step5-experience.component').then(m => m.Step5ExperienceComponent) },
       { path: 'v2', loadComponent: () => import('./features/student/onboarding/onboarding-v2/onboarding-v2.component').then(m => m.OnboardingV2Component) },
     ],
   },

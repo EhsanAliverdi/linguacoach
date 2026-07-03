@@ -9,5 +9,9 @@ public enum OnboardingAnswerMapping
     SupportLanguage = 2,         // sets SupportLanguageCode + SupportLanguageName + TranslationHelpPreference
     LearningGoals = 3,           // sets LearningGoals + CustomLearningGoal
     FocusAreas = 4,              // sets FocusAreas + CustomFocusArea
-    DifficultyPreference = 5     // sets DifficultyPreference
+    DifficultyPreference = 5,    // sets DifficultyPreference
+    CareerContext = 6,           // sets CareerContext (free text)
+    SessionDuration = 7,         // sets PreferredSessionDurationMinutes
+    WorkExperience = 8,          // sets ProfessionalExperienceLevel + RoleFamiliarity
+    LearningGoalDescription = 9  // sets LearningGoalDescription (free text)
 }

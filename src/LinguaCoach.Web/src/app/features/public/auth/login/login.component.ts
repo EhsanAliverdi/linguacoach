@@ -54,7 +54,7 @@ export class LoginComponent {
               this.router.navigate(['/onboarding/resume']);
             }
           },
-          error: () => this.router.navigate(['/onboarding/step-1']),
+          error: () => this.router.navigate(['/onboarding/v2']),
         });
       },
       error: err => {

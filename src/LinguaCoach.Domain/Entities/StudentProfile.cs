@@ -140,6 +140,17 @@ public sealed class StudentProfile : BaseEntity
         OnboardingStatus = OnboardingStatus.Complete;
     }
 
+    /// <summary>
+    /// Marks onboarding complete without driving the legacy V1 step state machine. Called by
+    /// onboarding V2's completion handler — every other handler in the system (activity
+    /// generation, dashboard, progress, speaking, readiness pool jobs) still gates on this
+    /// legacy field, so V2 completion must set it too.
+    /// </summary>
+    public void MarkOnboardingComplete()
+    {
+        OnboardingStatus = OnboardingStatus.Complete;
+    }
+
     // Free-text career path: does not require a CareerProfile FK.
     public void SetCareerContextText(string text)
     {
@@ -338,6 +349,29 @@ public sealed class StudentProfile : BaseEntity
         CustomFocusArea = string.IsNullOrWhiteSpace(customFocusArea) ? null : customFocusArea.Trim();
         DifficultyPreference = difficultyPreference;
         LearningPreferencesUpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Partial update for free-text onboarding context (career context, why-learning
+    /// description). Each parameter only updates its own field when non-null — bypasses the
+    /// onboarding state machine, safe to call from onboarding V2's per-step submission model
+    /// or after onboarding is complete (e.g. from /profile).
+    /// </summary>
+    public void UpdateOnboardingFreeTextContext(string? careerContextText, string? learningGoalDescription)
+    {
+        if (careerContextText is not null)
+        {
+            if (careerContextText.Length > 500)
+                throw new ArgumentException("Career context text must not exceed 500 characters.", nameof(careerContextText));
+            CareerContext = string.IsNullOrWhiteSpace(careerContextText) ? null : careerContextText.Trim();
+        }
+
+        if (learningGoalDescription is not null)
+        {
+            if (learningGoalDescription.Length > 1000)
+                throw new ArgumentException("Learning goal description must not exceed 1000 characters.", nameof(learningGoalDescription));
+            LearningGoalDescription = string.IsNullOrWhiteSpace(learningGoalDescription) ? null : learningGoalDescription.Trim();
+        }
     }
 
     /// <summary>Admin reset: clears placement results (CEFR level).</summary>

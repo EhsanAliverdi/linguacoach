@@ -75,6 +75,13 @@ public sealed class VocabularyPracticeActivityTests : IClassFixture<ActivityTest
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("vocabularyPractice", body.GetProperty("activityType").GetString());
+
+        // Regression: this path builds a LearningActivity without an ExercisePatternKey, so
+        // interactionMode used to be hardcoded null — the frontend's exercise-renderer reads a
+        // null interactionMode as free-text entry, silently rendering multiple-choice-shaped
+        // content as a plain text box. It must resolve to a real, non-null interaction mode.
+        Assert.True(body.TryGetProperty("interactionMode", out var mode));
+        Assert.NotEqual(JsonValueKind.Null, mode.ValueKind);
     }
 
     // ── VocabularyPractice returned with enough vocab + correct attempt count ─

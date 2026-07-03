@@ -51,7 +51,7 @@ export class ChangePasswordComponent {
         } else {
           this.onboarding.getStatus().subscribe({
             next: s => this.router.navigate(s.isComplete ? ['/dashboard'] : ['/onboarding/resume']),
-            error: () => this.router.navigate(['/onboarding/step-1']),
+            error: () => this.router.navigate(['/onboarding/v2']),
           });
         }
       },

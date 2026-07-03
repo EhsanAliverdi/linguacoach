@@ -2,7 +2,12 @@
 import { Router } from '@angular/router';
 import { OnboardingService } from '../../../../core/services/onboarding.service';
 
-// Redirect-only component. Checks onboarding status and routes to the correct step.
+// Redirect-only component. Every student (new or resuming) goes through onboarding V2 —
+// its own status check (OnboardingV2Component.load) redirects to /dashboard if already
+// complete, so this only needs to route into v2 and let it take over from there. The legacy
+// v1 status check here is kept only as a fast-path: if a legacy-complete student's V1
+// OnboardingStatus is already Complete, skip straight to the dashboard without waiting on
+// a v2 progress round-trip.
 @Component({
   selector: 'app-onboarding-resume',
   standalone: true,
@@ -20,17 +25,9 @@ export class OnboardingResumeComponent implements OnInit {
   ngOnInit(): void {
     this.onboarding.getStatus().subscribe({
       next: status => {
-        if (status.isComplete) { this.router.navigate(['/dashboard']); return; }
-        const stepMap: Record<string, string> = {
-          None: '/onboarding/step-1',
-          Language: '/onboarding/step-2',
-          Preference: '/onboarding/step-3',
-          Career: '/onboarding/step-4',
-        };
-        const route = stepMap[status.currentStep] ?? '/onboarding/step-1';
-        this.router.navigate([route]);
+        this.router.navigate([status.isComplete ? '/dashboard' : '/onboarding/v2']);
       },
-      error: () => this.router.navigate(['/onboarding/step-1']),
+      error: () => this.router.navigate(['/onboarding/v2']),
     });
   }
 }

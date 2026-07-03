@@ -98,6 +98,12 @@ public sealed class OnboardingV2CompleteHandler : IOnboardingV2CompleteHandler
             {
                 profile.SetLifecycleStage(StudentLifecycleStage.PlacementRequired);
             }
+
+            // Every other handler in the system (activity generation, dashboard, progress,
+            // speaking, readiness pool jobs) still gates on the legacy OnboardingStatus field —
+            // V2 completion must set it too, or a V2-onboarded student is silently blocked
+            // everywhere else in the app.
+            profile.MarkOnboardingComplete();
         }
 
         await _db.SaveChangesAsync(ct);

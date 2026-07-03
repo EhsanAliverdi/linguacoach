@@ -14,6 +14,8 @@ import { OnboardingV2MultipleChoiceComponent } from './steps/onboarding-v2-multi
 import { OnboardingV2FreeTextComponent } from './steps/onboarding-v2-free-text.component';
 import { OnboardingV2AssessmentComponent } from './steps/onboarding-v2-assessment.component';
 import { OnboardingV2SummaryComponent } from './steps/onboarding-v2-summary.component';
+import { OnboardingV2SessionDurationComponent } from './steps/onboarding-v2-session-duration.component';
+import { OnboardingV2WorkExperienceComponent } from './steps/onboarding-v2-work-experience.component';
 
 @Component({
   selector: 'app-onboarding-v2',
@@ -31,6 +33,8 @@ import { OnboardingV2SummaryComponent } from './steps/onboarding-v2-summary.comp
     OnboardingV2FreeTextComponent,
     OnboardingV2AssessmentComponent,
     OnboardingV2SummaryComponent,
+    OnboardingV2SessionDurationComponent,
+    OnboardingV2WorkExperienceComponent,
   ],
   template: `
     <div class="sp-page">
@@ -120,6 +124,16 @@ import { OnboardingV2SummaryComponent } from './steps/onboarding-v2-summary.comp
               [step]="currentStep"
               [status]="status"
               (completed)="onCompleted()"
+            />
+            <app-onboarding-v2-session-duration
+              *ngIf="currentStep.stepType === 'SessionDuration'"
+              [step]="currentStep"
+              (submitted)="onStepSubmitted($event)"
+            />
+            <app-onboarding-v2-work-experience
+              *ngIf="currentStep.stepType === 'WorkExperience'"
+              [step]="currentStep"
+              (submitted)="onStepSubmitted($event)"
             />
           </ng-container>
         </ng-container>
