@@ -1,7 +1,14 @@
+using LinguaCoach.Domain.Questions;
+
 namespace LinguaCoach.Application.Placement;
 
 // ── Admin-facing placement item DTO — includes CorrectAnswer (admin-only, unlike the
 // student-facing PlacementNextItemDto which deliberately excludes it) ────────────────
+//
+// The legacy flat fields (ItemType/Prompt/CorrectAnswer/ReadingPassage/ListeningAudioScript)
+// are now *derived* from Content (Unified Question-Schema Phase 4) rather than admin-authored
+// directly — kept only for display continuity and PlacementAssessmentService's still flat-field-
+// driven adaptive algorithm, dropped once that's cut over (Phase 7).
 
 public sealed record AdminPlacementItemDto(
     Guid ItemId,
@@ -13,7 +20,8 @@ public sealed record AdminPlacementItemDto(
     string? ReadingPassage,
     string? ListeningAudioScript,
     int ItemOrder,
-    bool IsEnabled
+    bool IsEnabled,
+    QuestionContent Content
 );
 
 // ── List all items ────────────────────────────────────────────────────────────
@@ -30,11 +38,7 @@ public interface IAdminPlacementItemListQuery
 public sealed record AddPlacementItemCommand(
     string Skill,
     string CefrLevel,
-    string ItemType,
-    string Prompt,
-    string CorrectAnswer,
-    string? ReadingPassage,
-    string? ListeningAudioScript,
+    QuestionContent Content,
     int ItemOrder,
     bool IsEnabled
 );
@@ -50,11 +54,7 @@ public sealed record UpdatePlacementItemCommand(
     Guid ItemId,
     string Skill,
     string CefrLevel,
-    string ItemType,
-    string Prompt,
-    string CorrectAnswer,
-    string? ReadingPassage,
-    string? ListeningAudioScript,
+    QuestionContent Content,
     int ItemOrder,
     bool IsEnabled
 );

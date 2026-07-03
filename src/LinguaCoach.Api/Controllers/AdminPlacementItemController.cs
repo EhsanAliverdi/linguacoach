@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Placement;
+using LinguaCoach.Domain.Questions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,8 +42,7 @@ public sealed class AdminPlacementItemController : ControllerBase
         try
         {
             var result = await _addItem.HandleAsync(new AddPlacementItemCommand(
-                request.Skill, request.CefrLevel, request.ItemType, request.Prompt, request.CorrectAnswer,
-                request.ReadingPassage, request.ListeningAudioScript, request.ItemOrder, request.IsEnabled), ct);
+                request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled), ct);
             return Ok(result);
         }
         catch (PlacementItemValidationException ex)
@@ -58,8 +58,7 @@ public sealed class AdminPlacementItemController : ControllerBase
         try
         {
             var result = await _updateItem.HandleAsync(new UpdatePlacementItemCommand(
-                itemId, request.Skill, request.CefrLevel, request.ItemType, request.Prompt, request.CorrectAnswer,
-                request.ReadingPassage, request.ListeningAudioScript, request.ItemOrder, request.IsEnabled), ct);
+                itemId, request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled), ct);
             return Ok(result);
         }
         catch (PlacementItemValidationException ex)
@@ -88,11 +87,7 @@ public sealed class AdminPlacementItemController : ControllerBase
     public sealed record PlacementItemRequest(
         string Skill,
         string CefrLevel,
-        string ItemType,
-        string Prompt,
-        string CorrectAnswer,
-        string? ReadingPassage,
-        string? ListeningAudioScript,
+        QuestionContent Content,
         int ItemOrder,
         bool IsEnabled);
 }

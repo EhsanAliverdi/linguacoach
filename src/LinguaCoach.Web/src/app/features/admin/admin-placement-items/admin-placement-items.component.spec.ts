@@ -15,6 +15,13 @@ const ITEM_A: AdminPlacementItemDto = {
   listeningAudioScript: null,
   itemOrder: 1,
   isEnabled: true,
+  content: {
+    type: 'single_choice',
+    id: 'q1',
+    questionText: 'Which is correct?',
+    choices: [{ key: 'A', label: 'am' }, { key: 'B', label: 'is' }],
+    correctAnswerKey: 'A',
+  },
 };
 
 const ITEM_B: AdminPlacementItemDto = {
@@ -28,6 +35,12 @@ const ITEM_B: AdminPlacementItemDto = {
   listeningAudioScript: 'The deadline has been extended.',
   itemOrder: 2,
   isEnabled: false,
+  content: {
+    type: 'listening_group',
+    id: 'g1',
+    audioScript: 'The deadline has been extended.',
+    questions: [{ type: 'gap_fill', id: 'q1', questionText: 'You hear: complete the sentence.', correctAnswer: 'extended' }],
+  },
 };
 
 function makeService(items: AdminPlacementItemDto[] = [ITEM_A, ITEM_B]) {
@@ -151,7 +164,7 @@ describe('AdminPlacementItemsComponent', () => {
   it('openAddItem resets itemForm to defaults', async () => {
     await setup();
     component.openAddItem();
-    expect(component.itemForm.prompt).toBe('');
+    expect(component.itemForm.content.type).toBe('single_choice');
     expect(component.itemForm.isEnabled).toBeTrue();
     expect(component.itemForm.skill).toBe('grammar');
   });
@@ -167,7 +180,7 @@ describe('AdminPlacementItemsComponent', () => {
     await setup();
     component.openEditItem(ITEM_B);
     expect(component.itemForm.skill).toBe('listening');
-    expect(component.itemForm.correctAnswer).toBe('extended');
+    expect(component.itemForm.content).toEqual(ITEM_B.content);
     expect(component.itemForm.isEnabled).toBeFalse();
   });
 
@@ -184,7 +197,7 @@ describe('AdminPlacementItemsComponent', () => {
   it('saveItem calls add when editingItem is null', fakeAsync(async () => {
     await setup();
     component.openAddItem();
-    component.itemForm.prompt = 'New prompt';
+    component.updateContent({ ...component.itemForm.content, questionText: 'New prompt' } as any);
     component.saveItem();
     tick();
     expect(svc.add).toHaveBeenCalledWith(component.itemForm);

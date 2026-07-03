@@ -29,6 +29,22 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
     }
 
     [Fact]
+    public async Task List_AsAdmin_EachItemHasStructuredContent()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.GetAsync("/api/admin/placement-items");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        foreach (var item in body.EnumerateArray())
+        {
+            Assert.True(item.TryGetProperty("content", out var content));
+            Assert.True(content.TryGetProperty("type", out _));
+        }
+    }
+
+    [Fact]
     public async Task List_Unauthenticated_Returns401()
     {
         var client = _factory.CreateClient();
@@ -43,19 +59,22 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
-        var prompt = $"Test prompt {Guid.NewGuid():N}";
+        var questionText = $"Test prompt {Guid.NewGuid():N}";
 
         var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
         {
             skill = "grammar",
             cefrLevel = "A1",
-            itemType = "multiple_choice",
-            prompt,
-            correctAnswer = "A",
-            readingPassage = (string?)null,
-            listeningAudioScript = (string?)null,
+            content = new
+            {
+                type = "single_choice",
+                id = "q1",
+                questionText,
+                choices = new[] { new { key = "A", label = "am" }, new { key = "B", label = "is" } },
+                correctAnswerKey = "A",
+            },
             itemOrder = 999,
-            isEnabled = true
+            isEnabled = true,
         });
         Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
         var addBody = await addResp.Content.ReadFromJsonAsync<JsonElement>();
@@ -65,21 +84,60 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         {
             skill = "grammar",
             cefrLevel = "A2",
-            itemType = "multiple_choice",
-            prompt,
-            correctAnswer = "B",
-            readingPassage = (string?)null,
-            listeningAudioScript = (string?)null,
+            content = new
+            {
+                type = "single_choice",
+                id = "q1",
+                questionText,
+                choices = new[] { new { key = "A", label = "am" }, new { key = "B", label = "is" } },
+                correctAnswerKey = "B",
+            },
             itemOrder = 999,
-            isEnabled = false
+            isEnabled = false,
         });
         Assert.Equal(HttpStatusCode.OK, updateResp.StatusCode);
         var updateBody = await updateResp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("A2", updateBody.GetProperty("cefrLevel").GetString());
         Assert.False(updateBody.GetProperty("isEnabled").GetBoolean());
+        Assert.Equal("B", updateBody.GetProperty("correctAnswer").GetString());
 
         var deleteResp = await client.DeleteAsync($"/api/admin/placement-items/{itemId}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddItem_ReadingGroupWithTwoSubQuestions_Succeeds()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var passage = $"The cat sat on the mat. {Guid.NewGuid():N}";
+
+        var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "reading",
+            cefrLevel = "A1",
+            content = new
+            {
+                type = "reading_group",
+                id = "g1",
+                passage,
+                questions = new object[]
+                {
+                    new { type = "single_choice", id = "q1", questionText = "Where did the cat sit?", choices = new[] { new { key = "A", label = "mat" } }, correctAnswerKey = "A" },
+                    new { type = "gap_fill", id = "q2", questionText = "The ___ sat on the mat.", correctAnswer = "cat" },
+                },
+            },
+            itemOrder = 998,
+            isEnabled = true,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
+        var body = await addResp.Content.ReadFromJsonAsync<JsonElement>();
+        var content = body.GetProperty("content");
+        Assert.Equal("reading_group", content.GetProperty("type").GetString());
+        Assert.Equal(2, content.GetProperty("questions").GetArrayLength());
+
+        await client.DeleteAsync($"/api/admin/placement-items/{GetItemId(body)}");
     }
 
     [Fact]
@@ -87,21 +145,26 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
-        var prompt = $"Duplicate prompt {Guid.NewGuid():N}";
+        var questionText = $"Duplicate prompt {Guid.NewGuid():N}";
+
+        object Content(string correctAnswerKey) => new
+        {
+            type = "single_choice",
+            id = "q1",
+            questionText,
+            choices = new[] { new { key = "A", label = "am" }, new { key = "B", label = "is" } },
+            correctAnswerKey,
+        };
 
         var first = await client.PostAsJsonAsync("/api/admin/placement-items", new
         {
-            skill = "grammar", cefrLevel = "A1", itemType = "multiple_choice",
-            prompt, correctAnswer = "A", readingPassage = (string?)null,
-            listeningAudioScript = (string?)null, itemOrder = 1000, isEnabled = true
+            skill = "grammar", cefrLevel = "A1", content = Content("A"), itemOrder = 1000, isEnabled = true,
         });
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await client.PostAsJsonAsync("/api/admin/placement-items", new
         {
-            skill = "grammar", cefrLevel = "A1", itemType = "multiple_choice",
-            prompt, correctAnswer = "B", readingPassage = (string?)null,
-            listeningAudioScript = (string?)null, itemOrder = 1001, isEnabled = true
+            skill = "grammar", cefrLevel = "A1", content = Content("B"), itemOrder = 1001, isEnabled = true,
         });
         Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
     }

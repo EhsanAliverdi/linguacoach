@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Placement;
+using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,8 @@ public sealed class AdminPlacementItemListQueryHandler : IAdminPlacementItemList
 
         return items.Select(i => new AdminPlacementItemDto(
             i.Id, i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
-            i.ReadingPassage, i.ListeningAudioScript, i.ItemOrder, i.IsEnabled)).ToList();
+            i.ReadingPassage, i.ListeningAudioScript, i.ItemOrder, i.IsEnabled,
+            i.Content ?? LegacyPlacementContentConverter.FromLegacyItem(
+                i.ItemType, i.Prompt, i.CorrectAnswer, i.ReadingPassage, i.ListeningAudioScript))).ToList();
     }
 }

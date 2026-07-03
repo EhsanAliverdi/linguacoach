@@ -7,8 +7,9 @@ import {
   PlacementItemRequest,
   PLACEMENT_SKILLS,
   PLACEMENT_CEFR_LEVELS,
-  PLACEMENT_ITEM_TYPES,
 } from '../../../core/models/admin-placement-item.models';
+import { QuestionContent, SingleChoiceQuestion } from '../../../shared/question/question-content.models';
+import { QuestionEditorComponent } from '../../../shared/question/question-editor.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -26,8 +27,17 @@ import {
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
-  SpAdminTextareaComponent,
 } from '../../../design-system/admin';
+
+function emptyQuestionContent(): SingleChoiceQuestion {
+  return {
+    type: 'single_choice',
+    id: 'q1',
+    questionText: '',
+    choices: [{ key: 'A', label: '' }, { key: 'B', label: '' }],
+    correctAnswerKey: 'A',
+  };
+}
 
 @Component({
   selector: 'app-admin-placement-items',
@@ -51,7 +61,7 @@ import {
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
-    SpAdminTextareaComponent,
+    QuestionEditorComponent,
   ],
   templateUrl: './admin-placement-items.component.html',
 })
@@ -72,7 +82,6 @@ export class AdminPlacementItemsComponent implements OnInit {
   readonly skillOptions = [{ value: 'all', label: 'All skills' }, ...PLACEMENT_SKILLS.map(s => ({ value: s, label: s }))];
   readonly formSkillOptions = PLACEMENT_SKILLS.map(s => ({ value: s, label: s }));
   readonly cefrLevelOptions = PLACEMENT_CEFR_LEVELS.map(l => ({ value: l, label: l }));
-  readonly itemTypeOptions = PLACEMENT_ITEM_TYPES.map(t => ({ value: t, label: t }));
 
   readonly filteredItems = computed(() => {
     const filter = this.skillFilter();
@@ -120,11 +129,7 @@ export class AdminPlacementItemsComponent implements OnInit {
     this.itemForm = {
       skill: item.skill,
       cefrLevel: item.cefrLevel,
-      itemType: item.itemType,
-      prompt: item.prompt,
-      correctAnswer: item.correctAnswer,
-      readingPassage: item.readingPassage,
-      listeningAudioScript: item.listeningAudioScript,
+      content: item.content,
       itemOrder: item.itemOrder,
       isEnabled: item.isEnabled,
     };
@@ -136,6 +141,10 @@ export class AdminPlacementItemsComponent implements OnInit {
   closeSlideOver(): void {
     this.slideOverOpen.set(false);
     this.editingItem.set(null);
+  }
+
+  updateContent(content: QuestionContent): void {
+    this.itemForm = { ...this.itemForm, content };
   }
 
   saveItem(): void {
@@ -171,11 +180,7 @@ export class AdminPlacementItemsComponent implements OnInit {
     return {
       skill: 'grammar',
       cefrLevel: 'A1',
-      itemType: 'multiple_choice',
-      prompt: '',
-      correctAnswer: '',
-      readingPassage: null,
-      listeningAudioScript: null,
+      content: emptyQuestionContent(),
       itemOrder: 1,
       isEnabled: true,
     };

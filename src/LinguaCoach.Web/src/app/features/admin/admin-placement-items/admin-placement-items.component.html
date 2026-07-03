@@ -106,26 +106,6 @@
       <sp-admin-select [(ngModel)]="itemForm.cefrLevel" [options]="cefrLevelOptions" />
     </sp-admin-form-field>
 
-    <sp-admin-form-field label="Item type" [required]="true">
-      <sp-admin-select [(ngModel)]="itemForm.itemType" [options]="itemTypeOptions" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Prompt" [required]="true" hint="The question text shown to the student">
-      <sp-admin-textarea [(ngModel)]="itemForm.prompt" placeholder="Question text" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Correct answer" [required]="true">
-      <sp-admin-input [(ngModel)]="itemForm.correctAnswer" placeholder="e.g. A, or the exact expected word" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Reading passage" hint="Optional — for reading-skill items, the full passage the prompt refers to">
-      <sp-admin-textarea [(ngModel)]="itemForm.readingPassage" placeholder="Optional reading passage" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Listening audio script" hint="Optional — for listening-skill items, the text that gets converted to speech">
-      <sp-admin-textarea [(ngModel)]="itemForm.listeningAudioScript" placeholder="Optional listening script" />
-    </sp-admin-form-field>
-
     <sp-admin-form-field label="Item order" hint="Used for admin list ordering only">
       <sp-admin-input type="number" [(ngModel)]="itemForm.itemOrder" />
     </sp-admin-form-field>
@@ -135,6 +115,8 @@
     </sp-admin-form-field>
 
   </div>
+
+  <app-question-editor [content]="itemForm.content" (contentChange)="updateContent($event)" />
 
   @if (actionError()) {
     <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
