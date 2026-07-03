@@ -1,4 +1,4 @@
-﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OnboardingV2Step } from '../../../../../core/models/onboarding-v2.models';
@@ -27,12 +27,23 @@ import { OnboardingV2Step } from '../../../../../core/models/onboarding-v2.model
     </div>
   `,
 })
-export class OnboardingV2FreeTextComponent {
+export class OnboardingV2FreeTextComponent implements OnChanges {
   @Input() step!: OnboardingV2Step;
   @Output() submitted = new EventEmitter<string>();
 
   value = '';
   error: string | null = null;
+
+  // Two consecutive steps of the same stepType (e.g. career_context then
+  // learning_goal_description, both FreeText) reuse this same component instance —
+  // Angular's *ngIf only re-renders on a truthiness change, not a step-key change — so
+  // component state must be reset explicitly or the next step inherits the previous answer.
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['step'] && !changes['step'].firstChange) {
+      this.value = '';
+      this.error = null;
+    }
+  }
 
   get maxLength(): number {
     return this.step.validationMetadata?.maxLength ?? 500;

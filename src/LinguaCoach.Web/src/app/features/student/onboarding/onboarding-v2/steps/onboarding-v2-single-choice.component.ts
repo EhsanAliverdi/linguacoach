@@ -1,4 +1,4 @@
-﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnboardingV2Step, OnboardingV2Option } from '../../../../../core/models/onboarding-v2.models';
 
@@ -28,12 +28,21 @@ import { OnboardingV2Step, OnboardingV2Option } from '../../../../../core/models
     </div>
   `,
 })
-export class OnboardingV2SingleChoiceComponent {
+export class OnboardingV2SingleChoiceComponent implements OnChanges {
   @Input() step!: OnboardingV2Step;
   @Output() submitted = new EventEmitter<string>();
 
   selectedKey: string | null = null;
   error: string | null = null;
+
+  // If a future flow uses two SingleChoice steps back to back, this component instance is
+  // reused — reset state on every step change or the second step inherits the first's answer.
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['step'] && !changes['step'].firstChange) {
+      this.selectedKey = null;
+      this.error = null;
+    }
+  }
 
   select(opt: OnboardingV2Option): void {
     this.selectedKey = opt.key;

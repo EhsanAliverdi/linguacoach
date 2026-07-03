@@ -1,4 +1,4 @@
-﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnboardingV2Step, OnboardingV2Option } from '../../../../../core/models/onboarding-v2.models';
 
@@ -29,12 +29,21 @@ import { OnboardingV2Step, OnboardingV2Option } from '../../../../../core/models
     </div>
   `,
 })
-export class OnboardingV2AssessmentComponent {
+export class OnboardingV2AssessmentComponent implements OnChanges {
   @Input() step!: OnboardingV2Step;
   @Output() submitted = new EventEmitter<string>();
 
   selectedKey: string | null = null;
   error: string | null = null;
+
+  // assessment_q1 and assessment_q2 both use this same component type — reset state on
+  // every step change or the second question inherits the first's selection/error.
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['step'] && !changes['step'].firstChange) {
+      this.selectedKey = null;
+      this.error = null;
+    }
+  }
 
   select(opt: OnboardingV2Option): void {
     this.selectedKey = opt.key;
